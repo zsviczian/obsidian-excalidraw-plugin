@@ -9,6 +9,7 @@ import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import { getCropFileNameAndFolder, getListOfTemplateFiles } from "./fileUtils";
 import { Notice, TFile } from "obsidian";
 import { Radians } from "@zsviczian/excalidraw/types/math/src/types";
+import { t } from "src/lang/helpers";
 
 export const CROPPED_PREFIX = "cropped_";
 export const ANNOTATED_PREFIX = "annotated_";
@@ -255,9 +256,7 @@ export const createImageCropperFile = async (
   }
   //console.log({counter, file});
   if (!file || !(file instanceof TFile)) {
-    new Notice(
-      "File not found. NewExcalidraw Drawing is taking too long to create. Please try again.",
-    );
+    new Notice(t("NEW_DRAWING_TIMEOUT"));
     return;
   }
 

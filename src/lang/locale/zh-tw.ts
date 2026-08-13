@@ -215,6 +215,9 @@ export default {
   ABOUT_EXCALIDRAW: "關於 Excalidraw",
   RUN_OCR: "OCR 整個繪圖：識別塗鴉和圖片裡的文字並複製到剪貼簿和筆記屬性中",
   TASKBONE_NOT_ENABLED: "Taskbone OCR 未啟用。請前往外掛設定將其開啟。",
+  OCR_ABORT_NO_ELEMENTS: "正在中止 OCR，因為畫布上沒有圖像或手繪元素。",
+  OCR_ALREADY_PROCESSED:
+    "此繪圖已經處理過，您可以在 Markdown 檢視模式下的 frontmatter 中找到結果。如果您是從 Excalidraw 的 Obsidian 面板執行此命令，可以按住 ctrl(cmd) 並點擊該命令以強制重新掃描。",
   RERUN_OCR:
     "重新 OCR 整個繪圖：識別塗鴉和圖片裡的文字並複製到剪貼簿和筆記屬性中",
   RUN_OCR_ELEMENTS: "OCR 選中的元素：識別塗鴉和圖片裡的文字並複製到剪貼簿",
@@ -1395,6 +1398,7 @@ export default {
 
   //InsertPDFModal.ts
   IPM_PAGES_TO_IMPORT_NAME: "要匯入的頁面",
+  IPM_PAGES_TO_IMPORT_DESC: "例如：1,3-5,7,9-10",
   IPM_SELECT_PAGES_TO_IMPORT: "請選擇頁面以進行匯入",
   IPM_ADD_BORDER_BOX_NAME: "新增帶邊框的盒子容器",
   IPM_ADD_FRAME_NAME: "新增頁面到畫框",
@@ -1636,4 +1640,19 @@ Obsidian 的 Excalidraw 外掛遠不只是畫圖工具。由於它與 Obsidian �
   EXTRAS_GATEWAY_COMP_PLUGIN: "Excalidraw Extras 外掛",
   EXTRAS_GATEWAY_UPDATE_TITLE: "Excalidraw 需要新版本的 Extras 外掛",
   EXTRAS_GATEWAY_UPDATE_BTN: "開啟社群外掛",
+
+  //ObserverManager.ts
+  ERROR_ADDING_OBSERVER_MANAGER: "新增 ObserverManager 時發生錯誤",
+
+  //PublishOutOfDateFiles.ts
+  POODF_TITLE: "過期的 SVG 檔案",
+  POODF_CHECK_RECURSIVE: "遞迴檢查",
+  POODF_OPEN_SELECTED: "開啟所選項",
+
+  //ImageCache.ts
+  IMAGE_CACHE_INITIALIZED:
+    "Excalidraw 圖片快取已初始化 - 您現在可以重試開啟損壞的繪圖。",
+
+  //carveout.ts
+  NEW_DRAWING_TIMEOUT: "找不到檔案。建立新的 Excalidraw 繪圖耗時過長。請重試。",
 };

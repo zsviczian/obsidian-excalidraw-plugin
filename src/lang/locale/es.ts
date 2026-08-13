@@ -1456,6 +1456,7 @@ export default {
 
   //InsertPDFModal.ts
   IPM_PAGES_TO_IMPORT_NAME: "Páginas para importar",
+  IPM_PAGES_TO_IMPORT_DESC: "P. ej.: 1,3-5,7,9-10",
   IPM_SELECT_PAGES_TO_IMPORT: "Por favor, selecciona las páginas para importar",
   IPM_ADD_BORDER_BOX_NAME: "Añadir recuadro de borde",
   IPM_ADD_FRAME_NAME: "Añadir página a un marco(frame)",
@@ -1664,4 +1665,26 @@ Si quieres ver lo que ya es posible hoy, aquí tienes una presentación de las f
     "Puede volver a habilitar esto en: Opciones → Excalidraw → Básico → Advertir sobre actualizaciones de complementos incompletos.",
   VERSION_MISMATCH_REDOWNLOAD: "Volver a descargar complemento",
   VERSION_MISMATCH_IGNORE: "Ignorar",
+
+  //Taskbone.ts
+  OCR_ABORT_NO_ELEMENTS:
+    "Cancelando el OCR porque no hay elementos de imagen o dibujo a mano alzada en el lienzo.",
+  OCR_ALREADY_PROCESSED:
+    "El dibujo ya ha sido procesado, encontrará el resultado en el frontmatter en modo de vista Markdown. Si ejecutó el comando desde el panel de Obsidian en Excalidraw, puede hacer ctrl(cmd)+clic en el comando para forzar el reescaneo.",
+
+  //ObserverManager.ts
+  ERROR_ADDING_OBSERVER_MANAGER: "Error al añadir ObserverManager",
+
+  //PublishOutOfDateFiles.ts
+  POODF_TITLE: "Archivos SVG desactualizados",
+  POODF_CHECK_RECURSIVE: "Comprobar de forma recursiva",
+  POODF_OPEN_SELECTED: "Abrir seleccionados",
+
+  //ImageCache.ts
+  IMAGE_CACHE_INITIALIZED:
+    "La caché de imágenes de Excalidraw se ha inicializado - ahora puede volver a intentar abrir su dibujo dañado.",
+
+  //carveout.ts
+  NEW_DRAWING_TIMEOUT:
+    "Archivo no encontrado. El nuevo dibujo de Excalidraw está tardando demasiado en crearse. Inténtelo de nuevo.",
 };

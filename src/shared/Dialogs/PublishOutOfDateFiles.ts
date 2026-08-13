@@ -1,4 +1,5 @@
 import { Modal, Setting, TFile, TAbstractFile } from "obsidian";
+import { t } from "src/lang/helpers";
 import ExcalidrawPlugin from "src/core/main";
 import { log } from "src/utils/debugHelper";
 import { getIMGFilename } from "src/utils/fileUtils";
@@ -110,7 +111,7 @@ export class PublishOutOfDateFilesDialog extends Modal {
 
   onOpen() {
     this.containerEl.classList.add("excalidraw-release");
-    this.titleEl.setText(`Out of Date SVG Files`);
+    this.titleEl.setText(t("POODF_TITLE"));
     void this.createForm(false);
   }
 
@@ -144,7 +145,7 @@ export class PublishOutOfDateFilesDialog extends Modal {
       };
       if (!recursive) {
         const bRecursive = div.createEl("button", {
-          text: "Check Recursive",
+          text: t("POODF_CHECK_RECURSIVE"),
           cls: "excalidraw-prompt-button",
         });
         bRecursive.onclick = () => {
@@ -178,7 +179,7 @@ export class PublishOutOfDateFilesDialog extends Modal {
     };
     if (!recursive) {
       const bRecursive = div.createEl("button", {
-        text: "Check Recursive",
+        text: t("POODF_CHECK_RECURSIVE"),
         cls: "excalidraw-prompt-button",
       });
       bRecursive.onclick = () => {
@@ -187,7 +188,7 @@ export class PublishOutOfDateFilesDialog extends Modal {
       };
     }
     const bOpen = div.createEl("button", {
-      text: "Open Selected",
+      text: t("POODF_OPEN_SELECTED"),
       cls: "excalidraw-prompt-button",
     });
     bOpen.onclick = () => {

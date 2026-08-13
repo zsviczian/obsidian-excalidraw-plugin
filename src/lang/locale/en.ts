@@ -246,6 +246,10 @@ export default {
     "OCR full drawing: Grab text from freedraw + images to clipboard and doc.props",
   TASKBONE_NOT_ENABLED:
     "Taskbone OCR is not enabled. Please go to plugins settings to enable it.",
+  OCR_ABORT_NO_ELEMENTS:
+    "Aborting OCR because there are no image or freedraw elements on the canvas.",
+  OCR_ALREADY_PROCESSED:
+    "The drawing has already been processed, you will find the result in the frontmatter in Markdown view mode. If you ran the command from the Obsidian panel in Excalidraw then you can ctrl(cmd)+click the command to force the rescanning.",
   RERUN_OCR:
     "OCR full drawing re-run: Grab text from freedraw + images to clipboard and doc.props",
   RUN_OCR_ELEMENTS:
@@ -1493,6 +1497,7 @@ export default {
 
   //InsertPDFModal.ts
   IPM_PAGES_TO_IMPORT_NAME: "Pages to import",
+  IPM_PAGES_TO_IMPORT_DESC: "E.g.: 1,3-5,7,9-10",
   IPM_SELECT_PAGES_TO_IMPORT: "Please select pages to import",
   IPM_ADD_BORDER_BOX_NAME: "Add border box",
   IPM_ADD_FRAME_NAME: "Add page to frame",
@@ -1829,4 +1834,20 @@ Thank you & Enjoy!
   PEN_SETTINGS_CAP_END: "Cap End",
   PEN_SETTINGS_SAVE: "Save Changes",
   PEN_SETTINGS_CANCEL: "Cancel",
+
+  //ObserverManager.ts
+  ERROR_ADDING_OBSERVER_MANAGER: "Error adding ObserverManager",
+
+  //PublishOutOfDateFiles.ts
+  POODF_TITLE: "Out of date SVG files",
+  POODF_CHECK_RECURSIVE: "Check recursive",
+  POODF_OPEN_SELECTED: "Open selected",
+
+  //ImageCache.ts
+  IMAGE_CACHE_INITIALIZED:
+    "Excalidraw image cache is initialized - you may now retry opening your damaged drawing.",
+
+  //carveout.ts
+  NEW_DRAWING_TIMEOUT:
+    "File not found. New Excalidraw drawing is taking too long to create. Please try again.",
 };

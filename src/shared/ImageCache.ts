@@ -1,4 +1,5 @@
 import { App, Notice, TFile } from "obsidian";
+import { t } from "src/lang/helpers";
 import ExcalidrawPlugin from "src/core/main";
 import { PDFPageViewProps, Size } from "src/types/embeddedFileLoaderTypes";
 import { convertSVGStringToElement, errorlog } from "../utils/utils";
@@ -218,9 +219,7 @@ class ImageCache {
     } finally {
       this.isInitializing = false;
       if (this.initializationNotice) {
-        new Notice(
-          "Excalidraw Image Cache is Initialized - You may now retry opening your damaged drawing.",
-        );
+        new Notice(t("IMAGE_CACHE_INITIALIZED"));
         this.initializationNotice = false;
       }
       log("Initialized Excalidraw Image Cache");

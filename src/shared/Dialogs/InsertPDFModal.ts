@@ -288,7 +288,7 @@ export class InsertPDFModal extends Modal {
     numPagesMessages();
     new Setting(ce)
       .setName(t("IPM_PAGES_TO_IMPORT_NAME"))
-      .setDesc("e.g.: 1,3-5,7,9-10")
+      .setDesc(t("IPM_PAGES_TO_IMPORT_DESC"))
       .addText((text) => {
         pageRangesTextComponent = text;
         text.setValue("").onChange(async (value) => {

@@ -1291,6 +1291,7 @@ export default {
 
   //InsertPDFModal.ts
   IPM_PAGES_TO_IMPORT_NAME: "Страницы для импорта",
+  IPM_PAGES_TO_IMPORT_DESC: "Например: 1,3-5,7,9-10",
   IPM_SELECT_PAGES_TO_IMPORT: "Пожалуйста, выберите страницы для импорта",
   IPM_ADD_BORDER_BOX_NAME: "Добавить рамку",
   IPM_ADD_FRAME_NAME: "Добавить страницу в кадр",
@@ -1301,4 +1302,26 @@ export default {
   IPM_GROUP_PAGES_DESC:
     "Это позволит объединить все страницы в одну группу. Это рекомендуется делать, если вы блокируете страницы после импорта, потому что группу будет легче разблокировать позже, чем разблокировать каждую по отдельности.",
   IPM_SELECT_PDF: "Пожалуйста, выберите файл PDF",
+
+  //Taskbone.ts
+  OCR_ABORT_NO_ELEMENTS:
+    "Отмена OCR, так как на холсте нет элементов изображения или рисования от руки.",
+  OCR_ALREADY_PROCESSED:
+    "Рисунок уже обработан, результат можно найти во frontmatter в режиме просмотра Markdown. Если вы запустили команду с панели Obsidian в Excalidraw, вы можете нажать ctrl(cmd)+клик по команде, чтобы принудительно повторить сканирование.",
+
+  //ObserverManager.ts
+  ERROR_ADDING_OBSERVER_MANAGER: "Ошибка при добавлении ObserverManager",
+
+  //PublishOutOfDateFiles.ts
+  POODF_TITLE: "Устаревшие файлы SVG",
+  POODF_CHECK_RECURSIVE: "Проверить рекурсивно",
+  POODF_OPEN_SELECTED: "Открыть выбранное",
+
+  //ImageCache.ts
+  IMAGE_CACHE_INITIALIZED:
+    "Кэш изображений Excalidraw инициализирован - теперь вы можете повторить попытку открытия повреждённого рисунка.",
+
+  //carveout.ts
+  NEW_DRAWING_TIMEOUT:
+    "Файл не найден. Создание нового рисунка Excalidraw занимает слишком много времени. Пожалуйста, попробуйте снова.",
 };
