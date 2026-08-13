@@ -2,7 +2,7 @@ import { Setting } from "obsidian";
 import { setStyle } from "./styleUtils";
 
 export type SliderSetting = {
-  name: string;
+  name: string | DocumentFragment;
   desc?: string | DocumentFragment;
   min: number;
   max: number;
