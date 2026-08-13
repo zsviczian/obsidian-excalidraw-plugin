@@ -123,6 +123,25 @@ interface TextControl {
   placeholder?: string;
   /** When set, the sanitized value replaces both the stored setting and the input's displayed text, matching the existing replaceAll-then-setValue pattern. */
   sanitize?: (value: string) => string;
+  /** Extra logic run before the setting is assigned. */
+  before?: (value: string) => void | Promise<void>;
+  /** Extra logic run after the setting is assigned (and sanitized/setValue-back, if `sanitize` is set) but before applySettingsUpdate(). */
+  after?: (value: string) => void | Promise<void>;
+  /** Extra logic run after applySettingsUpdate() completes. */
+  afterUpdate?: (value: string) => void | Promise<void>;
+  /** Wires the text input into addVaultPathSupport() (path suggester + existence warning), matching the existing folder/file path settings. */
+  vaultPath?: {
+    kind: "file" | "folder";
+    options?: {
+      optional?: boolean;
+      extensions?: readonly string[];
+      resolvePath?: (value: string) => string;
+      createFolder?: boolean;
+      validate?: boolean;
+    };
+  };
+  /** Called with the raw TextComponent before placeholder/value/onChange are wired, for callers that need to keep manipulating it afterward (e.g. a sibling toggle disabling it, or applying configurePasswordTextInput). */
+  capture?: (text: TextComponent) => void;
   /** true => applySettingsUpdate(true); default => applySettingsUpdate() */
   reload?: boolean;
 }
@@ -293,11 +312,13 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     }
     if (control.type === "text") {
       setting.addText((text) => {
+        control.capture?.(text);
         if (control.placeholder !== undefined) {
           text.setPlaceholder(control.placeholder);
         }
         text.setValue(this.plugin.settings[control.key]).onChange(
           async (value) => {
+            await control.before?.(value);
             const finalValue = control.sanitize
               ? control.sanitize(value)
               : value;
@@ -305,9 +326,19 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             if (control.sanitize) {
               text.setValue(finalValue);
             }
+            await control.after?.(value);
             this.applySettingsUpdate(control.reload ?? false);
+            await control.afterUpdate?.(value);
           },
         );
+        if (control.vaultPath) {
+          this.addVaultPathSupport(
+            setting,
+            text,
+            control.vaultPath.kind,
+            control.vaultPath.options,
+          );
+        }
       });
       return setting;
     }
@@ -776,16 +807,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       control: { type: "toggle", key: "showSplashscreen" },
     });
 
-    const drawingFolderSetting = new Setting(detailsEl)
-      .setName(t("FOLDER_NAME"))
-      .setDesc(fragWithHTML(t("FOLDER_DESC")));
-    drawingFolderSetting.addText((text) => {
-      text
-        .setPlaceholder(t("FOLDER_PLACEHOLDER"))
-        .setValue(this.plugin.settings.folder)
-        .onChange(async (value) => {
-          const previousFolder = this.plugin.settings.folder;
-          this.plugin.settings.folder = value;
+    let previousFolder = "";
+    this.buildSetting(detailsEl, {
+      name: t("FOLDER_NAME"),
+      desc: fragWithHTML(t("FOLDER_DESC")),
+      control: {
+        type: "text",
+        key: "folder",
+        placeholder: t("FOLDER_PLACEHOLDER"),
+        before: () => {
+          previousFolder = this.plugin.settings.folder;
+        },
+        after: (value) => {
           if (
             this.plugin.settings.libraryFolderPath ===
             normalizePath(`${previousFolder}/Libraries`)
@@ -794,9 +827,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
               `${value}/Libraries`,
             );
           }
-          this.applySettingsUpdate();
-        });
-      this.addVaultPathSupport(drawingFolderSetting, text, "folder");
+        },
+        vaultPath: { kind: "folder" },
+      },
     });
 
     const libraryStorageSetting = new Setting(detailsEl)
@@ -826,40 +859,39 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         }),
     );
 
-    const libraryFolderSetting = new Setting(detailsEl)
-      .setName(t("LIBRARY_FOLDER_NAME"))
-      .setDesc(t("LIBRARY_FOLDER_DESC"));
-    libraryFolderSetting.addText((text) => {
-      text
-        .setValue(this.plugin.settings.libraryFolderPath)
-        .onChange((value) => {
-          this.plugin.settings.libraryFolderPath = value;
-          this.plugin.stencilLibraryManager.invalidate();
-          this.applySettingsUpdate(true);
-        });
-      this.addVaultPathSupport(libraryFolderSetting, text, "folder", {
-        optional: this.plugin.settings.libraryStorageMode === "data-json",
-        createFolder: this.plugin.settings.libraryStorageMode === "vault",
-        validate: this.plugin.settings.libraryStorageMode === "vault",
-      });
+    const libraryFolderSetting = this.buildSetting(detailsEl, {
+      name: t("LIBRARY_FOLDER_NAME"),
+      desc: t("LIBRARY_FOLDER_DESC"),
+      control: {
+        type: "text",
+        key: "libraryFolderPath",
+        after: () => this.plugin.stencilLibraryManager.invalidate(),
+        reload: true,
+        vaultPath: {
+          kind: "folder",
+          options: {
+            optional: this.plugin.settings.libraryStorageMode === "data-json",
+            createFolder: this.plugin.settings.libraryStorageMode === "vault",
+            validate: this.plugin.settings.libraryStorageMode === "vault",
+          },
+        },
+      },
     });
-    libraryFolderSetting.setDisabled(
+    libraryFolderSetting?.setDisabled(
       this.plugin.settings.libraryStorageMode === "data-json",
     );
 
-    const libraryFileSetting = new Setting(detailsEl)
-      .setName(t("LIBRARY_FILE_NAME"))
-      .setDesc(t("LIBRARY_FILE_DESC"))
-      .addText((text) =>
-        text
-          .setValue(this.plugin.settings.libraryFileName)
-          .onChange((value) => {
-            this.plugin.settings.libraryFileName = value;
-            this.plugin.stencilLibraryManager.invalidate();
-            this.applySettingsUpdate(true);
-          }),
-      );
-    libraryFileSetting.setDisabled(
+    const libraryFileSetting = this.buildSetting(detailsEl, {
+      name: t("LIBRARY_FILE_NAME"),
+      desc: t("LIBRARY_FILE_DESC"),
+      control: {
+        type: "text",
+        key: "libraryFileName",
+        after: () => this.plugin.stencilLibraryManager.invalidate(),
+        reload: true,
+      },
+    });
+    libraryFileSetting?.setDisabled(
       this.plugin.settings.libraryStorageMode === "data-json",
     );
 
@@ -888,68 +920,52 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       control: { type: "toggle", key: "embedUseExcalidrawFolder" },
     });
 
-    const cropFolderSetting = new Setting(detailsEl)
-      .setName(t("CROP_FOLDER_NAME"))
-      .setDesc(fragWithHTML(t("CROP_FOLDER_DESC")));
-    cropFolderSetting.addText((text) => {
-      text
-        .setPlaceholder(t("CROP_FOLDER_PLACEHOLDER"))
-        .setValue(this.plugin.settings.cropFolder)
-        .onChange(async (value) => {
-          this.plugin.settings.cropFolder = value;
-          this.applySettingsUpdate();
-        });
-      this.addVaultPathSupport(cropFolderSetting, text, "folder", {
-        optional: true,
-      });
+    this.buildSetting(detailsEl, {
+      name: t("CROP_FOLDER_NAME"),
+      desc: fragWithHTML(t("CROP_FOLDER_DESC")),
+      control: {
+        type: "text",
+        key: "cropFolder",
+        placeholder: t("CROP_FOLDER_PLACEHOLDER"),
+        vaultPath: { kind: "folder", options: { optional: true } },
+      },
     });
 
-    const annotateFolderSetting = new Setting(detailsEl)
-      .setName(t("ANNOTATE_FOLDER_NAME"))
-      .setDesc(fragWithHTML(t("ANNOTATE_FOLDER_DESC")));
-    annotateFolderSetting.addText((text) => {
-      text
-        .setPlaceholder(t("ANNOTATE_FOLDER_PLACEHOLDER"))
-        .setValue(this.plugin.settings.annotateFolder)
-        .onChange(async (value) => {
-          this.plugin.settings.annotateFolder = value;
-          this.applySettingsUpdate();
-        });
-      this.addVaultPathSupport(annotateFolderSetting, text, "folder", {
-        optional: true,
-      });
+    this.buildSetting(detailsEl, {
+      name: t("ANNOTATE_FOLDER_NAME"),
+      desc: fragWithHTML(t("ANNOTATE_FOLDER_DESC")),
+      control: {
+        type: "text",
+        key: "annotateFolder",
+        placeholder: t("ANNOTATE_FOLDER_PLACEHOLDER"),
+        vaultPath: { kind: "folder", options: { optional: true } },
+      },
     });
 
-    const templateFileSetting = new Setting(detailsEl)
-      .setName(t("TEMPLATE_NAME"))
-      .setDesc(fragWithHTML(t("TEMPLATE_DESC")));
-    templateFileSetting.addText((text) => {
-      text
-        .setPlaceholder(t("TEMPLATE_PLACEHOLDER"))
-        .setValue(this.plugin.settings.templateFilePath)
-        .onChange(async (value) => {
-          this.plugin.settings.templateFilePath = value;
-          this.applySettingsUpdate();
-        });
-      this.addVaultPathSupport(templateFileSetting, text, "file", {
-        optional: true,
-        extensions: ["md", "excalidraw"],
-      });
+    this.buildSetting(detailsEl, {
+      name: t("TEMPLATE_NAME"),
+      desc: fragWithHTML(t("TEMPLATE_DESC")),
+      control: {
+        type: "text",
+        key: "templateFilePath",
+        placeholder: t("TEMPLATE_PLACEHOLDER"),
+        vaultPath: {
+          kind: "file",
+          options: { optional: true, extensions: ["md", "excalidraw"] },
+        },
+      },
     });
     addYouTubeThumbnail(detailsEl, "jgUpYznHP9A", 216);
 
-    const scriptFolderSetting = new Setting(detailsEl)
-      .setName(t("SCRIPT_FOLDER_NAME"))
-      .setDesc(fragWithHTML(t("SCRIPT_FOLDER_DESC")));
-    scriptFolderSetting.addText((text) => {
-      text
-        .setPlaceholder(t("SCRIPT_FOLDER_PLACEHOLDER"))
-        .setValue(this.plugin.settings.scriptFolderPath)
-        .onChange(async (value) => {
-          this.plugin.settings.scriptFolderPath = value;
-          this.applySettingsUpdate();
-        });
-      this.addVaultPathSupport(scriptFolderSetting, text, "folder");
+    this.buildSetting(detailsEl, {
+      name: t("SCRIPT_FOLDER_NAME"),
+      desc: fragWithHTML(t("SCRIPT_FOLDER_DESC")),
+      control: {
+        type: "text",
+        key: "scriptFolderPath",
+        placeholder: t("SCRIPT_FOLDER_PLACEHOLDER"),
+        vaultPath: { kind: "folder" },
+      },
     });
 
   }
@@ -1031,23 +1047,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     this.filenameSampleEl = detailsEl.createEl("p", { text: "" });
     setSanitizedHtml(this.filenameSampleEl, this.getFilenameSample());
 
-    new Setting(detailsEl)
-      .setName(t("FILENAME_PREFIX_NAME"))
-      .setDesc(fragWithHTML(t("FILENAME_PREFIX_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder(t("FILENAME_PREFIX_PLACEHOLDER"))
-          .setValue(this.plugin.settings.drawingFilenamePrefix)
-          .onChange(async (value) => {
-            this.plugin.settings.drawingFilenamePrefix = value.replaceAll(
-              /[<>:"/\\|?*]/g,
-              "_",
-            );
-            text.setValue(this.plugin.settings.drawingFilenamePrefix);
-            setSanitizedHtml(this.filenameSampleEl, this.getFilenameSample());
-            this.applySettingsUpdate();
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("FILENAME_PREFIX_NAME"),
+      desc: fragWithHTML(t("FILENAME_PREFIX_DESC")),
+      control: {
+        type: "text",
+        key: "drawingFilenamePrefix",
+        placeholder: t("FILENAME_PREFIX_PLACEHOLDER"),
+        sanitize: sanitizeFilenameSegment,
+        after: () =>
+          setSanitizedHtml(this.filenameSampleEl, this.getFilenameSample()),
+      },
+    });
 
     this.buildSetting(detailsEl, {
       name: t("FILENAME_PREFIX_EMBED_NAME"),
@@ -1060,41 +1071,30 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       },
     });
 
-    new Setting(detailsEl)
-      .setName(t("FILENAME_POSTFIX_NAME"))
-      .setDesc(fragWithHTML(t("FILENAME_POSTFIX_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder("")
-          .setValue(this.plugin.settings.drawingFilnameEmbedPostfix)
-          .onChange(async (value) => {
-            this.plugin.settings.drawingFilnameEmbedPostfix = value.replaceAll(
-              /[<>:"/\\|?*]/g,
-              "_",
-            );
-            text.setValue(this.plugin.settings.drawingFilnameEmbedPostfix);
-            setSanitizedHtml(this.filenameSampleEl, this.getFilenameSample());
-            this.applySettingsUpdate();
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("FILENAME_POSTFIX_NAME"),
+      desc: fragWithHTML(t("FILENAME_POSTFIX_DESC")),
+      control: {
+        type: "text",
+        key: "drawingFilnameEmbedPostfix",
+        sanitize: sanitizeFilenameSegment,
+        after: () =>
+          setSanitizedHtml(this.filenameSampleEl, this.getFilenameSample()),
+      },
+    });
 
-    new Setting(detailsEl)
-      .setName(t("FILENAME_DATE_NAME"))
-      .setDesc(fragWithHTML(t("FILENAME_DATE_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder("YYYY-MM-DD HH.mm.ss")
-          .setValue(this.plugin.settings.drawingFilenameDateTime)
-          .onChange(async (value) => {
-            this.plugin.settings.drawingFilenameDateTime = value.replaceAll(
-              /[<>:"/\\|?*]/g,
-              "_",
-            );
-            text.setValue(this.plugin.settings.drawingFilenameDateTime);
-            setSanitizedHtml(this.filenameSampleEl, this.getFilenameSample());
-            this.applySettingsUpdate();
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("FILENAME_DATE_NAME"),
+      desc: fragWithHTML(t("FILENAME_DATE_DESC")),
+      control: {
+        type: "text",
+        key: "drawingFilenameDateTime",
+        placeholder: "YYYY-MM-DD HH.mm.ss",
+        sanitize: sanitizeFilenameSegment,
+        after: () =>
+          setSanitizedHtml(this.filenameSampleEl, this.getFilenameSample()),
+      },
+    });
 
     this.buildSetting(detailsEl, {
       name: t("FILENAME_EXCALIDRAW_EXTENSION_NAME"),
@@ -2350,31 +2350,27 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       control: { type: "toggle", key: "showLinkBrackets", reload: true },
     });
 
-    new Setting(detailsEl)
-      .setName(t("LINK_PREFIX_NAME"))
-      .setDesc(fragWithHTML(t("LINK_PREFIX_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder(t("INSERT_EMOJI"))
-          .setValue(this.plugin.settings.linkPrefix)
-          .onChange((value) => {
-            this.plugin.settings.linkPrefix = value;
-            this.applySettingsUpdate(true);
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("LINK_PREFIX_NAME"),
+      desc: fragWithHTML(t("LINK_PREFIX_DESC")),
+      control: {
+        type: "text",
+        key: "linkPrefix",
+        placeholder: t("INSERT_EMOJI"),
+        reload: true,
+      },
+    });
 
-    new Setting(detailsEl)
-      .setName(t("URL_PREFIX_NAME"))
-      .setDesc(fragWithHTML(t("URL_PREFIX_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder(t("INSERT_EMOJI"))
-          .setValue(this.plugin.settings.urlPrefix)
-          .onChange((value) => {
-            this.plugin.settings.urlPrefix = value;
-            this.applySettingsUpdate(true);
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("URL_PREFIX_NAME"),
+      desc: fragWithHTML(t("URL_PREFIX_DESC")),
+      control: {
+        type: "text",
+        key: "urlPrefix",
+        placeholder: t("INSERT_EMOJI"),
+        reload: true,
+      },
+    });
 
     let todoPrefixSetting: TextComponent;
     let donePrefixSetting: TextComponent;
@@ -2393,35 +2389,35 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       },
     });
 
-    new Setting(detailsEl)
-      .setName(t("TODO_NAME"))
-      .setDesc(fragWithHTML(t("TODO_DESC")))
-      .addText((text) => {
-        todoPrefixSetting = text;
-        text
-          .setPlaceholder(t("INSERT_EMOJI"))
-          .setValue(this.plugin.settings.todo)
-          .onChange((value) => {
-            this.plugin.settings.todo = value;
-            this.applySettingsUpdate(true);
-          });
-      });
+    this.buildSetting(detailsEl, {
+      name: t("TODO_NAME"),
+      desc: fragWithHTML(t("TODO_DESC")),
+      control: {
+        type: "text",
+        key: "todo",
+        placeholder: t("INSERT_EMOJI"),
+        capture: (text) => {
+          todoPrefixSetting = text;
+        },
+        reload: true,
+      },
+    });
     todoPrefixSetting.setDisabled(!this.plugin.settings.parseTODO);
 
-    new Setting(detailsEl)
-      .setName(t("DONE_NAME"))
-      .setDesc(fragWithHTML(t("DONE_DESC")))
-      .setDisabled(!this.plugin.settings.parseTODO)
-      .addText((text) => {
-        donePrefixSetting = text;
-        text
-          .setPlaceholder(t("INSERT_EMOJI"))
-          .setValue(this.plugin.settings.done)
-          .onChange((value) => {
-            this.plugin.settings.done = value;
-            this.applySettingsUpdate(true);
-          });
-      });
+    const doneSetting = this.buildSetting(detailsEl, {
+      name: t("DONE_NAME"),
+      desc: fragWithHTML(t("DONE_DESC")),
+      control: {
+        type: "text",
+        key: "done",
+        placeholder: t("INSERT_EMOJI"),
+        capture: (text) => {
+          donePrefixSetting = text;
+        },
+        reload: true,
+      },
+    });
+    doneSetting?.setDisabled(!this.plugin.settings.parseTODO);
     donePrefixSetting.setDisabled(!this.plugin.settings.parseTODO);
 
     createSliderWithText(detailsEl, {
@@ -2748,33 +2744,31 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       text: t("EMBED_SIZING"),
       cls: "excalidraw-setting-h4",
     });
-    new Setting(detailsEl)
-      .setName(t("EMBED_WIDTH_NAME"))
-      .setDesc(fragWithHTML(t("EMBED_WIDTH_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder("400")
-          .setValue(this.plugin.settings.width)
-          .onChange(async (value) => {
-            this.plugin.settings.width = value;
-            this.applySettingsUpdate();
-            this.requestEmbedUpdate = true;
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("EMBED_WIDTH_NAME"),
+      desc: fragWithHTML(t("EMBED_WIDTH_DESC")),
+      control: {
+        type: "text",
+        key: "width",
+        placeholder: "400",
+        afterUpdate: () => {
+          this.requestEmbedUpdate = true;
+        },
+      },
+    });
 
-    new Setting(detailsEl)
-      .setName(t("EMBED_HEIGHT_NAME"))
-      .setDesc(fragWithHTML(t("EMBED_HEIGHT_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder("400")
-          .setValue(this.plugin.settings.height)
-          .onChange(async (value) => {
-            this.plugin.settings.height = value;
-            this.applySettingsUpdate();
-            this.requestEmbedUpdate = true;
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("EMBED_HEIGHT_NAME"),
+      desc: fragWithHTML(t("EMBED_HEIGHT_DESC")),
+      control: {
+        type: "text",
+        key: "height",
+        placeholder: "400",
+        afterUpdate: () => {
+          this.requestEmbedUpdate = true;
+        },
+      },
+    });
 
     createSliderWithText(detailsEl, {
       name: t("EXPORT_PNG_SCALE_NAME"),
@@ -3072,47 +3066,47 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         }),
     );
 
-    new Setting(detailsEl)
-      .setName(t("MD_DEFAULT_COLOR_NAME"))
-      .setDesc(fragWithHTML(t("MD_DEFAULT_COLOR_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder(t("DEFAULT_COLOR_MD_DESC"))
-          .setValue(this.plugin.settings.mdFontColor)
-          .onChange((value) => {
-            this.requestReloadDrawings = true;
-            this.plugin.settings.mdFontColor = value;
-            this.applySettingsUpdate(true);
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("MD_DEFAULT_COLOR_NAME"),
+      desc: fragWithHTML(t("MD_DEFAULT_COLOR_DESC")),
+      control: {
+        type: "text",
+        key: "mdFontColor",
+        placeholder: t("DEFAULT_COLOR_MD_DESC"),
+        before: () => {
+          this.requestReloadDrawings = true;
+        },
+        reload: true,
+      },
+    });
 
-    new Setting(detailsEl)
-      .setName(t("MD_DEFAULT_BORDER_COLOR_NAME"))
-      .setDesc(fragWithHTML(t("MD_DEFAULT_BORDER_COLOR_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder(t("DEFAULT_COLOR_MD_DESC"))
-          .setValue(this.plugin.settings.mdBorderColor)
-          .onChange((value) => {
-            this.requestReloadDrawings = true;
-            this.plugin.settings.mdBorderColor = value;
-            this.applySettingsUpdate(true);
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("MD_DEFAULT_BORDER_COLOR_NAME"),
+      desc: fragWithHTML(t("MD_DEFAULT_BORDER_COLOR_DESC")),
+      control: {
+        type: "text",
+        key: "mdBorderColor",
+        placeholder: t("DEFAULT_COLOR_MD_DESC"),
+        before: () => {
+          this.requestReloadDrawings = true;
+        },
+        reload: true,
+      },
+    });
 
-    new Setting(detailsEl)
-      .setName(t("MD_CSS_NAME"))
-      .setDesc(fragWithHTML(t("MD_CSS_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder(t("MD_CSS_PLACEHOLDER"))
-          .setValue(this.plugin.settings.mdCSS)
-          .onChange((value) => {
-            this.requestReloadDrawings = true;
-            this.plugin.settings.mdCSS = value;
-            this.applySettingsUpdate(true);
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("MD_CSS_NAME"),
+      desc: fragWithHTML(t("MD_CSS_DESC")),
+      control: {
+        type: "text",
+        key: "mdCSS",
+        placeholder: t("MD_CSS_PLACEHOLDER"),
+        before: () => {
+          this.requestReloadDrawings = true;
+        },
+        reload: true,
+      },
+    });
 
   }
 
@@ -3260,20 +3254,15 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     const cjkdescdiv = detailsEl.createDiv({ cls: "setting-item-description" });
     setSanitizedHtml(cjkdescdiv, t("OFFLINE_CJK_DESC"));
 
-    const cjkAssetsFolderSetting = new Setting(detailsEl)
-      .setName(t("CJK_ASSETS_FOLDER_NAME"))
-      .setDesc(fragWithHTML(t("CJK_ASSETS_FOLDER_DESC")));
-    cjkAssetsFolderSetting.addText((text) => {
-      text
-        .setPlaceholder(t("CJK_ASSETS_FOLDER_PLACEHOLDER"))
-        .setValue(this.plugin.settings.fontAssetsPath)
-        .onChange(async (value) => {
-          this.plugin.settings.fontAssetsPath = value;
-          this.applySettingsUpdate();
-        });
-      this.addVaultPathSupport(cjkAssetsFolderSetting, text, "folder", {
-        optional: true,
-      });
+    this.buildSetting(detailsEl, {
+      name: t("CJK_ASSETS_FOLDER_NAME"),
+      desc: fragWithHTML(t("CJK_ASSETS_FOLDER_DESC")),
+      control: {
+        type: "text",
+        key: "fontAssetsPath",
+        placeholder: t("CJK_ASSETS_FOLDER_PLACEHOLDER"),
+        vaultPath: { kind: "folder", options: { optional: true } },
+      },
     });
 
     this.buildSetting(detailsEl, {
@@ -3318,21 +3307,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       control: { type: "text", key: "latexBoilerplate" },
     });
 
-    const latexPreambleSetting = new Setting(detailsEl)
-      .setName(t("LATEX_PREAMBLE_NAME"))
-      .setDesc(fragWithHTML(t("LATEX_PREAMBLE_DESC")));
-    latexPreambleSetting.addText((text) => {
-      text
-        .setPlaceholder("e.g.: preamble.sty")
-        .setValue(this.plugin.settings.latexPreambleLocation)
-        .onChange(async (value) => {
-          this.plugin.settings.latexPreambleLocation = value;
-          this.applySettingsUpdate();
-        });
-      this.addVaultPathSupport(latexPreambleSetting, text, "file", {
-        optional: true,
-        extensions: ["sty"],
-      });
+    this.buildSetting(detailsEl, {
+      name: t("LATEX_PREAMBLE_NAME"),
+      desc: fragWithHTML(t("LATEX_PREAMBLE_DESC")),
+      control: {
+        type: "text",
+        key: "latexPreambleLocation",
+        placeholder: "e.g.: preamble.sty",
+        vaultPath: {
+          kind: "file",
+          options: { optional: true, extensions: ["sty"] },
+        },
+      },
     });
 
     this.buildSetting(detailsEl, {
@@ -3414,20 +3400,21 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       },
     });
 
-    new Setting(detailsEl)
-      .setName(t("TASKBONE_APIKEY_NAME"))
-      .setDesc(fragWithHTML(t("TASKBONE_APIKEY_DESC")))
-      .addText((text) => {
-        taskboneAPIKeyText = text;
-        configurePasswordTextInput(taskboneAPIKeyText);
-        taskboneAPIKeyText
-          .setValue(this.plugin.settings.taskboneAPIkey)
-          .onChange(async (value) => {
-            this.plugin.settings.taskboneAPIkey = value;
-            this.applySettingsUpdate();
-          })
-          .setDisabled(!this.plugin.settings.taskboneEnabled);
-      });
+    this.buildSetting(detailsEl, {
+      name: t("TASKBONE_APIKEY_NAME"),
+      desc: fragWithHTML(t("TASKBONE_APIKEY_DESC")),
+      control: {
+        type: "text",
+        key: "taskboneAPIkey",
+        capture: (text) => {
+          taskboneAPIKeyText = text;
+          configurePasswordTextInput(taskboneAPIKeyText);
+          taskboneAPIKeyText.setDisabled(
+            !this.plugin.settings.taskboneEnabled,
+          );
+        },
+      },
+    });
 
   }
 

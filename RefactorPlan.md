@@ -1015,8 +1015,15 @@ after `applySettingsUpdate()`) and `negate` (for two inverted-boolean
 settings), and made `buildSetting()` return the underlying `Setting` so
 callers that need to keep manipulating it afterward (e.g.
 `.nameEl.setAttribute(...)`, later show/hide) can capture it. Toggle
-control type is now fully closed out — text/dropdown/slider still have
-their remaining non-pilot instances unconverted.
+control type is fully closed out. Text control type is also now fully
+closed out: extended `TextControl` with the same `before`/`after`/
+`afterUpdate` hooks, a `vaultPath` hook that wires the text input into the
+existing `addVaultPathSupport()` (path suggester + existence warning), and
+a `capture` hook (called with the raw `TextComponent` before
+placeholder/value/onChange are wired) for callers that need to keep
+manipulating the component afterward (a sibling toggle disabling it,
+`configurePasswordTextInput()`). Dropdown/slider still have their
+remaining non-pilot instances unconverted.
 
 **Deliberately left as legacy imperative code (toggle type), each because
 it doesn't fit the current `control` shape cleanly:**
@@ -1041,10 +1048,34 @@ it doesn't fit the current `control` shape cleanly:**
   are runtime-generated per script), inherently `render`-only content once
   that control type exists.
 
-**If resumed:** convert the remaining text/dropdown/slider instances the
-same way (mechanical, one control type at a time, full-type verification
-before commit — the user explicitly asked for full-type closeout before
+**Deliberately left as legacy imperative code (text type), each because it
+doesn't fit the current `control` shape cleanly:**
+
+- `PAGE_TRANSCLUSION_CHARCOUNT_NAME`, `TRANSCLUSION_DEFAULT_WRAP_NAME`,
+  `MD_TRANSCLUDE_WIDTH_NAME`, `MD_TRANSCLUDE_HEIGHT_NAME` — numeric text
+  inputs with `parseInt`/`NaN` validation, an early return that leaves the
+  input unchanged (and unpersisted) on invalid input, and a different
+  fallback default per field on an empty string. A genuinely different
+  control shape (validated numeric text) than `TextControl`/`sanitize`
+  (a pure string-to-string transform) models; not worth a new control type
+  for 4 settings.
+- The AI section's `addNumberSetting` closure — takes arbitrary
+  getter/setter functions rather than a fixed `ExcalidrawSettings` key,
+  used for token-limit fields with custom validation; structurally
+  incompatible with `TextControl.key: StringSettingKey`.
+- `STARTUP_SCRIPT_NAME` — one `Setting` row chains both `.addText()` and
+  `.addButton()` (path input + an "Open"/"Create" button whose label the
+  text input's `onChange` updates). Same category as `GRID_DIRECTION_NAME`
+  above: `SettingDefinition` assumes one control per row, and this row has
+  a real cross-control dependency within itself.
+- The two dynamic per-installed-script text closures (`addStringSetting`'s
+  array/plain branches) in Compatibility — same reasoning as the dynamic
+  script toggle above.
+
+**If resumed:** convert the remaining dropdown/slider instances the same
+way (mechanical, one control type at a time, full-type verification before
+commit — the user explicitly asked for full-type closeout before
 committing, and to review the diff before each commit). Only after all
 four control types are fully converted does adding `render` and `visible`
-start to make sense, since at that point the exception list above becomes
+start to make sense, since at that point the exception lists above become
 the actual scope for `render`.
