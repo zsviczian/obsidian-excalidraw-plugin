@@ -1028,8 +1028,14 @@ closed out: extended `DropdownControl` with the same `before`/`after`/
 dropdowns whose options are numbers stored as DOM strings but bind to a
 numeric field (autosave intervals, PDF-export scale, custom-pen count) —
 `parse: "int" | "float"` controls the `parseInt`/`parseFloat` conversion
-back into the setting. Slider still has its remaining non-pilot instances
-unconverted.
+back into the setting. Slider control type is also now fully closed out:
+extended `SliderControl` with `after`/`afterUpdate` hooks (no `before` —
+no existing slider needed one). Widened `SliderSetting.onChange` in
+`sliderUtils.ts` from `(value: number) => void` to `(value: number) =>
+void | Promise<void>` since the hooks can be async, and `createSliderWithText`'s
+internal caller now awaits it (`no-misused-promises`/`no-floating-promises`
+caught both sides of this at lint time — a real, correctly-caught gap, not
+a false positive). All four control types are now fully converted.
 
 **Deliberately left as legacy imperative code (toggle type), each because
 it doesn't fit the current `control` shape cleanly:**
@@ -1099,10 +1105,40 @@ it doesn't fit the current `control` shape cleanly:**
 - The dynamic per-installed-script dropdown closure in Compatibility —
   same reasoning as the other dynamic script content.
 
-**If resumed:** convert the remaining slider instances the same
-way (mechanical, one control type at a time, full-type verification before
-commit — the user explicitly asked for full-type closeout before
-committing, and to review the diff before each commit). Only after all
-four control types are fully converted does adding `render` and `visible`
-start to make sense, since at that point the exception lists above become
-the actual scope for `render`.
+**Deliberately left as legacy imperative code (slider type), each because
+it doesn't fit the current `control` shape cleanly:**
+
+- `GRID_OPACITY_NAME` (`gridSettings.OPACITY`), `LASER_DECAY_TIME_NAME`
+  (`laserSettings.DECAY_TIME`), `LASER_DECAY_LENGTH_NAME`
+  (`laserSettings.DECAY_LENGTH`) — nested fields, not a flat
+  `NumberSettingKey`. Same reasoning as `GRID_DYNAMIC_COLOR_NAME` from the
+  toggle pass.
+
+**All four control types (toggle/text/dropdown/slider) are now fully
+converted.** What remains before this data structure could feed Obsidian's
+real `getSettingDefinitions()`:
+
+1. **`render` support in `buildSetting()`** — every exception listed across
+   the four sections above (roughly 20 settings) is a `render` candidate:
+   custom components (`HotkeyEditor`, `FontPickerComponent`,
+   `VaultPathSuggest`-only cases, `PDFExportSettingsComponent`,
+   `ModifierKeySettingsComponent`, `UIModeSettingsComponent`), multi-control
+   rows (`GRID_DIRECTION_NAME`, `STARTUP_SCRIPT_NAME`), nested/nonflat
+   fields (`gridSettings`/`laserSettings` members), cross-control clusters
+   (`EMBED_TYPE_NAME` + the SVG/PNG export toggles, `TASKBONE_ENABLE_NAME`'s
+   captured text component), branching/early-return logic
+   (`LIBRARY_STORAGE_NAME`), and the fully dynamic AI provider/model and
+   per-installed-script content.
+2. **The `visible`/`registerVisibilityGate`/`refreshVisibilityGates`
+   mechanism** (designed but never implemented — see the investigation
+   findings near the top of this section) for the 6 existing show/hide
+   relationships, most of which are now `control` entries reaching into a
+   still-legacy sibling (`embedComment`, `aiEl`, `gridColorSection`).
+3. Only after both of those does actually wiring up
+   `getSettingDefinitions()` (behind Path B — keep `display()` for pre-1.13
+   users) become the natural next step, and only once `minAppVersion` is a
+   decision the user is ready to make.
+
+Each remains its own small, separately-committed step per the same
+full-type-closeout-before-commit, review-before-commit discipline used for
+all four control types above.

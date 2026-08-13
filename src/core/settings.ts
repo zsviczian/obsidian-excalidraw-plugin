@@ -195,6 +195,10 @@ interface SliderControl {
    * 0-1 fraction shown as a 1-100 percent slider). Defaults to 1.
    */
   scale?: number;
+  /** Extra logic run after the setting is assigned but before applySettingsUpdate(). */
+  after?: (value: number) => void | Promise<void>;
+  /** Extra logic run after applySettingsUpdate() completes. */
+  afterUpdate?: (value: number) => void | Promise<void>;
   /** true => applySettingsUpdate(true); default => applySettingsUpdate() */
   reload?: boolean;
 }
@@ -309,9 +313,11 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         max: control.max,
         step: control.step,
         minWidth: control.minWidth,
-        onChange: (value) => {
+        onChange: async (value) => {
           this.setNumberSetting(control.key, value / scale);
+          await control.after?.(value);
           this.applySettingsUpdate(control.reload ?? false);
+          await control.afterUpdate?.(value);
         },
       });
       return undefined;
@@ -2304,29 +2310,29 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       cls: "setting-item-description",
     });
 
-    createSliderWithText(detailsEl, {
+    this.buildSetting(detailsEl, {
       name: t("LONG_PRESS_DESKTOP_NAME"),
       desc: t("LONG_PRESS_DESKTOP_DESC"),
-      value: this.plugin.settings.longPressDesktop,
-      min: 300,
-      max: 3000,
-      step: 100,
-      onChange: (value) => {
-        this.plugin.settings.longPressDesktop = value;
-        this.applySettingsUpdate(true);
+      control: {
+        type: "slider",
+        key: "longPressDesktop",
+        min: 300,
+        max: 3000,
+        step: 100,
+        reload: true,
       },
     });
 
-    createSliderWithText(detailsEl, {
+    this.buildSetting(detailsEl, {
       name: t("LONG_PRESS_MOBILE_NAME"),
       desc: t("LONG_PRESS_MOBILE_DESC"),
-      value: this.plugin.settings.longPressMobile,
-      min: 300,
-      max: 3000,
-      step: 100,
-      onChange: (value) => {
-        this.plugin.settings.longPressMobile = value;
-        this.applySettingsUpdate(true);
+      control: {
+        type: "slider",
+        key: "longPressMobile",
+        min: 300,
+        max: 3000,
+        step: 100,
+        reload: true,
       },
     });
 
@@ -2470,16 +2476,16 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     doneSetting?.setDisabled(!this.plugin.settings.parseTODO);
     donePrefixSetting.setDisabled(!this.plugin.settings.parseTODO);
 
-    createSliderWithText(detailsEl, {
+    this.buildSetting(detailsEl, {
       name: t("LINKOPACITY_NAME"),
       desc: t("LINKOPACITY_DESC"),
-      value: this.plugin.settings.linkOpacity,
-      min: 0,
-      max: 1,
-      step: 0.05,
-      onChange: (value) => {
-        this.plugin.settings.linkOpacity = value;
-        this.applySettingsUpdate(true);
+      control: {
+        type: "slider",
+        key: "linkOpacity",
+        min: 0,
+        max: 1,
+        step: 0.05,
+        reload: true,
       },
     });
 
@@ -2703,31 +2709,29 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       cls: "excalidraw-setting-h3",
     });
 
-    createSliderWithText(detailsEl, {
+    this.buildSetting(detailsEl, {
       name: t("RENDERING_CONCURRENCY_NAME"),
       desc: t("RENDERING_CONCURRENCY_DESC"),
-      min: 1,
-      max: 5,
-      step: 1,
-      value: this.plugin.settings.renderingConcurrency,
-      onChange: (value) => {
-        this.plugin.settings.renderingConcurrency = value;
-        this.applySettingsUpdate();
+      control: {
+        type: "slider",
+        key: "renderingConcurrency",
+        min: 1,
+        max: 5,
+        step: 1,
       },
     });
 
-    createSliderWithText(detailsEl, {
+    this.buildSetting(detailsEl, {
       name: t("IMAGE_CACHE_RETENTION_DAYS_NAME"),
       desc: fragWithHTML(t("IMAGE_CACHE_RETENTION_DAYS_DESC")),
-      min: 1,
-      max: 365,
-      step: 1,
-      value: this.plugin.settings.imageCacheRetentionDays,
-      onChange: (value) => {
-        this.plugin.settings.imageCacheRetentionDays = value;
-        this.applySettingsUpdate();
+      control: {
+        type: "slider",
+        key: "imageCacheRetentionDays",
+        min: 1,
+        max: 365,
+        step: 1,
+        minWidth: "3em",
       },
-      minWidth: "3em",
     });
 
     this.buildSetting(detailsEl, {
@@ -2821,29 +2825,27 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       },
     });
 
-    createSliderWithText(detailsEl, {
+    this.buildSetting(detailsEl, {
       name: t("EXPORT_PNG_SCALE_NAME"),
       desc: t("EXPORT_PNG_SCALE_DESC"),
-      value: this.plugin.settings.pngExportScale,
-      min: 1,
-      max: 5,
-      step: 0.5,
-      onChange: (value) => {
-        this.plugin.settings.pngExportScale = value;
-        this.applySettingsUpdate();
+      control: {
+        type: "slider",
+        key: "pngExportScale",
+        min: 1,
+        max: 5,
+        step: 0.5,
       },
     });
 
-    createSliderWithText(detailsEl, {
+    this.buildSetting(detailsEl, {
       name: t("EXPORT_PADDING_NAME"),
       desc: fragWithHTML(t("EXPORT_PADDING_DESC")),
-      value: this.plugin.settings.exportPaddingSVG,
-      min: 0,
-      max: 50,
-      step: 5,
-      onChange: (value) => {
-        this.plugin.settings.exportPaddingSVG = value;
-        this.applySettingsUpdate();
+      control: {
+        type: "slider",
+        key: "exportPaddingSVG",
+        min: 0,
+        max: 50,
+        step: 5,
       },
     });
 
@@ -3179,17 +3181,16 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       cls: "excalidraw-setting-h3",
     });
 
-    createSliderWithText(detailsEl, {
+    this.buildSetting(detailsEl, {
       name: t("MAX_IMAGE_ZOOM_IN_NAME"),
       desc: fragWithHTML(t("MAX_IMAGE_ZOOM_IN_DESC")),
-      value: this.plugin.settings.areaZoomLimit,
-      min: 1,
-      max: 10,
-      step: 0.5,
-      onChange: (value) => {
-        this.plugin.settings.areaZoomLimit = value;
-        this.applySettingsUpdate();
-        this.plugin.excalidrawConfig.updateValues(this.plugin);
+      control: {
+        type: "slider",
+        key: "areaZoomLimit",
+        min: 1,
+        max: 10,
+        step: 0.5,
+        afterUpdate: () => this.plugin.excalidrawConfig.updateValues(this.plugin),
       },
     });
 

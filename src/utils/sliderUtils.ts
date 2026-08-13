@@ -9,7 +9,7 @@ export type SliderSetting = {
   step: number;
   value: number;
   minWidth?: string;
-  onChange: (value: number) => void;
+  onChange: (value: number) => void | Promise<void>;
 };
 
 export const createSliderWithText = (
@@ -27,7 +27,7 @@ export const createSliderWithText = (
         .setValue(settings.value)
         .onChange(async (value) => {
           valueText.innerText = ` ${value.toString()}`;
-          settings.onChange(value);
+          await settings.onChange(value);
         }),
     )
     .settingEl.createDiv("", (el) => {
