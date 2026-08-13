@@ -8,7 +8,7 @@ import { TFile } from "obsidian";
 import * as React from "react";
 import { DEVICE } from "src/constants/constants";
 import { PenSettingsModal } from "src/shared/Dialogs/PenSettingsModal";
-import ExcalidrawView from "src/view/ExcalidrawView";
+import type ExcalidrawView from "src/view/ExcalidrawView";
 import { ExtendedFillStyle, PenStyle } from "src/types/penTypes";
 import { PENS } from "src/utils/pens";
 import ExcalidrawPlugin from "../../../core/main";

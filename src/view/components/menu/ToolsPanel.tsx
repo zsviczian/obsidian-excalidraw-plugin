@@ -9,7 +9,7 @@ import {
   search,
 } from "../../../utils/excalidrawViewHelpers";
 import { TextMode } from "../../../shared/TextMode";
-import ExcalidrawView from "../../ExcalidrawView";
+import type ExcalidrawView from "../../ExcalidrawView";
 import { t } from "../../../lang/helpers";
 import { ReleaseNotes } from "../../../shared/Dialogs/ReleaseNotes";
 import { ScriptIconMap } from "../../../shared/Scripts";

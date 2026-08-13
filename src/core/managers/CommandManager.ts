@@ -87,7 +87,7 @@ import {
 } from "../../utils/carveout";
 import { showFrameSettings } from "../../shared/Dialogs/FrameSettings";
 import { insertImageToView } from "../../utils/excalidrawViewUtils";
-import ExcalidrawPlugin from "src/core/main";
+import type ExcalidrawPlugin from "src/core/main";
 import { UIModeSettings } from "src/shared/Dialogs/UIModeSettings";
 import { PaneTarget } from "src/types/utilTypes";
 import { decompress } from "src/utils/sceneDataUtils";

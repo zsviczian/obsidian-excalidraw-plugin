@@ -2,7 +2,7 @@ import { updateExcalidrawLib } from "src/constants/constants";
 import { ExcalidrawLib } from "../../types/excalidrawLib";
 import { Packages } from "../../types/types";
 import { Notice } from "obsidian";
-import ExcalidrawPlugin from "src/core/main";
+import type ExcalidrawPlugin from "src/core/main";
 import { errorHandler } from "../../utils/ErrorHandler";
 import React from "react";
 import ReactDOM from "react-dom/client";

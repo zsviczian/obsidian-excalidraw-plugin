@@ -1,5 +1,5 @@
 import { ExcalidrawEmbeddableElement } from "@zsviczian/excalidraw/types/element/src/types";
-import ExcalidrawView from "src/view/ExcalidrawView";
+import type ExcalidrawView from "src/view/ExcalidrawView";
 import { Notice, requireApiVersion } from "obsidian";
 import * as React from "react";
 import { isObsidianThemeDark } from "src/utils/obsidianUtils";

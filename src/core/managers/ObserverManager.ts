@@ -1,6 +1,6 @@
 import { t } from "src/lang/helpers";
 import { DEBUGGING } from "src/utils/debugHelper";
-import ExcalidrawPlugin from "src/core/main";
+import type ExcalidrawPlugin from "src/core/main";
 import { CustomMutationObserver } from "src/utils/debugHelper";
 import { DEVICE } from "src/constants/constants";
 import {

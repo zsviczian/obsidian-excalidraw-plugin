@@ -1,4 +1,4 @@
-import ExcalidrawView from "../ExcalidrawView";
+import type ExcalidrawView from "../ExcalidrawView";
 import { App, Notice, TFile } from "obsidian";
 import {
   AppState,

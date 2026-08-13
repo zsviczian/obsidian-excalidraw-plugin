@@ -1,6 +1,6 @@
 import { ButtonComponent, DropdownComponent, TFile } from "obsidian";
 import ExcalidrawView from "../../view/ExcalidrawView";
-import ExcalidrawPlugin from "../../core/main";
+import type ExcalidrawPlugin from "../../core/main";
 import { Modal, Setting, TextComponent } from "obsidian";
 import { FileSuggestionModal } from "../Suggesters/FileSuggestionModal";
 import {

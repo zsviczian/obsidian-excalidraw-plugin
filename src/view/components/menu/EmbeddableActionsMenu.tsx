@@ -1,6 +1,6 @@
 import { TFile } from "obsidian";
 import * as React from "react";
-import ExcalidrawView from "../../ExcalidrawView";
+import type ExcalidrawView from "../../ExcalidrawView";
 import {
   ExcalidrawElement,
   ExcalidrawEmbeddableElement,

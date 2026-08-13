@@ -29,7 +29,7 @@ import {
 } from "../../shared/ExcalidrawData";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import { getTextMode } from "src/shared/TextMode";
-import ExcalidrawPlugin from "src/core/main";
+import type ExcalidrawPlugin from "src/core/main";
 import {
   checkAndCreateFolder,
   createFileAndAwaitMetacacheUpdate,

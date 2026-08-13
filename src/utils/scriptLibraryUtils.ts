@@ -7,7 +7,7 @@ import { ExcalidrawSidepanelView } from "src/view/sidepanel/Sidepanel";
 import { errorlog } from "./coreUtils";
 import { getIMGFilename, createOrOverwriteFile } from "./fileUtils";
 import { hideElement, setButtonBgColor, showElement } from "./styleUtils";
-import ExcalidrawPlugin from "src/core/main";
+import type ExcalidrawPlugin from "src/core/main";
 
 export const installButton = async (
   plugin: ExcalidrawPlugin,

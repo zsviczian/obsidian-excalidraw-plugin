@@ -5,7 +5,7 @@ import {
   AppState,
   BinaryFiles,
 } from "@zsviczian/excalidraw/types/excalidraw/types";
-import ExcalidrawPlugin from "src/core/main";
+import type ExcalidrawPlugin from "src/core/main";
 import { getTextMode } from "src/shared/TextMode";
 import {
   ExcalidrawElement,
