@@ -1,6 +1,9 @@
 # Incremental refactor assessment and plan
 
-Status: active plan for the 2.27.0 refactor, last updated 2026-08-09
+Status: parked as of 2026-08-13 (see "Parked: next steps if resumed" near the
+end). Focus has shifted to `src/core/settings.ts` and declarative-settings
+readiness; this plan is not being actively worked but is left in a
+resumable state.
 
 This document is the working plan for reducing the size and coupling of
 `src/core/main.ts` and `src/view/ExcalidrawView.ts` without destabilizing the
@@ -42,8 +45,8 @@ validated, and what remains uncertain.
 | Audit and consolidate duplicate logic | In progress | Consolidated `updateFrontmatterInString()`, `arrayToMap()`, `wrapTextAtCharLength()`, `getLinkParts()`/`LinkParts`, `getBinaryFileFromDataURL()`, `svgToBase64()`, `getFontDataURL()`, `cropCanvas()`, `getImageSize()`, `promiseTry()`, `isVersionNewerThanOther()`, `repositionElementsToCursor()`, the internal `cloneElement()`, and `getBoundTextElementId()`; continue one independently testable helper family at a time |
 | Extract the React root (Phase 7) | Implemented; awaiting manual validation | `src/view/components/ExcalidrawRoot.ts` now owns the mechanical body of the former `excalidrawRootElement()`: menu/observer mount and teardown, and the full Excalidraw prop wiring. `ExcalidrawView` keeps `excalidrawRoot`/`createRoot()` ownership and the bound-function render call; ~30 previously private members the render tree touches were widened to `public` (type-only, no logic change) following the precedent already set by `packages`/`plugin`/`excalidrawAPI` |
 | Extract `MarkdownImageController` (Phase 6 item 6) | Complete | `src/view/managers/MarkdownImageController.ts` now owns the deletion queue (`queueMarkdownImageDeletion`/`processMarkdownImageDeletionQueue` + its 3 state fields) and the edit/convert trio (`openMarkdownImageEditor`, `convertEmbeddableToMarkdownImage`, `convertMarkdownImageToEmbeddable`). `ExcalidrawView` keeps all three as public delegates (called from `CommandManager`, `ExcalidrawRoot`, and `EmbeddableActionsMenu`), calls `queueMarkdownImageDeletion` from `onExcalidrawIncrement`, and reads `markdownImageController.markdownImageDeletionPrompt` from `save()` exactly where it read the field directly before. Cross-module functions from the existing `ExcalidrawData`/`MarkdownImage`/`MarkdownImageEditor`/`Dialogs/Prompt`/`excalidrawViewUtils` cycle are constructor-injected rather than imported directly, matching the `ViewLinkNavigationManager`/`ViewExcalidrawExtensionRenderer` precedent. Manual testing found no issues |
-| Extract `ViewSceneFileManager` (Phase 6 item 5) | Implemented; awaiting manual validation | `src/view/managers/ViewSceneFileManager.ts` now owns the active/next loader pair, the deferred background revalidation pass and its timer, the request-coalescing queue, and the stale-image retry loop (7 state fields, 5 methods). `loadSceneFiles()` and `scheduleSceneFileDeferredValidation()` stay as public delegates on `ExcalidrawView` (external callers: `ExcalidrawAutomate.ts`'s scripting surface and `EventManager.ts`'s leaf-switch handler, neither of which needed edits). The three byte-for-byte-duplicated loader-teardown blocks in `onClose()`, `onunload()`, and `clear()` collapsed to one call each to a new `terminateActiveLoaders()` method. A previously-missed direct external read of `activeLoader` in `EventManager.ts:387` is preserved via a pass-through getter on `ExcalidrawView`. `EmbeddedFilesLoader` and the shared `addFiles()` helper (still `ExcalidrawView`-owned, since it's also used by the unrelated LaTeX-equation-editing flow) are constructor-injected, matching the `ViewExportManager`/`MarkdownImageController` precedent |
-| Remaining view phases | In progress | Manually validate the React-root and `ViewSceneFileManager` checkpoints (`MarkdownImageController` is closed). `ViewInteractionController` (hover preview + pointer/key handling) is the last remaining Phase 6 controller candidate, deliberately sequenced last for its hover-editor interop and mobile-keyboard timing risk. Phase 8 (converting the extracted React root to TSX) should follow only after its own checkpoint closes |
+| Extract `ViewSceneFileManager` (Phase 6 item 5) | Complete | `src/view/managers/ViewSceneFileManager.ts` now owns the active/next loader pair, the deferred background revalidation pass and its timer, the request-coalescing queue, and the stale-image retry loop (7 state fields, 5 methods). `loadSceneFiles()` and `scheduleSceneFileDeferredValidation()` stay as public delegates on `ExcalidrawView` (external callers: `ExcalidrawAutomate.ts`'s scripting surface and `EventManager.ts`'s leaf-switch handler, neither of which needed edits). The three byte-for-byte-duplicated loader-teardown blocks in `onClose()`, `onunload()`, and `clear()` collapsed to one call each to a new `terminateActiveLoaders()` method. A previously-missed direct external read of `activeLoader` in `EventManager.ts:387` is preserved via a pass-through getter on `ExcalidrawView`. `EmbeddedFilesLoader` and the shared `addFiles()` helper (still `ExcalidrawView`-owned, since it's also used by the unrelated LaTeX-equation-editing flow) are constructor-injected, matching the `ViewExportManager`/`MarkdownImageController` precedent |
+| Remaining view phases | Parked | `MarkdownImageController` and `ViewSceneFileManager` are both closed (user-confirmed manual testing, no issues). The Phase 7 React-root extraction (`ExcalidrawRoot.ts`) was never explicitly re-confirmed after its own checkpoint note was written and should be the first thing re-validated if this plan resumes. `ViewInteractionController` (hover preview + pointer/key handling) was explicitly declined by the user for now and remains the last Phase 6 controller candidate if resumed. Phase 8 (converting the extracted React root to TSX) should follow only after the React-root checkpoint is confirmed closed. See "Parked: next steps if resumed" |
 
 ### Action log
 
@@ -111,6 +114,8 @@ validated, and what remains uncertain.
 | 2026-08-11 | Extracted `MarkdownImageController` from `ExcalidrawView` (Phase 6 item 6) | Added `src/view/managers/MarkdownImageController.ts` owning the Markdown-image deletion queue (`queueMarkdownImageDeletion`/`processMarkdownImageDeletionQueue` plus its 3 state fields) and the edit/convert trio (`openMarkdownImageEditor`, `convertEmbeddableToMarkdownImage`, `convertMarkdownImageToEmbeddable`), a mechanical move with `this.` replaced by `this.view.`. `ExcalidrawView` keeps all three conversion/edit methods as public delegates (external callers: `CommandManager.ts`, `ExcalidrawRoot.ts`, `EmbeddableActionsMenu.tsx`), replaced its one internal `queueMarkdownImageDeletion` call site in `onExcalidrawIncrement()` with `this.markdownImageController.queueMarkdownImageDeletion(...)`, and reads `this.markdownImageController.markdownImageDeletionPrompt` in `save()` in place of the field it read directly before (same conditional-then-await shape, unchanged). Widened `getBackOfTheNoteSections()` to `public` (shared by 3 other existing call sites plus the new controller). Cross-module functions from the existing `ExcalidrawData`/`MarkdownImage`/`MarkdownImageEditor`/`Dialogs/Prompt`/`excalidrawViewUtils` cycle (`parseMarkdownImages`, `unwrapMarkdownImageBlock`, `isMarkdownImageElement`, `getMarkdownImageCustomData`, `getEmbeddableMarkdownImageSource`, `convertEmbeddableElementToMarkdownImage`, `getMarkdownImageSource`, `convertMarkdownImageElementToEmbeddable`, `getLevelOneMarkdownHeadings`, `openMarkdownImageEditorSidepanel`, `MultiOptionConfirmationPrompt`, `GenericInputPrompt`, `insertBackOfTheNoteContent`, `errorlog`) are constructor-injected rather than imported directly in the new file, matching the `ViewLinkNavigationManager`/`ViewExcalidrawExtensionRenderer` precedent for avoiding a new circular-import edge | `npm run build`, `npm run lib`, and `node --check dist/main.js` passed with the unchanged 33-warning circular-dependency baseline (empirically confirming the dependency-injection approach added no new cycle). Targeted ESLint on `ExcalidrawView.ts` is unchanged at 149 problems/146 errors/3 warnings before and after (the moved code carried zero lint findings of its own), and the new `MarkdownImageController.ts` has zero ESLint findings; the three external caller files were re-checked and show only the 9 pre-existing findings already attributed to the prior React-root checkpoint. Repository-wide search confirmed no other file reads the three moved state fields. `ExcalidrawView.ts` decreased by 234 lines from 7,574 to 7,340; the new module is 367 documented lines; `dist/main.js` is 4,712,873 bytes, 1,935 bytes above the preceding checkpoint, still well below 5 MiB. Manual validation should prioritize the Markdown-image deletion keep/delete prompt racing a save (`save()`'s await), then the local- and external-source conversion paths in both directions, the H1-heading and section-name prompts, and the embeddable-to-Markdown-image path when the source file is dirty; the deletion-queue/save race is the highest-impact risk since it crosses persistence timing |
 | 2026-08-12 | Closed the `MarkdownImageController` validation checkpoint | Manual testing found no issues | User confirmed testing completed with no issues; committed |
 | 2026-08-12 | Planned and extracted `ViewSceneFileManager` from `ExcalidrawView` (Phase 6 item 5) | Entered plan mode to scope the higher-risk loader/timer/teardown surface before touching it; plan approved, then implemented. Added `src/view/managers/ViewSceneFileManager.ts` owning `activeLoader`/`nextLoader`/`deferredValidationLoader`/`deferredValidationTimer`/`deferredValidationFilePath`/`queuedLoadSceneFilesRequest`/`pendingDeferredValidationFileIDs` and the 5 methods that operate on them (`cancelDeferredSceneFileValidation`, `addDeferredValidationCandidates`, `scheduleDeferredSceneFileValidation`, `scheduleSceneFileDeferredValidation`, `loadSceneFiles`), a mechanical move with `this.` replaced by `this.view.` for view reads/writes and left as same-class `this.` for the loader's own reciprocal calls. `lastSceneLoadTime` stays on `ExcalidrawView` (read externally by `excalidrawViewUtils.ts` for leaf-switch detection) but continues to be written by the manager via `view.lastSceneLoadTime = ...`. `loadSceneFiles()` and `scheduleSceneFileDeferredValidation()` stay as public delegates so their two external callers (`ExcalidrawAutomate.ts`'s scripting surface, `EventManager.ts`'s leaf-switch handler) needed no edits. The three byte-for-byte-duplicated loader-teardown blocks in `onClose()`, `onunload()`, and `clear()` collapsed to one call each to a new `terminateActiveLoaders()` method. A production build caught a direct external read of `activeLoader` at `EventManager.ts:387` that the initial plan's call-site trace had missed (it greps for method calls, not field reads); preserved with a pass-through `get activeLoader()` getter on `ExcalidrawView` rather than editing the external caller. `EmbeddedFilesLoader` (already a confirmed cycle participant) and the shared `addFiles()` helper (kept on `ExcalidrawView` since the unrelated LaTeX-equation-editing flow also calls it) are constructor-injected rather than imported directly in the new file, matching the `ViewExportManager`/`MarkdownImageController` precedent | `npm run build`, `npm run lib`, and `node --check dist/main.js` passed with the unchanged 33-warning circular-dependency baseline. A repository-wide search after the `EventManager.ts` fix confirmed no remaining external reference to any of the 7 moved fields or 3 fully-private moved methods. Targeted ESLint across `ExcalidrawView.ts`, `EventManager.ts`, and `ExcalidrawAutomate.ts` is unchanged at 229 problems/225 errors/4 warnings before and after (the moved code carried zero lint findings of its own), and the new `ViewSceneFileManager.ts` has zero ESLint findings. `ExcalidrawView.ts` decreased by 242 lines from 7,340 to 7,098; the new module is 324 documented lines; `dist/main.js` is 4,713,231 bytes, 358 bytes above the preceding checkpoint, still well below 5 MiB. Manual validation should prioritize, in order: opening a drawing with several embedded images/PDFs (stale-first pass with no flicker from the deferred validated pass), rapid file switching (`nextLoader` queuing and `clear()`'s termination path), theme toggling with images open, editing a locally-linked image's path, a sync update changing embedded files, an ExcalidrawAutomate script calling `targetView.loadSceneFiles` plus a leaf switch to trigger `EventManager`'s deferred-validation call, and view close/plugin reload/popout close with a load in flight — the deferred-validation/save-race and lifecycle-teardown paths are the highest-impact risk since none of this is exercised by the build |
+| 2026-08-12 | Closed the `ViewSceneFileManager` validation checkpoint | Manual testing found no issues | User confirmed "ViewSceneFileManager testing did not uncover any nasty surprises" in the same message that declined `ViewInteractionController` for now; committed |
+| 2026-08-13 | Investigated the circular-dependency count and fixed unnecessary value imports | `npx madge --circular` reports 322 elementary cycles versus Rollup's steady 33-warning summary; confirmed this is the same underlying densely-connected core (roughly `ExcalidrawView.ts`, `main.ts`, `ExcalidrawAutomate.ts`, `ExcalidrawData.ts`, `EmbeddedFileLoader.ts`, `ImageCache.ts`, `fileUtils.ts`, `constants.ts`, `types.d.ts`, and several `Dialogs/`/`utils/` files) enumerated as many overlapping paths rather than 322 independent problems. Found 19 files importing `ExcalidrawView` or `ExcalidrawPlugin` as a *value* (e.g. `import ExcalidrawView from "..."`) purely to type a constructor parameter or field, with zero actual runtime usage (verified by grep for property/method access) — converted all 19 to `import type`, plus one unrelated `svgToExcalidraw` `Point` type import, to remove genuinely unnecessary runtime coupling | `npm run build` and a `git stash`/`pop` ESLint diff (514/514, unchanged) passed. Both the madge count (322) and the Rollup circular-dependency warning count ("and 30 more", 33 total) were **unchanged** by this fix: madge does not distinguish `import type` from value imports when building its graph, and the Rollup-reported cycles turned out to route through other, genuinely-necessary value imports in the same core cluster, not through the 19 edges fixed here. The fix is still correct and was committed (`f39db658`) as a real (if small) coupling reduction, but actually shrinking the reported cycle count would require breaking real value-level cycles inside the core cluster (e.g. `ExcalidrawData.ts` <-> `EmbeddedFileLoader.ts`), which is a larger, separate undertaking |
 
 ## Executive recommendation
 
@@ -911,29 +916,72 @@ Before merging any refactor step, answer all of the following:
    `ExcalidrawView` export methods as delegates. This establishes the
    view-controller pattern away from lifecycle and synchronization.
 
-`MarkdownImageController` is closed (manual testing found no issues). The
-current checkpoint is manual validation of two remaining changes: the Phase 7
-React-root extraction (`src/view/components/ExcalidrawRoot.ts`) and the new
-`src/view/managers/ViewSceneFileManager.ts`. For the React root, first test a
-popout window because a cross-window React mismatch is the highest-impact
-risk given the render tree now lives in a different file, then verify
-tools-panel positioning/resize, the embeddable and selected-element context
-menus, the welcome screen, custom menu actions, web and Obsidian embeddables,
-and text-to-diagram/diagram-to-code in the main window. Repeat basic
-rendering and embeddables on a mobile device. For the scene-file manager,
-prioritize opening a drawing with several embedded images/PDFs, rapid file
-switching, theme toggling with images open, editing a locally-linked image's
-path, a sync update changing embedded files, an ExcalidrawAutomate script
-calling `targetView.loadSceneFiles` alongside a leaf switch that triggers
-`EventManager`'s deferred-validation call, and view close/plugin
-reload/popout close with a load in flight.
+`MarkdownImageController` and `ViewSceneFileManager` are both closed (manual
+testing found no issues in either). This plan is now parked — see "Parked:
+next steps if resumed" immediately below for exactly where to pick it back
+up.
 
-`ViewInteractionController` (hover preview + pointer/key handling) is the
-last remaining Phase 6 controller candidate, deliberately sequenced last for
-its hover-editor interop and mobile-keyboard timing risk. Phase 8 (converting
-the extracted React root to TSX) should follow only after its own checkpoint
-closes, and must not be combined with any state or callback-wiring change.
+## Parked: next steps if resumed
 
-After those steps, reassess coupling, bundle size, and manual-test coverage
-before committing to the next phase. The plan is deliberately a sequence of
-checkpoints rather than a promise to execute every proposed module unchanged.
+As of 2026-08-13 this plan is paused in favor of `src/core/settings.ts` and
+declarative-settings-readiness work (tracked separately, not in this
+document). Nothing here is abandoned — the sequence below is exactly where
+to resume.
+
+**Learnings worth carrying forward:**
+
+- The `ExcalidrawView`-typed-host + constructor-injected-dependencies pattern
+  (used by every manager extracted so far) has held up across five
+  extractions with zero functional regressions found in manual testing. Keep
+  using it unchanged for `ViewInteractionController` if that's picked up.
+- A production build has twice caught an external reference the plan's
+  initial call-site trace missed (`activeLoader` read directly from
+  `EventManager.ts`, found only because `tsc` failed to compile after the
+  field went private) — grep-based call-site tracing during planning finds
+  method calls reliably but can miss direct field reads. Always let the
+  build be the final authority, not the trace.
+- `git stash`/`pop` before/after ESLint diffing has been a reliable,
+  cheap way to prove an extraction introduced zero new lint findings — keep
+  using it for any future extraction or fix in this codebase.
+- Circular-dependency counts from `npx madge --circular` and from Rollup's
+  own build warning are **not directly comparable**: madge enumerates every
+  elementary cycle (so one small strongly-connected core produces hundreds
+  of overlapping paths), while Rollup reports something closer to the
+  distinct problem count. Don't use the madge number as a target to drive
+  toward zero; use Rollup's steady warning count (currently 33) as the
+  tracked baseline instead.
+- `import type` fixes for value-imports-that-are-really-just-types are safe
+  and worth doing opportunistically (see the 2026-08-13 action-log entry),
+  but they only remove *unnecessary* runtime coupling — they will not move
+  the reported cycle count if a real value-level cycle still connects the
+  same two files through another path. Actually reducing the core cluster's
+  cycle count needs a deliberate pass at the genuine value-level cycles
+  (starting candidates: `ExcalidrawData.ts` <-> `EmbeddedFileLoader.ts`,
+  `constants.ts` -> `types.d.ts` -> `ExcalidrawAutomate.ts` -> `constants.ts`),
+  which is real dependency-inversion work, not a quick follow-up.
+
+**If resumed, in order:**
+
+1. Re-validate the Phase 7 React-root extraction
+   (`src/view/components/ExcalidrawRoot.ts`) manually — it was implemented
+   and the checkpoint text was written, but no explicit user confirmation of
+   manual testing was ever logged for it the way `MarkdownImageController`
+   and `ViewSceneFileManager` were. Prioritize a popout window first (cross-
+   window React mismatch is the highest-impact risk), then tools-panel
+   positioning/resize, the embeddable and selected-element context menus,
+   the welcome screen, custom menu actions, web/Obsidian embeddables, and
+   text-to-diagram/diagram-to-code in the main window; repeat basic
+   rendering and embeddables on mobile.
+2. Decide on `ViewInteractionController` (hover preview + pointer/key
+   handling). The user explicitly declined it for now ("I am not sure I
+   want to implement `ViewInteractionController` at this time") rather than
+   ruling it out permanently — it remains the last unclaimed Phase 6
+   controller candidate, deliberately sequenced last for its hover-editor
+   interop and mobile-keyboard timing risk.
+3. Phase 8 (converting the extracted React root to TSX) should follow only
+   after the React-root checkpoint above is explicitly confirmed closed, and
+   must not be combined with any state or callback-wiring change.
+4. After those steps, reassess coupling, bundle size, and manual-test
+   coverage before committing to the next phase. This plan is deliberately a
+   sequence of checkpoints rather than a promise to execute every proposed
+   module unchanged.
