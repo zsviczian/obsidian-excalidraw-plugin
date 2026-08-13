@@ -68,9 +68,109 @@ import {
   KNOWN_AI_IMAGE_MODEL_CONFIGS,
   cloneModelConfigs,
 } from "src/core/settingsDefaults";
+import type { ExcalidrawSettings } from "src/core/settingsDefaults";
 
 declare const mainDocument: Document;
 declare type SettingDefinitionItem = string;
+
+/**
+ * Legacy-rendering data shape modeled after Obsidian's declarative
+ * settings API (`getSettingDefinitions()`, requires Obsidian 1.13+, not
+ * used directly yet). `display()` interprets these via `buildSetting()`
+ * to build the current imperative UI, so the same definitions can move
+ * closer to feeding the real API later without depending on it now.
+ *
+ * Only the toggle, text, dropdown, and slider controls are implemented so
+ * far; `render` and `visible` are added incrementally as they're needed.
+ */
+interface SettingDefinition {
+  name: string;
+  desc?: string | DocumentFragment;
+  control: ToggleControl | TextControl | DropdownControl | SliderControl;
+}
+
+interface ToggleControl {
+  type: "toggle";
+  key: BooleanSettingKey;
+  /** true => applySettingsUpdate(true); default => applySettingsUpdate() */
+  reload?: boolean;
+}
+
+interface TextControl {
+  type: "text";
+  key: StringSettingKey;
+  placeholder?: string;
+  /** When set, the sanitized value replaces both the stored setting and the input's displayed text, matching the existing replaceAll-then-setValue pattern. */
+  sanitize?: (value: string) => string;
+  /** true => applySettingsUpdate(true); default => applySettingsUpdate() */
+  reload?: boolean;
+}
+
+interface DropdownControl {
+  type: "dropdown";
+  key: StringLikeSettingKey;
+  options: readonly { value: string; label: string }[];
+  /** true => applySettingsUpdate(true); default => applySettingsUpdate() */
+  reload?: boolean;
+}
+
+interface SliderControl {
+  type: "slider";
+  key: NumberSettingKey;
+  min: number;
+  max: number;
+  step: number;
+  minWidth?: string;
+  /**
+   * Displayed/edited value = stored value * scale (e.g. 100 for a stored
+   * 0-1 fraction shown as a 1-100 percent slider). Defaults to 1.
+   */
+  scale?: number;
+  /** true => applySettingsUpdate(true); default => applySettingsUpdate() */
+  reload?: boolean;
+}
+
+/** Keys of ExcalidrawSettings whose value type is boolean. */
+type BooleanSettingKey = {
+  [K in keyof ExcalidrawSettings]: ExcalidrawSettings[K] extends boolean
+    ? K
+    : never;
+}[keyof ExcalidrawSettings];
+
+/**
+ * Keys of ExcalidrawSettings whose value type is exactly string (not a
+ * narrower string-literal union like `embedType` or `defaultPenMode`,
+ * which an arbitrary sanitized/typed string must not be assignable to).
+ */
+type StringSettingKey = {
+  [K in keyof ExcalidrawSettings]: string extends ExcalidrawSettings[K]
+    ? ExcalidrawSettings[K] extends string
+      ? K
+      : never
+    : never;
+}[keyof ExcalidrawSettings];
+
+/**
+ * Keys of ExcalidrawSettings whose value type is string OR a narrower
+ * string-literal union (e.g. `defaultPenMode: "never" | "mobile" |
+ * "always"`) — the superset StringSettingKey deliberately excludes.
+ */
+type StringLikeSettingKey = {
+  [K in keyof ExcalidrawSettings]: ExcalidrawSettings[K] extends string
+    ? K
+    : never;
+}[keyof ExcalidrawSettings];
+
+/** Keys of ExcalidrawSettings whose value type is number. */
+type NumberSettingKey = {
+  [K in keyof ExcalidrawSettings]: ExcalidrawSettings[K] extends number
+    ? K
+    : never;
+}[keyof ExcalidrawSettings];
+
+/** Strips characters that are invalid in filenames on common filesystems. */
+const sanitizeFilenameSegment = (value: string): string =>
+  value.replaceAll(/[<>:"/\\|?*]/g, "_");
 
 const configurePasswordTextInput = (text: TextComponent) => {
   const { inputEl } = text;
@@ -114,6 +214,100 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       picker.destroy();
     }
     this.fontPickers = [];
+  }
+
+  /**
+   * Interprets a SettingDefinition to build the equivalent imperative
+   * Setting UI. Only the toggle, text, dropdown, and slider controls are
+   * handled so far.
+   */
+  private buildSetting(container: HTMLElement, def: SettingDefinition): void {
+    const { control } = def;
+    if (control.type === "slider") {
+      const scale = control.scale ?? 1;
+      createSliderWithText(container, {
+        name: def.name,
+        desc: def.desc,
+        value: this.plugin.settings[control.key] * scale,
+        min: control.min,
+        max: control.max,
+        step: control.step,
+        minWidth: control.minWidth,
+        onChange: (value) => {
+          this.setNumberSetting(control.key, value / scale);
+          this.applySettingsUpdate(control.reload ?? false);
+        },
+      });
+      return;
+    }
+    const setting = new Setting(container).setName(def.name);
+    if (def.desc) {
+      setting.setDesc(def.desc);
+    }
+    if (control.type === "toggle") {
+      setting.addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings[control.key])
+          .onChange(async (value) => {
+            this.plugin.settings[control.key] = value;
+            this.applySettingsUpdate(control.reload ?? false);
+          }),
+      );
+      return;
+    }
+    if (control.type === "text") {
+      setting.addText((text) => {
+        if (control.placeholder !== undefined) {
+          text.setPlaceholder(control.placeholder);
+        }
+        text.setValue(this.plugin.settings[control.key]).onChange(
+          async (value) => {
+            const finalValue = control.sanitize
+              ? control.sanitize(value)
+              : value;
+            this.plugin.settings[control.key] = finalValue;
+            if (control.sanitize) {
+              text.setValue(finalValue);
+            }
+            this.applySettingsUpdate(control.reload ?? false);
+          },
+        );
+      });
+      return;
+    }
+    // control.type === "dropdown" (the only remaining case)
+    setting.addDropdown((dropdown) => {
+      for (const option of control.options) {
+        dropdown.addOption(option.value, option.label);
+      }
+      dropdown
+        .setValue(this.plugin.settings[control.key])
+        .onChange(async (value) => {
+          this.setStringSetting(control.key, value);
+          this.applySettingsUpdate(control.reload ?? false);
+        });
+    });
+  }
+
+  /**
+   * Correlated-generic write helpers: a plain `this.plugin.settings[key] =
+   * value` doesn't type-check when `key` is a union of differently-typed
+   * fields (TypeScript can't verify the write is sound for every member of
+   * the union), even though each individual case is fine. Scoping the
+   * generic to a single call correlates key and value so it does.
+   */
+  private setStringSetting<K extends StringLikeSettingKey>(
+    key: K,
+    value: ExcalidrawSettings[K],
+  ): void {
+    this.plugin.settings[key] = value;
+  }
+
+  private setNumberSetting<K extends NumberSettingKey>(
+    key: K,
+    value: ExcalidrawSettings[K],
+  ): void {
+    this.plugin.settings[key] = value;
   }
 
   private getFilenameSample(): string {
@@ -522,41 +716,23 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       text: t("BASIC_HEAD"),
       cls: "excalidraw-setting-h1",
     });
-    new Setting(detailsEl)
-      .setName(t("RELEASE_NOTES_NAME"))
-      .setDesc(fragWithHTML(t("RELEASE_NOTES_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.showReleaseNotes)
-          .onChange(async (value) => {
-            this.plugin.settings.showReleaseNotes = value;
-            this.applySettingsUpdate();
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("RELEASE_NOTES_NAME"),
+      desc: fragWithHTML(t("RELEASE_NOTES_DESC")),
+      control: { type: "toggle", key: "showReleaseNotes" },
+    });
 
-    new Setting(detailsEl)
-      .setName(t("WARN_ON_MANIFEST_MISMATCH_NAME"))
-      .setDesc(fragWithHTML(t("WARN_ON_MANIFEST_MISMATCH_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.compareManifestToPluginVersion)
-          .onChange(async (value) => {
-            this.plugin.settings.compareManifestToPluginVersion = value;
-            this.applySettingsUpdate();
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("WARN_ON_MANIFEST_MISMATCH_NAME"),
+      desc: fragWithHTML(t("WARN_ON_MANIFEST_MISMATCH_DESC")),
+      control: { type: "toggle", key: "compareManifestToPluginVersion" },
+    });
 
-    new Setting(detailsEl)
-      .setName(t("NEWVERSION_NOTIFICATION_NAME"))
-      .setDesc(fragWithHTML(t("NEWVERSION_NOTIFICATION_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.showNewVersionNotification)
-          .onChange(async (value) => {
-            this.plugin.settings.showNewVersionNotification = value;
-            this.applySettingsUpdate();
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("NEWVERSION_NOTIFICATION_NAME"),
+      desc: fragWithHTML(t("NEWVERSION_NOTIFICATION_DESC")),
+      control: { type: "toggle", key: "showNewVersionNotification" },
+    });
 
     new Setting(detailsEl)
       .setName(t("TOGGLE_SPLASHSCREEN"))
@@ -922,73 +1098,49 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(detailsEl)
-      .setName(t("CROP_PREFIX_NAME"))
-      .setDesc(fragWithHTML(t("CROP_PREFIX_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder(t("CROP_PREFIX_PLACEHOLDER"))
-          .setValue(this.plugin.settings.cropPrefix)
-          .onChange(async (value) => {
-            this.plugin.settings.cropPrefix = value.replaceAll(
-              /[<>:"/\\|?*]/g,
-              "_",
-            );
-            text.setValue(this.plugin.settings.cropPrefix);
-            this.applySettingsUpdate();
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("CROP_PREFIX_NAME"),
+      desc: fragWithHTML(t("CROP_PREFIX_DESC")),
+      control: {
+        type: "text",
+        key: "cropPrefix",
+        placeholder: t("CROP_PREFIX_PLACEHOLDER"),
+        sanitize: sanitizeFilenameSegment,
+      },
+    });
 
-    new Setting(detailsEl)
-      .setName(t("CROP_SUFFIX_NAME"))
-      .setDesc(fragWithHTML(t("CROP_SUFFIX_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder(t("CROP_SUFFIX_PLACEHOLDER"))
-          .setValue(this.plugin.settings.cropSuffix)
-          .onChange(async (value) => {
-            this.plugin.settings.cropSuffix = value.replaceAll(
-              /[<>:"/\\|?*]/g,
-              "_",
-            );
-            text.setValue(this.plugin.settings.cropSuffix);
-            this.applySettingsUpdate();
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("CROP_SUFFIX_NAME"),
+      desc: fragWithHTML(t("CROP_SUFFIX_DESC")),
+      control: {
+        type: "text",
+        key: "cropSuffix",
+        placeholder: t("CROP_SUFFIX_PLACEHOLDER"),
+        sanitize: sanitizeFilenameSegment,
+      },
+    });
 
-    new Setting(detailsEl)
-      .setName(t("ANNOTATE_PREFIX_NAME"))
-      .setDesc(fragWithHTML(t("ANNOTATE_PREFIX_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder(t("ANNOTATE_PREFIX_PLACEHOLDER"))
-          .setValue(this.plugin.settings.annotatePrefix)
-          .onChange(async (value) => {
-            this.plugin.settings.annotatePrefix = value.replaceAll(
-              /[<>:"/\\|?*]/g,
-              "_",
-            );
-            text.setValue(this.plugin.settings.annotatePrefix);
-            this.applySettingsUpdate();
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("ANNOTATE_PREFIX_NAME"),
+      desc: fragWithHTML(t("ANNOTATE_PREFIX_DESC")),
+      control: {
+        type: "text",
+        key: "annotatePrefix",
+        placeholder: t("ANNOTATE_PREFIX_PLACEHOLDER"),
+        sanitize: sanitizeFilenameSegment,
+      },
+    });
 
-    new Setting(detailsEl)
-      .setName(t("ANNOTATE_SUFFIX_NAME"))
-      .setDesc(fragWithHTML(t("ANNOTATE_SUFFIX_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder(t("ANNOTATE_SUFFIX_PLACEHOLDER"))
-          .setValue(this.plugin.settings.annotateSuffix)
-          .onChange(async (value) => {
-            this.plugin.settings.annotateSuffix = value.replaceAll(
-              /[<>:"/\\|?*]/g,
-              "_",
-            );
-            text.setValue(this.plugin.settings.annotateSuffix);
-            this.applySettingsUpdate();
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("ANNOTATE_SUFFIX_NAME"),
+      desc: fragWithHTML(t("ANNOTATE_SUFFIX_DESC")),
+      control: {
+        type: "text",
+        key: "annotateSuffix",
+        placeholder: t("ANNOTATE_SUFFIX_PLACEHOLDER"),
+        sanitize: sanitizeFilenameSegment,
+      },
+    });
 
     new Setting(detailsEl)
       .setName(t("ANNOTATE_PRESERVE_SIZE_NAME"))
@@ -1794,21 +1946,23 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(detailsEl)
-      .setName(t("DEFAULT_OPEN_MODE_NAME"))
-      .setDesc(fragWithHTML(t("DEFAULT_OPEN_MODE_DESC")))
-      .addDropdown((dropdown) =>
-        dropdown
-          .addOption("normal", t("DEFAULT_OPEN_MODE_OPTION_NORMAL"))
-          .addOption("zen", t("DEFAULT_OPEN_MODE_OPTION_ZEN"))
-          .addOption("view", t("DEFAULT_OPEN_MODE_OPTION_VIEW"))
-          .addOption("view-mobile", t("DEFAULT_OPEN_MODE_OPTION_VIEW_MOBILE"))
-          .setValue(this.plugin.settings.defaultMode)
-          .onChange(async (value) => {
-            this.plugin.settings.defaultMode = value;
-            this.applySettingsUpdate();
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("DEFAULT_OPEN_MODE_NAME"),
+      desc: fragWithHTML(t("DEFAULT_OPEN_MODE_DESC")),
+      control: {
+        type: "dropdown",
+        key: "defaultMode",
+        options: [
+          { value: "normal", label: t("DEFAULT_OPEN_MODE_OPTION_NORMAL") },
+          { value: "zen", label: t("DEFAULT_OPEN_MODE_OPTION_ZEN") },
+          { value: "view", label: t("DEFAULT_OPEN_MODE_OPTION_VIEW") },
+          {
+            value: "view-mobile",
+            label: t("DEFAULT_OPEN_MODE_OPTION_VIEW_MOBILE"),
+          },
+        ],
+      },
+    });
 
     new Setting(detailsEl)
       .setName(t("PHONE_FOOTER_SAFE_AREA_PADDING_NAME"))
@@ -1910,55 +2064,54 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    createSliderWithText(detailsEl, {
+    this.buildSetting(detailsEl, {
       name: t("ZOOM_TO_FIT_MAX_LEVEL_NAME"),
       desc: t("ZOOM_TO_FIT_MAX_LEVEL_DESC"),
-      value: this.plugin.settings.zoomToFitMaxLevel,
-      min: 0.5,
-      max: 10,
-      step: 0.5,
-      onChange: (value) => {
-        this.plugin.settings.zoomToFitMaxLevel = value;
-        this.applySettingsUpdate();
+      control: {
+        type: "slider",
+        key: "zoomToFitMaxLevel",
+        min: 0.5,
+        max: 10,
+        step: 0.5,
       },
     });
 
-    createSliderWithText(detailsEl, {
+    this.buildSetting(detailsEl, {
       name: t("ZOOM_STEP_NAME"),
       desc: t("ZOOM_STEP_DESC"),
-      value: this.plugin.settings.zoomStep * 100,
-      min: 1,
-      max: 25,
-      step: 1,
-      onChange: (value) => {
-        this.plugin.settings.zoomStep = value / 100;
-        this.applySettingsUpdate();
+      control: {
+        type: "slider",
+        key: "zoomStep",
+        min: 1,
+        max: 25,
+        step: 1,
+        scale: 100,
       },
     });
 
-    createSliderWithText(detailsEl, {
+    this.buildSetting(detailsEl, {
       name: t("ZOOM_MIN_NAME"),
       desc: t("ZOOM_MIN_DESC"),
-      value: this.plugin.settings.zoomMin * 100,
-      min: 1,
-      max: 50,
-      step: 1,
-      onChange: (value) => {
-        this.plugin.settings.zoomMin = value / 100;
-        this.applySettingsUpdate();
+      control: {
+        type: "slider",
+        key: "zoomMin",
+        min: 1,
+        max: 50,
+        step: 1,
+        scale: 100,
       },
     });
 
-    createSliderWithText(detailsEl, {
+    this.buildSetting(detailsEl, {
       name: t("ZOOM_MAX_NAME"),
       desc: t("ZOOM_MAX_DESC"),
-      value: this.plugin.settings.zoomMax * 100,
-      min: 500,
-      max: 6000,
-      step: 100,
-      onChange: (value) => {
-        this.plugin.settings.zoomMax = value / 100;
-        this.applySettingsUpdate();
+      control: {
+        type: "slider",
+        key: "zoomMax",
+        min: 500,
+        max: 6000,
+        step: 100,
+        scale: 100,
       },
     });
 
@@ -1971,20 +2124,19 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       cls: "excalidraw-setting-h3",
     });
 
-    new Setting(detailsEl)
-      .setName(t("DEFAULT_PEN_MODE_NAME"))
-      .setDesc(fragWithHTML(t("DEFAULT_PEN_MODE_DESC")))
-      .addDropdown((dropdown) =>
-        dropdown
-          .addOption("never", t("DEFAULT_PEN_MODE_OPTION_NEVER"))
-          .addOption("mobile", t("DEFAULT_PEN_MODE_OPTION_MOBILE"))
-          .addOption("always", t("DEFAULT_PEN_MODE_OPTION_ALWAYS"))
-          .setValue(this.plugin.settings.defaultPenMode)
-          .onChange(async (value: "never" | "always" | "mobile") => {
-            this.plugin.settings.defaultPenMode = value;
-            this.applySettingsUpdate();
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("DEFAULT_PEN_MODE_NAME"),
+      desc: fragWithHTML(t("DEFAULT_PEN_MODE_DESC")),
+      control: {
+        type: "dropdown",
+        key: "defaultPenMode",
+        options: [
+          { value: "never", label: t("DEFAULT_PEN_MODE_OPTION_NEVER") },
+          { value: "mobile", label: t("DEFAULT_PEN_MODE_OPTION_MOBILE") },
+          { value: "always", label: t("DEFAULT_PEN_MODE_OPTION_ALWAYS") },
+        ],
+      },
+    });
 
     new Setting(detailsEl)
       .setName(t("DISABLE_DOUBLE_TAP_ERASER_NAME"))
@@ -3416,17 +3568,11 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     });
 
     addYouTubeThumbnail(detailsEl, "r08wk-58DPk");
-    new Setting(detailsEl)
-      .setName(t("LATEX_DEFAULT_NAME"))
-      .setDesc(fragWithHTML(t("LATEX_DEFAULT_DESC")))
-      .addText((text) =>
-        text
-          .setValue(this.plugin.settings.latexBoilerplate)
-          .onChange((value) => {
-            this.plugin.settings.latexBoilerplate = value;
-            this.applySettingsUpdate();
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("LATEX_DEFAULT_NAME"),
+      desc: fragWithHTML(t("LATEX_DEFAULT_DESC")),
+      control: { type: "text", key: "latexBoilerplate" },
+    });
 
     const latexPreambleSetting = new Setting(detailsEl)
       .setName(t("LATEX_PREAMBLE_NAME"))
@@ -3458,18 +3604,15 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(detailsEl)
-      .setName(t("FILETAG_NAME"))
-      .setDesc(fragWithHTML(t("FILETAG_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder(t("INSERT_EMOJI"))
-          .setValue(this.plugin.settings.experimentalFileTag)
-          .onChange(async (value) => {
-            this.plugin.settings.experimentalFileTag = value;
-            this.applySettingsUpdate();
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("FILETAG_NAME"),
+      desc: fragWithHTML(t("FILETAG_DESC")),
+      control: {
+        type: "text",
+        key: "experimentalFileTag",
+        placeholder: t("INSERT_EMOJI"),
+      },
+    });
 
     new Setting(detailsEl)
       .setName(t("LIVEPREVIEW_NAME"))
