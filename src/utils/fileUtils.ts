@@ -18,7 +18,7 @@ import {
   FRONTMATTER_KEYS,
   URLFETCHTIMEOUT,
 } from "src/constants/constants";
-import { ExcalidrawSettings } from "src/core/settings";
+import type { ExcalidrawSettings } from "src/core/settingsDefaults";
 import { errorlog, getDataURL } from "./coreUtils";
 import type ExcalidrawPlugin from "src/core/main";
 import {

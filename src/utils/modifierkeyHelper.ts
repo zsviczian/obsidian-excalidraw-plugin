@@ -2,7 +2,7 @@ import type React from "react";
 import { Modifier } from "obsidian";
 import { DEVICE } from "src/constants/constants";
 import { t } from "src/lang/helpers";
-import { ExcalidrawSettings } from "src/core/settings";
+import type { ExcalidrawSettings } from "src/core/settingsDefaults";
 import { PaneTarget } from "src/types/utilTypes";
 export {
   labelALT,

@@ -1,6 +1,6 @@
 import { Setting, DropdownComponent, App } from "obsidian";
 import { t } from "src/lang/helpers";
-import { ExcalidrawSettings } from "src/core/settings";
+import type { ExcalidrawSettings } from "src/core/settingsDefaults";
 import { fragWithHTML, setLeftHandedMode, setUIMode } from "src/utils/utils";
 import { DEVICE } from "src/constants/constants";
 

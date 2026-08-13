@@ -34,10 +34,8 @@ import {
   DEVICE,
   setRootElementSize,
 } from "../constants/constants";
-import {
-  ExcalidrawSettings,
-  ExcalidrawSettingTab,
-} from "./settings";
+import { ExcalidrawSettingTab } from "./settings";
+import type { ExcalidrawSettings } from "./settingsDefaults";
 import { ExcalidrawAutomate } from "../shared/ExcalidrawAutomate";
 import { initExcalidrawAutomate } from "src/utils/excalidrawAutomateUtils";
 import { t } from "../lang/helpers";

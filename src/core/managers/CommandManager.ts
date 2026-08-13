@@ -23,7 +23,7 @@ import {
 import ExcalidrawView from "../../view/ExcalidrawView";
 import { TextMode } from "../../shared/TextMode";
 import { REGEX_LINK } from "../../shared/ExcalidrawData";
-import { ExcalidrawSettings } from "../settings";
+import type { ExcalidrawSettings } from "../settingsDefaults";
 import {
   openDialogAction,
   OpenFileDialog,

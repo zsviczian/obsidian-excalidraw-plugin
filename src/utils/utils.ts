@@ -43,7 +43,7 @@ import Pool from "es6-promise-pool";
 import { t } from "src/lang/helpers";
 import { log } from "./debugHelper";
 import { VersionMismatchPrompt } from "src/shared/Dialogs/VersionMismatch";
-import { ExcalidrawSettings } from "src/core/settings";
+import type { ExcalidrawSettings } from "src/core/settingsDefaults";
 import { FileData } from "src/types/embeddedFileLoaderTypes";
 import { ExportSettings } from "src/types/exportUtilTypes";
 import { RemoteDirectoryInfo } from "src/types/githubTypes";
