@@ -1022,8 +1022,14 @@ existing `addVaultPathSupport()` (path suggester + existence warning), and
 a `capture` hook (called with the raw `TextComponent` before
 placeholder/value/onChange are wired) for callers that need to keep
 manipulating the component afterward (a sibling toggle disabling it,
-`configurePasswordTextInput()`). Dropdown/slider still have their
-remaining non-pilot instances unconverted.
+`configurePasswordTextInput()`). Dropdown control type is also now fully
+closed out: extended `DropdownControl` with the same `before`/`after`/
+`afterUpdate` hooks, and added a new `NumberDropdownControl` variant for
+dropdowns whose options are numbers stored as DOM strings but bind to a
+numeric field (autosave intervals, PDF-export scale, custom-pen count) —
+`parse: "int" | "float"` controls the `parseInt`/`parseFloat` conversion
+back into the setting. Slider still has its remaining non-pilot instances
+unconverted.
 
 **Deliberately left as legacy imperative code (toggle type), each because
 it doesn't fit the current `control` shape cleanly:**
@@ -1072,7 +1078,28 @@ doesn't fit the current `control` shape cleanly:**
   array/plain branches) in Compatibility — same reasoning as the dynamic
   script toggle above.
 
-**If resumed:** convert the remaining dropdown/slider instances the same
+**Deliberately left as legacy imperative code (dropdown type), each because
+it doesn't fit the current `control` shape cleanly:**
+
+- `LIBRARY_STORAGE_NAME` — its `onChange` early-returns on no-op selection,
+  branches into async migration prompts, and in one branch assigns a fixed
+  `"vault"` rather than the selected value; ends with a full `this.display()`
+  re-render (one of only two such calls in the whole file). Doesn't fit the
+  "always assign the selected value" model at all.
+- The AI provider/model dropdown (inside the dynamic `renderAISettings`
+  closure) — options are built from a runtime list, and the row also
+  chains `.addExtraButton()`; same dynamic/multi-control reasoning as the
+  AI text-model closures already excluded from toggle/text.
+- `EMBED_TYPE_NAME` — this is the dropdown `EXPORT_SVG_NAME`/
+  `EXPORT_PNG_NAME` (excluded from the toggle pass) mutate: its own options
+  are conditionally built from `autoexportPNG`/`autoexportSVG`, it
+  self-corrects `embedType` back to `"excalidraw"` if the previously
+  selected option becomes unavailable, and its `onChange` shows/hides
+  `embedComment`'s row. A cross-control cluster, not a single setting.
+- The dynamic per-installed-script dropdown closure in Compatibility —
+  same reasoning as the other dynamic script content.
+
+**If resumed:** convert the remaining slider instances the same
 way (mechanical, one control type at a time, full-type verification before
 commit — the user explicitly asked for full-type closeout before
 committing, and to review the diff before each commit). Only after all

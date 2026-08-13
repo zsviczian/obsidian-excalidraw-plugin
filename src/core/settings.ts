@@ -13,7 +13,6 @@ import {
 } from "src/constants/constants";
 import { t } from "src/lang/helpers";
 import type ExcalidrawPlugin from "src/core/main";
-import { DynamicStyle } from "src/types/types";
 import { PreviewImageType } from "src/types/utilTypes";
 import { setDynamicStyle } from "src/utils/dynamicStyling";
 import {
@@ -86,7 +85,12 @@ declare type SettingDefinitionItem = string;
 interface SettingDefinition {
   name: string | DocumentFragment;
   desc?: string | DocumentFragment;
-  control: ToggleControl | TextControl | DropdownControl | SliderControl;
+  control:
+    | ToggleControl
+    | TextControl
+    | DropdownControl
+    | NumberDropdownControl
+    | SliderControl;
 }
 
 interface ToggleControl {
@@ -150,6 +154,31 @@ interface DropdownControl {
   type: "dropdown";
   key: StringLikeSettingKey;
   options: readonly { value: string; label: string }[];
+  /** Extra logic run before the setting is assigned. */
+  before?: (value: string) => void | Promise<void>;
+  /** Extra logic run after the setting is assigned but before applySettingsUpdate(). */
+  after?: (value: string) => void | Promise<void>;
+  /** Extra logic run after applySettingsUpdate() completes. */
+  afterUpdate?: (value: string) => void | Promise<void>;
+  /** true => applySettingsUpdate(true); default => applySettingsUpdate() */
+  reload?: boolean;
+}
+
+/**
+ * A dropdown whose option values are numbers stored as strings in the DOM
+ * (Obsidian's DropdownComponent only deals in strings) but bind to a
+ * numeric ExcalidrawSettings field, parsed back with `parseInt`/`parseFloat`
+ * on change — matching the existing autosave-interval/PDF-scale/
+ * custom-pen-count dropdowns.
+ */
+interface NumberDropdownControl {
+  type: "number-dropdown";
+  key: NumberSettingKey;
+  options: readonly { value: number; label: string }[];
+  /** "int" uses parseInt, "float" uses parseFloat. Default "float". */
+  parse?: "int" | "float";
+  /** Extra logic run after the setting is assigned but before applySettingsUpdate(). */
+  after?: (value: number) => void | Promise<void>;
   /** true => applySettingsUpdate(true); default => applySettingsUpdate() */
   reload?: boolean;
 }
@@ -342,15 +371,35 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       });
       return setting;
     }
-    // control.type === "dropdown" (the only remaining case)
+    if (control.type === "dropdown") {
+      setting.addDropdown((dropdown) => {
+        for (const option of control.options) {
+          dropdown.addOption(option.value, option.label);
+        }
+        dropdown
+          .setValue(this.plugin.settings[control.key])
+          .onChange(async (value) => {
+            await control.before?.(value);
+            this.setStringSetting(control.key, value);
+            await control.after?.(value);
+            this.applySettingsUpdate(control.reload ?? false);
+            await control.afterUpdate?.(value);
+          });
+      });
+      return setting;
+    }
+    // control.type === "number-dropdown" (the only remaining case)
     setting.addDropdown((dropdown) => {
       for (const option of control.options) {
-        dropdown.addOption(option.value, option.label);
+        dropdown.addOption(option.value.toString(), option.label);
       }
       dropdown
-        .setValue(this.plugin.settings[control.key])
+        .setValue(this.plugin.settings[control.key].toString())
         .onChange(async (value) => {
-          this.setStringSetting(control.key, value);
+          const numValue =
+            control.parse === "int" ? parseInt(value) : parseFloat(value);
+          this.setNumberSetting(control.key, numValue);
+          await control.after?.(numValue);
           this.applySettingsUpdate(control.reload ?? false);
         });
     });
@@ -1000,39 +1049,39 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       control: { type: "toggle", key: "decompressForMDView" },
     });
 
-    new Setting(detailsEl)
-      .setName(t("AUTOSAVE_INTERVAL_DESKTOP_NAME"))
-      .setDesc(fragWithHTML(t("AUTOSAVE_INTERVAL_DESKTOP_DESC")))
-      .addDropdown((dropdown) =>
-        dropdown
-          .addOption("15000", "Very frequent (every 15 seconds)")
-          .addOption("30000", "Frequent (every 30 seconds)")
-          .addOption("60000", "Moderate (every 60 seconds)")
-          .addOption("300000", "Rare (every 5 minutes)")
-          .addOption("900000", "Practically never (every 15 minutes)")
-          .setValue(this.plugin.settings.autosaveIntervalDesktop.toString())
-          .onChange(async (value) => {
-            this.plugin.settings.autosaveIntervalDesktop = parseInt(value);
-            this.applySettingsUpdate();
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("AUTOSAVE_INTERVAL_DESKTOP_NAME"),
+      desc: fragWithHTML(t("AUTOSAVE_INTERVAL_DESKTOP_DESC")),
+      control: {
+        type: "number-dropdown",
+        key: "autosaveIntervalDesktop",
+        parse: "int",
+        options: [
+          { value: 15000, label: "Very frequent (every 15 seconds)" },
+          { value: 30000, label: "Frequent (every 30 seconds)" },
+          { value: 60000, label: "Moderate (every 60 seconds)" },
+          { value: 300000, label: "Rare (every 5 minutes)" },
+          { value: 900000, label: "Practically never (every 15 minutes)" },
+        ],
+      },
+    });
 
-    new Setting(detailsEl)
-      .setName(t("AUTOSAVE_INTERVAL_MOBILE_NAME"))
-      .setDesc(fragWithHTML(t("AUTOSAVE_INTERVAL_MOBILE_DESC")))
-      .addDropdown((dropdown) =>
-        dropdown
-          .addOption("10000", "Very frequent (every 10 seconds)")
-          .addOption("20000", "Frequent (every 20 seconds)")
-          .addOption("30000", "Moderate (every 30 seconds)")
-          .addOption("60000", "Rare (every 1 minute)")
-          .addOption("300000", "Practically never (every 5 minutes)")
-          .setValue(this.plugin.settings.autosaveIntervalMobile.toString())
-          .onChange(async (value) => {
-            this.plugin.settings.autosaveIntervalMobile = parseInt(value);
-            this.applySettingsUpdate();
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("AUTOSAVE_INTERVAL_MOBILE_NAME"),
+      desc: fragWithHTML(t("AUTOSAVE_INTERVAL_MOBILE_DESC")),
+      control: {
+        type: "number-dropdown",
+        key: "autosaveIntervalMobile",
+        parse: "int",
+        options: [
+          { value: 10000, label: "Very frequent (every 10 seconds)" },
+          { value: 20000, label: "Frequent (every 20 seconds)" },
+          { value: 30000, label: "Moderate (every 30 seconds)" },
+          { value: 60000, label: "Rare (every 1 minute)" },
+          { value: 300000, label: "Practically never (every 5 minutes)" },
+        ],
+      },
+    });
 
     detailsEl = savingDetailsEl.createEl("details");
     detailsEl.createEl("summary", {
@@ -1845,21 +1894,22 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       control: { type: "toggle", key: "overrideObsidianFontSize" },
     });
 
-    new Setting(detailsEl)
-      .setName(t("DYNAMICSTYLE_NAME"))
-      .setDesc(fragWithHTML(t("DYNAMICSTYLE_DESC")))
-      .addDropdown((dropdown) =>
-        dropdown
-          .addOption("none", t("DYNAMICSTYLE_OPTION_NONE"))
-          .addOption("colorful", t("DYNAMICSTYLE_OPTION_COLORFUL"))
-          .addOption("gray", t("DYNAMICSTYLE_OPTION_GRAY"))
-          .setValue(this.plugin.settings.dynamicStyling)
-          .onChange(async (value) => {
-            this.requestUpdateDynamicStyling = true;
-            this.plugin.settings.dynamicStyling = value as DynamicStyle;
-            this.applySettingsUpdate();
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("DYNAMICSTYLE_NAME"),
+      desc: fragWithHTML(t("DYNAMICSTYLE_DESC")),
+      control: {
+        type: "dropdown",
+        key: "dynamicStyling",
+        before: () => {
+          this.requestUpdateDynamicStyling = true;
+        },
+        options: [
+          { value: "none", label: t("DYNAMICSTYLE_OPTION_NONE") },
+          { value: "colorful", label: t("DYNAMICSTYLE_OPTION_COLORFUL") },
+          { value: "gray", label: t("DYNAMICSTYLE_OPTION_GRAY") },
+        ],
+      },
+    });
     addYouTubeThumbnail(detailsEl, "fypDth_-8q0");
 
     this.buildSetting(detailsEl, {
@@ -2550,30 +2600,31 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       cls: "excalidraw-setting-h1",
     });
 
-    new Setting(detailsEl)
-      .setName(t("EMBED_PREVIEW_IMAGETYPE_NAME"))
-      .setDesc(fragWithHTML(t("EMBED_PREVIEW_IMAGETYPE_DESC")))
-      .addDropdown((dropdown) =>
-        dropdown
-          .addOption(
-            PreviewImageType.PNG,
-            t("EMBED_PREVIEW_IMAGETYPE_OPTION_PNG"),
-          )
-          .addOption(
-            PreviewImageType.SVG,
-            t("EMBED_PREVIEW_IMAGETYPE_OPTION_SVG"),
-          )
-          .addOption(
-            PreviewImageType.SVGIMG,
-            t("EMBED_PREVIEW_IMAGETYPE_OPTION_SVGIMG"),
-          )
-          .setValue(this.plugin.settings.previewImageType)
-          .onChange((value) => {
-            this.plugin.settings.previewImageType = value as PreviewImageType;
-            this.requestEmbedUpdate = true;
-            this.applySettingsUpdate();
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("EMBED_PREVIEW_IMAGETYPE_NAME"),
+      desc: fragWithHTML(t("EMBED_PREVIEW_IMAGETYPE_DESC")),
+      control: {
+        type: "dropdown",
+        key: "previewImageType",
+        after: () => {
+          this.requestEmbedUpdate = true;
+        },
+        options: [
+          {
+            value: PreviewImageType.PNG,
+            label: t("EMBED_PREVIEW_IMAGETYPE_OPTION_PNG"),
+          },
+          {
+            value: PreviewImageType.SVG,
+            label: t("EMBED_PREVIEW_IMAGETYPE_OPTION_SVG"),
+          },
+          {
+            value: PreviewImageType.SVGIMG,
+            label: t("EMBED_PREVIEW_IMAGETYPE_OPTION_SVGIMG"),
+          },
+        ],
+      },
+    });
     addYouTubeThumbnail(detailsEl, "yZQoJg2RCKI");
     addYouTubeThumbnail(detailsEl, "opLd1SqaH_I", 8);
 
@@ -2944,24 +2995,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     });
 
     addYouTubeThumbnail(detailsEl, "nB4cOfn0xAs");
-    new Setting(detailsEl)
-      .setName(t("PDF_TO_IMAGE_SCALE_NAME"))
-      .setDesc(fragWithHTML(t("PDF_TO_IMAGE_SCALE_DESC")))
-      .addDropdown((dropdown) =>
-        dropdown
-          .addOption("0.5", "0.5")
-          .addOption("1", "1")
-          .addOption("2", "2")
-          .addOption("3", "3")
-          .addOption("4", "4")
-          .addOption("5", "5")
-          .addOption("6", "6")
-          .setValue(`${this.plugin.settings.pdfScale}`)
-          .onChange((value) => {
-            this.plugin.settings.pdfScale = parseFloat(value);
-            this.applySettingsUpdate();
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("PDF_TO_IMAGE_SCALE_NAME"),
+      desc: fragWithHTML(t("PDF_TO_IMAGE_SCALE_DESC")),
+      control: {
+        type: "number-dropdown",
+        key: "pdfScale",
+        options: [0.5, 1, 2, 3, 4, 5, 6].map((value) => ({
+          value,
+          label: value.toString(),
+        })),
+      },
+    });
 
     detailsEl = embedFilesDetailsEl.createEl("details");
     detailsEl.createEl("summary", {
@@ -3154,29 +3199,22 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       cls: "excalidraw-setting-h3",
     });
     addYouTubeThumbnail(detailsEl, "OjNhjaH2KjI", 69);
-    new Setting(detailsEl)
-      .setName(t("CUSTOM_PEN_NAME"))
-      .setDesc(t("CUSTOM_PEN_DESC"))
-      .addDropdown((dropdown) =>
-        dropdown
-          .addOption("0", "0")
-          .addOption("1", "1")
-          .addOption("2", "2")
-          .addOption("3", "3")
-          .addOption("4", "4")
-          .addOption("5", "5")
-          .addOption("6", "6")
-          .addOption("7", "7")
-          .addOption("8", "8")
-          .addOption("9", "9")
-          .addOption("10", "10")
-          .setValue(this.plugin.settings.numberOfCustomPens.toString())
-          .onChange((value) => {
-            this.plugin.settings.numberOfCustomPens = parseInt(value);
-            this.requestUpdatePinnedPens = true;
-            this.applySettingsUpdate(false);
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("CUSTOM_PEN_NAME"),
+      desc: t("CUSTOM_PEN_DESC"),
+      control: {
+        type: "number-dropdown",
+        key: "numberOfCustomPens",
+        parse: "int",
+        options: Array.from({ length: 11 }, (_, value) => ({
+          value,
+          label: value.toString(),
+        })),
+        after: () => {
+          this.requestUpdatePinnedPens = true;
+        },
+      },
+    });
 
   }
 
