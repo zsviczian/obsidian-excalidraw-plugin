@@ -1,3 +1,4 @@
+import type React from "react";
 import ExcalidrawPlugin from "src/core/main";
 import LZString from "lz-string";
 import {

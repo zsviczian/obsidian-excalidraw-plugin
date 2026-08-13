@@ -1,4 +1,15 @@
-import { TFile, View, WorkspaceLeaf } from "obsidian";
+import {
+  TFile,
+  View,
+  WorkspaceLeaf,
+  PluginManifest,
+  Hotkey,
+  TAbstractFile,
+  MenuItem,
+  Component,
+  EventRef,
+  WorkspaceContainer,
+} from "obsidian";
 import { ExcalidrawAutomate } from "../shared/ExcalidrawAutomate";
 import { ExcalidrawLib } from "./excalidrawLib";
 import type { PdfJsLibrary } from "./pdfJsTypes";

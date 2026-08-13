@@ -28,6 +28,20 @@ export default tseslint.config(
 		languageOptions: {
 			globals: {
 				...globals.browser,
+				// Buffer/NodeJS/BufferEncoding: genuine ambient Node types available
+				// in Obsidian's Electron environment (used e.g. in DataAdapter.fs
+				// callbacks in src/types/types.d.ts).
+				...globals.node,
+				// @types/react/global.d.ts declares this as a bare top-level
+				// `interface` (an ambient script, not a module), so it becomes a
+				// real global type alongside HTMLDivElement etc. -- not something
+				// that can be imported.
+				HTMLWebViewElement: 'readonly',
+				// NodeJS/BufferEncoding: ambient @types/node type/namespace names
+				// (globals.node above only covers runtime values like `Buffer`,
+				// not these TS-only type names).
+				NodeJS: 'readonly',
+				BufferEncoding: 'readonly',
 			},
 			parserOptions: {
 				projectService: {

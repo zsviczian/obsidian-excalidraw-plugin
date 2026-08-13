@@ -1,3 +1,4 @@
+import type React from "react";
 import { Modifier } from "obsidian";
 import { DEVICE } from "src/constants/constants";
 import { t } from "src/lang/helpers";
