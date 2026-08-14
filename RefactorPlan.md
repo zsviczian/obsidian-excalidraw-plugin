@@ -1291,21 +1291,94 @@ still mid-sync and confirm it eventually loads without a manual reopen) and
 general text-element/link/back-of-card parsing sanity (the two
 `as Mutable<ExcalidrawTextElement>[]` sites).
 
-**If resumed:** look for more `ExcalidrawData.ts`-shaped cases elsewhere in
-the `no-unsafe-*` backlog — specifically, a local variable whose real type
-is already known and already used correctly elsewhere in the same file or
-codebase, just missing on one declaration — rather than external-boundary
-`any` (network responses, `JSON.parse` of untrusted content, etc.), which
-needs the same scrutiny `AIUtils.ts` got before touching. `ExcalidrawView.ts`
-(144 findings) and `ExcalidrawAutomate.ts` (12 findings, down from 77 after
-today's fix) are the two remaining large-ish clusters and haven't been
-individually triaged yet — either could contain more of the safe kind, but
-that needs checking file-by-file the same way this session did for
-`ExcalidrawData.ts` and `AIUtils.ts`, not assumed from the finding count
-alone. `ExcalidrawView.ts`'s cluster is now by far the largest remaining one.
+**Correction:** an earlier note in this log mislabeled
+`src/utils/excalidrawAutomateUtils.ts` (which benefited from the
+`ExcalidrawDataScene` fix, 21 → 12) as `src/shared/ExcalidrawAutomate.ts`
+(a different, similarly-named file that was untouched and still has ~79
+findings). Accurate counts as of this correction: `ExcalidrawView.ts` 144,
+`ExcalidrawAutomate.ts` 79 (unchanged), `AIUtils.ts` 46 (declined, drifted
+slightly from 42), `ExcalidrawData.ts` 17, `excalidrawAutomateUtils.ts` 12.
 
-**Closed the 2026-08-14 validation checkpoint:** user confirmed both
-targeted manual tests — the stale-image retry loop and general text-
+**Done (2026-08-14, session 2): triaged `excalidrawAutomateUtils.ts`'s
+remaining 12 findings, fixed one, and surfaced a much bigger separate
+issue.**
+
+1. **Fixed:** `getTextElementsMatchingQueryFromString()`'s
+   `let parts;` (no annotation, assigned via `res.next()` where
+   `res = text.matchAll(...)`) — the exact same un-annotated-iterator-result
+   shape as the original `RegExpMatchIteratorResult` fix in `ExcalidrawData.ts`.
+   Annotated it `IteratorResult<RegExpMatchArray, undefined>` inline (this
+   file doesn't import the private alias of the same name from
+   `ExcalidrawData.ts`). Fixed 2 of the 12 findings, confirmed zero new
+   findings anywhere via a `git stash`/`pop` full-repo ESLint diff (413 → 411).
+2. **Left alone, confirmed genuine boundary:** `el.customData?.text2Path?.text`
+   (2 findings) — `customData?: Record<string, any>` is Excalidraw's own
+   intentional extensible-metadata mechanism, documented in this repo's own
+   `AGENTS.md` ("Custom Element Metadata"). Not a bug, same category as the
+   `frontmatter`/`AIUtils.ts` cases already declined.
+3. **Flagged, NOT fixed — a new, much bigger, separate structural issue.**
+   The remaining 8 findings (`getTemplate()`'s `excalidrawData.scene.files[f.id]`
+   computed assignment; `Object.values(scene.files).filter((f: BinaryFileData)
+   => fileIDWhiteList.has(f.id))`; three separate `template?.appState?.theme`
+   sites in `createPNG()`/`createSVG()`; one `newElement.link = link` in
+   `updateElementLinksToObsidianLinks()`) all trace to the same root cause,
+   confirmed empirically with the same throwaway-probe technique used for the
+   `ExcalidrawDataScene` fix (added and reverted each time): `BinaryFileData["id"]`
+   and `AppState["theme"]` (and by extension pieces of `ExcalidrawElement`)
+   resolve to `any`/`error`, even though the standalone types they're built
+   from (`FileId`, `Theme`) resolve cleanly on their own. Traced to
+   `@zsviczian/excalidraw`'s own bundled `.d.ts` files
+   (`element/src/types.d.ts` etc.) containing bare-specifier imports like
+   `import type {...} from "@excalidraw/common"` and
+   `import type {...} from "@excalidraw/common/utility-types"` — a package
+   this plugin's `package.json` never depends on and that isn't in
+   `package-lock.json`. This looks like an artifact of the upstream
+   Excalidraw monorepo's `packages/common` workspace split leaking into the
+   fork's published type declarations without the dependency being declared.
+   Two things ruled this out as a quick fix, both tested and reverted:
+   - Installing `@excalidraw/common@0.18.0-f0063e113` (npm's `latest` dist-tag)
+     with `--no-save` did **not** fix any of the 8 findings — simple package
+     presence isn't sufficient.
+   - This project's `tsconfig.json` uses `"moduleResolution": "node"`
+     (classic/legacy resolution), which does not consult `package.json`
+     `exports` maps for **subpath** imports at all (only unscoped/bare
+     imports use the top-level `types` field) — `@excalidraw/common/utility-types`
+     specifically cannot resolve under this setting regardless of what's
+     installed. Testing `"moduleResolution": "bundler"` (which does support
+     `exports` subpaths) did fix this pattern, but broke hundreds of other,
+     previously-clean type checks elsewhere in the project — global
+     resolution-mode changes are not a safe or scoped fix.
+   - Also discovered while testing: merely having `@excalidraw/common`
+     physically present under `node_modules/@excalidraw/` (even completely
+     unreferenced by `package.json`/`package-lock.json`) changed
+     `src/utils/excalidrawViewUtils.ts`'s type resolution enough to produce a
+     **new real compile error** (`ColorPaletteCustom` not assignable to
+     `string | string[]`) that disappeared the moment the untracked package
+     was removed. This means even the "just add the dependency" option needs
+     careful, isolated verification before being treated as safe — it is not
+     guaranteed side-effect-free.
+   - This is very likely the dominant root cause behind large portions of
+     the still-untriaged `ExcalidrawView.ts` (144) and `ExcalidrawAutomate.ts`
+     (79) clusters too, given how much of `ExcalidrawElement`/`AppState`
+     transitively depends on the same upstream types. Needs its own dedicated
+     investigation (candidates: a scoped `tsconfig` `paths` remapping instead
+     of a global `moduleResolution` change; fixing the dts generation in the
+     sibling `zsviczian/excalidraw` fork repo per the two-repository
+     workflow; or a local ambient `.d.ts` shim) rather than being bundled
+     into routine lint-cleanup work.
+
+`npm run build`, `npm run lib`, `node --check dist/main.js`, and
+`git diff --check` all passed for the one applied fix; the 33-warning
+circular-dependency baseline is unchanged; `dist/main.js` is 4,716,860 bytes
+(unchanged from the previous checkpoint, as expected for a single local type
+annotation). `excalidrawAutomateUtils.ts`: 12 → 10 findings (2 genuine
+boundary, 8 flagged under the `@excalidraw/common` issue above). Manual
+testing pending for the one behavior-adjacent area touched (search-by-quoted-
+text element selection, `getTextElementsMatchingQueryFromString()` — though
+this was a pure type-annotation change with no logic touched).
+
+**Closed the 2026-08-14 (session 1) validation checkpoint:** user confirmed
+both targeted manual tests — the stale-image retry loop and general text-
 element/link/back-of-card parsing — succeeded with no issues; committed.
 
 ## Related, separate effort: `ExcalidrawData.ts` structural extraction

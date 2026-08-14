@@ -846,7 +846,7 @@ export const search = async (view: ExcalidrawView) => {
   }
   const res = text.matchAll(/"(.*?)"/g);
   let query: string[] = [];
-  let parts;
+  let parts: IteratorResult<RegExpMatchArray, undefined>;
   while (!(parts = res.next()).done) {
     query.push(parts.value[1]);
   }
