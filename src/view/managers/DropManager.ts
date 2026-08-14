@@ -264,7 +264,7 @@ export class DropManager {
           void (async () => {
             if (["image", "image-fullsize"].contains(internalDragAction)) {
               const ea: ExcalidrawAutomate = getEA(this.view);
-              ea.canvas.theme = api.getAppState().theme as string;
+              ea.canvas.theme = api.getAppState().theme;
               let counter: number = 0;
               const ids: string[] = [];
               for (const f of draggable.files) {

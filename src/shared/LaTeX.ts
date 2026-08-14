@@ -8,7 +8,7 @@ import type { ExcalidrawExtrasAPI } from "@zsviczian/excalidraw-extras-api";
 
 export const updateEquation = async (
   equation: string,
-  fileId: string,
+  fileId: FileId,
   view: ExcalidrawView,
   addFiles: (files: FileData[], view: ExcalidrawView) => void,
 ) => {

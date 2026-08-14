@@ -27,6 +27,7 @@ import {
   ExcalidrawImageElement,
   ExcalidrawTextElement,
   FileId,
+  NonDeletedExcalidrawElement,
 } from "@zsviczian/excalidraw/types/element/src/types";
 import { getAllNestedExcalidrawFiles } from "./fileUtils";
 import {
@@ -686,7 +687,12 @@ export async function addBackOfTheNoteCard(
   if (activate) {
     window.setTimeout(() => {
       api.updateScene({
-        appState: { activeEmbeddable: { element: el, state: "active" } },
+        appState: {
+          activeEmbeddable: {
+            element: el as NonDeletedExcalidrawElement,
+            state: "active",
+          },
+        },
         captureUpdate: CaptureUpdateAction.NEVER,
       });
       if (found) {
@@ -929,10 +935,17 @@ export function getViewColorPalette(
     return getDefaultColorPalette();
   }
 
-  const basePalette = colorPalette[palette];
+  // AppState["colorPalette"][palette] is typed as ColorPaletteCustom (a
+  // config-shaped record) upstream, but at the AppState/runtime level the
+  // fork actually stores it as a flat list of single colors and/or grouped
+  // color tuples -- confirmed against this function's own already-typed
+  // flattenPalette() helper below (readonly (string | string[])[]).
+  const basePalette = colorPalette[palette] as unknown as
+    | string
+    | readonly (string | string[])[];
 
   if (!Array.isArray(basePalette)) {
-    return [basePalette];
+    return [basePalette as string];
   }
 
   const cmFactory =

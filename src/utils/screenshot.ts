@@ -4,6 +4,7 @@ import { getEA } from "src/core";
 import { t } from "src/lang/helpers";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import type { NormalizedZoomValue } from "@zsviczian/excalidraw/types/excalidraw/types";
+import type { Theme } from "@zsviczian/excalidraw/types/element/src/types";
 import { hideElement, setStyle, showElement } from "./styleUtils";
 
 declare const mainDocument: Document;
@@ -122,7 +123,7 @@ export async function captureScreenshot(
     appState: {
       viewModeEnabled: true,
       linkOpacity: 0,
-      theme: options.theme,
+      theme: options.theme as Theme,
     },
   });
 

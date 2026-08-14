@@ -179,7 +179,7 @@ export function createExcalidrawRootElement(
             maxWidthOrHeight: 3440,
             maxFileSizeBytes: 20 * 1024 * 1024,
           },
-          initState: initdata?.appState,
+          initState: initdata?.appState as AppState,
           initialData: initdata,
           detectScroll: true,
           onPointerUpdate: (p) => view.onPointerUpdate(p),
