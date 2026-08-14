@@ -1615,17 +1615,56 @@ with **zero `eslint-disable` suppressions anywhere in this file**;
 4,716,872 bytes (+19 bytes from the prior checkpoint, from the fork's own
 rebuild — this repo's change is compile-time only). Confirmed via
 `git stash`/pop full-repo ESLint diff: 229 → 172 (57 fewer), zero
-regressions, the entire delta contained to this one file. Not yet
-committed — sitting as an uncommitted change on `master`, pending the
-user's direction on branching.
+regressions, the entire delta contained to this one file. Committed
+(`efb00d1d`) on branch `excalidraw-automate-cleanup`, pushed; PR not yet
+opened (`gh` unavailable in this environment — no token/CLI to author it
+directly, link and prepared title/body handed to the user instead).
 
-**If resumed:** `excalidrawViewUtils.ts` (20) is the next reasonably-sized
-untriaged file, followed by re-checking `AIUtils.ts` (46, previously
-declined as external-boundary — worth confirming that conclusion still
-holds) and a final full-repo sweep once the remaining clusters are gone.
-Realistic floor is not 0 — `AIUtils.ts`'s provider-JSON boundary and
-Obsidian's own `FrontMatterCache: {[key: string]: any}` are both genuine,
-unavoidable external boundaries per this file's own established precedent.
+**Done (2026-08-14, session 5): `excalidrawViewUtils.ts` fully triaged,
+20 → 0.** On branch `excalidraw-automate-cleanup` (continued rather than
+starting a new branch). Two clusters:
+
+1. **The exact `RegExpMatchIteratorResult`-shaped bug again (16 of 20).**
+   `isTextImageTransclusion()`'s `const match = text.trim().matchAll(...).next();`
+   — a bare `let`/`const` with no annotation, assigned via `.next()` on a
+   `matchAll()` iterator, collapsing to implicit `any` and cascading through
+   16 downstream accesses. Same exact shape as the very first fix in this
+   whole `no-unsafe-*` effort (`ExcalidrawData.ts`, session predating this
+   page's start) — annotated `IteratorResult<RegExpMatchArray, undefined>`.
+   The plan's own "if resumed" note several sections up predicted exactly
+   this: "look for more `ExcalidrawData.ts`-shaped cases... a local variable
+   whose real type is already known... just missing on one declaration."
+2. **`Function.prototype.bind()` degrading a real signature to `any` (4).**
+   `getViewColorPalette()`'s `cmFactory = view.hookServer?.getCM?.bind(...) ??
+   view.plugin.ea.getCM.bind(...)`. Probed each side independently
+   (throwaway type-probes, added and reverted): `view.hookServer?.getCM` and
+   `view.plugin.ea.getCM` both resolve cleanly to their real declared
+   signature, `(color: TInput) => ColorMaster` — the `any` is introduced
+   exclusively by `.bind()`'s own type declaration failing to preserve it.
+   A plain variable type annotation on `cmFactory` satisfied `tsc` but
+   *not* `eslint`'s `no-unsafe-assignment` (which still flags assigning a
+   provably-`any`-typed expression regardless of the target annotation);
+   switched to an explicit `as (color: TInput) => ColorMaster` cast instead,
+   which both tools accept. Imported the real `TInput`/`ColorMaster` types
+   from `@zsviczian/colormaster` — the file's own pre-existing local
+   `ColorMasterLike` structural type and `isColorMasterLike()` guard (used
+   for everything *after* the `cmFactory(...)` call) were left untouched,
+   since only the call signature itself needed fixing.
+
+`npm run build`/`npm run lib`/`node --check dist/main.js` all pass clean;
+33-warning circular-dependency baseline and `dist/main.js` byte size both
+unchanged (4,716,872 bytes — compile-time only). Confirmed via `git
+stash`/pop full-repo ESLint diff: 172 → 152 (20 fewer), zero regressions,
+entire delta contained to this one file.
+
+**If resumed:** `AIUtils.ts` (46, previously declined as external-boundary)
+is the natural next target — worth confirming that conclusion still holds
+given how many things in this effort turned out to have a real fix hiding
+behind what first looked like a boundary, rather than assuming. After that,
+a final full-repo sweep once the remaining clusters are gone. Realistic
+floor is still not 0 — `AIUtils.ts`'s provider-JSON boundary and Obsidian's
+own `FrontMatterCache: {[key: string]: any}` remain genuine, unavoidable
+external boundaries by their own nature, not by insufficient effort.
 
 ## Related, separate effort: `ExcalidrawData.ts` structural extraction
 
