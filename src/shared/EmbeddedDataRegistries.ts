@@ -64,7 +64,7 @@ export class EmbeddedDataRegistries {
   }
 
   public getFiles(): EmbeddedFile[] {
-    return Object.values(this.host.files);
+    return Array.from(this.host.files.values());
   }
 
   public getFile(fileId: FileId): EmbeddedFile {

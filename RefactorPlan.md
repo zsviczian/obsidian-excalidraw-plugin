@@ -1157,6 +1157,14 @@ backlog is 470 `@typescript-eslint/no-unsafe-*` findings (was 514 before the
 fix below), concentrated in `ExcalidrawView.ts` (145), `ExcalidrawData.ts`
 (64, was 108), `ExcalidrawAutomate.ts` (77), and `AIUtils.ts` (42).
 
+**Risk policy for this effort:** the general rule for *all* `any`-replacement
+work in this repo — not restated here, read it there — is `AGENTS.md`'s
+"CRITICAL: Behavioral Change Detection When Replacing `any`" section. It
+covers falsy/truthy checks, existence checks, and optional-chaining
+fallbacks changing meaning once a real type replaces `any`, with a mandatory
+pre-change verification checklist. Every fix logged below was screened
+against that checklist before being applied.
+
 **Done:** fixed `ExcalidrawData.ts`'s cluster at its root cause. Traced it to
 8 `let parts;` / `let res;` declarations with no initializer and no type
 annotation (`getDecompressedScene`, `getJSON`, the text-element/element-link
@@ -1202,17 +1210,103 @@ same-shape follow-up to the fix above:
   a mechanical fix.
 - Conclusion: doesn't meet the same low-risk bar. Left entirely untouched.
 
+**Done (2026-08-14): fixed the `ExcalidrawDataScene.elements`/`appState`
+intersection-collapse root cause.** Triaged the remaining 64 findings across
+`ExcalidrawData.ts` (63) and the newly-extracted `EmbeddedDataRegistries.ts`
+(1) into three buckets before touching anything:
+
+1. **A real bug, not a typing artifact.** `EmbeddedDataRegistries.getFiles()`
+   did `Object.values(this.host.files)` where `files` is a `Map`.
+   `Object.values()` on a `Map` instance always returns `[]` (verified with
+   a plain Node check — this is standard JS, not a TS quirk: a `Map`'s data
+   lives in internal slots, not enumerable own properties). The only real
+   caller, `ViewSceneFileManager.ts`'s stale-image retry loop ("in case one
+   or more files have not loaded retry later"), has therefore likely never
+   actually retried anything since it was written. Fixed with
+   `Array.from(this.host.files.values())` — a genuine, intentional runtime
+   behavior change (the point of the fix), not a type-only edit. Searched
+   every `Map`-typed field in `src/` (`files`/`filesMaster`/`equations`/
+   `equationsMaster`/`markdownImages`/`markdownImagesMaster`/`mermaids`/
+   `mermaidsMaster`/`elementLinks`/`buttons`/`colorsCache`/`packageMap`/
+   `pageDimensionsByPage`/`pdfDocsMap`) against every `Object.keys/values/
+   entries` call site in the codebase — this was the only instance of the
+   pattern; every other `files`-named argument passed to `Object.values`
+   elsewhere is genuinely `BinaryFiles` (Excalidraw's own `Record` type),
+   confirmed per call site, not a `Map`.
+2. **One dominant root cause behind most of the rest — type-definition-only,
+   no runtime behavior change.** `ExcalidrawDataScene` was declared as
+   `SceneDataWithFiles & { elements: Mutable<ExcalidrawElement>[]; appState:
+   ...; ... }`. `SceneDataWithFiles` (via the upstream `SceneData` type)
+   *already* declares `elements` and `appState`. TypeScript doesn't let the
+   second declaration override the first inside an intersection — it
+   intersects both property types. Verified empirically with a throwaway
+   `@ts-expect-error`-shaped probe (added and reverted): the real type of
+   `this.scene.elements` was `readonly ExcalidrawElement[] & Mutable<ExcalidrawElement>[]`.
+   Calling `.filter()`/similar directly on that (no `?.`, no trailing `as`)
+   made TypeScript's overload resolution collapse the call to `any`,
+   cascading into every downstream property access. Fixed by wrapping the
+   base type in `Omit<SceneDataWithFiles, "elements" | "appState">` so the
+   local, stricter declarations actually replace instead of intersect.
+   Sampled `ExcalidrawView.ts`/`ExcalidrawAutomate.ts` beforehand and found
+   only one non-`.filter()` touch point (`excalidrawData.scene.elements.length`),
+   so the blast radius looked contained to `ExcalidrawData.ts` itself before
+   attempting the fix — confirmed after the fact via a clean `npm run build`
+   (zero new hard type errors anywhere in the dependency graph) plus a
+   `git stash`/`pop` full-repo ESLint diff showing zero new findings in any
+   file. Two genuine (and expected) knock-on compile errors surfaced in
+   `ExcalidrawData.ts` itself — `updateTextElementsFromScene()` and
+   `generateMDBase()` both filter `scene.elements` down to elements assumed
+   (by the surrounding logic, not the type) to always be text elements, then
+   read `.rawText`/`.originalText`/`.text`, which don't exist on the general
+   `ExcalidrawElement` union. These were previously invisible because the
+   filter result was silently `any`; fixed with the same
+   `as Mutable<ExcalidrawTextElement>[]` cast idiom the file already uses in
+   `updateSceneTextElements()` and `syncFiles()` for the identical situation
+   — no behavior change, just making the existing runtime assumption
+   type-visible. Also removed one `as Mutable<ExcalidrawElement>[]` cast in
+   `loadData()` that the fix made genuinely redundant
+   (`no-unnecessary-type-assertion`).
+3. **Genuine external boundary — confirmed, left untouched.**
+   `fileCache.frontmatter[key]` accesses (`getOnLoadScript`/`setLinkPrefix`/
+   `setUrlPrefix`/`setAutoexportPreferences`/`setembeddableThemePreference`/
+   `getLinkOpacity`, ~13 findings) and `JSON.parse(data)` in
+   `loadLegacyData()` (1 finding). Obsidian's own published type is
+   `FrontMatterCache { [key: string]: any }` — arbitrary user-authored YAML;
+   same category as the `AIUtils.ts` cluster already declined above.
+
+**Outcome:** `ExcalidrawData.ts` findings dropped from 63 to 17;
+`EmbeddedDataRegistries.ts` from 1 to 0. The type-definition fix also had
+beneficial ripple effects with zero negative side effects, confirmed via a
+`git stash`/`pop` per-file ESLint diff: `excalidrawAutomateUtils.ts` dropped
+21 → 12 and `ExcalidrawView.ts` dropped 145 → 144, both previously relying
+on the same `any` leak through call sites this session didn't touch
+directly. Whole-repo count: 470 → 413 (57 fewer), matching the sum of all
+per-file deltas exactly — confirming zero new findings anywhere. `npm run
+build`, `npm run lib`, `node --check dist/main.js`, and `git diff --check`
+all passed; the 33-warning circular-dependency baseline is unchanged;
+`dist/main.js` is 4,716,860 bytes (6 bytes above the structural-extraction
+checkpoint, noise). Manual testing pending, prioritizing the two intentional
+behavior changes: the stale-image retry loop (open a drawing with an image
+still mid-sync and confirm it eventually loads without a manual reopen) and
+general text-element/link/back-of-card parsing sanity (the two
+`as Mutable<ExcalidrawTextElement>[]` sites).
+
 **If resumed:** look for more `ExcalidrawData.ts`-shaped cases elsewhere in
 the `no-unsafe-*` backlog — specifically, a local variable whose real type
 is already known and already used correctly elsewhere in the same file or
 codebase, just missing on one declaration — rather than external-boundary
 `any` (network responses, `JSON.parse` of untrusted content, etc.), which
 needs the same scrutiny `AIUtils.ts` got before touching. `ExcalidrawView.ts`
-(145 findings) and `ExcalidrawAutomate.ts` (77 findings) are the two
-remaining large clusters and haven't been individually triaged yet — either
-could contain more of the safe kind, but that needs checking file-by-file
-the same way this session did for `ExcalidrawData.ts` and `AIUtils.ts`, not
-assumed from the finding count alone.
+(144 findings) and `ExcalidrawAutomate.ts` (12 findings, down from 77 after
+today's fix) are the two remaining large-ish clusters and haven't been
+individually triaged yet — either could contain more of the safe kind, but
+that needs checking file-by-file the same way this session did for
+`ExcalidrawData.ts` and `AIUtils.ts`, not assumed from the finding count
+alone. `ExcalidrawView.ts`'s cluster is now by far the largest remaining one.
+
+**Closed the 2026-08-14 validation checkpoint:** user confirmed both
+targeted manual tests — the stale-image retry loop and general text-
+element/link/back-of-card parsing — succeeded with no issues; committed.
 
 ## Related, separate effort: `ExcalidrawData.ts` structural extraction
 

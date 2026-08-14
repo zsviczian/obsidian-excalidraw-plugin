@@ -110,7 +110,19 @@ type LegacyGridColor = NonNullable<
   MajorGridFrequency?: number;
 };
 
-type ExcalidrawDataScene = SceneDataWithFiles & {
+/**
+ * `SceneDataWithFiles` (via `SceneData`) already declares optional
+ * `elements`/`appState` fields. Intersecting it directly would make
+ * TypeScript intersect those declarations with the stricter ones below
+ * (e.g. `readonly ExcalidrawElement[] & Mutable<ExcalidrawElement>[]`)
+ * instead of replacing them, which silently collapses every `.filter()`/
+ * `.find()` call on `scene.elements` to `any`. Omitting them first makes
+ * this an actual override.
+ */
+type ExcalidrawDataScene = Omit<
+  SceneDataWithFiles,
+  "elements" | "appState"
+> & {
   type?: string;
   version?: number;
   source?: string;
@@ -613,8 +625,7 @@ export class ExcalidrawData {
       (el: ExcalidrawElement): el is NonDeletedExcalidrawElement =>
         !el.isDeleted,
     );
-    this.scene.elements =
-      nonDeletedSceneElements as Mutable<ExcalidrawElement>[];
+    this.scene.elements = nonDeletedSceneElements;
 
     //once off migration of legacy scenes
     if (
@@ -1123,7 +1134,7 @@ export class ExcalidrawData {
       //find text element in the scene
       const el = this.scene.elements?.filter(
         (el: ExcalidrawElement) => el.type === "text" && el.id === key,
-      );
+      ) as Mutable<ExcalidrawTextElement>[];
       if (el.length === 0) {
         this.textElements.delete(key); //if no longer in the scene, delete the text element
       } else {
@@ -1376,7 +1387,7 @@ export class ExcalidrawData {
       //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/566
       const element = this.scene.elements.filter(
         (el: ExcalidrawElement) => el.id === key,
-      );
+      ) as Mutable<ExcalidrawTextElement>[];
       const elementString = this.textElements.get(key).raw;
       if (
         element &&
