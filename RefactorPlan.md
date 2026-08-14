@@ -1213,3 +1213,36 @@ remaining large clusters and haven't been individually triaged yet — either
 could contain more of the safe kind, but that needs checking file-by-file
 the same way this session did for `ExcalidrawData.ts` and `AIUtils.ts`, not
 assumed from the finding count alone.
+
+## Related, separate effort: script-registered element actions + autostart permissions
+
+Started 2026-08-14. Independent of the other work on this page. Full design
+(context, API shapes, sequencing, AGENTS.md/CONTRIBUTING.md compliance
+notes, verification plan) is in the approved plan at
+`/Users/zsviczian/.claude/plans/proud-wandering-tulip.md` — this section
+tracks execution against that plan; see the plan file for the "why."
+
+Two features, shipped as 5 sequential checkpoints: (1) let scripts register
+buttons in the selected-element context menu
+(`ExcalidrawAutomate.registerElementActionProvider()`), and (2) let a
+script ask to be automatically re-run whenever a new `ExcalidrawView`
+opens, gated by a per-script user confirmation (Allow/Deny/Ask-later) that
+persists and is manageable later from Settings and a Command Palette
+action reusing the same rendering component (matching how
+`EmbeddalbeMDFileCustomDataSettingsComponent` is reused across contexts).
+
+### Progress
+
+| Step | Status | Outcome |
+| --- | --- | --- |
+| 1. Type move | Complete | Moved `SelectedElementMenuAction`/`SelectedElementMenuProvider` from `SelectedElementActionsMenu.ts` to new `src/types/elementActionTypes.ts`. Pure mechanical move, no other file referenced the old location yet, so no compatibility re-export was needed. |
+| 2. `registerElementActionProvider` | Implemented; user-tested, one fix applied | Added the public method on `ExcalidrawAutomate` (delegates to the existing `view.selectedElementActionsMenu.registerProvider()`, id defaults to `this.activeScript ?? nanoid()`, matching `createSidepanelTab`'s precedent). Added `ScriptEngine.trackElementActionProvider()`/cleanup in `unloadScript()` (`src/shared/Scripts.ts`) for the one gap the existing mechanism didn't already cover: a script's file being deleted while a view using its registered action is still open (ordinary view-close cleanup was already handled by `SelectedElementActionsMenu.destroy()`). Added the `SuggesterInfo.ts` entry and a `## New` bullet in `Messages.ts` under `2.27.0` per the ExcalidrawAutomate Change Checklist. No new locale keys needed — this API produces no plugin-authored user-visible strings (button text/icon come from the registering script). User tested registering multiple menus and clearing them independently — both worked. Found and fixed one bug: `registerProvider()` primes the menu to recompute on its *next* `update()` call (by resetting `selectedElementId`), but nothing was triggering `update()` immediately — if an eligible element was already selected when a script registered (e.g. run via command palette), the button didn't appear until the user deselected and reselected. Fixed by having `registerElementActionProvider()` immediately call `selectedElementActionsMenu.update(view.getViewElements(), appState)` right after registering, mirroring the exact call `ExcalidrawRoot.ts`'s mount effect already makes at view-open time. |
+| 3. Autostart data + prompt flow | Not started | |
+| 4. Autostart execution | Not started | |
+| 5. Autostart UI | Not started | |
+
+### Action log
+
+| Date | Action | Outcome | Validation |
+| --- | --- | --- | --- |
+| 2026-08-14 | Completed steps 1-2 | See Progress table above | `npm run build`, `tsc --noEmit`, `npm run lib` (public API surface touched) all passed; `node --check dist/main.js` passed; ESLint unchanged at 470/0 across the whole repo (same baseline before and after via `git stash` comparison); the existing 33-warning circular-dependency baseline is unchanged. Manual validation pending: register an action from a throwaway script, confirm it appears/disappears correctly across selection changes, and confirm deleting the script file while its view is open removes the button with no error on the next selection change. |

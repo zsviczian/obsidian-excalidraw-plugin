@@ -32,6 +32,13 @@ export class ScriptEngine {
   //https://stackoverflow.com/questions/60218638/how-to-force-re-render-if-map-value-changes
   public scriptIconMap: ScriptIconMap;
   eaInstances = new WeakArray<ExcalidrawAutomate>();
+  /**
+   * Selected-element action-provider unregister callbacks registered via
+   * `ExcalidrawAutomate.registerElementActionProvider()`, keyed by script
+   * name. Cleared in `unloadScript()` so a deleted script's buttons don't
+   * linger in views that are still open.
+   */
+  private elementActionProviders = new Map<string, Set<() => void>>();
 
   constructor(plugin: ExcalidrawPlugin) {
     this.plugin = plugin;
@@ -61,6 +68,7 @@ export class ScriptEngine {
     this.eaInstances.forEach((ea) => ea.destroy());
     this.eaInstances.clear();
     this.eaInstances = null;
+    this.elementActionProviders.clear();
     this.scriptIconMap = null;
     this.plugin = null;
     this.scriptPath = null;
@@ -254,6 +262,25 @@ export class ScriptEngine {
     });
   }
 
+  /**
+   * Registers a cleanup callback for a selected-element action provider a
+   * script registered via `ExcalidrawAutomate.registerElementActionProvider()`,
+   * so it can be unregistered if the script's file is deleted while a view
+   * using it is still open. Not needed for the ordinary view-close case,
+   * which `SelectedElementActionsMenu.destroy()` already handles.
+   */
+  public trackElementActionProvider(
+    scriptName: string,
+    unregister: () => void,
+  ): void {
+    let providers = this.elementActionProviders.get(scriptName);
+    if (!providers) {
+      providers = new Set();
+      this.elementActionProviders.set(scriptName, providers);
+    }
+    providers.add(unregister);
+  }
+
   unloadScript(basename: string, path: string) {
     if (!path.endsWith(".md")) {
       return;
@@ -261,6 +288,12 @@ export class ScriptEngine {
     delete this.scriptIconMap[path];
     this.scriptIconMap = { ...this.scriptIconMap };
     this.updateToolPannels();
+
+    const providers = this.elementActionProviders.get(basename);
+    if (providers) {
+      providers.forEach((unregister) => unregister());
+      this.elementActionProviders.delete(basename);
+    }
 
     const commandId = `${PLUGIN_ID}:${basename}`;
     if (!this.app.commands.commands[commandId]) {

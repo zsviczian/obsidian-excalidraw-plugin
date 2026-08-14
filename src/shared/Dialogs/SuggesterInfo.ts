@@ -997,6 +997,17 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field: "registerElementActionProvider",
+    code:
+      "registerElementActionProvider(getActions: (element: ExcalidrawElement) => readonly {id: string, title: string, icon: string, action: () => void}[]): (() => void) | null;",
+    desc:
+      "Registers custom action buttons in the selected-element context menu (the small toolbar shown above a single selected element). " +
+      "getActions is called with the selected element whenever the selection, element type, fileId, or customData changes; return an empty array to show nothing. " +
+      "Registration is cleared automatically when the view closes, and cleared for this script specifically if the script's file is deleted while the view is still open. " +
+      "Returns a cleanup function to unregister manually, or null if there is no active target view.",
+    after: '((element) => element.type === "rectangle" ? [{id: "my-action", title: "My Action", icon: "star", action: () => console.log(element.id)}] : []);',
+  },
+  {
     field: "getSidepanelLeaf",
     code: "getSidepanelLeaf(): WorkspaceLeaf | null;",
     desc: "Returns the WorkspaceLeaf hosting the Excalidraw sidepanel view, or null if the sidepanel is not present.",

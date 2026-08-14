@@ -209,6 +209,7 @@ import { ObsidianCanvasNode } from "src/view/managers/CanvasNodeFactory";
 import { AIRequest, ExcalidrawAISettings } from "src/types/AIUtilTypes";
 import { getAspectRatio } from "src/utils/YoutTubeUtils";
 import { getPDFCropRect } from "src/utils/PDFUtils";
+import type { SelectedElementMenuAction } from "src/types/elementActionTypes";
 import { CaptureUpdateActionType } from "@zsviczian/excalidraw/types/element/src";
 import { URL_REGISTRY, URLs } from "src/constants/safeUrls";
 
@@ -3838,6 +3839,60 @@ export class ExcalidrawAutomate {
     }
     this.targetView.setHookServer(this);
     return true;
+  }
+
+  /**
+   * Registers a provider of custom action buttons for the selected-element
+   * context menu (the small toolbar shown above a single selected element).
+   * `getActions` is called with the currently selected element whenever the
+   * selection, element type, fileId, or customData changes, and should
+   * return the buttons to show for that element (an empty array shows
+   * nothing). Registration is tied to the current view: it is automatically
+   * cleared when the view closes, and cleared for this script specifically
+   * if the script's file is deleted while the view is still open.
+   * @param getActions - Given the selected element, returns the action
+   * buttons to display, or an empty array to show none.
+   * @returns A cleanup function that unregisters the provider, or null if
+   * there is no active target view to register against.
+   */
+  public registerElementActionProvider(
+    getActions: (
+      element: ExcalidrawElement,
+    ) => readonly SelectedElementMenuAction[],
+  ): (() => void) | null {
+    if (!this.targetView?.selectedElementActionsMenu) {
+      errorMessage(
+        "targetView not set or not ready",
+        "registerElementActionProvider()",
+      );
+      return null;
+    }
+    const id = this.activeScript ?? nanoid();
+    const unregister =
+      this.targetView.selectedElementActionsMenu.registerProvider({
+        id,
+        getActions,
+      });
+    if (this.activeScript) {
+      this.plugin.scriptEngine.trackElementActionProvider(
+        this.activeScript,
+        unregister,
+      );
+    }
+    // registerProvider() primes the menu to recompute actions on its next
+    // update(), but nothing else calls update() until the next genuine
+    // selection/scene change. If an eligible element is already selected
+    // at registration time (e.g. a script run via command palette while
+    // something is selected), force that recompute immediately instead of
+    // waiting for the user to reselect.
+    const appState = this.targetView.excalidrawAPI?.getAppState();
+    if (appState) {
+      this.targetView.selectedElementActionsMenu.update(
+        this.targetView.getViewElements(),
+        appState,
+      );
+    }
+    return unregister;
   }
 
   /**
