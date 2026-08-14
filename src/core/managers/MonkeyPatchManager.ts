@@ -43,15 +43,15 @@ export class MonkeyPatchManager {
             T extends View,
           >(this: Workspace, type: ViewConstructor<T>): T | null {
             const result = old.call(this, type) as T | null;
+            const stackTrace = new Error().stack ?? "";
+            if (!MonkeyPatchManager.isCallerFromTemplaterPlugin(stackTrace)) {
+              return result;
+            }
             const maybeEAView = this.getMostRecentLeaf()?.view;
             if (
               !maybeEAView ||
               maybeEAView.getViewType() !== VIEW_TYPE_EXCALIDRAW
             ) {
-              return result;
-            }
-            const stackTrace = new Error().stack ?? "";
-            if (!MonkeyPatchManager.isCallerFromTemplaterPlugin(stackTrace)) {
               return result;
             }
             const leafOrNode = (
