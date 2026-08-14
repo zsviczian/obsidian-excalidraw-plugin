@@ -1214,6 +1214,94 @@ could contain more of the safe kind, but that needs checking file-by-file
 the same way this session did for `ExcalidrawData.ts` and `AIUtils.ts`, not
 assumed from the finding count alone.
 
+## Related, separate effort: `ExcalidrawData.ts` structural extraction
+
+Started 2026-08-14. Independent of the other work on this page; not blocked
+by the parked `ExcalidrawView`/`main.ts` plan and doesn't block it. Motivated
+by the same "split large files" guidance in `AGENTS.md` already applied to
+`main.ts` and `ExcalidrawView.ts`, applied here to `ExcalidrawData.ts`
+(2,845 lines). Two mechanical, same-sitting extractions, both validated by
+build before moving to the next.
+
+**1. Extracted Markdown/frontmatter parsing to `excalidrawMarkdownParsing.ts`.**
+Moved the module-level (non-class) functions and their private helpers intact:
+`changeThemeOfExcalidrawMD`, `getJSON`, `getMarkdownDrawingSection(Async)`,
+`parseMarkdownImages`, `unwrapMarkdownImageBlock`, `syncMarkdownImagesInHeader`,
+`getExcalidrawMarkdownHeader`, `getExcalidrawMarkdownHeaderSection`, plus their
+supporting regexes and private helpers (`isCompressedMD`, `getDecompressedScene`,
+`getMarkdownImageBlocks`, `serializeMarkdownImageBlock`, the `RE_*` section-
+boundary regexes). `ExcalidrawData.ts` re-imports the four of these its own
+class methods still call (`getJSON`, `getMarkdownDrawingSection(Async)`,
+`parseMarkdownImages`) and re-exports all ten previously-exported names so
+every existing external import path (`FileManager.ts`, `ExcalidrawAutomate.ts`,
+`ExcalidrawView.ts`, `MarkdownImageController.ts`, `excalidrawViewUtils.ts`,
+`excalidrawAutomateUtils.ts`) keeps working unchanged. One planning miss
+caught by the build, not by the initial call-site trace: four of the
+section-boundary regexes (`RE_EXCALIDRAWDATA_NOSECTION_OK`,
+`RE_EXCALIDRAWDATA_FALLBACK_2`, `RE_TEXTELEMENTS_NOSECTION_OK`,
+`RE_TEXTELEMENTS_FALLBACK_2`) turned out to be used a second time, directly,
+by the class's own text-element-section detection in `loadData()`, not only
+inside the moved `getExcalidrawMarkdownHeader()` — exported those four from
+the new file and imported them back rather than duplicating the regexes.
+REGEX_TAGS/REGEX_LINK/REG_LINKINDEX_HYPERLINK and the `AutoexportPreference`
+enum were deliberately left in `ExcalidrawData.ts` since the class body uses
+them extensively; they're a different concern (inline link/tag parsing, not
+header/drawing-section parsing).
+
+**2. Extracted the four embedded-data registries to `EmbeddedDataRegistries.ts`.**
+Moved the Files/Equations/Local-Markdown-images/Mermaids `Map`-based
+get/set/has/delete method families (~20 methods) intact into a new
+`EmbeddedDataRegistries` class, constructor-injected with `host: ExcalidrawData`
+(type-only import), matching the `ViewSceneFileManager`/`MarkdownImageController`
+precedent. `ExcalidrawData` keeps every method as a one-line public delegate
+(`this.embeddedDataRegistries.setFile(fileId, data)`, etc.) so no external
+caller needed to change. The four registries are structurally similar but
+**not identical** (Files has hyperlink/local-link branching Equations/Mermaids
+don't; Markdown-images has a `clearMaster` flag the others don't), so they
+were moved as four distinct method groups rather than collapsed into one
+generic registry — collapsing them would have been exactly the kind of
+behavior-risking consolidation `AGENTS.md` warns against ("marginal behavior
+differences must be shown unused"). Required widening `app`, `plugin`,
+`equations`, and `mermaids` from `private` to `public` on `ExcalidrawData`
+(`files`/`markdownImages`/`file` were already public) — a type-only visibility
+change with the same precedent as the ~30 fields widened during the Phase 7
+React-root extraction. A first pass value-imported `EmbeddedFile` from
+`EmbeddedFileLoader.ts` into the new file for its two `new EmbeddedFile(...)`
+call sites; the production build caught that this added a new circular-
+dependency edge (33 → 34 Rollup warnings, a genuinely new edge through the
+new file, not just another path through the pre-existing `ExcalidrawData.ts`
+↔ `EmbeddedFileLoader.ts` cycle already on the "starting candidates" list
+above). Fixed by constructor-injecting the `EmbeddedFile` class itself
+(`embeddedFileCtor: typeof EmbeddedFile`, passed as
+`new EmbeddedDataRegistries(this, EmbeddedFile)` from `ExcalidrawData`'s
+constructor, which already value-imports `EmbeddedFile`) and switching the
+new file's own import to `import type` — restoring the 33-warning baseline.
+This is the same constructor-injection-to-avoid-a-new-cycle-edge pattern the
+`no-unsafe-*` and Phase-6 sections above already established.
+
+**Outcome:** `ExcalidrawData.ts` decreased from 2,845 to 2,285 lines (560
+fewer, ~20%); `excalidrawMarkdownParsing.ts` is 474 documented lines and
+`EmbeddedDataRegistries.ts` is 285 documented lines. `npm run build`,
+`npm run lib`, and `node --check dist/main.js` passed; the circular-
+dependency baseline is unchanged at 33 warnings. Targeted ESLint on all three
+files plus a full `src/` run confirm **zero new findings**: the pre-existing
+64 `no-unsafe-*` findings in `ExcalidrawData.ts` split as 63 remaining +
+1 relocated into `EmbeddedDataRegistries.ts` (the `getFiles()` `Object.values()`
+`any[]` return, which already existed at the old location), and the
+`excalidrawMarkdownParsing.ts` extraction carried zero findings of its own;
+the full-repo count is unchanged at 470. `dist/main.js` is 4,716,854 bytes,
+comfortably below the 5 MiB release limit. `git diff --check` passed (no
+whitespace issues). Manual testing pending — see the plan file for whether
+to prioritize this over the `no-unsafe-*` continuation noted just above,
+since it touches the same file.
+
+### Action log
+
+| Date | Action | Outcome | Validation |
+| --- | --- | --- | --- |
+| 2026-08-14 | Extracted Markdown/frontmatter parsing and the four embedded-data registries out of `ExcalidrawData.ts` (see the two numbered items above) | `ExcalidrawData.ts` reduced from 2,845 to 2,285 lines via two new files, `excalidrawMarkdownParsing.ts` (474 lines) and `EmbeddedDataRegistries.ts` (285 lines); all existing external import paths preserved via re-exports/delegates | `npm run build`, `npm run lib`, `node --check dist/main.js` all passed; circular-dependency baseline unchanged at 33 (after fixing one transient new edge caught by the first build, via constructor-injecting `EmbeddedFile` instead of value-importing it in the new registries file); targeted ESLint on the three touched/new files and a full `src/` run both confirm zero new findings (64 pre-existing `ExcalidrawData.ts` findings now split 63+1 across the two files; full-repo count unchanged at 470); `dist/main.js` is 4,716,854 bytes; `git diff --check` passed. Manual testing pending: embedding/pasting images, equations, local Markdown images, and Mermaid diagrams across drawings (registry extraction); opening drawings with unusual header structures, theme-switching a Markdown file, and back-of-card text-element parsing (parsing extraction). |
+| 2026-08-14 | Closed the `ExcalidrawData.ts` structural-extraction validation checkpoint | Manual testing of both extractions found no issues | User confirmed testing completed with no issues; committed |
+
 ## Related, separate effort: script-registered element actions + autostart permissions
 
 Started 2026-08-14. Independent of the other work on this page. Full design
