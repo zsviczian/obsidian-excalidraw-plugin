@@ -81,7 +81,7 @@ export class ExportDialog extends Modal {
     this.theme = getExportTheme(
       this.plugin,
       this.file,
-      this.api.getAppState().theme as string,
+      this.api.getAppState().theme,
     );
     this.boundingBox = this.ea.getBoundingBox(this.ea.getViewElements());
     this.embedScene = shouldEmbedScene(this.plugin, this.file);

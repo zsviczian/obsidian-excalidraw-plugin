@@ -3,13 +3,14 @@ import {
   ExcalidrawImperativeAPI,
 } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { ObsidianResetCustomPenState } from "@zsviczian/excalidraw/types/excalidraw/obsidianTypes";
+import type { FillStyle } from "@zsviczian/excalidraw/types/element/src/types";
 import clsx from "clsx";
 import { TFile } from "obsidian";
 import * as React from "react";
 import { DEVICE } from "src/constants/constants";
 import { PenSettingsModal } from "src/shared/Dialogs/PenSettingsModal";
 import type ExcalidrawView from "src/view/ExcalidrawView";
-import { ExtendedFillStyle, PenStyle } from "src/types/penTypes";
+import { PenStyle } from "src/types/penTypes";
 import { PENS } from "src/utils/pens";
 import ExcalidrawPlugin from "../../../core/main";
 import { ICONS, penIcon, stringToSVG } from "../../../constants/actionIcons";
@@ -64,7 +65,9 @@ export function setPen(pen: PenStyle, api: ExcalidrawImperativeAPI) {
       ? { currentItemBackgroundColor: pen.backgroundColor }
       : null),
     ...(pen.strokeColor ? { currentItemStrokeColor: pen.strokeColor } : null),
-    ...(pen.fillStyle === "" ? null : { currentItemFillStyle: pen.fillStyle }),
+    ...(pen.fillStyle === ""
+      ? null
+      : { currentItemFillStyle: pen.fillStyle as FillStyle }),
     ...(pen.roughness !== null
       ? { currentItemRoughness: pen.roughness }
       : null),
@@ -73,20 +76,15 @@ export function setPen(pen: PenStyle, api: ExcalidrawImperativeAPI) {
       ? {
           resetCustomPen: {
             currentItemStrokeWidthKey:
-              (st.currentItemStrokeWidthKey as
-                | "extraThin"
-                | "thin"
-                | "medium"
-                | "bold"
-                | "extraBold") ?? null,
+              (st.currentItemStrokeWidthKey) ?? null,
             currentItemStrokeWidth: st.currentItemStrokeWidth ?? null,
             currentItemStrokeVariability:
-              (st.currentItemStrokeVariability as "constant" | "variable") ??
+              (st.currentItemStrokeVariability) ??
               null,
             currentItemBackgroundColor: st.currentItemBackgroundColor ?? null,
             currentItemStrokeColor: st.currentItemStrokeColor ?? null,
             currentItemFillStyle:
-              (st.currentItemFillStyle as ExtendedFillStyle) ?? null,
+              (st.currentItemFillStyle) ?? null,
             currentItemRoughness: st.currentItemRoughness ?? null,
           },
         }
@@ -108,15 +106,23 @@ export function resetStrokeOptions(
     ...(resetCustomPen
       ? {
           currentItemStrokeWidthKey:
-            resetCustomPen.currentItemStrokeWidthKey ?? null,
+            (resetCustomPen.currentItemStrokeWidthKey as
+              | "extraThin"
+              | "thin"
+              | "medium"
+              | "bold"
+              | "extraBold") ?? null,
           currentItemStrokeWidth: resetCustomPen.currentItemStrokeWidth ?? null,
           currentItemBackgroundColor:
             resetCustomPen.currentItemBackgroundColor ?? null,
           currentItemStrokeColor: resetCustomPen.currentItemStrokeColor ?? null,
-          currentItemFillStyle: resetCustomPen.currentItemFillStyle ?? null,
+          currentItemFillStyle:
+            (resetCustomPen.currentItemFillStyle as FillStyle) ?? null,
           currentItemRoughness: resetCustomPen.currentItemRoughness ?? null,
           currentItemStrokeVariability:
-            resetCustomPen.currentItemStrokeVariability ?? null,
+            (resetCustomPen.currentItemStrokeVariability as
+              | "constant"
+              | "variable") ?? null,
         }
       : null),
     resetCustomPen: null,
@@ -259,7 +265,7 @@ export class ObsidianMenu {
   }
 
   private actionShowHideMenu(isMobile: boolean, appState: AppState) {
-    this.toolsRef.current.setTheme(appState.theme as "dark" | "light");
+    this.toolsRef.current.setTheme(appState.theme);
     this.toolsRef.current.toggleVisibility(appState.zenModeEnabled || isMobile);
   }
 
@@ -334,18 +340,13 @@ export class ObsidianMenu {
       ) {
         const updatedActivePen = this.activePens[index] ?? { ...pen };
         updatedActivePen.strokeWidth = getFreedrawStrokeWidthByKey(
-          appState.currentItemStrokeWidthKey as
-            | "extraThin"
-            | "thin"
-            | "medium"
-            | "bold"
-            | "extraBold",
+          appState.currentItemStrokeWidthKey,
           appState.currentItemStrokeWidth,
         );
         updatedActivePen.backgroundColor = appState.currentItemBackgroundColor;
         updatedActivePen.strokeColor = appState.currentItemStrokeColor;
         updatedActivePen.fillStyle =
-          appState.currentItemFillStyle as ExtendedFillStyle;
+          appState.currentItemFillStyle;
         updatedActivePen.roughness = appState.currentItemRoughness;
         this.activePens[index] = updatedActivePen;
       }

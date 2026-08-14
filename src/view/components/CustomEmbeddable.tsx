@@ -1,4 +1,7 @@
-import { ExcalidrawEmbeddableElement } from "@zsviczian/excalidraw/types/element/src/types";
+import {
+  ExcalidrawElement,
+  ExcalidrawEmbeddableElement,
+} from "@zsviczian/excalidraw/types/element/src/types";
 import type ExcalidrawView from "src/view/ExcalidrawView";
 import { Notice, requireApiVersion } from "obsidian";
 import * as React from "react";
@@ -1261,7 +1264,7 @@ function RenderObsidianView({
         const el = api
           .getSceneElements()
           .filter(
-            (el: ExcalidrawEmbeddableElement) => el.id === element.id,
+            (el: ExcalidrawElement) => el.id === element.id,
           )[0] as ExcalidrawEmbeddableElement;
         if (!el || el.angle !== 0) {
           new Notice("Sorry, cannot edit rotated Markdown documents");
@@ -1475,7 +1478,7 @@ export const CustomEmbeddable: React.FC<{
 }> = ({ element, view, appState, linkText }) => {
   const React = view.packages.react;
   const containerRef: React.RefObject<HTMLDivElement> = React.useRef(null);
-  const theme = getTheme(view, appState.theme as string);
+  const theme = getTheme(view, appState.theme);
   const mdProps: EmbeddableMDCustomProps =
     (element.customData?.mdProps as EmbeddableMDCustomProps) || null;
   const selectedElementIds = Object.keys(appState.selectedElementIds);
@@ -1502,8 +1505,13 @@ export const CustomEmbeddable: React.FC<{
         linkText={linkText}
         view={view}
         containerRef={containerRef}
-        activeEmbeddable={appState.activeEmbeddable}
-        theme={appState.theme as string}
+        activeEmbeddable={
+          appState.activeEmbeddable as unknown as {
+            element: ExcalidrawEmbeddableElement;
+            state: string;
+          }
+        }
+        theme={appState.theme}
         canvasColor={appState.viewBackgroundColor}
         selectedElementId={
           selectedElementIds.length === 1 ? selectedElementIds[0] : null

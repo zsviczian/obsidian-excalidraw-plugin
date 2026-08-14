@@ -1381,6 +1381,187 @@ this was a pure type-annotation change with no logic touched).
 both targeted manual tests — the stale-image retry loop and general text-
 element/link/back-of-card parsing — succeeded with no issues; committed.
 
+## Related, separate effort: `@excalidraw/common` type-resolution fix
+
+Started 2026-08-14 (session 3), on branch `excalidraw-type-import-fix`.
+Directly grew out of the `excalidrawAutomateUtils.ts` triage above, whose
+"flagged, needs its own investigation" finding turned out to be the single
+largest lint win of the whole `no-unsafe-*` effort by a wide margin.
+
+**Root cause (confirmed against both this repo and upstream, no fork changes
+needed):** `@zsviczian/excalidraw`'s bundled `.d.ts` files import bare-specifier
+`@excalidraw/common`, `@excalidraw/common/utility-types`, `@excalidraw/element`,
+`@excalidraw/math`, `@excalidraw/utils`, and self-referencing `@excalidraw/excalidraw/*`
+— packages this plugin's `package.json` never lists as dependencies. Confirmed
+this is not fork-specific: the same gap exists in upstream's own published
+`@excalidraw/excalidraw@0.18.1` (`npm view @excalidraw/excalidraw dependencies`
+lists neither `@excalidraw/common` nor `@excalidraw/element`/`math`/`utils`
+either, and its own shipped `.d.ts` files contain the identical bare imports).
+It's an inherent characteristic of how the Excalidraw monorepo publishes
+per-package types, not a bug introduced by the fork. Every value that
+transitively touched one of those unresolvable imports (`Theme`,
+`BinaryFileData["id"]`, most of `AppState`, large parts of the
+`ExcalidrawElement` union) silently collapsed to `any`, which is what the
+`no-unsafe-*` backlog had actually been measuring all along.
+
+**The fix, and how it evolved (read this before touching it again):**
+
+1. First attempt: added `@excalidraw/element@0.18.0-f0063e113` (npm's
+   `latest` tag) as a `devDependency` and mapped all four `@excalidraw/*`
+   specifiers to it via `tsconfig.json` `paths`. This worked for simple
+   leaf types (`Theme`, `FileId`) but **introduced genuine false-positive
+   type errors** for complex types: the externally-installed package's own
+   `ExcalidrawElement` (e.g. `ExcalidrawArrowElement.lastCommittedPoint:
+   LocalPoint | null`) structurally disagreed with `@zsviczian/excalidraw`'s
+   own bundled `ExcalidrawElement` (no such optional field) — two
+   same-named-but-different types competing, caught via
+   `InsertPDFModal.ts`'s `selectElements()`/`zoomToFit()` calls suddenly
+   failing with a real structural mismatch that hadn't existed before.
+   **Reverted** (`npm uninstall @excalidraw/element`) once this was
+   understood — an independently-versioned external package is fundamentally
+   the wrong source of truth here, no matter which version is pinned.
+2. **Correct fix:** `node_modules/@zsviczian/excalidraw/types/` already
+   vendors its own exact-match copies of `common/`, `element/`, `math/`,
+   `utils/`, and `excalidraw/` (it has to, to be self-contained) — so
+   `tsconfig.json` `paths` redirects `@excalidraw/common|element|math|utils`
+   (bare and `/*` subpaths) straight into that same already-installed
+   package's own `types/` tree instead of an external one. Zero version-drift
+   risk by construction (literally the same files), and **no new
+   dependency at all** — `package.json` ended up completely untouched.
+   Also explains why the first attempt's `devDependency` alone (before
+   the `paths` redirect existed) did nothing: this project's
+   `"moduleResolution": "node"` (classic/legacy) never consults
+   `package.json` `exports` maps for **subpath** imports at all, only
+   bare ones via the top-level `types` field — `@excalidraw/common/utility-types`
+   could not have resolved through package installation alone regardless
+   of version. A global `"moduleResolution": "bundler"` switch (which does
+   support subpath `exports`) was tested and immediately reverted: it fixed
+   this pattern but broke hundreds of other, previously-clean type checks
+   elsewhere in the project — `paths` remapping is the correctly scoped
+   tool here, a global resolution-mode change is not.
+
+**Fallout, fixed file by file, small-to-large, each verified with a fresh
+`npm run build` before moving on:** turning the fix on project-wide surfaced
+117 real, previously-masked compile errors across 18 files (the same
+narrowing-gap shape as the two `ExcalidrawData.ts`
+`as Mutable<ExcalidrawTextElement>[]` fixes in the prior session, now at
+project scale). Fixed via the same idioms throughout — casting to the
+narrower literal/branded type at the exact site where the code already
+behaved as if it had that type (`as Theme` / `as "dark" | "light"` for
+theme strings, `as FileId` for branded IDs, `as NonDeletedExcalidrawElement`
+/ `as unknown as NonDeletedExcalidrawElement` for the `isDeleted: boolean`
+vs `isDeleted: false` narrowing gap, matching the user's explicit "readonly
+complaints are deliberate, fix as mutable" guidance generalized to this
+whole family of narrowing gaps), or widening an explicit type annotation at
+a `let`/`const` declaration when the array was later reassigned to a
+narrower produced type. Files fully cleared: `LaTeX.ts`, `dynamicStyling.ts`,
+`screenshot.ts`, `ExcalidrawData.ts`, `excalidrawAutomateUtils.ts`,
+`ExcalidrawAutomate.ts`, `ExcalidrawRoot.ts`, `InsertPDFModal.ts`,
+`ExcalidrawView.ts`, `ViewExcalidrawExtensionRenderer.ts`,
+`ViewExportManager.ts`, `ObsidianMenu.tsx`, `EmbeddableActionsMenu.tsx`,
+`CustomEmbeddable.tsx`. A final `eslint --fix` pass (scoped — confirmed
+beforehand that every "potentially fixable" finding at that point was
+`no-unnecessary-type-assertion`, i.e. removing a now-redundant cast this
+same fix made unnecessary, never a behavior-changing rule) mechanically
+cleaned up a further cascade of now-redundant `as X`/`as unknown as X`
+casts across files this session hadn't touched directly (`DropManager.ts`,
+`EmbeddedFileLoader.ts`, `ExportDialog.ts`), each confirmed zero-risk by
+definition (an assertion ESLint proved changes nothing about the expression's
+type cannot change its runtime value either). One resulting unused import
+(`ExtendedFillStyle` in `ObsidianMenu.tsx`, superseded by the real `FillStyle`
+cast) was removed by hand.
+
+**Two real bugs found and fixed along the way (not type-only — flagged and
+confirmed before fixing, per the user's explicit instruction):**
+
+- `ExcalidrawView.ts`'s `addFiles()`: `isDark = s.scene.appState.theme;`
+  assigned the literal string `"light"`/`"dark"` directly to a `boolean`
+  parameter. Proof this was live and wrong, not just a type nag: three lines
+  later the code did `isDark: !!isDark` — `!!` on any non-empty string is
+  always `true`, so every call through this fallback path (whenever the
+  caller didn't pass `isDark` explicitly) had unconditionally treated the
+  scene as dark-themed regardless of the actual theme, since the very first
+  version of this code. User caught this by inspection and supplied the
+  fix directly; applied as `isDark = s.scene.appState.theme === "dark"`,
+  matching the already-correct sibling usage at the same file's line ~4088
+  (`isDark: st.theme === "dark"`).
+- `ExcalidrawView.ts`'s `getSelectedTextElement()`: the "selected element is
+  part of a group containing a text element" branch returned
+  `{id: selectedElement[0].id, text: (selectedElement[0] as
+  ExcalidrawTextElement).text}` — casting the *originally selected* element
+  (proven only to be grouped with a text element, never proven to be text
+  itself) instead of `textElement[0]`, the group's actual text element the
+  same branch had just found two lines above via `.filter(type === "text")`
+  and then never used. Silently wrong whenever the selected element itself
+  wasn't literally text (e.g. a shape grouped with a caption): `.text` would
+  read `undefined` off a non-text element at runtime, previously invisible
+  because the cast was `any`-permissive. The sibling "bound text elements"
+  branch immediately above already does this correctly (`id`/`text` both
+  from its own found `textElement[0]`). Asked the user whether `id` should
+  also switch to `textElement[0].id` (this method is exposed via the public
+  `ExcalidrawAutomate` scripting API, so changing which `id` a script
+  receives needed explicit confirmation, not an assumption) — confirmed yes;
+  both `id` and `text` now come from `textElement[0]`, matching the sibling
+  branch exactly.
+
+**One found, initially flagged as a suspected logic bug — corrected by the
+user, then fixed as type-only after all.** `excalidrawViewUtils.ts`'s
+`getViewColorPalette()`: `AppState["colorPalette"][palette]`'s *declared*
+type is `ColorPaletteCustom = {[key: string]: ColorTuple | string}` (a
+config-shaped record), which made the function's `Array.isArray(basePalette)`
+check look like dead code guarding a shape the value could never have. Wrong
+— the user tested it directly and confirmed `getViewColorPalette()` already
+returns correct values, then pointed at the authoritative fork-side type
+(`packages/excalidraw/types.ts`, marked `//zsviczian`) to settle it. The real
+runtime shape is a flat list of single colors and/or grouped 5-color tuples,
+not a record — confirmed independently by the function's own pre-existing
+`flattenPalette()` helper a few lines below, whose parameter was *already*
+explicitly typed `readonly (string | string[])[]`. So `ColorPaletteCustom`
+describes the record-shaped *settings/config* input, but the fork
+transforms it into this flat list by the time it lands in `AppState` — a
+type-declaration imprecision in the fork's own upstream-facing type, not a
+logic bug in the plugin. Fixed as a documented bridge cast at the one read
+site (`as unknown as string | readonly (string | string[])[]`, matching the
+shape `flattenPalette()` already assumed) plus one follow-on cast the first
+one's `Array.isArray` narrowing didn't propagate through
+(`readonly (string|string[])[]`'s negative-array branch doesn't narrow
+cleanly to `string` in this TS version — cast directly instead of relying on
+control-flow narrowing). Zero logic touched; build now fully clean.
+
+**Outcome:** `npm run build`, `npm run lib`, `node --check dist/main.js` all
+pass (exit 0) with **zero remaining diagnostics** — every one of the
+originally-surfaced 117 build errors is now fixed; the 33-warning
+circular-dependency baseline is unchanged;
+`dist/main.js` is 4,716,853 bytes, effectively unchanged (this was
+exclusively a `tsconfig.json`/source type-annotation effort, nothing
+touched the runtime bundle). Confirmed via a `git stash -u`/`pop` full-repo
+ESLint diff against the pre-session-3 commit (`b7472cb8`): **411 → 229
+findings (182 fewer, 44%), with zero files regressing** — every file with a
+changed count went down, none went up. `ExcalidrawView.ts` alone dropped
+144 → 18 (87%). Several files neither this session nor the prior one
+touched directly also improved as pure beneficiaries of the project-wide
+type-resolution fix: `CropImage.ts`, `InsertImageDialog.ts`, `carveout.ts`,
+and `utils.ts`. `ExcalidrawRoot.ts`, `getElementAtPointer.ts`,
+`screenshot.ts`, and `carveout.ts` are now fully clean (0 findings).
+`ExcalidrawAutomate.ts` (still the largest remaining cluster at 57, down
+from 79) and `excalidrawViewUtils.ts` (20, down from 23) have not been
+individually re-triaged since this fix landed — worth a fresh look before
+assuming their remaining findings are all external-boundary cases, since
+this session found real bugs by just reading the surfaced errors in
+context. Manual testing pending, prioritizing the two real bug fixes above
+(dark/light theme detection when embedding freshly-pasted images/PDFs
+without an explicit theme argument; selecting a non-text element that's
+grouped with a text element, e.g. via a script calling
+`getSelectedTextElement`/its public API surface) over the purely type-level
+changes elsewhere, including `getViewColorPalette()` since its logic itself
+was already confirmed correct and unchanged.
+
+**If resumed:** `ExcalidrawAutomate.ts` (57) is the natural next file-by-file
+triage target, followed by re-checking `AIUtils.ts` (46, previously declined
+as external-boundary — worth confirming that conclusion still holds now
+that so much else has changed) and a final full-repo sweep once the large
+clusters are gone.
+
 ## Related, separate effort: `ExcalidrawData.ts` structural extraction
 
 Started 2026-08-14. Independent of the other work on this page; not blocked

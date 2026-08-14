@@ -7,6 +7,7 @@ import type {
 } from "@zsviczian/excalidraw/types/element/src/types";
 import type { UIAppState } from "@zsviczian/excalidraw/types/excalidraw/types";
 import type { TTTDDialog } from "@zsviczian/excalidraw/types/excalidraw/components/TTDDialog/types";
+import type { RequestError } from "@zsviczian/excalidraw/types/excalidraw/errors";
 import {
   excalidrawSword,
   ICONS,
@@ -100,7 +101,7 @@ export class ViewExcalidrawExtensionRenderer {
                 error: new Error(
                   this.dependencies.getJsonErrorMessage(json) ??
                     `Request failed with status ${response?.status ?? 0}`,
-                ),
+                ) as RequestError,
                 rateLimit,
                 rateLimitRemaining,
               };
@@ -111,7 +112,7 @@ export class ViewExcalidrawExtensionRenderer {
               return {
                 error: new Error(
                   "Generation failed... see console log for details",
-                ),
+                ) as RequestError,
                 rateLimit,
                 rateLimitRemaining,
               };
@@ -131,7 +132,7 @@ export class ViewExcalidrawExtensionRenderer {
               return {
                 error: new Error(
                   "Generation failed... see console log for details",
-                ),
+                ) as RequestError,
                 rateLimit,
                 rateLimitRemaining,
               };
@@ -154,10 +155,12 @@ export class ViewExcalidrawExtensionRenderer {
           } catch (error) {
             const err = error as { name?: string; message?: string };
             if (err?.name === "AbortError") {
-              return { error: new Error("Request aborted") };
+              return { error: new Error("Request aborted") as RequestError };
             }
             log(error);
-            return { error: new Error(err?.message ?? "Request failed") };
+            return {
+              error: new Error(err?.message ?? "Request failed") as RequestError,
+            };
           }
         },
       },

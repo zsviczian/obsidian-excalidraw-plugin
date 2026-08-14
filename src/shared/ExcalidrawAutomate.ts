@@ -1447,7 +1447,7 @@ export class ExcalidrawAutomate {
       elements,
       appState: {
         ...templateAppstate,
-        theme: (templateAppstate.theme ?? this.canvas.theme) as string,
+        theme: (templateAppstate.theme ?? this.canvas.theme),
         viewBackgroundColor:
           templateAppstate.viewBackgroundColor ??
           this.canvas.viewBackgroundColor,
@@ -1722,7 +1722,7 @@ export class ExcalidrawAutomate {
         ...{
           appState: {
             ...scene.appState,
-            theme: view.getViewExportTheme(theme),
+            theme: view.getViewExportTheme(theme) as "dark" | "light",
             exportEmbedScene: view.getViewExportEmbedScene(embedScene),
           },
         },

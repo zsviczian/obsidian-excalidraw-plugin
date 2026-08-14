@@ -42,6 +42,7 @@ import {
   NonDeletedExcalidrawElement,
   ExcalidrawTextElement,
   FileId,
+  Theme,
 } from "@zsviczian/excalidraw/types/element/src/types";
 import {
   BinaryFiles,
@@ -670,7 +671,7 @@ export class ExcalidrawData {
         this.plugin,
         this.file,
         "light",
-      );
+      ) as Theme;
     } else if (this.plugin.settings.matchThemeAlways) {
       this.scene.appState.theme = isObsidianThemeDark() ? "dark" : "light";
     }
