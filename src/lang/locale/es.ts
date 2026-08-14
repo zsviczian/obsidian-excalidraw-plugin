@@ -1185,6 +1185,20 @@ export default {
     "Si está habilitado, Excalidraw ejecutará el <code>excalidraw-onload-script</code> a nivel de archivo en todos los dibujos que abras a partir de ahora, hasta que desactives esta opción. " +
     "Esto crea un riesgo si descargas archivos Markdown de fuentes desconocidas: un actor malicioso puede usar <code>excalidraw-onload-script</code> " +
     "para ejecutar cualquier comando en Obsidian y potencialmente transferir datos a internet. Actívalo solo si confías en el archivo y en su origen.",
+  AUTOSTART_SCRIPT_PROMPT:
+    "quiere ejecutarse automáticamente cada vez que abras un dibujo de Excalidraw. ¿Deseas permitirlo?",
+  AUTOSTART_SCRIPT_PROMPT_MANAGE_HINT:
+    'Puedes cambiar esto más tarde desde la paleta de comandos ("Scripts de inicio automático") o en Ajustes → Compatibilidad → Scripts de inicio automático.',
+  AUTOSTART_SCRIPT_ALLOW: "Inicio automático",
+  AUTOSTART_SCRIPT_DENY: "Solo manual",
+  AUTOSTART_SCRIPT_ASK_LATER: "Preguntar cada vez",
+  AUTOSTART_SCRIPTS_HEAD: "Scripts de inicio automático",
+  AUTOSTART_SCRIPTS_DESC:
+    "Los scripts aparecen aquí una vez que solicitan permiso para ejecutarse automáticamente cada vez que se abre un nuevo dibujo de Excalidraw (ejecutar el script una vez manualmente es lo que activa la solicitud). Puedes cambiar el ajuste de un script en cualquier momento.",
+  AUTOSTART_SCRIPTS_EMPTY:
+    "Ningún script ha solicitado permiso de inicio automático todavía.",
+  AUTOSTART_SCRIPT_FAILED_WARNING:
+    "Este script falló la última vez que intentó iniciarse automáticamente.",
   ENABLE_COMMAND_LINKS_NAME: "Habilitar enlaces de comandos (cmd://)",
   ENABLE_COMMAND_LINKS_CONFIRMATION:
     "Este enlace ejecuta un comando de Obsidian mediante <code>cmd://</code>. ¿Quieres habilitar los enlaces de comandos?",
@@ -1429,6 +1443,7 @@ export default {
   PROMPT_BUTTON_NEVERMIND: "No importa",
   PROMPT_BUTTON_OK: "OK",
   PROMPT_BUTTON_CANCEL: "Cancelar",
+  PROMPT_BUTTON_CLOSE: "Cerrar",
   PROMPT_BUTTON_INSERT_LINE: "Insertar nueva línea",
   PROMPT_BUTTON_INSERT_SPACE: "Insertar espacio",
   PROMPT_BUTTON_INSERT_LINK: "Insertar enlace Markdown a un archivo",

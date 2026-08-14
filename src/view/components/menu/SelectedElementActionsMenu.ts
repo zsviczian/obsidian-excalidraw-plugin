@@ -5,20 +5,10 @@ import {
   ROOTELEMENTSIZE,
   sceneCoordsToViewportCoords,
 } from "src/constants/constants";
-
-export type SelectedElementMenuAction = {
-  id: string;
-  title: string;
-  icon: string;
-  action: () => void;
-};
-
-export type SelectedElementMenuProvider = {
-  id: string;
-  getActions: (
-    element: ExcalidrawElement,
-  ) => readonly SelectedElementMenuAction[];
-};
+import type {
+  SelectedElementMenuAction,
+  SelectedElementMenuProvider,
+} from "src/types/elementActionTypes";
 
 const getSingleSelectedElementId = (
   selectedElementIds: AppState["selectedElementIds"],
@@ -55,6 +45,11 @@ export class SelectedElementActionsMenu {
   private positionKey = "";
 
   constructor(private readonly getHost: () => HTMLElement | null | undefined) {}
+
+  /** Whether a provider with this id is already registered. */
+  public hasProvider(id: string): boolean {
+    return this.providers.some((provider) => provider.id === id);
+  }
 
   /** Registers an internal action provider and returns its cleanup callback. */
   public registerProvider(provider: SelectedElementMenuProvider): () => void {

@@ -29,6 +29,7 @@ import {
 import { getImageCache } from "src/shared/ImageCache";
 import { MultiOptionConfirmationPrompt } from "src/shared/Dialogs/Prompt";
 import { EmbeddalbeMDFileCustomDataSettingsComponent } from "src/shared/Dialogs/EmbeddableMDFileCustomDataSettingsComponent";
+import { AutostartScriptsSettingsComponent } from "src/shared/Dialogs/AutostartScriptsSettingsComponent";
 import { startupScript } from "src/constants/starutpscript";
 import { ModifierKeySettingsComponent } from "src/shared/Dialogs/ModifierKeySettings";
 import { EDITOR_FADEOUT } from "src/core/editor/EditorHandler";
@@ -3566,6 +3567,13 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           });
       });
 
+    //-------------------------------------
+    //Autostart scripts
+    //-------------------------------------
+    new AutostartScriptsSettingsComponent(
+      detailsEl.createDiv(),
+      this.plugin,
+    ).render();
   }
 
   private renderCompatibilitySection(): void {

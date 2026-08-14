@@ -66,6 +66,7 @@ import {
   FileId,
 } from "@zsviczian/excalidraw/types/element/src/types";
 import { ReleaseNotes } from "../../shared/Dialogs/ReleaseNotes";
+import { AutostartScriptsModal } from "../../shared/Dialogs/AutostartScriptsSettingsComponent";
 import { ScriptInstallPrompt } from "../../shared/Dialogs/ScriptInstallPrompt";
 import Taskbone from "../../shared/OCR/Taskbone";
 import {
@@ -2298,6 +2299,14 @@ export class CommandManager {
         }
         new ReleaseNotes(this.app, this.plugin, PLUGIN_VERSION).open();
         return true;
+      },
+    });
+
+    this.addCommand({
+      id: "view-autostart-scripts",
+      name: t("AUTOSTART_SCRIPTS_HEAD"),
+      callback: () => {
+        new AutostartScriptsModal(this.plugin).open();
       },
     });
 

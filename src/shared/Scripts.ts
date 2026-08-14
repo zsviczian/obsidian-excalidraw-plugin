@@ -32,6 +32,13 @@ export class ScriptEngine {
   //https://stackoverflow.com/questions/60218638/how-to-force-re-render-if-map-value-changes
   public scriptIconMap: ScriptIconMap;
   eaInstances = new WeakArray<ExcalidrawAutomate>();
+  /**
+   * Selected-element action-provider unregister callbacks registered via
+   * `ExcalidrawAutomate.registerElementActionProvider()`, keyed by script
+   * name. Cleared in `unloadScript()` so a deleted script's buttons don't
+   * linger in views that are still open.
+   */
+  private elementActionProviders = new Map<string, Set<() => void>>();
 
   constructor(plugin: ExcalidrawPlugin) {
     this.plugin = plugin;
@@ -61,6 +68,7 @@ export class ScriptEngine {
     this.eaInstances.forEach((ea) => ea.destroy());
     this.eaInstances.clear();
     this.eaInstances = null;
+    this.elementActionProviders.clear();
     this.scriptIconMap = null;
     this.plugin = null;
     this.scriptPath = null;
@@ -86,7 +94,9 @@ export class ScriptEngine {
     if (!file.path.startsWith(this.scriptPath)) {
       return;
     }
-    this.unloadScript(this.getScriptName(file), file.path);
+    const scriptName = this.getScriptName(file);
+    this.unloadScript(scriptName, file.path);
+    await this.purgeAutostartPermission(scriptName);
     this.handleSvgFileChange(file.path);
   }
 
@@ -108,7 +118,9 @@ export class ScriptEngine {
     const oldFileIsScript = oldPath.startsWith(this.scriptPath);
     const newFileIsScript = file.path.startsWith(this.scriptPath);
     if (oldFileIsScript) {
-      this.unloadScript(this.getScriptName(oldPath), oldPath);
+      const oldScriptName = this.getScriptName(oldPath);
+      this.unloadScript(oldScriptName, oldPath);
+      await this.purgeAutostartPermission(oldScriptName);
       this.handleSvgFileChange(oldPath);
     }
     if (newFileIsScript) {
@@ -254,6 +266,149 @@ export class ScriptEngine {
     });
   }
 
+  /**
+   * Registers a cleanup callback for a selected-element action provider a
+   * script registered via `ExcalidrawAutomate.registerElementActionProvider()`,
+   * so it can be unregistered if the script's file is deleted while a view
+   * using it is still open. Not needed for the ordinary view-close case,
+   * which `SelectedElementActionsMenu.destroy()` already handles.
+   */
+  public trackElementActionProvider(
+    scriptName: string,
+    unregister: () => void,
+  ): void {
+    let providers = this.elementActionProviders.get(scriptName);
+    if (!providers) {
+      providers = new Set();
+      this.elementActionProviders.set(scriptName, providers);
+    }
+    providers.add(unregister);
+  }
+
+  /**
+   * Removes a script's entry from `settings.autostartScripts` and
+   * `settings.autostartScriptFailures` when its file is deleted or renamed
+   * away, so a stale allow/deny permission or failure flag does not linger
+   * under a name that no longer resolves to any script file. A renamed
+   * script starts fresh (prompts again) under its new name.
+   */
+  private async purgeAutostartPermission(scriptName: string): Promise<void> {
+    const hasPermission = scriptName in this.plugin.settings.autostartScripts;
+    const hasFailureFlag =
+      scriptName in this.plugin.settings.autostartScriptFailures;
+    if (!hasPermission && !hasFailureFlag) {
+      return;
+    }
+    delete this.plugin.settings.autostartScripts[scriptName];
+    delete this.plugin.settings.autostartScriptFailures[scriptName];
+    await this.plugin.saveSettings();
+  }
+
+  /**
+   * Records whether a script's most recent autostart run failed, so it can
+   * be surfaced as a warning in the autostart settings/modal UI. Only
+   * writes to disk when the flag actually changes (not on every autostart
+   * run) to avoid a `saveSettings()` call every time an allow-listed
+   * script runs. Purely informational: never touches `autostartScripts`
+   * itself, so a failing script is never auto-removed from the allow
+   * list - the user does that manually.
+   */
+  private async recordAutostartResult(
+    scriptName: string,
+    failed: boolean,
+  ): Promise<void> {
+    const failures = this.plugin.settings.autostartScriptFailures;
+    if (Boolean(failures[scriptName]) === failed) {
+      return;
+    }
+    if (failed) {
+      failures[scriptName] = true;
+    } else {
+      delete failures[scriptName];
+    }
+    await this.plugin.saveSettings();
+  }
+
+  /**
+   * Reads and executes a single autostart-permitted script against a single
+   * view, catching and logging its own error so one bad script never
+   * affects the caller's other scripts/views. Shared by
+   * `attachAutostartScriptToOpenViews()` and `runAutostartScripts()`.
+   */
+  private async runAutostartScriptInView(
+    scriptName: string,
+    file: TFile,
+    view: ExcalidrawView,
+    where: string,
+  ): Promise<void> {
+    try {
+      const script = stripYamlFrontmatter(await this.app.vault.read(file));
+      if (script) {
+        await this.executeScript(view, script, scriptName, file);
+      }
+      await this.recordAutostartResult(scriptName, false);
+    } catch (error: unknown) {
+      errorlog({ where, scriptName, error });
+      await this.recordAutostartResult(scriptName, true);
+    }
+  }
+
+  /**
+   * Called by `ExcalidrawAutomate.registerAutostart()` right after a script
+   * is freshly granted autostart permission, so the script attaches to
+   * every other currently-open Excalidraw view immediately instead of only
+   * the next time each view is opened. Reuses the same `executeScript()`
+   * path `runAutostartScripts()` uses for newly-opened views; one script
+   * failing does not affect the others.
+   */
+  public attachAutostartScriptToOpenViews(
+    scriptName: string,
+    excludeView?: ExcalidrawView,
+  ): void {
+    const file = this.getScriptFileByName(scriptName);
+    if (!file) {
+      return;
+    }
+    const views = getExcalidrawViews(this.app, true).filter(
+      (view) => view !== excludeView,
+    );
+    views.forEach((view) => {
+      void this.runAutostartScriptInView(
+        scriptName,
+        file,
+        view,
+        "ScriptEngine.attachAutostartScriptToOpenViews",
+      );
+    });
+  }
+
+  /**
+   * Runs every script the user has allow-listed for autostart (see
+   * `ExcalidrawAutomate.registerAutostart()`) once against a newly-opened
+   * view. Called from `ExcalidrawRoot.ts`'s mount effect, after the view's
+   * `selectedElementActionsMenu` is ready. Fire-and-forget: does not block
+   * initial render. Deliberately independent of the sidepanel autostart
+   * feature (`Sidepanel.ts`, not touched) — different persisted field,
+   * different trigger, different execution owner.
+   */
+  public runAutostartScripts(view: ExcalidrawView): void {
+    const autostartScripts = this.plugin.settings.autostartScripts;
+    Object.keys(autostartScripts)
+      .filter((scriptName) => autostartScripts[scriptName] === "allow")
+      .forEach((scriptName) => {
+        const file = this.getScriptFileByName(scriptName);
+        if (!file) {
+          return;
+        }
+        void this.runAutostartScriptInView(
+          scriptName,
+          file,
+          view,
+          "ScriptEngine.runAutostartScripts",
+        );
+      });
+  }
+
   unloadScript(basename: string, path: string) {
     if (!path.endsWith(".md")) {
       return;
@@ -261,6 +416,12 @@ export class ScriptEngine {
     delete this.scriptIconMap[path];
     this.scriptIconMap = { ...this.scriptIconMap };
     this.updateToolPannels();
+
+    const providers = this.elementActionProviders.get(basename);
+    if (providers) {
+      providers.forEach((unregister) => unregister());
+      this.elementActionProviders.delete(basename);
+    }
 
     const commandId = `${PLUGIN_ID}:${basename}`;
     if (!this.app.commands.commands[commandId]) {

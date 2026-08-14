@@ -35,6 +35,15 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 - Respect box selection mode ('contain' vs 'overlap') in lasso selection [#11862](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/11862)
 - Color-picker top picks can now be customized by dragging a color from the palette onto the strip; right-click the strip to reset [#11872](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/11872)
 
+## New in Excalidraw Automate
+- Scripts can now register custom buttons in the selected-element context menu (the small toolbar shown above a selected element):
+\`\`\`ts
+registerElementActionProvider(getActions: (element: ExcalidrawElement) => readonly {id: string, title: string, icon: string, action: () => void}[]): (() => void) | null;
+\`\`\`
+- Scripts can now ask to be automatically re-run every time a new Excalidraw view is opened, with a user-confirmed Allow/Deny/Ask-me-later prompt; a fresh Allow also attaches the script to every other currently-open view immediately. Manage which scripts are allowed to autostart from the "Autostart scripts" command or the Compatibility settings section:
+\`\`\`ts
+registerAutostart(): Promise<"allow" | "deny" | "pending">;
+\`\`\`
 `,
   "2.26.4": `
 ## Fixed

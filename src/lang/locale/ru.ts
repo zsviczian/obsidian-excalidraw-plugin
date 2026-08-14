@@ -1090,6 +1090,19 @@ export default {
     "Если эта настройка включена, Excalidraw будет выполнять <code>excalidraw-onload-script</code> на уровне файла во всех рисунках, которые вы откроете далее, пока вы не отключите эту настройку. " +
     "Это создаёт риск, если вы загружаете Markdown-файлы из неизвестных источников: злоумышленник может использовать <code>excalidraw-onload-script</code> " +
     "для запуска любой команды в Obsidian и потенциальной передачи данных в интернет. Включайте это только если доверяете файлу и его источнику.",
+  AUTOSTART_SCRIPT_PROMPT:
+    "хочет запускаться автоматически каждый раз, когда вы открываете рисунок Excalidraw. Разрешить это?",
+  AUTOSTART_SCRIPT_PROMPT_MANAGE_HINT:
+    "Позже это можно изменить в командной палитре («Автозапуск скриптов») или в Настройках → Совместимость → Автозапуск скриптов.",
+  AUTOSTART_SCRIPT_ALLOW: "Автозапуск",
+  AUTOSTART_SCRIPT_DENY: "Только вручную",
+  AUTOSTART_SCRIPT_ASK_LATER: "Спрашивать каждый раз",
+  AUTOSTART_SCRIPTS_HEAD: "Автозапуск скриптов",
+  AUTOSTART_SCRIPTS_DESC:
+    "Скрипты появляются здесь после того, как они запрашивают разрешение автоматически запускаться каждый раз при открытии нового рисунка Excalidraw (запрос инициируется однократным ручным запуском скрипта). Изменить настройку скрипта можно в любое время.",
+  AUTOSTART_SCRIPTS_EMPTY: "Ни один скрипт ещё не запрашивал разрешение на автозапуск.",
+  AUTOSTART_SCRIPT_FAILED_WARNING:
+    "Этот скрипт завершился ошибкой при последнем автозапуске.",
   ENABLE_COMMAND_LINKS_NAME: "Включить ссылки-команды (cmd://)",
   ENABLE_COMMAND_LINKS_CONFIRMATION:
     "Эта ссылка запускает команду Obsidian через <code>cmd://</code>. Включить ссылки-команды?",
@@ -1266,6 +1279,7 @@ export default {
   PROMPT_BUTTON_NEVERMIND: "Неважно",
   PROMPT_BUTTON_OK: "OK",
   PROMPT_BUTTON_CANCEL: "Отменить",
+  PROMPT_BUTTON_CLOSE: "Закрыть",
   PROMPT_BUTTON_INSERT_LINE: "Вставить новую строку",
   PROMPT_BUTTON_INSERT_SPACE: "Вставить пробел",
   PROMPT_BUTTON_INSERT_LINK: "Вставить ссылку на файл в формате markdown",

@@ -86,7 +86,12 @@ import {
 } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { EmbeddedFile, EmbeddedFilesLoader } from "./EmbeddedFileLoader";
 import { tex2dataURL } from "./LaTeX";
-import { LatexSuitePlugin, NewFileActions } from "src/shared/Dialogs/Prompt";
+import {
+  LatexSuitePlugin,
+  MultiOptionConfirmationPrompt,
+  NewFileActions,
+} from "src/shared/Dialogs/Prompt";
+import { t } from "src/lang/helpers";
 import {
   ConnectionPoint,
   DeviceType,
@@ -209,6 +214,7 @@ import { ObsidianCanvasNode } from "src/view/managers/CanvasNodeFactory";
 import { AIRequest, ExcalidrawAISettings } from "src/types/AIUtilTypes";
 import { getAspectRatio } from "src/utils/YoutTubeUtils";
 import { getPDFCropRect } from "src/utils/PDFUtils";
+import type { SelectedElementMenuAction } from "src/types/elementActionTypes";
 import { CaptureUpdateActionType } from "@zsviczian/excalidraw/types/element/src";
 import { URL_REGISTRY, URLs } from "src/constants/safeUrls";
 
@@ -3838,6 +3844,135 @@ export class ExcalidrawAutomate {
     }
     this.targetView.setHookServer(this);
     return true;
+  }
+
+  /**
+   * Registers a provider of custom action buttons for the selected-element
+   * context menu (the small toolbar shown above a single selected element).
+   * `getActions` is called with the currently selected element whenever the
+   * selection, element type, fileId, or customData changes, and should
+   * return the buttons to show for that element (an empty array shows
+   * nothing). Registration is tied to the current view: it is automatically
+   * cleared when the view closes, and cleared for this script specifically
+   * if the script's file is deleted while the view is still open. Calling
+   * this a second time for the same script in the same view (e.g. running
+   * the script again while it is already registered) does not create a
+   * duplicate registration - it logs a message and returns null instead.
+   * @param getActions - Given the selected element, returns the action
+   * buttons to display, or an empty array to show none.
+   * @returns A cleanup function that unregisters the provider, or null if
+   * there is no active target view to register against, or if this script
+   * has already registered a provider in this view.
+   */
+  public registerElementActionProvider(
+    getActions: (
+      element: ExcalidrawElement,
+    ) => readonly SelectedElementMenuAction[],
+  ): (() => void) | null {
+    if (!this.targetView?.selectedElementActionsMenu) {
+      errorMessage(
+        "targetView not set or not ready",
+        "registerElementActionProvider()",
+      );
+      return null;
+    }
+    const id = this.activeScript ?? nanoid();
+    if (this.targetView.selectedElementActionsMenu.hasProvider(id)) {
+      errorMessage(
+        "This script has already registered an element action provider in this view",
+        "registerElementActionProvider()",
+      );
+      return null;
+    }
+    const unregister =
+      this.targetView.selectedElementActionsMenu.registerProvider({
+        id,
+        getActions,
+      });
+    if (this.activeScript) {
+      this.plugin.scriptEngine.trackElementActionProvider(
+        this.activeScript,
+        unregister,
+      );
+    }
+    // registerProvider() primes the menu to recompute actions on its next
+    // update(), but nothing else calls update() until the next genuine
+    // selection/scene change. If an eligible element is already selected
+    // at registration time (e.g. a script run via command palette while
+    // something is selected), force that recompute immediately instead of
+    // waiting for the user to reselect.
+    const appState = this.targetView.excalidrawAPI?.getAppState();
+    if (appState) {
+      this.targetView.selectedElementActionsMenu.update(
+        this.targetView.getViewElements(),
+        appState,
+      );
+    }
+    return unregister;
+  }
+
+  /**
+   * Requests permission for the active script to be automatically re-run
+   * every time a new Excalidraw view is opened (see
+   * `ScriptEngine.runAutostartScripts()`). The first time a given script
+   * calls this, the user is prompted to Allow, Deny, or decide later; the
+   * decision persists in plugin settings (viewable/editable via the
+   * "Autostart scripts" command and settings section) and is not asked
+   * again unless the user changes it or previously picked "Ask me later".
+   * A fresh "allow" also immediately re-runs the script in every other
+   * currently-open Excalidraw view, so it attaches everywhere right away
+   * instead of only the next time each view is opened.
+   * @returns "allow" if the script is permitted to autostart, "deny" if
+   * the user has denied it, or "pending" if there is no active script or
+   * the user has not yet made a decision.
+   */
+  public async registerAutostart(): Promise<"allow" | "deny" | "pending"> {
+    const scriptName = this.activeScript;
+    if (!scriptName) {
+      errorMessage("no active script", "registerAutostart()");
+      return "pending";
+    }
+    const autostartScripts = this.plugin.settings.autostartScripts;
+    let state = autostartScripts[scriptName];
+    if (!state) {
+      state = "unknown";
+      autostartScripts[scriptName] = state;
+      await this.plugin.saveSettings();
+    }
+    if (state === "allow" || state === "deny") {
+      return state;
+    }
+    const prompt = new MultiOptionConfirmationPrompt<
+      "allow" | "deny" | "pending" | null
+    >(
+      this.plugin,
+      `<b>${scriptName}</b> ${t("AUTOSTART_SCRIPT_PROMPT")}<br><br>` +
+        `<span style="color: var(--text-muted); font-size: var(--font-smaller);">` +
+        `${t("AUTOSTART_SCRIPT_PROMPT_MANAGE_HINT")}</span>`,
+      new Map([
+        [t("AUTOSTART_SCRIPT_ALLOW"), "allow"],
+        [t("AUTOSTART_SCRIPT_DENY"), "deny"],
+        [t("AUTOSTART_SCRIPT_ASK_LATER"), "pending"],
+      ]),
+      t("AUTOSTART_SCRIPT_ASK_LATER"),
+    );
+    const decision = await prompt.waitForClose;
+    if (decision === "allow" || decision === "deny") {
+      autostartScripts[scriptName] = decision;
+      await this.plugin.saveSettings();
+      if (decision === "allow") {
+        // A freshly granted "allow" should attach the script to every other
+        // currently-open view immediately, not only the next time each view
+        // is opened (that ongoing case is handled separately by
+        // ScriptEngine.runAutostartScripts() at view-mount time).
+        this.plugin.scriptEngine.attachAutostartScriptToOpenViews(
+          scriptName,
+          this.targetView,
+        );
+      }
+      return decision;
+    }
+    return "pending";
   }
 
   /**

@@ -182,6 +182,19 @@ export interface ExcalidrawSettings {
       [key: string]: ScriptSettingValue | string | number | boolean;
     };
   };
+  //autostart permission registry for scripts calling ExcalidrawAutomate.registerAutostart();
+  //deliberately a sibling of scriptEngineSettings, not reused, because this is
+  //plugin/user-trusted permission state a script must not be able to silently flip
+  autostartScripts: {
+    [scriptName: string]: "allow" | "deny" | "unknown";
+  };
+  //true for a script whose most recent autostart run threw an error; cleared
+  //the next time that script's autostart run succeeds. Purely informational
+  //(surfaced as a warning in settings) - never removes the script from
+  //autostartScripts on its own, the user does that manually.
+  autostartScriptFailures: {
+    [scriptName: string]: boolean;
+  };
   previousRelease: string;
   showReleaseNotes: boolean;
   excalidrawMasteryPromoCollapsed: boolean;
@@ -633,6 +646,8 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
     },
   },
   scriptEngineSettings: {},
+  autostartScripts: {},
+  autostartScriptFailures: {},
   previousRelease: "0.0.0",
   showReleaseNotes: true,
   excalidrawMasteryPromoCollapsed: false,
