@@ -286,17 +286,71 @@ export class ScriptEngine {
   }
 
   /**
-   * Removes a script's entry from `settings.autostartScripts` when its file
-   * is deleted or renamed away, so a stale allow/deny permission does not
-   * linger under a name that no longer resolves to any script file. A
-   * renamed script starts fresh (prompts again) under its new name.
+   * Removes a script's entry from `settings.autostartScripts` and
+   * `settings.autostartScriptFailures` when its file is deleted or renamed
+   * away, so a stale allow/deny permission or failure flag does not linger
+   * under a name that no longer resolves to any script file. A renamed
+   * script starts fresh (prompts again) under its new name.
    */
   private async purgeAutostartPermission(scriptName: string): Promise<void> {
-    if (!(scriptName in this.plugin.settings.autostartScripts)) {
+    const hasPermission = scriptName in this.plugin.settings.autostartScripts;
+    const hasFailureFlag =
+      scriptName in this.plugin.settings.autostartScriptFailures;
+    if (!hasPermission && !hasFailureFlag) {
       return;
     }
     delete this.plugin.settings.autostartScripts[scriptName];
+    delete this.plugin.settings.autostartScriptFailures[scriptName];
     await this.plugin.saveSettings();
+  }
+
+  /**
+   * Records whether a script's most recent autostart run failed, so it can
+   * be surfaced as a warning in the autostart settings/modal UI. Only
+   * writes to disk when the flag actually changes (not on every autostart
+   * run) to avoid a `saveSettings()` call every time an allow-listed
+   * script runs. Purely informational: never touches `autostartScripts`
+   * itself, so a failing script is never auto-removed from the allow
+   * list - the user does that manually.
+   */
+  private async recordAutostartResult(
+    scriptName: string,
+    failed: boolean,
+  ): Promise<void> {
+    const failures = this.plugin.settings.autostartScriptFailures;
+    if (Boolean(failures[scriptName]) === failed) {
+      return;
+    }
+    if (failed) {
+      failures[scriptName] = true;
+    } else {
+      delete failures[scriptName];
+    }
+    await this.plugin.saveSettings();
+  }
+
+  /**
+   * Reads and executes a single autostart-permitted script against a single
+   * view, catching and logging its own error so one bad script never
+   * affects the caller's other scripts/views. Shared by
+   * `attachAutostartScriptToOpenViews()` and `runAutostartScripts()`.
+   */
+  private async runAutostartScriptInView(
+    scriptName: string,
+    file: TFile,
+    view: ExcalidrawView,
+    where: string,
+  ): Promise<void> {
+    try {
+      const script = stripYamlFrontmatter(await this.app.vault.read(file));
+      if (script) {
+        await this.executeScript(view, script, scriptName, file);
+      }
+      await this.recordAutostartResult(scriptName, false);
+    } catch (error: unknown) {
+      errorlog({ where, scriptName, error });
+      await this.recordAutostartResult(scriptName, true);
+    }
   }
 
   /**
@@ -319,21 +373,40 @@ export class ScriptEngine {
       (view) => view !== excludeView,
     );
     views.forEach((view) => {
-      void (async () => {
-        try {
-          const script = stripYamlFrontmatter(await this.app.vault.read(file));
-          if (script) {
-            await this.executeScript(view, script, scriptName, file);
-          }
-        } catch (error: unknown) {
-          errorlog({
-            where: "ScriptEngine.attachAutostartScriptToOpenViews",
-            scriptName,
-            error,
-          });
-        }
-      })();
+      void this.runAutostartScriptInView(
+        scriptName,
+        file,
+        view,
+        "ScriptEngine.attachAutostartScriptToOpenViews",
+      );
     });
+  }
+
+  /**
+   * Runs every script the user has allow-listed for autostart (see
+   * `ExcalidrawAutomate.registerAutostart()`) once against a newly-opened
+   * view. Called from `ExcalidrawRoot.ts`'s mount effect, after the view's
+   * `selectedElementActionsMenu` is ready. Fire-and-forget: does not block
+   * initial render. Deliberately independent of the sidepanel autostart
+   * feature (`Sidepanel.ts`, not touched) — different persisted field,
+   * different trigger, different execution owner.
+   */
+  public runAutostartScripts(view: ExcalidrawView): void {
+    const autostartScripts = this.plugin.settings.autostartScripts;
+    Object.keys(autostartScripts)
+      .filter((scriptName) => autostartScripts[scriptName] === "allow")
+      .forEach((scriptName) => {
+        const file = this.getScriptFileByName(scriptName);
+        if (!file) {
+          return;
+        }
+        void this.runAutostartScriptInView(
+          scriptName,
+          file,
+          view,
+          "ScriptEngine.runAutostartScripts",
+        );
+      });
   }
 
   unloadScript(basename: string, path: string) {

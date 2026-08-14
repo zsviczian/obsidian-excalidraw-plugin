@@ -1222,9 +1222,17 @@ export default {
     "to run any command in Obsidian and potentially transfer data to the internet. Only enable this if you trust the file and its source.",
   AUTOSTART_SCRIPT_PROMPT:
     "wants to run automatically every time you open an Excalidraw drawing. Do you want to allow this?",
-  AUTOSTART_SCRIPT_ALLOW: "Allow",
-  AUTOSTART_SCRIPT_DENY: "Deny",
-  AUTOSTART_SCRIPT_ASK_LATER: "Ask me later",
+  AUTOSTART_SCRIPT_PROMPT_MANAGE_HINT:
+    'You can change this later from the Command Palette ("Autostart scripts") or in Settings → Compatibility → Autostart scripts.',
+  AUTOSTART_SCRIPT_ALLOW: "Autostart",
+  AUTOSTART_SCRIPT_DENY: "Manual start only",
+  AUTOSTART_SCRIPT_ASK_LATER: "Ask every time",
+  AUTOSTART_SCRIPTS_HEAD: "Autostart scripts",
+  AUTOSTART_SCRIPTS_DESC:
+    "Scripts appear here once they ask for permission to run automatically every time a new Excalidraw view opens (running the script once, manually, is what triggers the request). Change a script's setting at any time.",
+  AUTOSTART_SCRIPTS_EMPTY: "No scripts have requested autostart permission yet.",
+  AUTOSTART_SCRIPT_FAILED_WARNING:
+    "This script failed the last time it tried to autostart.",
   ENABLE_COMMAND_LINKS_NAME: "Enable command links (cmd://)",
   ENABLE_COMMAND_LINKS_CONFIRMATION:
     "This link triggers an Obsidian command via <code>cmd://</code>. Do you want to enable command links?",
@@ -1476,6 +1484,7 @@ export default {
   PROMPT_BUTTON_NEVERMIND: "Nevermind",
   PROMPT_BUTTON_OK: "OK",
   PROMPT_BUTTON_CANCEL: "Cancel",
+  PROMPT_BUTTON_CLOSE: "Close",
   PROMPT_BUTTON_INSERT_LINE: "Insert new line",
   PROMPT_BUTTON_INSERT_SPACE: "Insert space",
   PROMPT_BUTTON_INSERT_LINK: "Insert markdown link to file",

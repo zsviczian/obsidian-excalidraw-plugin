@@ -1136,9 +1136,16 @@ export default {
     "在 Obsidian 中运行任意命令，并且有可能将数据传输到互联网。只有在你信任该文件及其来源时才启用此功能。",
   AUTOSTART_SCRIPT_PROMPT:
     "希望在你每次打开 Excalidraw 绘图时自动运行。是否允许？",
-  AUTOSTART_SCRIPT_ALLOW: "允许",
-  AUTOSTART_SCRIPT_DENY: "拒绝",
-  AUTOSTART_SCRIPT_ASK_LATER: "稍后再问",
+  AUTOSTART_SCRIPT_PROMPT_MANAGE_HINT:
+    "你以后可以在命令面板（“自动启动脚本”）或设置 → 兼容性 → 自动启动脚本中更改此设置。",
+  AUTOSTART_SCRIPT_ALLOW: "自动启动",
+  AUTOSTART_SCRIPT_DENY: "仅手动启动",
+  AUTOSTART_SCRIPT_ASK_LATER: "每次都询问",
+  AUTOSTART_SCRIPTS_HEAD: "自动启动脚本",
+  AUTOSTART_SCRIPTS_DESC:
+    "脚本在请求权限以便每次打开新的 Excalidraw 绘图时自动运行后会出现在这里（手动运行一次脚本即可触发该请求）。你可以随时更改脚本的设置。",
+  AUTOSTART_SCRIPTS_EMPTY: "尚无脚本请求自动启动权限。",
+  AUTOSTART_SCRIPT_FAILED_WARNING: "该脚本上次自动启动时失败了。",
   ENABLE_COMMAND_LINKS_NAME: "启用命令链接（cmd://）",
   ENABLE_COMMAND_LINKS_CONFIRMATION:
     "此链接会通过 <code>cmd://</code> 触发 Obsidian 命令。是否启用命令链接？",
@@ -1378,6 +1385,7 @@ export default {
   PROMPT_BUTTON_NEVERMIND: "算了",
   PROMPT_BUTTON_OK: "OK",
   PROMPT_BUTTON_CANCEL: "取消",
+  PROMPT_BUTTON_CLOSE: "关闭",
   PROMPT_BUTTON_INSERT_LINE: "插入一行",
   PROMPT_BUTTON_INSERT_SPACE: "插入空格",
   PROMPT_BUTTON_INSERT_LINK: "插入内部链接",

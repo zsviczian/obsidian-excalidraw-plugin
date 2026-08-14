@@ -3854,11 +3854,15 @@ export class ExcalidrawAutomate {
    * return the buttons to show for that element (an empty array shows
    * nothing). Registration is tied to the current view: it is automatically
    * cleared when the view closes, and cleared for this script specifically
-   * if the script's file is deleted while the view is still open.
+   * if the script's file is deleted while the view is still open. Calling
+   * this a second time for the same script in the same view (e.g. running
+   * the script again while it is already registered) does not create a
+   * duplicate registration - it logs a message and returns null instead.
    * @param getActions - Given the selected element, returns the action
    * buttons to display, or an empty array to show none.
    * @returns A cleanup function that unregisters the provider, or null if
-   * there is no active target view to register against.
+   * there is no active target view to register against, or if this script
+   * has already registered a provider in this view.
    */
   public registerElementActionProvider(
     getActions: (
@@ -3873,6 +3877,13 @@ export class ExcalidrawAutomate {
       return null;
     }
     const id = this.activeScript ?? nanoid();
+    if (this.targetView.selectedElementActionsMenu.hasProvider(id)) {
+      errorMessage(
+        "This script has already registered an element action provider in this view",
+        "registerElementActionProvider()",
+      );
+      return null;
+    }
     const unregister =
       this.targetView.selectedElementActionsMenu.registerProvider({
         id,
@@ -3935,7 +3946,9 @@ export class ExcalidrawAutomate {
       "allow" | "deny" | "pending" | null
     >(
       this.plugin,
-      `<b>${scriptName}</b> ${t("AUTOSTART_SCRIPT_PROMPT")}`,
+      `<b>${scriptName}</b> ${t("AUTOSTART_SCRIPT_PROMPT")}<br><br>` +
+        `<span style="color: var(--text-muted); font-size: var(--font-smaller);">` +
+        `${t("AUTOSTART_SCRIPT_PROMPT_MANAGE_HINT")}</span>`,
       new Map([
         [t("AUTOSTART_SCRIPT_ALLOW"), "allow"],
         [t("AUTOSTART_SCRIPT_DENY"), "deny"],

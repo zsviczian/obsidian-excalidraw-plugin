@@ -46,6 +46,11 @@ export class SelectedElementActionsMenu {
 
   constructor(private readonly getHost: () => HTMLElement | null | undefined) {}
 
+  /** Whether a provider with this id is already registered. */
+  public hasProvider(id: string): boolean {
+    return this.providers.some((provider) => provider.id === id);
+  }
+
   /** Registers an internal action provider and returns its cleanup callback. */
   public registerProvider(provider: SelectedElementMenuProvider): () => void {
     this.providers.push(provider);
