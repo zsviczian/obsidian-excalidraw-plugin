@@ -1556,11 +1556,76 @@ grouped with a text element, e.g. via a script calling
 changes elsewhere, including `getViewColorPalette()` since its logic itself
 was already confirmed correct and unchanged.
 
-**If resumed:** `ExcalidrawAutomate.ts` (57) is the natural next file-by-file
-triage target, followed by re-checking `AIUtils.ts` (46, previously declined
-as external-boundary — worth confirming that conclusion still holds now
-that so much else has changed) and a final full-repo sweep once the large
-clusters are gone.
+**Done (2026-08-14, session 4): `ExcalidrawAutomate.ts` fully triaged, 57 → 0.**
+On `master` (the `excalidraw-type-import-fix` PR was merged as #2892 in the
+interim; `master` is now at `2.27.0-beta.2`). Same methodology, three
+clusters:
+
+1. **Safe, fixed (49 of 57).** `cloneElement()`/`cloneElements()`'s inner
+   map both do `JSON.parse(JSON.stringify(el))` to deep-clone an already-known
+   `ExcalidrawElement` — cast to `Mutable<ExcalidrawElement>` (`cloneElement`)
+   and a small local `ClonedElementDraft = Mutable<ExcalidrawElement> &
+   {containerId?; startBinding?; endBinding?}` (`cloneElements`, since the
+   remap logic generically probes text/arrow-only relationship fields across
+   whatever element variant it receives — matches the union's actual base
+   fields plus the two Excalidraw-typed cross-cutting ones, not an invented
+   shape). One follow-on: `newEl.boundElements.map((bound: {id: string; type:
+   string}) => ...)` had a same-shape-but-looser-than-necessary inline
+   annotation; swapped for the real imported `BoundElement` type. Also a
+   `new Promise((resolve) => ...)` with no generic, resolved with `string |
+   null` in different branches — TS had defaulted the whole chain to
+   `unknown`; added the explicit `Promise<string | null>`.
+2. **Initially suppressed as external-boundary (8), then genuinely fixed
+   once the actual sources became available — 0 suppressions remain.** Two
+   distinct sources, both traced to their exact origin before touching
+   anything: `addMermaid()`'s `result.files` traced to the upstream
+   `mermaidToExcalidraw()` function's own declared return type (`{
+   elements?: ExcalidrawElement[]; files?: any; error?: string } | undefined`
+   in `@zsviczian/excalidraw`'s `MermaidToExcalidrawLib.d.ts`) — `files?:
+   any` was the *library's own* declared type, not something the earlier
+   `@excalidraw/common` fix masked or could improve from this side. First
+   pass suppressed both with `eslint-disable-next-line` plus a one-line
+   justification per site, matching this repo's documented suppression
+   format. The user then fixed it at the actual source: updated
+   `mermaidToExcalidraw`'s declaration in the fork
+   (`packages/excalidraw/components/TTDDialog/MermaidToExcalidrawLib.ts`)
+   to `files?: BinaryFiles`, rebuilt, and refreshed this repo's installed
+   `node_modules` copy — both suppressions simply deleted, no cast needed,
+   the value is now genuinely typed. For `cloneElements()`'s
+   `JSON.parse(elementsOrClipboard)`, the user pointed at the authoritative
+   source instead of accepting the suppression: `actionCopy`/
+   `serializeAsClipboardJSON()` in the fork's own
+   `packages/excalidraw/clipboard.ts` show the real envelope Excalidraw's
+   own copy action produces (`{type: "excalidraw/clipboard", elements,
+   files}`, `EXPORT_DATA_TYPES.excalidrawClipboard === "excalidraw/clipboard"`
+   confirmed against `packages/common/src/constants.ts`, matching the
+   plugin's own runtime check exactly). Replaced the suppressions with a real
+   union type (`{type: string; elements: ExcalidrawElement[]} |
+   ExcalidrawElement[]`, the second arm being this method's own added
+   convenience for a bare JSON-stringified array, not an Excalidraw-produced
+   format) and one added `!Array.isArray(parsed)` guard ahead of the
+   `.type` check purely to let the union narrow before that property access
+   — logically a no-op versus the original runtime behavior, since a bare
+   array was already implicitly guaranteed to fail the `.type ===
+   "excalidraw/clipboard"` comparison (arrays have no `.type`).
+
+`npm run build`/`npm run lib`/`node --check dist/main.js` all pass clean
+with **zero `eslint-disable` suppressions anywhere in this file**;
+33-warning circular-dependency baseline unchanged; `dist/main.js` is
+4,716,872 bytes (+19 bytes from the prior checkpoint, from the fork's own
+rebuild — this repo's change is compile-time only). Confirmed via
+`git stash`/pop full-repo ESLint diff: 229 → 172 (57 fewer), zero
+regressions, the entire delta contained to this one file. Not yet
+committed — sitting as an uncommitted change on `master`, pending the
+user's direction on branching.
+
+**If resumed:** `excalidrawViewUtils.ts` (20) is the next reasonably-sized
+untriaged file, followed by re-checking `AIUtils.ts` (46, previously
+declined as external-boundary — worth confirming that conclusion still
+holds) and a final full-repo sweep once the remaining clusters are gone.
+Realistic floor is not 0 — `AIUtils.ts`'s provider-JSON boundary and
+Obsidian's own `FrontMatterCache: {[key: string]: any}` are both genuine,
+unavoidable external boundaries per this file's own established precedent.
 
 ## Related, separate effort: `ExcalidrawData.ts` structural extraction
 
