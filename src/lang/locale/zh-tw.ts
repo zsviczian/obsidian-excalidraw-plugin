@@ -1134,6 +1134,11 @@ export default {
     "啟用後，Excalidraw 會在你之後開啟的所有繪圖中執行檔案級別的 <code>excalidraw-onload-script</code>，直到你關閉此設定。" +
     "如果你從未知來源下載 Markdown 檔案，這會帶來風險：惡意行為者可以利用 <code>excalidraw-onload-script</code> " +
     "在 Obsidian 中執行任意命令，並且有可能將資料傳輸到網際網路。只有在你信任該檔案及其來源時才啟用此功能。",
+  AUTOSTART_SCRIPT_PROMPT:
+    "希望在你每次開啟 Excalidraw 繪圖時自動執行。是否允許？",
+  AUTOSTART_SCRIPT_ALLOW: "允許",
+  AUTOSTART_SCRIPT_DENY: "拒絕",
+  AUTOSTART_SCRIPT_ASK_LATER: "稍後再問",
   ENABLE_COMMAND_LINKS_NAME: "啟用命令連結（cmd://）",
   ENABLE_COMMAND_LINKS_CONFIRMATION:
     "此連結會透過 <code>cmd://</code> 觸發 Obsidian 命令。是否啟用命令連結？",

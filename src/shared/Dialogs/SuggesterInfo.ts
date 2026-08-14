@@ -1008,6 +1008,16 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: '((element) => element.type === "rectangle" ? [{id: "my-action", title: "My Action", icon: "star", action: () => console.log(element.id)}] : []);',
   },
   {
+    field: "registerAutostart",
+    code: 'registerAutostart(): Promise<"allow" | "deny" | "pending">;',
+    desc:
+      "Requests permission for this script to be automatically re-run every time a new Excalidraw view is opened. " +
+      "The first time a given script calls this, the user is prompted to Allow, Deny, or decide later; the decision persists and is not asked again unless the user changes it (via the \"Autostart scripts\" command or settings section) or previously picked \"Ask me later\". " +
+      "A fresh Allow also immediately re-runs the script in every other currently-open Excalidraw view, so it attaches everywhere right away instead of only the next time each view is opened. " +
+      'Returns "allow", "deny", or "pending" (no active script, or the user has not yet decided). Typically called near the top of a script, guarding whatever the script wants to re-register on autostart, e.g. registerElementActionProvider().',
+    after: "();",
+  },
+  {
     field: "getSidepanelLeaf",
     code: "getSidepanelLeaf(): WorkspaceLeaf | null;",
     desc: "Returns the WorkspaceLeaf hosting the Excalidraw sidepanel view, or null if the sidepanel is not present.",

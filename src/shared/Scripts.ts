@@ -94,7 +94,9 @@ export class ScriptEngine {
     if (!file.path.startsWith(this.scriptPath)) {
       return;
     }
-    this.unloadScript(this.getScriptName(file), file.path);
+    const scriptName = this.getScriptName(file);
+    this.unloadScript(scriptName, file.path);
+    await this.purgeAutostartPermission(scriptName);
     this.handleSvgFileChange(file.path);
   }
 
@@ -116,7 +118,9 @@ export class ScriptEngine {
     const oldFileIsScript = oldPath.startsWith(this.scriptPath);
     const newFileIsScript = file.path.startsWith(this.scriptPath);
     if (oldFileIsScript) {
-      this.unloadScript(this.getScriptName(oldPath), oldPath);
+      const oldScriptName = this.getScriptName(oldPath);
+      this.unloadScript(oldScriptName, oldPath);
+      await this.purgeAutostartPermission(oldScriptName);
       this.handleSvgFileChange(oldPath);
     }
     if (newFileIsScript) {
@@ -279,6 +283,57 @@ export class ScriptEngine {
       this.elementActionProviders.set(scriptName, providers);
     }
     providers.add(unregister);
+  }
+
+  /**
+   * Removes a script's entry from `settings.autostartScripts` when its file
+   * is deleted or renamed away, so a stale allow/deny permission does not
+   * linger under a name that no longer resolves to any script file. A
+   * renamed script starts fresh (prompts again) under its new name.
+   */
+  private async purgeAutostartPermission(scriptName: string): Promise<void> {
+    if (!(scriptName in this.plugin.settings.autostartScripts)) {
+      return;
+    }
+    delete this.plugin.settings.autostartScripts[scriptName];
+    await this.plugin.saveSettings();
+  }
+
+  /**
+   * Called by `ExcalidrawAutomate.registerAutostart()` right after a script
+   * is freshly granted autostart permission, so the script attaches to
+   * every other currently-open Excalidraw view immediately instead of only
+   * the next time each view is opened. Reuses the same `executeScript()`
+   * path `runAutostartScripts()` uses for newly-opened views; one script
+   * failing does not affect the others.
+   */
+  public attachAutostartScriptToOpenViews(
+    scriptName: string,
+    excludeView?: ExcalidrawView,
+  ): void {
+    const file = this.getScriptFileByName(scriptName);
+    if (!file) {
+      return;
+    }
+    const views = getExcalidrawViews(this.app, true).filter(
+      (view) => view !== excludeView,
+    );
+    views.forEach((view) => {
+      void (async () => {
+        try {
+          const script = stripYamlFrontmatter(await this.app.vault.read(file));
+          if (script) {
+            await this.executeScript(view, script, scriptName, file);
+          }
+        } catch (error: unknown) {
+          errorlog({
+            where: "ScriptEngine.attachAutostartScriptToOpenViews",
+            scriptName,
+            error,
+          });
+        }
+      })();
+    });
   }
 
   unloadScript(basename: string, path: string) {

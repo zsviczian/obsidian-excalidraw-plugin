@@ -1220,6 +1220,11 @@ export default {
     "If enabled, Excalidraw will execute file-level <code>excalidraw-onload-script</code> code in all drawings you open from now on, until you disable this setting. " +
     "This creates a risk if you download markdown files from unknown sources: a malicious actor can use <code>excalidraw-onload-script</code> " +
     "to run any command in Obsidian and potentially transfer data to the internet. Only enable this if you trust the file and its source.",
+  AUTOSTART_SCRIPT_PROMPT:
+    "wants to run automatically every time you open an Excalidraw drawing. Do you want to allow this?",
+  AUTOSTART_SCRIPT_ALLOW: "Allow",
+  AUTOSTART_SCRIPT_DENY: "Deny",
+  AUTOSTART_SCRIPT_ASK_LATER: "Ask me later",
   ENABLE_COMMAND_LINKS_NAME: "Enable command links (cmd://)",
   ENABLE_COMMAND_LINKS_CONFIRMATION:
     "This link triggers an Obsidian command via <code>cmd://</code>. Do you want to enable command links?",

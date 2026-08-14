@@ -23,6 +23,10 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 \`\`\`ts
 registerElementActionProvider(getActions: (element: ExcalidrawElement) => readonly {id: string, title: string, icon: string, action: () => void}[]): (() => void) | null;
 \`\`\`
+- Scripts can now ask to be automatically re-run every time a new Excalidraw view is opened, with a user-confirmed Allow/Deny/Ask-me-later prompt; a fresh Allow also attaches the script to every other currently-open view immediately. Manage which scripts are allowed to autostart from the "Autostart scripts" command or the Compatibility settings section:
+\`\`\`ts
+registerAutostart(): Promise<"allow" | "deny" | "pending">;
+\`\`\`
 
 ## Maintenance
 - Refactoring the plugin. Removed unused functions, improved code structure and readability. Removed the obsolete Draw.io/Diagram plugin integration (since the other plugin no longer works and is not maintained) and retired the Create DrawIO file script from the script library.
