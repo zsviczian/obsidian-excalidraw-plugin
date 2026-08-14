@@ -1,3 +1,5 @@
+import type { ColorMaster } from "@zsviczian/colormaster";
+import type { TInput } from "@zsviczian/colormaster/types";
 import {
   MAX_IMAGE_SIZE,
   IMAGE_TYPES,
@@ -810,7 +812,10 @@ export function isTextImageTransclusion(
   callback: (link: string, file: TFile) => void,
 ): boolean {
   const REG_TRANSCLUSION = /^!\[\[([^|\]]*)?.*?]]$|^!\[[^\]]*?]\((.*?)\)$/g;
-  const match = text.trim().matchAll(REG_TRANSCLUSION).next(); //reset the iterator
+  const match: IteratorResult<RegExpMatchArray, undefined> = text
+    .trim()
+    .matchAll(REG_TRANSCLUSION)
+    .next(); //reset the iterator
   if (match?.value?.[0]) {
     const link = match.value[1] ?? match.value[2];
     const file = view.app.metadataCache.getFirstLinkpathDest(
@@ -948,9 +953,13 @@ export function getViewColorPalette(
     return [basePalette as string];
   }
 
-  const cmFactory =
-    view.hookServer?.getCM?.bind(view.hookServer) ??
-    view.plugin.ea.getCM.bind(view.plugin.ea);
+  // Function.prototype.bind()'s type declaration doesn't preserve getCM's
+  // real (color: TInput) => ColorMaster signature, collapsing it to any --
+  // annotated explicitly instead, matching the signature confirmed above.
+  const cmFactory = (view.hookServer?.getCM?.bind(view.hookServer) ??
+    view.plugin.ea.getCM.bind(view.plugin.ea)) as (
+    color: TInput,
+  ) => ColorMaster;
   type ColorMasterLike = {
     lightness?: number;
     alpha?: number;

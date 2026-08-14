@@ -1556,11 +1556,115 @@ grouped with a text element, e.g. via a script calling
 changes elsewhere, including `getViewColorPalette()` since its logic itself
 was already confirmed correct and unchanged.
 
-**If resumed:** `ExcalidrawAutomate.ts` (57) is the natural next file-by-file
-triage target, followed by re-checking `AIUtils.ts` (46, previously declined
-as external-boundary — worth confirming that conclusion still holds now
-that so much else has changed) and a final full-repo sweep once the large
-clusters are gone.
+**Done (2026-08-14, session 4): `ExcalidrawAutomate.ts` fully triaged, 57 → 0.**
+On `master` (the `excalidraw-type-import-fix` PR was merged as #2892 in the
+interim; `master` is now at `2.27.0-beta.2`). Same methodology, three
+clusters:
+
+1. **Safe, fixed (49 of 57).** `cloneElement()`/`cloneElements()`'s inner
+   map both do `JSON.parse(JSON.stringify(el))` to deep-clone an already-known
+   `ExcalidrawElement` — cast to `Mutable<ExcalidrawElement>` (`cloneElement`)
+   and a small local `ClonedElementDraft = Mutable<ExcalidrawElement> &
+   {containerId?; startBinding?; endBinding?}` (`cloneElements`, since the
+   remap logic generically probes text/arrow-only relationship fields across
+   whatever element variant it receives — matches the union's actual base
+   fields plus the two Excalidraw-typed cross-cutting ones, not an invented
+   shape). One follow-on: `newEl.boundElements.map((bound: {id: string; type:
+   string}) => ...)` had a same-shape-but-looser-than-necessary inline
+   annotation; swapped for the real imported `BoundElement` type. Also a
+   `new Promise((resolve) => ...)` with no generic, resolved with `string |
+   null` in different branches — TS had defaulted the whole chain to
+   `unknown`; added the explicit `Promise<string | null>`.
+2. **Initially suppressed as external-boundary (8), then genuinely fixed
+   once the actual sources became available — 0 suppressions remain.** Two
+   distinct sources, both traced to their exact origin before touching
+   anything: `addMermaid()`'s `result.files` traced to the upstream
+   `mermaidToExcalidraw()` function's own declared return type (`{
+   elements?: ExcalidrawElement[]; files?: any; error?: string } | undefined`
+   in `@zsviczian/excalidraw`'s `MermaidToExcalidrawLib.d.ts`) — `files?:
+   any` was the *library's own* declared type, not something the earlier
+   `@excalidraw/common` fix masked or could improve from this side. First
+   pass suppressed both with `eslint-disable-next-line` plus a one-line
+   justification per site, matching this repo's documented suppression
+   format. The user then fixed it at the actual source: updated
+   `mermaidToExcalidraw`'s declaration in the fork
+   (`packages/excalidraw/components/TTDDialog/MermaidToExcalidrawLib.ts`)
+   to `files?: BinaryFiles`, rebuilt, and refreshed this repo's installed
+   `node_modules` copy — both suppressions simply deleted, no cast needed,
+   the value is now genuinely typed. For `cloneElements()`'s
+   `JSON.parse(elementsOrClipboard)`, the user pointed at the authoritative
+   source instead of accepting the suppression: `actionCopy`/
+   `serializeAsClipboardJSON()` in the fork's own
+   `packages/excalidraw/clipboard.ts` show the real envelope Excalidraw's
+   own copy action produces (`{type: "excalidraw/clipboard", elements,
+   files}`, `EXPORT_DATA_TYPES.excalidrawClipboard === "excalidraw/clipboard"`
+   confirmed against `packages/common/src/constants.ts`, matching the
+   plugin's own runtime check exactly). Replaced the suppressions with a real
+   union type (`{type: string; elements: ExcalidrawElement[]} |
+   ExcalidrawElement[]`, the second arm being this method's own added
+   convenience for a bare JSON-stringified array, not an Excalidraw-produced
+   format) and one added `!Array.isArray(parsed)` guard ahead of the
+   `.type` check purely to let the union narrow before that property access
+   — logically a no-op versus the original runtime behavior, since a bare
+   array was already implicitly guaranteed to fail the `.type ===
+   "excalidraw/clipboard"` comparison (arrays have no `.type`).
+
+`npm run build`/`npm run lib`/`node --check dist/main.js` all pass clean
+with **zero `eslint-disable` suppressions anywhere in this file**;
+33-warning circular-dependency baseline unchanged; `dist/main.js` is
+4,716,872 bytes (+19 bytes from the prior checkpoint, from the fork's own
+rebuild — this repo's change is compile-time only). Confirmed via
+`git stash`/pop full-repo ESLint diff: 229 → 172 (57 fewer), zero
+regressions, the entire delta contained to this one file. Committed
+(`efb00d1d`) on branch `excalidraw-automate-cleanup`, pushed; PR not yet
+opened (`gh` unavailable in this environment — no token/CLI to author it
+directly, link and prepared title/body handed to the user instead).
+
+**Done (2026-08-14, session 5): `excalidrawViewUtils.ts` fully triaged,
+20 → 0.** On branch `excalidraw-automate-cleanup` (continued rather than
+starting a new branch). Two clusters:
+
+1. **The exact `RegExpMatchIteratorResult`-shaped bug again (16 of 20).**
+   `isTextImageTransclusion()`'s `const match = text.trim().matchAll(...).next();`
+   — a bare `let`/`const` with no annotation, assigned via `.next()` on a
+   `matchAll()` iterator, collapsing to implicit `any` and cascading through
+   16 downstream accesses. Same exact shape as the very first fix in this
+   whole `no-unsafe-*` effort (`ExcalidrawData.ts`, session predating this
+   page's start) — annotated `IteratorResult<RegExpMatchArray, undefined>`.
+   The plan's own "if resumed" note several sections up predicted exactly
+   this: "look for more `ExcalidrawData.ts`-shaped cases... a local variable
+   whose real type is already known... just missing on one declaration."
+2. **`Function.prototype.bind()` degrading a real signature to `any` (4).**
+   `getViewColorPalette()`'s `cmFactory = view.hookServer?.getCM?.bind(...) ??
+   view.plugin.ea.getCM.bind(...)`. Probed each side independently
+   (throwaway type-probes, added and reverted): `view.hookServer?.getCM` and
+   `view.plugin.ea.getCM` both resolve cleanly to their real declared
+   signature, `(color: TInput) => ColorMaster` — the `any` is introduced
+   exclusively by `.bind()`'s own type declaration failing to preserve it.
+   A plain variable type annotation on `cmFactory` satisfied `tsc` but
+   *not* `eslint`'s `no-unsafe-assignment` (which still flags assigning a
+   provably-`any`-typed expression regardless of the target annotation);
+   switched to an explicit `as (color: TInput) => ColorMaster` cast instead,
+   which both tools accept. Imported the real `TInput`/`ColorMaster` types
+   from `@zsviczian/colormaster` — the file's own pre-existing local
+   `ColorMasterLike` structural type and `isColorMasterLike()` guard (used
+   for everything *after* the `cmFactory(...)` call) were left untouched,
+   since only the call signature itself needed fixing.
+
+`npm run build`/`npm run lib`/`node --check dist/main.js` all pass clean;
+33-warning circular-dependency baseline and `dist/main.js` byte size both
+unchanged (4,716,872 bytes — compile-time only). Confirmed via `git
+stash`/pop full-repo ESLint diff: 172 → 152 (20 fewer), zero regressions,
+entire delta contained to this one file.
+
+**If resumed:** `AIUtils.ts` (46, previously declined as external-boundary)
+is the natural next target — worth confirming that conclusion still holds
+given how many things in this effort turned out to have a real fix hiding
+behind what first looked like a boundary, rather than assuming. After that,
+a final full-repo sweep once the remaining clusters are gone. Realistic
+floor is still not 0 — `AIUtils.ts`'s provider-JSON boundary and Obsidian's
+own `FrontMatterCache: {[key: string]: any}` remain genuine, unavoidable
+external boundaries by their own nature, not by insufficient effort.
 
 ## Related, separate effort: `ExcalidrawData.ts` structural extraction
 

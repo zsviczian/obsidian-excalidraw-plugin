@@ -17,6 +17,8 @@ import {
   ExcalidrawFrameElement,
   ExcalidrawTextContainer,
   ElementsMap,
+  FixedPointBinding,
+  BoundElement,
 } from "@zsviczian/excalidraw/types/element/src/types";
 import { ColorMap, MimeType } from "../types/embeddedFileLoaderTypes";
 import {
@@ -581,7 +583,7 @@ export class ExcalidrawAutomate {
     const blob = new Blob([data], { type });
 
     // Read the blob as Data URL
-    const base64String = await new Promise((resolve) => {
+    const base64String = await new Promise<string | null>((resolve) => {
       const reader = new FileReader();
       reader.onload = () => {
         if (typeof reader.result === "string") {
@@ -4712,7 +4714,7 @@ export class ExcalidrawAutomate {
    * @returns {ExcalidrawElement} The cloned element with a new ID.
    */
   cloneElement(element: ExcalidrawElement): ExcalidrawElement {
-    const newEl = JSON.parse(JSON.stringify(element));
+    const newEl = JSON.parse(JSON.stringify(element)) as Mutable<ExcalidrawElement>;
     newEl.id = nanoid();
     return newEl;
   }
@@ -4733,8 +4735,16 @@ export class ExcalidrawAutomate {
     // 1. Parse the input
     if (typeof elementsOrClipboard === "string") {
       try {
-        const parsed = JSON.parse(elementsOrClipboard);
+        // Matches the envelope serializeAsClipboardJSON()/actionCopy produce
+        // upstream (packages/excalidraw/clipboard.ts): {type: "excalidraw/clipboard",
+        // elements, files}. The bare-array branch below is this method's own
+        // convenience for a plain JSON-stringified element array, not an
+        // Excalidraw-produced format.
+        const parsed = JSON.parse(elementsOrClipboard) as
+          | { type: string; elements: ExcalidrawElement[] }
+          | ExcalidrawElement[];
         if (
+          !Array.isArray(parsed) &&
           parsed.type === "excalidraw/clipboard" &&
           Array.isArray(parsed.elements)
         ) {
@@ -4779,9 +4789,18 @@ export class ExcalidrawAutomate {
     });
 
     // 3. Clone and remap relationships
+    // Deep-cloned elements are probed for relationship fields (containerId,
+    // startBinding, endBinding) that only exist on some ExcalidrawElement
+    // union members -- widened here so the generic remap logic below can
+    // read/write them regardless of which variant a given element actually is.
+    type ClonedElementDraft = Mutable<ExcalidrawElement> & {
+      containerId?: string | null;
+      startBinding?: FixedPointBinding | null;
+      endBinding?: FixedPointBinding | null;
+    };
     const clonedElements: ExcalidrawElement[] = elements.map((el) => {
       // Deep clone the element
-      const newEl = JSON.parse(JSON.stringify(el));
+      const newEl = JSON.parse(JSON.stringify(el)) as ClonedElementDraft;
 
       // Update element ID
       newEl.id = idMap.get(el.id)!;
@@ -4801,7 +4820,7 @@ export class ExcalidrawAutomate {
       // Remap Bound Elements (e.g., the rectangle holding the text, or arrows attached to a shape)
       if (newEl.boundElements && Array.isArray(newEl.boundElements)) {
         newEl.boundElements = newEl.boundElements.map(
-          (bound: { id: string; type: string }) => ({
+          (bound: BoundElement) => ({
             ...bound,
             id: idMap.get(bound.id) || bound.id, // Fallback to original ID if bound element wasn't cloned
           }),
