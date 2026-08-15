@@ -111,6 +111,21 @@ declare namespace ExcalidrawLib {
     ) => string;
   }>;
 
+  type ObsidianExcalidrawHostAdapter = Readonly<{
+    protocolVersion: 1;
+    isDoubleTapEraserEnabled: () => boolean;
+    isRightClickPanEnabled: () => boolean;
+    getZoomToFitMaxLevel: () => number;
+    isPenModeCrosshairVisible: () => boolean;
+    isSingleFingerPanningEnabled: () => boolean;
+    isDoubleClickTextEditingDisabled: () => boolean;
+    getZoomStep: () => number;
+    getZoomMin: () => number;
+    getZoomMax: () => number;
+    isContextMenuDisabled: () => boolean;
+    shouldSyncElementLinkWithText: () => boolean;
+  }>;
+
   type ElementUpdate<TElement extends ExcalidrawElement> = Omit<
     Partial<TElement>,
     "id" | "updated"
@@ -286,6 +301,10 @@ declare namespace ExcalidrawLib {
   const OBSIDIAN_COMMON_HOST_PROTOCOL_VERSION: 1;
   function configureObsidianCommonHost(
     adapter: ObsidianCommonHostAdapter,
+  ): () => void;
+  const OBSIDIAN_EXCALIDRAW_HOST_PROTOCOL_VERSION: 1;
+  function configureObsidianExcalidrawHost(
+    adapter: ObsidianExcalidrawHostAdapter,
   ): () => void;
   function destroyObsidianUtils(): void;
   function registerLocalFont(fontMetrics: FontMetadata, uri: string): void;

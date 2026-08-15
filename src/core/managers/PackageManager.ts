@@ -7,6 +7,7 @@ import { errorHandler } from "../../utils/ErrorHandler";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { createObsidianCommonHostAdapter } from "./obsidianCommonHostAdapter";
+import { createObsidianExcalidrawHostAdapter } from "./obsidianExcalidrawHostAdapter";
 
 declare let REACT_PACKAGES: string;
 declare let react: typeof React;
@@ -27,6 +28,7 @@ export class PackageManager {
   private plugin: ExcalidrawPlugin;
   private fallbackPackage: Packages | null = null;
   private commonHostDisposerMap = new Map<Window, () => void>();
+  private excalidrawHostDisposerMap = new Map<Window, () => void>();
 
   constructor(plugin: ExcalidrawPlugin) {
     this.plugin = plugin;
@@ -142,12 +144,50 @@ export class PackageManager {
     );
   }
 
+  /** Registers plugin-wide settings with one evaluated Excalidraw runtime. */
+  private configureObsidianExcalidrawHost(win: Window, pkg: Packages): void {
+    this.excalidrawHostDisposerMap.get(win)?.();
+    this.excalidrawHostDisposerMap.delete(win);
+
+    const lib = pkg.excalidrawLib;
+    if (
+      !lib ||
+      typeof lib.configureObsidianExcalidrawHost !== "function" ||
+      typeof lib.OBSIDIAN_EXCALIDRAW_HOST_PROTOCOL_VERSION !== "number"
+    ) {
+      return;
+    }
+
+    const adapter = createObsidianExcalidrawHostAdapter(
+      this.plugin,
+      lib.OBSIDIAN_EXCALIDRAW_HOST_PROTOCOL_VERSION,
+    );
+    this.excalidrawHostDisposerMap.set(
+      win,
+      lib.configureObsidianExcalidrawHost(adapter),
+    );
+  }
+
+  /** Disposes every host registration owned by an evaluated window runtime. */
+  private disposeObsidianHosts(win: Window): void {
+    this.commonHostDisposerMap.get(win)?.();
+    this.commonHostDisposerMap.delete(win);
+    this.excalidrawHostDisposerMap.get(win)?.();
+    this.excalidrawHostDisposerMap.delete(win);
+  }
+
   /**
    * Store a package for a specific window
    */
   public setPackage(window: Window, pkg: Packages) {
     if (this.validatePackage(pkg)) {
-      this.configureObsidianCommonHost(window, pkg);
+      try {
+        this.configureObsidianCommonHost(window, pkg);
+        this.configureObsidianExcalidrawHost(window, pkg);
+      } catch (error: unknown) {
+        this.disposeObsidianHosts(window);
+        throw normalizeError(error);
+      }
       this.packageMap.set(window, pkg);
 
       // Update fallback if we don't have one
@@ -237,8 +277,7 @@ export class PackageManager {
 
   public deletePackage(win: Window) {
     try {
-      this.commonHostDisposerMap.get(win)?.();
-      this.commonHostDisposerMap.delete(win);
+      this.disposeObsidianHosts(win);
 
       const pkg = this.packageMap.get(win);
       if (!pkg) {
@@ -281,6 +320,7 @@ export class PackageManager {
 
       this.packageMap.clear();
       this.commonHostDisposerMap.clear();
+      this.excalidrawHostDisposerMap.clear();
       this.EXCALIDRAW_PACKAGE = "";
       this.fallbackPackage = null;
 
