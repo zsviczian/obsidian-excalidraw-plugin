@@ -118,8 +118,6 @@ export class PackageManager {
 
   /**
    * Registers plugin capabilities with one evaluated Excalidraw runtime.
-   * Older package artifacts remain usable through their legacy bridge until
-   * the coordinated package-version handoff is complete.
    */
   private configureObsidianCommonHost(win: Window, pkg: Packages): void {
     this.commonHostDisposerMap.get(win)?.();
@@ -131,7 +129,7 @@ export class PackageManager {
       typeof lib.configureObsidianCommonHost !== "function" ||
       typeof lib.OBSIDIAN_COMMON_HOST_PROTOCOL_VERSION !== "number"
     ) {
-      return;
+      throw new Error("Excalidraw package is missing the common host boundary");
     }
 
     const adapter = createObsidianCommonHostAdapter(
@@ -155,7 +153,9 @@ export class PackageManager {
       typeof lib.configureObsidianExcalidrawHost !== "function" ||
       typeof lib.OBSIDIAN_EXCALIDRAW_HOST_PROTOCOL_VERSION !== "number"
     ) {
-      return;
+      throw new Error(
+        "Excalidraw package is missing the package host boundary",
+      );
     }
 
     const adapter = createObsidianExcalidrawHostAdapter(
@@ -287,12 +287,6 @@ export class PackageManager {
       const { excalidrawLib } = pkg;
       if (win.ExcalidrawLib === excalidrawLib) {
         errorHandler.wrapWithTryCatch(() => {
-          if (
-            excalidrawLib &&
-            typeof excalidrawLib.destroyObsidianUtils === "function"
-          ) {
-            excalidrawLib.destroyObsidianUtils();
-          }
           delete win.ExcalidrawLib;
         }, "PackageManager.deletePackage - cleanup ExcalidrawLib");
       }

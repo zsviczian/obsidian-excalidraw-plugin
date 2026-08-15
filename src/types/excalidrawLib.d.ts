@@ -112,7 +112,7 @@ declare namespace ExcalidrawLib {
   }>;
 
   type ObsidianExcalidrawHostAdapter = Readonly<{
-    protocolVersion: 1;
+    protocolVersion: 2;
     isDoubleTapEraserEnabled: () => boolean;
     isRightClickPanEnabled: () => boolean;
     getZoomToFitMaxLevel: () => number;
@@ -124,6 +124,19 @@ declare namespace ExcalidrawLib {
     getZoomMax: () => number;
     isContextMenuDisabled: () => boolean;
     shouldSyncElementLinkWithText: () => boolean;
+    loadFontFromFile: (filename: string) => Promise<ArrayBuffer | undefined>;
+    getMermaid: () => Promise<MermaidToExcalidrawLibProps>;
+    runAction: (action: "anyFile" | "LaTeX" | "card") => void;
+    getLabel: (key: string) => string;
+    attachInlineLinkSuggester: (
+      inputEl: HTMLInputElement | HTMLTextAreaElement,
+      widthWrapper?: HTMLElement,
+      container?: HTMLDivElement | null,
+      suppressPlaceholder?: boolean,
+    ) => Readonly<{
+      isBlockingKeys: () => boolean;
+      close: () => void;
+    }>;
   }>;
 
   type ElementUpdate<TElement extends ExcalidrawElement> = Omit<
@@ -302,11 +315,10 @@ declare namespace ExcalidrawLib {
   function configureObsidianCommonHost(
     adapter: ObsidianCommonHostAdapter,
   ): () => void;
-  const OBSIDIAN_EXCALIDRAW_HOST_PROTOCOL_VERSION: 1;
+  const OBSIDIAN_EXCALIDRAW_HOST_PROTOCOL_VERSION: 2;
   function configureObsidianExcalidrawHost(
     adapter: ObsidianExcalidrawHostAdapter,
   ): () => void;
-  function destroyObsidianUtils(): void;
   function registerLocalFont(fontMetrics: FontMetadata, uri: string): void;
   function getFontFamilies(): string[];
   function registerFontsInCSS(): Promise<void>;

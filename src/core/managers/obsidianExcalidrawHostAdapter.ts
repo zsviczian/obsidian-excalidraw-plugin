@@ -2,13 +2,13 @@ import type ExcalidrawPlugin from "src/core/main";
 import { ExcalidrawLib } from "../../types/excalidrawLib";
 
 /**
- * Creates the plugin-wide settings adapter consumed by the evaluated
+ * Creates the plugin-wide capability adapter consumed by the evaluated
  * Excalidraw package runtime.
  *
  * @remarks
- * Every method reads current settings so changes are not captured in a stale
- * snapshot. This boundary deliberately excludes plugin services and active-view
- * state; those require separate lifecycle contracts.
+ * Settings methods read current values rather than capturing a stale snapshot.
+ * The adapter exposes only semantic operations and never the plugin instance,
+ * settings object, or active-view state.
  */
 export const createObsidianExcalidrawHostAdapter = (
   plugin: ExcalidrawPlugin,
@@ -28,4 +28,21 @@ export const createObsidianExcalidrawHostAdapter = (
   getZoomMax: () => plugin.settings.zoomMax,
   isContextMenuDisabled: () => plugin.settings.disableContextMenu,
   shouldSyncElementLinkWithText: () => plugin.settings.syncElementLinkWithText,
+  loadFontFromFile: (filename) => plugin.loadFontFromFile(filename),
+  getMermaid: () => plugin.getMermaid(),
+  runAction: (action) => plugin.runAction(action),
+  getLabel: (key) =>
+    plugin.getLabel(key as Parameters<ExcalidrawPlugin["getLabel"]>[0]),
+  attachInlineLinkSuggester: (
+    inputEl,
+    widthWrapper,
+    container,
+    suppressPlaceholder,
+  ) =>
+    plugin.attachInlineLinkSuggester(
+      inputEl,
+      widthWrapper,
+      container ?? undefined,
+      suppressPlaceholder,
+    ),
 });
