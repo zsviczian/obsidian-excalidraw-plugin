@@ -82,6 +82,35 @@ type EmbeddedLink =
   | null;
 
 declare namespace ExcalidrawLib {
+  type ObsidianCommonHostUIMode = "full" | "compact" | "tray" | "mobile";
+
+  type ObsidianCommonHostAdapter = Readonly<{
+    protocolVersion: 1;
+    getDeviceInfo: () => Readonly<{
+      isDesktop: boolean;
+      isPhone: boolean;
+      isTablet: boolean;
+      isMobile: boolean;
+      isLinux: boolean;
+      isMacOS: boolean;
+      isWindows: boolean;
+      isIOS: boolean;
+      isAndroid: boolean;
+    }> | null;
+    getDesktopUIMode: () => ObsidianCommonHostUIMode;
+    getPreferredUIMode: (
+      formFactor: "phone" | "tablet" | "desktop",
+    ) => ObsidianCommonHostUIMode;
+    getCanvasLimits: () => Readonly<{
+      areaLimit: number;
+      widthHeightLimit: number;
+    }>;
+    getHighlightColor: (
+      sceneBackgroundColor: string,
+      opacity: number,
+    ) => string;
+  }>;
+
   type ElementUpdate<TElement extends ExcalidrawElement> = Omit<
     Partial<TElement>,
     "id" | "updated"
@@ -254,6 +283,10 @@ declare namespace ExcalidrawLib {
   let DiagramToCodePlugin: typeof import("@zsviczian/excalidraw").DiagramToCodePlugin;
 
   function getDataURL(file: Blob | File): Promise<DataURL>;
+  const OBSIDIAN_COMMON_HOST_PROTOCOL_VERSION: 1;
+  function configureObsidianCommonHost(
+    adapter: ObsidianCommonHostAdapter,
+  ): () => void;
   function destroyObsidianUtils(): void;
   function registerLocalFont(fontMetrics: FontMetadata, uri: string): void;
   function getFontFamilies(): string[];

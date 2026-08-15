@@ -6,6 +6,7 @@ import type ExcalidrawPlugin from "src/core/main";
 import { errorHandler } from "../../utils/ErrorHandler";
 import React from "react";
 import ReactDOM from "react-dom/client";
+import { createObsidianCommonHostAdapter } from "./obsidianCommonHostAdapter";
 
 declare let REACT_PACKAGES: string;
 declare let react: typeof React;
@@ -15,11 +16,17 @@ declare let ReactJSXRuntime: unknown;
 declare let ReactJSXDevRuntime: unknown;
 declare const unpackExcalidraw: () => string;
 
+const normalizeError = (error: unknown): Error =>
+  error instanceof Error
+    ? error
+    : new Error(typeof error === "string" ? error : "Unknown error");
+
 export class PackageManager {
   private packageMap: Map<Window, Packages> = new Map<Window, Packages>();
   private EXCALIDRAW_PACKAGE: string;
   private plugin: ExcalidrawPlugin;
   private fallbackPackage: Packages | null = null;
+  private commonHostDisposerMap = new Map<Window, () => void>();
 
   constructor(plugin: ExcalidrawPlugin) {
     this.plugin = plugin;
@@ -69,8 +76,11 @@ export class PackageManager {
       } else {
         throw new Error("Invalid initial package");
       }
-    } catch (e) {
-      errorHandler.handleError(e, "PackageManager constructor");
+    } catch (e: unknown) {
+      errorHandler.handleError(
+        normalizeError(e),
+        "PackageManager constructor",
+      );
       new Notice(
         "Error loading the Excalidraw package. Some features may not work correctly.",
         10000,
@@ -105,10 +115,39 @@ export class PackageManager {
   }
 
   /**
+   * Registers plugin capabilities with one evaluated Excalidraw runtime.
+   * Older package artifacts remain usable through their legacy bridge until
+   * the coordinated package-version handoff is complete.
+   */
+  private configureObsidianCommonHost(win: Window, pkg: Packages): void {
+    this.commonHostDisposerMap.get(win)?.();
+    this.commonHostDisposerMap.delete(win);
+
+    const lib = pkg.excalidrawLib;
+    if (
+      !lib ||
+      typeof lib.configureObsidianCommonHost !== "function" ||
+      typeof lib.OBSIDIAN_COMMON_HOST_PROTOCOL_VERSION !== "number"
+    ) {
+      return;
+    }
+
+    const adapter = createObsidianCommonHostAdapter(
+      this.plugin,
+      lib.OBSIDIAN_COMMON_HOST_PROTOCOL_VERSION,
+    );
+    this.commonHostDisposerMap.set(
+      win,
+      lib.configureObsidianCommonHost(adapter),
+    );
+  }
+
+  /**
    * Store a package for a specific window
    */
   public setPackage(window: Window, pkg: Packages) {
     if (this.validatePackage(pkg)) {
+      this.configureObsidianCommonHost(window, pkg);
       this.packageMap.set(window, pkg);
 
       // Update fallback if we don't have one
@@ -140,7 +179,7 @@ export class PackageManager {
           return pkg;
         }
         // If package exists but is invalid, delete it so we can recreate it
-        this.packageMap.delete(win);
+        this.deletePackage(win);
       }
 
       // Create new package
@@ -174,14 +213,17 @@ export class PackageManager {
             excalidrawLib: evalResult.excalidrawLib,
           };
 
-          this.packageMap.set(win, newPackage);
+          this.setPackage(win, newPackage);
           return newPackage;
         },
         "PackageManager.getPackage",
         this.fallbackPackage,
       );
-    } catch (error) {
-      errorHandler.handleError(error, "PackageManager.getPackage");
+    } catch (error: unknown) {
+      errorHandler.handleError(
+        normalizeError(error),
+        "PackageManager.getPackage",
+      );
 
       // Return fallback package if available to prevent data loss
       if (this.fallbackPackage) {
@@ -195,6 +237,9 @@ export class PackageManager {
 
   public deletePackage(win: Window) {
     try {
+      this.commonHostDisposerMap.get(win)?.();
+      this.commonHostDisposerMap.delete(win);
+
       const pkg = this.packageMap.get(win);
       if (!pkg) {
         return;
@@ -214,8 +259,11 @@ export class PackageManager {
       }
 
       this.packageMap.delete(win);
-    } catch (error) {
-      errorHandler.handleError(error, "PackageManager.deletePackage");
+    } catch (error: unknown) {
+      errorHandler.handleError(
+        normalizeError(error),
+        "PackageManager.deletePackage",
+      );
     }
   }
 
@@ -232,14 +280,18 @@ export class PackageManager {
       });
 
       this.packageMap.clear();
+      this.commonHostDisposerMap.clear();
       this.EXCALIDRAW_PACKAGE = "";
       this.fallbackPackage = null;
 
       react = null;
       reactDOM = null;
       excalidrawLib = null;
-    } catch (error) {
-      errorHandler.handleError(error, "PackageManager.destroy");
+    } catch (error: unknown) {
+      errorHandler.handleError(
+        normalizeError(error),
+        "PackageManager.destroy",
+      );
     }
   }
 }
