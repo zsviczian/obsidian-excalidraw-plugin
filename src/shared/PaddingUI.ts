@@ -1,4 +1,5 @@
 import type ExcalidrawPlugin from "../core/main";
+import type { FILENAMEPARTS } from "../types/utilTypes";
 
 declare const mainDocument: Document;
 
@@ -21,7 +22,7 @@ const nthIndexOf = (str: string, search: string, n: number): number => {
 export const wrapWithPaddingPopup = (
   imgDiv: HTMLDivElement,
   src: string,
-  fnameParts: { hasArearef: boolean; padding?: number; blockref: string; linkpartReference: string },
+  fnameParts: FILENAMEPARTS,
 ): HTMLDivElement => {
   const currentPadding =
     fnameParts.padding ?? plugin.settings.exportPaddingSVG;
@@ -65,7 +66,8 @@ export const wrapWithPaddingPopup = (
 
     let value = currentPadding;
     let debounceTimer: number;
-    let target = fnameParts.linkpartReference;
+    // Match the embed prefix so a plain wikilink to the same block ref isn't targeted.
+    let target = `![[${fnameParts.filepath}${fnameParts.linkpartReference}`;
 
     // Order this embed among all embeds with the same area=ID in DOM.
     // DOM order matches source markdown order (elements render sequentially).
@@ -83,7 +85,9 @@ export const wrapWithPaddingPopup = (
       if (!file || !("extension" in file)) return;
       const defaultPad = plugin.settings.exportPaddingSVG;
       const newSuffix = value === defaultPad ? "" : ",padding=" + value;
-      const base = fnameParts.linkpartReference.replace(/,padding=\d+$/, "");
+      // `![[` makes the base embed-specific, so a plain `[[...]]` link with the
+      // same area ref (e.g. in a task item) is never matched as occurrence zero.
+      const base = `![[${fnameParts.filepath}${fnameParts.linkpartReference.replace(/,padding=\d+$/, "")}`;
       const replacement = base + newSuffix;
       await plugin.app.vault.process(file, (data: string) => {
         let idx: number;
@@ -98,7 +102,7 @@ export const wrapWithPaddingPopup = (
             oldLen = base.length + (padMatch ? padMatch[0].length : 0);
           }
         } else {
-          // Fallback: exact match by linkpartReference
+          // Fallback: exact match by the embed-specific target
           idx = data.indexOf(target);
           oldLen = target.length;
         }
