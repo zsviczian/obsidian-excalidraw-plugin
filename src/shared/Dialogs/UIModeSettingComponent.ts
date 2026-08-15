@@ -1,10 +1,11 @@
 import { Setting, DropdownComponent, App } from "obsidian";
+import type { StylesPanelMode } from "@zsviczian/excalidraw/types/common/src/editorInterface";
 import { t } from "src/lang/helpers";
 import type { ExcalidrawSettings } from "src/core/settingsDefaults";
 import { fragWithHTML, setLeftHandedMode, setUIMode } from "src/utils/utils";
 import { DEVICE } from "src/constants/constants";
 
-export type UIMode = "full" | "compact" | "tray" | "mobile";
+export type UIMode = StylesPanelMode;
 
 //setDesktopUIMode(this.app, this.plugin.settings);
 
