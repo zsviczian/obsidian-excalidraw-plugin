@@ -206,6 +206,31 @@ The customized component lives in the sibling `zsviczian/excalidraw` repository.
 - Never hand-edit or commit generated `dist/`, `lib/`, or `node_modules` artifacts as source fixes.
 - Treat the repositories as separate Git histories. Check branch, status, diff, build, and commit state independently in each one, and do not commit or publish unless explicitly requested.
 
+### Typed Excalidraw Host Boundary
+
+The customized Excalidraw runtime receives Obsidian capabilities through typed host adapters. Treat this as the only supported plugin-to-fork dependency-inversion boundary.
+
+- Do not expose or recover the plugin through component props, `appState`, `window`, `globalThis`, `app.plugins`, or fork-side `hostPlugin` variables.
+- Keep adapters narrow and semantic. They may expose operations such as reading a current limit or running a named action, but never the plugin instance, the complete settings object, or an active view.
+- Capabilities used by `@excalidraw/common` or lower layers belong in `ObsidianCommonHostAdapter`. Capabilities used only by the Excalidraw package belong in `ObsidianExcalidrawHostAdapter`.
+- View-specific state must remain instance-scoped. Do not put an active view into either window-runtime adapter; expose a semantic plugin-side action when the component genuinely requires such behavior.
+- `PackageManager` registers both adapters once per evaluated Excalidraw runtime and window. React components and individual `ExcalidrawView` instances must not configure or dispose them.
+- Adapter methods must read live plugin state instead of capturing settings snapshots during registration.
+- `PackageManager` owns the complete lifetime: dispose registrations before removing a package or window runtime, make cleanup idempotent, and roll back all registrations if configuring any adapter fails.
+
+A closure that references the plugin is not itself a memory leak. The risk is allowing a registry, listener, or evaluated runtime retaining that closure to outlive its owning `PackageManager` registration.
+
+The fork is the source of truth for host-adapter contracts and protocol constants. Import or derive types from its published declarations where possible. If the evaluated `window.ExcalidrawLib` surface requires an ambient declaration, derive that declaration from the fork types instead of restating property lists or unions locally.
+
+### Coordinated Internal Protocol And Release
+
+The host adapters are an internal protocol between this plugin and its exact `@zsviczian/excalidraw` dependency. They are not a compatibility surface between arbitrary historical plugin and fork versions.
+
+- A breaking adapter change must increment the relevant protocol version and update the fork implementation, fork tests, plugin adapter, and plugin ambient runtime declaration in one coordinated checkpoint.
+- Fail fast during package loading when a required boundary is absent or incompatible. Do not retain global-plugin discovery or legacy bridge fallbacks solely to support mismatched plugin and fork versions.
+- Preserve the general backwards-compatibility requirements for persisted settings, serialized scenes, scripts, commands, and public APIs; this exception applies only to the paired internal host protocol.
+- For a maintainer-coordinated release, build and verify the fork package first, publish it, update the plugin's exact dependency, run `npm install`, and rebuild and smoke-test against the published artifact before committing the plugin handoff.
+
 ### Popout Window Support
 
 - `src/core/managers/PackageManager.ts` manages window-scoped React/ReactDOM/Excalidraw packages.
@@ -328,6 +353,7 @@ Backwards compatibility is a strong requirement in this repository.
 - If a rename reaches beyond a purely internal import graph, prefer temporary aliases, re-exports, or compatibility wrappers during migration.
 - If settings shape or stored values change, update defaults, settings UI, load/save flow, and migration logic together.
 - Assume user scripts, vault content, templates, embeds, release-note references, and community documentation may depend on existing names and behavior.
+- The paired plugin-to-fork host protocol is the deliberate exception described above: coordinate and version breaking contract changes instead of preserving fallbacks for mismatched package versions.
 
 ## User-Facing Change Workflow
 
@@ -439,6 +465,7 @@ npm run doc
 
 Validation guidance:
 
+- After every code modification, run `npm run build` before starting the next checkpoint. Treat new build errors or warnings relative to the recorded baseline as blockers and report relevant existing warnings accurately.
 - Treat `eslint.config.cjs` as the quality bar for all new and modified code.
 - Use lint results to avoid introducing new violations in touched files, even if repo-wide lint still fails because of unrelated backlog.
 - `npm run code` is useful for visibility, but a failing repo-wide run does not by itself mean your change is invalid if the failures are pre-existing and unrelated.
@@ -446,7 +473,9 @@ Validation guidance:
 - Run `npm run lib` if you touch the public/library API surface.
 - Run `npm run build:mathjax` or `npm run build:all` if you edit `MathjaxToSVG/`.
 - Run `npm run madge` after structural import changes or when touching shared architecture.
+- Compare Madge and Rollup circular-dependency results only with their own baselines. Madge enumerates overlapping elementary paths and can include type-only imports, while Rollup reports runtime bundle cycles; their raw counts are not directly comparable.
 - When the customized Excalidraw source changes, run its `yarn build:obsidian`, refresh the four local package artifacts, and then run this repository's production and relevant development builds. A plugin build against the old installed artifact does not validate the component change.
+- For host-boundary changes, run the fork's focused adapter tests without Obsidian, then validate plugin registration and teardown through cold startup, plugin reload, the main window, a new and restored popout, and window removal. Confirm adapter methods observe settings changed after registration.
 - After React/package-loading changes, validate cold startup, plugin reload, the main window, new and restored popouts, and moving a leaf between windows. Confirm that no `window.React` or `window.ReactDOM` global was introduced.
 - After Radix/portal changes, validate visibility, positioning, stacking, click-outside, and Escape handling in both the main window and a popout; include mobile when viewport collision behavior can differ.
 - Record `dist/main.js` byte size after packaging changes and report remaining headroom under the release limit.
@@ -464,7 +493,7 @@ Validation guidance:
 	- Considering both direct and indirect consumers of the changed code or types
 	- Reviewing all files that may be impacted by a type, interface, or API change
 - Never assume a change is local unless you have verified, by search or analysis, that no other code is affected.
-- After making a change, always validate that the build passes and that no new errors or warnings are introduced anywhere in the codebase.
+- After making a change, validate the relevant build and compare errors and warnings with the recorded baseline. Touched files must not introduce new diagnostics.
 - Prefer minimal, local changes when possible, but never at the expense of breaking global correctness or introducing subtle bugs elsewhere.
 - Avoid reformatting large files unless necessary.
 - Do not edit generated `dist/` or `lib/` outputs by hand.
@@ -472,26 +501,6 @@ Validation guidance:
 - For new code, follow the target naming conventions even if nearby legacy files do not yet.
 - When a change looks odd, search for the constraint that explains it before removing it.
 - When in doubt, preserve startup performance, popout support, and existing vault compatibility.
-
-### Additional Guidance for Global Impact
-
-- When changing types, interfaces, or exported APIs, always search for all references and usages across the codebase and update them as needed.
-- When tightening types (e.g., replacing `any`), ensure all code that accesses the affected values is type-safe and will continue to work as before.
-- If a change introduces new type errors elsewhere, you must fix those errors or revert the change.
-- Always run `npm run build` after changes, and do not consider a change complete until the build passes with no new errors.
-- If a change could affect runtime behavior, validate by running the plugin in Obsidian if possible.
-
-### MANDATORY: Build Validation After Every Change
-
-**Build validation is not optional and must be run immediately after every code change.**
-
-- After you complete any code modification, you **must** immediately run `npm run build` before proceeding to the next task.
-- Do not consider a change complete, correct, or ready to return to the user until `npm run build` passes with no new errors or warnings.
-- If the build fails, fix all errors in your code and run `npm run build` again.
-- Report all build output (including warnings and circular dependency notices) to the user if relevant to your changes.
-- Build validation is not a final polish step—it is part of the core work.
-- Treat any new build errors as blockers that must be resolved before considering the task done.
-- If a type change or code edit introduces new build failures anywhere in the codebase, those are your responsibility to fix.
 
 ### Type Consolidation Follow-through
 
@@ -581,13 +590,14 @@ Before replacing an `any` type:
 ### Type Files And Responsibilities
 
 - **`src/types/types.d.ts`**: Ambient module declarations and Obsidian unpublished API types. This is the standard location for extending Obsidian's type system and for global type declarations. Use the existing patterns (interfaces extending `obsidian` module interfaces) consistently.
-- **`src/types/excalidrawLib.ts`** (or similar): When creating new type files for project-specific types, place them in `src/types/` and use PascalCase for files that export types or interfaces.
+- **`src/types/excalidrawLib.d.ts`**: Ambient declarations for the evaluated `window.ExcalidrawLib` runtime. Derive declarations from published fork types where possible, and keep the file lowerCamelCase in line with grouped type-module naming.
 - **Type files in subsystem directories**: Files like `src/shared/ExcalidrawAutomate.ts` may carry substantial type definitions and exports alongside implementation. Do not move these without evaluating the impact on the public API surface.
-- **Leverage existing type files**: Consult `src/types/excalidrawLib.ts` for the current Excalidraw type model before adding new Excalidraw-derived types.
+- **Leverage existing type files**: Consult `src/types/excalidrawLib.d.ts` and the installed fork declarations for the current Excalidraw type model before adding new Excalidraw-derived types.
 
 ### Excalidraw Type Integration
 
 - Do not invent wrapper types for Excalidraw entities. Reference the customized `@zsviczian/excalidraw` types directly.
+- Before defining a plugin-local union or interface for a fork concept, search the published fork declarations and import or alias the canonical type. Ambient runtime bridges should reuse those types rather than duplicate their structure.
 - Build on existing type extensions in the codebase (e.g., `src/types/types.d.ts` may already extend Excalidraw types).
 - When a type depends on Excalidraw internals, document the dependency clearly so future changes to the fork are visible.
 - Obsidian unpublished API types often interact with Excalidraw components; model these intersections carefully in `src/types/types.d.ts`.
