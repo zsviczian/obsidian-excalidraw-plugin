@@ -85,6 +85,16 @@ Follow Obsidian's **Developer Policies** and **Plugin Guidelines**. In particula
 - Avoid long-running tasks during `onload`; use lazy initialization.
 - Batch disk access and avoid excessive vault scans.
 - Debounce/throttle expensive operations in response to file system events.
+- For temporary performance diagnostics, use a unique searchable prefix and
+  emit one copyable string per event rather than logging expandable objects.
+  Keep timing-only callbacks and state isolated from production behavior.
+- Distinguish synchronous API duration, queue completion, browser-task yields,
+  animation-frame callbacks, and actual paint; none is a substitute for the
+  others when explaining perceived latency.
+- Temporary diagnostics are not product observability. Do not log vault
+  contents, and include filenames only when the maintainer explicitly needs
+  per-file attribution. Remove the diagnostics before commit and search both
+  `src/` and the built `dist/main.js` for their prefix.
 
 ## Coding conventions
 
@@ -203,6 +213,11 @@ The customized component lives in the sibling `zsviczian/excalidraw` repository.
 - This plugin consumes the same four paths from `node_modules/@zsviczian/excalidraw/dist/obsidian/` in `rollup.config.mjs`.
 - For a temporary unpublished integration test, build the sibling package and copy only those four generated files into the installed package under `node_modules`. Do not change `package.json` or `package-lock.json` to a local `file:` dependency merely for this handoff. A later `npm install` restores the published package.
 - For the durable handoff, publish a new `@zsviczian/excalidraw` version, update this repository's dependency, run `npm install`, and rebuild the plugin.
+- A local artifact copy proves integration only. If plugin source consumes a
+  new fork API, do not describe the plugin handoff as commit- or release-ready
+  until the published package is installed and the exact dependency and
+  lockfile contain that API, unless the maintainer explicitly requests a
+  paired intermediate commit.
 - Never hand-edit or commit generated `dist/`, `lib/`, or `node_modules` artifacts as source fixes.
 - Treat the repositories as separate Git histories. Check branch, status, diff, build, and commit state independently in each one, and do not commit or publish unless explicitly requested.
 
@@ -247,6 +262,25 @@ Window ownership for rendering is not the same as ownership for persistent plugi
 - Do not change persistent storage to `view.ownerWindow`, create one database per popout, or infer a storage migration from a rendering bug unless the task explicitly requires that behavior.
 - Diagnose persistence and presentation separately. For example, a visible history button conditioned on loaded records proves the load path worked even when a portaled history menu is hidden.
 - If a new feature is intentionally view-local, document that exception and test window migration and popout teardown explicitly.
+
+### IndexedDB And Cache Schema Changes
+
+- Classify every affected store as disposable derived cache or durable user
+  data before changing its schema. Image previews may be rebuilt; drawing
+  backups must not be deleted as cache migration cleanup.
+- Create current stores and remove obsolete disposable stores in one IndexedDB
+  version-change transaction. Prefer lazy cache rebuilding over deserializing
+  and rewriting a large legacy cache during startup.
+- If opening or upgrading fails, close and clear unusable database handles and
+  readiness promises. A closed legacy connection must never make the cache
+  report itself as ready.
+- Use browser APIs such as `Blob` and `FileReader` for in-memory payload
+  conversion so the path remains mobile-safe. Vault file access must still use
+  Obsidian's Vault API.
+- Validate cold upgrade, preservation of durable stores, first cold rebuild,
+  warm reopen, clear, timed purge, plugin reload, and one mobile run. Persistent
+  plugin data remains owned by the main application window; popouts need a
+  usage smoke test, not a separate database.
 
 ### MathJax Subproject
 

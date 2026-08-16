@@ -371,7 +371,18 @@ export const addFiles = async (
       view.excalidrawData.setEquation(f.id, { latex, isLoaded: true });
     }
   }
-  api.addFiles(files);
+  const skipSvgNormalization = new Set<FileId>();
+  for (const file of files) {
+    const sourceFile = view.excalidrawData.getFile(file.id)?.file;
+    if (
+      file.mimeType === "image/svg+xml" &&
+      sourceFile &&
+      view.plugin.isExcalidrawFile(sourceFile)
+    ) {
+      skipSvgNormalization.add(file.id);
+    }
+  }
+  api.addFiles({ files, skipSvgNormalization });
 };
 
 const warningUnknowSeriousError = () => {
