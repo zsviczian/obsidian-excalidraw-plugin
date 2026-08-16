@@ -1,6 +1,9 @@
 import type { FileId } from "@zsviczian/excalidraw/types/element/src/types";
 
-import type { EmbeddedFilesLoader } from "../../shared/EmbeddedFileLoader";
+import type {
+  DeferredCacheValidation,
+  EmbeddedFilesLoader,
+} from "../../shared/EmbeddedFileLoader";
 import type { FileData } from "../../types/embeddedFileLoaderTypes";
 import type ExcalidrawView from "../ExcalidrawView";
 
@@ -50,9 +53,12 @@ export class ViewSceneFileManager {
     forceReloadFileIDs?: Set<FileId>;
     callback?: () => void;
   } | null = null;
-  // File IDs collected during the stale-first pass. These are the only files that
-  // need a validated retry after the scene is already visible.
-  private pendingDeferredValidationFileIDs: Set<FileId> = new Set();
+  // Cache metadata collected during the stale-first pass. These are the only
+  // files that need validation after the scene is already visible.
+  private pendingDeferredValidationCandidates = new Map<
+    FileId,
+    DeferredCacheValidation
+  >();
 
   public constructor(
     private readonly view: ExcalidrawView,
@@ -89,30 +95,33 @@ export class ViewSceneFileManager {
     this.queuedLoadSceneFilesRequest = null;
   }
 
-  private addDeferredValidationCandidates(fileIDs?: Set<FileId>) {
-    if (!fileIDs || fileIDs.size === 0) {
+  private addDeferredValidationCandidates(
+    candidates?: ReadonlyMap<FileId, DeferredCacheValidation>,
+  ) {
+    if (!candidates || candidates.size === 0) {
       return;
     }
-    fileIDs.forEach((fileId) =>
-      this.pendingDeferredValidationFileIDs.add(fileId),
+    candidates.forEach((validation, fileId) =>
+      this.pendingDeferredValidationCandidates.set(fileId, validation),
     );
   }
 
   private scheduleDeferredSceneFileValidation(
-    fileIDs: Set<FileId>,
+    candidates: Map<FileId, DeferredCacheValidation>,
     isThemeChange: boolean,
     emitPolicy: "changed-only" | "all" = "changed-only",
   ) {
     this.cancelDeferredSceneFileValidation();
     if (
-      !fileIDs ||
-      fileIDs.size === 0 ||
+      !candidates ||
+      candidates.size === 0 ||
       !this.view.file ||
       !this.view.excalidrawAPI
     ) {
       return;
     }
 
+    const fileIDs = new Set(candidates.keys());
     const currentFile = this.view.file.path;
     const loader = this.dependencies.createEmbeddedFilesLoader();
     this.deferredValidationFilePath = currentFile;
@@ -176,6 +185,7 @@ export class ViewSceneFileManager {
         fileIDWhiteList: fileIDs,
         forceReloadFileIDs: fileIDs,
         cacheValidation: "validated",
+        deferredCacheValidation: candidates,
         validationConcurrency: 1,
         emitPolicy,
       });
@@ -191,11 +201,23 @@ export class ViewSceneFileManager {
       return;
     }
     if (this.activeLoader) {
-      this.addDeferredValidationCandidates(fileIDs);
+      this.addDeferredValidationCandidates(
+        new Map(
+          Array.from(fileIDs, (fileId) => [
+            fileId,
+            { kind: "reload" } as const,
+          ]),
+        ),
+      );
       return;
     }
     this.scheduleDeferredSceneFileValidation(
-      new Set(fileIDs),
+      new Map(
+        Array.from(fileIDs, (fileId) => [
+          fileId,
+          { kind: "reload" } as const,
+        ]),
+      ),
       isThemeChange,
       forceEmitFromCache ? "all" : "changed-only",
     );
@@ -231,7 +253,7 @@ export class ViewSceneFileManager {
 
     this.cancelDeferredSceneFileValidation();
     if (!this.activeLoader) {
-      this.pendingDeferredValidationFileIDs.clear();
+      this.pendingDeferredValidationCandidates.clear();
     }
 
     const loader = this.dependencies.createEmbeddedFilesLoader();
@@ -266,12 +288,12 @@ export class ViewSceneFileManager {
           } else {
             // Once the scene is painted, validate cached candidates in the background
             // so unchanged cache hits do not delay the initial scene load.
-            if (this.pendingDeferredValidationFileIDs.size > 0) {
+            if (this.pendingDeferredValidationCandidates.size > 0) {
               this.scheduleDeferredSceneFileValidation(
-                new Set(this.pendingDeferredValidationFileIDs),
+                new Map(this.pendingDeferredValidationCandidates),
                 isThemeChange,
               );
-              this.pendingDeferredValidationFileIDs.clear();
+              this.pendingDeferredValidationCandidates.clear();
             }
             //in case one or more files have not loaded retry later hoping that sync has delivered the file in the mean time.
             this.view.excalidrawData.getFiles().some((ef) => {
@@ -310,8 +332,8 @@ export class ViewSceneFileManager {
         fileIDWhiteList,
         forceReloadFileIDs,
         cacheValidation: "stale-first",
-        onDeferredValidationCandidates: (fileIds: Set<FileId>) => {
-          this.addDeferredValidationCandidates(fileIds);
+        onDeferredValidationCandidates: (candidates) => {
+          this.addDeferredValidationCandidates(candidates);
         },
       });
     };
