@@ -953,13 +953,9 @@ export function getViewColorPalette(
     return [basePalette as string];
   }
 
-  // Function.prototype.bind()'s type declaration doesn't preserve getCM's
-  // real (color: TInput) => ColorMaster signature, collapsing it to any --
-  // annotated explicitly instead, matching the signature confirmed above.
-  const cmFactory = (view.hookServer?.getCM?.bind(view.hookServer) ??
-    view.plugin.ea.getCM.bind(view.plugin.ea)) as (
-    color: TInput,
-  ) => ColorMaster;
+  const hookServer = view.hookServer;
+  const cmFactory = (color: TInput): ColorMaster =>
+    hookServer?.getCM ? hookServer.getCM(color) : view.plugin.ea.getCM(color);
   type ColorMasterLike = {
     lightness?: number;
     alpha?: number;
@@ -974,7 +970,7 @@ export function getViewColorPalette(
     );
   };
   const getLightness = (color: string): number => {
-    const cm = cmFactory?.(color) as unknown;
+    const cm = cmFactory(color) as unknown;
     const value = isColorMasterLike(cm) ? cm.lightness : undefined;
     return typeof value === "number" ? value : Number.POSITIVE_INFINITY;
   };
@@ -985,7 +981,7 @@ export function getViewColorPalette(
     if (color.toLowerCase() === "transparent") {
       return "transparent";
     }
-    const cm = cmFactory?.(color) as unknown;
+    const cm = cmFactory(color) as unknown;
     if (isColorMasterLike(cm) && typeof cm.stringHEX === "function") {
       try {
         const alpha = cm.alpha;

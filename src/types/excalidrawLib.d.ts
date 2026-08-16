@@ -302,7 +302,7 @@ declare namespace ExcalidrawLib {
     error?: string;
   } | undefined>;*/
 
-  let getSceneVersion: typeof import("@zsviczian/excalidraw/types/excalidraw").getSceneVersion;
+  let hashElementsVersion: typeof import("@zsviczian/excalidraw/types/excalidraw").hashElementsVersion;
   let Excalidraw: typeof import("@zsviczian/excalidraw").Excalidraw;
   let MainMenu: typeof import("@zsviczian/excalidraw").MainMenu;
   let WelcomeScreen: typeof import("@zsviczian/excalidraw").WelcomeScreen;

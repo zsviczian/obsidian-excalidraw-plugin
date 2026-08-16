@@ -1438,13 +1438,15 @@ export default class ExcalidrawView
     this.zoomToFit(false);
   }
 
-  excalidrawGetSceneVersion: (elements: ExcalidrawElement[]) => number;
+  excalidrawHashElementsVersion: (
+    elements: readonly ExcalidrawElement[],
+  ) => number;
   getSceneVersion(elements: readonly ExcalidrawElement[]): number {
-    if (!this.excalidrawGetSceneVersion) {
-      this.excalidrawGetSceneVersion =
-        this.packages.excalidrawLib.getSceneVersion;
+    if (!this.excalidrawHashElementsVersion) {
+      this.excalidrawHashElementsVersion =
+        this.packages.excalidrawLib.hashElementsVersion;
     }
-    return this.excalidrawGetSceneVersion(
+    return this.excalidrawHashElementsVersion(
       elements.filter((el) => !el.isDeleted),
     );
   }
