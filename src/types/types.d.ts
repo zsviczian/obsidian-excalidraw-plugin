@@ -213,6 +213,9 @@ declare module "obsidian" {
       addDefaultHotkeys(commandId: string, hotkeys: Hotkey[]): void;
       
     };
+    statusBar: {
+      containerEl: HTMLElement;
+    };
   }
   interface FileManager {
     promptForFileRename(file: TFile): Promise<void>;
