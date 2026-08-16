@@ -1,6 +1,6 @@
 import type { App } from "obsidian";
 import { DEVICE } from "src/constants/constants";
-import type { ExcalidrawSettings } from "src/core/settings";
+import type { ExcalidrawSettings } from "src/core/settingsDefaults";
 import { isInstanceOfHTMLStyleElement } from "src/utils/typechecks";
 
 declare const mainDocument: Document;

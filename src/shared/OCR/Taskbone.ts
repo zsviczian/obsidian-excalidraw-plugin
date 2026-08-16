@@ -1,5 +1,6 @@
 import { ExcalidrawAutomate } from "../ExcalidrawAutomate";
 import { Notice, requestUrl } from "obsidian";
+import { t } from "src/lang/helpers";
 import ExcalidrawPlugin from "../../core/main";
 import FrontmatterEditor from "src/shared/Frontmatter";
 import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/src/types";
@@ -105,19 +106,13 @@ export default class Taskbone {
           )),
     );
     if (viewElements.length === 0) {
-      new Notice(
-        "Aborting OCR because there are no image or freedraw elements on the canvas.",
-        4000,
-      );
+      new Notice(t("OCR_ABORT_NO_ELEMENTS"), 4000);
       ea.destroy();
       return;
     }
     const fe = new FrontmatterEditor(view.data);
     if (addToFrontmatter && fe.hasKey("taskbone-ocr") && !forceReScan) {
-      new Notice(
-        "The drawing has already been processed, you will find the result in the frontmatter in markdown view mode. If you ran the command from the Obsidian Panel in Excalidraw then you can CTRL(CMD)+click the command to force the rescaning.",
-        4000,
-      );
+      new Notice(t("OCR_ALREADY_PROCESSED"), 4000);
       ea.destroy();
       return;
     }

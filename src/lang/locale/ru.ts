@@ -1090,6 +1090,19 @@ export default {
     "Если эта настройка включена, Excalidraw будет выполнять <code>excalidraw-onload-script</code> на уровне файла во всех рисунках, которые вы откроете далее, пока вы не отключите эту настройку. " +
     "Это создаёт риск, если вы загружаете Markdown-файлы из неизвестных источников: злоумышленник может использовать <code>excalidraw-onload-script</code> " +
     "для запуска любой команды в Obsidian и потенциальной передачи данных в интернет. Включайте это только если доверяете файлу и его источнику.",
+  AUTOSTART_SCRIPT_PROMPT:
+    "хочет запускаться автоматически каждый раз, когда вы открываете рисунок Excalidraw. Разрешить это?",
+  AUTOSTART_SCRIPT_PROMPT_MANAGE_HINT:
+    "Позже это можно изменить в командной палитре («Автозапуск скриптов») или в Настройках → Совместимость → Автозапуск скриптов.",
+  AUTOSTART_SCRIPT_ALLOW: "Автозапуск",
+  AUTOSTART_SCRIPT_DENY: "Только вручную",
+  AUTOSTART_SCRIPT_ASK_LATER: "Спрашивать каждый раз",
+  AUTOSTART_SCRIPTS_HEAD: "Автозапуск скриптов",
+  AUTOSTART_SCRIPTS_DESC:
+    "Скрипты появляются здесь после того, как они запрашивают разрешение автоматически запускаться каждый раз при открытии нового рисунка Excalidraw (запрос инициируется однократным ручным запуском скрипта). Изменить настройку скрипта можно в любое время.",
+  AUTOSTART_SCRIPTS_EMPTY: "Ни один скрипт ещё не запрашивал разрешение на автозапуск.",
+  AUTOSTART_SCRIPT_FAILED_WARNING:
+    "Этот скрипт завершился ошибкой при последнем автозапуске.",
   ENABLE_COMMAND_LINKS_NAME: "Включить ссылки-команды (cmd://)",
   ENABLE_COMMAND_LINKS_CONFIRMATION:
     "Эта ссылка запускает команду Obsidian через <code>cmd://</code>. Включить ссылки-команды?",
@@ -1266,6 +1279,7 @@ export default {
   PROMPT_BUTTON_NEVERMIND: "Неважно",
   PROMPT_BUTTON_OK: "OK",
   PROMPT_BUTTON_CANCEL: "Отменить",
+  PROMPT_BUTTON_CLOSE: "Закрыть",
   PROMPT_BUTTON_INSERT_LINE: "Вставить новую строку",
   PROMPT_BUTTON_INSERT_SPACE: "Вставить пробел",
   PROMPT_BUTTON_INSERT_LINK: "Вставить ссылку на файл в формате markdown",
@@ -1291,6 +1305,7 @@ export default {
 
   //InsertPDFModal.ts
   IPM_PAGES_TO_IMPORT_NAME: "Страницы для импорта",
+  IPM_PAGES_TO_IMPORT_DESC: "Например: 1,3-5,7,9-10",
   IPM_SELECT_PAGES_TO_IMPORT: "Пожалуйста, выберите страницы для импорта",
   IPM_ADD_BORDER_BOX_NAME: "Добавить рамку",
   IPM_ADD_FRAME_NAME: "Добавить страницу в кадр",
@@ -1301,4 +1316,26 @@ export default {
   IPM_GROUP_PAGES_DESC:
     "Это позволит объединить все страницы в одну группу. Это рекомендуется делать, если вы блокируете страницы после импорта, потому что группу будет легче разблокировать позже, чем разблокировать каждую по отдельности.",
   IPM_SELECT_PDF: "Пожалуйста, выберите файл PDF",
+
+  //Taskbone.ts
+  OCR_ABORT_NO_ELEMENTS:
+    "Отмена OCR, так как на холсте нет элементов изображения или рисования от руки.",
+  OCR_ALREADY_PROCESSED:
+    "Рисунок уже обработан, результат можно найти во frontmatter в режиме просмотра Markdown. Если вы запустили команду с панели Obsidian в Excalidraw, вы можете нажать ctrl(cmd)+клик по команде, чтобы принудительно повторить сканирование.",
+
+  //ObserverManager.ts
+  ERROR_ADDING_OBSERVER_MANAGER: "Ошибка при добавлении ObserverManager",
+
+  //PublishOutOfDateFiles.ts
+  POODF_TITLE: "Устаревшие файлы SVG",
+  POODF_CHECK_RECURSIVE: "Проверить рекурсивно",
+  POODF_OPEN_SELECTED: "Открыть выбранное",
+
+  //ImageCache.ts
+  IMAGE_CACHE_INITIALIZED:
+    "Кэш изображений Excalidraw инициализирован - теперь вы можете повторить попытку открытия повреждённого рисунка.",
+
+  //carveout.ts
+  NEW_DRAWING_TIMEOUT:
+    "Файл не найден. Создание нового рисунка Excalidraw занимает слишком много времени. Пожалуйста, попробуйте снова.",
 };

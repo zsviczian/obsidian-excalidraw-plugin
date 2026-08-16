@@ -7,7 +7,28 @@
     "noImplicitAny": true,
     "types": ["node"],
     "paths": {
-      "src/*": ["./src/*"]
+      "src/*": ["./src/*"],
+      // @zsviczian/excalidraw's bundled .d.ts files import bare-specifier
+      // @excalidraw/common|element|math|utils (an upstream monorepo-split
+      // artifact present in @excalidraw/excalidraw's own published types too)
+      // that this plugin never depends on, collapsing everything downstream
+      // to `any`. The package already vendors its own exact-match copies of
+      // all four under node_modules/@zsviczian/excalidraw/types/ (it has to,
+      // to be self-contained), so redirecting there guarantees zero version
+      // drift -- no external devDependency needed. Type-checking only; never
+      // reaches the runtime bundle. (An external @excalidraw/element devDependency
+      // was tried first and reverted: its independently-versioned types
+      // structurally disagreed with this package's own bundled ExcalidrawElement,
+      // producing false-positive mismatches between two same-named-but-different types.)
+      "@excalidraw/common": ["./node_modules/@zsviczian/excalidraw/types/common/src/index"],
+      "@excalidraw/common/*": ["./node_modules/@zsviczian/excalidraw/types/common/src/*"],
+      "@excalidraw/element": ["./node_modules/@zsviczian/excalidraw/types/element/src/index"],
+      "@excalidraw/element/*": ["./node_modules/@zsviczian/excalidraw/types/element/src/*"],
+      "@excalidraw/math": ["./node_modules/@zsviczian/excalidraw/types/math/src/index"],
+      "@excalidraw/math/*": ["./node_modules/@zsviczian/excalidraw/types/math/src/*"],
+      "@excalidraw/utils": ["./node_modules/@zsviczian/excalidraw/types/utils/src/index"],
+      "@excalidraw/utils/*": ["./node_modules/@zsviczian/excalidraw/types/utils/src/*"],
+      "@excalidraw/excalidraw/*": ["./node_modules/@zsviczian/excalidraw/types/excalidraw/*"]
     },
     "moduleResolution": "node",
     "esModuleInterop": true,

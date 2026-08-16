@@ -82,6 +82,63 @@ type EmbeddedLink =
   | null;
 
 declare namespace ExcalidrawLib {
+  type ObsidianCommonHostUIMode = "full" | "compact" | "tray" | "mobile";
+
+  type ObsidianCommonHostAdapter = Readonly<{
+    protocolVersion: 1;
+    getDeviceInfo: () => Readonly<{
+      isDesktop: boolean;
+      isPhone: boolean;
+      isTablet: boolean;
+      isMobile: boolean;
+      isLinux: boolean;
+      isMacOS: boolean;
+      isWindows: boolean;
+      isIOS: boolean;
+      isAndroid: boolean;
+    }> | null;
+    getDesktopUIMode: () => ObsidianCommonHostUIMode;
+    getPreferredUIMode: (
+      formFactor: "phone" | "tablet" | "desktop",
+    ) => ObsidianCommonHostUIMode;
+    getCanvasLimits: () => Readonly<{
+      areaLimit: number;
+      widthHeightLimit: number;
+    }>;
+    getHighlightColor: (
+      sceneBackgroundColor: string,
+      opacity: number,
+    ) => string;
+  }>;
+
+  type ObsidianExcalidrawHostAdapter = Readonly<{
+    protocolVersion: 2;
+    isDoubleTapEraserEnabled: () => boolean;
+    isRightClickPanEnabled: () => boolean;
+    getZoomToFitMaxLevel: () => number;
+    isPenModeCrosshairVisible: () => boolean;
+    isSingleFingerPanningEnabled: () => boolean;
+    isDoubleClickTextEditingDisabled: () => boolean;
+    getZoomStep: () => number;
+    getZoomMin: () => number;
+    getZoomMax: () => number;
+    isContextMenuDisabled: () => boolean;
+    shouldSyncElementLinkWithText: () => boolean;
+    loadFontFromFile: (filename: string) => Promise<ArrayBuffer | undefined>;
+    getMermaid: () => Promise<MermaidToExcalidrawLibProps>;
+    runAction: (action: "anyFile" | "LaTeX" | "card") => void;
+    getLabel: (key: string) => string;
+    attachInlineLinkSuggester: (
+      inputEl: HTMLInputElement | HTMLTextAreaElement,
+      widthWrapper?: HTMLElement,
+      container?: HTMLDivElement | null,
+      suppressPlaceholder?: boolean,
+    ) => Readonly<{
+      isBlockingKeys: () => boolean;
+      close: () => void;
+    }>;
+  }>;
+
   type ElementUpdate<TElement extends ExcalidrawElement> = Omit<
     Partial<TElement>,
     "id" | "updated"
@@ -245,7 +302,7 @@ declare namespace ExcalidrawLib {
     error?: string;
   } | undefined>;*/
 
-  let getSceneVersion: typeof import("@zsviczian/excalidraw/types/excalidraw").getSceneVersion;
+  let hashElementsVersion: typeof import("@zsviczian/excalidraw/types/excalidraw").hashElementsVersion;
   let Excalidraw: typeof import("@zsviczian/excalidraw").Excalidraw;
   let MainMenu: typeof import("@zsviczian/excalidraw").MainMenu;
   let WelcomeScreen: typeof import("@zsviczian/excalidraw").WelcomeScreen;
@@ -254,7 +311,14 @@ declare namespace ExcalidrawLib {
   let DiagramToCodePlugin: typeof import("@zsviczian/excalidraw").DiagramToCodePlugin;
 
   function getDataURL(file: Blob | File): Promise<DataURL>;
-  function destroyObsidianUtils(): void;
+  const OBSIDIAN_COMMON_HOST_PROTOCOL_VERSION: 1;
+  function configureObsidianCommonHost(
+    adapter: ObsidianCommonHostAdapter,
+  ): () => void;
+  const OBSIDIAN_EXCALIDRAW_HOST_PROTOCOL_VERSION: 2;
+  function configureObsidianExcalidrawHost(
+    adapter: ObsidianExcalidrawHostAdapter,
+  ): () => void;
   function registerLocalFont(fontMetrics: FontMetadata, uri: string): void;
   function getFontFamilies(): string[];
   function registerFontsInCSS(): Promise<void>;

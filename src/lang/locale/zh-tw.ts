@@ -215,6 +215,9 @@ export default {
   ABOUT_EXCALIDRAW: "關於 Excalidraw",
   RUN_OCR: "OCR 整個繪圖：識別塗鴉和圖片裡的文字並複製到剪貼簿和筆記屬性中",
   TASKBONE_NOT_ENABLED: "Taskbone OCR 未啟用。請前往外掛設定將其開啟。",
+  OCR_ABORT_NO_ELEMENTS: "正在中止 OCR，因為畫布上沒有圖像或手繪元素。",
+  OCR_ALREADY_PROCESSED:
+    "此繪圖已經處理過，您可以在 Markdown 檢視模式下的 frontmatter 中找到結果。如果您是從 Excalidraw 的 Obsidian 面板執行此命令，可以按住 ctrl(cmd) 並點擊該命令以強制重新掃描。",
   RERUN_OCR:
     "重新 OCR 整個繪圖：識別塗鴉和圖片裡的文字並複製到剪貼簿和筆記屬性中",
   RUN_OCR_ELEMENTS: "OCR 選中的元素：識別塗鴉和圖片裡的文字並複製到剪貼簿",
@@ -1131,6 +1134,18 @@ export default {
     "啟用後，Excalidraw 會在你之後開啟的所有繪圖中執行檔案級別的 <code>excalidraw-onload-script</code>，直到你關閉此設定。" +
     "如果你從未知來源下載 Markdown 檔案，這會帶來風險：惡意行為者可以利用 <code>excalidraw-onload-script</code> " +
     "在 Obsidian 中執行任意命令，並且有可能將資料傳輸到網際網路。只有在你信任該檔案及其來源時才啟用此功能。",
+  AUTOSTART_SCRIPT_PROMPT:
+    "希望在你每次開啟 Excalidraw 繪圖時自動執行。是否允許？",
+  AUTOSTART_SCRIPT_PROMPT_MANAGE_HINT:
+    "你之後可以在命令選擇區（「自動啟動指令碼」）或設定 → 相容性 → 自動啟動指令碼中變更此設定。",
+  AUTOSTART_SCRIPT_ALLOW: "自動啟動",
+  AUTOSTART_SCRIPT_DENY: "僅手動啟動",
+  AUTOSTART_SCRIPT_ASK_LATER: "每次都詢問",
+  AUTOSTART_SCRIPTS_HEAD: "自動啟動指令碼",
+  AUTOSTART_SCRIPTS_DESC:
+    "指令碼在請求權限以便每次開啟新的 Excalidraw 繪圖時自動執行後會出現在這裡（手動執行一次指令碼即可觸發該請求）。你可以隨時變更指令碼的設定。",
+  AUTOSTART_SCRIPTS_EMPTY: "尚無指令碼請求自動啟動權限。",
+  AUTOSTART_SCRIPT_FAILED_WARNING: "該指令碼上次自動啟動時失敗了。",
   ENABLE_COMMAND_LINKS_NAME: "啟用命令連結（cmd://）",
   ENABLE_COMMAND_LINKS_CONFIRMATION:
     "此連結會透過 <code>cmd://</code> 觸發 Obsidian 命令。是否啟用命令連結？",
@@ -1370,6 +1385,7 @@ export default {
   PROMPT_BUTTON_NEVERMIND: "算了",
   PROMPT_BUTTON_OK: "OK",
   PROMPT_BUTTON_CANCEL: "取消",
+  PROMPT_BUTTON_CLOSE: "關閉",
   PROMPT_BUTTON_INSERT_LINE: "插入一行",
   PROMPT_BUTTON_INSERT_SPACE: "插入空格",
   PROMPT_BUTTON_INSERT_LINK: "插入內部連結",
@@ -1395,6 +1411,7 @@ export default {
 
   //InsertPDFModal.ts
   IPM_PAGES_TO_IMPORT_NAME: "要匯入的頁面",
+  IPM_PAGES_TO_IMPORT_DESC: "例如：1,3-5,7,9-10",
   IPM_SELECT_PAGES_TO_IMPORT: "請選擇頁面以進行匯入",
   IPM_ADD_BORDER_BOX_NAME: "新增帶邊框的盒子容器",
   IPM_ADD_FRAME_NAME: "新增頁面到畫框",
@@ -1636,4 +1653,19 @@ Obsidian 的 Excalidraw 外掛遠不只是畫圖工具。由於它與 Obsidian �
   EXTRAS_GATEWAY_COMP_PLUGIN: "Excalidraw Extras 外掛",
   EXTRAS_GATEWAY_UPDATE_TITLE: "Excalidraw 需要新版本的 Extras 外掛",
   EXTRAS_GATEWAY_UPDATE_BTN: "開啟社群外掛",
+
+  //ObserverManager.ts
+  ERROR_ADDING_OBSERVER_MANAGER: "新增 ObserverManager 時發生錯誤",
+
+  //PublishOutOfDateFiles.ts
+  POODF_TITLE: "過期的 SVG 檔案",
+  POODF_CHECK_RECURSIVE: "遞迴檢查",
+  POODF_OPEN_SELECTED: "開啟所選項",
+
+  //ImageCache.ts
+  IMAGE_CACHE_INITIALIZED:
+    "Excalidraw 圖片快取已初始化 - 您現在可以重試開啟損壞的繪圖。",
+
+  //carveout.ts
+  NEW_DRAWING_TIMEOUT: "找不到檔案。建立新的 Excalidraw 繪圖耗時過長。請重試。",
 };

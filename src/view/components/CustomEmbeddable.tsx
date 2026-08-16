@@ -1,5 +1,8 @@
-import { ExcalidrawEmbeddableElement } from "@zsviczian/excalidraw/types/element/src/types";
-import ExcalidrawView from "src/view/ExcalidrawView";
+import {
+  ExcalidrawElement,
+  ExcalidrawEmbeddableElement,
+} from "@zsviczian/excalidraw/types/element/src/types";
+import type ExcalidrawView from "src/view/ExcalidrawView";
 import { Notice, requireApiVersion } from "obsidian";
 import * as React from "react";
 import { isObsidianThemeDark } from "src/utils/obsidianUtils";
@@ -40,7 +43,7 @@ type PdfViewLike = {
   };
 };
 
-type PdfObserverRef = React.MutableRefObject<MutationObserver | null> & {
+type PdfObserverRef = React.RefObject<MutationObserver | null> & {
   currentCleanup?: () => void;
 };
 
@@ -171,9 +174,9 @@ function setPDFViewTheme(view: ExcalidrawView, pdfView: PdfViewLike | null) {
 
 function setupPdfViewEnhancements(
   view: ExcalidrawView,
-  leafRef: React.MutableRefObject<EmbeddableLeafRef | null>,
+  leafRef: React.RefObject<EmbeddableLeafRef | null>,
   pdfObserverRef: PdfObserverRef,
-  pdfObserverDisabledRef: React.MutableRefObject<boolean>,
+  pdfObserverDisabledRef: React.RefObject<boolean>,
 ) {
   const pdfView = leafRef.current?.node?.child;
   if (!pdfView) {
@@ -592,7 +595,7 @@ function RenderObsidianView({
   const React = view.packages.react;
   const leafRef = React.useRef(
     null,
-  ) as React.MutableRefObject<EmbeddableLeafRef | null>;
+  ) as React.RefObject<EmbeddableLeafRef | null>;
   const isEditingRef = React.useRef(false);
   const isPreviewRef = React.useRef(false);
   const isActiveRef = React.useRef(false);
@@ -1261,7 +1264,7 @@ function RenderObsidianView({
         const el = api
           .getSceneElements()
           .filter(
-            (el: ExcalidrawEmbeddableElement) => el.id === element.id,
+            (el: ExcalidrawElement) => el.id === element.id,
           )[0] as ExcalidrawEmbeddableElement;
         if (!el || el.angle !== 0) {
           new Notice("Sorry, cannot edit rotated Markdown documents");
@@ -1475,7 +1478,7 @@ export const CustomEmbeddable: React.FC<{
 }> = ({ element, view, appState, linkText }) => {
   const React = view.packages.react;
   const containerRef: React.RefObject<HTMLDivElement> = React.useRef(null);
-  const theme = getTheme(view, appState.theme as string);
+  const theme = getTheme(view, appState.theme);
   const mdProps: EmbeddableMDCustomProps =
     (element.customData?.mdProps as EmbeddableMDCustomProps) || null;
   const selectedElementIds = Object.keys(appState.selectedElementIds);
@@ -1502,8 +1505,13 @@ export const CustomEmbeddable: React.FC<{
         linkText={linkText}
         view={view}
         containerRef={containerRef}
-        activeEmbeddable={appState.activeEmbeddable}
-        theme={appState.theme as string}
+        activeEmbeddable={
+          appState.activeEmbeddable as unknown as {
+            element: ExcalidrawEmbeddableElement;
+            state: string;
+          }
+        }
+        theme={appState.theme}
         canvasColor={appState.viewBackgroundColor}
         selectedElementId={
           selectedElementIds.length === 1 ? selectedElementIds[0] : null

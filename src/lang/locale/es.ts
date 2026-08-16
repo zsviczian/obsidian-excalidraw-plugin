@@ -1185,6 +1185,20 @@ export default {
     "Si está habilitado, Excalidraw ejecutará el <code>excalidraw-onload-script</code> a nivel de archivo en todos los dibujos que abras a partir de ahora, hasta que desactives esta opción. " +
     "Esto crea un riesgo si descargas archivos Markdown de fuentes desconocidas: un actor malicioso puede usar <code>excalidraw-onload-script</code> " +
     "para ejecutar cualquier comando en Obsidian y potencialmente transferir datos a internet. Actívalo solo si confías en el archivo y en su origen.",
+  AUTOSTART_SCRIPT_PROMPT:
+    "quiere ejecutarse automáticamente cada vez que abras un dibujo de Excalidraw. ¿Deseas permitirlo?",
+  AUTOSTART_SCRIPT_PROMPT_MANAGE_HINT:
+    'Puedes cambiar esto más tarde desde la paleta de comandos ("Scripts de inicio automático") o en Ajustes → Compatibilidad → Scripts de inicio automático.',
+  AUTOSTART_SCRIPT_ALLOW: "Inicio automático",
+  AUTOSTART_SCRIPT_DENY: "Solo manual",
+  AUTOSTART_SCRIPT_ASK_LATER: "Preguntar cada vez",
+  AUTOSTART_SCRIPTS_HEAD: "Scripts de inicio automático",
+  AUTOSTART_SCRIPTS_DESC:
+    "Los scripts aparecen aquí una vez que solicitan permiso para ejecutarse automáticamente cada vez que se abre un nuevo dibujo de Excalidraw (ejecutar el script una vez manualmente es lo que activa la solicitud). Puedes cambiar el ajuste de un script en cualquier momento.",
+  AUTOSTART_SCRIPTS_EMPTY:
+    "Ningún script ha solicitado permiso de inicio automático todavía.",
+  AUTOSTART_SCRIPT_FAILED_WARNING:
+    "Este script falló la última vez que intentó iniciarse automáticamente.",
   ENABLE_COMMAND_LINKS_NAME: "Habilitar enlaces de comandos (cmd://)",
   ENABLE_COMMAND_LINKS_CONFIRMATION:
     "Este enlace ejecuta un comando de Obsidian mediante <code>cmd://</code>. ¿Quieres habilitar los enlaces de comandos?",
@@ -1429,6 +1443,7 @@ export default {
   PROMPT_BUTTON_NEVERMIND: "No importa",
   PROMPT_BUTTON_OK: "OK",
   PROMPT_BUTTON_CANCEL: "Cancelar",
+  PROMPT_BUTTON_CLOSE: "Cerrar",
   PROMPT_BUTTON_INSERT_LINE: "Insertar nueva línea",
   PROMPT_BUTTON_INSERT_SPACE: "Insertar espacio",
   PROMPT_BUTTON_INSERT_LINK: "Insertar enlace Markdown a un archivo",
@@ -1456,6 +1471,7 @@ export default {
 
   //InsertPDFModal.ts
   IPM_PAGES_TO_IMPORT_NAME: "Páginas para importar",
+  IPM_PAGES_TO_IMPORT_DESC: "P. ej.: 1,3-5,7,9-10",
   IPM_SELECT_PAGES_TO_IMPORT: "Por favor, selecciona las páginas para importar",
   IPM_ADD_BORDER_BOX_NAME: "Añadir recuadro de borde",
   IPM_ADD_FRAME_NAME: "Añadir página a un marco(frame)",
@@ -1664,4 +1680,26 @@ Si quieres ver lo que ya es posible hoy, aquí tienes una presentación de las f
     "Puede volver a habilitar esto en: Opciones → Excalidraw → Básico → Advertir sobre actualizaciones de complementos incompletos.",
   VERSION_MISMATCH_REDOWNLOAD: "Volver a descargar complemento",
   VERSION_MISMATCH_IGNORE: "Ignorar",
+
+  //Taskbone.ts
+  OCR_ABORT_NO_ELEMENTS:
+    "Cancelando el OCR porque no hay elementos de imagen o dibujo a mano alzada en el lienzo.",
+  OCR_ALREADY_PROCESSED:
+    "El dibujo ya ha sido procesado, encontrará el resultado en el frontmatter en modo de vista Markdown. Si ejecutó el comando desde el panel de Obsidian en Excalidraw, puede hacer ctrl(cmd)+clic en el comando para forzar el reescaneo.",
+
+  //ObserverManager.ts
+  ERROR_ADDING_OBSERVER_MANAGER: "Error al añadir ObserverManager",
+
+  //PublishOutOfDateFiles.ts
+  POODF_TITLE: "Archivos SVG desactualizados",
+  POODF_CHECK_RECURSIVE: "Comprobar de forma recursiva",
+  POODF_OPEN_SELECTED: "Abrir seleccionados",
+
+  //ImageCache.ts
+  IMAGE_CACHE_INITIALIZED:
+    "La caché de imágenes de Excalidraw se ha inicializado - ahora puede volver a intentar abrir su dibujo dañado.",
+
+  //carveout.ts
+  NEW_DRAWING_TIMEOUT:
+    "Archivo no encontrado. El nuevo dibujo de Excalidraw está tardando demasiado en crearse. Inténtelo de nuevo.",
 };

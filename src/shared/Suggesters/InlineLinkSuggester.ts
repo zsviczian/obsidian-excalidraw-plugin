@@ -1,7 +1,7 @@
 import { App, FuzzyMatch, TFile } from "obsidian";
 import { SuggestionModal } from "./SuggestionModal";
 import { LinkSuggestion } from "src/types/types";
-import ExcalidrawPlugin from "src/core/main";
+import type ExcalidrawPlugin from "src/core/main";
 import {
   getLinkSuggestionsFiltered,
   getSortedLinkMatches,

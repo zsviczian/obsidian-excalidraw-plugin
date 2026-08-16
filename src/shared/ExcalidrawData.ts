@@ -18,25 +18,20 @@ import {
   refreshTextDimensions,
   getContainerElement,
   loadSceneFonts,
-  MD_MARKDOWN_IMAGES,
 } from "../constants/constants";
 import ExcalidrawPlugin from "../core/main";
 import { TextMode } from "./TextMode";
 import type ExcalidrawView from "../view/ExcalidrawView";
 import { addAppendUpdateCustomData } from "../utils/elementCustomDataUtils";
 import {
-  compress,
-  decompress,
   getBinaryFileFromDataURL,
   getExportTheme,
   getLinkParts,
   hasExportTheme,
   isVersionNewerThanOther,
   LinkParts,
-  updateFrontmatterInString,
   wrapTextAtCharLength,
   arrayToMap,
-  compressAsync,
 } from "../utils/sceneDataUtils";
 import { isObsidianThemeDark } from "../utils/obsidianUtils";
 import { cleanBlockRef, cleanSectionHeading } from "../utils/pathUtils";
@@ -47,6 +42,7 @@ import {
   NonDeletedExcalidrawElement,
   ExcalidrawTextElement,
   FileId,
+  Theme,
 } from "@zsviczian/excalidraw/types/element/src/types";
 import {
   BinaryFiles,
@@ -54,6 +50,7 @@ import {
   SceneData,
 } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { EmbeddedFile } from "./EmbeddedFileLoader";
+import { EmbeddedDataRegistries } from "./EmbeddedDataRegistries";
 import { MimeType } from "src/types/embeddedFileLoaderTypes";
 import { MultiOptionConfirmationPrompt } from "./Dialogs/Prompt";
 import {
@@ -76,6 +73,35 @@ import {
   type MarkdownImageCustomData,
   type MarkdownImageData,
 } from "src/types/markdownImageTypes";
+import {
+  changeThemeOfExcalidrawMD,
+  DRAWING_COMPRESSED_REG,
+  getExcalidrawMarkdownHeader,
+  getExcalidrawMarkdownHeaderSection,
+  getJSON,
+  getMarkdownDrawingSection,
+  getMarkdownDrawingSectionAsync,
+  parseMarkdownImages,
+  RE_EXCALIDRAWDATA_FALLBACK_2,
+  RE_EXCALIDRAWDATA_NOSECTION_OK,
+  RE_TEXTELEMENTS_FALLBACK_2,
+  RE_TEXTELEMENTS_NOSECTION_OK,
+  syncMarkdownImagesInHeader,
+  unwrapMarkdownImageBlock,
+} from "./excalidrawMarkdownParsing";
+
+export {
+  changeThemeOfExcalidrawMD,
+  DRAWING_COMPRESSED_REG,
+  getExcalidrawMarkdownHeader,
+  getExcalidrawMarkdownHeaderSection,
+  getJSON,
+  getMarkdownDrawingSection,
+  getMarkdownDrawingSectionAsync,
+  parseMarkdownImages,
+  syncMarkdownImagesInHeader,
+  unwrapMarkdownImageBlock,
+};
 
 type SceneDataWithFiles = SceneData & { files: BinaryFiles };
 
@@ -85,7 +111,19 @@ type LegacyGridColor = NonNullable<
   MajorGridFrequency?: number;
 };
 
-type ExcalidrawDataScene = SceneDataWithFiles & {
+/**
+ * `SceneDataWithFiles` (via `SceneData`) already declares optional
+ * `elements`/`appState` fields. Intersecting it directly would make
+ * TypeScript intersect those declarations with the stricter ones below
+ * (e.g. `readonly ExcalidrawElement[] & Mutable<ExcalidrawElement>[]`)
+ * instead of replacing them, which silently collapses every `.filter()`/
+ * `.find()` call on `scene.elements` to `any`. Omitting them first makes
+ * this an actual override.
+ */
+type ExcalidrawDataScene = Omit<
+  SceneDataWithFiles,
+  "elements" | "appState"
+> & {
   type?: string;
   version?: number;
   source?: string;
@@ -203,455 +241,7 @@ export const REGEX_LINK = {
   },
 };
 
-//added \n at and of DRAWING_REG: https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/357
-const DRAWING_REG = /\n##? Drawing\n[^`]*(```json\n)([\s\S]*?)```\n/gm; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/182
-const DRAWING_REG_FALLBACK = /\n##? Drawing\n(```json\n)?(.*)(```)?(%%)?/gm;
-export const DRAWING_COMPRESSED_REG =
-  /(\n##? Drawing\n[^`]*(?:```compressed-json\n))([\s\S]*?)(```\n)/gm; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/182
-const DRAWING_COMPRESSED_REG_FALLBACK =
-  /(\n##? Drawing\n(?:```compressed-json\n)?)(.*)((```)?(%%)?)/gm;
 export const REG_LINKINDEX_HYPERLINK = /^\w+:\/\//;
-
-const isCompressedMD = (data: string): boolean => {
-  return data.match(/```compressed-json\n/gm) !== null;
-};
-
-const getDecompressedScene = (
-  data: string,
-): [string | null, RegExpMatchIteratorResult] => {
-  let res = data.matchAll(DRAWING_COMPRESSED_REG);
-
-  //In case the user adds a text element with the contents "# Drawing\n"
-  let parts;
-  parts = res.next();
-  if (parts.done) {
-    //did not find a match
-    res = data.matchAll(DRAWING_COMPRESSED_REG_FALLBACK);
-    parts = res.next();
-  }
-  if (parts.value && parts.value.length > 1) {
-    return [decompress(parts.value[2]), parts];
-  }
-  return [null, parts];
-};
-
-export const changeThemeOfExcalidrawMD = (data: string): string => {
-  const compressed = isCompressedMD(data);
-  let scene = compressed ? getDecompressedScene(data)[0] : data;
-  if (!scene) {
-    return data;
-  }
-  if (isObsidianThemeDark) {
-    if ((scene.match(/"theme"\s*:\s*"light"\s*,/g) || []).length === 1) {
-      scene = scene.replace(/"theme"\s*:\s*"light"\s*,/, `"theme": "dark",`);
-    }
-  } else if ((scene.match(/"theme"\s*:\s*"dark"\s*,/g) || []).length === 1) {
-    scene = scene.replace(/"theme"\s*:\s*"dark"\s*,/, `"theme": "light",`);
-  }
-  if (compressed) {
-    return data.replace(DRAWING_COMPRESSED_REG, `$1${compress(scene)}$3`);
-  }
-  return scene;
-};
-
-export function getJSON(data: string): { scene: string; pos: number } {
-  let res;
-  if (isCompressedMD(data)) {
-    const [result, parts] = getDecompressedScene(data);
-    if (result) {
-      return {
-        scene: result.substring(0, result.lastIndexOf("}") + 1),
-        pos: parts.value.index,
-      }; //this is a workaround in case sync merges two files together and one version is still an old version without the ```codeblock
-    }
-    return { scene: data, pos: parts.value ? parts.value.index : 0 };
-  }
-  res = data.matchAll(DRAWING_REG);
-
-  //In case the user adds a text element with the contents "# Drawing\n"
-  let parts;
-  parts = res.next();
-  if (parts.done) {
-    //did not find a match
-    res = data.matchAll(DRAWING_REG_FALLBACK);
-    parts = res.next();
-  }
-  if (parts.value && parts.value.length > 1) {
-    const result = parts.value[2];
-    return {
-      scene: result.substring(0, result.lastIndexOf("}") + 1),
-      pos: parts.value.index,
-    }; //this is a workaround in case sync merges two files together and one version is still an old version without the ```codeblock
-  }
-  return { scene: data, pos: parts.value ? parts.value.index : 0 };
-}
-
-export async function getMarkdownDrawingSectionAsync(
-  jsonString: string,
-  compressed: boolean,
-) {
-  const result = compressed
-    ? `## Drawing\n\x60\x60\x60compressed-json\n${await compressAsync(
-        jsonString,
-      )}\n\x60\x60\x60\n%%`
-    : `## Drawing\n\x60\x60\x60json\n${jsonString}\n\x60\x60\x60\n%%`;
-  return result;
-}
-
-export function getMarkdownDrawingSection(
-  jsonString: string,
-  compressed: boolean,
-): string {
-  const result = compressed
-    ? `## Drawing\n\x60\x60\x60compressed-json\n${compress(
-        jsonString,
-      )}\n\x60\x60\x60\n%%`
-    : `## Drawing\n\x60\x60\x60json\n${jsonString}\n\x60\x60\x60\n%%`;
-  return result;
-}
-
-const MARKDOWN_IMAGE_OPEN_MARKER =
-  /^<!-- excalidraw-markdown-image:([\w-]+) -->$/gm;
-
-type MarkdownImageBlock = {
-  fileId: FileId;
-  start: number;
-  bodyStart: number;
-  bodyEnd: number;
-  end: number;
-};
-
-const getMarkdownImageBlocks = (data: string): MarkdownImageBlock[] => {
-  const blocks: MarkdownImageBlock[] = [];
-  const openMarker = new RegExp(MARKDOWN_IMAGE_OPEN_MARKER);
-  let match: RegExpExecArray | null;
-  while ((match = openMarker.exec(data)) !== null) {
-    const fileId = match[1] as FileId;
-    const bodySeparator = data.startsWith("\r\n\r\n", openMarker.lastIndex)
-      ? "\r\n\r\n"
-      : "\n\n";
-    if (!data.startsWith(bodySeparator, openMarker.lastIndex)) {
-      continue;
-    }
-    const closeMarker = `<!-- /excalidraw-markdown-image:${fileId} -->`;
-    const closeIndex = data.indexOf(
-      `${bodySeparator}${closeMarker}`,
-      openMarker.lastIndex + bodySeparator.length,
-    );
-    if (closeIndex === -1) {
-      continue;
-    }
-    const end = closeIndex + bodySeparator.length + closeMarker.length;
-    blocks.push({
-      fileId,
-      start: match.index,
-      bodyStart: openMarker.lastIndex + bodySeparator.length,
-      bodyEnd: closeIndex,
-      end,
-    });
-    openMarker.lastIndex = end;
-  }
-  return blocks;
-};
-
-/**
- * Reads locally stored Markdown-image bodies from marker-delimited blocks.
- * Marker matching is deliberately independent of headings and block position.
- */
-export function parseMarkdownImages(data: string): Map<FileId, MarkdownImageData> {
-  const result = new Map<FileId, MarkdownImageData>();
-  getMarkdownImageBlocks(data).forEach((block) =>
-    result.set(block.fileId, {
-      markdown: data.substring(block.bodyStart, block.bodyEnd),
-    }),
-  );
-  return result;
-}
-
-/**
- * Removes a local Markdown-image block's marker comments while preserving its
- * Markdown body and surrounding document content exactly.
- *
- * @param data - Complete Excalidraw Markdown document.
- * @param fileId - File ID identifying the local Markdown-image block.
- * @param markdown - Optional current in-memory body to preserve instead of a
- * potentially stale body from the document.
- * @returns The document with the matching marker comments removed.
- */
-export function unwrapMarkdownImageBlock(
-  data: string,
-  fileId: FileId,
-  markdown?: string,
-): string {
-  const blocks = getMarkdownImageBlocks(data).filter(
-    (block) => block.fileId === fileId,
-  );
-  let updated = data;
-  for (let index = blocks.length - 1; index >= 0; index--) {
-    const block = blocks[index];
-    updated =
-      updated.slice(0, block.start) +
-      (markdown ?? updated.slice(block.bodyStart, block.bodyEnd)) +
-      updated.slice(block.end);
-  }
-  return updated;
-}
-
-const serializeMarkdownImageBlock = (
-  fileId: FileId,
-  markdown: string,
-): string =>
-  `<!-- excalidraw-markdown-image:${fileId} -->\n\n${markdown}\n\n<!-- /excalidraw-markdown-image:${fileId} -->`;
-
-/**
- * Synchronizes local Markdown-image bodies in the user-editable note header.
- * Existing blocks stay where the user placed them; only missing blocks receive
- * the default scaffolding immediately above Excalidraw Data.
- */
-export function syncMarkdownImagesInHeader(
-  header: string,
-  markdownImages: ReadonlyMap<FileId, MarkdownImageData>,
-): string {
-  const blocks = getMarkdownImageBlocks(header);
-  const existingIds = new Set<FileId>();
-  let updated = header;
-  for (let index = blocks.length - 1; index >= 0; index--) {
-    const block = blocks[index];
-    const data = markdownImages.get(block.fileId);
-    if (!data) {
-      updated = updated.slice(0, block.start) + updated.slice(block.end);
-      continue;
-    }
-    existingIds.add(block.fileId);
-    updated =
-      updated.slice(0, block.bodyStart) +
-      data.markdown +
-      updated.slice(block.bodyEnd);
-  }
-
-  const missing = [...markdownImages.entries()].filter(
-    ([fileId]) => !existingIds.has(fileId),
-  );
-  if (missing.length > 0) {
-    const hasExistingBlocks = getMarkdownImageBlocks(updated).length > 0;
-    const hasScaffoldingHeading = updated
-      .split(/\r?\n/)
-      .some((line) => line.trimEnd() === MD_MARKDOWN_IMAGES);
-    const blocksToAppend = missing
-      .map(([fileId, data]) => serializeMarkdownImageBlock(fileId, data.markdown))
-      .join("\n\n");
-    updated = `${updated.replace(/\s*$/, "")}${
-      hasExistingBlocks || hasScaffoldingHeading
-        ? "\n\n"
-        : `\n\n${MD_MARKDOWN_IMAGES}\n\n`
-    }${blocksToAppend}\n\n`;
-  } else if (markdownImages.size === 0) {
-    updated = updated.replace(
-      new RegExp(`(?:^|\\n)${MD_MARKDOWN_IMAGES}[ \\t]*\\n*$`),
-      "\n",
-    );
-  }
-  return updated;
-}
-
-//WITHSECTION refers to back of the card note (see this.inputEl.onkeyup in SelectCard.ts)
-const RE_EXCALIDRAWDATA_WITHSECTION_OK =
-  /^(#\n+)%%\n+# Excalidraw Data(?:\n|$)/m;
-const RE_EXCALIDRAWDATA_WITHSECTION_NOTOK =
-  /#\n+%%\n+# Excalidraw Data(?:\n|$)/m;
-const RE_EXCALIDRAWDATA_NOSECTION_OK = /^(%%\n+)?# Excalidraw Data(?:\n|$)/m;
-
-//WITHSECTION refers to back of the card note (see this.inputEl.onkeyup in SelectCard.ts)
-const RE_TEXTELEMENTS_WITHSECTION_OK = /^#\n+%%\n+##? Text Elements(?:\n|$)/m;
-const RE_TEXTELEMENTS_WITHSECTION_NOTOK = /#\n+%%\n+##? Text Elements(?:\n|$)/m;
-const RE_TEXTELEMENTS_NOSECTION_OK = /^(%%\n+)?##? Text Elements(?:\n|$)/m;
-
-//The issue is that when editing in markdown embeds the user can delete the last enter causing two sections
-//to collide. This is particularly problematic when the user is editing the last section before # Text Elements
-const RE_EXCALIDRAWDATA_FALLBACK_1 = /(.*)%%\n+# Excalidraw Data(?:\n|$)/m;
-const RE_EXCALIDRAWDATA_FALLBACK_2 = /(.*)# Excalidraw Data(?:\n|$)/m;
-
-const RE_TEXTELEMENTS_FALLBACK_1 = /(.*)%%\n+##? Text Elements(?:\n|$)/m;
-const RE_TEXTELEMENTS_FALLBACK_2 = /(.*)##? Text Elements(?:\n|$)/m;
-
-const RE_DRAWING = /^(%%\n+)?##? Drawing\n/m;
-
-export function getExcalidrawMarkdownHeader(data: string): {
-  header: string;
-  shouldFixTrailingHashtag: boolean;
-  processingOk: boolean;
-} {
-  //The base case scenario is at the top, continued with fallbacks in order of likelihood and file structure
-  //change history for sake of backward compatibility
-
-  /* Expected markdown structure:
-  bla bla bla
-  #
-  %%
-  # Excalidraw Data
-  */
-
-  //trimming the json because in legacy excalidraw files the JSON was a single string resulting in very slow regexp parsing
-  const drawingTrimLocation = data.search(RE_DRAWING);
-  if (drawingTrimLocation > 0) {
-    data = data.substring(0, drawingTrimLocation);
-  }
-
-  const m1 = data.match(RE_EXCALIDRAWDATA_WITHSECTION_OK);
-  let trimLocation = m1?.index ?? -1; //data.search(RE_EXCALIDRAWDATA_WITHSECTION_OK);
-  let shouldFixTrailingHashtag = false;
-  if (trimLocation > 0) {
-    trimLocation += m1[1].length; //accounts for the "(#\n\s*)" which I want to leave there untouched
-  }
-
-  /* Expected markdown structure (this happens when the user deletes the last empty line of the last back-of-the-card note):
-  bla bla bla#
-  %%
-  # Excalidraw Data
-  */
-  if (trimLocation === -1) {
-    trimLocation = data.search(RE_EXCALIDRAWDATA_WITHSECTION_NOTOK);
-    if (trimLocation > 0) {
-      shouldFixTrailingHashtag = true;
-    }
-  }
-  /* Expected markdown structure
-  a)
-    bla bla bla
-    %%
-    # Excalidraw Data
-  b)
-    bla bla bla
-    # Excalidraw Data
-  */
-  if (trimLocation === -1) {
-    trimLocation = data.search(RE_EXCALIDRAWDATA_NOSECTION_OK);
-  }
-  /* Expected markdown structure:
-  bla bla bla%%
-  # Excalidraw Data
-  */
-  if (trimLocation === -1) {
-    const res = data.match(RE_EXCALIDRAWDATA_FALLBACK_1);
-    if (res && Boolean(res[1])) {
-      trimLocation = res.index + res[1].length;
-    }
-  }
-  /* Expected markdown structure:
-  bla bla bla# Excalidraw Data
-  */
-  if (trimLocation === -1) {
-    const res = data.match(RE_EXCALIDRAWDATA_FALLBACK_2);
-    if (res && Boolean(res[1])) {
-      trimLocation = res.index + res[1].length;
-    }
-  }
-  /* Expected markdown structure:
-  bla bla bla
-  #
-  %%
-  # Text Elements
-  */
-  if (trimLocation === -1) {
-    trimLocation = data.search(RE_TEXTELEMENTS_WITHSECTION_OK);
-    if (trimLocation > 0) {
-      trimLocation += 2; //accounts for the "#\n" which I want to leave there untouched
-    }
-  }
-  /* Expected markdown structure:
-  bla bla bla#
-  %%
-  # Text Elements
-  */
-  if (trimLocation === -1) {
-    trimLocation = data.search(RE_TEXTELEMENTS_WITHSECTION_NOTOK);
-    if (trimLocation > 0) {
-      shouldFixTrailingHashtag = true;
-    }
-  }
-  /* Expected markdown structure
-  a)
-    bla bla bla
-    %%
-    # Text Elements
-  b)
-    bla bla bla
-    # Text Elements
-  */
-  if (trimLocation === -1) {
-    trimLocation = data.search(RE_TEXTELEMENTS_NOSECTION_OK);
-  }
-  /* Expected markdown structure:
-  bla bla bla%%
-  # Text Elements
-  */
-  if (trimLocation === -1) {
-    const res = data.match(RE_TEXTELEMENTS_FALLBACK_1);
-    if (res && Boolean(res[1])) {
-      trimLocation = res.index + res[1].length;
-    }
-  }
-  /* Expected markdown structure:
-  bla bla bla# Text Elements
-  */
-  if (trimLocation === -1) {
-    const res = data.match(RE_TEXTELEMENTS_FALLBACK_2);
-    if (res && Boolean(res[1])) {
-      trimLocation = res.index + res[1].length;
-    }
-  }
-  /* Expected markdown structure:
-  a)
-    bla bla bla
-    # Drawing
-  b)
-    bla bla bla
-    %%
-    # Drawing
-  */
-  if (trimLocation === -1) {
-    if (drawingTrimLocation > 0) {
-      trimLocation = drawingTrimLocation;
-    }
-  }
-  if (trimLocation === -1) {
-    return {
-      header: data.endsWith("\n") ? data : `${data}\n`,
-      shouldFixTrailingHashtag,
-      processingOk: false,
-    };
-  }
-
-  return {
-    header: data.substring(0, trimLocation),
-    shouldFixTrailingHashtag,
-    processingOk: true,
-  };
-}
-
-export const getExcalidrawMarkdownHeaderSection = (
-  data: string,
-  keys?: [string, string][],
-): string => {
-  const { header, shouldFixTrailingHashtag, processingOk } =
-    getExcalidrawMarkdownHeader(data);
-  if (!processingOk) {
-    return header;
-  }
-
-  const updatedHeader = updateFrontmatterInString(header, keys);
-  //this should be removed at a later time. Left it here to remediate 1.4.9 mistake
-  /*const REG_IMG = /(^---[\w\W]*?---\n)(!\[\[.*?]]\n(%%\n)?)/m; //(%%\n)? because of 1.4.8-beta... to be backward compatible with anyone who installed that version
-  if (header.match(REG_IMG)) {
-    header = header.replace(REG_IMG, "$1");
-  }*/
-  //end of remove
-  return shouldFixTrailingHashtag
-    ? `${updatedHeader}\n#\n`
-    : updatedHeader.endsWith("\n")
-      ? header
-      : `${header}\n`;
-};
 
 export type EquationItem = { latex: string; isLoaded: boolean };
 export type MermaidItem = { mermaid: string; isLoaded: boolean };
@@ -664,7 +254,8 @@ export class ExcalidrawData {
   public scene: ExcalidrawDataScene = null;
   public deletedElements: ExcalidrawElement[] = [];
   public file: TFile = null;
-  private app: App;
+  //public: read by EmbeddedDataRegistries via its constructor-injected host reference
+  public app: App;
   private showLinkBrackets: boolean;
   private linkPrefix: string;
   public embeddableTheme: "light" | "dark" | "auto" | "default" = "auto";
@@ -676,14 +267,17 @@ export class ExcalidrawData {
   public elementLinks: Map<string, string> = null;
   public files: Map<FileId, EmbeddedFile> = null; //fileId, path
   public markdownImages: Map<FileId, MarkdownImageData> = null;
-  private equations: Map<FileId, EquationItem> = null; //fileId, path
-  private mermaids: Map<FileId, MermaidItem> = null; //fileId, path
+  //public: read by EmbeddedDataRegistries via its constructor-injected host reference
+  public equations: Map<FileId, EquationItem> = null; //fileId, path
+  public mermaids: Map<FileId, MermaidItem> = null; //fileId, path
   private compatibilityMode: boolean = false;
   private textElementCommentedOut: boolean = false;
   selectedElementIds: { [key: string]: boolean } = {}; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/609
+  private embeddedDataRegistries: EmbeddedDataRegistries;
 
   constructor(
-    private plugin: ExcalidrawPlugin,
+    //public: read by EmbeddedDataRegistries via its constructor-injected host reference
+    public plugin: ExcalidrawPlugin,
     private view?: ExcalidrawView,
   ) {
     this.app = this.plugin.app;
@@ -691,6 +285,7 @@ export class ExcalidrawData {
     this.markdownImages = new Map<FileId, MarkdownImageData>();
     this.equations = new Map<FileId, EquationItem>();
     this.mermaids = new Map<FileId, MermaidItem>();
+    this.embeddedDataRegistries = new EmbeddedDataRegistries(this, EmbeddedFile);
   }
 
   public destroy() {
@@ -707,6 +302,7 @@ export class ExcalidrawData {
     this.textMode = null;
     this.loaded = false;
     this.elementLinks = null;
+    this.embeddedDataRegistries = null;
     this.files = null;
     this.markdownImages = null;
     this.equations = null;
@@ -1030,8 +626,7 @@ export class ExcalidrawData {
       (el: ExcalidrawElement): el is NonDeletedExcalidrawElement =>
         !el.isDeleted,
     );
-    this.scene.elements =
-      nonDeletedSceneElements as Mutable<ExcalidrawElement>[];
+    this.scene.elements = nonDeletedSceneElements;
 
     //once off migration of legacy scenes
     if (
@@ -1076,7 +671,7 @@ export class ExcalidrawData {
         this.plugin,
         this.file,
         "light",
-      );
+      ) as Theme;
     } else if (this.plugin.settings.matchThemeAlways) {
       this.scene.appState.theme = isObsidianThemeDark() ? "dark" : "light";
     }
@@ -1172,7 +767,7 @@ export class ExcalidrawData {
     data = data.slice(textElementsMatch.length);
     this.textElementCommentedOut = textElementsMatch.startsWith("%%\n");
     position = 0;
-    let parts;
+    let parts: RegExpMatchIteratorResult;
 
     //load element links
     const elementLinkMap = new Map<string, string>();
@@ -1540,7 +1135,7 @@ export class ExcalidrawData {
       //find text element in the scene
       const el = this.scene.elements?.filter(
         (el: ExcalidrawElement) => el.type === "text" && el.id === key,
-      );
+      ) as Mutable<ExcalidrawTextElement>[];
       if (el.length === 0) {
         this.textElements.delete(key); //if no longer in the scene, delete the text element
       } else {
@@ -1617,7 +1212,7 @@ export class ExcalidrawData {
     const res = REGEX_LINK.getRes(text);
     let linkIcon = false;
     let urlIcon = false;
-    let parts;
+    let parts: RegExpMatchIteratorResult;
     if (text.match(REG_LINKINDEX_HYPERLINK)) {
       link = text;
       urlIcon = true;
@@ -1719,7 +1314,7 @@ export class ExcalidrawData {
   private quickParse(text: string): [string, string] {
     const hasTransclusion = (text: string): boolean => {
       const res = REGEX_LINK.getRes(text);
-      let parts;
+      let parts: RegExpMatchIteratorResult;
       while (!(parts = res.next()).done) {
         if (REGEX_LINK.isTransclusion(parts)) {
           return true;
@@ -1737,7 +1332,7 @@ export class ExcalidrawData {
     const res = REGEX_LINK.getRes(text);
     let linkIcon = false;
     let urlIcon = false;
-    let parts;
+    let parts: RegExpMatchIteratorResult;
     if (text.match(REG_LINKINDEX_HYPERLINK)) {
       link = text;
       urlIcon = true;
@@ -1793,7 +1388,7 @@ export class ExcalidrawData {
       //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/566
       const element = this.scene.elements.filter(
         (el: ExcalidrawElement) => el.id === key,
-      );
+      ) as Mutable<ExcalidrawTextElement>[];
       const elementString = this.textElements.get(key).raw;
       if (
         element &&
@@ -2472,105 +2067,28 @@ export class ExcalidrawData {
    this is going to do the job
   */
   public setFile(fileId: FileId, data: EmbeddedFile) {
-    //always store absolute path because in case of paste, relative path may not resolve ok
-    if (!data) {
-      return;
-    }
-    this.files.set(fileId, data);
-
-    if (data.isHyperLink || data.isLocalLink) {
-      this.plugin.filesMaster.set(fileId, {
-        isHyperLink: data.isHyperLink,
-        isLocalLink: data.isLocalLink,
-        path: data.hyperlink,
-        blockrefData: null,
-        hasSVGwithBitmap: data.isSVGwithBitmap,
-      });
-      return;
-    }
-
-    if (!data.file) {
-      return;
-    }
-
-    const parts = data.linkParts.original.split("#");
-    this.plugin.filesMaster.set(fileId, {
-      isHyperLink: false,
-      isLocalLink: false,
-      path: data.file.path + (data.shouldScale() ? "" : "|100%"),
-      blockrefData: parts.length === 1 ? null : parts[1],
-      hasSVGwithBitmap: data.isSVGwithBitmap,
-      colorMapJSON: data.colorMap ? JSON.stringify(data.colorMap) : null,
-    });
+    this.embeddedDataRegistries.setFile(fileId, data);
   }
 
   public getFiles(): EmbeddedFile[] {
-    return Object.values(this.files);
+    return this.embeddedDataRegistries.getFiles();
   }
 
   public getFile(fileId: FileId): EmbeddedFile {
-    let embeddedFile = this.files.get(fileId);
-    if (embeddedFile) {
-      return embeddedFile;
-    }
-    const masterFile = this.plugin.filesMaster.get(fileId);
-    if (!masterFile) {
-      return embeddedFile;
-    }
-    embeddedFile = new EmbeddedFile(
-      this.plugin,
-      this.file.path,
-      masterFile.blockrefData
-        ? `${masterFile.path}#${masterFile.blockrefData}`
-        : masterFile.path,
-      masterFile.colorMapJSON,
-    );
-    this.files.set(fileId, embeddedFile);
-    return embeddedFile;
+    return this.embeddedDataRegistries.getFile(fileId);
   }
 
   public getFileEntries() {
-    return this.files.entries();
+    return this.embeddedDataRegistries.getFileEntries();
   }
 
   public deleteFile(fileId: FileId) {
-    this.files.delete(fileId);
-    //deliberately not deleting from plugin.filesMaster
-    //could be present in other drawings as well
+    this.embeddedDataRegistries.deleteFile(fileId);
   }
 
   //Image copy/paste support
   public hasFile(fileId: FileId): boolean {
-    if (this.files.has(fileId)) {
-      return true;
-    }
-    if (this.plugin.filesMaster.has(fileId)) {
-      const masterFile = this.plugin.filesMaster.get(fileId);
-      if (masterFile.isHyperLink || masterFile.isLocalLink) {
-        this.files.set(
-          fileId,
-          new EmbeddedFile(this.plugin, this.file.path, masterFile.path),
-        );
-        return true;
-      }
-      const path = masterFile.path.split("|")[0].split("#")[0];
-      if (!this.app.vault.getAbstractFileByPath(path)) {
-        this.plugin.filesMaster.delete(fileId);
-        return true;
-      } // the file no longer exists
-      const fixScale = masterFile.path.endsWith("100%");
-      const embeddedFile = new EmbeddedFile(
-        this.plugin,
-        this.file.path,
-        (masterFile.blockrefData
-          ? `${path}#${masterFile.blockrefData}`
-          : path) + (fixScale ? "|100%" : ""),
-        masterFile.colorMapJSON,
-      );
-      this.files.set(fileId, embeddedFile);
-      return true;
-    }
-    return false;
+    return this.embeddedDataRegistries.hasFile(fileId);
   }
 
   //--------------
@@ -2580,46 +2098,24 @@ export class ExcalidrawData {
     fileId: FileId,
     data: { latex: string; isLoaded: boolean },
   ) {
-    this.equations.set(fileId, { latex: data.latex, isLoaded: data.isLoaded });
-    this.plugin.equationsMaster.set(fileId, data.latex);
+    this.embeddedDataRegistries.setEquation(fileId, data);
   }
 
   public getEquation(fileId: FileId): { latex: string; isLoaded: boolean } {
-    const result = this.equations.get(fileId);
-    if (result) {
-      return result;
-    }
-    const latex = this.plugin.equationsMaster.get(fileId);
-    if (!latex) {
-      return result;
-    }
-    this.equations.set(fileId, { latex, isLoaded: false });
-    return { latex, isLoaded: false };
+    return this.embeddedDataRegistries.getEquation(fileId);
   }
 
   public getEquationEntries() {
-    return this.equations?.entries();
+    return this.embeddedDataRegistries.getEquationEntries();
   }
 
   public deleteEquation(fileId: FileId) {
-    this.equations.delete(fileId);
-    //deliberately not deleting from plugin.equationsMaster
-    //could be present in other drawings as well
+    this.embeddedDataRegistries.deleteEquation(fileId);
   }
 
   //Image copy/paste support
   public hasEquation(fileId: FileId): boolean {
-    if (this.equations.has(fileId)) {
-      return true;
-    }
-    if (this.plugin.equationsMaster.has(fileId)) {
-      this.equations.set(fileId, {
-        latex: this.plugin.equationsMaster.get(fileId),
-        isLoaded: false,
-      });
-      return true;
-    }
-    return false;
+    return this.embeddedDataRegistries.hasEquation(fileId);
   }
 
   //--------------
@@ -2628,41 +2124,22 @@ export class ExcalidrawData {
 
   /** Stores a local Markdown-image source and makes it available for intra-vault copy/paste. */
   public setMarkdownImage(fileId: FileId, data: MarkdownImageData): void {
-    if (!data) {
-      return;
-    }
-    const value = { markdown: data.markdown ?? "" };
-    this.markdownImages.set(fileId, value);
-    this.plugin.markdownImagesMaster.set(fileId, value);
+    this.embeddedDataRegistries.setMarkdownImage(fileId, data);
   }
 
   /** Returns local Markdown, restoring it from the intra-vault copy master. */
   public getMarkdownImage(fileId: FileId): MarkdownImageData | undefined {
-    const local = this.markdownImages.get(fileId);
-    if (local) {
-      return local;
-    }
-    const master = this.plugin.markdownImagesMaster.get(fileId);
-    if (master) {
-      const value = { ...master };
-      this.markdownImages.set(fileId, value);
-      return value;
-    }
-    return undefined;
+    return this.embeddedDataRegistries.getMarkdownImage(fileId);
   }
 
   /** Returns whether local Markdown exists, restoring intra-vault clipboard data. */
   public hasMarkdownImage(fileId: FileId): boolean {
-    return Boolean(this.getMarkdownImage(fileId));
+    return this.embeddedDataRegistries.hasMarkdownImage(fileId);
   }
 
   /** Removes a local source, optionally discarding its clipboard master entry. */
   public deleteMarkdownImage(fileId: FileId, clearMaster = false): void {
-    this.markdownImages.delete(fileId);
-    if (clearMaster) {
-      this.plugin.markdownImagesMaster.delete(fileId);
-    }
-    // Normally retain the master entry for copies already on the clipboard.
+    this.embeddedDataRegistries.deleteMarkdownImage(fileId, clearMaster);
   }
 
   //--------------
@@ -2672,49 +2149,24 @@ export class ExcalidrawData {
     fileId: FileId,
     data: { mermaid: string; isLoaded: boolean },
   ) {
-    this.mermaids.set(fileId, {
-      mermaid: data.mermaid,
-      isLoaded: data.isLoaded,
-    });
-    this.plugin.mermaidsMaster.set(fileId, data.mermaid);
+    this.embeddedDataRegistries.setMermaid(fileId, data);
   }
 
   public getMermaid(fileId: FileId): { mermaid: string; isLoaded: boolean } {
-    const result = this.mermaids.get(fileId);
-    if (result) {
-      return result;
-    }
-    const mermaid = this.plugin.mermaidsMaster.get(fileId);
-    if (!mermaid) {
-      return result;
-    }
-    this.mermaids.set(fileId, { mermaid, isLoaded: false });
-    return { mermaid, isLoaded: false };
+    return this.embeddedDataRegistries.getMermaid(fileId);
   }
 
   public getMermaidEntries() {
-    return this.mermaids.entries();
+    return this.embeddedDataRegistries.getMermaidEntries();
   }
 
   public deleteMermaid(fileId: FileId) {
-    this.mermaids.delete(fileId);
-    //deliberately not deleting from plugin.mermaidsMaster
-    //could be present in other drawings as well
+    this.embeddedDataRegistries.deleteMermaid(fileId);
   }
 
   //Image copy/paste support
   public hasMermaid(fileId: FileId): boolean {
-    if (this.mermaids.has(fileId)) {
-      return true;
-    }
-    if (this.plugin.mermaidsMaster.has(fileId)) {
-      this.mermaids.set(fileId, {
-        mermaid: this.plugin.mermaidsMaster.get(fileId),
-        isLoaded: false,
-      });
-      return true;
-    }
-    return false;
+    return this.embeddedDataRegistries.hasMermaid(fileId);
   }
 }
 

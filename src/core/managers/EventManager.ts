@@ -20,7 +20,7 @@ import {
   isUnwantedLeaf,
   setExcalidrawView,
 } from "../../utils/obsidianUtils";
-import ExcalidrawPlugin from "src/core/main";
+import type ExcalidrawPlugin from "src/core/main";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import {
   FRONTMATTER_KEYS,

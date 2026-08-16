@@ -1,7 +1,7 @@
 import { BaseComponent, Setting, Modifier } from "obsidian";
 import { DEVICE } from "src/constants/constants";
 import { t } from "src/lang/helpers";
-import { ExcalidrawSettings } from "src/core/settings";
+import type { ExcalidrawSettings } from "src/core/settingsDefaults";
 import { modifierLabel } from "src/utils/modifierkeyHelper";
 import { fragWithHTML } from "src/utils/utils";
 import { setStyle } from "src/utils/styleUtils";

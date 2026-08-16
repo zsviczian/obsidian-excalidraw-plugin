@@ -1490,7 +1490,7 @@ export class EmbeddedFilesLoader {
                   depth,
                   inFile: null,
                   hasSVGwithBitmap: false,
-                  elements: result.elements as ExcalidrawElement[],
+                  elements: result.elements,
                 });
                 if (this.terminate) {
                   return;

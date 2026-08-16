@@ -1,5 +1,5 @@
 import { DEVICE } from "src/constants/constants";
-import ExcalidrawPlugin from "src/core/main";
+import type ExcalidrawPlugin from "src/core/main";
 
 export class ExcalidrawConfig {
   public areaLimit: number = 16777216;

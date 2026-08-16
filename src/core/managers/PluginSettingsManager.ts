@@ -2,7 +2,7 @@ import { JSON_parse } from "src/constants/constants";
 import {
   DEFAULT_SETTINGS,
   type ExcalidrawSettings,
-} from "src/core/settings";
+} from "src/core/settingsDefaults";
 import { PreviewImageType } from "src/types/utilTypes";
 import {
   decryptPersistedAPIKeys,

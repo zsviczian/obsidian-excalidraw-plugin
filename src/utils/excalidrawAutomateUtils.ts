@@ -5,7 +5,7 @@ import {
   AppState,
   BinaryFiles,
 } from "@zsviczian/excalidraw/types/excalidraw/types";
-import ExcalidrawPlugin from "src/core/main";
+import type ExcalidrawPlugin from "src/core/main";
 import { getTextMode } from "src/shared/TextMode";
 import {
   ExcalidrawElement,
@@ -13,6 +13,7 @@ import {
   FileId,
   FixedPoint,
   FontString,
+  Theme,
 } from "@zsviczian/excalidraw/types/element/src/types";
 import { normalizePath, TFile } from "obsidian";
 
@@ -552,8 +553,7 @@ export async function createPNG(
       source: `${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES_TAG}/${PLUGIN_VERSION}`,
       elements,
       appState: {
-        theme:
-          forceTheme ?? template?.appState?.theme ?? canvasTheme ?? "light",
+        theme: (forceTheme ?? template?.appState?.theme ?? canvasTheme ?? "light") as Theme,
         viewBackgroundColor:
           template?.appState?.viewBackgroundColor ?? canvasBackgroundColor,
         ...(template?.appState?.frameRendering
@@ -627,7 +627,7 @@ export const updateElementLinksToObsidianLinks = ({
               linkedFile: file,
               hostFile,
             }) ?? link;
-        } catch (e) {
+        } catch (e: unknown) {
           errorlog({
             where: "excalidrawAutomateUtils.updateElementLinksToObsidianLinks",
             fn: window.ExcalidrawAutomate.onUpdateElementLinkForExportHook,
@@ -694,8 +694,7 @@ export async function createSVG(
     });
   }
 
-  const theme =
-    forceTheme ?? template?.appState?.theme ?? canvasTheme ?? "light";
+  const theme = (forceTheme ?? template?.appState?.theme ?? canvasTheme ?? "light") as Theme;
   const withTheme =
     exportSettings?.withTheme ?? plugin.settings.exportWithTheme;
 
@@ -846,7 +845,7 @@ export const search = async (view: ExcalidrawView) => {
   }
   const res = text.matchAll(/"(.*?)"/g);
   let query: string[] = [];
-  let parts;
+  let parts: IteratorResult<RegExpMatchArray, undefined>;
   while (!(parts = res.next()).done) {
     query.push(parts.value[1]);
   }

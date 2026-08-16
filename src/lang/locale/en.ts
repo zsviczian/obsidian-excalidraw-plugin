@@ -246,6 +246,10 @@ export default {
     "OCR full drawing: Grab text from freedraw + images to clipboard and doc.props",
   TASKBONE_NOT_ENABLED:
     "Taskbone OCR is not enabled. Please go to plugins settings to enable it.",
+  OCR_ABORT_NO_ELEMENTS:
+    "Aborting OCR because there are no image or freedraw elements on the canvas.",
+  OCR_ALREADY_PROCESSED:
+    "The drawing has already been processed, you will find the result in the frontmatter in Markdown view mode. If you ran the command from the Obsidian panel in Excalidraw then you can ctrl(cmd)+click the command to force the rescanning.",
   RERUN_OCR:
     "OCR full drawing re-run: Grab text from freedraw + images to clipboard and doc.props",
   RUN_OCR_ELEMENTS:
@@ -1216,6 +1220,19 @@ export default {
     "If enabled, Excalidraw will execute file-level <code>excalidraw-onload-script</code> code in all drawings you open from now on, until you disable this setting. " +
     "This creates a risk if you download markdown files from unknown sources: a malicious actor can use <code>excalidraw-onload-script</code> " +
     "to run any command in Obsidian and potentially transfer data to the internet. Only enable this if you trust the file and its source.",
+  AUTOSTART_SCRIPT_PROMPT:
+    "wants to run automatically every time you open an Excalidraw drawing. Do you want to allow this?",
+  AUTOSTART_SCRIPT_PROMPT_MANAGE_HINT:
+    'You can change this later from the Command Palette ("Autostart scripts") or in Settings → Compatibility → Autostart scripts.',
+  AUTOSTART_SCRIPT_ALLOW: "Autostart",
+  AUTOSTART_SCRIPT_DENY: "Manual start only",
+  AUTOSTART_SCRIPT_ASK_LATER: "Ask every time",
+  AUTOSTART_SCRIPTS_HEAD: "Autostart scripts",
+  AUTOSTART_SCRIPTS_DESC:
+    "Scripts appear here once they ask for permission to run automatically every time a new Excalidraw view opens (running the script once, manually, is what triggers the request). Change a script's setting at any time.",
+  AUTOSTART_SCRIPTS_EMPTY: "No scripts have requested autostart permission yet.",
+  AUTOSTART_SCRIPT_FAILED_WARNING:
+    "This script failed the last time it tried to autostart.",
   ENABLE_COMMAND_LINKS_NAME: "Enable command links (cmd://)",
   ENABLE_COMMAND_LINKS_CONFIRMATION:
     "This link triggers an Obsidian command via <code>cmd://</code>. Do you want to enable command links?",
@@ -1467,6 +1484,7 @@ export default {
   PROMPT_BUTTON_NEVERMIND: "Nevermind",
   PROMPT_BUTTON_OK: "OK",
   PROMPT_BUTTON_CANCEL: "Cancel",
+  PROMPT_BUTTON_CLOSE: "Close",
   PROMPT_BUTTON_INSERT_LINE: "Insert new line",
   PROMPT_BUTTON_INSERT_SPACE: "Insert space",
   PROMPT_BUTTON_INSERT_LINK: "Insert markdown link to file",
@@ -1493,6 +1511,7 @@ export default {
 
   //InsertPDFModal.ts
   IPM_PAGES_TO_IMPORT_NAME: "Pages to import",
+  IPM_PAGES_TO_IMPORT_DESC: "E.g.: 1,3-5,7,9-10",
   IPM_SELECT_PAGES_TO_IMPORT: "Please select pages to import",
   IPM_ADD_BORDER_BOX_NAME: "Add border box",
   IPM_ADD_FRAME_NAME: "Add page to frame",
@@ -1829,4 +1848,20 @@ Thank you & Enjoy!
   PEN_SETTINGS_CAP_END: "Cap End",
   PEN_SETTINGS_SAVE: "Save Changes",
   PEN_SETTINGS_CANCEL: "Cancel",
+
+  //ObserverManager.ts
+  ERROR_ADDING_OBSERVER_MANAGER: "Error adding ObserverManager",
+
+  //PublishOutOfDateFiles.ts
+  POODF_TITLE: "Out of date SVG files",
+  POODF_CHECK_RECURSIVE: "Check recursive",
+  POODF_OPEN_SELECTED: "Open selected",
+
+  //ImageCache.ts
+  IMAGE_CACHE_INITIALIZED:
+    "Excalidraw image cache is initialized - you may now retry opening your damaged drawing.",
+
+  //carveout.ts
+  NEW_DRAWING_TIMEOUT:
+    "File not found. New Excalidraw drawing is taking too long to create. Please try again.",
 };

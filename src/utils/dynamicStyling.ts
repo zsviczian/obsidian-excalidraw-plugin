@@ -110,7 +110,7 @@ export const setDynamicStyle = (
     //const doc = view.ownerDocument;
     const st = view?.excalidrawAPI?.getAppState?.();
 
-    const isLightTheme = st?.theme === "light" || st?.theme === "light";
+    const isLightTheme = st?.theme === "light";
 
     if (color === "transparent") {
       color = "#ffffff";

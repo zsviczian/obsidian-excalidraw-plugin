@@ -1,5 +1,6 @@
+import { t } from "src/lang/helpers";
 import { DEBUGGING } from "src/utils/debugHelper";
-import ExcalidrawPlugin from "src/core/main";
+import type ExcalidrawPlugin from "src/core/main";
 import { CustomMutationObserver } from "src/utils/debugHelper";
 import { DEVICE } from "src/constants/constants";
 import {
@@ -49,7 +50,7 @@ export class ObserverManager {
         this.addWorkspaceDrawerObserver();
       }
     } catch (e) {
-      new Notice("Error adding ObserverManager", 6000);
+      new Notice(t("ERROR_ADDING_OBSERVER_MANAGER"), 6000);
       console.error("Error adding ObserverManager", e);
     }
     this.plugin.logStartupEvent("ObserverManager added");

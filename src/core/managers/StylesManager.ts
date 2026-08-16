@@ -1,5 +1,5 @@
 import { WorkspaceWindow } from "obsidian";
-import ExcalidrawPlugin from "src/core/main";
+import type ExcalidrawPlugin from "src/core/main";
 import { getAllWindowDocuments } from "../../utils/obsidianUtils";
 import { setStyleText } from "src/utils/htmlUtils";
 

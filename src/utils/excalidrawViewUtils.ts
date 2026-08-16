@@ -1,3 +1,5 @@
+import type { ColorMaster } from "@zsviczian/colormaster";
+import type { TInput } from "@zsviczian/colormaster/types";
 import {
   MAX_IMAGE_SIZE,
   IMAGE_TYPES,
@@ -27,6 +29,7 @@ import {
   ExcalidrawImageElement,
   ExcalidrawTextElement,
   FileId,
+  NonDeletedExcalidrawElement,
 } from "@zsviczian/excalidraw/types/element/src/types";
 import { getAllNestedExcalidrawFiles } from "./fileUtils";
 import {
@@ -686,7 +689,12 @@ export async function addBackOfTheNoteCard(
   if (activate) {
     window.setTimeout(() => {
       api.updateScene({
-        appState: { activeEmbeddable: { element: el, state: "active" } },
+        appState: {
+          activeEmbeddable: {
+            element: el as NonDeletedExcalidrawElement,
+            state: "active",
+          },
+        },
         captureUpdate: CaptureUpdateAction.NEVER,
       });
       if (found) {
@@ -804,7 +812,10 @@ export function isTextImageTransclusion(
   callback: (link: string, file: TFile) => void,
 ): boolean {
   const REG_TRANSCLUSION = /^!\[\[([^|\]]*)?.*?]]$|^!\[[^\]]*?]\((.*?)\)$/g;
-  const match = text.trim().matchAll(REG_TRANSCLUSION).next(); //reset the iterator
+  const match: IteratorResult<RegExpMatchArray, undefined> = text
+    .trim()
+    .matchAll(REG_TRANSCLUSION)
+    .next(); //reset the iterator
   if (match?.value?.[0]) {
     const link = match.value[1] ?? match.value[2];
     const file = view.app.metadataCache.getFirstLinkpathDest(
@@ -929,15 +940,22 @@ export function getViewColorPalette(
     return getDefaultColorPalette();
   }
 
-  const basePalette = colorPalette[palette];
+  // AppState["colorPalette"][palette] is typed as ColorPaletteCustom (a
+  // config-shaped record) upstream, but at the AppState/runtime level the
+  // fork actually stores it as a flat list of single colors and/or grouped
+  // color tuples -- confirmed against this function's own already-typed
+  // flattenPalette() helper below (readonly (string | string[])[]).
+  const basePalette = colorPalette[palette] as unknown as
+    | string
+    | readonly (string | string[])[];
 
   if (!Array.isArray(basePalette)) {
-    return [basePalette];
+    return [basePalette as string];
   }
 
-  const cmFactory =
-    view.hookServer?.getCM?.bind(view.hookServer) ??
-    view.plugin.ea.getCM.bind(view.plugin.ea);
+  const hookServer = view.hookServer;
+  const cmFactory = (color: TInput): ColorMaster =>
+    hookServer?.getCM ? hookServer.getCM(color) : view.plugin.ea.getCM(color);
   type ColorMasterLike = {
     lightness?: number;
     alpha?: number;
@@ -952,7 +970,7 @@ export function getViewColorPalette(
     );
   };
   const getLightness = (color: string): number => {
-    const cm = cmFactory?.(color) as unknown;
+    const cm = cmFactory(color) as unknown;
     const value = isColorMasterLike(cm) ? cm.lightness : undefined;
     return typeof value === "number" ? value : Number.POSITIVE_INFINITY;
   };
@@ -963,7 +981,7 @@ export function getViewColorPalette(
     if (color.toLowerCase() === "transparent") {
       return "transparent";
     }
-    const cm = cmFactory?.(color) as unknown;
+    const cm = cmFactory(color) as unknown;
     if (isColorMasterLike(cm) && typeof cm.stringHEX === "function") {
       try {
         const alpha = cm.alpha;

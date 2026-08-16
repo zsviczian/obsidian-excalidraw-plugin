@@ -1,14 +1,12 @@
 import { Random } from "roughjs/bin/math";
 import { nanoid } from "nanoid";
-import { Point } from "./elements/ExcalidrawElement";
+import type { Point } from "./elements/ExcalidrawElement";
 
 const random = new Random(Date.now());
 
 export const randomInteger = (): number => Math.floor(random.next() * 2 ** 31);
 
 export const randomId = (): string => nanoid();
-
-export const safeNumber = (number: number): number => Number(number.toFixed(2));
 
 export function dimensionsFromPoints(points: number[][]): number[] {
   const xCoords = points.map(([x]) => x);

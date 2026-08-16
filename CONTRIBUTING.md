@@ -63,6 +63,12 @@ Because the plugin must support Obsidian's native popout windows, React and Exca
 
 Rendering and persistence have different window-ownership rules. DOM, events, portals, and React roots should use the owning view window. Existing plugin-level IndexedDB and local-storage data belongs to the main Obsidian application window and is shared with popouts; do not move it to `view.ownerWindow` without an explicit storage design and migration.
 
+#### Typed Excalidraw host boundary
+
+Obsidian-specific capabilities used inside the customized component must cross the typed host-adapter boundary configured by `PackageManager`. Do not pass the plugin, its settings object, or an active view through Excalidraw props or `appState`, and do not recover them through globals. Adapters should expose small semantic operations, read current plugin state, and remain owned by the evaluated window runtime. View-specific behavior must stay instance-scoped.
+
+The fork is the source of truth for adapter contracts and protocol versions. Reuse its published types instead of defining parallel plugin-local unions or interfaces. The adapters are an internal protocol paired with this plugin's exact Excalidraw dependency: coordinate breaking changes across both repositories and fail fast on a missing or incompatible boundary rather than retaining legacy global bridges.
+
 ### 2. MathjaxToSVG
 LaTeX support is provided by the `MathjaxToSVG` library, which is packaged as a separate sub-component (located in the `MathjaxToSVG/` folder).
 - It is compressed using `LZString` during build time.
@@ -119,6 +125,8 @@ From `../excalidraw/packages/excalidraw`, `yarn build:obsidian` produces four co
 
 For an unpublished integration test, you may temporarily copy those four generated files into the installed package under this repository's ignored `node_modules`. Keep the declared npm dependency unchanged. Running `npm install` restores the published package. The durable workflow is to publish a new component version, update the plugin dependency, run `npm install`, and rebuild.
 
+For a maintainer-coordinated host-protocol release, update and test the fork contract first, inspect the package tarball, publish the fork package, then update this repository's exact dependency and lockfile. The final production build and smoke test must use the published package installed by `npm install`, not the temporary copied artifacts. Unit tests in the fork use structural fake adapters and do not require Obsidian; integration testing here must cover startup, reload, the main window, and popout creation and teardown.
+
 The Excalidraw Obsidian artifact has strict runtime constraints:
 
 - one function-evaluable JavaScript file, with no runtime chunks
@@ -139,7 +147,7 @@ Use `RefactorPlan.md` as the living record for ongoing structural work. Refactor
 
 - **No hardcoded strings:** There should be no hardcoded English strings directly in the UI components or logic.
 - **Language files:** All strings must be added to the localization files located in `src/lang/locale/`.
-- **Translations:** At a minimum, you must add your new keys and strings to `en.ts`. However, it is highly appreciated if you can provide translated strings for all of our actively maintained translations (`es.ts`, `ru.ts`, `zh-cn.ts`, `zh-tw.ts`) using a translation tool.
+- **Translations:** Add every new key and string to `en.ts` and the actively maintained translations (`es.ts`, `ru.ts`, `zh-cn.ts`, `zh-tw.ts`) in the same change.
 
 ## 📦 Pull Requests & Versioning
 

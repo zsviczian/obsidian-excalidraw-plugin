@@ -997,6 +997,28 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field: "registerElementActionProvider",
+    code:
+      "registerElementActionProvider(getActions: (element: ExcalidrawElement) => readonly {id: string, title: string, icon: string, action: () => void}[]): (() => void) | null;",
+    desc:
+      "Registers custom action buttons in the selected-element context menu (the small toolbar shown above a single selected element). " +
+      "getActions is called with the selected element whenever the selection, element type, fileId, or customData changes; return an empty array to show nothing. " +
+      "Registration is cleared automatically when the view closes, and cleared for this script specifically if the script's file is deleted while the view is still open. " +
+      "Calling this again for the same script in the same view (e.g. running the script again while it is already registered) does not create a duplicate - it is a no-op that returns null. " +
+      "Returns a cleanup function to unregister manually, or null if there is no active target view or this script is already registered in it.",
+    after: '((element) => element.type === "rectangle" ? [{id: "my-action", title: "My Action", icon: "star", action: () => console.log(element.id)}] : []);',
+  },
+  {
+    field: "registerAutostart",
+    code: 'registerAutostart(): Promise<"allow" | "deny" | "pending">;',
+    desc:
+      "Requests permission for this script to be automatically re-run every time a new Excalidraw view is opened. " +
+      "The first time a given script calls this, the user is prompted to Allow, Deny, or decide later; the decision persists and is not asked again unless the user changes it (via the \"Autostart scripts\" command or settings section) or previously picked \"Ask me later\". " +
+      "A fresh Allow also immediately re-runs the script in every other currently-open Excalidraw view, so it attaches everywhere right away instead of only the next time each view is opened. " +
+      'Returns "allow", "deny", or "pending" (no active script, or the user has not yet decided). Typically called near the top of a script, guarding whatever the script wants to re-register on autostart, e.g. registerElementActionProvider().',
+    after: "();",
+  },
+  {
     field: "getSidepanelLeaf",
     code: "getSidepanelLeaf(): WorkspaceLeaf | null;",
     desc: "Returns the WorkspaceLeaf hosting the Excalidraw sidepanel view, or null if the sidepanel is not present.",

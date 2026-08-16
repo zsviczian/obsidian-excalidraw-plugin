@@ -1,9 +1,10 @@
 import { TFile } from "obsidian";
 import * as React from "react";
-import ExcalidrawView from "../../ExcalidrawView";
+import type ExcalidrawView from "../../ExcalidrawView";
 import {
   ExcalidrawElement,
   ExcalidrawEmbeddableElement,
+  NonDeletedExcalidrawElement,
 } from "@zsviczian/excalidraw/types/element/src/types";
 import { AppState } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { ActionButton } from "./ActionButton";
@@ -294,7 +295,7 @@ export class EmbeddableMenu {
       this.view.updateScene({
         appState: {
           activeEmbeddable: {
-            element: updatedElement,
+            element: updatedElement as unknown as NonDeletedExcalidrawElement,
             state: "active",
           },
         },
@@ -334,7 +335,7 @@ export class EmbeddableMenu {
       this.view.updateScene({
         appState: {
           activeEmbeddable: {
-            element: updatedElement,
+            element: updatedElement as unknown as NonDeletedExcalidrawElement,
             state: "active",
           },
         },

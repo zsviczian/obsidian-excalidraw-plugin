@@ -215,6 +215,9 @@ export default {
   ABOUT_EXCALIDRAW: "关于 Excalidraw",
   RUN_OCR: "OCR 整个绘图：识别涂鸦和图片里的文本并复制到剪贴板和笔记属性中",
   TASKBONE_NOT_ENABLED: "Taskbone OCR 未启用。请前往插件设置将其开启。",
+  OCR_ABORT_NO_ELEMENTS: "正在中止 OCR，因为画布上没有图像或手绘元素。",
+  OCR_ALREADY_PROCESSED:
+    "该绘图已经处理过，您可以在 Markdown 视图模式下的 frontmatter 中找到结果。如果您是从 Excalidraw 的 Obsidian 面板运行此命令，可以按住 ctrl(cmd) 并点击该命令以强制重新扫描。",
   RERUN_OCR:
     "重新 OCR 整个绘图：识别涂鸦和图片里的文本并复制到剪贴板和笔记属性中",
   RUN_OCR_ELEMENTS: "OCR 选中的元素：识别涂鸦和图片里的文本并复制到剪贴板",
@@ -1131,6 +1134,18 @@ export default {
     "启用后，Excalidraw 会在你之后打开的所有绘图中执行文件级别的 <code>excalidraw-onload-script</code>，直到你关闭此设置。" +
     "如果你从未知来源下载 Markdown 文件，这会带来风险：恶意行为者可以利用 <code>excalidraw-onload-script</code> " +
     "在 Obsidian 中运行任意命令，并且有可能将数据传输到互联网。只有在你信任该文件及其来源时才启用此功能。",
+  AUTOSTART_SCRIPT_PROMPT:
+    "希望在你每次打开 Excalidraw 绘图时自动运行。是否允许？",
+  AUTOSTART_SCRIPT_PROMPT_MANAGE_HINT:
+    "你以后可以在命令面板（“自动启动脚本”）或设置 → 兼容性 → 自动启动脚本中更改此设置。",
+  AUTOSTART_SCRIPT_ALLOW: "自动启动",
+  AUTOSTART_SCRIPT_DENY: "仅手动启动",
+  AUTOSTART_SCRIPT_ASK_LATER: "每次都询问",
+  AUTOSTART_SCRIPTS_HEAD: "自动启动脚本",
+  AUTOSTART_SCRIPTS_DESC:
+    "脚本在请求权限以便每次打开新的 Excalidraw 绘图时自动运行后会出现在这里（手动运行一次脚本即可触发该请求）。你可以随时更改脚本的设置。",
+  AUTOSTART_SCRIPTS_EMPTY: "尚无脚本请求自动启动权限。",
+  AUTOSTART_SCRIPT_FAILED_WARNING: "该脚本上次自动启动时失败了。",
   ENABLE_COMMAND_LINKS_NAME: "启用命令链接（cmd://）",
   ENABLE_COMMAND_LINKS_CONFIRMATION:
     "此链接会通过 <code>cmd://</code> 触发 Obsidian 命令。是否启用命令链接？",
@@ -1370,6 +1385,7 @@ export default {
   PROMPT_BUTTON_NEVERMIND: "算了",
   PROMPT_BUTTON_OK: "OK",
   PROMPT_BUTTON_CANCEL: "取消",
+  PROMPT_BUTTON_CLOSE: "关闭",
   PROMPT_BUTTON_INSERT_LINE: "插入一行",
   PROMPT_BUTTON_INSERT_SPACE: "插入空格",
   PROMPT_BUTTON_INSERT_LINK: "插入内部链接",
@@ -1395,6 +1411,7 @@ export default {
 
   //InsertPDFModal.ts
   IPM_PAGES_TO_IMPORT_NAME: "要导入的页面",
+  IPM_PAGES_TO_IMPORT_DESC: "例如：1,3-5,7,9-10",
   IPM_SELECT_PAGES_TO_IMPORT: "请选择页面以进行导入",
   IPM_ADD_BORDER_BOX_NAME: "添加带边框的盒子容器",
   IPM_ADD_FRAME_NAME: "添加页面到画框",
@@ -1636,4 +1653,19 @@ Obsidian 的 Excalidraw 插件远不只是画图工具。由于它与 Obsidian �
   EXTRAS_GATEWAY_COMP_PLUGIN: "Excalidraw Extras 插件",
   EXTRAS_GATEWAY_UPDATE_TITLE: "Excalidraw 需要新版本的 Extras 插件",
   EXTRAS_GATEWAY_UPDATE_BTN: "打开社区插件",
+
+  //ObserverManager.ts
+  ERROR_ADDING_OBSERVER_MANAGER: "添加 ObserverManager 时出错",
+
+  //PublishOutOfDateFiles.ts
+  POODF_TITLE: "过期的 SVG 文件",
+  POODF_CHECK_RECURSIVE: "递归检查",
+  POODF_OPEN_SELECTED: "打开所选项",
+
+  //ImageCache.ts
+  IMAGE_CACHE_INITIALIZED:
+    "Excalidraw 图像缓存已初始化 - 您现在可以重试打开损坏的绘图。",
+
+  //carveout.ts
+  NEW_DRAWING_TIMEOUT: "未找到文件。新建 Excalidraw 绘图耗时过长。请重试。",
 };

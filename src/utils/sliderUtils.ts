@@ -2,14 +2,14 @@ import { Setting } from "obsidian";
 import { setStyle } from "./styleUtils";
 
 export type SliderSetting = {
-  name: string;
+  name: string | DocumentFragment;
   desc?: string | DocumentFragment;
   min: number;
   max: number;
   step: number;
   value: number;
   minWidth?: string;
-  onChange: (value: number) => void;
+  onChange: (value: number) => void | Promise<void>;
 };
 
 export const createSliderWithText = (
@@ -27,7 +27,7 @@ export const createSliderWithText = (
         .setValue(settings.value)
         .onChange(async (value) => {
           valueText.innerText = ` ${value.toString()}`;
-          settings.onChange(value);
+          await settings.onChange(value);
         }),
     )
     .settingEl.createDiv("", (el) => {

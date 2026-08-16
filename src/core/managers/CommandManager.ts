@@ -23,7 +23,7 @@ import {
 import ExcalidrawView from "../../view/ExcalidrawView";
 import { TextMode } from "../../shared/TextMode";
 import { REGEX_LINK } from "../../shared/ExcalidrawData";
-import { ExcalidrawSettings } from "../settings";
+import type { ExcalidrawSettings } from "../settingsDefaults";
 import {
   openDialogAction,
   OpenFileDialog,
@@ -66,6 +66,7 @@ import {
   FileId,
 } from "@zsviczian/excalidraw/types/element/src/types";
 import { ReleaseNotes } from "../../shared/Dialogs/ReleaseNotes";
+import { AutostartScriptsModal } from "../../shared/Dialogs/AutostartScriptsSettingsComponent";
 import { ScriptInstallPrompt } from "../../shared/Dialogs/ScriptInstallPrompt";
 import Taskbone from "../../shared/OCR/Taskbone";
 import {
@@ -87,7 +88,7 @@ import {
 } from "../../utils/carveout";
 import { showFrameSettings } from "../../shared/Dialogs/FrameSettings";
 import { insertImageToView } from "../../utils/excalidrawViewUtils";
-import ExcalidrawPlugin from "src/core/main";
+import type ExcalidrawPlugin from "src/core/main";
 import { UIModeSettings } from "src/shared/Dialogs/UIModeSettings";
 import { PaneTarget } from "src/types/utilTypes";
 import { decompress } from "src/utils/sceneDataUtils";
@@ -2298,6 +2299,14 @@ export class CommandManager {
         }
         new ReleaseNotes(this.app, this.plugin, PLUGIN_VERSION).open();
         return true;
+      },
+    });
+
+    this.addCommand({
+      id: "view-autostart-scripts",
+      name: t("AUTOSTART_SCRIPTS_HEAD"),
+      callback: () => {
+        new AutostartScriptsModal(this.plugin).open();
       },
     });
 

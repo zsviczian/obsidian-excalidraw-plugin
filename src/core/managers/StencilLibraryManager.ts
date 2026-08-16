@@ -344,7 +344,7 @@ export class StencilLibraryManager {
 
     for (const item of this.currentItems) {
       const next = nextById.get(item.id);
-      if (!next || JSON.stringify(next) !== JSON.stringify(item)) {
+      if (!next || JSON.stringify(next, null, 2) !== JSON.stringify(item, null, 2)) {
         affectedPaths.add(
           this.itemSource.get(item.id) ?? this.getLocalLibraryPath(),
         );
@@ -389,7 +389,7 @@ export class StencilLibraryManager {
         version: 2,
         libraryItems: updated,
       };
-      if (JSON.stringify(existingData) !== JSON.stringify(nextData)) {
+      if (JSON.stringify(existingData, null, 2) !== JSON.stringify(nextData, null, 2)) {
         await this.persistLibraryFile(path, nextData);
       }
     }
@@ -487,7 +487,7 @@ export class StencilLibraryManager {
         return;
       }
       await this.ensureFolder();
-      const content = JSON.stringify(data);
+      const content = JSON.stringify(data, null, 2);
       if (existing) {
         await this.plugin.app.vault.modify(existing, content);
         return;

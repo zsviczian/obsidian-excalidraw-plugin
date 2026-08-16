@@ -13,7 +13,7 @@ import {
 } from "../../constants/constants";
 import { EmbeddedFilesLoader } from "../../shared/EmbeddedFileLoader";
 import { createPNG, createSVG } from "../../utils/excalidrawAutomateUtils";
-import ExcalidrawPlugin from "../main";
+import type ExcalidrawPlugin from "../main";
 import { getIMGFilename } from "../../utils/fileUtils";
 import {
   getEmbeddedFilenameParts,
