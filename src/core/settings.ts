@@ -71,6 +71,7 @@ import {
 import { SettingBindingRegistry } from "src/core/settings/SettingBindingRegistry";
 import { LegacySettingsAdapter } from "src/core/settings/LegacySettingsAdapter";
 import { DeclarativeSettingsAdapter } from "src/core/settings/DeclarativeSettingsAdapter";
+import { SettingsPersistenceQueue } from "src/core/settings/SettingsPersistenceQueue";
 import type {
   SettingBindingKey,
   SettingSpec,
@@ -103,7 +104,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   private requestReloadDrawings: boolean = false;
   private requestUpdatePinnedPens: boolean = false;
   private requestUpdateDynamicStyling: boolean = false;
-  private settingsPersistenceChain: Promise<void> = Promise.resolve();
+  private readonly settingsPersistenceQueue: SettingsPersistenceQueue;
   private readonly settingBindings: SettingBindingRegistry;
   private readonly legacySettingsAdapter: LegacySettingsAdapter;
   private readonly declarativeSettingsAdapter: DeclarativeSettingsAdapter;
@@ -137,6 +138,16 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       this.settingBindings,
       this.legacySettingsAdapter,
     );
+    this.settingsPersistenceQueue = new SettingsPersistenceQueue({
+      persistSettings: async () => {
+        this.normalizeSettingsBeforeSave();
+        await this.plugin.saveSettings();
+      },
+      applyPendingActions: () => this.applyPendingActions(),
+      // Obsidian 1.13 rebuilds an active legacy-fallback tab after plugin data
+      // persistence. Do not let that replacement interrupt text entry.
+      shouldDeferPersistence: () => this.isEditableSettingControlFocused(),
+    });
   }
 
   private destroyFontPickers(): void {
@@ -144,6 +155,17 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       picker.destroy();
     }
     this.fontPickers = [];
+  }
+
+  private isEditableSettingControlFocused(): boolean {
+    const activeElement = this.containerEl.ownerDocument.activeElement;
+    return Boolean(
+      activeElement &&
+      this.containerEl.contains(activeElement) &&
+      activeElement.matches(
+        'textarea, [contenteditable="true"], input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="button"]):not([type="submit"]):not([type="reset"])',
+      ),
+    );
   }
 
   /** Legacy compatibility delegate for canonical setting specifications. */
@@ -275,19 +297,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     updateWarning();
   }
 
-  private persistSettingsAndApplyPendingActions(): Promise<void> {
-    const persistAndApply = async () => {
-      this.normalizeSettingsBeforeSave();
-      await this.plugin.saveSettings();
-      await this.applyPendingActions();
-    };
-    // Keep queuing updates even if an earlier save failed.
-    this.settingsPersistenceChain = this.settingsPersistenceChain
-      .catch((): void => undefined)
-      .then(persistAndApply);
-    return this.settingsPersistenceChain;
-  }
-
   private async applyPendingActions() {
     if (this.requestUpdatePinnedPens) {
       this.requestUpdatePinnedPens = false;
@@ -328,14 +337,17 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     if (requestReloadDrawings) {
       this.requestReloadDrawings = true;
     }
-    return this.persistSettingsAndApplyPendingActions();
+    return this.settingsPersistenceQueue.enqueue();
   }
 
   applySettingsUpdate(requestReloadDrawings: boolean = false) {
-    void this.queueSettingsUpdate(requestReloadDrawings);
+    void this.queueSettingsUpdate(requestReloadDrawings).catch(
+      (): void => undefined,
+    );
   }
 
   hide() {
+    void this.settingsPersistenceQueue.flush().catch((): void => undefined);
     this.destroyFontPickers();
     if (this.plugin.settings.overrideObsidianFontSize) {
       setStyle(mainDocument.documentElement, { fontSize: "" });

@@ -205,7 +205,7 @@ export class SettingBindingRegistry {
       return;
     }
     await control.afterUpdate?.(value);
-    void persistence;
+    void persistence.catch((): void => undefined);
   }
 
   private requireBoolean(control: SettingControlSpec, value: unknown): boolean {
