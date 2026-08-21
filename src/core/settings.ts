@@ -68,179 +68,16 @@ import {
   KNOWN_AI_IMAGE_MODEL_CONFIGS,
   cloneModelConfigs,
 } from "src/core/settingsDefaults";
-import type { ExcalidrawSettings } from "src/core/settingsDefaults";
+import { SettingBindingRegistry } from "src/core/settings/SettingBindingRegistry";
+import { LegacySettingsAdapter } from "src/core/settings/LegacySettingsAdapter";
+import { DeclarativeSettingsAdapter } from "src/core/settings/DeclarativeSettingsAdapter";
+import type {
+  SettingBindingKey,
+  SettingSpec,
+} from "src/core/settings/settingSpecs";
 import type { SettingDefinitionItem } from "src/types/obsidianDeclarativeSettings";
 
 declare const mainDocument: Document;
-
-/**
- * Legacy-rendering data shape modeled after Obsidian's declarative
- * settings API (`getSettingDefinitions()`, requires Obsidian 1.13+, not
- * used directly yet). `display()` interprets these via `buildSetting()`
- * to build the current imperative UI, so the same definitions can move
- * closer to feeding the real API later without depending on it now.
- *
- * Only the toggle, text, dropdown, and slider controls are implemented so
- * far; `render` and `visible` are added incrementally as they're needed.
- */
-interface SettingDefinition {
-  name: string | DocumentFragment;
-  desc?: string | DocumentFragment;
-  control:
-    | ToggleControl
-    | TextControl
-    | DropdownControl
-    | NumberDropdownControl
-    | SliderControl;
-}
-
-interface ToggleControl {
-  type: "toggle";
-  key: BooleanSettingKey;
-  /**
-   * When true, the displayed toggle state and onChange value are the
-   * logical negation of the stored setting (e.g. a "double-click text
-   * editing" toggle backed by a `disableDoubleClickTextEditing` field).
-   */
-  negate?: boolean;
-  /**
-   * Extra logic run before the setting is assigned. Rare — matches the one
-   * existing case (aiEnabled) where a wrapper is shown/hidden using the
-   * *previous* semantics of "value" as the toggle's new state.
-   */
-  before?: (value: boolean) => void | Promise<void>;
-  /**
-   * Extra logic run after the setting is assigned but before
-   * applySettingsUpdate() — the common case (e.g. refreshing a derived
-   * preview, toggling a sibling's disabled state, setting a request flag
-   * that applySettingsUpdate()'s pending-actions pass will consume).
-   */
-  after?: (value: boolean) => void | Promise<void>;
-  /** Extra logic run after applySettingsUpdate() completes. Rare. */
-  afterUpdate?: (value: boolean) => void | Promise<void>;
-  /** true => applySettingsUpdate(true); default => applySettingsUpdate() */
-  reload?: boolean;
-}
-
-interface TextControl {
-  type: "text";
-  key: StringSettingKey;
-  placeholder?: string;
-  /** When set, the sanitized value replaces both the stored setting and the input's displayed text, matching the existing replaceAll-then-setValue pattern. */
-  sanitize?: (value: string) => string;
-  /** Extra logic run before the setting is assigned. */
-  before?: (value: string) => void | Promise<void>;
-  /** Extra logic run after the setting is assigned (and sanitized/setValue-back, if `sanitize` is set) but before applySettingsUpdate(). */
-  after?: (value: string) => void | Promise<void>;
-  /** Extra logic run after applySettingsUpdate() completes. */
-  afterUpdate?: (value: string) => void | Promise<void>;
-  /** Wires the text input into addVaultPathSupport() (path suggester + existence warning), matching the existing folder/file path settings. */
-  vaultPath?: {
-    kind: "file" | "folder";
-    options?: {
-      optional?: boolean;
-      extensions?: readonly string[];
-      resolvePath?: (value: string) => string;
-      createFolder?: boolean;
-      validate?: boolean;
-    };
-  };
-  /** Called with the raw TextComponent before placeholder/value/onChange are wired, for callers that need to keep manipulating it afterward (e.g. a sibling toggle disabling it, or applying configurePasswordTextInput). */
-  capture?: (text: TextComponent) => void;
-  /** true => applySettingsUpdate(true); default => applySettingsUpdate() */
-  reload?: boolean;
-}
-
-interface DropdownControl {
-  type: "dropdown";
-  key: StringLikeSettingKey;
-  options: readonly { value: string; label: string }[];
-  /** Extra logic run before the setting is assigned. */
-  before?: (value: string) => void | Promise<void>;
-  /** Extra logic run after the setting is assigned but before applySettingsUpdate(). */
-  after?: (value: string) => void | Promise<void>;
-  /** Extra logic run after applySettingsUpdate() completes. */
-  afterUpdate?: (value: string) => void | Promise<void>;
-  /** true => applySettingsUpdate(true); default => applySettingsUpdate() */
-  reload?: boolean;
-}
-
-/**
- * A dropdown whose option values are numbers stored as strings in the DOM
- * (Obsidian's DropdownComponent only deals in strings) but bind to a
- * numeric ExcalidrawSettings field, parsed back with `parseInt`/`parseFloat`
- * on change — matching the existing autosave-interval/PDF-scale/
- * custom-pen-count dropdowns.
- */
-interface NumberDropdownControl {
-  type: "number-dropdown";
-  key: NumberSettingKey;
-  options: readonly { value: number; label: string }[];
-  /** "int" uses parseInt, "float" uses parseFloat. Default "float". */
-  parse?: "int" | "float";
-  /** Extra logic run after the setting is assigned but before applySettingsUpdate(). */
-  after?: (value: number) => void | Promise<void>;
-  /** true => applySettingsUpdate(true); default => applySettingsUpdate() */
-  reload?: boolean;
-}
-
-interface SliderControl {
-  type: "slider";
-  key: NumberSettingKey;
-  min: number;
-  max: number;
-  step: number;
-  minWidth?: string;
-  /**
-   * Displayed/edited value = stored value * scale (e.g. 100 for a stored
-   * 0-1 fraction shown as a 1-100 percent slider). Defaults to 1.
-   */
-  scale?: number;
-  /** Extra logic run after the setting is assigned but before applySettingsUpdate(). */
-  after?: (value: number) => void | Promise<void>;
-  /** Extra logic run after applySettingsUpdate() completes. */
-  afterUpdate?: (value: number) => void | Promise<void>;
-  /** true => applySettingsUpdate(true); default => applySettingsUpdate() */
-  reload?: boolean;
-}
-
-/** Keys of ExcalidrawSettings whose value type is boolean. */
-type BooleanSettingKey = {
-  [K in keyof ExcalidrawSettings]: ExcalidrawSettings[K] extends boolean
-    ? K
-    : never;
-}[keyof ExcalidrawSettings];
-
-/**
- * Keys of ExcalidrawSettings whose value type is exactly string (not a
- * narrower string-literal union like `embedType` or `defaultPenMode`,
- * which an arbitrary sanitized/typed string must not be assignable to).
- */
-type StringSettingKey = {
-  [K in keyof ExcalidrawSettings]: string extends ExcalidrawSettings[K]
-    ? ExcalidrawSettings[K] extends string
-      ? K
-      : never
-    : never;
-}[keyof ExcalidrawSettings];
-
-/**
- * Keys of ExcalidrawSettings whose value type is string OR a narrower
- * string-literal union (e.g. `defaultPenMode: "never" | "mobile" |
- * "always"`) — the superset StringSettingKey deliberately excludes.
- */
-type StringLikeSettingKey = {
-  [K in keyof ExcalidrawSettings]: ExcalidrawSettings[K] extends string
-    ? K
-    : never;
-}[keyof ExcalidrawSettings];
-
-/** Keys of ExcalidrawSettings whose value type is number. */
-type NumberSettingKey = {
-  [K in keyof ExcalidrawSettings]: ExcalidrawSettings[K] extends number
-    ? K
-    : never;
-}[keyof ExcalidrawSettings];
 
 /** Strips characters that are invalid in filenames on common filesystems. */
 const sanitizeFilenameSegment = (value: string): string =>
@@ -267,6 +104,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   private requestUpdatePinnedPens: boolean = false;
   private requestUpdateDynamicStyling: boolean = false;
   private settingsPersistenceChain: Promise<void> = Promise.resolve();
+  private readonly settingBindings: SettingBindingRegistry;
+  private readonly legacySettingsAdapter: LegacySettingsAdapter;
+  private readonly declarativeSettingsAdapter: DeclarativeSettingsAdapter;
   private hotkeyEditor: HotkeyEditor;
   private fontPickers: FontPickerComponent[] = [];
   /**
@@ -281,6 +121,22 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   constructor(app: App, plugin: ExcalidrawPlugin) {
     super(app, plugin);
     this.plugin = plugin;
+    this.settingBindings = new SettingBindingRegistry({
+      getSettings: () => this.plugin.settings,
+      queueSettingsUpdate: (requestReloadDrawings) =>
+        this.queueSettingsUpdate(requestReloadDrawings),
+    });
+    this.legacySettingsAdapter = new LegacySettingsAdapter(
+      this.settingBindings,
+      {
+        addVaultPathSupport: (setting, text, kind, options) =>
+          this.addVaultPathSupport(setting, text, kind, options),
+      },
+    );
+    this.declarativeSettingsAdapter = new DeclarativeSettingsAdapter(
+      this.settingBindings,
+      this.legacySettingsAdapter,
+    );
   }
 
   private destroyFontPickers(): void {
@@ -290,148 +146,12 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     this.fontPickers = [];
   }
 
-  /**
-   * Interprets a SettingDefinition to build the equivalent imperative
-   * Setting UI. Only the toggle, text, dropdown, and slider controls are
-   * handled so far. Returns the underlying Setting for toggle/text/dropdown
-   * (callers that need to keep manipulating it afterward, e.g. disabling a
-   * sibling setting, can capture the return value); slider has no
-   * equivalent object to return since createSliderWithText() doesn't
-   * expose one, so it returns undefined.
-   */
+  /** Legacy compatibility delegate for canonical setting specifications. */
   private buildSetting(
     container: HTMLElement,
-    def: SettingDefinition,
+    spec: SettingSpec,
   ): Setting | undefined {
-    const { control } = def;
-    if (control.type === "slider") {
-      const scale = control.scale ?? 1;
-      createSliderWithText(container, {
-        name: def.name,
-        desc: def.desc,
-        value: this.plugin.settings[control.key] * scale,
-        min: control.min,
-        max: control.max,
-        step: control.step,
-        minWidth: control.minWidth,
-        onChange: async (value) => {
-          this.setNumberSetting(control.key, value / scale);
-          await control.after?.(value);
-          this.applySettingsUpdate(control.reload ?? false);
-          await control.afterUpdate?.(value);
-        },
-      });
-      return undefined;
-    }
-    const setting = new Setting(container).setName(def.name);
-    if (def.desc) {
-      setting.setDesc(def.desc);
-    }
-    if (control.type === "toggle") {
-      const negate = control.negate ?? false;
-      setting.addToggle((toggle) =>
-        toggle
-          .setValue(
-            negate
-              ? !this.plugin.settings[control.key]
-              : this.plugin.settings[control.key],
-          )
-          .onChange(async (value) => {
-            await control.before?.(value);
-            this.plugin.settings[control.key] = negate ? !value : value;
-            await control.after?.(value);
-            this.applySettingsUpdate(control.reload ?? false);
-            await control.afterUpdate?.(value);
-          }),
-      );
-      return setting;
-    }
-    if (control.type === "text") {
-      setting.addText((text) => {
-        control.capture?.(text);
-        if (control.placeholder !== undefined) {
-          text.setPlaceholder(control.placeholder);
-        }
-        text.setValue(this.plugin.settings[control.key]).onChange(
-          async (value) => {
-            await control.before?.(value);
-            const finalValue = control.sanitize
-              ? control.sanitize(value)
-              : value;
-            this.plugin.settings[control.key] = finalValue;
-            if (control.sanitize) {
-              text.setValue(finalValue);
-            }
-            await control.after?.(value);
-            this.applySettingsUpdate(control.reload ?? false);
-            await control.afterUpdate?.(value);
-          },
-        );
-        if (control.vaultPath) {
-          this.addVaultPathSupport(
-            setting,
-            text,
-            control.vaultPath.kind,
-            control.vaultPath.options,
-          );
-        }
-      });
-      return setting;
-    }
-    if (control.type === "dropdown") {
-      setting.addDropdown((dropdown) => {
-        for (const option of control.options) {
-          dropdown.addOption(option.value, option.label);
-        }
-        dropdown
-          .setValue(this.plugin.settings[control.key])
-          .onChange(async (value) => {
-            await control.before?.(value);
-            this.setStringSetting(control.key, value);
-            await control.after?.(value);
-            this.applySettingsUpdate(control.reload ?? false);
-            await control.afterUpdate?.(value);
-          });
-      });
-      return setting;
-    }
-    // control.type === "number-dropdown" (the only remaining case)
-    setting.addDropdown((dropdown) => {
-      for (const option of control.options) {
-        dropdown.addOption(option.value.toString(), option.label);
-      }
-      dropdown
-        .setValue(this.plugin.settings[control.key].toString())
-        .onChange(async (value) => {
-          const numValue =
-            control.parse === "int" ? parseInt(value) : parseFloat(value);
-          this.setNumberSetting(control.key, numValue);
-          await control.after?.(numValue);
-          this.applySettingsUpdate(control.reload ?? false);
-        });
-    });
-    return setting;
-  }
-
-  /**
-   * Correlated-generic write helpers: a plain `this.plugin.settings[key] =
-   * value` doesn't type-check when `key` is a union of differently-typed
-   * fields (TypeScript can't verify the write is sound for every member of
-   * the union), even though each individual case is fine. Scoping the
-   * generic to a single call correlates key and value so it does.
-   */
-  private setStringSetting<K extends StringLikeSettingKey>(
-    key: K,
-    value: ExcalidrawSettings[K],
-  ): void {
-    this.plugin.settings[key] = value;
-  }
-
-  private setNumberSetting<K extends NumberSettingKey>(
-    key: K,
-    value: ExcalidrawSettings[K],
-  ): void {
-    this.plugin.settings[key] = value;
+    return this.legacySettingsAdapter.render(container, spec);
   }
 
   private getFilenameSample(): string {
@@ -448,17 +168,25 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   }
 
   /**
-   * Keeps the existing imperative settings UI while declaring support for the
-   * settings definitions API.
-   * This is added to avoid the "This plugin does not support the new settings API" codescanner warning
-   * which is obnoxious considering that at time of creating this function, 1.13.x is not yet released publicly!
-   * ... not to mention the volume of work Obsidian elegantly pushes on developers compensated with a punishmet
-   * that ranks the plugin lower. I am not happy.
+   * Keeps the imperative settings UI active until every conversion batch and
+   * the search/layout checkpoint are complete. Obsidian also calls this early
+   * for indexing, so the inactive path only clears stale binding metadata.
    *
    * @returns An empty list so Obsidian falls back to {@link display}.
    */
-  getSettingDefinitions(): SettingDefinitionItem[] {
+  getSettingDefinitions(): SettingDefinitionItem<SettingBindingKey>[] {
+    this.declarativeSettingsAdapter.beginBuild();
     return [];
+  }
+
+  /** Reads a registered declarative control through the canonical binding. */
+  getControlValue(key: string): unknown {
+    return this.settingBindings.getControlValue(key);
+  }
+
+  /** Writes and persists a registered declarative control mutation. */
+  setControlValue(key: string, value: unknown): Promise<void> {
+    return this.settingBindings.setControlValue(key, value);
   }
 
   private normalizeSettingsBeforeSave() {
@@ -547,7 +275,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     updateWarning();
   }
 
-  private persistSettingsAndApplyPendingActions() {
+  private persistSettingsAndApplyPendingActions(): Promise<void> {
     const persistAndApply = async () => {
       this.normalizeSettingsBeforeSave();
       await this.plugin.saveSettings();
@@ -557,6 +285,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     this.settingsPersistenceChain = this.settingsPersistenceChain
       .catch((): void => undefined)
       .then(persistAndApply);
+    return this.settingsPersistenceChain;
   }
 
   private async applyPendingActions() {
@@ -593,11 +322,17 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     }
   }
 
-  applySettingsUpdate(requestReloadDrawings: boolean = false) {
+  private queueSettingsUpdate(
+    requestReloadDrawings: boolean = false,
+  ): Promise<void> {
     if (requestReloadDrawings) {
       this.requestReloadDrawings = true;
     }
-    this.persistSettingsAndApplyPendingActions();
+    return this.persistSettingsAndApplyPendingActions();
+  }
+
+  applySettingsUpdate(requestReloadDrawings: boolean = false) {
+    void this.queueSettingsUpdate(requestReloadDrawings);
   }
 
   hide() {

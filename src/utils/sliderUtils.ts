@@ -16,9 +16,21 @@ export const createSliderWithText = (
   container: HTMLElement,
   settings: SliderSetting,
 ): void => {
+  configureSliderWithText(new Setting(container), settings);
+};
+
+/**
+ * Configures an existing setting row with the plugin's slider-plus-value UI.
+ * This supports declarative `render` callbacks, where Obsidian owns creation
+ * of the row but the plugin must preserve its established slider layout.
+ */
+export const configureSliderWithText = (
+  setting: Setting,
+  settings: SliderSetting,
+): void => {
   let valueText: HTMLDivElement;
 
-  new Setting(container)
+  setting
     .setName(settings.name)
     .setDesc(settings.desc || "")
     .addSlider((slider) =>
