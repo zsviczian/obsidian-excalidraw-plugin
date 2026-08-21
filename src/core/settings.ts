@@ -69,9 +69,9 @@ import {
   cloneModelConfigs,
 } from "src/core/settingsDefaults";
 import type { ExcalidrawSettings } from "src/core/settingsDefaults";
+import type { SettingDefinitionItem } from "src/types/obsidianDeclarativeSettings";
 
 declare const mainDocument: Document;
-declare type SettingDefinitionItem = string;
 
 /**
  * Legacy-rendering data shape modeled after Obsidian's declarative
@@ -457,7 +457,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
    *
    * @returns An empty list so Obsidian falls back to {@link display}.
    */
-  getSettingDefinitions(): SettingDefinitionItem[] { //SettingDefinitionItem[] {
+  getSettingDefinitions(): SettingDefinitionItem[] {
     return [];
   }
 
