@@ -1,9 +1,10 @@
 # Incremental refactor assessment and plan
 
-Status: parked as of 2026-08-13 (see "Parked: next steps if resumed" near the
-end). Focus has shifted to `src/core/settings.ts` and declarative-settings
-readiness; this plan is not being actively worked but is left in a
-resumable state.
+Status: the `ExcalidrawView`/`main.ts` plan is parked as of 2026-08-13 (see
+"Parked: next steps if resumed" near the end). The active refactor is the
+dual-support migration of `src/core/settings.ts` to Obsidian's declarative
+settings API; its checkpoint plan is recorded under "Active effort:
+declarative settings migration."
 
 This document is the working plan for reducing the size and coupling of
 `src/core/main.ts` and `src/view/ExcalidrawView.ts` without destabilizing the
@@ -24,6 +25,7 @@ validated, and what remains uncertain.
 | Assessment and baseline design | Complete | Initial architecture, risks, sequencing, and validation matrix documented |
 | Retire legacy AI settings and fallbacks | Complete | Removed the retired migration, schema/default fields, GPT reset, and AI runtime fallbacks without filtering unknown persisted keys; manual testing found no issues |
 | Extract settings implementation service | Implemented; awaiting manual validation | `PluginSettingsManager` now owns persistence, default assembly, remaining migrations, and API-key obfuscation; plugin methods and startup readiness remain intact, while temporary autosave enablement is now explicit plugin-instance state rather than persisted settings state |
+| Migrate the settings tab to declarative settings with legacy fallback | Checkpoint 1 complete; implementation pending | Recorded the approved Path B architecture, compatibility constraints, persistence boundary, help/promotion requirements, conversion batches, validation protocol, and per-checkpoint commit discipline without changing the pinned Obsidian `1.8.7` dependency or `minAppVersion` |
 | Extract footer safe-area styling | Implemented; awaiting manual validation | `FooterSafeAreaManager` now owns device-specific stylesheet injection, open-document traversal, and unload cleanup; the plugin method remains as a settings-UI compatibility delegate |
 | Extract font management | Implemented; awaiting manual validation | `FontManager` now owns CJK discovery/loading, custom-font registration, document stylesheets, readiness, and cleanup; plugin methods and the externally read `fourthFontLoaded` field remain intact |
 | Extract startup instrumentation | Implemented; awaiting manual validation | `StartupTimer` now owns startup event history, delta tracking, and breakdown formatting; lifecycle calls, public methods, and the public `loadTimestamp` field remain intact |
@@ -60,6 +62,7 @@ validated, and what remains uncertain.
 
 | Date | Action | Outcome | Validation |
 | --- | --- | --- | --- |
+| 2026-08-21 | Completed declarative-settings checkpoint 1: record the approved migration plan | Promoted the dual-support settings migration to the active refactor; recorded the unchanged Obsidian `1.8.7` dependency/minimum, temporary `return []` legacy-test method, canonical dual-adapter architecture, mandatory persistence bridge, native visibility/disabled/update rules, custom-component cleanup ownership, five conversion batches, explicit preservation of NotebookLM/Excalidraw Mastery/help/promotion/clipboard features, filtered-search UX decision, and per-checkpoint validation-and-commit gate. No runtime source, dependency, manifest, persisted setting, locale, or generated artifact was changed as source | Documentation review and `git diff --check` passed. Production `npm run build` passed under Node 22 with the unchanged 33 circular-dependency warnings and produced a 4,724,922-byte `dist/main.js`; `node --check dist/main.js` passed. No Obsidian UI test is required for this documentation-only checkpoint. Highest-risk planning omission would be a setting or top utility disappearing at the eventual non-empty-array cutover; checkpoint 6 therefore requires a complete inventory, while the strongest immediate review is to verify the recorded batches, compatibility constraints, top-surface requirements, and validation matrix before checkpoint 2 begins |
 | 2026-08-16 | Completed the published Excalidraw dependency handoff | Published fork version `0.18.125` is now the plugin's exact dependency in `package.json` and `package-lock.json`. `npm install` restored the installed package from npm, including the new `addFiles` declaration and all four Obsidian artifacts. The temporary local declaration cast was removed; the plugin now calls the typed options form directly | Production `npm run build` passed against the published package with the unchanged 33 circular-dependency warnings and produced a 4,724,922-byte `dist/main.js`; `node --check dist/main.js` and targeted lint for the changed cache/loader/manager/utility files passed. The published declaration and production artifact both contain `skipSvgNormalization` |
 | 2026-08-16 | Removed temporary performance observability and completed paired commit review | Removed every `[TEMP PERF]` console line, timing accumulator, diagnostic cache callback, publication-name map, and animation-frame marker. The functional fast/deferred queue, browser-task yield, stale-first validation metadata, v2 cache behavior, and trusted-SVG normalization bypass remain. The review also hardened failed IndexedDB upgrades so a closed legacy connection cannot be advertised as a ready cache. Historical diagnostic checkpoints below remain as the record of how the bottlenecks were identified; no diagnostic code or marker is present in `src` or the production bundle | Fork `yarn build:obsidian` and plugin development/production builds pass under Node 22; the four locally copied fork artifacts match their build outputs byte-for-byte. `node --check dist/main.js` and both repositories' `git diff --check` pass; the production bundle is 4,724,926 bytes and contains the new normalization option. Targeted plugin lint is clean for every changed cache/loader/manager/utility file, while `ExcalidrawView.ts` retains 18 unrelated existing findings away from the changed boundary. Full plugin `npm run code` retains its repository backlog (138 errors), and fork `yarn test:typecheck` retains its documented test-harness backlog (`window.h`, disabled `createTestHook`, and stale fixtures), with no diagnostics in the touched fork files; focused fork ESLint has no findings in either touched range. The measured warm reopen improved synchronous `addFiles()` time from 12.76 seconds to 1.43 seconds. Before release, smoke-test cache-v2 migration/backup preservation, warm reopen, a stale nested drawing, PDF scale upgrade, ordinary SVG normalization, rapid close during deferred generation, popout, and mobile |
 | 2026-08-16 | Bypassed duplicate SVG normalization for trusted embedded drawings | A runtime trace showed `addFiles()` synchronously consuming 12.76 seconds while publishing 194.8 MiB of data-URL text, closely proportional to batch size. The paired fork now extends the existing one-argument API with an optional object form containing files plus a `ReadonlySet<FileId>` whose SVG payloads are already normalized. The plugin certifies only SVGs backed by an Excalidraw source file; no marker enters `BinaryFileData`, scene JSON, cache records, or component state. In the component, all legacy array callers and every ID absent from the set execute the unchanged normalization path. Fork changes are confined to the imperative API declaration and `App.addFiles()`/`addMissingFiles()` and carry exact `zsviczian` fingerprints | Fork `yarn build:obsidian` passed and generated the four consumer artifacts plus updated declarations. Repository-wide `yarn test:typecheck` remains blocked by the documented pre-existing test-harness backlog (`window.h`, disabled `createTestHook`, stale fixtures), with no diagnostic in either touched file. Focused ESLint's normal formatter is broken by an ESM/CJS mismatch; JSON output confirms no diagnostic in the touched ranges after retaining the repository's unrelated existing warnings. After copying only the four local artifacts into the installed package, plugin development and production builds passed with the unchanged 33 circular-dependency warnings; `node --check dist/main.js`, touched-range ESLint, and both repositories' `git diff --check` passed. The production bundle is 4,732,562 bytes and contains the new option/bypass path. Manual validation should repeat the unchanged warm reopen trace and compare `add-files-flush.addFilesDurationMs`: the 84.2 MiB/20-file batch previously took 5,530 ms and all publication calls totaled 12,761 ms. Also open a drawing containing an ordinary vault SVG and confirm it renders unchanged; main window and popout need coverage, plus one mobile smoke test because reduced temporary SVG strings/DOM should help memory pressure there |
@@ -1011,162 +1014,202 @@ to resume.
    sequence of checkpoints rather than a promise to execute every proposed
    module unchanged.
 
-## Related, separate effort: settings.ts declarative-shape adoption
+## Active effort: declarative settings migration
 
-Started 2026-08-13, independent of the `ExcalidrawView`/`main.ts` plan above
-(different file, different motivation — not part of the parked plan, not
-blocked by it, and not blocking it). Tracked here because it's the other
-active refactor in the codebase and future sessions should know it exists.
+Started 2026-08-13 and promoted to the active refactor on 2026-08-21. This
+effort is independent of the parked `ExcalidrawView`/`main.ts` plan above.
 
-**Goal:** prepare for Obsidian's declarative settings API
-(`getSettingDefinitions()`, requires Obsidian 1.13+) without bumping
-`minAppVersion` past 1.8.7 yet, by modeling settings as data
-(`SettingDefinition` objects with a `control` variant) that the *current*
-`display()` interprets via a new `buildSetting()` method, rather than each
-setting being hand-built with `new Setting(...).addToggle(...)` etc.
-`render`/`visible` (for Obsidian's real API) are deliberately not
-implemented yet — only the legacy-rendering interpreter exists so far.
+### Objective and fixed compatibility decisions
 
-**Sequence so far:** extracted `ExcalidrawSettings`/`DEFAULT_SETTINGS`/AI
-config constants to `src/core/settingsDefaults.ts`; split
-`ExcalidrawSettingTab.display()` into 14 per-section methods (pure code
-motion, verified via reconstruction diff); added the `SettingDefinition`
-type system and `buildSetting()` interpreter, piloted against one or two
-settings per control type (toggle/text/dropdown/slider) before doing a
-full pass; converted all plain toggles, then extended `ToggleControl` with
-`before`/`after`/`afterUpdate` hooks (matching every side-effect ordering
-found: before assignment, between assignment and `applySettingsUpdate()`,
-after `applySettingsUpdate()`) and `negate` (for two inverted-boolean
-settings), and made `buildSetting()` return the underlying `Setting` so
-callers that need to keep manipulating it afterward (e.g.
-`.nameEl.setAttribute(...)`, later show/hide) can capture it. Toggle
-control type is fully closed out. Text control type is also now fully
-closed out: extended `TextControl` with the same `before`/`after`/
-`afterUpdate` hooks, a `vaultPath` hook that wires the text input into the
-existing `addVaultPathSupport()` (path suggester + existence warning), and
-a `capture` hook (called with the raw `TextComponent` before
-placeholder/value/onChange are wired) for callers that need to keep
-manipulating the component afterward (a sibling toggle disabling it,
-`configurePasswordTextInput()`). Dropdown control type is also now fully
-closed out: extended `DropdownControl` with the same `before`/`after`/
-`afterUpdate` hooks, and added a new `NumberDropdownControl` variant for
-dropdowns whose options are numbers stored as DOM strings but bind to a
-numeric field (autosave intervals, PDF-export scale, custom-pen count) —
-`parse: "int" | "float"` controls the `parseInt`/`parseFloat` conversion
-back into the setting. Slider control type is also now fully closed out:
-extended `SliderControl` with `after`/`afterUpdate` hooks (no `before` —
-no existing slider needed one). Widened `SliderSetting.onChange` in
-`sliderUtils.ts` from `(value: number) => void` to `(value: number) =>
-void | Promise<void>` since the hooks can be async, and `createSliderWithText`'s
-internal caller now awaits it (`no-misused-promises`/`no-floating-promises`
-caught both sides of this at lint time — a real, correctly-caught gap, not
-a false positive). All four control types are now fully converted.
+Migrate `ExcalidrawSettingTab` to Obsidian's declarative settings API while
+retaining the imperative `display()` path for compatibility:
 
-**Deliberately left as legacy imperative code (toggle type), each because
-it doesn't fit the current `control` shape cleanly:**
+- Keep both `package.json`'s Obsidian dependency and `manifest.json`'s
+  `minAppVersion` at `1.8.7`. Do not create a misleading type/runtime gap by
+  bumping only the development dependency.
+- Follow Obsidian's Path B dual-support model. On Obsidian 1.13+, a non-empty
+  `getSettingDefinitions()` activates declarative rendering and bypasses
+  `display()`; returning an empty array retains the legacy path.
+- An Obsidian 1.8.7 test installation is not available. Validate the legacy
+  path on the available 1.13.x installation by temporarily returning `[]`
+  from `getSettingDefinitions()`. This is a local test-only edit and must be
+  reverted before committing a declarative checkpoint.
+- Add a documented local type compatibility layer for only the Obsidian
+  1.13.0 definition/method subset the plugin uses. Do not import runtime
+  classes that are absent from 1.8.7, and do not use API additions introduced
+  after 1.13.0 without an explicit compatibility decision.
+- Keep one canonical source of setting definitions. The legacy renderer and
+  the declarative adapter must consume the same specifications so Path B does
+  not become two manually synchronized settings implementations.
+- Preserve current observable behavior, setting keys, persistence, migrations,
+  side-effect ordering, localization, and mobile support.
 
-- `AI_ENABLED_NAME` (`aiEnabled`) — reads with a `?? true` defensive
-  fallback for legacy persisted data; `ToggleControl` has no way to express
-  a read-time default.
-- `GRID_DIRECTION_NAME` — two `.addToggle()` calls chained onto one
-  `Setting` row (horizontal/vertical), bound to a nested,
-  migration-guarded field (`gridSettings.GRID_DIRECTION?.horizontal ??
-  true` with an inline "2.10.1 migration" backfill). `SettingDefinition`
-  assumes one control per row and a flat top-level key.
-- `GRID_DYNAMIC_COLOR_NAME` (`gridSettings.DYNAMIC_COLOR`) — nested field,
-  not a flat `BooleanSettingKey`.
-- `EXPORT_SVG_NAME` / `EXPORT_PNG_NAME` (`autoexportSVG`/`autoexportPNG`)
-  — each toggle mutates a *different* setting's dropdown options
-  (add/remove an "SVG"/"PNG" choice from the embed-type dropdown). A
-  genuine cross-control relationship, structurally the same category as
-  the deferred `visible` mechanism.
-- The dynamic per-installed-script toggle in the Compatibility section —
-  not a real named setting at all (`variableName`/`getValue`/`setValue`
-  are runtime-generated per script), inherently `render`-only content once
-  that control type exists.
+### Current implementation baseline
 
-**Deliberately left as legacy imperative code (text type), each because it
-doesn't fit the current `control` shape cleanly:**
+The preparatory work already completed is substantial:
 
-- `PAGE_TRANSCLUSION_CHARCOUNT_NAME`, `TRANSCLUSION_DEFAULT_WRAP_NAME`,
-  `MD_TRANSCLUDE_WIDTH_NAME`, `MD_TRANSCLUDE_HEIGHT_NAME` — numeric text
-  inputs with `parseInt`/`NaN` validation, an early return that leaves the
-  input unchanged (and unpersisted) on invalid input, and a different
-  fallback default per field on an empty string. A genuinely different
-  control shape (validated numeric text) than `TextControl`/`sanitize`
-  (a pure string-to-string transform) models; not worth a new control type
-  for 4 settings.
-- The AI section's `addNumberSetting` closure — takes arbitrary
-  getter/setter functions rather than a fixed `ExcalidrawSettings` key,
-  used for token-limit fields with custom validation; structurally
-  incompatible with `TextControl.key: StringSettingKey`.
-- `STARTUP_SCRIPT_NAME` — one `Setting` row chains both `.addText()` and
-  `.addButton()` (path input + an "Open"/"Create" button whose label the
-  text input's `onChange` updates). Same category as `GRID_DIRECTION_NAME`
-  above: `SettingDefinition` assumes one control per row, and this row has
-  a real cross-control dependency within itself.
-- The two dynamic per-installed-script text closures (`addStringSetting`'s
-  array/plain branches) in Compatibility — same reasoning as the dynamic
-  script toggle above.
+- `ExcalidrawSettings`, `DEFAULT_SETTINGS`, and AI configuration constants are
+  in `src/core/settingsDefaults.ts`.
+- `display()` is split into 14 section methods.
+- 125 fixed rows use the local `buildSetting()` interpreter.
+- The local model covers toggle, text, dropdown, numeric-dropdown, and slider
+  controls, including existing before/after/afterUpdate hooks, inverted
+  booleans, sanitization, scaling, vault-path support, component capture, and
+  drawing-reload flags.
+- 29 direct `new Setting()` sites remain outside `buildSetting()` (some create
+  a dynamic number of rows), plus custom components and three nested legacy
+  slider calls.
+- `getSettingDefinitions()` still returns an empty array, so no released path
+  is declarative yet.
 
-**Deliberately left as legacy imperative code (dropdown type), each because
-it doesn't fit the current `control` shape cleanly:**
+The local definition dialect is intentionally not returned directly to
+Obsidian. Official controls have different option shapes and do not understand
+the plugin's hook, scaling, sanitization, capture, or numeric-dropdown fields.
 
-- `LIBRARY_STORAGE_NAME` — its `onChange` early-returns on no-op selection,
-  branches into async migration prompts, and in one branch assigns a fixed
-  `"vault"` rather than the selected value; ends with a full `this.display()`
-  re-render (one of only two such calls in the whole file). Doesn't fit the
-  "always assign the selected value" model at all.
-- The AI provider/model dropdown (inside the dynamic `renderAISettings`
-  closure) — options are built from a runtime list, and the row also
-  chains `.addExtraButton()`; same dynamic/multi-control reasoning as the
-  AI text-model closures already excluded from toggle/text.
-- `EMBED_TYPE_NAME` — this is the dropdown `EXPORT_SVG_NAME`/
-  `EXPORT_PNG_NAME` (excluded from the toggle pass) mutate: its own options
-  are conditionally built from `autoexportPNG`/`autoexportSVG`, it
-  self-corrects `embedType` back to `"excalidraw"` if the previously
-  selected option becomes unavailable, and its `onChange` shows/hides
-  `embedComment`'s row. A cross-control cluster, not a single setting.
-- The dynamic per-installed-script dropdown closure in Compatibility —
-  same reasoning as the other dynamic script content.
+### Non-negotiable persistence boundary
 
-**Deliberately left as legacy imperative code (slider type), each because
-it doesn't fit the current `control` shape cleanly:**
+Obsidian's default declarative control path writes `this.plugin.settings` and
+calls `saveData()` automatically. That default must not be used here because it
+would bypass:
 
-- `GRID_OPACITY_NAME` (`gridSettings.OPACITY`), `LASER_DECAY_TIME_NAME`
-  (`laserSettings.DECAY_TIME`), `LASER_DECAY_LENGTH_NAME`
-  (`laserSettings.DECAY_LENGTH`) — nested fields, not a flat
-  `NumberSettingKey`. Same reasoning as `GRID_DYNAMIC_COLOR_NAME` from the
-  toggle pass.
+- `normalizeSettingsBeforeSave()`;
+- the serialized `settingsPersistenceChain`;
+- pending pen, dynamic-style, drawing-reload, and embed-update actions;
+- `PluginSettingsManager.saveSettings()` and API-key obfuscation.
 
-**All four control types (toggle/text/dropdown/slider) are now fully
-converted.** What remains before this data structure could feed Obsidian's
-real `getSettingDefinitions()`:
+`ExcalidrawSettingTab` must override `getControlValue()` and
+`setControlValue()`. A typed binding registry will read/write flat, nested, and
+derived values; preserve negate/parse/scale/sanitize behavior; run the existing
+hooks in their current order; and route persistence through
+`applySettingsUpdate()`/`plugin.saveSettings()`. The bridge must also expose an
+awaitable completion to the declarative host without silently reordering the
+current before/after/afterUpdate semantics.
 
-1. **`render` support in `buildSetting()`** — every exception listed across
-   the four sections above (roughly 20 settings) is a `render` candidate:
-   custom components (`HotkeyEditor`, `FontPickerComponent`,
-   `VaultPathSuggest`-only cases, `PDFExportSettingsComponent`,
-   `ModifierKeySettingsComponent`, `UIModeSettingsComponent`), multi-control
-   rows (`GRID_DIRECTION_NAME`, `STARTUP_SCRIPT_NAME`), nested/nonflat
-   fields (`gridSettings`/`laserSettings` members), cross-control clusters
-   (`EMBED_TYPE_NAME` + the SVG/PNG export toggles, `TASKBONE_ENABLE_NAME`'s
-   captured text component), branching/early-return logic
-   (`LIBRARY_STORAGE_NAME`), and the fully dynamic AI provider/model and
-   per-installed-script content.
-2. **The `visible`/`registerVisibilityGate`/`refreshVisibilityGates`
-   mechanism** (designed but never implemented — see the investigation
-   findings near the top of this section) for the 6 existing show/hide
-   relationships, most of which are now `control` entries reaching into a
-   still-legacy sibling (`embedComment`, `aiEl`, `gridColorSection`).
-3. Only after both of those does actually wiring up
-   `getSettingDefinitions()` (behind Path B — keep `display()` for pre-1.13
-   users) become the natural next step, and only once `minAppVersion` is a
-   decision the user is ready to make.
+### Dependency and component strategy
 
-Each remains its own small, separately-committed step per the same
-full-type-closeout-before-commit, review-before-commit discipline used for
-all four control types above.
+Do not turn every cross-linked setting into one opaque custom row. Prefer a
+component or factory that returns a declarative group containing separately
+indexed child definitions. Use a single imperative `render` item only where
+the children genuinely cannot be described independently.
+
+- Use `visible` for AI content, the embed-comment row, and the fixed grid-color
+  row. Declarative controls refresh these predicates automatically; imperative
+  callbacks call `refreshDomState()`.
+- Use `disabled` for the library path/file rows, TODO/done prefix inputs, and
+  the Taskbone API-key input.
+- Use `update()` only when the definition structure or options change, such as
+  the library migration action, autoexport-dependent embed-type options,
+  provider/model collections, or dynamic script settings.
+- Replace declarative-path calls to `display()` with a compatibility refresh
+  helper: `update()` for declarative definitions and `display()` for the legacy
+  test/fallback path.
+- Put `aliases` on searchable child definitions. Groups and pages do not carry
+  aliases themselves. An opaque rendered component must list all relevant
+  search terms on its containing definition.
+- Keep multi-control or behavior-heavy rows imperative where needed, including
+  grid direction, startup script, custom vault-path creation/validation,
+  password behavior, and numeric inputs whose blank/invalid semantics do not
+  exactly match Obsidian's native number control.
+- Declarative `render` callbacks own teardown. Hotkey editors must unload and
+  font pickers must destroy themselves when a row/page is rebuilt, navigated
+  away from, or closed; tab-level `hide()` must tolerate either rendering path.
+
+### Top help, navigation, and promotional surface
+
+The migration must not silently remove or degrade the non-setting features at
+the top of the current tab:
+
+- the local settings search and settings-to-Markdown clipboard export;
+- the NotebookLM self-help database link;
+- the Excalidraw Mastery expandable help/promotion;
+- coffee, issue tracker, wiki, YouTube, community, social, and book links.
+
+Native Obsidian search replaces only part of `ContentSearcher`; it does not
+replace clipboard export or these help surfaces. The normal, unfiltered
+Excalidraw settings view must retain them. Before declarative cutover, perform a
+dedicated UX checkpoint to determine how they behave while a global setting
+search is active:
+
+1. first investigate whether declarative settings exposes a supported
+   persistent/header surface during filtered results;
+2. if not, compare a compact help/promotion result with carefully chosen
+   aliases against showing links only in the normal tab;
+3. reject a solution that repeats a large promotional block for every matched
+   setting or crowds out the setting the user searched for;
+4. retain clipboard export through either a declarative action backed by the
+   canonical specifications or a deliberately rendered utility component.
+
+No help, self-service, navigation, promotion, or export feature is approved for
+removal as part of this refactor.
+
+### Checkpoint tracking
+
+| Checkpoint | Status | Scope and completion condition |
+| --- | --- | --- |
+| 1. Record the approved migration plan | Complete | Compatibility decisions, architecture, persistence boundary, component strategy, top content requirements, batches, validation, and commit protocol are recorded here |
+| 2. Add Obsidian 1.13 compatibility types | Pending | Add the minimal documented structural type shim and runtime-method facade without changing dependencies, manifests, or runtime behavior |
+| 3. Establish canonical specifications and dual adapters | Pending | Extract the local definition model/interpreter, add declarative conversion plus typed get/set binding and persistence routing, and keep `getSettingDefinitions()` empty until full coverage is ready |
+| 4A. Convert shell, help/promotion, General, and Saving | Pending | Define the tab shell and top utilities, preserve all help/promotion links, and migrate the first related settings batch through both adapters |
+| 4B. Convert Display and Links/transclusions | Pending | Migrate display modes, theme/zoom, grid/laser, modifiers, link behavior, TODO dependencies, and validated transclusion inputs |
+| 4C. Convert Embed/export, Embedding, and nonstandard features | Pending | Migrate image cache actions, embed/autoexport dependency cluster, PDF/export custom UI, Markdown embeds, and custom pens |
+| 4D. Convert Fonts, Experimental, Excalidraw Automate, and Compatibility | Pending | Migrate font-picker cleanup, Taskbone dependency behavior, startup/autostart scripts, filename-preview cross-link, and dynamic script settings |
+| 4E. Convert AI | Pending | Extract and migrate the large runtime-generated provider/model/token-limit component independently because it has the highest complexity and credential risk |
+| 5. Finalize declarative layout and search UX | Pending | Decide pages versus groups, audit localized sibling-page uniqueness, add aliases, and validate the normal and searched help/promotion experience without overcrowding |
+| 6. Activate Path B declarative rendering | Pending | Return the complete non-empty definition array on 1.13+, retain `display()` fallback, and validate both modes by toggling the test-only empty-array return locally |
+| 7. Remove transitional DOM coupling | Pending | Remove obsolete captures/visibility code and tab-global component tracking only after both rendering modes and cleanup paths are validated |
+
+Batch boundaries may be adjusted before implementation if call-site tracing
+shows a stronger dependency boundary, but a batch must remain independently
+buildable, manually testable, and reversible. Do not combine unrelated cleanup
+or naming changes with a migration batch.
+
+### Mandatory checkpoint workflow
+
+Checkpoint 1, checkpoints 2-3 and 5-7, and every individual checkpoint-4 batch
+follow the same completion gate:
+
+1. implement only the recorded scope;
+2. update the progress row and append an action-log entry in this document;
+3. run `npm run build` and relevant targeted diagnostics; run `npm run lib` only
+   if the public/library surface is touched;
+4. run the applicable manual Obsidian validation before committing;
+5. list the highest-risk regressions and the best concrete test scenarios for
+   user validation, including whether main-window, popout, desktop, and mobile
+   need distinct coverage;
+6. commit the independently validated checkpoint before starting the next one.
+
+For implementation checkpoints, test both modes where applicable: the normal
+declarative return and a temporary local `return []` legacy fallback. Revert
+the test-only empty-array edit before reviewing and committing the checkpoint.
+
+### Persistent high-risk validation matrix
+
+- **Persistence and secrets:** change an unrelated setting while AI and
+  Taskbone credentials exist, then confirm persisted values remain obfuscated;
+  also test rapid consecutive edits and queued saves.
+- **Early lifecycle/indexing:** `getSettingDefinitions()` runs when the tab is
+  registered, before layout-ready managers such as the stencil-library manager
+  and script engine exist. Definition generation must stay cheap and must not
+  touch those managers; defer such work to `render` or guarded update paths.
+- **Cross-setting behavior:** test AI visibility, library field enablement and
+  migration prompts, TODO/done enablement, grid dynamic color, Taskbone
+  enablement/initialization, embed-comment visibility, and autoexport option
+  addition/removal with selected-value fallback.
+- **Search and navigation:** test names and aliases, hidden-item exclusion,
+  nested page navigation, maintained-locales, duplicate localized sibling page
+  names, and the top help/promotion experience during normal and filtered use.
+- **Custom UI cleanup:** close/navigate/update while hotkey capture, a font
+  picker menu, dynamic AI UI, or a custom component is active; test plugin
+  reload and settings-modal close.
+- **View side effects:** change reload/embed/style settings while drawings are
+  open in both the main window and a popout; cover desktop and mobile when
+  layout or multi-control rows differ.
+- **Legacy fallback:** temporarily return `[]` on 1.13.x and walk the same
+  changed batch through imperative `display()`; this is the available proxy
+  for an Obsidian 1.8.7 installation.
+- **Structural completeness:** before checkpoint 6, inventory every current
+  setting, custom component, action, YouTube thumbnail, help/promotion item,
+  and utility so a non-empty array cannot make an unconverted feature vanish.
 
 ## Related, separate effort: no-unsafe-* lint cleanup — parked 2026-08-13
 
