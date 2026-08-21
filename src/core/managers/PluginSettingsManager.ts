@@ -1,3 +1,4 @@
+import type { App } from "obsidian";
 import { JSON_parse } from "src/constants/constants";
 import {
   DEFAULT_SETTINGS,
@@ -8,11 +9,15 @@ import {
   decryptPersistedAPIKeys,
   encryptPersistedAPIKeys,
 } from "src/utils/settingsKeyObfuscation";
+import { SettingsRecoveryStore } from "src/core/settings/SettingsRecoveryStore";
 
 type PersistedExcalidrawSettings = Partial<ExcalidrawSettings> &
   Record<string, unknown>;
 
+const PENDING_SETTINGS_RECOVERY_KEY =
+  "obsidian-excalidraw-plugin:pending-settings-save";
 interface PluginSettingsHost {
+  app: Pick<App, "loadLocalStorage" | "saveLocalStorage">;
   settings: ExcalidrawSettings;
   loadData(): Promise<unknown>;
   saveData(data: unknown): Promise<void>;
@@ -24,7 +29,17 @@ interface PluginSettingsHost {
  * the plugin lifecycle.
  */
 export class PluginSettingsManager {
-  public constructor(private readonly host: PluginSettingsHost) {}
+  private readonly recoveryStore: SettingsRecoveryStore<PersistedExcalidrawSettings>;
+
+  public constructor(private readonly host: PluginSettingsHost) {
+    this.recoveryStore = new SettingsRecoveryStore({
+      loadRecoveryData: () =>
+        this.host.app.loadLocalStorage(PENDING_SETTINGS_RECOVERY_KEY) as unknown,
+      saveRecoveryData: (data) =>
+        this.host.app.saveLocalStorage(PENDING_SETTINGS_RECOVERY_KEY, data),
+      saveData: (data) => this.host.saveData(data),
+    });
+  }
 
   /**
    * Loads persisted settings, applies defaults and migrations, and decrypts
@@ -33,7 +48,12 @@ export class PluginSettingsManager {
    * @remarks Unknown persisted properties are intentionally retained.
    */
   public async loadSettings(): Promise<void> {
-    const persistedSettings = ((await this.host.loadData()) ??
+    const pendingRecovery = this.recoveryStore.loadPendingSnapshot();
+    // A killed `saveData()` can leave invalid or empty JSON. The synchronous
+    // journal is authoritative until it has been written back successfully.
+    const loadedSettings = pendingRecovery ? null : await this.host.loadData();
+    const persistedSettings = (pendingRecovery ??
+      loadedSettings ??
       {}) as PersistedExcalidrawSettings;
     const decryptedSettings = decryptPersistedAPIKeys(persistedSettings);
     let didSettingsMigration = false;
@@ -149,17 +169,27 @@ export class PluginSettingsManager {
     const shouldPersistEncryptedSettings =
       JSON.stringify(encryptedPersistedSettings) !==
       JSON.stringify(persistedSettings);
-    if (didSettingsMigration || shouldPersistEncryptedSettings) {
-      await this.host.saveData(encryptedPersistedSettings);
+    if (
+      pendingRecovery ||
+      didSettingsMigration ||
+      shouldPersistEncryptedSettings
+    ) {
+      await this.persistSnapshot(encryptedPersistedSettings);
     }
   }
 
   /** Encrypts protected fields and persists the current settings object. */
-  public async saveSettings(): Promise<void> {
-    await this.host.saveData(
+  public saveSettings(): Promise<void> {
+    return this.persistSnapshot(
       encryptPersistedAPIKeys(
         this.host.settings as PersistedExcalidrawSettings,
       ),
     );
+  }
+
+  private persistSnapshot(
+    settings: PersistedExcalidrawSettings,
+  ): Promise<void> {
+    return this.recoveryStore.persist(settings);
   }
 }

@@ -108,6 +108,10 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   private readonly settingBindings: SettingBindingRegistry;
   private readonly legacySettingsAdapter: LegacySettingsAdapter;
   private readonly declarativeSettingsAdapter: DeclarativeSettingsAdapter;
+  private persistenceOwnerWindow: Window | null = null;
+  private readonly flushOnSettingsWindowBlur = (): void => {
+    void this.settingsPersistenceQueue.flush().catch((): void => undefined);
+  };
   private hotkeyEditor: HotkeyEditor;
   private fontPickers: FontPickerComponent[] = [];
   /**
@@ -166,6 +170,24 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         'textarea, [contenteditable="true"], input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="button"]):not([type="submit"]):not([type="reset"])',
       ),
     );
+  }
+
+  private attachPersistenceWindowBlurHandler(): void {
+    this.detachPersistenceWindowBlurHandler();
+    const ownerWindow = this.containerEl.ownerDocument.defaultView;
+    if (!ownerWindow) {
+      return;
+    }
+    this.persistenceOwnerWindow = ownerWindow;
+    ownerWindow.addEventListener("blur", this.flushOnSettingsWindowBlur);
+  }
+
+  private detachPersistenceWindowBlurHandler(): void {
+    this.persistenceOwnerWindow?.removeEventListener(
+      "blur",
+      this.flushOnSettingsWindowBlur,
+    );
+    this.persistenceOwnerWindow = null;
   }
 
   /** Legacy compatibility delegate for canonical setting specifications. */
@@ -347,6 +369,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   }
 
   hide() {
+    this.detachPersistenceWindowBlurHandler();
     void this.settingsPersistenceQueue.flush().catch((): void => undefined);
     this.destroyFontPickers();
     if (this.plugin.settings.overrideObsidianFontSize) {
@@ -379,6 +402,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.addClass("excalidraw-settings");
     this.containerEl.empty();
+    this.attachPersistenceWindowBlurHandler();
 
     this.renderSearchSection();
     this.renderPromoLinksSection();
