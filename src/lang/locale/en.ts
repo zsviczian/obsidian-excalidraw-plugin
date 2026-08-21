@@ -22,6 +22,8 @@ export default {
   SELECT_FILE_TO_INSERT: "Select a file to insert",
   // main.ts
   ERROR_INITIALIZING_EA: "Error initializing Excalidraw Automate",
+  SETTINGS_DATA_INVALID:
+    "The Excalidraw settings file is empty or unreadable. Current settings are kept in memory, and saving is paused until a valid file is synchronized or restored.",
   CONVERT_URL_TO_FILE: "Save image from URL to local file",
   UNZIP_CURRENT_FILE: "Decompress current Excalidraw file",
   PUBLISH_SVG_CHECK:

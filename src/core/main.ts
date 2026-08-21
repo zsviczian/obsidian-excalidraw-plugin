@@ -989,8 +989,10 @@ export default class ExcalidrawPlugin extends Plugin {
 
   /** Reloads externally changed settings and invalidates cached libraries. */
   async onExternalSettingsChange() {
-    await this.loadSettings();
-    this.stencilLibraryManager?.invalidate();
+    const didLoadSettings = await this.settingsManager.loadSettings();
+    if (didLoadSettings) {
+      this.stencilLibraryManager?.invalidate();
+    }
   }
 
   public async openSidepanel(

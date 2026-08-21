@@ -25,7 +25,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 - Improved loading performance for drawings with many cached embedded files by avoiding large cache rewrites, SVG reconstruction, unnecessary image measurement and hashing, premature cache-read timeouts, and duplicate SVG normalization when cached drawings are handed to the canvas. Cached and direct images now appear before uncached generated drawings. The disposable image cache is rebuilt once after updating; drawing backups are preserved.
 
 ## Fixed
-- Rapid text editing in Excalidraw settings no longer loses focus or collapses the active section, and an interrupted settings write is recovered after an abrupt Obsidian reload instead of resetting the plugin to defaults.
+- Rapid text editing in Excalidraw settings no longer loses focus or collapses the active section. Settings writes are coalesced and serialized, and an empty or unreadable externally synchronized settings file no longer replaces the active settings with defaults.
 - The Excalidraw color palette now uses its natural height when space is available instead of being unnecessarily limited to a short, vertically scrolling panel. Its native color control also remains aligned with the hex input.
 - The text-to-diagram chat history menu is visible again, allowing saved chats to be restored and deleted.
 - Stencil library is persisted with tab-indented JSON to support Git diffs. [#2883](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2883)

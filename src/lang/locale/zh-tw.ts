@@ -15,6 +15,8 @@ export default {
   // Sugester
   SELECT_FILE_TO_INSERT: "選擇要嵌入到當前繪圖中的檔案",
   // main.ts
+  SETTINGS_DATA_INVALID:
+    "Excalidraw 設定檔為空或無法讀取。目前的設定將保留在記憶體中，並暫停儲存，直到同步或還原有效檔案。",
   ERROR_INITIALIZING_EA: "初始化 Excalidraw Automate 時出錯",
   CONVERT_URL_TO_FILE: "從 URL 下載圖片到本地",
   UNZIP_CURRENT_FILE: "解壓當前 Excalidraw 檔案",

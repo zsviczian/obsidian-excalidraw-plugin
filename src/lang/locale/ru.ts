@@ -15,6 +15,8 @@ import {
 // русский
 export default {
   // main.ts
+  SETTINGS_DATA_INVALID:
+    "Файл настроек Excalidraw пуст или недоступен для чтения. Текущие настройки сохранены в памяти, а запись приостановлена до синхронизации или восстановления корректного файла.",
   CONVERT_URL_TO_FILE: "Сохранить изображение из URL в локальный файл",
   UNZIP_CURRENT_FILE: "Распаковать текущий файл Excalidraw",
   PUBLISH_SVG_CHECK:

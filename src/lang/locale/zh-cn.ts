@@ -15,6 +15,8 @@ export default {
   // Sugester
   SELECT_FILE_TO_INSERT: "选择要嵌入到当前绘图中的文件",
   // main.ts
+  SETTINGS_DATA_INVALID:
+    "Excalidraw 设置文件为空或无法读取。当前设置将保留在内存中，并暂停保存，直到同步或恢复有效文件。",
   ERROR_INITIALIZING_EA: "初始化 Excalidraw Automate 时出错",
   CONVERT_URL_TO_FILE: "从 URL 下载图片到本地",
   UNZIP_CURRENT_FILE: "解压当前 Excalidraw 文件",

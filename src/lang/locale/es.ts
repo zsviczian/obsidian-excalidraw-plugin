@@ -19,6 +19,8 @@ export default {
   // Sugester
   SELECT_FILE_TO_INSERT: "Selecciona un archivo para insertar",
   // main.ts
+  SETTINGS_DATA_INVALID:
+    "El archivo de configuración de Excalidraw está vacío o no se puede leer. La configuración actual se conserva en memoria y el guardado queda en pausa hasta que se sincronice o restaure un archivo válido.",
   CONVERT_URL_TO_FILE: "Guardar imagen desde el URL en un archivo local",
   UNZIP_CURRENT_FILE: "Descomprimir el archivo Excalidraw actual",
   PUBLISH_SVG_CHECK:

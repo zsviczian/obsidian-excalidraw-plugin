@@ -475,6 +475,8 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     const excalidrawMasteryLink = URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_EM;
     const updateExcalidrawMasteryPromoState = (persist: boolean) => {
       const isCollapsed = !excalidrawMasteryPromo.open;
+      const didStateChange =
+        this.plugin.settings.excalidrawMasteryPromoCollapsed !== isCollapsed;
       this.plugin.settings.excalidrawMasteryPromoCollapsed = isCollapsed;
       excalidrawMasteryPromo.classList.toggle("is-collapsed", isCollapsed);
       excalidrawMasterySummaryTitle.classList.toggle("is-hidden", !isCollapsed);
@@ -483,7 +485,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           ? t("EXCALIDRAW_MASTERY_PROMO_SHOW")
           : t("EXCALIDRAW_MASTERY_PROMO_HIDE"),
       );
-      if (persist) {
+      if (persist && didStateChange) {
         void this.plugin.saveSettings();
       }
     };
