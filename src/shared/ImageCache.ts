@@ -1,4 +1,4 @@
-import { App, Notice, TFile } from "obsidian";
+import { App, Notice } from "obsidian";
 import { t } from "src/lang/helpers";
 import ExcalidrawPlugin from "src/core/main";
 import { PDFPageViewProps, Size } from "src/types/embeddedFileLoaderTypes";
@@ -7,16 +7,25 @@ import { log } from "../utils/debugHelper";
 import { FILENAMEPARTS, PreviewImageType } from "../types/utilTypes";
 import { hasExcalidrawEmbeddedImagesTreeChanged } from "../utils/fileUtils";
 import { EXCALIDRAW_PLUGIN } from "src/constants/constants";
+import { blobToDataURL } from "../utils/coreUtils";
+import { isInstanceOfSVGSVGElement } from "../utils/typechecks";
 
 type FileCacheData = {
+  schemaVersion: 2;
+  payloadKind: "svg" | "raster";
   mtime: number;
-  lastAccessed?: number;
-  blob?: Blob;
-  svg?: string;
+  blob: Blob;
   renderScale?: number;
   size?: Size;
+  hasSVGwithBitmap?: boolean;
   pdfPageViewProps?: PDFPageViewProps;
 };
+type ImageCacheMetadata = Partial<
+  Pick<
+    FileCacheData,
+    "renderScale" | "size" | "hasSVGwithBitmap" | "pdfPageViewProps"
+  >
+>;
 type BackupData = string;
 type BackupKey = string;
 
@@ -35,6 +44,16 @@ export type ImageKey = {
 type GetImageFromCacheOptions = {
   skipDependencyCheck?: boolean;
   minRenderScale?: number;
+  expectedPayloadKind?: FileCacheData["payloadKind"];
+  requireSvgInspectionMetadata?: boolean;
+  svgFormat?: "element" | "data-url";
+  onCacheHit?: (metadata: {
+    mtime: number;
+    renderScale?: number;
+    size?: Size;
+    hasSVGwithBitmap?: boolean;
+    payloadKind: FileCacheData["payloadKind"];
+  }) => void;
 };
 
 const getKey = (key: ImageKey): string =>
@@ -55,7 +74,9 @@ const getKey = (key: ImageKey): string =>
 class ImageCache {
   private dbName: string;
   private cacheStoreName: string;
+  private cacheAccessStoreName: string;
   private backupStoreName: string;
+  private legacyCacheStoreNames: readonly string[];
   private db: IDBDatabase | null;
   private isInitializing: boolean;
   private plugin: ExcalidrawPlugin;
@@ -64,6 +85,8 @@ class ImageCache {
   private obsidanURLCache = new Map<string, string>();
   private purgeInvalidCacheTimer: number = null;
   private purgeInvalidBackupTimer: number = null;
+  private touchedCacheKeys = new Set<string>();
+  private cacheReadinessPromise: Promise<void> | null = null;
 
   private getCacheRetentionCutoff(): number {
     const retentionDays = Math.max(
@@ -73,29 +96,28 @@ class ImageCache {
     return Date.now() - retentionDays * 24 * 60 * 60 * 1000;
   }
 
-  private touchCacheData(key: string, cacheData: FileCacheData): void {
-    if (!this.db) {
+  /**
+   * Records cache use without rewriting the potentially very large image value.
+   * The access store has a disjoint transaction scope, so these small writes do
+   * not block image-cache reads. One write per key and plugin session is enough
+   * for retention-based housekeeping.
+   */
+  private touchCacheData(key: string): void {
+    if (!this.db || this.touchedCacheKeys.has(key)) {
       return;
     }
-    const nextLastAccessed = Date.now();
-    // Avoid rewriting IndexedDB on every cache hit while still keeping actively used
-    // entries alive for retention-based purging.
-    if (
-      cacheData.lastAccessed &&
-      nextLastAccessed - cacheData.lastAccessed < 60 * 1000
-    ) {
-      return;
-    }
-
-    const transaction = this.db.transaction(this.cacheStoreName, "readwrite");
-    const store = transaction.objectStore(this.cacheStoreName);
-    store.put(
-      {
-        ...cacheData,
-        lastAccessed: nextLastAccessed,
-      },
-      key,
+    this.touchedCacheKeys.add(key);
+    const transaction = this.db.transaction(
+      this.cacheAccessStoreName,
+      "readwrite",
     );
+    const request = transaction
+      .objectStore(this.cacheAccessStoreName)
+      .put(Date.now(), key);
+    request.onerror = (event) => {
+      event.preventDefault();
+      this.touchedCacheKeys.delete(key);
+    };
   }
 
   public destroy(): void {
@@ -106,21 +128,71 @@ class ImageCache {
     if (this.purgeInvalidBackupTimer) {
       window.clearTimeout(this.purgeInvalidBackupTimer);
     }
+    this.db?.close();
     this.db = null;
     this.plugin = null;
     this.app = null;
     this.obsidanURLCache.forEach((url) => URL.revokeObjectURL(url));
     this.obsidanURLCache.clear();
     this.obsidanURLCache = null;
+    this.touchedCacheKeys.clear();
+    this.cacheReadinessPromise = null;
   }
 
-  constructor(dbName: string, cacheStoreName: string, backupStoreName: string) {
+  constructor(
+    dbName: string,
+    cacheStoreName: string,
+    cacheAccessStoreName: string,
+    backupStoreName: string,
+    legacyCacheStoreNames: readonly string[],
+  ) {
     this.dbName = dbName;
     this.cacheStoreName = cacheStoreName;
+    this.cacheAccessStoreName = cacheAccessStoreName;
     this.backupStoreName = backupStoreName;
+    this.legacyCacheStoreNames = legacyCacheStoreNames;
     this.db = null;
     this.isInitializing = false;
     this.plugin = null;
+  }
+
+  /**
+   * Creates the current cache stores and removes disposable legacy image-cache
+   * stores in the same IndexedDB version-change transaction.
+   *
+   * The drawing backup store is deliberately preserved. Legacy image payloads
+   * are not converted because doing so would deserialize and rewrite the full
+   * cache during startup; the v2 cache is rebuilt lazily as images are used.
+   */
+  private applyStoreSchema(db: IDBDatabase): void {
+    if (!db.objectStoreNames.contains(this.cacheStoreName)) {
+      db.createObjectStore(this.cacheStoreName);
+    }
+    if (!db.objectStoreNames.contains(this.cacheAccessStoreName)) {
+      db.createObjectStore(this.cacheAccessStoreName);
+    }
+    if (!db.objectStoreNames.contains(this.backupStoreName)) {
+      db.createObjectStore(this.backupStoreName);
+    }
+    this.legacyCacheStoreNames.forEach((storeName) => {
+      if (
+        storeName !== this.backupStoreName &&
+        db.objectStoreNames.contains(storeName)
+      ) {
+        db.deleteObjectStore(storeName);
+      }
+    });
+  }
+
+  private requiresStoreUpgrade(db: IDBDatabase): boolean {
+    return (
+      !db.objectStoreNames.contains(this.cacheStoreName) ||
+      !db.objectStoreNames.contains(this.cacheAccessStoreName) ||
+      !db.objectStoreNames.contains(this.backupStoreName) ||
+      this.legacyCacheStoreNames.some((storeName) =>
+        db.objectStoreNames.contains(storeName),
+      )
+    );
   }
 
   public async initializeDB(plugin: ExcalidrawPlugin): Promise<void> {
@@ -137,12 +209,7 @@ class ImageCache {
 
       request.onupgradeneeded = (event: IDBVersionChangeEvent) => {
         const db = (event.target as IDBOpenDBRequest).result;
-        if (!db.objectStoreNames.contains(this.cacheStoreName)) {
-          db.createObjectStore(this.cacheStoreName);
-        }
-        if (!db.objectStoreNames.contains(this.backupStoreName)) {
-          db.createObjectStore(this.backupStoreName);
-        }
+        this.applyStoreSchema(db);
       };
 
       this.db = await new Promise<IDBDatabase>((resolve, reject) => {
@@ -160,23 +227,16 @@ class ImageCache {
         };
       });
 
-      // Pre-create the object stores to reduce delay when accessing them later
-      if (
-        !this.db.objectStoreNames.contains(this.cacheStoreName) ||
-        !this.db.objectStoreNames.contains(this.backupStoreName)
-      ) {
+      // Existing databases are upgraded atomically: create v2 stores, remove
+      // disposable v1 image stores, and leave drawingBAK untouched.
+      if (this.requiresStoreUpgrade(this.db)) {
         const version = this.db.version + 1;
         this.db.close();
 
         const upgradeRequest = indexedDB.open(this.dbName, version);
         upgradeRequest.onupgradeneeded = (event: IDBVersionChangeEvent) => {
           const db = (event.target as IDBOpenDBRequest).result;
-          if (!db.objectStoreNames.contains(this.cacheStoreName)) {
-            db.createObjectStore(this.cacheStoreName);
-          }
-          if (!db.objectStoreNames.contains(this.backupStoreName)) {
-            db.createObjectStore(this.backupStoreName);
-          }
+          this.applyStoreSchema(db);
         };
 
         await new Promise<void>((resolve, reject) => {
@@ -207,6 +267,10 @@ class ImageCache {
         });
       }
 
+      // All initial cache consumers share this probe instead of racing separate
+      // reads against a short timeout. Once it resolves, normal reads can proceed.
+      await this.ensureCacheStoreReady();
+
       this.purgeInvalidCacheTimer = window.setTimeout(() => {
         this.purgeInvalidCacheTimer = null;
         void this.purgeInvalidCacheFiles();
@@ -216,6 +280,13 @@ class ImageCache {
         this.purgeInvalidBackupTimer = null;
         void this.purgeInvalidBackupFiles();
       }, 120000);
+    } catch (error) {
+      // An upgrade failure can leave `this.db` pointing at the closed legacy
+      // connection. Do not advertise a broken cache as ready to consumers.
+      this.db?.close();
+      this.db = null;
+      this.cacheReadinessPromise = null;
+      throw error;
     } finally {
       this.isInitializing = false;
       if (this.initializationNotice) {
@@ -226,57 +297,104 @@ class ImageCache {
     }
   }
 
+  private ensureCacheStoreReady(): Promise<void> {
+    if (this.cacheReadinessPromise !== null) {
+      return this.cacheReadinessPromise;
+    }
+    this.cacheReadinessPromise = new Promise<void>((resolve, reject) => {
+      const transaction = this.db.transaction(this.cacheStoreName, "readonly");
+      const request = transaction
+        .objectStore(this.cacheStoreName)
+        .get("__excalidraw_cache_readiness_probe__");
+      request.onsuccess = () => resolve();
+      request.onerror = () =>
+        reject(new Error("Failed to initialize image-cache reads."));
+    });
+    return this.cacheReadinessPromise;
+  }
+
+  private async getCacheAccessTimes(): Promise<Map<string, number>> {
+    const accessTimes = new Map<string, number>();
+    const transaction = this.db.transaction(
+      this.cacheAccessStoreName,
+      "readonly",
+    );
+    const request = transaction
+      .objectStore(this.cacheAccessStoreName)
+      .openCursor();
+    return new Promise<Map<string, number>>((resolve, reject) => {
+      request.onsuccess = (event: Event) => {
+        const cursor = (event.target as IDBRequest<IDBCursorWithValue | null>)
+          .result;
+        if (!cursor) {
+          resolve(accessTimes);
+          return;
+        }
+        if (
+          typeof cursor.key === "string" &&
+          typeof cursor.value === "number"
+        ) {
+          accessTimes.set(cursor.key, cursor.value);
+        }
+        cursor.continue();
+      };
+      request.onerror = () =>
+        reject(new Error("Failed to retrieve image-cache access times."));
+    });
+  }
+
+  private isCurrentCacheData(cacheData: FileCacheData): boolean {
+    return (
+      cacheData?.schemaVersion === 2 &&
+      (cacheData.payloadKind === "svg" || cacheData.payloadKind === "raster") &&
+      cacheData.blob instanceof Blob
+    );
+  }
+
   private async purgeInvalidCacheFiles(): Promise<void> {
+    const accessTimes = await this.getCacheAccessTimes();
     return new Promise<void>((resolve, reject) => {
-      const transaction = this.db.transaction(this.cacheStoreName, "readwrite");
+      const transaction = this.db.transaction(
+        [this.cacheStoreName, this.cacheAccessStoreName],
+        "readwrite",
+      );
       const store = transaction.objectStore(this.cacheStoreName);
-      const files = this.app.vault.getFiles();
-      const deletePromises: Promise<void>[] = [];
+      const accessStore = transaction.objectStore(this.cacheAccessStoreName);
       const request = store.openCursor();
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () =>
+        reject(
+          transaction.error ??
+            new Error("Failed to purge invalid image-cache entries."),
+        );
       request.onsuccess = (event: Event) => {
         const cursor = (event.target as IDBRequest<IDBCursorWithValue | null>)
           .result;
         if (cursor) {
           const key = cursor.key as string;
-          const isLegacyKey = key.split("#").length - 1 < 13; // introduced hasGroupref, etc. in 1.9.28 // introduced hasClippedFrameref in 2.2.10 //introduced inlineFonts 2.2.11 //introduced cacheId in 2.23.x
+          const cacheData = cursor.value as FileCacheData;
+          // Cache-key suffixes such as transparency and padding are optional, so
+          // separator counts cannot identify an old schema reliably. Unreachable
+          // legacy entries are harmless and age out through normal retention.
           const filepath = key.split("#")[0];
-          const fileExists = files.some((f: TFile) => f.path === filepath);
-          const file = fileExists
-            ? files.find((f: TFile) => f.path === filepath)
-            : null;
-          const lastAccessed = cursor.value.lastAccessed ?? cursor.value.mtime;
+          const file = this.app.vault.getFileByPath(filepath);
+          const lastAccessed = accessTimes.get(key) ?? cacheData.mtime;
           const isExpired = lastAccessed < this.getCacheRetentionCutoff();
           if (
-            isLegacyKey ||
             !file ||
-            (file && file.stat.mtime > cursor.value.mtime) ||
-            (!cursor.value.blob && !cursor.value.svg) ||
+            (file && file.stat.mtime > cacheData.mtime) ||
+            !this.isCurrentCacheData(cacheData) ||
             isExpired
           ) {
             if (this.obsidanURLCache.has(key)) {
               URL.revokeObjectURL(this.obsidanURLCache.get(key));
               this.obsidanURLCache.delete(key);
             }
-            deletePromises.push(
-              new Promise<void>((innerResolve, innerReject) => {
-                const deleteRequest = store.delete(cursor.primaryKey);
-                deleteRequest.onsuccess = () => innerResolve();
-                deleteRequest.onerror = () => {
-                  const error = deleteRequest.error;
-                  const errorMsg = `Failed to delete file with key: ${key}. Error: ${error.message}`;
-                  innerReject(new Error(errorMsg));
-                };
-              }),
-            );
+            store.delete(cursor.primaryKey);
+            accessStore.delete(cursor.primaryKey);
+            this.touchedCacheKeys.delete(key);
           }
           cursor.continue();
-        } else {
-          Promise.all(deletePromises)
-            .then(() => {
-              transaction.commit();
-              resolve();
-            })
-            .catch((error) => reject(error as Error));
         }
       };
 
@@ -296,7 +414,6 @@ class ImageCache {
   private async purgeInvalidBackupFiles(): Promise<void> {
     const transaction = this.db.transaction(this.backupStoreName, "readwrite");
     const store = transaction.objectStore(this.backupStoreName);
-    const files = this.app.vault.getFiles();
     const deletePromises: Promise<void>[] = [];
     const request = store.openCursor();
     return await new Promise<void>((resolve, reject) => {
@@ -305,7 +422,7 @@ class ImageCache {
           .result;
         if (cursor) {
           const key = cursor.key as BackupKey;
-          const fileExists = files.some((f: TFile) => f.path === key);
+          const fileExists = Boolean(this.app.vault.getFileByPath(key));
           if (!fileExists) {
             deletePromises.push(
               new Promise<void>((resolve, reject) => {
@@ -391,38 +508,34 @@ class ImageCache {
     );
   }
 
-  private fullyInitialized = false;
-
   private async getResolvedCacheData(
     key_: ImageKey,
     options?: GetImageFromCacheOptions,
   ): Promise<{ cacheData: FileCacheData; key: string } | undefined> {
+    const key = getKey(key_);
     if (!this.isReady()) {
       return undefined;
     }
 
-    const key = getKey(key_);
-
     try {
-      const cachedData = this.fullyInitialized
-        ? await this.getCacheData(key)
-        : await Promise.race([
-            this.getCacheData(key),
-            new Promise<undefined>((_, reject) =>
-              window.setTimeout(() => {
-                reject(new Error("Timeout while retrieving cache data"));
-              }, 200),
-            ),
-          ]);
-      this.fullyInitialized = true;
+      await this.ensureCacheStoreReady();
+      const cachedData = await this.getCacheData(key);
       if (!cachedData) {
         return undefined;
       }
+      if (!this.isCurrentCacheData(cachedData)) {
+        const transaction = this.db.transaction(
+          [this.cacheStoreName, this.cacheAccessStoreName],
+          "readwrite",
+        );
+        transaction.objectStore(this.cacheStoreName).delete(key);
+        transaction.objectStore(this.cacheAccessStoreName).delete(key);
+        this.touchedCacheKeys.delete(key);
+        return undefined;
+      }
 
-      const file = this.app.vault.getAbstractFileByPath(
-        key_.filepath.split("#")[0],
-      );
-      if (!file || !(file instanceof TFile)) {
+      const file = this.app.vault.getFileByPath(key_.filepath.split("#")[0]);
+      if (!file) {
         return undefined;
       }
       if (cachedData.mtime < file.stat.mtime) {
@@ -447,7 +560,27 @@ class ImageCache {
       ) {
         return undefined;
       }
-      this.touchCacheData(key, cachedData);
+      if (
+        options?.expectedPayloadKind &&
+        cachedData.payloadKind !== options.expectedPayloadKind
+      ) {
+        return undefined;
+      }
+      if (
+        options?.requireSvgInspectionMetadata &&
+        cachedData.payloadKind === "svg" &&
+        typeof cachedData.hasSVGwithBitmap !== "boolean"
+      ) {
+        return undefined;
+      }
+      options?.onCacheHit?.({
+        mtime: cachedData.mtime,
+        renderScale: cachedData.renderScale,
+        size: cachedData.size,
+        hasSVGwithBitmap: cachedData.hasSVGwithBitmap,
+        payloadKind: cachedData.payloadKind,
+      });
+      this.touchCacheData(key);
       return { cacheData: cachedData, key };
     } catch (error) {
       console.error(
@@ -477,11 +610,11 @@ class ImageCache {
     }
 
     const { cacheData, key } = resolved;
-    if (cacheData.svg) {
-      return convertSVGStringToElement(cacheData.svg);
-    }
-    if (!cacheData.blob) {
-      return undefined;
+    if (cacheData.payloadKind === "svg") {
+      if (options?.svgFormat === "data-url") {
+        return blobToDataURL(cacheData.blob);
+      }
+      return convertSVGStringToElement(await cacheData.blob.text());
     }
     if (this.obsidanURLCache.has(key)) {
       return this.obsidanURLCache.get(key);
@@ -520,39 +653,45 @@ class ImageCache {
     key_: ImageKey,
     obsidianURL: string,
     image: Blob | SVGSVGElement,
-    metadata?: Partial<FileCacheData>,
+    metadata?: ImageCacheMetadata,
   ): void {
     if (!this.isReady()) {
       return; // Database not initialized yet
     }
 
-    const file = this.app.vault.getAbstractFileByPath(
-      key_.filepath.split("#")[0],
-    );
-    if (!file || !(file instanceof TFile)) {
+    const file = this.app.vault.getFileByPath(key_.filepath.split("#")[0]);
+    if (!file) {
       return;
     }
 
-    let svg: string = null;
-    let blob: Blob = null;
-    if (image instanceof SVGSVGElement) {
-      svg = image.outerHTML;
-    } else {
-      blob = image;
-    }
+    const isSVGElement = isInstanceOfSVGSVGElement(image);
+    const payloadKind =
+      isSVGElement || image.type === "image/svg+xml" ? "svg" : "raster";
+    const blob =
+      isSVGElement
+        ? new Blob([image.outerHTML.replaceAll("&nbsp;", " ")], {
+            type: "image/svg+xml",
+          })
+        : image;
     const now = Date.now();
     const data: FileCacheData = {
+      schemaVersion: 2,
+      payloadKind,
       mtime: now,
-      lastAccessed: now,
       blob,
-      svg,
       ...metadata,
     };
-    const transaction = this.db.transaction(this.cacheStoreName, "readwrite");
+    const transaction = this.db.transaction(
+      [this.cacheStoreName, this.cacheAccessStoreName],
+      "readwrite",
+    );
     const store = transaction.objectStore(this.cacheStoreName);
+    const accessStore = transaction.objectStore(this.cacheAccessStoreName);
     const key = getKey(key_);
     store.put(data, key);
-    if (!svg && obsidianURL) {
+    accessStore.put(now, key);
+    this.touchedCacheKeys.add(key);
+    if (payloadKind === "raster" && obsidianURL) {
       if (
         this.obsidanURLCache.has(key) &&
         this.obsidanURLCache.get(key) !== obsidianURL
@@ -603,7 +742,11 @@ class ImageCache {
     this.obsidanURLCache.forEach((url) => URL.revokeObjectURL(url));
     this.obsidanURLCache.clear();
 
-    return this.clear(this.cacheStoreName, "Image cache was cleared");
+    this.touchedCacheKeys.clear();
+    return this.clear(
+      [this.cacheStoreName, this.cacheAccessStoreName],
+      "Image cache was cleared",
+    );
   }
 
   public async clearBackupCache(): Promise<void> {
@@ -614,22 +757,31 @@ class ImageCache {
     return this.clear(this.backupStoreName, "All backups were cleared");
   }
 
-  private async clear(storeName: string, message: string): Promise<void> {
+  private async clear(
+    storeNames: string | string[],
+    message: string,
+  ): Promise<void> {
     if (!this.isReady()) {
       return; // Database not initialized yet
     }
 
-    const transaction = this.db.transaction([storeName], "readwrite");
-    const store = transaction.objectStore(storeName);
+    const names = Array.isArray(storeNames) ? storeNames : [storeNames];
+    const transaction = this.db.transaction(names, "readwrite");
 
     return new Promise<void>((resolve, reject) => {
-      const request = store.clear();
-      request.onsuccess = () => {
+      const requests = names.map((name) =>
+        transaction.objectStore(name).clear(),
+      );
+      transaction.oncomplete = () => {
         new Notice(message);
         resolve();
       };
-      request.onerror = () =>
-        reject(new Error(`Failed to clear ${storeName}.`));
+      transaction.onerror = () =>
+        reject(new Error(`Failed to clear ${names.join(", ")}.`));
+      requests.forEach((request) => {
+        request.onerror = () =>
+          reject(new Error(`Failed to clear ${names.join(", ")}.`));
+      });
     });
   }
 }
@@ -639,9 +791,17 @@ let imageCache: ImageCache = null;
 export const getImageCache = (): ImageCache => {
   if (!imageCache) {
     const DB_NAME = `Excalidraw ${EXCALIDRAW_PLUGIN.app.appId}`;
-    const CACHE_STORE = "imageCache";
+    const CACHE_STORE = "imageCacheV2";
+    const CACHE_ACCESS_STORE = "imageCacheAccessV2";
     const BACKUP_STORE = "drawingBAK";
-    imageCache = new ImageCache(DB_NAME, CACHE_STORE, BACKUP_STORE);
+    const LEGACY_CACHE_STORES = ["imageCache", "imageCacheAccess"] as const;
+    imageCache = new ImageCache(
+      DB_NAME,
+      CACHE_STORE,
+      CACHE_ACCESS_STORE,
+      BACKUP_STORE,
+      LEGACY_CACHE_STORES,
+    );
   }
   return imageCache;
 };

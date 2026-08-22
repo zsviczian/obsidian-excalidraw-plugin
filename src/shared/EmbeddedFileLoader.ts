@@ -31,9 +31,10 @@ import {
   getMimeType,
   getPDFDoc,
   getURLImageExtension,
+  hasExcalidrawEmbeddedImagesTreeChanged,
   readLocalFileBinary,
 } from "../utils/fileUtils";
-import { errorlog, getDataURL } from "../utils/coreUtils";
+import { blobToDataURL, errorlog, getDataURL } from "../utils/coreUtils";
 import {
   getExportTheme,
   getLinkParts,
@@ -103,10 +104,23 @@ const markdownRendererRecursionWatcthdog = new Set<TFile>();
 
 type CacheValidationMode = "validated" | "stale-first";
 
+/** Describes the lightweight work required after a stale-first cache hit. */
+export type DeferredCacheValidation =
+  | {
+      kind: "excalidraw-dependencies";
+      cacheMtime: number;
+    }
+  | {
+      kind: "reload";
+    };
+
 type LoadImageOptions = {
   cacheValidation?: CacheValidationMode;
-  onStaleCacheHit?: () => void;
+  onStaleCacheHit?: (validation: DeferredCacheValidation) => void;
+  deferUncachedExcalidraw?: boolean;
+  onExcalidrawGenerationDeferred?: () => void;
   markdownTransclusionRender?: MarkdownImageRenderSettings;
+  fileId?: FileId;
 };
 
 type MarkdownRenderOverrides = {
@@ -758,6 +772,7 @@ export class EmbeddedFilesLoader {
     elements = [],
     cacheValidation = "validated",
     onStaleCacheHit,
+    deferUncachedGeneration = false,
   }: {
     isDark: boolean;
     file: TFile;
@@ -766,11 +781,14 @@ export class EmbeddedFilesLoader {
     hasSVGwithBitmap: boolean;
     elements?: ExcalidrawElement[];
     cacheValidation?: CacheValidationMode;
-    onStaleCacheHit?: () => void;
+    onStaleCacheHit?: (validation: DeferredCacheValidation) => void;
+    deferUncachedGeneration?: boolean;
   }): Promise<{
     dataURL: DataURL;
     hasSVGwithBitmap: boolean;
     loadedFromCache?: boolean;
+    size?: Size;
+    generationDeferred?: boolean;
   }> {
     if (this.terminate) {
       return { dataURL: "" as DataURL, hasSVGwithBitmap: false };
@@ -830,9 +848,24 @@ export class EmbeddedFilesLoader {
       isTransparent: !exportSettings.withBackground,
     };
 
+    let cachedSize: Size | undefined;
+    let cachedHasSVGwithBitmap: boolean | undefined;
     const maybeSVG = shouldUseCache
       ? await getImageCache().getImageFromCache(cacheKey, {
           skipDependencyCheck: cacheValidation === "stale-first",
+          expectedPayloadKind: "svg",
+          requireSvgInspectionMetadata: true,
+          svgFormat: "data-url",
+          onCacheHit: ({ mtime, size, hasSVGwithBitmap }) => {
+            cachedSize = size;
+            cachedHasSVGwithBitmap = hasSVGwithBitmap;
+            if (cacheValidation === "stale-first") {
+              onStaleCacheHit?.({
+                kind: "excalidraw-dependencies",
+                cacheMtime: mtime,
+              });
+            }
+          },
         })
       : undefined;
 
@@ -840,48 +873,60 @@ export class EmbeddedFilesLoader {
       return { dataURL: "" as DataURL, hasSVGwithBitmap: false };
     }
 
-    if (maybeSVG && cacheValidation === "stale-first") {
-      onStaleCacheHit?.();
+    const cachedDataURL =
+      typeof maybeSVG === "string" ? (maybeSVG as DataURL) : undefined;
+    if (cachedDataURL) {
+      return {
+        dataURL: cachedDataURL,
+        hasSVGwithBitmap: cachedHasSVGwithBitmap ?? hasSVGwithBitmap,
+        loadedFromCache: true,
+        size: cachedSize,
+      };
     }
 
-    const svg =
-      maybeSVG && maybeSVG instanceof SVGSVGElement
-        ? maybeSVG
-        : (replaceSVGColors(
-            await createSVG(
-              hasFilenameParts
-                ? filenameParts.hasGroupref ||
-                  filenameParts.hasBlockref ||
-                  filenameParts.hasSectionref ||
-                  filenameParts.hasFrameref ||
-                  filenameParts.hasClippedFrameref
-                  ? filenameParts.filepath + filenameParts.linkpartReference
-                  : file.path
-                : file?.path,
-              false, //false
-              hasFilenameParts && filenameParts.hasClippedFrameref
-                ? {
-                    ...exportSettings,
-                    frameRendering: {
-                      enabled: true,
-                      name: false,
-                      outline: false,
-                      clip: true,
-                    },
-                  }
-                : exportSettings,
-              this,
-              forceTheme,
-              null,
-              null,
-              elements,
-              this.plugin,
-              depth + 1,
-              getExportPadding(this.plugin, file),
-            ),
-            inFile instanceof EmbeddedFile ? inFile.colorMap : null,
-          ) as SVGSVGElement);
+    if (deferUncachedGeneration) {
+      return {
+        dataURL: null,
+        hasSVGwithBitmap,
+        loadedFromCache: false,
+        generationDeferred: true,
+      };
+    }
 
+    const svg = replaceSVGColors(
+      await createSVG(
+        hasFilenameParts
+          ? filenameParts.hasGroupref ||
+            filenameParts.hasBlockref ||
+            filenameParts.hasSectionref ||
+            filenameParts.hasFrameref ||
+            filenameParts.hasClippedFrameref
+            ? filenameParts.filepath + filenameParts.linkpartReference
+            : file.path
+          : file?.path,
+        false, //false
+        hasFilenameParts && filenameParts.hasClippedFrameref
+          ? {
+              ...exportSettings,
+              frameRendering: {
+                enabled: true,
+                name: false,
+                outline: false,
+                clip: true,
+              },
+            }
+          : exportSettings,
+        this,
+        forceTheme,
+        null,
+        null,
+        elements,
+        this.plugin,
+        depth + 1,
+        getExportPadding(this.plugin, file),
+      ),
+      inFile instanceof EmbeddedFile ? inFile.colorMap : null,
+    ) as SVGSVGElement;
     if (this.terminate) {
       return { dataURL: "" as DataURL, hasSVGwithBitmap: false };
     }
@@ -894,7 +939,7 @@ export class EmbeddedFilesLoader {
       hasSVGwithBitmap = true;
     }
 
-    if (hasSVGwithBitmap && isDark && !maybeSVG) {
+    if (hasSVGwithBitmap && isDark) {
       imageList.forEach((i) => {
         const id = i.parentElement?.id;
         if (id.endsWith("-invert-bitmap")) {
@@ -912,7 +957,7 @@ export class EmbeddedFilesLoader {
       hasSVGwithBitmap = true;
     }
 
-    if (svgsToInvert.length > 0 && isDark && !maybeSVG) {
+    if (svgsToInvert.length > 0 && isDark) {
       svgsToInvert.forEach((i) => {
         const id = i.id;
         svg.querySelectorAll(`use[href='#${id}']`).forEach((u) => {
@@ -924,12 +969,6 @@ export class EmbeddedFilesLoader {
     if (!hasSVGwithBitmap && svg.getAttribute("hasbitmap")) {
       hasSVGwithBitmap = true;
     }
-    if (shouldUseCache && !maybeSVG) {
-      //cache SVG should have the width and height parameters and not the embedded font
-      //see svgWithFont below
-      getImageCache().addImageToCache(cacheKey, "", svg);
-    }
-
     if (!svg.hasAttribute("width") && svg.hasAttribute("viewBox")) {
       //2024.06.09
       //this addresses backward compatibility issues where the cache does not have the width and height attributes
@@ -942,11 +981,32 @@ export class EmbeddedFilesLoader {
         svg.setAttribute("height", vb[3]);
       }
     }
-    const dURL = svgToBase64(svg.outerHTML) as DataURL;
+    const width = Number.parseFloat(svg.getAttribute("width") ?? "");
+    const height = Number.parseFloat(svg.getAttribute("height") ?? "");
+    const size =
+      Number.isFinite(width) &&
+      width > 0 &&
+      Number.isFinite(height) &&
+      height > 0
+        ? { width, height }
+        : undefined;
+    const svgBlob = new Blob([svg.outerHTML.replaceAll("&nbsp;", " ")], {
+      type: "image/svg+xml",
+    });
+    const dURL = await blobToDataURL(svgBlob);
+    if (shouldUseCache) {
+      // Scene cache hits need enough metadata to avoid reparsing the SVG merely
+      // to rediscover bitmap content and intrinsic dimensions.
+      getImageCache().addImageToCache(cacheKey, "", svgBlob, {
+        size,
+        hasSVGwithBitmap,
+      });
+    }
     return {
       dataURL: dURL,
       hasSVGwithBitmap,
       loadedFromCache: Boolean(maybeSVG),
+      size,
     };
   }
 
@@ -1029,13 +1089,13 @@ export class EmbeddedFilesLoader {
                 this.getLocalPath((inFile as EmbeddedFile).hyperlink),
               )
             : await app.vault.readBinary(file);
-
       if (this.terminate) {
         return null;
       }
 
       let dURL: DataURL = null;
       let excalidrawLoadedFromCache = false;
+      let excalidrawSize: Size | undefined;
       if (isExcalidrawFile) {
         const res = await this.getExcalidrawSVG({
           isDark: this.isDark,
@@ -1045,14 +1105,19 @@ export class EmbeddedFilesLoader {
           hasSVGwithBitmap,
           cacheValidation: options?.cacheValidation,
           onStaleCacheHit: options?.onStaleCacheHit,
+          deferUncachedGeneration: options?.deferUncachedExcalidraw,
         });
-
         if (this.terminate) {
+          return null;
+        }
+        if (res.generationDeferred) {
+          options?.onExcalidrawGenerationDeferred?.();
           return null;
         }
         dURL = res.dataURL;
         hasSVGwithBitmap = res.hasSVGwithBitmap;
         excalidrawLoadedFromCache = !!res.loadedFromCache;
+        excalidrawSize = res.size;
       }
 
       const excalidrawSVG = isExcalidrawFile ? dURL : null;
@@ -1066,7 +1131,6 @@ export class EmbeddedFilesLoader {
       ] = isPDF
         ? await this.pdfToDataURL(file, linkParts, options)
         : [null, null, null, null, false];
-
       if (this.terminate) {
         return null;
       }
@@ -1096,7 +1160,6 @@ export class EmbeddedFilesLoader {
             : file?.extension === "md"
               ? null
               : await getDataURL(ab, mimeType)));
-
       if (this.terminate) {
         return null;
       }
@@ -1131,22 +1194,27 @@ export class EmbeddedFilesLoader {
         }
       }
 
-      const size = isPDF ? pdfSize : await getImageSize(dataURL);
+      const size = isPDF
+        ? pdfSize
+        : (excalidrawSize ?? (await getImageSize(dataURL)));
 
       if (this.terminate) {
         return null;
       }
 
-      return {
-        mimeType,
-        fileId: await generateIdFromFile(
+      const generatedFileId =
+        options?.fileId ??
+        (await generateIdFromFile(
           isHyperLink || isPDF || isExcalidrawFile
             ? new TextEncoder().encode(dataURL).buffer
             : ab,
           inFile instanceof EmbeddedFile
             ? inFile.filenameparts?.linkpartReference
             : undefined,
-        ),
+        ));
+      return {
+        mimeType,
+        fileId: generatedFileId,
         dataURL,
         created: isHyperLink || isLocalLink ? 0 : file.stat.mtime,
         loadedFromCache: isExcalidrawFile
@@ -1186,6 +1254,7 @@ export class EmbeddedFilesLoader {
     validationConcurrency,
     emitPolicy = "all",
     onDeferredValidationCandidates,
+    deferredCacheValidation,
     sceneElements,
   }: {
     excalidrawData: ExcalidrawData;
@@ -1197,7 +1266,10 @@ export class EmbeddedFilesLoader {
     cacheValidation?: CacheValidationMode;
     validationConcurrency?: number;
     emitPolicy?: LoadSceneEmitPolicy;
-    onDeferredValidationCandidates?: (fileIds: Set<FileId>) => void;
+    onDeferredValidationCandidates?: (
+      candidates: Map<FileId, DeferredCacheValidation>,
+    ) => void;
+    deferredCacheValidation?: ReadonlyMap<FileId, DeferredCacheValidation>;
     sceneElements?: readonly ExcalidrawElement[];
   }) {
     if (depth > 7) {
@@ -1238,13 +1310,21 @@ export class EmbeddedFilesLoader {
     const files: FileData[][] = [];
     files.push([]);
     let batch = 0;
-    // Only stale-first cache hits are queued for the cheap second pass.
-    const deferredValidationFileIds = new Set<FileId>();
+    // Carry cache metadata into the second pass so unchanged Excalidraw
+    // dependencies can be validated without reading the image payload again.
+    const deferredValidationCandidates = new Map<
+      FileId,
+      DeferredCacheValidation
+    >();
+    const deferredGenerationEntries: typeof entries = [];
 
     function* loadIterator(
-      this: EmbeddedFilesLoader,
+      loader: EmbeddedFilesLoader,
+      embeddedEntries: typeof entries = entries,
+      deferUncachedExcalidraw = false,
+      includeAdditionalAssets = true,
     ): Generator<Promise<void>> {
-      for (const entry of entries) {
+      for (const entry of embeddedEntries) {
         if (markdownImageFileIds.has(entry[0])) {
           continue;
         }
@@ -1255,21 +1335,54 @@ export class EmbeddedFilesLoader {
         const id = entry[0];
         yield createSafeLoadTask(
           async () => {
-            if (this.terminate) {
+            if (loader.terminate) {
               return;
             }
             const shouldForceReload = forceReloadFileIDs?.has(id);
-            if (shouldForceReload || !embeddedFile.isLoaded(this.isDark)) {
+            const deferredValidation = deferredCacheValidation?.get(id);
+            if (
+              cacheValidation === "validated" &&
+              emitPolicy === "changed-only" &&
+              shouldForceReload &&
+              deferredValidation?.kind === "excalidraw-dependencies"
+            ) {
+              const file = embeddedFile.file;
+              const cacheIsValid = Boolean(
+                file &&
+                file.stat.mtime <= deferredValidation.cacheMtime &&
+                !hasExcalidrawEmbeddedImagesTreeChanged(
+                  file,
+                  deferredValidation.cacheMtime,
+                  loader.plugin,
+                ),
+              );
+              if (cacheIsValid) {
+                return;
+              }
+            }
+            if (shouldForceReload || !embeddedFile.isLoaded(loader.isDark)) {
               //debug({where:"EmbeddedFileLoader.loadSceneFiles",uid:this.uid,status:"embedded Files are not loaded"});
-              const data = await this._getObsidianImage(embeddedFile, depth, {
+              let excalidrawGenerationDeferred = false;
+              const data = await loader._getObsidianImage(embeddedFile, depth, {
                 cacheValidation,
+                fileId: id,
+                deferUncachedExcalidraw,
+                onExcalidrawGenerationDeferred: () => {
+                  excalidrawGenerationDeferred = true;
+                },
                 onStaleCacheHit:
                   cacheValidation === "stale-first"
-                    ? () => deferredValidationFileIds.add(id)
+                    ? (validation) =>
+                        deferredValidationCandidates.set(id, validation)
                     : undefined,
               });
-              if (this.terminate) {
+              if (loader.terminate) {
                 return null;
+              }
+
+              if (excalidrawGenerationDeferred) {
+                deferredGenerationEntries.push(entry);
+                return;
               }
 
               if (data) {
@@ -1295,7 +1408,7 @@ export class EmbeddedFilesLoader {
               const fileData: FileData = {
                 mimeType: embeddedFile.mimeType,
                 id,
-                dataURL: embeddedFile.getImage(this.isDark) as DataURL,
+                dataURL: embeddedFile.getImage(loader.isDark) as DataURL,
                 created: embeddedFile.mtime,
                 size: embeddedFile.size,
                 hasSVGwithBitmap: embeddedFile.isSVGwithBitmap,
@@ -1315,6 +1428,10 @@ export class EmbeddedFilesLoader {
         );
       }
 
+      if (!includeAdditionalAssets) {
+        return;
+      }
+
       for (const element of markdownImageElements) {
         const id = element.fileId;
         if (fileIDWhiteList && !fileIDWhiteList.has(id)) {
@@ -1322,7 +1439,7 @@ export class EmbeddedFilesLoader {
         }
         yield createSafeLoadTask(
           async () => {
-            if (this.terminate) {
+            if (loader.terminate) {
               return;
             }
             const customData = element.customData?.[
@@ -1332,7 +1449,7 @@ export class EmbeddedFilesLoader {
               return;
             }
             const render = resolveMarkdownImageRenderSettings(
-              this.plugin.settings.markdownImageSettings.defaults,
+              loader.plugin.settings.markdownImageSettings.defaults,
               customData.render,
             );
             const legacyRender = customData.render as MarkdownImageRenderSettings & {
@@ -1369,7 +1486,7 @@ export class EmbeddedFilesLoader {
               sourceFile = embeddedFile.file;
               const transclusion = await getTransclusion(
                 embeddedFile.linkParts,
-                this.plugin.app,
+                loader.plugin.app,
                 sourceFile,
               );
               markdown =
@@ -1380,12 +1497,12 @@ export class EmbeddedFilesLoader {
             if (markdown === undefined) {
               return;
             }
-            const rendered = await this.renderMarkdownToSVG(
+            const rendered = await loader.renderMarkdownToSVG(
               sourceFile,
               markdown,
               render,
             );
-            if (!rendered.dataURL || this.terminate) {
+            if (!rendered.dataURL || loader.terminate) {
               return;
             }
             files[batch].push({
@@ -1412,13 +1529,13 @@ export class EmbeddedFilesLoader {
         }
         yield createSafeLoadTask(
           async () => {
-            if (this.terminate) {
+            if (loader.terminate) {
               return;
             }
             if (!excalidrawData.getEquation(id).isLoaded) {
               const latex = equation.latex;
-              const data = await tex2dataURL(latex, 4, this.plugin);
-              if (this.terminate) {
+              const data = await tex2dataURL(latex, 4, loader.plugin);
+              if (loader.terminate) {
                 return null;
               }
               if (data) {
@@ -1450,14 +1567,14 @@ export class EmbeddedFilesLoader {
         for (const element of mermaidElements) {
           yield createSafeLoadTask(
             async () => {
-              if (this.terminate) {
+              if (loader.terminate) {
                 return;
               }
               const data = getMermaidText(element);
               const result = await mermaidToExcalidraw(data, {
                 themeVariables: { fontSize: "20" },
               });
-              if (!result || this.terminate) {
+              if (!result || loader.terminate) {
                 return;
               }
               if (result?.files) {
@@ -1481,18 +1598,18 @@ export class EmbeddedFilesLoader {
               }
               if (result?.elements) {
                 //handle case that mermaidToExcalidraw has implemented this type of diagram in the mean time
-                if (this.terminate) {
+                if (loader.terminate) {
                   return;
                 }
-                const res = await this.getExcalidrawSVG({
-                  isDark: this.isDark,
+                const res = await loader.getExcalidrawSVG({
+                  isDark: loader.isDark,
                   file: null,
                   depth,
                   inFile: null,
                   hasSVGwithBitmap: false,
                   elements: result.elements,
                 });
-                if (this.terminate) {
+                if (loader.terminate) {
                   return;
                 }
                 if (res?.dataURL) {
@@ -1520,6 +1637,17 @@ export class EmbeddedFilesLoader {
       }
     }
 
+    const flushFiles = (
+      batchFiles: FileData[] | undefined,
+      final: boolean,
+    ) => {
+      try {
+        addFiles(batchFiles, this.isDark, final);
+      } catch (e: unknown) {
+        errorlog({ where: "EmbeddedFileLoader.loadSceneFiles", error: e });
+      }
+    };
+
     const addFilesTimer = window.setInterval(() => {
       if (this.terminate) {
         window.clearInterval(addFilesTimer);
@@ -1532,41 +1660,64 @@ export class EmbeddedFilesLoader {
       const batchFiles = files[batch].filter(
         (f) => emitPolicy === "all" || !f.loadedFromCache,
       );
-      try {
-        addFiles(batchFiles, this.isDark, false);
-      } catch (e: unknown) {
-        errorlog({ where: "EmbeddedFileLoader.loadSceneFiles", error: e });
-      }
+      flushFiles(batchFiles, false);
       files.push([]);
       batch++;
     }, 1200);
 
     try {
-      const iterator = loadIterator.bind(this)();
       const concurency =
         validationConcurrency ?? this.plugin.settings.renderingConcurrency;
+      const iterator = loadIterator(this, entries, true, true);
       if (!this.terminate) {
         await new PromisePool(iterator, concurency).all();
       }
 
       if (this.terminate) {
-        addFiles(undefined, this.isDark, true);
+        flushFiles(undefined, true);
+        return;
+      }
+      if (deferredGenerationEntries.length > 0) {
+        // Publish everything that was available from cache or direct file reads
+        // before expensive generated SVG work can monopolize the main thread.
+        const fastFiles = files[batch].filter(
+          (f) => emitPolicy === "all" || !f.loadedFromCache,
+        );
+        if (fastFiles.length > 0) {
+          flushFiles(fastFiles, false);
+        }
+        files.push([]);
+        batch++;
+
+        // Yield a browser task after addFiles so the fast batch can paint before
+        // starting potentially long synchronous sections of SVG generation.
+        await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
+        if (!this.terminate) {
+          const deferredIterator = loadIterator(
+            this,
+            deferredGenerationEntries,
+            false,
+            false,
+          );
+          await new PromisePool(deferredIterator, concurency).all();
+        }
+      }
+
+      if (this.terminate) {
+        flushFiles(undefined, true);
         return;
       }
       //debug({where:"EmbeddedFileLoader.loadSceneFiles",uid:this.uid,status:"add Files"});
-      if (deferredValidationFileIds.size > 0) {
-        onDeferredValidationCandidates?.(deferredValidationFileIds);
+      if (deferredValidationCandidates.size > 0) {
+        onDeferredValidationCandidates?.(deferredValidationCandidates);
       }
       // Same filter for the final flush so validated cache hits remain a no-op.
       const batchFiles = files[batch].filter(
         (f) => emitPolicy === "all" || !f.loadedFromCache,
       );
-      try {
-        //in try block because by the time files are loaded the user may have closed the view
-        addFiles(batchFiles, this.isDark, true);
-      } catch (e: unknown) {
-        errorlog({ where: "EmbeddedFileLoader.loadSceneFiles", error: e });
-      }
+      // The helper retains the try/catch because the user may have closed the
+      // view by the time the asynchronous image work completes.
+      flushFiles(batchFiles, true);
     } finally {
       window.clearInterval(addFilesTimer);
       this.emptyPDFDocsMap();
@@ -1609,6 +1760,7 @@ export class EmbeddedFilesLoader {
       const cachedData = shouldUseCache
         ? await getImageCache().getImageCacheData(cacheKey, {
             skipDependencyCheck: options?.cacheValidation === "stale-first",
+            expectedPayloadKind: "raster",
             minRenderScale:
               options?.cacheValidation === "stale-first"
                 ? undefined
@@ -1624,7 +1776,7 @@ export class EmbeddedFilesLoader {
           options?.cacheValidation === "stale-first" &&
           cachedScale < requestedScale
         ) {
-          options?.onStaleCacheHit?.();
+          options?.onStaleCacheHit?.({ kind: "reload" });
         }
         return [
           `data:image/png;base64,${await blobToBase64(cachedData.blob)}` as DataURL,

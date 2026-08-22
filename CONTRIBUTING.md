@@ -49,6 +49,13 @@ Timers, observers, autosave coordination, and undocumented Obsidian API workarou
 
 - **Do not use direct `console.log(...)` calls in project code.** Use the shared logging helper exported as `log` from `src/utils/debugHelper.ts`.
 - If you are working in a Node script where importing `src/utils/debugHelper.ts` is not practical, define and use a local `log` wrapper instead of calling `console.log(...)` directly.
+- Temporary performance diagnostics must use a unique searchable prefix and
+  produce copyable string lines rather than expandable console objects. Keep
+  instrumentation separate from functional behavior, avoid vault contents,
+  and include filenames only when per-file attribution is explicitly needed.
+- Remove temporary diagnostics before committing. Search both `src/` and the
+  built `dist/main.js` for the prefix so timing callbacks and bundled log code
+  are not left behind.
 
 ## 🏗️ Architecture & Sub-components
 
@@ -124,6 +131,12 @@ The repositories deliberately use different package managers:
 From `../excalidraw/packages/excalidraw`, `yarn build:obsidian` produces four consumer-specific files in `dist/obsidian`: development and production JavaScript and CSS. This plugin reads the corresponding four files from `node_modules/@zsviczian/excalidraw/dist/obsidian/`.
 
 For an unpublished integration test, you may temporarily copy those four generated files into the installed package under this repository's ignored `node_modules`. Keep the declared npm dependency unchanged. Running `npm install` restores the published package. The durable workflow is to publish a new component version, update the plugin dependency, run `npm install`, and rebuild.
+
+Keep component commit readiness, local integration readiness, and durable
+consumer handoff separate. A copied artifact can validate the pair locally,
+but a plugin change that consumes a new fork API is not release-ready until the
+published package is installed and `package.json` plus `package-lock.json`
+reference that version.
 
 For a maintainer-coordinated host-protocol release, update and test the fork contract first, inspect the package tarball, publish the fork package, then update this repository's exact dependency and lockfile. The final production build and smoke test must use the published package installed by `npm install`, not the temporary copied artifacts. Unit tests in the fork use structural fake adapters and do not require Obsidian; integration testing here must cover startup, reload, the main window, and popout creation and teardown.
 

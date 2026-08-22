@@ -42,6 +42,7 @@ import { linkPrompt } from "../../shared/Dialogs/Prompt";
 import {
   isInstanceOfHTMLElement,
   isInstanceOfHTMLImageElement,
+  isInstanceOfSVGSVGElement,
   isInstanceOfSVGElement,
 } from "../../utils/typechecks";
 import { ExportSettings } from "src/types/exportUtilTypes";
@@ -152,7 +153,9 @@ const _getPNG = async ({
   };
 
   if (cacheReady) {
-    const src = await getImageCache().getImageFromCache(cacheKey);
+    const src = await getImageCache().getImageFromCache(cacheKey, {
+      expectedPayloadKind: "raster",
+    });
     if (src && typeof src === "string") {
       img.src = src;
       return img;
@@ -290,7 +293,10 @@ const _getSVGIMG = async ({
   };
 
   if (cacheReady) {
-    const src = await getImageCache().getImageFromCache(cacheKey);
+    const src = await getImageCache().getImageFromCache(cacheKey, {
+      expectedPayloadKind: "svg",
+      svgFormat: "data-url",
+    });
     if (src && typeof src === "string") {
       img.setAttribute("src", src);
       return img;
@@ -382,11 +388,13 @@ const _getSVGNative = async ({
   };
   let maybeSVG;
   if (cacheReady) {
-    maybeSVG = await getImageCache().getImageFromCache(cacheKey);
+    maybeSVG = await getImageCache().getImageFromCache(cacheKey, {
+      expectedPayloadKind: "svg",
+    });
   }
 
   const svg =
-    maybeSVG && maybeSVG instanceof SVGSVGElement
+    maybeSVG && isInstanceOfSVGSVGElement(maybeSVG)
       ? maybeSVG
       : convertSVGStringToElement(
           (
