@@ -479,6 +479,7 @@ export default class ExcalidrawView
   private resizeBatchTimer: number | null = null;
   private resizeBatchWindowStart: number = 0;
   private lastAggregatedDh = 0;
+  private lastOffsetDriftCheck: number = 0;
   private oldKeyboardScroll: { scrollY: number; scrollX: number } | null = null;
 
   //https://stackoverflow.com/questions/27132796/is-there-any-javascript-event-fired-when-the-on-screen-keyboard-on-mobile-safari
@@ -1613,6 +1614,39 @@ export default class ExcalidrawView
     this.previousContentElHeight = this.contentEl.clientHeight;
     ro.observe(this.contentEl);
     this.destroyers.push(() => ro.disconnect());
+
+    //Guard against stale canvas offsets. Excalidraw caches offsetLeft/offsetTop in
+    //appState and only recalculates when its container RESIZES (its internal
+    //ResizeObserver) or scrolls. When another plugin injects UI above the canvas
+    //after view init (e.g. obsidian-editing-toolbar) or the tab header wraps,
+    //.excalidraw-wrapper (height:100%) is pushed down WITHOUT a size change, so
+    //neither Excalidraw's ResizeObserver nor the parentMoveObserver fires, and
+    //pointer/selection events land a few pixels off the cursor until the next
+    //autosave tick refreshes the offsets (up to 60s later).
+    //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1544
+    const offsetDriftGuard = () => {
+      const now = Date.now();
+      if (now - this.lastOffsetDriftCheck < 250) {
+        return;
+      }
+      this.lastOffsetDriftCheck = now;
+      const api = this.excalidrawAPI;
+      const container = this.excalidrawContainer;
+      if (!api || !container) {
+        return;
+      }
+      const { left, top } = container.getBoundingClientRect();
+      const { offsetLeft, offsetTop } = api.getAppState();
+      if (Math.abs(left - offsetLeft) > 1 || Math.abs(top - offsetTop) > 1) {
+        this.refreshCanvasOffset();
+      }
+    };
+    //pointerenter catches drift before the click lands (mouse); the capture-phase
+    //pointerdown is the fallback for touch/pen where enter and down coincide
+    this.registerDomEvent(this.containerEl, "pointerenter", offsetDriftGuard);
+    this.registerDomEvent(this.containerEl, "pointerdown", offsetDriftGuard, {
+      capture: true,
+    });
 
     this.app.workspace.onLayoutReady(async () => {
       //Leaf was moved to new window and ExcalidrawView was destructed.

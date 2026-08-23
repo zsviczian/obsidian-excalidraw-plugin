@@ -136,6 +136,12 @@ export class EventManager {
       ),
     );
 
+    //theme/snippet toggles can change header/toolbar heights and shift the canvas
+    //without firing layout-change; refresh cached canvas offsets the same way
+    this.registerEvent(
+      this.app.workspace.on("css-change", () => this.onLayoutChangeHandler()),
+    );
+
     //File Save Trigger Handlers
     //Save the drawing if the user clicks outside the Excalidraw Canvas
     const onClickEventSaveActiveDrawing = (e: PointerEvent) =>
