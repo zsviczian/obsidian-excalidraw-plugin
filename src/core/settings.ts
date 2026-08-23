@@ -477,7 +477,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       }
     };
 
-    visit(this.getConvertedSettingsPages(), []);
+    visit(this.getSettingsPages(), []);
     this.declarativePagePathsByTag = pathsByTag;
     return pathsByTag.get(tag) ?? null;
   }
@@ -1171,7 +1171,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     ];
   }
 
-  private getConvertedSettingsPages(): SettingsPageModel[] {
+  private getSettingsPages(): SettingsPageModel[] {
     return [
       ...this.getCheckpoint4APages(),
       ...this.getCheckpoint4EPages(),
@@ -1241,7 +1241,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     );
   }
 
-  private buildConvertedDefinitions(): SettingDefinitionItem<SettingBindingKey>[] {
+  private buildSettingDefinitions(): SettingDefinitionItem<SettingBindingKey>[] {
     this.declarativePagePathsByTag = null;
     this.declarativeSettingsAdapter.beginBuild();
     return [
@@ -1249,17 +1249,15 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       this.declarativeSettingsAdapter.toDefinition(
         this.getSettingsLayoutSpec(),
       ),
-      ...this.getConvertedSettingsPages().map((page) =>
+      ...this.getSettingsPages().map((page) =>
         this.toDeclarativePage(page),
       ),
     ];
   }
   /**
-   * Keeps the imperative settings UI active until every conversion batch and
-   * the search/layout checkpoint are complete. Obsidian also calls this early
-   * for indexing, so the inactive path only clears stale binding metadata.
-   *
-   * @returns An empty list so Obsidian falls back to {@link display}.
+   * Returns the complete searchable settings tree when supported and selected.
+   * Returning an empty array deliberately asks Obsidian to call {@link display}
+   * for older versions or when the user selected the legacy single-page layout.
    */
   getSettingDefinitions(): SettingDefinitionItem<SettingBindingKey>[] {
     if (!this.useDeclarativeSettingsForSession) {
@@ -1268,7 +1266,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       this.declarativeDefinitionsActive = false;
       return [];
     }
-    const definitions = this.buildConvertedDefinitions();
+    const definitions = this.buildSettingDefinitions();
     this.declarativeDefinitions = definitions;
     this.declarativeDefinitionsActive = definitions.length > 0;
     return this.declarativeDefinitionsActive ? definitions : [];
@@ -1475,7 +1473,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   private async copyDeclarativeSettingsAsMarkdown(): Promise<void> {
     // Build fresh fragments because Obsidian may consume a DocumentFragment
     // while rendering a page. Rebuilding also exports unopened pages.
-    const definitions = this.buildConvertedDefinitions();
+    const definitions = this.buildSettingDefinitions();
     this.declarativeDefinitions = definitions;
     const markdown = declarativeSettingsToMarkdown(definitions);
     const ownerWindow = this.containerEl.ownerDocument.defaultView;
