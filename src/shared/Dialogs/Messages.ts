@@ -20,8 +20,8 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
   "2.27.0": `
 ## New
 - On Obsidian 1.13 and newer, Excalidraw now uses Obsidian's searchable, multi-page settings. Settings are organized into clearer sections with breadcrumbs, compact help links, and clickable links between related options.
-- Prefer the previous experience? Turn off **Use searchable settings** at the top of Excalidraw settings and restart Obsidian. Older Obsidian versions continue using the legacy single-page layout automatically.
-- Settings exposed by installed Excalidraw Automate scripts have moved to **Excalidraw Automate → Settings for installed scripts** and update when a script adds or changes its settings.
+  - Prefer the previous experience? Turn off **Use searchable settings** at the top of Excalidraw settings and restart Obsidian. Older Obsidian versions continue using the legacy single-page layout automatically.
+  - Settings exposed by installed Excalidraw Automate scripts have moved to **Excalidraw Automate → Settings for installed scripts** and update when a script adds or changes its settings.
 
 ## New from Excalidraw.com
 - Improved bucket tool and eyedropper support. [#11849](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/11849)
@@ -38,7 +38,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 - Stencil-library JSON is now tab-indented for cleaner Git diffs. [#2883](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2883)
 
 ## Maintenance
-- This is one of Excalidraw's largest internal maintenance releases. The settings system, persistence pipeline, plugin lifecycle, runtime packaging, and several major managers were reorganized into clearer, independently maintained components. The visible workflow remains familiar, but the foundation is substantially safer for future features and fixes.
+- This is one of the Plugin's largest internal maintenance releases. The settings system, persistence pipeline, plugin lifecycle, runtime packaging, and several major managers were reorganized into clearer, independently maintained components. The visible workflow remains familiar, but the foundation is substantially safer for future features and fixes.
 - The embedded Excalidraw runtime now uses a modern ESM-source build and React 19 instead of the retired UMD pipeline. Offline use and popout windows remain supported; the Assistant UI font is bundled locally and Mermaid still loads on demand through Excalidraw Extras.
 - Drawings with many cached embedded files load more efficiently by avoiding redundant cache rewrites, SVG reconstruction, image measurement, hashing, and normalization. Cached and direct images can appear before slower generated drawings, while drawing backups remain protected.
 - Removed unused code and the obsolete Draw.io/Diagram integration, and retired the non-functional Create DrawIO file script.
