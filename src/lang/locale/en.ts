@@ -23,7 +23,20 @@ export default {
   // main.ts
   ERROR_INITIALIZING_EA: "Error initializing Excalidraw Automate",
   SETTINGS_DATA_INVALID:
-    "The Excalidraw settings file is empty or unreadable. Current settings are kept in memory, and saving is paused until a valid file is synchronized or restored.",
+    "Excalidraw is waiting for a valid replacement data.json. Setting changes will not be saved until that file is restored, or you restart Obsidian and choose Reset to defaults.",
+  SETTINGS_DATA_REPAIRED_FROM_MEMORY:
+    "An empty or unreadable Excalidraw settings file was received and rejected. The active settings were written back to repair data.json.",
+  SETTINGS_DATA_RECOVERED:
+    "Excalidraw data.json was empty or unreadable. The last known good settings were restored automatically.",
+  SETTINGS_RECOVERY_MISSING_TITLE: "Excalidraw settings file is missing",
+  SETTINGS_RECOVERY_MISSING_DESC:
+    "A last known good settings backup exists on this device. Restore that backup, or reset Excalidraw to factory defaults. Closing this message restores the backup.",
+  SETTINGS_RECOVERY_CORRUPT_TITLE: "Excalidraw settings file is corrupted",
+  SETTINGS_RECOVERY_CORRUPT_DESC:
+    "The settings file is empty or unreadable, and no recovery backup is available on this device. Reset Excalidraw to factory defaults, or leave the file unchanged while you restore a valid data.json from another source. Closing this message waits for a replacement file.",
+  SETTINGS_RECOVERY_RESTORE_BACKUP: "Restore backup",
+  SETTINGS_RECOVERY_RESET_DEFAULTS: "Reset to defaults",
+  SETTINGS_RECOVERY_WAIT_FOR_FILE: "Wait for restored file",
   CONVERT_URL_TO_FILE: "Save image from URL to local file",
   UNZIP_CURRENT_FILE: "Decompress current Excalidraw file",
   PUBLISH_SVG_CHECK:

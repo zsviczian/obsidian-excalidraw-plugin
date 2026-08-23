@@ -20,7 +20,22 @@ export default {
   SELECT_FILE_TO_INSERT: "Selecciona un archivo para insertar",
   // main.ts
   SETTINGS_DATA_INVALID:
-    "El archivo de configuración de Excalidraw está vacío o no se puede leer. La configuración actual se conserva en memoria y el guardado queda en pausa hasta que se sincronice o restaure un archivo válido.",
+    "Excalidraw está esperando un archivo data.json válido. Los cambios no se guardarán hasta que se restaure el archivo o reinicies Obsidian y elijas Restablecer valores predeterminados.",
+  SETTINGS_DATA_REPAIRED_FROM_MEMORY:
+    "Se recibió y rechazó un archivo de configuración de Excalidraw vacío o ilegible. La configuración activa se volvió a guardar para reparar data.json.",
+  SETTINGS_DATA_RECOVERED:
+    "El archivo data.json de Excalidraw estaba vacío o no se podía leer. La última configuración válida se restauró automáticamente.",
+  SETTINGS_RECOVERY_MISSING_TITLE:
+    "Falta el archivo de configuración de Excalidraw",
+  SETTINGS_RECOVERY_MISSING_DESC:
+    "Existe una copia válida de la configuración en este dispositivo. Restaura la copia o restablece Excalidraw a los valores de fábrica. Al cerrar este mensaje se restaurará la copia.",
+  SETTINGS_RECOVERY_CORRUPT_TITLE:
+    "El archivo de configuración de Excalidraw está dañado",
+  SETTINGS_RECOVERY_CORRUPT_DESC:
+    "El archivo está vacío o no se puede leer y no hay una copia de recuperación en este dispositivo. Restablece Excalidraw a los valores de fábrica o deja el archivo sin cambios mientras restauras un data.json válido desde otra fuente. Al cerrar este mensaje se esperará un archivo de reemplazo.",
+  SETTINGS_RECOVERY_RESTORE_BACKUP: "Restaurar copia",
+  SETTINGS_RECOVERY_RESET_DEFAULTS: "Restablecer valores predeterminados",
+  SETTINGS_RECOVERY_WAIT_FOR_FILE: "Esperar archivo restaurado",
   CONVERT_URL_TO_FILE: "Guardar imagen desde el URL en un archivo local",
   UNZIP_CURRENT_FILE: "Descomprimir el archivo Excalidraw actual",
   PUBLISH_SVG_CHECK:

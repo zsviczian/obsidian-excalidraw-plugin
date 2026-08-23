@@ -10,6 +10,12 @@ import {
   encryptPersistedAPIKeys,
 } from "src/utils/settingsKeyObfuscation";
 import { SerializedSettingsWriter } from "src/core/settings/SerializedSettingsWriter";
+import { SettingsRecoveryStore } from "src/core/settings/SettingsRecoveryStore";
+import {
+  SettingsRecoveryPrompt,
+  type SettingsRecoveryChoice,
+  type SettingsRecoveryPromptMode,
+} from "src/shared/Dialogs/SettingsRecoveryPrompt";
 import {
   classifySettingsDataLoad,
   isSettingsDataRecord,
@@ -28,6 +34,16 @@ interface PluginSettingsHost {
   saveData(data: unknown): Promise<void>;
 }
 
+interface SettingsRecoveryStoreLike {
+  load(): Promise<PersistedExcalidrawSettings | null>;
+  save(settings: PersistedExcalidrawSettings): Promise<void>;
+  destroy(): void;
+}
+
+type SettingsRecoveryPromptHandler = (
+  mode: SettingsRecoveryPromptMode,
+) => Promise<SettingsRecoveryChoice>;
+
 /**
  * Owns plugin settings persistence, default assembly, and compatibility
  * migrations while leaving startup readiness and settings UI registration to
@@ -35,13 +51,31 @@ interface PluginSettingsHost {
  */
 export class PluginSettingsManager {
   private readonly writer: SerializedSettingsWriter<PersistedExcalidrawSettings>;
+  private readonly recoveryStore: SettingsRecoveryStoreLike;
   private hasCompletedInitialLoad = false;
   private persistenceBlockedByInvalidData = false;
-  private invalidDataNoticeShown = false;
+  private missingRecoveryNoticeShown = false;
+  private awaitingStartupRecoveryChoice = false;
+  private readonly promptForRecoveryChoice: SettingsRecoveryPromptHandler;
 
-  public constructor(private readonly host: PluginSettingsHost) {
+  public constructor(
+    private readonly host: PluginSettingsHost,
+    recoveryStore?: SettingsRecoveryStoreLike,
+    promptForRecoveryChoice?: SettingsRecoveryPromptHandler,
+  ) {
+    this.recoveryStore =
+      recoveryStore ??
+      new SettingsRecoveryStore({
+        databaseName: `Excalidraw Settings Recovery ${host.app.appId}`,
+      });
+    this.promptForRecoveryChoice =
+      promptForRecoveryChoice ??
+      ((mode) => new SettingsRecoveryPrompt(host.app, mode).start());
     this.writer = new SerializedSettingsWriter({
-      saveData: (data) => this.host.saveData(data),
+      saveData: async (data) => {
+        await this.saveRecoverySnapshot(data);
+        await this.host.saveData(data);
+      },
     });
   }
 
@@ -50,8 +84,8 @@ export class PluginSettingsManager {
    * protected API-key fields.
    *
    * @remarks Unknown persisted properties are intentionally retained.
-   * @returns `false` when invalid data was rejected and active/default
-   * settings were retained without persistence.
+   * @returns `false` when the disk payload was invalid. Runtime callers use
+   * this to suppress cache invalidation for a rejected synchronized payload.
    */
   public async loadSettings(): Promise<boolean> {
     const dataFileState = await this.getSettingsDataFileState();
@@ -69,21 +103,71 @@ export class PluginSettingsManager {
       loadFailed,
       isInitialLoad: !this.hasCompletedInitialLoad,
     });
-    const hasValidSettings = isSettingsDataRecord(loadedSettings);
     const hasInvalidSettings = classification === "invalid";
+    const isFirstInstallation = classification === "first-installation";
+    let persistedSettings: PersistedExcalidrawSettings;
+    let recoveredInvalidStartup = false;
+    let shouldPersistStartupChoice = false;
 
     if (hasInvalidSettings) {
-      this.blockPersistenceForInvalidData();
       if (this.hasCompletedInitialLoad) {
+        this.persistenceBlockedByInvalidData = false;
+        this.missingRecoveryNoticeShown = false;
+        new Notice(t("SETTINGS_DATA_REPAIRED_FROM_MEMORY"), 12000);
+        console.error(
+          "Excalidraw rejected invalid synchronized settings data and restored the active settings",
+        );
+        await this.persistSnapshot(
+          encryptPersistedAPIKeys(
+            this.host.settings as PersistedExcalidrawSettings,
+          ),
+        );
         return false;
       }
+      const recoveredSettings = await this.loadRecoverySnapshot();
+      if (recoveredSettings) {
+        persistedSettings = recoveredSettings;
+        recoveredInvalidStartup = true;
+        shouldPersistStartupChoice = true;
+        this.persistenceBlockedByInvalidData = false;
+        this.missingRecoveryNoticeShown = false;
+      } else {
+        this.host.settings = Object.assign({}, DEFAULT_SETTINGS);
+        const choice = await this.requestStartupRecoveryChoice(
+          "invalid-without-recovery",
+        );
+        persistedSettings = {};
+        if (choice === "reset-defaults") {
+          this.persistenceBlockedByInvalidData = false;
+          this.missingRecoveryNoticeShown = false;
+          shouldPersistStartupChoice = true;
+        } else {
+          this.blockPersistenceWhileWaitingForFile();
+        }
+      }
+    } else if (isFirstInstallation) {
+      const recoveredSettings = await this.loadRecoverySnapshot();
+      if (recoveredSettings) {
+        this.host.settings = Object.assign({}, DEFAULT_SETTINGS);
+        const choice = await this.requestStartupRecoveryChoice(
+          "missing-with-recovery",
+        );
+        persistedSettings =
+          choice === "reset-defaults" ? {} : recoveredSettings;
+      } else {
+        persistedSettings = {};
+      }
+      this.persistenceBlockedByInvalidData = false;
+      this.missingRecoveryNoticeShown = false;
+      shouldPersistStartupChoice = true;
     } else {
       this.persistenceBlockedByInvalidData = false;
-      this.invalidDataNoticeShown = false;
+      this.missingRecoveryNoticeShown = false;
+      persistedSettings = isSettingsDataRecord(loadedSettings)
+        ? loadedSettings
+        : {};
     }
 
-    const persistedSettings = (hasValidSettings ? loadedSettings : {}) as
-      PersistedExcalidrawSettings;
     const decryptedSettings = decryptPersistedAPIKeys(persistedSettings);
     let didSettingsMigration = false;
     this.host.settings = Object.assign(
@@ -198,11 +282,18 @@ export class PluginSettingsManager {
     const shouldPersistEncryptedSettings =
       JSON.stringify(encryptedPersistedSettings) !==
       JSON.stringify(persistedSettings);
-    if (
+    if (shouldPersistStartupChoice) {
+      await this.persistSnapshot(encryptedPersistedSettings);
+      if (recoveredInvalidStartup) {
+        new Notice(t("SETTINGS_DATA_RECOVERED"), 12000);
+      }
+    } else if (
       !this.persistenceBlockedByInvalidData &&
       (didSettingsMigration || shouldPersistEncryptedSettings)
     ) {
       await this.persistSnapshot(encryptedPersistedSettings);
+    } else if (!this.persistenceBlockedByInvalidData) {
+      await this.saveRecoverySnapshot(encryptedPersistedSettings);
     }
     this.hasCompletedInitialLoad = true;
     return !hasInvalidSettings;
@@ -211,7 +302,7 @@ export class PluginSettingsManager {
   /** Encrypts protected fields and persists the current settings object. */
   public saveSettings(): Promise<void> {
     if (this.persistenceBlockedByInvalidData) {
-      this.showInvalidDataNotice();
+      this.showMissingRecoveryNotice();
       return Promise.resolve();
     }
     return this.persistSnapshot(
@@ -221,10 +312,20 @@ export class PluginSettingsManager {
     );
   }
 
+  /** Whether plugin startup is intentionally waiting for a recovery choice. */
+  public get isAwaitingStartupRecoveryChoice(): boolean {
+    return this.awaitingStartupRecoveryChoice;
+  }
+
   private persistSnapshot(
     settings: PersistedExcalidrawSettings,
   ): Promise<void> {
     return this.writer.persist(settings);
+  }
+
+  /** Closes the device-local recovery database connection. */
+  public destroy(): void {
+    this.recoveryStore.destroy();
   }
 
   private async getSettingsDataFileState(): Promise<SettingsDataFileState> {
@@ -245,19 +346,50 @@ export class PluginSettingsManager {
     }
   }
 
-  private blockPersistenceForInvalidData(): void {
+  private blockPersistenceWhileWaitingForFile(): void {
     this.persistenceBlockedByInvalidData = true;
-    this.showInvalidDataNotice();
+    this.missingRecoveryNoticeShown = false;
   }
 
-  private showInvalidDataNotice(): void {
-    if (this.invalidDataNoticeShown) {
+  private showMissingRecoveryNotice(): void {
+    if (this.missingRecoveryNoticeShown) {
       return;
     }
-    this.invalidDataNoticeShown = true;
+    this.missingRecoveryNoticeShown = true;
     console.error(
-      "Excalidraw settings data is empty or unreadable; persistence is paused",
+      "Excalidraw settings data is empty or unreadable; waiting for a valid replacement file",
     );
     new Notice(t("SETTINGS_DATA_INVALID"), 12000);
+  }
+
+  private async requestStartupRecoveryChoice(
+    mode: SettingsRecoveryPromptMode,
+  ): Promise<SettingsRecoveryChoice> {
+    this.awaitingStartupRecoveryChoice = true;
+    try {
+      return await this.promptForRecoveryChoice(mode);
+    } finally {
+      this.awaitingStartupRecoveryChoice = false;
+    }
+  }
+
+  private async loadRecoverySnapshot(): Promise<PersistedExcalidrawSettings | null> {
+    try {
+      const recoveredSettings = await this.recoveryStore.load();
+      return isSettingsDataRecord(recoveredSettings) ? recoveredSettings : null;
+    } catch (error) {
+      console.error("Could not load Excalidraw settings recovery", error);
+      return null;
+    }
+  }
+
+  private async saveRecoverySnapshot(
+    settings: PersistedExcalidrawSettings,
+  ): Promise<void> {
+    try {
+      await this.recoveryStore.save(settings);
+    } catch (error) {
+      console.error("Could not update Excalidraw settings recovery", error);
+    }
   }
 }

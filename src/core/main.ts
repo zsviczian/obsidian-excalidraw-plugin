@@ -562,7 +562,10 @@ export default class ExcalidrawPlugin extends Plugin {
 
   public async awaitSettings() {
     let counter = 0;
-    while (!this.settingsReady && counter < 150) {
+    while (
+      !this.settingsReady &&
+      (counter < 150 || this.settingsManager.isAwaitingStartupRecoveryChoice)
+    ) {
       await sleep(20);
       counter++;
     }
@@ -965,6 +968,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.activeExcalidrawView = null;
     this.lastActiveExcalidrawFilePath = null;
 
+    this.settingsManager.destroy();
     this.settings = null;
     //pluginPackages = null;
     //PLUGIN_VERSION = null;

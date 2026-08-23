@@ -16,7 +16,20 @@ export default {
   SELECT_FILE_TO_INSERT: "选择要嵌入到当前绘图中的文件",
   // main.ts
   SETTINGS_DATA_INVALID:
-    "Excalidraw 设置文件为空或无法读取。当前设置将保留在内存中，并暂停保存，直到同步或恢复有效文件。",
+    "Excalidraw 正在等待有效的替代 data.json。在恢复该文件，或重新启动 Obsidian 并选择重置为默认值之前，设置更改不会保存。",
+  SETTINGS_DATA_REPAIRED_FROM_MEMORY:
+    "收到的 Excalidraw 设置文件为空或无法读取，已拒绝该文件。当前设置已写回，以修复 data.json。",
+  SETTINGS_DATA_RECOVERED:
+    "Excalidraw 的 data.json 为空或无法读取。已自动恢复最近的有效设置。",
+  SETTINGS_RECOVERY_MISSING_TITLE: "Excalidraw 设置文件缺失",
+  SETTINGS_RECOVERY_MISSING_DESC:
+    "此设备上存在最近的有效设置备份。你可以恢复该备份，或将 Excalidraw 重置为出厂默认值。关闭此消息将恢复备份。",
+  SETTINGS_RECOVERY_CORRUPT_TITLE: "Excalidraw 设置文件已损坏",
+  SETTINGS_RECOVERY_CORRUPT_DESC:
+    "设置文件为空或无法读取，并且此设备上没有恢复备份。你可以将 Excalidraw 重置为出厂默认值，或保持文件不变，同时从其他来源恢复有效的 data.json。关闭此消息将等待替代文件。",
+  SETTINGS_RECOVERY_RESTORE_BACKUP: "恢复备份",
+  SETTINGS_RECOVERY_RESET_DEFAULTS: "重置为默认值",
+  SETTINGS_RECOVERY_WAIT_FOR_FILE: "等待恢复文件",
   ERROR_INITIALIZING_EA: "初始化 Excalidraw Automate 时出错",
   CONVERT_URL_TO_FILE: "从 URL 下载图片到本地",
   UNZIP_CURRENT_FILE: "解压当前 Excalidraw 文件",

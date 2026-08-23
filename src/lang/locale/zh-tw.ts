@@ -16,7 +16,20 @@ export default {
   SELECT_FILE_TO_INSERT: "選擇要嵌入到當前繪圖中的檔案",
   // main.ts
   SETTINGS_DATA_INVALID:
-    "Excalidraw 設定檔為空或無法讀取。目前的設定將保留在記憶體中，並暫停儲存，直到同步或還原有效檔案。",
+    "Excalidraw 正在等待有效的替代 data.json。在復原該檔案，或重新啟動 Obsidian 並選擇重設為預設值之前，設定變更不會儲存。",
+  SETTINGS_DATA_REPAIRED_FROM_MEMORY:
+    "收到的 Excalidraw 設定檔為空或無法讀取，已拒絕該檔案。目前的設定已寫回，以修復 data.json。",
+  SETTINGS_DATA_RECOVERED:
+    "Excalidraw 的 data.json 為空或無法讀取。已自動復原最近的有效設定。",
+  SETTINGS_RECOVERY_MISSING_TITLE: "Excalidraw 設定檔遺失",
+  SETTINGS_RECOVERY_MISSING_DESC:
+    "此裝置上有最近的有效設定備份。你可以復原該備份，或將 Excalidraw 重設為出廠預設值。關閉此訊息將復原備份。",
+  SETTINGS_RECOVERY_CORRUPT_TITLE: "Excalidraw 設定檔已損壞",
+  SETTINGS_RECOVERY_CORRUPT_DESC:
+    "設定檔為空或無法讀取，且此裝置上沒有復原備份。你可以將 Excalidraw 重設為出廠預設值，或保持檔案不變，同時從其他來源復原有效的 data.json。關閉此訊息將等待替代檔案。",
+  SETTINGS_RECOVERY_RESTORE_BACKUP: "復原備份",
+  SETTINGS_RECOVERY_RESET_DEFAULTS: "重設為預設值",
+  SETTINGS_RECOVERY_WAIT_FOR_FILE: "等待復原檔案",
   ERROR_INITIALIZING_EA: "初始化 Excalidraw Automate 時出錯",
   CONVERT_URL_TO_FILE: "從 URL 下載圖片到本地",
   UNZIP_CURRENT_FILE: "解壓當前 Excalidraw 檔案",
