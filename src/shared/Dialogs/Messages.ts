@@ -29,6 +29,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 
 ## Fixed
 - Rapid text editing in Excalidraw settings no longer loses focus or collapses the active section. Settings writes are coalesced and serialized. Excalidraw now keeps a device-local last-known-good recovery copy: corrupted synchronized settings are rejected and repaired from memory while running, or restored automatically from recovery at startup. If the settings file is deliberately removed, Excalidraw asks whether to restore that backup or reset to factory defaults.
+- Changing a rendering-related Excalidraw setting no longer resets the live scroll and zoom position in open drawings. The default completed-TODO marker for new configurations is now ☑.
 - The Excalidraw color palette now uses its natural height when space is available instead of being unnecessarily limited to a short, vertically scrolling panel. Its native color control also remains aligned with the hex input.
 - The text-to-diagram chat history menu is visible again, allowing saved chats to be restored and deleted.
 - Stencil library is persisted with tab-indented JSON to support Git diffs. [#2883](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2883)

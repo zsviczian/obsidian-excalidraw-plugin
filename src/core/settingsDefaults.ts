@@ -561,7 +561,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   urlPrefix: "",
   parseTODO: false,
   todo: "☐",
-  done: "🗹",
+  done: "☑",
   hoverPreviewWithoutCTRL: false,
   linkOpacity: 1,
   openInAdjacentPane: true,

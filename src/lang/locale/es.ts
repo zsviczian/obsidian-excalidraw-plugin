@@ -724,6 +724,9 @@ export default {
   DISPLAY_HEAD: "Apariencia y Comportamiento de Excalidraw",
   DISPLAY_DESC:
     "En la sección 'Apariencia y Comportamiento' de la Configuración de Excalidraw, puedes ajustar cómo se ve y se comporta Excalidraw. Esto incluye opciones para estilos dinámicos, modo para zurdos, coincidencia de temas de Excalidraw y Obsidian, modos predeterminados y más.",
+  DISPLAY_EDITOR_PREVIEWS_HEAD: "Edición y vistas previas",
+  DISPLAY_EDITOR_PREVIEWS_DESC:
+    "Configura los gestos de edición del lienzo y cómo aparecen los archivos de Excalidraw en el modo de lectura y las vistas previas al pasar el cursor.",
   OVERRIDE_OBSIDIAN_FONT_SIZE_NAME:
     "Limitar tamaño de fuente de Obsidian al texto del editor",
   OVERRIDE_OBSIDIAN_FONT_SIZE_DESC:
@@ -803,13 +806,22 @@ export default {
     }'>Modo de Lectura de Markdown</a> en 'Apariencia y Comportamiento' más arriba.<br>` +
     `⚠️ Debes cerrar y volver a abrir el archivo de Excalidraw/Markdown para que los cambios surtan efecto. ⚠️`,
   MODES_HEAD: "Modos",
+  MODES_DESC:
+    "Elige diseños de interfaz específicos para cada dispositivo, controles de la barra de título y la posición de la bandeja para diestros o zurdos.",
   HOTKEY_OVERRIDE_HEAD: "Anulaciones de atajos de teclado",
+  HOTKEY_OVERRIDE_GROUP_DESC:
+    "Administra las combinaciones de Excalidraw que deben tener prioridad sobre los atajos de Obsidian en conflicto.",
+  HOTKEY_OVERRIDE_CONTROL_NAME: "Administrar anulaciones de atajos",
   HOTKEY_OVERRIDE_DESC:
     `Algunos de los atajos de teclado de Excalidraw, como <code>${labelCTRL()}+Enter</code> para editar texto o <code>${labelCTRL()}+K</code> para crear un enlace de elemento ` +
     "entran en conflicto con la configuración de atajos de teclado de Obsidian. Las combinaciones de atajos de teclado que agregues a continuación anularán la configuración de atajos de teclado de Obsidian mientras usas Excalidraw. Por lo tanto, " +
     `puedes agregar <code>${labelCTRL()}+G</code> si quieres que el comportamiento predeterminado sea Agrupar Objeto en Excalidraw en lugar de abrir la Vista de Gráfico.`,
   THEME_HEAD: "Tema y estilo",
+  THEME_DESC:
+    "Controla el estilo de la interfaz, los temas de dibujos e incrustaciones, el modo de apertura y el espacio seguro en móviles.",
   ZOOM_AND_PAN_HEAD: "Zoom y panorámica",
+  ZOOM_AND_PAN_DESC:
+    "Configura el comportamiento del ratón, el tacto, la apertura, el cambio de tamaño y el intervalo de zoom.",
   PAN_WITH_RIGHT_MOUSE_BUTTON_NAME:
     "Desplazar el lienzo con el botón derecho del mouse (abrir menú con 'm')",
   PAN_WITH_RIGHT_MOUSE_BUTTON_DESC:
@@ -843,7 +855,11 @@ export default {
   ZOOM_MAX_DESC:
     "Límite superior del zoom. Predeterminado: 3000%. Por lo general, no es necesario cambiarlo; se incluye para ser exhaustivos.",
   PEN_HEAD: "Lápiz",
+  PEN_DESC:
+    "Configura el modo lápiz automático, los gestos táctiles, el borrador y la cruz de dibujo libre.",
   GRID_HEAD: "Cuadrícula",
+  GRID_DESC:
+    "Configura la dirección de la cuadrícula, el color automático o personalizado y la opacidad.",
   GRID_DYNAMIC_COLOR_NAME: "Color de cuadrícula dinámica",
   GRID_DYNAMIC_COLOR_DESC:
     "<b><u>Activado:</u></b> Cambia el color de la cuadrícula para que coincida con el color del lienzo<br><b><u>Desactivado:</u></bUsar el color de abajo como color de la cuadrícula",
@@ -858,6 +874,8 @@ export default {
   GRID_HORIZONTAL: "Renderizar cuadrícula horizontal",
   GRID_VERTICAL: "Renderizar cuadrícula vertical",
   LASER_HEAD: "Puntero láser",
+  LASER_DESC:
+    "Configura el color del puntero láser y la rapidez y distancia con que se desvanece su rastro.",
   LASER_COLOR: "Color del puntero láser",
   LASER_DECAY_TIME_NAME: "Tiempo de desvanecimiento del puntero láser",
   LASER_DECAY_TIME_DESC:
@@ -878,6 +896,21 @@ export default {
     "Si no quieres que el texto cambie accidentalmente en tus bosquejos, usa <code>[[enlaces|con alias]]</code>.",
   DRAG_MODIFIER_NAME:
     "Teclas modificadoras para click de enlace y Arrastrar y Soltar(Drag&Drop)",
+  DRAG_MODIFIER_GROUP_DESC:
+    "Configura gestos para abrir enlaces y combinaciones de modificadores para clics y acciones de arrastrar y soltar.",
+  LINK_OPENING_GESTURES_HEAD: "Gestos para abrir enlaces",
+  LINK_OPENING_GESTURES_DESC:
+    "Configura retrasos de pulsación prolongada y la apertura con doble clic en dibujos incrustados y el modo de vista.",
+  WEB_BROWSER_DRAG_ACTION_DESC:
+    "Elige modificadores para enlaces, imágenes, importaciones e incrustaciones arrastradas desde un navegador web.",
+  LOCAL_FILE_DRAG_ACTION_DESC:
+    "Elige modificadores para enlaces, imágenes, importaciones e incrustaciones arrastradas desde el sistema operativo.",
+  INTERNAL_DRAG_ACTION_DESC:
+    "Elige modificadores para enlaces, imágenes, imágenes a tamaño completo e incrustaciones arrastradas dentro de Obsidian.",
+  PANE_TARGET_DESC:
+    "Elige combinaciones de modificadores que determinan dónde se abren los enlaces.",
+  MODIFIER_KEY_USAGE_NAME: "Configurar teclas modificadoras",
+  MODIFIER_KEY_COMBINATIONS: "Combinaciones de modificadores",
   DRAG_MODIFIER_DESC:
     `Comportamiento de la tecla modificadora al hacer click en enlaces y arrastrar y soltar elementos. ` +
     `Excalidraw no validará tu configuración... presta atención para evitar configuraciones conflictivas. ` +
@@ -976,6 +1009,22 @@ export default {
     "Usa <code>http" +
     "s://noembed" +
     ".com/embed?url=</code> para obtener el título de la página al soltar un enlace HTTPS en Excalidraw.",
+  LINK_BEHAVIOR_HEAD: "Comportamiento de enlaces",
+  LINK_BEHAVIOR_DESC:
+    "Configura la sincronización, enlaces relacionados, vistas previas, clics y la búsqueda de títulos web.",
+  LINK_USAGE_NAME: "Usar enlaces en Excalidraw",
+  LINK_OPENING_HEAD: "Comportamiento de paneles y pestañas",
+  LINK_OPENING_DESC:
+    "Elige si los enlaces reutilizan, enfocan o cambian entre paneles, pestañas y el espacio de trabajo principal.",
+  LINK_APPEARANCE_HEAD: "Apariencia de enlaces",
+  LINK_APPEARANCE_DESC:
+    "Configura corchetes, prefijos, iconos y opacidad al mostrar enlaces.",
+  TODO_HEAD: "Tareas pendientes",
+  TODO_GROUP_DESC:
+    "Configura el análisis de tareas y los iconos para tareas abiertas y completadas.",
+  TRANSCLUSION_HEAD: "Transclusiones de texto",
+  TRANSCLUSION_DESC:
+    "Configura límites de caracteres, ajuste de línea y limpieza de citas para texto Markdown transcluido.",
   PDF_TO_IMAGE: "PDF a Image",
   PDF_TO_IMAGE_SCALE_NAME: "Escala de conversión de PDF a imagen",
   PDF_TO_IMAGE_SCALE_DESC:

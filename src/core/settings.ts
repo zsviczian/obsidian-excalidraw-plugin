@@ -10,6 +10,7 @@ import {
   TextComponent,
 } from "obsidian";
 import {
+  DEVICE,
   LOGO_EXCALIDRAW_MASTERY,
   setRootElementSize,
 } from "src/constants/constants";
@@ -22,17 +23,27 @@ import {
   getDrawingFilename,
   getEmbedFilename,
 } from "src/utils/fileUtils";
-import { addYouTubeThumbnail, fragWithHTML } from "src/utils/utils";
 import {
-  setElementHidden,
-  setSanitizedHtml,
-} from "src/utils/htmlUtils";
+  addYouTubeThumbnail,
+  fragWithHTML,
+  setLeftHandedMode,
+  setUIMode,
+} from "src/utils/utils";
+import { setElementHidden, setSanitizedHtml } from "src/utils/htmlUtils";
 import { getImageCache } from "src/shared/ImageCache";
 import { MultiOptionConfirmationPrompt } from "src/shared/Dialogs/Prompt";
 import { EmbeddalbeMDFileCustomDataSettingsComponent } from "src/shared/Dialogs/EmbeddableMDFileCustomDataSettingsComponent";
 import { AutostartScriptsSettingsComponent } from "src/shared/Dialogs/AutostartScriptsSettingsComponent";
 import { startupScript } from "src/constants/starutpscript";
-import { ModifierKeySettingsComponent } from "src/shared/Dialogs/ModifierKeySettings";
+import {
+  getModifierKeyCategoryName,
+  MODIFIER_KEY_CATEGORIES,
+  ModifierKeySettingsComponent,
+} from "src/shared/Dialogs/ModifierKeySettings";
+import {
+  modifierKeyTooltipMessages,
+  type ModifierSetType,
+} from "src/utils/modifierkeyHelper";
 import { EDITOR_FADEOUT } from "src/core/editor/EditorHandler";
 import {
   TAG_AUTOEXPORT,
@@ -41,10 +52,9 @@ import {
 } from "src/constants/constSettingsTags";
 import { HotkeyEditor } from "src/shared/Dialogs/HotkeyEditor";
 import { getExcalidrawViews } from "src/utils/obsidianUtils";
-import { createSliderWithText } from "src/utils/sliderUtils";
+import { configureSliderWithText } from "src/utils/sliderUtils";
 import { PDFExportSettingsComponent } from "src/shared/Dialogs/PDFExportSettingsComponent";
 import { ContentSearcher } from "src/shared/components/ContentSearcher";
-import { UIModeSettingsComponent } from "src/shared/Dialogs/UIModeSettingComponent";
 import { ScriptSettingValue } from "src/types/excalidrawAutomateTypes";
 import {
   AIImageModelConfig,
@@ -127,12 +137,16 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   private readonly useDeclarativeSettingsForSession: boolean;
   private declarativeDefinitionsActive = false;
   private declarativeDisplayPrepared = false;
-  private declarativeDefinitions: SettingDefinitionItem<SettingBindingKey>[] = [];
+  private declarativeDefinitions: SettingDefinitionItem<SettingBindingKey>[] =
+    [];
   private persistenceOwnerWindow: Window | null = null;
   private readonly flushOnSettingsWindowBlur = (): void => {
     void this.settingsPersistenceQueue.flush().catch((): void => undefined);
   };
-  private hotkeyEditor: HotkeyEditor;
+  private hotkeyEditor: HotkeyEditor | null = null;
+  private todoPrefixSetting: TextComponent | null = null;
+  private donePrefixSetting: TextComponent | null = null;
+  private gridColorSettingEl: HTMLElement | null = null;
   private fontPickers: FontPickerComponent[] = [];
   /**
    * Filename-sample preview element from the Saving section, refreshed by
@@ -247,6 +261,13 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     this.display();
   }
 
+  private refreshDeclarativeDomState(): void {
+    if (!this.declarativeDefinitionsActive) {
+      return;
+    }
+    getDeclarativeSettingTabRuntime(this)?.refreshDomState();
+  }
+
   private prepareDeclarativeDisplay(): void {
     if (this.declarativeDisplayPrepared) {
       return;
@@ -284,6 +305,55 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   private prepareFullWidthDeclarativeSetting(setting: Setting): void {
     setting.settingEl.empty();
     setting.settingEl.addClass("excalidraw-declarative-full-width");
+  }
+
+  private createRenderedDefinition(options: {
+    name: string;
+    desc?: string | DocumentFragment;
+    aliases?: string[];
+    searchable?: boolean | (() => boolean);
+    visible?: boolean | (() => boolean);
+    controlType?: string;
+    omitFromMarkdown?: boolean;
+    render: (container: HTMLElement) => void | (() => void);
+  }): SettingDefinition<SettingBindingKey> {
+    return annotateMarkdownDefinition(
+      {
+        name: options.name,
+        desc: options.desc,
+        aliases: options.aliases,
+        searchable: options.searchable,
+        visible: options.visible,
+        render: (setting) => {
+          this.prepareFullWidthDeclarativeSetting(setting);
+          return options.render(setting.settingEl);
+        },
+      },
+      {
+        controlType: options.controlType,
+        omit: options.omitFromMarkdown,
+      },
+    );
+  }
+
+  private createCustomSettingDefinition(options: {
+    name: string;
+    desc?: string | DocumentFragment;
+    aliases?: string[];
+    visible?: boolean | (() => boolean);
+    controlType: string;
+    configure: (setting: Setting) => void;
+  }): SettingDefinition<SettingBindingKey> {
+    return annotateMarkdownDefinition(
+      {
+        name: options.name,
+        desc: options.desc,
+        aliases: options.aliases,
+        visible: options.visible,
+        render: (setting) => options.configure(setting),
+      },
+      { controlType: options.controlType },
+    );
   }
 
   private createSectionDescriptionDefinition(
@@ -388,18 +458,17 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     );
   }
 
-  private createTemplateVideoDefinition(): SettingDefinition<SettingBindingKey> {
-    return annotateMarkdownDefinition(
-      {
-        name: `${t("TEMPLATE_NAME")} · YouTube`,
-        searchable: false,
-        render: (setting) => {
-          this.prepareFullWidthDeclarativeSetting(setting);
-          addYouTubeThumbnail(setting.settingEl, "jgUpYznHP9A", 216);
-        },
-      },
-      { omit: true },
-    );
+  private createYouTubeDefinition(
+    scope: string,
+    videoId: string,
+    startAt?: number,
+  ): SettingDefinition<SettingBindingKey> {
+    return this.createRenderedDefinition({
+      name: `${scope} · YouTube`,
+      searchable: false,
+      omitFromMarkdown: true,
+      render: (container) => addYouTubeThumbnail(container, videoId, startAt),
+    });
   }
 
   private getCheckpoint4APages(): SettingsPageModel[] {
@@ -424,7 +493,11 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             ),
             ...this.toDeclarativeDefinitions(this.getGeneralTrailingSpecs()),
             ...this.toDeclarativeDefinitions(this.getGeneralScriptSpecs()),
-            this.createTemplateVideoDefinition(),
+            this.createYouTubeDefinition(
+              t("TEMPLATE_NAME"),
+              "jgUpYznHP9A",
+              216,
+            ),
           ],
           renderLegacy: (container) => {
             this.renderSettingSpecs(
@@ -485,12 +558,193 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     return [basicPage, savingPage];
   }
 
+  private getCheckpoint4BPages(): SettingsPageModel[] {
+    const modifierKeyPage: SettingsPageModel = {
+      name: t("DRAG_MODIFIER_NAME"),
+      description: t("DRAG_MODIFIER_GROUP_DESC"),
+      buildDefinitions: () => [this.createModifierKeyUsageDefinition()],
+      renderLegacy: (container) => this.renderModifierKeyUsage(container),
+      children: [
+        {
+          name: t("LINK_OPENING_GESTURES_HEAD"),
+          description: t("LINK_OPENING_GESTURES_DESC"),
+          buildDefinitions: () =>
+            this.toDeclarativeDefinitions(this.getLinkOpeningGestureSpecs()),
+          renderLegacy: (container) =>
+            this.renderSettingSpecs(
+              container,
+              this.getLinkOpeningGestureSpecs(),
+            ),
+        },
+        ...MODIFIER_KEY_CATEGORIES.map(
+          (modifierSetType): SettingsPageModel => ({
+            name: getModifierKeyCategoryName(modifierSetType),
+            description:
+              this.getModifierKeyCategoryDescription(modifierSetType),
+            buildDefinitions: () => [
+              this.createModifierKeyCategoryDefinition(modifierSetType),
+            ],
+            renderLegacy: (container) =>
+              this.renderModifierKeyCategory(container, modifierSetType),
+          }),
+        ),
+      ],
+    };
+
+    const displayPage: SettingsPageModel = {
+      name: t("DISPLAY_HEAD"),
+      description: t("DISPLAY_DESC"),
+      children: [
+        {
+          name: t("DISPLAY_EDITOR_PREVIEWS_HEAD"),
+          description: t("DISPLAY_EDITOR_PREVIEWS_DESC"),
+          buildDefinitions: () =>
+            this.toDeclarativeDefinitions(this.getDisplayEditorPreviewSpecs()),
+          renderLegacy: (container) =>
+            this.renderDisplayEditorPreviewSettings(container),
+        },
+        {
+          name: t("MODES_HEAD"),
+          description: t("MODES_DESC"),
+          buildDefinitions: () => [
+            ...this.toDeclarativeDefinitions(this.getUIModeSpecs()),
+            this.createYouTubeDefinition(t("MODES_HEAD"), "H8Njp7ZXYag", 999),
+          ],
+          renderLegacy: (container) => {
+            this.renderSettingSpecs(container, this.getUIModeSpecs());
+            addYouTubeThumbnail(container, "H8Njp7ZXYag", 999);
+          },
+        },
+        {
+          name: t("HOTKEY_OVERRIDE_HEAD"),
+          description: t("HOTKEY_OVERRIDE_GROUP_DESC"),
+          buildDefinitions: () => [this.createHotkeyEditorDefinition()],
+          renderLegacy: (container) => this.renderHotkeyEditor(container),
+        },
+        {
+          name: t("THEME_HEAD"),
+          description: t("THEME_DESC"),
+          buildDefinitions: () => {
+            const specs = this.getThemeSpecs();
+            return [
+              ...this.toDeclarativeDefinitions(specs.slice(0, 2)),
+              this.createYouTubeDefinition(
+                t("DYNAMICSTYLE_NAME"),
+                "fypDth_-8q0",
+              ),
+              ...this.toDeclarativeDefinitions(specs.slice(2, 3)),
+              this.createYouTubeDefinition(
+                t("IFRAME_MATCH_THEME_NAME"),
+                "ICpoyMv6KSs",
+              ),
+              ...this.toDeclarativeDefinitions(specs.slice(3)),
+            ];
+          },
+          renderLegacy: (container) => this.renderThemeSettings(container),
+        },
+        {
+          name: t("ZOOM_AND_PAN_HEAD"),
+          description: t("ZOOM_AND_PAN_DESC"),
+          buildDefinitions: () => {
+            const specs = this.getZoomAndPanSpecs();
+            return [
+              ...this.toDeclarativeDefinitions(specs.slice(0, 2)),
+              this.createYouTubeDefinition(
+                t("DEFAULT_PINCHZOOM_NAME"),
+                "rBarRfcSxNo",
+                107,
+              ),
+              ...this.toDeclarativeDefinitions(specs.slice(2)),
+            ];
+          },
+          renderLegacy: (container) => this.renderZoomAndPanSettings(container),
+        },
+        {
+          name: t("PEN_HEAD"),
+          description: t("PEN_DESC"),
+          buildDefinitions: () =>
+            this.toDeclarativeDefinitions(this.getPenSpecs()),
+          renderLegacy: (container) =>
+            this.renderSettingSpecs(container, this.getPenSpecs()),
+        },
+        {
+          name: t("GRID_HEAD"),
+          description: t("GRID_DESC"),
+          buildDefinitions: () => this.getGridDefinitions(),
+          renderLegacy: (container) => this.renderGridSettings(container),
+        },
+        {
+          name: t("LASER_HEAD"),
+          description: t("LASER_DESC"),
+          buildDefinitions: () => this.getLaserDefinitions(),
+          renderLegacy: (container) => this.renderLaserSettings(container),
+        },
+        modifierKeyPage,
+      ],
+    };
+
+    const linksPage: SettingsPageModel = {
+      name: t("LINKS_HEAD"),
+      description: t("LINKS_HEAD_DESC"),
+      children: [
+        {
+          name: t("LINK_BEHAVIOR_HEAD"),
+          description: t("LINK_BEHAVIOR_DESC"),
+          buildDefinitions: () => [
+            this.createLinkUsageDefinition(),
+            ...this.toDeclarativeDefinitions(this.getLinkBehaviorSpecs()),
+          ],
+          renderLegacy: (container) =>
+            this.renderLinkBehaviorSettings(container),
+        },
+        {
+          name: t("LINK_OPENING_HEAD"),
+          description: t("LINK_OPENING_DESC"),
+          buildDefinitions: () =>
+            this.toDeclarativeDefinitions(this.getLinkOpeningSpecs()),
+          renderLegacy: (container) =>
+            this.renderSettingSpecs(container, this.getLinkOpeningSpecs()),
+        },
+        {
+          name: t("LINK_APPEARANCE_HEAD"),
+          description: t("LINK_APPEARANCE_DESC"),
+          buildDefinitions: () =>
+            this.toDeclarativeDefinitions(this.getLinkAppearanceSpecs()),
+          renderLegacy: (container) =>
+            this.renderSettingSpecs(container, this.getLinkAppearanceSpecs()),
+        },
+        {
+          name: t("TODO_HEAD"),
+          description: t("TODO_GROUP_DESC"),
+          buildDefinitions: () =>
+            this.toDeclarativeDefinitions(this.getTodoSpecs()),
+          renderLegacy: (container) =>
+            this.renderSettingSpecs(container, this.getTodoSpecs()),
+        },
+        {
+          name: t("TRANSCLUSION_HEAD"),
+          description: t("TRANSCLUSION_DESC"),
+          buildDefinitions: () => this.getTransclusionDefinitions(),
+          renderLegacy: (container) =>
+            this.renderTransclusionSettings(container),
+        },
+      ],
+    };
+
+    return [displayPage, linksPage];
+  }
+
+  private getConvertedSettingsPages(): SettingsPageModel[] {
+    return [...this.getCheckpoint4APages(), ...this.getCheckpoint4BPages()];
+  }
+
   private toDeclarativePage(
     page: SettingsPageModel,
   ): SettingDefinitionItem<SettingBindingKey> {
-    const items = page.children
-      ? page.children.map((child) => this.toDeclarativePage(child))
-      : (page.buildDefinitions?.() ?? []);
+    const items = [
+      ...(page.buildDefinitions?.() ?? []),
+      ...(page.children?.map((child) => this.toDeclarativePage(child)) ?? []),
+    ];
     return {
       type: "page",
       name: page.name,
@@ -521,21 +775,22 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       cls: `excalidraw-setting-h${headingLevel}`,
     });
 
+    page.renderLegacy?.(details);
+
     const childHeadingLevel = headingLevel === 1 ? 3 : 4;
     page.children?.forEach((child) =>
       this.renderLegacyPage(details, child, childHeadingLevel),
     );
-    page.renderLegacy?.(details);
   }
 
-  private buildCheckpoint4ADefinitions(): SettingDefinitionItem<SettingBindingKey>[] {
+  private buildConvertedDefinitions(): SettingDefinitionItem<SettingBindingKey>[] {
     this.declarativeSettingsAdapter.beginBuild();
     return [
       this.createDeclarativeUtilitiesDefinition("Root", true),
       this.declarativeSettingsAdapter.toDefinition(
         this.getSettingsLayoutSpec(),
       ),
-      ...this.getCheckpoint4APages().map((page) =>
+      ...this.getConvertedSettingsPages().map((page) =>
         this.toDeclarativePage(page),
       ),
     ];
@@ -554,7 +809,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       this.declarativeDefinitionsActive = false;
       return [];
     }
-    const definitions = this.buildCheckpoint4ADefinitions();
+    const definitions = this.buildConvertedDefinitions();
     this.declarativeDefinitions = definitions;
     this.declarativeDefinitionsActive = definitions.length > 0;
     return this.declarativeDefinitionsActive ? definitions : [];
@@ -679,8 +934,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       const excalidrawViews = getExcalidrawViews(this.app, true);
       for (const excalidrawView of excalidrawViews) {
         await excalidrawView.save(false);
-        //debug({where:"ExcalidrawSettings.hide",file:v.view.file.name,before:"reload(true)"})
-        await excalidrawView.reload(true);
+        await excalidrawView.reloadAfterSettingsChange();
       }
       this.requestEmbedUpdate = true;
     }
@@ -722,10 +976,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       setRootElementSize();
     }
 
-    this.hotkeyEditor?.unload();
-    if (this.hotkeyEditor?.isDirty) {
-      this.plugin.registerHotkeyOverrides();
-    }
+    this.destroyHotkeyEditor();
     this.plugin.scriptEngine.updateScriptPath();
     /*    if(this.reloadMathJax) {
       this.plugin.loadMathJax();
@@ -738,6 +989,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     this.requestReloadDrawings = false;
     this.declarativeDisplayPrepared = false;
     this.destroyFontPickers();
+    this.destroyHotkeyEditor();
     const { containerEl } = this;
     containerEl.addClass("excalidraw-settings");
     this.containerEl.empty();
@@ -751,10 +1003,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     if (requireApiVersion("1.13.0")) {
       this.buildSetting(containerEl, this.getSettingsLayoutSpec());
     }
-    this.renderCheckpoint4ALegacyPages();
+    this.renderLegacyPages(this.getCheckpoint4APages());
     this.renderAISection();
-    this.renderDisplaySection();
-    this.renderLinksAndTransclusionsSection();
+    this.renderLegacyPages(this.getCheckpoint4BPages());
     this.renderEmbedAndExportSection();
     this.renderEmbeddingSettingsSection();
     this.renderNonExcalidrawFeaturesSection();
@@ -765,9 +1016,11 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   }
 
   private async copyDeclarativeSettingsAsMarkdown(): Promise<void> {
-    const markdown = declarativeSettingsToMarkdown(
-      this.declarativeDefinitions,
-    );
+    // Build fresh fragments because Obsidian may consume a DocumentFragment
+    // while rendering a page. Rebuilding also exports unopened pages.
+    const definitions = this.buildConvertedDefinitions();
+    this.declarativeDefinitions = definitions;
+    const markdown = declarativeSettingsToMarkdown(definitions);
     const ownerWindow = this.containerEl.ownerDocument.defaultView;
     if (!ownerWindow) {
       return;
@@ -1142,8 +1395,8 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       );
   }
 
-  private renderCheckpoint4ALegacyPages(): void {
-    for (const page of this.getCheckpoint4APages()) {
+  private renderLegacyPages(pages: readonly SettingsPageModel[]): void {
+    for (const page of pages) {
       this.containerEl.createEl("hr", { cls: "excalidraw-setting-hr" });
       this.renderLegacyPage(this.containerEl, page, 1);
     }
@@ -1904,66 +2157,64 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         this.plugin.settings.aiDefaultMaxResponseTokens = value;
       },
     );
-
   }
 
-  private renderDisplaySection(): void {
-    const { containerEl } = this;
-    let detailsEl: HTMLElement;
-    // ------------------------------------------------
-    // Display
-    // ------------------------------------------------
-    containerEl.createEl("hr", { cls: "excalidraw-setting-hr" });
-    containerEl.createDiv({
-      text: t("DISPLAY_DESC"),
-      cls: "setting-item-description",
-    });
-    detailsEl = this.containerEl.createEl("details");
-    const displayDetailsEl = detailsEl;
-    detailsEl.createEl("summary", {
-      text: t("DISPLAY_HEAD"),
-      cls: "excalidraw-setting-h1",
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("ENABLE_DOUBLE_CLICK_TEXT_EDITING_NAME"),
-      control: {
-        type: "toggle",
-        key: "disableDoubleClickTextEditing",
-        negate: true,
+  private getDisplayEditorPreviewSpecs(): SettingSpec[] {
+    return [
+      {
+        name: t("ENABLE_DOUBLE_CLICK_TEXT_EDITING_NAME"),
+        aliases: ["double click text", "create text"],
+        control: {
+          type: "toggle",
+          key: "disableDoubleClickTextEditing",
+          negate: true,
+        },
       },
-    });
+      {
+        name: t("DISABLE_CONTEXT_MENU_NAME"),
+        desc: t("DISABLE_CONTEXT_MENU_DESC"),
+        aliases: ["context menu", "right click menu"],
+        control: { type: "toggle", key: "disableContextMenu", negate: true },
+      },
+      {
+        name: t("SHOW_DRAWING_OR_MD_IN_READING_MODE_NAME"),
+        desc: fragWithHTML(t("SHOW_DRAWING_OR_MD_IN_READING_MODE_DESC")),
+        aliases: ["reading mode", "markdown reading mode", "render image"],
+        control: { type: "toggle", key: "renderImageInMarkdownReadingMode" },
+      },
+      {
+        name: t("SHOW_DRAWING_OR_MD_IN_HOVER_PREVIEW_NAME"),
+        desc: fragWithHTML(t("SHOW_DRAWING_OR_MD_IN_HOVER_PREVIEW_DESC")),
+        aliases: ["hover preview", "page preview", "render image"],
+        control: {
+          type: "toggle",
+          key: "renderImageInHoverPreviewForMDNotes",
+        },
+      },
+    ];
+  }
 
-    this.buildSetting(detailsEl, {
-      name: t("DISABLE_CONTEXT_MENU_NAME"),
-      desc: t("DISABLE_CONTEXT_MENU_DESC"),
-      control: { type: "toggle", key: "disableContextMenu", negate: true },
+  private renderDisplayEditorPreviewSettings(container: HTMLElement): void {
+    const specs = this.getDisplayEditorPreviewSpecs();
+    specs.forEach((spec) => {
+      const setting = this.buildSetting(container, spec);
+      if (
+        spec.control.key === "renderImageInMarkdownReadingMode" &&
+        setting !== undefined
+      ) {
+        setting.nameEl.setAttribute("id", TAG_MDREADINGMODE);
+      }
     });
+  }
 
-    const readingModeEl = this.buildSetting(detailsEl, {
-      name: t("SHOW_DRAWING_OR_MD_IN_READING_MODE_NAME"),
-      desc: fragWithHTML(t("SHOW_DRAWING_OR_MD_IN_READING_MODE_DESC")),
-      control: { type: "toggle", key: "renderImageInMarkdownReadingMode" },
-    });
-    readingModeEl.nameEl.setAttribute("id", TAG_MDREADINGMODE);
-
-    this.buildSetting(detailsEl, {
-      name: t("SHOW_DRAWING_OR_MD_IN_HOVER_PREVIEW_NAME"),
-      desc: fragWithHTML(t("SHOW_DRAWING_OR_MD_IN_HOVER_PREVIEW_DESC")),
-      control: { type: "toggle", key: "renderImageInHoverPreviewForMDNotes" },
-    });
-
-    detailsEl = displayDetailsEl.createEl("details");
-    detailsEl.createEl("summary", {
-      text: t("MODES_HEAD"),
-      cls: "excalidraw-setting-h3",
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("SHOW_TAB_TITLEBAR_BUTTONS"),
-      control: {
-        type: "toggle",
-        key: "showTabTitlebarButtons",
+  private getUIModeSpecs(): SettingSpec[] {
+    return [
+      {
+        name: t("SHOW_TAB_TITLEBAR_BUTTONS"),
+        aliases: ["tab buttons", "titlebar buttons"],
+        control: {
+          type: "toggle",
+          key: "showTabTitlebarButtons",
         afterUpdate: (value) => {
           getExcalidrawViews(this.app, true).forEach((excalidrawView) => {
             if (value) {
@@ -1971,103 +2222,157 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             } else {
               excalidrawView.removeTabTitlebarButtons();
             }
-          });
+            });
+          },
         },
       },
-    });
+      {
+        name: t("DESKTOP_UI_MODE_NAME"),
+        desc: t("DESKTOP_UI_MODE_DESC"),
+        aliases: ["desktop mode", "full mode", "compact mode", "tray mode"],
+        control: {
+          type: "dropdown",
+          key: "desktopUIMode",
+          options: [
+            { value: "full", label: t("MODE_FULL") },
+            { value: "compact", label: t("MODE_COMPACT") },
+            { value: "tray", label: t("MODE_TRAY") },
+          ],
+          after: () => {
+            if (DEVICE.isDesktop) {
+              setUIMode(this.app, this.plugin.settings);
+            }
+          },
+        },
+      },
+      {
+        name: t("TABLET_UI_MODE_NAME"),
+        desc: t("TABLET_UI_MODE_DESC"),
+        aliases: ["tablet mode", "full mode", "compact mode", "tray mode"],
+        control: {
+          type: "dropdown",
+          key: "tabletUIMode",
+          options: [
+            { value: "full", label: t("MODE_FULL") },
+            { value: "compact", label: t("MODE_COMPACT") },
+            { value: "tray", label: t("MODE_TRAY") },
+          ],
+          after: () => {
+            if (DEVICE.isTablet) {
+              setUIMode(this.app, this.plugin.settings);
+            }
+          },
+        },
+      },
+      {
+        name: t("PHONE_UI_MODE_NAME"),
+        desc: t("PHONE_UI_MODE_DESC"),
+        aliases: [
+          "phone mode",
+          "mobile mode",
+          "full mode",
+          "compact mode",
+          "tray mode",
+        ],
+        control: {
+          type: "dropdown",
+          key: "phoneUIMode",
+          options: [
+            { value: "full", label: t("MODE_FULL") },
+            { value: "compact", label: t("MODE_COMPACT") },
+            { value: "tray", label: t("MODE_TRAY") },
+            { value: "mobile", label: t("MODE_PHONE") },
+          ],
+          after: () => {
+            if (DEVICE.isPhone) {
+              setUIMode(this.app, this.plugin.settings);
+            }
+          },
+        },
+      },
+      {
+        name: t("LEFTHANDED_MODE_NAME"),
+        desc: fragWithHTML(t("LEFTHANDED_MODE_DESC")),
+        aliases: ["left handed", "tray side"],
+        control: {
+          type: "toggle",
+          key: "isLeftHanded",
+          after: (value) => setLeftHandedMode(value),
+        },
+      },
+    ];
+  }
 
-    new UIModeSettingsComponent(detailsEl, this.plugin.settings, this.app, () =>
-      this.applySettingsUpdate(),
-    ).render();
-    addYouTubeThumbnail(detailsEl, "H8Njp7ZXYag", 999);
-
-    detailsEl = displayDetailsEl.createEl("details");
-    detailsEl.createEl("summary", {
-      text: t("HOTKEY_OVERRIDE_HEAD"),
-      cls: "excalidraw-setting-h3",
-    });
-    detailsEl.createSpan({}, (el) => {
-      setSanitizedHtml(el, t("HOTKEY_OVERRIDE_DESC"));
-    });
-
-    this.hotkeyEditor = new HotkeyEditor(
-      detailsEl,
-      this.plugin.settings,
-      (x: boolean = false) => this.applySettingsUpdate(x),
-    );
-    this.hotkeyEditor.onload();
-
-    detailsEl = displayDetailsEl.createEl("details");
-    detailsEl.createEl("summary", {
-      text: t("THEME_HEAD"),
-      cls: "excalidraw-setting-h3",
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("OVERRIDE_OBSIDIAN_FONT_SIZE_NAME"),
-      desc: fragWithHTML(t("OVERRIDE_OBSIDIAN_FONT_SIZE_DESC")),
-      control: { type: "toggle", key: "overrideObsidianFontSize" },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("DYNAMICSTYLE_NAME"),
-      desc: fragWithHTML(t("DYNAMICSTYLE_DESC")),
-      control: {
-        type: "dropdown",
-        key: "dynamicStyling",
+  private getThemeSpecs(): SettingSpec[] {
+    return [
+      {
+        name: t("OVERRIDE_OBSIDIAN_FONT_SIZE_NAME"),
+        desc: fragWithHTML(t("OVERRIDE_OBSIDIAN_FONT_SIZE_DESC")),
+        aliases: ["font size", "editor text size", "Obsidian font size"],
+        control: { type: "toggle", key: "overrideObsidianFontSize" },
+      },
+      {
+        name: t("DYNAMICSTYLE_NAME"),
+        desc: fragWithHTML(t("DYNAMICSTYLE_DESC")),
+        aliases: ["dynamic styling", "canvas color", "interface color"],
+        control: {
+          type: "dropdown",
+          key: "dynamicStyling",
         before: () => {
           this.requestUpdateDynamicStyling = true;
         },
         options: [
           { value: "none", label: t("DYNAMICSTYLE_OPTION_NONE") },
           { value: "colorful", label: t("DYNAMICSTYLE_OPTION_COLORFUL") },
-          { value: "gray", label: t("DYNAMICSTYLE_OPTION_GRAY") },
-        ],
+            { value: "gray", label: t("DYNAMICSTYLE_OPTION_GRAY") },
+          ],
+        },
       },
-    });
-    addYouTubeThumbnail(detailsEl, "fypDth_-8q0");
-
-    this.buildSetting(detailsEl, {
-      name: t("IFRAME_MATCH_THEME_NAME"),
-      desc: fragWithHTML(t("IFRAME_MATCH_THEME_DESC")),
-      control: { type: "toggle", key: "iframeMatchExcalidrawTheme", reload: true },
-    });
-    addYouTubeThumbnail(detailsEl, "ICpoyMv6KSs");
-
-    this.buildSetting(detailsEl, {
-      name: t("MATCH_THEME_NAME"),
-      desc: fragWithHTML(t("MATCH_THEME_DESC")),
-      control: { type: "toggle", key: "matchTheme" },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("MATCH_THEME_ALWAYS_NAME"),
-      desc: fragWithHTML(t("MATCH_THEME_ALWAYS_DESC")),
-      control: { type: "toggle", key: "matchThemeAlways" },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("MATCH_THEME_TRIGGER_NAME"),
-      desc: fragWithHTML(t("MATCH_THEME_TRIGGER_DESC")),
-      control: {
-        type: "toggle",
-        key: "matchThemeTrigger",
+      {
+        name: t("IFRAME_MATCH_THEME_NAME"),
+        desc: fragWithHTML(t("IFRAME_MATCH_THEME_DESC")),
+        aliases: ["markdown embed theme", "iframe theme"],
+        control: {
+          type: "toggle",
+          key: "iframeMatchExcalidrawTheme",
+          reload: true,
+        },
+      },
+      {
+        name: t("MATCH_THEME_NAME"),
+        desc: fragWithHTML(t("MATCH_THEME_DESC")),
+        aliases: ["new drawing theme", "Obsidian theme"],
+        control: { type: "toggle", key: "matchTheme" },
+      },
+      {
+        name: t("MATCH_THEME_ALWAYS_NAME"),
+        desc: fragWithHTML(t("MATCH_THEME_ALWAYS_DESC")),
+        aliases: ["existing drawing theme", "Obsidian theme"],
+        control: { type: "toggle", key: "matchThemeAlways" },
+      },
+      {
+        name: t("MATCH_THEME_TRIGGER_NAME"),
+        desc: fragWithHTML(t("MATCH_THEME_TRIGGER_DESC")),
+        aliases: ["theme change", "follow theme"],
+        control: {
+          type: "toggle",
+          key: "matchThemeTrigger",
         after: (value) => {
           if (value) {
             this.plugin.addThemeObserver();
           } else {
             this.plugin.removeThemeObserver();
-          }
+            }
+          },
         },
       },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("DEFAULT_OPEN_MODE_NAME"),
-      desc: fragWithHTML(t("DEFAULT_OPEN_MODE_DESC")),
-      control: {
-        type: "dropdown",
-        key: "defaultMode",
+      {
+        name: t("DEFAULT_OPEN_MODE_NAME"),
+        desc: fragWithHTML(t("DEFAULT_OPEN_MODE_DESC")),
+        aliases: ["default open mode", "normal", "zen", "view mode"],
+        control: {
+          type: "dropdown",
+          key: "defaultMode",
         options: [
           { value: "normal", label: t("DEFAULT_OPEN_MODE_OPTION_NORMAL") },
           { value: "zen", label: t("DEFAULT_OPEN_MODE_OPTION_ZEN") },
@@ -2075,197 +2380,246 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           {
             value: "view-mobile",
             label: t("DEFAULT_OPEN_MODE_OPTION_VIEW_MOBILE"),
-          },
-        ],
+            },
+          ],
+        },
       },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("PHONE_FOOTER_SAFE_AREA_PADDING_NAME"),
-      desc: fragWithHTML(t("PHONE_FOOTER_SAFE_AREA_PADDING_DESC")),
-      control: {
-        type: "toggle",
-        key: "phoneFooterSafeAreaPadding",
-        after: () => this.plugin.updateFooterSafeAreaPadding(),
+      {
+        name: t("PHONE_FOOTER_SAFE_AREA_PADDING_NAME"),
+        desc: fragWithHTML(t("PHONE_FOOTER_SAFE_AREA_PADDING_DESC")),
+        aliases: ["phone footer", "safe area", "bottom padding"],
+        control: {
+          type: "toggle",
+          key: "phoneFooterSafeAreaPadding",
+          after: () => this.plugin.updateFooterSafeAreaPadding(),
+        },
       },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("TABLET_FOOTER_SAFE_AREA_PADDING_NAME"),
-      desc: fragWithHTML(t("TABLET_FOOTER_SAFE_AREA_PADDING_DESC")),
-      control: {
-        type: "toggle",
-        key: "tabletFooterSafeAreaPadding",
-        after: () => this.plugin.updateFooterSafeAreaPadding(),
+      {
+        name: t("TABLET_FOOTER_SAFE_AREA_PADDING_NAME"),
+        desc: fragWithHTML(t("TABLET_FOOTER_SAFE_AREA_PADDING_DESC")),
+        aliases: ["tablet footer", "safe area", "bottom padding"],
+        control: {
+          type: "toggle",
+          key: "tabletFooterSafeAreaPadding",
+          after: () => this.plugin.updateFooterSafeAreaPadding(),
+        },
       },
-    });
+    ];
+  }
 
-    detailsEl = displayDetailsEl.createEl("details");
-    detailsEl.createEl("summary", {
-      text: t("ZOOM_AND_PAN_HEAD"), //mfuria #329
-      cls: "excalidraw-setting-h3",
-    });
+  private renderThemeSettings(container: HTMLElement): void {
+    const specs = this.getThemeSpecs();
+    this.renderSettingSpecs(container, specs.slice(0, 2));
+    addYouTubeThumbnail(container, "fypDth_-8q0");
+    this.renderSettingSpecs(container, specs.slice(2, 3));
+    addYouTubeThumbnail(container, "ICpoyMv6KSs");
+    this.renderSettingSpecs(container, specs.slice(3));
+  }
 
-    //mfuria #329. Added setting for right-click panning
-    this.buildSetting(detailsEl, {
-      name: t("PAN_WITH_RIGHT_MOUSE_BUTTON_NAME"),
-      desc: fragWithHTML(t("PAN_WITH_RIGHT_MOUSE_BUTTON_DESC")),
-      control: { type: "toggle", key: "panWithRightMouseButton", reload: true },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("DEFAULT_PINCHZOOM_NAME"),
-      desc: fragWithHTML(t("DEFAULT_PINCHZOOM_DESC")),
-      control: {
-        type: "toggle",
-        key: "allowPinchZoom",
+  private getZoomAndPanSpecs(): SettingSpec[] {
+    return [
+      {
+        name: t("PAN_WITH_RIGHT_MOUSE_BUTTON_NAME"),
+        desc: fragWithHTML(t("PAN_WITH_RIGHT_MOUSE_BUTTON_DESC")),
+        aliases: ["right click pan", "mouse pan"],
+        control: {
+          type: "toggle",
+          key: "panWithRightMouseButton",
+          reload: true,
+        },
+      },
+      {
+        name: t("DEFAULT_PINCHZOOM_NAME"),
+        desc: fragWithHTML(t("DEFAULT_PINCHZOOM_DESC")),
+        aliases: ["pinch zoom", "pen mode zoom", "touch zoom"],
+        control: {
+          type: "toggle",
+          key: "allowPinchZoom",
         after: () =>
           getExcalidrawViews(this.app, true).forEach((excalidrawView) =>
-            excalidrawView.updatePinchZoom(),
-          ),
+              excalidrawView.updatePinchZoom(),
+            ),
+        },
       },
-    });
-    addYouTubeThumbnail(detailsEl, "rBarRfcSxNo", 107);
-
-    this.buildSetting(detailsEl, {
-      name: t("DEFAULT_WHEELZOOM_NAME"),
-      desc: fragWithHTML(t("DEFAULT_WHEELZOOM_DESC")),
-      control: {
-        type: "toggle",
-        key: "allowWheelZoom",
+      {
+        name: t("DEFAULT_WHEELZOOM_NAME"),
+        desc: fragWithHTML(t("DEFAULT_WHEELZOOM_DESC")),
+        aliases: ["wheel zoom", "mouse wheel", "scroll zoom"],
+        control: {
+          type: "toggle",
+          key: "allowWheelZoom",
         after: () =>
           getExcalidrawViews(this.app, true).forEach((excalidrawView) =>
-            excalidrawView.updateWheelZoom(),
-          ),
+              excalidrawView.updateWheelZoom(),
+            ),
+        },
       },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("ZOOM_TO_FIT_ONOPEN_NAME"),
-      desc: fragWithHTML(t("ZOOM_TO_FIT_ONOPEN_DESC")),
-      control: { type: "toggle", key: "zoomToFitOnOpen" },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("ZOOM_TO_FIT_NAME"),
-      desc: fragWithHTML(t("ZOOM_TO_FIT_DESC")),
-      control: { type: "toggle", key: "zoomToFitOnResize" },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("ZOOM_TO_FIT_MAX_LEVEL_NAME"),
-      desc: t("ZOOM_TO_FIT_MAX_LEVEL_DESC"),
-      control: {
-        type: "slider",
-        key: "zoomToFitMaxLevel",
+      {
+        name: t("ZOOM_TO_FIT_ONOPEN_NAME"),
+        desc: fragWithHTML(t("ZOOM_TO_FIT_ONOPEN_DESC")),
+        aliases: ["zoom to fit", "file open"],
+        control: { type: "toggle", key: "zoomToFitOnOpen" },
+      },
+      {
+        name: t("ZOOM_TO_FIT_NAME"),
+        desc: fragWithHTML(t("ZOOM_TO_FIT_DESC")),
+        aliases: ["zoom to fit", "view resize"],
+        control: { type: "toggle", key: "zoomToFitOnResize" },
+      },
+      {
+        name: t("ZOOM_TO_FIT_MAX_LEVEL_NAME"),
+        desc: t("ZOOM_TO_FIT_MAX_LEVEL_DESC"),
+        aliases: ["zoom to fit maximum", "zoom level"],
+        control: {
+          type: "slider",
+          key: "zoomToFitMaxLevel",
         min: 0.5,
-        max: 10,
-        step: 0.5,
+          max: 10,
+          step: 0.5,
+        },
       },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("ZOOM_STEP_NAME"),
-      desc: t("ZOOM_STEP_DESC"),
-      control: {
-        type: "slider",
-        key: "zoomStep",
+      {
+        name: t("ZOOM_STEP_NAME"),
+        desc: t("ZOOM_STEP_DESC"),
+        aliases: ["zoom increment", "zoom step"],
+        control: {
+          type: "slider",
+          key: "zoomStep",
         min: 1,
         max: 25,
-        step: 1,
-        scale: 100,
+          step: 1,
+          scale: 100,
+        },
       },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("ZOOM_MIN_NAME"),
-      desc: t("ZOOM_MIN_DESC"),
-      control: {
-        type: "slider",
-        key: "zoomMin",
+      {
+        name: t("ZOOM_MIN_NAME"),
+        desc: t("ZOOM_MIN_DESC"),
+        aliases: ["minimum zoom", "zoom out"],
+        control: {
+          type: "slider",
+          key: "zoomMin",
         min: 1,
         max: 50,
-        step: 1,
-        scale: 100,
+          step: 1,
+          scale: 100,
+        },
       },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("ZOOM_MAX_NAME"),
-      desc: t("ZOOM_MAX_DESC"),
-      control: {
-        type: "slider",
-        key: "zoomMax",
+      {
+        name: t("ZOOM_MAX_NAME"),
+        desc: t("ZOOM_MAX_DESC"),
+        aliases: ["maximum zoom", "zoom in"],
+        control: {
+          type: "slider",
+          key: "zoomMax",
         min: 500,
         max: 6000,
-        step: 100,
-        scale: 100,
+          step: 100,
+          scale: 100,
+        },
       },
-    });
+    ];
+  }
 
-    // ------------------------------------------------
-    // Pen
-    // ------------------------------------------------
-    detailsEl = displayDetailsEl.createEl("details");
-    detailsEl.createEl("summary", {
-      text: t("PEN_HEAD"),
-      cls: "excalidraw-setting-h3",
-    });
+  private renderZoomAndPanSettings(container: HTMLElement): void {
+    const specs = this.getZoomAndPanSpecs();
+    this.renderSettingSpecs(container, specs.slice(0, 2));
+    addYouTubeThumbnail(container, "rBarRfcSxNo", 107);
+    this.renderSettingSpecs(container, specs.slice(2));
+  }
 
-    this.buildSetting(detailsEl, {
-      name: t("DEFAULT_PEN_MODE_NAME"),
-      desc: fragWithHTML(t("DEFAULT_PEN_MODE_DESC")),
-      control: {
-        type: "dropdown",
-        key: "defaultPenMode",
+  private getPenSpecs(): SettingSpec[] {
+    return [
+      {
+        name: t("DEFAULT_PEN_MODE_NAME"),
+        desc: fragWithHTML(t("DEFAULT_PEN_MODE_DESC")),
+        aliases: ["pen mode", "stylus"],
+        control: {
+          type: "dropdown",
+          key: "defaultPenMode",
         options: [
           { value: "never", label: t("DEFAULT_PEN_MODE_OPTION_NEVER") },
           { value: "mobile", label: t("DEFAULT_PEN_MODE_OPTION_MOBILE") },
-          { value: "always", label: t("DEFAULT_PEN_MODE_OPTION_ALWAYS") },
-        ],
+            { value: "always", label: t("DEFAULT_PEN_MODE_OPTION_ALWAYS") },
+          ],
+        },
       },
+      {
+        name: t("DISABLE_DOUBLE_TAP_ERASER_NAME"),
+        aliases: ["double tap eraser", "pen eraser"],
+        control: { type: "toggle", key: "penModeDoubleTapEraser" },
+      },
+      {
+        name: t("DISABLE_SINGLE_FINGER_PANNING_NAME"),
+        aliases: ["single finger pan", "pen panning"],
+        control: { type: "toggle", key: "penModeSingleFingerPanning" },
+      },
+      {
+        name: t("SHOW_PEN_MODE_FREEDRAW_CROSSHAIR_NAME"),
+        desc: fragWithHTML(t("SHOW_PEN_MODE_FREEDRAW_CROSSHAIR_DESC")),
+        aliases: ["pen crosshair", "freedraw crosshair"],
+        control: { type: "toggle", key: "penModeCrosshairVisible" },
+      },
+    ];
+  }
+
+  private createHotkeyEditorDefinition(): SettingDefinition<SettingBindingKey> {
+    return this.createRenderedDefinition({
+      name: t("HOTKEY_OVERRIDE_CONTROL_NAME"),
+      desc: fragWithHTML(t("HOTKEY_OVERRIDE_DESC")),
+      aliases: ["hotkey override", "keyboard shortcut", "key combination"],
+      controlType: "hotkey editor",
+      render: (container) => this.renderHotkeyEditor(container),
     });
+  }
 
-    this.buildSetting(detailsEl, {
-      name: t("DISABLE_DOUBLE_TAP_ERASER_NAME"),
-      control: { type: "toggle", key: "penModeDoubleTapEraser" },
+  private renderHotkeyEditor(container: HTMLElement): () => void {
+    this.destroyHotkeyEditor();
+    container.createSpan({}, (el) => {
+      setSanitizedHtml(el, t("HOTKEY_OVERRIDE_DESC"));
     });
+    const editor = new HotkeyEditor(
+      container,
+      this.plugin.settings,
+      (requestReloadDrawings: boolean = false) =>
+        this.applySettingsUpdate(requestReloadDrawings),
+    );
+    this.hotkeyEditor = editor;
+    editor.onload();
+    return () => this.disposeHotkeyEditor(editor);
+  }
 
-    this.buildSetting(detailsEl, {
-      name: t("DISABLE_SINGLE_FINGER_PANNING_NAME"),
-      control: { type: "toggle", key: "penModeSingleFingerPanning" },
-    });
+  private disposeHotkeyEditor(editor: HotkeyEditor): void {
+    editor.unload();
+    if (editor.isDirty) {
+      this.plugin.registerHotkeyOverrides();
+    }
+    if (this.hotkeyEditor === editor) {
+      this.hotkeyEditor = null;
+    }
+  }
 
-    this.buildSetting(detailsEl, {
-      name: t("SHOW_PEN_MODE_FREEDRAW_CROSSHAIR_NAME"),
-      desc: fragWithHTML(t("SHOW_PEN_MODE_FREEDRAW_CROSSHAIR_DESC")),
-      control: { type: "toggle", key: "penModeCrosshairVisible" },
-    });
+  private destroyHotkeyEditor(): void {
+    if (this.hotkeyEditor !== null) {
+      this.disposeHotkeyEditor(this.hotkeyEditor);
+    }
+  }
 
-    // ------------------------------------------------
-    // Grid
-    // ------------------------------------------------
-    detailsEl = displayDetailsEl.createEl("details");
-    detailsEl.createEl("summary", {
-      text: t("GRID_HEAD"),
-      cls: "excalidraw-setting-h3",
-    });
+  private updateGridColor(): void {
+    getExcalidrawViews(this.app, true).forEach((excalidrawView) =>
+      excalidrawView.updateGridColor(),
+    );
+  }
 
-    const updateGridColor = () => {
-      getExcalidrawViews(this.app, true).forEach((excalidrawView) =>
-        excalidrawView.updateGridColor(),
-      );
-    };
+  private updateGridDirection(): void {
+    getExcalidrawViews(this.app, true).forEach((excalidrawView) =>
+      excalidrawView.updateGridDirection(
+        this.plugin.settings.gridSettings.GRID_DIRECTION,
+      ),
+    );
+  }
 
-    const updateGridDirection = () => {
-      getExcalidrawViews(this.app, true).forEach((excalidrawView) =>
-        excalidrawView.updateGridDirection(
-          this.plugin.settings.gridSettings.GRID_DIRECTION,
-        ),
-      );
-    };
-
-    new Setting(detailsEl)
+  private configureGridDirectionSetting(setting: Setting): void {
+    setting
       .setName(t("GRID_DIRECTION_NAME"))
       .setDesc(t("GRID_DIRECTION_DESC"))
       .addToggle((toggle) =>
@@ -2276,15 +2630,13 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
               true,
           )
           .onChange((value) => {
-            if (!this.plugin.settings.gridSettings.GRID_DIRECTION) {
-              this.plugin.settings.gridSettings.GRID_DIRECTION = {
-                horizontal: true,
-                vertical: true,
-              };
-            } //2.10.1 migration
+            this.plugin.settings.gridSettings.GRID_DIRECTION ??= {
+              horizontal: true,
+              vertical: true,
+            };
             this.plugin.settings.gridSettings.GRID_DIRECTION.horizontal = value;
             this.applySettingsUpdate();
-            updateGridDirection();
+            this.updateGridDirection();
           }),
       )
       .addToggle((toggle) =>
@@ -2294,407 +2646,594 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.plugin.settings.gridSettings.GRID_DIRECTION?.vertical ?? true,
           )
           .onChange((value) => {
-            if (!this.plugin.settings.gridSettings.GRID_DIRECTION) {
-              this.plugin.settings.gridSettings.GRID_DIRECTION = {
-                horizontal: true,
-                vertical: true,
-              };
-            } //2.10.1 migration
+            this.plugin.settings.gridSettings.GRID_DIRECTION ??= {
+              horizontal: true,
+              vertical: true,
+            };
             this.plugin.settings.gridSettings.GRID_DIRECTION.vertical = value;
             this.applySettingsUpdate();
-            updateGridDirection();
+            this.updateGridDirection();
           }),
       );
+  }
 
-    // Dynamic color toggle
-    new Setting(detailsEl)
+  private configureDynamicGridColorSetting(setting: Setting): void {
+    setting
       .setName(t("GRID_DYNAMIC_COLOR_NAME"))
       .setDesc(fragWithHTML(t("GRID_DYNAMIC_COLOR_DESC")))
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.gridSettings.DYNAMIC_COLOR)
-          .onChange(async (value) => {
+          .onChange((value) => {
             this.plugin.settings.gridSettings.DYNAMIC_COLOR = value;
-            if (value) {
-              hideElement(gridColorSection);
-            } else {
-              showElement(gridColorSection);
+            if (
+              this.gridColorSettingEl &&
+              this.gridColorSettingEl.isConnected
+            ) {
+              if (value) {
+                hideElement(this.gridColorSettingEl);
+              } else {
+                showElement(this.gridColorSettingEl);
+              }
             }
             this.applySettingsUpdate();
-            updateGridColor();
+            this.updateGridColor();
+            this.refreshDeclarativeDomState();
           }),
       );
+  }
 
-    // Create a div to contain color and opacity settings
-    const gridColorSection = detailsEl.createDiv();
+  private configureGridColorSetting(setting: Setting): void {
+    this.gridColorSettingEl = setting.settingEl;
+    setting.setName(t("GRID_COLOR_NAME")).addColorPicker((colorPicker) =>
+      colorPicker
+        .setValue(this.plugin.settings.gridSettings.COLOR)
+        .onChange((value) => {
+          this.plugin.settings.gridSettings.COLOR = value;
+          this.applySettingsUpdate();
+          this.updateGridColor();
+        }),
+    );
     if (this.plugin.settings.gridSettings.DYNAMIC_COLOR) {
-      hideElement(gridColorSection);
+      hideElement(setting.settingEl);
     } else {
-      showElement(gridColorSection);
+      showElement(setting.settingEl);
     }
+  }
 
-    // Grid color picker
-    new Setting(gridColorSection)
-      .setName(t("GRID_COLOR_NAME"))
-      .addColorPicker((colorPicker) =>
-        colorPicker
-          .setValue(this.plugin.settings.gridSettings.COLOR)
-          .onChange(async (value) => {
-            this.plugin.settings.gridSettings.COLOR = value;
-            this.applySettingsUpdate();
-            updateGridColor();
-          }),
-      );
-
-    // Grid opacity slider (hex value between 00 and FF)
-    createSliderWithText(detailsEl, {
+  private configureGridOpacitySetting(setting: Setting): void {
+    configureSliderWithText(setting, {
       name: t("GRID_OPACITY_NAME"),
       desc: t("GRID_OPACITY_DESC"),
       value: this.plugin.settings.gridSettings.OPACITY,
       min: 0,
       max: 100,
       step: 1,
+      minWidth: "3em",
       onChange: (value) => {
         this.plugin.settings.gridSettings.OPACITY = value;
         this.applySettingsUpdate();
-        updateGridColor();
+        this.updateGridColor();
       },
-      minWidth: "3em",
     });
+  }
 
-    // ------------------------------------------------
-    // Laser Pointer
-    // ------------------------------------------------
-    detailsEl = displayDetailsEl.createEl("details");
-    detailsEl.createEl("summary", {
-      text: t("LASER_HEAD"),
-      cls: "excalidraw-setting-h3",
-    });
-    new Setting(detailsEl)
-      .setName(t("LASER_COLOR"))
-      .addColorPicker((colorPicker) =>
-        colorPicker
-          .setValue(this.plugin.settings.laserSettings.COLOR)
-          .onChange(async (value) => {
-            this.plugin.settings.laserSettings.COLOR = value;
-            this.applySettingsUpdate();
-          }),
-      );
+  private getGridDefinitions(): SettingDefinitionItem<SettingBindingKey>[] {
+    return [
+      this.createCustomSettingDefinition({
+        name: t("GRID_DIRECTION_NAME"),
+        desc: t("GRID_DIRECTION_DESC"),
+        aliases: ["horizontal grid", "vertical grid", "grid direction"],
+        controlType: "toggle group",
+        configure: (setting) => this.configureGridDirectionSetting(setting),
+      }),
+      this.createCustomSettingDefinition({
+        name: t("GRID_DYNAMIC_COLOR_NAME"),
+        desc: fragWithHTML(t("GRID_DYNAMIC_COLOR_DESC")),
+        aliases: ["automatic grid color", "canvas color"],
+        controlType: "toggle",
+        configure: (setting) => this.configureDynamicGridColorSetting(setting),
+      }),
+      this.createCustomSettingDefinition({
+        name: t("GRID_COLOR_NAME"),
+        aliases: ["custom grid color"],
+        visible: () => !this.plugin.settings.gridSettings.DYNAMIC_COLOR,
+        controlType: "color picker",
+        configure: (setting) => this.configureGridColorSetting(setting),
+      }),
+      this.createCustomSettingDefinition({
+        name: t("GRID_OPACITY_NAME"),
+        desc: t("GRID_OPACITY_DESC"),
+        aliases: ["grid transparency"],
+        controlType: "slider",
+        configure: (setting) => this.configureGridOpacitySetting(setting),
+      }),
+    ];
+  }
 
-    createSliderWithText(detailsEl, {
+  private renderGridSettings(container: HTMLElement): void {
+    this.configureGridDirectionSetting(new Setting(container));
+    this.configureDynamicGridColorSetting(new Setting(container));
+    this.configureGridColorSetting(new Setting(container));
+    this.configureGridOpacitySetting(new Setting(container));
+  }
+
+  private configureLaserColorSetting(setting: Setting): void {
+    setting.setName(t("LASER_COLOR")).addColorPicker((colorPicker) =>
+      colorPicker
+        .setValue(this.plugin.settings.laserSettings.COLOR)
+        .onChange((value) => {
+          this.plugin.settings.laserSettings.COLOR = value;
+          this.applySettingsUpdate();
+        }),
+    );
+  }
+
+  private configureLaserDecayTimeSetting(setting: Setting): void {
+    configureSliderWithText(setting, {
       name: t("LASER_DECAY_TIME_NAME"),
       desc: t("LASER_DECAY_TIME_DESC"),
       value: this.plugin.settings.laserSettings.DECAY_TIME,
       min: 500,
       max: 20000,
       step: 500,
+      minWidth: "3em",
       onChange: (value) => {
         this.plugin.settings.laserSettings.DECAY_TIME = value;
         this.applySettingsUpdate();
       },
-      minWidth: "3em",
     });
+  }
 
-    createSliderWithText(detailsEl, {
+  private configureLaserDecayLengthSetting(setting: Setting): void {
+    configureSliderWithText(setting, {
       name: t("LASER_DECAY_LENGTH_NAME"),
       desc: t("LASER_DECAY_LENGTH_DESC"),
       value: this.plugin.settings.laserSettings.DECAY_LENGTH,
       min: 25,
       max: 2000,
       step: 25,
+      minWidth: "3em",
       onChange: (value) => {
         this.plugin.settings.laserSettings.DECAY_LENGTH = value;
         this.applySettingsUpdate();
       },
-      minWidth: "3em",
     });
+  }
 
-    detailsEl = displayDetailsEl.createEl("details");
-    detailsEl.createEl("summary", {
-      text: t("DRAG_MODIFIER_NAME"),
-      cls: "excalidraw-setting-h3",
+  private getLaserDefinitions(): SettingDefinitionItem<SettingBindingKey>[] {
+    return [
+      this.createCustomSettingDefinition({
+        name: t("LASER_COLOR"),
+        aliases: ["laser pointer color"],
+        controlType: "color picker",
+        configure: (setting) => this.configureLaserColorSetting(setting),
+      }),
+      this.createCustomSettingDefinition({
+        name: t("LASER_DECAY_TIME_NAME"),
+        desc: t("LASER_DECAY_TIME_DESC"),
+        aliases: ["laser duration", "laser time"],
+        controlType: "slider",
+        configure: (setting) => this.configureLaserDecayTimeSetting(setting),
+      }),
+      this.createCustomSettingDefinition({
+        name: t("LASER_DECAY_LENGTH_NAME"),
+        desc: t("LASER_DECAY_LENGTH_DESC"),
+        aliases: ["laser trail", "laser length"],
+        controlType: "slider",
+        configure: (setting) => this.configureLaserDecayLengthSetting(setting),
+      }),
+    ];
+  }
+
+  private renderLaserSettings(container: HTMLElement): void {
+    this.configureLaserColorSetting(new Setting(container));
+    this.configureLaserDecayTimeSetting(new Setting(container));
+    this.configureLaserDecayLengthSetting(new Setting(container));
+  }
+
+  private getLinkOpeningGestureSpecs(): SettingSpec[] {
+    return [
+      {
+        name: t("LONG_PRESS_DESKTOP_NAME"),
+        desc: t("LONG_PRESS_DESKTOP_DESC"),
+        aliases: ["long press desktop", "embedded drawing"],
+        control: {
+          type: "slider",
+          key: "longPressDesktop",
+        min: 300,
+        max: 3000,
+          step: 100,
+          reload: true,
+        },
+      },
+      {
+        name: t("LONG_PRESS_MOBILE_NAME"),
+        desc: t("LONG_PRESS_MOBILE_DESC"),
+        aliases: ["long press mobile", "embedded drawing"],
+        control: {
+          type: "slider",
+          key: "longPressMobile",
+        min: 300,
+        max: 3000,
+          step: 100,
+          reload: true,
+        },
+      },
+      {
+        name: t("DOUBLE_CLICK_LINK_OPEN_VIEW_MODE"),
+        aliases: ["double click link", "view mode link"],
+        control: { type: "toggle", key: "doubleClickLinkOpenViewMode" },
+      },
+    ];
+  }
+
+  private getModifierKeyCategoryDescription(
+    modifierSetType: ModifierSetType,
+  ): string {
+    switch (modifierSetType) {
+      case "WebBrowserDragAction":
+        return t("WEB_BROWSER_DRAG_ACTION_DESC");
+      case "LocalFileDragAction":
+        return t("LOCAL_FILE_DRAG_ACTION_DESC");
+      case "InternalDragAction":
+        return t("INTERNAL_DRAG_ACTION_DESC");
+      case "LinkClickAction":
+        return t("PANE_TARGET_DESC");
+    }
+  }
+
+  private createModifierKeyUsageDefinition(): SettingDefinition<SettingBindingKey> {
+    return this.createRenderedDefinition({
+      name: t("MODIFIER_KEY_USAGE_NAME"),
+      desc: t("DRAG_MODIFIER_DESC"),
+      aliases: [
+        "modifier key",
+        "shift",
+        "control",
+        "command",
+        "alt",
+        "option",
+        "meta",
+      ],
+      controlType: "information",
+      render: (container) => this.renderModifierKeyUsage(container),
     });
-    detailsEl.createDiv({
+  }
+
+  private renderModifierKeyUsage(container: HTMLElement): void {
+    container.createDiv({
       text: t("DRAG_MODIFIER_DESC"),
       cls: "setting-item-description",
     });
-
-    this.buildSetting(detailsEl, {
-      name: t("LONG_PRESS_DESKTOP_NAME"),
-      desc: t("LONG_PRESS_DESKTOP_DESC"),
-      control: {
-        type: "slider",
-        key: "longPressDesktop",
-        min: 300,
-        max: 3000,
-        step: 100,
-        reload: true,
-      },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("LONG_PRESS_MOBILE_NAME"),
-      desc: t("LONG_PRESS_MOBILE_DESC"),
-      control: {
-        type: "slider",
-        key: "longPressMobile",
-        min: 300,
-        max: 3000,
-        step: 100,
-        reload: true,
-      },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("DOUBLE_CLICK_LINK_OPEN_VIEW_MODE"),
-      control: { type: "toggle", key: "doubleClickLinkOpenViewMode" },
-    });
-
-    new ModifierKeySettingsComponent(
-      detailsEl,
-      this.plugin.settings.modifierKeyConfig,
-      () => this.applySettingsUpdate(),
-    ).render();
-
   }
 
-  private renderLinksAndTransclusionsSection(): void {
-    const { containerEl } = this;
-    let detailsEl: HTMLElement;
-    // ------------------------------------------------
-    // Links and Transclusions
-    // ------------------------------------------------
-    containerEl.createEl("hr", { cls: "excalidraw-setting-hr" });
-    containerEl.createDiv({
-      text: t("LINKS_HEAD_DESC"),
-      cls: "setting-item-description",
+  private createModifierKeyCategoryDefinition(
+    modifierSetType: ModifierSetType,
+  ): SettingDefinition<SettingBindingKey> {
+    const categoryName = getModifierKeyCategoryName(modifierSetType);
+    const actionAliases = Object.values(
+      modifierKeyTooltipMessages()[modifierSetType] ?? {},
+    ).filter((value): value is string => typeof value === "string");
+    return this.createRenderedDefinition({
+      name: categoryName + " · " + t("MODIFIER_KEY_COMBINATIONS"),
+      desc: this.getModifierKeyCategoryDescription(modifierSetType),
+      aliases: [
+        categoryName,
+        ...actionAliases,
+        "shift",
+        "control",
+        "command",
+        "alt",
+        "option",
+        "meta",
+      ],
+      controlType: "modifier toggle matrix",
+      render: (container) =>
+        this.renderModifierKeyCategory(container, modifierSetType),
     });
-    detailsEl = this.containerEl.createEl("details");
-    detailsEl.createEl("summary", {
-      text: t("LINKS_HEAD"),
-      cls: "excalidraw-setting-h1",
-    });
+  }
 
-    detailsEl.createSpan(undefined, (el) =>
-      setSanitizedHtml(el, t("LINKS_DESC")),
-    );
+  private renderModifierKeyCategory(
+    container: HTMLElement,
+    modifierSetType: ModifierSetType,
+  ): void {
+    new ModifierKeySettingsComponent(
+      container,
+      this.plugin.settings.modifierKeyConfig,
+      () => this.applySettingsUpdate(),
+    ).renderCategory(modifierSetType, false);
+  }
 
-    this.buildSetting(detailsEl, {
-      name: t("ELEMENT_LINK_SYNC_NAME"),
-      desc: fragWithHTML(t("ELEMENT_LINK_SYNC_DESC")),
-      control: { type: "toggle", key: "syncElementLinkWithText" },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("SECOND_ORDER_LINKS_NAME"),
-      desc: fragWithHTML(t("SECOND_ORDER_LINKS_DESC")),
-      control: { type: "toggle", key: "showSecondOrderLinks" },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("ADJACENT_PANE_NAME"),
-      desc: fragWithHTML(t("ADJACENT_PANE_DESC")),
-      control: { type: "toggle", key: "openInAdjacentPane" },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("FOCUS_ON_EXISTING_TAB_NAME"),
-      desc: fragWithHTML(t("FOCUS_ON_EXISTING_TAB_DESC")),
-      control: { type: "toggle", key: "focusOnFileTab" },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("MAINWORKSPACE_PANE_NAME"),
-      desc: fragWithHTML(t("MAINWORKSPACE_PANE_DESC")),
-      control: { type: "toggle", key: "openInMainWorkspace" },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: fragWithHTML(t("LINK_BRACKETS_NAME")),
-      desc: fragWithHTML(t("LINK_BRACKETS_DESC")),
-      control: { type: "toggle", key: "showLinkBrackets", reload: true },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("LINK_PREFIX_NAME"),
-      desc: fragWithHTML(t("LINK_PREFIX_DESC")),
-      control: {
-        type: "text",
-        key: "linkPrefix",
-        placeholder: t("INSERT_EMOJI"),
-        reload: true,
+  private createLinkUsageDefinition(): SettingDefinition<SettingBindingKey> {
+    return this.createRenderedDefinition({
+      name: t("LINK_USAGE_NAME"),
+      desc: fragWithHTML(t("LINKS_DESC")),
+      aliases: ["wiki link", "web link", "ctrl click", "link alias"],
+      controlType: "information",
+      render: (container) => {
+        container.createSpan({}, (el) => setSanitizedHtml(el, t("LINKS_DESC")));
       },
     });
+  }
 
-    this.buildSetting(detailsEl, {
-      name: t("URL_PREFIX_NAME"),
-      desc: fragWithHTML(t("URL_PREFIX_DESC")),
-      control: {
-        type: "text",
-        key: "urlPrefix",
-        placeholder: t("INSERT_EMOJI"),
-        reload: true,
+  private getLinkBehaviorSpecs(): SettingSpec[] {
+    return [
+      {
+        name: t("ELEMENT_LINK_SYNC_NAME"),
+        desc: fragWithHTML(t("ELEMENT_LINK_SYNC_DESC")),
+        aliases: ["element link", "text link", "sync link"],
+        control: { type: "toggle", key: "syncElementLinkWithText" },
       },
-    });
+      {
+        name: t("SECOND_ORDER_LINKS_NAME"),
+        desc: fragWithHTML(t("SECOND_ORDER_LINKS_DESC")),
+        aliases: ["second order link", "backlink"],
+        control: { type: "toggle", key: "showSecondOrderLinks" },
+      },
+      {
+        name: t("HOVERPREVIEW_NAME"),
+        desc: fragWithHTML(t("HOVERPREVIEW_DESC")),
+        aliases: ["hover preview", "link preview"],
+        control: { type: "toggle", key: "hoverPreviewWithoutCTRL" },
+      },
+      {
+        name: t("LINK_CTRL_CLICK_NAME"),
+        desc: fragWithHTML(t("LINK_CTRL_CLICK_DESC")),
+        aliases: ["ctrl click", "command click", "open link"],
+        control: { type: "toggle", key: "allowCtrlClick" },
+      },
+      {
+        name: t("GET_URL_TITLE_NAME"),
+        desc: fragWithHTML(t("GET_URL_TITLE_DESC")),
+        aliases: ["oEmbed", "URL title", "web page title"],
+        control: { type: "toggle", key: "oEmbedAllowed" },
+      },
+    ];
+  }
 
-    let todoPrefixSetting: TextComponent;
-    let donePrefixSetting: TextComponent;
+  private renderLinkBehaviorSettings(container: HTMLElement): void {
+    container.createSpan({}, (el) => setSanitizedHtml(el, t("LINKS_DESC")));
+    this.renderSettingSpecs(container, this.getLinkBehaviorSpecs());
+  }
 
-    this.buildSetting(detailsEl, {
-      name: t("PARSE_TODO_NAME"),
-      desc: fragWithHTML(t("PARSE_TODO_DESC")),
-      control: {
-        type: "toggle",
-        key: "parseTODO",
-        after: (value) => {
-          todoPrefixSetting.setDisabled(!value);
-          donePrefixSetting.setDisabled(!value);
+  private getLinkOpeningSpecs(): SettingSpec[] {
+    return [
+      {
+        name: t("ADJACENT_PANE_NAME"),
+        desc: fragWithHTML(t("ADJACENT_PANE_DESC")),
+        aliases: ["adjacent pane", "reuse pane"],
+        control: { type: "toggle", key: "openInAdjacentPane" },
+      },
+      {
+        name: t("FOCUS_ON_EXISTING_TAB_NAME"),
+        desc: fragWithHTML(t("FOCUS_ON_EXISTING_TAB_DESC")),
+        aliases: ["existing tab", "focus tab"],
+        control: { type: "toggle", key: "focusOnFileTab" },
+      },
+      {
+        name: t("MAINWORKSPACE_PANE_NAME"),
+        desc: fragWithHTML(t("MAINWORKSPACE_PANE_DESC")),
+        aliases: ["main workspace", "popout link"],
+        control: { type: "toggle", key: "openInMainWorkspace" },
+      },
+    ];
+  }
+
+  private getLinkAppearanceSpecs(): SettingSpec[] {
+    return [
+      {
+        name: fragWithHTML(t("LINK_BRACKETS_NAME")),
+        desc: fragWithHTML(t("LINK_BRACKETS_DESC")),
+        aliases: ["wiki link brackets", "preview brackets"],
+        control: { type: "toggle", key: "showLinkBrackets", reload: true },
+      },
+      {
+        name: t("LINK_PREFIX_NAME"),
+        desc: fragWithHTML(t("LINK_PREFIX_DESC")),
+        aliases: ["link icon", "link emoji", "link prefix"],
+        control: {
+          type: "text",
+          key: "linkPrefix",
+          placeholder: t("INSERT_EMOJI"),
+          reload: true,
         },
-        reload: true,
       },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("TODO_NAME"),
-      desc: fragWithHTML(t("TODO_DESC")),
-      control: {
-        type: "text",
-        key: "todo",
-        placeholder: t("INSERT_EMOJI"),
-        capture: (text) => {
-          todoPrefixSetting = text;
+      {
+        name: t("URL_PREFIX_NAME"),
+        desc: fragWithHTML(t("URL_PREFIX_DESC")),
+        aliases: ["URL icon", "URL emoji", "web link prefix"],
+        control: {
+          type: "text",
+          key: "urlPrefix",
+          placeholder: t("INSERT_EMOJI"),
+          reload: true,
         },
-        reload: true,
       },
-    });
-    todoPrefixSetting.setDisabled(!this.plugin.settings.parseTODO);
-
-    const doneSetting = this.buildSetting(detailsEl, {
-      name: t("DONE_NAME"),
-      desc: fragWithHTML(t("DONE_DESC")),
-      control: {
-        type: "text",
-        key: "done",
-        placeholder: t("INSERT_EMOJI"),
-        capture: (text) => {
-          donePrefixSetting = text;
+      {
+        name: t("LINKOPACITY_NAME"),
+        desc: t("LINKOPACITY_DESC"),
+        aliases: ["link icon opacity", "link transparency"],
+        control: {
+          type: "slider",
+          key: "linkOpacity",
+          min: 0,
+          max: 1,
+          step: 0.05,
+          reload: true,
         },
-        reload: true,
       },
-    });
-    doneSetting?.setDisabled(!this.plugin.settings.parseTODO);
-    donePrefixSetting.setDisabled(!this.plugin.settings.parseTODO);
+    ];
+  }
 
-    this.buildSetting(detailsEl, {
-      name: t("LINKOPACITY_NAME"),
-      desc: t("LINKOPACITY_DESC"),
-      control: {
-        type: "slider",
-        key: "linkOpacity",
-        min: 0,
-        max: 1,
-        step: 0.05,
-        reload: true,
+  private getTodoSpecs(): SettingSpec[] {
+    return [
+      {
+        name: t("PARSE_TODO_NAME"),
+        desc: fragWithHTML(t("PARSE_TODO_DESC")),
+        aliases: ["todo checkbox", "task checkbox", "parse task"],
+        control: {
+          type: "toggle",
+          key: "parseTODO",
+          after: (value) => {
+            this.todoPrefixSetting?.setDisabled(!value);
+            this.donePrefixSetting?.setDisabled(!value);
+          },
+          reload: true,
+        },
       },
-    });
+      {
+        name: t("TODO_NAME"),
+        desc: fragWithHTML(t("TODO_DESC")),
+        aliases: ["open todo", "todo icon", "unchecked task"],
+        control: {
+          type: "text",
+          key: "todo",
+          placeholder: t("INSERT_EMOJI"),
+          capture: (text) => {
+            this.todoPrefixSetting = text;
+          },
+          disabled: () => !this.plugin.settings.parseTODO,
+          reload: true,
+        },
+      },
+      {
+        name: t("DONE_NAME"),
+        desc: fragWithHTML(t("DONE_DESC")),
+        aliases: ["completed todo", "done icon", "checked task"],
+        control: {
+          type: "text",
+          key: "done",
+          placeholder: t("INSERT_EMOJI"),
+          capture: (text) => {
+            this.donePrefixSetting = text;
+          },
+          disabled: () => !this.plugin.settings.parseTODO,
+          reload: true,
+        },
+      },
+    ];
+  }
 
-    this.buildSetting(detailsEl, {
-      name: t("HOVERPREVIEW_NAME"),
-      desc: fragWithHTML(t("HOVERPREVIEW_DESC")),
-      control: { type: "toggle", key: "hoverPreviewWithoutCTRL" },
-    });
+  private getTransclusionToggleSpecs(): SettingSpec[] {
+    return [
+      {
+        name: t("TRANSCLUSION_WRAP_NAME"),
+        desc: fragWithHTML(
+          "<code>![[doc#^ref]]{number}</code> " + t("TRANSCLUSION_WRAP_DESC"),
+        ),
+        aliases: ["transclusion wrap", "force wrap", "overflow"],
+        control: { type: "toggle", key: "forceWrap", reload: true },
+      },
+      {
+        name: t("QUOTE_TRANSCLUSION_REMOVE_NAME"),
+        desc: fragWithHTML(t("QUOTE_TRANSCLUSION_REMOVE_DESC")),
+        aliases: ["quote transclusion", "remove quote signs"],
+        control: {
+          type: "toggle",
+          key: "removeTransclusionQuoteSigns",
+          after: () => {
+            this.requestEmbedUpdate = true;
+          },
+          reload: true,
+        },
+      },
+    ];
+  }
 
-    this.buildSetting(detailsEl, {
-      name: t("LINK_CTRL_CLICK_NAME"),
-      desc: fragWithHTML(t("LINK_CTRL_CLICK_DESC")),
-      control: { type: "toggle", key: "allowCtrlClick" },
-    });
-
-    const s = this.buildSetting(detailsEl, {
-      name: t("TRANSCLUSION_WRAP_NAME"),
-      desc: fragWithHTML(t("TRANSCLUSION_WRAP_DESC")),
-      control: { type: "toggle", key: "forceWrap", reload: true },
-    });
-    setSanitizedHtml(
-      s.descEl,
-      `<code>![[doc#^ref]]{number}</code> ${t("TRANSCLUSION_WRAP_DESC")}`,
-    );
-
-    new Setting(detailsEl)
-      .setName(t("PAGE_TRANSCLUSION_CHARCOUNT_NAME"))
-      .setDesc(fragWithHTML(t("PAGE_TRANSCLUSION_CHARCOUNT_DESC")))
+  private configureIntegerTextSetting(
+    setting: Setting,
+    options: {
+      name: string;
+      desc: string | DocumentFragment;
+      key: "pageTransclusionCharLimit" | "wordWrappingDefault";
+      emptyValue: number;
+    },
+  ): void {
+    setting
+      .setName(options.name)
+      .setDesc(options.desc)
       .addText((text) =>
         text
           .setPlaceholder("Enter a number")
-          .setValue(this.plugin.settings.pageTransclusionCharLimit.toString())
-          .onChange(async (value) => {
-            const intVal = parseInt(value);
-            if (isNaN(intVal) && value !== "") {
-              text.setValue(
-                this.plugin.settings.pageTransclusionCharLimit.toString(),
-              );
+          .setValue(this.plugin.settings[options.key].toString())
+          .onChange((value) => {
+            const parsedValue = parseInt(value, 10);
+            if (isNaN(parsedValue) && value !== "") {
+              text.setValue(this.plugin.settings[options.key].toString());
               return;
             }
             this.requestEmbedUpdate = true;
             if (value === "") {
-              this.plugin.settings.pageTransclusionCharLimit = 10;
+              this.plugin.settings[options.key] = options.emptyValue;
               this.applySettingsUpdate(true);
               return;
             }
-            this.plugin.settings.pageTransclusionCharLimit = intVal;
-            text.setValue(
-              this.plugin.settings.pageTransclusionCharLimit.toString(),
-            );
+            this.plugin.settings[options.key] = parsedValue;
+            text.setValue(parsedValue.toString());
             this.applySettingsUpdate(true);
           }),
       );
+  }
 
-    new Setting(detailsEl)
-      .setName(t("TRANSCLUSION_DEFAULT_WRAP_NAME"))
-      .setDesc(fragWithHTML(t("TRANSCLUSION_DEFAULT_WRAP_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder("Enter a number")
-          .setValue(this.plugin.settings.wordWrappingDefault.toString())
-          .onChange(async (value) => {
-            const intVal = parseInt(value);
-            if (isNaN(intVal) && value !== "") {
-              text.setValue(
-                this.plugin.settings.wordWrappingDefault.toString(),
-              );
-              return;
-            }
-            this.requestEmbedUpdate = true;
-            if (value === "") {
-              this.plugin.settings.wordWrappingDefault = 0;
-              this.applySettingsUpdate(true);
-              return;
-            }
-            this.plugin.settings.wordWrappingDefault = intVal;
-            text.setValue(this.plugin.settings.wordWrappingDefault.toString());
-            this.applySettingsUpdate(true);
-          }),
-      );
-
-    this.buildSetting(detailsEl, {
-      name: t("QUOTE_TRANSCLUSION_REMOVE_NAME"),
-      desc: fragWithHTML(t("QUOTE_TRANSCLUSION_REMOVE_DESC")),
-      control: {
-        type: "toggle",
-        key: "removeTransclusionQuoteSigns",
-        after: () => {
-          this.requestEmbedUpdate = true;
-        },
-        reload: true,
-      },
+  private createPageTransclusionLimitDefinition(): SettingDefinition<SettingBindingKey> {
+    return this.createCustomSettingDefinition({
+      name: t("PAGE_TRANSCLUSION_CHARCOUNT_NAME"),
+      desc: fragWithHTML(t("PAGE_TRANSCLUSION_CHARCOUNT_DESC")),
+      aliases: ["page transclusion limit", "maximum characters"],
+      controlType: "number input",
+      configure: (setting) =>
+        this.configureIntegerTextSetting(setting, {
+          name: t("PAGE_TRANSCLUSION_CHARCOUNT_NAME"),
+          desc: fragWithHTML(t("PAGE_TRANSCLUSION_CHARCOUNT_DESC")),
+          key: "pageTransclusionCharLimit",
+          emptyValue: 10,
+        }),
     });
+  }
 
-    this.buildSetting(detailsEl, {
-      name: t("GET_URL_TITLE_NAME"),
-      desc: fragWithHTML(t("GET_URL_TITLE_DESC")),
-      control: { type: "toggle", key: "oEmbedAllowed" },
+  private createTransclusionWrapDefaultDefinition(): SettingDefinition<SettingBindingKey> {
+    return this.createCustomSettingDefinition({
+      name: t("TRANSCLUSION_DEFAULT_WRAP_NAME"),
+      desc: fragWithHTML(t("TRANSCLUSION_DEFAULT_WRAP_DESC")),
+      aliases: ["transclusion wrap default", "word wrap length"],
+      controlType: "number input",
+      configure: (setting) =>
+        this.configureIntegerTextSetting(setting, {
+          name: t("TRANSCLUSION_DEFAULT_WRAP_NAME"),
+          desc: fragWithHTML(t("TRANSCLUSION_DEFAULT_WRAP_DESC")),
+          key: "wordWrappingDefault",
+          emptyValue: 0,
+        }),
     });
+  }
 
+  private getTransclusionDefinitions(): SettingDefinitionItem<SettingBindingKey>[] {
+    const specs = this.getTransclusionToggleSpecs();
+    return [
+      this.declarativeSettingsAdapter.toDefinition(specs[0]),
+      this.createPageTransclusionLimitDefinition(),
+      this.createTransclusionWrapDefaultDefinition(),
+      this.declarativeSettingsAdapter.toDefinition(specs[1]),
+    ];
+  }
+
+  private renderTransclusionSettings(container: HTMLElement): void {
+    const specs = this.getTransclusionToggleSpecs();
+    this.buildSetting(container, specs[0]);
+    this.configureIntegerTextSetting(new Setting(container), {
+      name: t("PAGE_TRANSCLUSION_CHARCOUNT_NAME"),
+      desc: fragWithHTML(t("PAGE_TRANSCLUSION_CHARCOUNT_DESC")),
+      key: "pageTransclusionCharLimit",
+      emptyValue: 10,
+    });
+    this.configureIntegerTextSetting(new Setting(container), {
+      name: t("TRANSCLUSION_DEFAULT_WRAP_NAME"),
+      desc: fragWithHTML(t("TRANSCLUSION_DEFAULT_WRAP_DESC")),
+      key: "wordWrappingDefault",
+      emptyValue: 0,
+    });
+    this.buildSetting(container, specs[1]);
   }
 
   private renderEmbedAndExportSection(): void {
@@ -3077,7 +3616,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       desc: fragWithHTML(t("EXPORT_BOTH_DARK_AND_LIGHT_DESC")),
       control: { type: "toggle", key: "autoExportLightAndDark" },
     });
-
   }
 
   private renderEmbeddingSettingsSection(): void {
@@ -3204,14 +3742,8 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setName(t("MD_DEFAULT_FONT_NAME"))
       .setDesc(fragWithHTML(t("MD_DEFAULT_FONT_DESC")));
     this.fontPickers.push(
-      new FontPickerComponent(
-        markdownFontSetting.controlEl,
-        this.app,
-        () =>
-          getSelectableFontOptions(
-            this.app,
-            this.plugin.settings.fontAssetsPath,
-          ),
+      new FontPickerComponent(markdownFontSetting.controlEl, this.app, () =>
+        getSelectableFontOptions(this.app, this.plugin.settings.fontAssetsPath),
       )
         .setAriaLabel(t("MD_DEFAULT_FONT_NAME"))
         .setValue(this.plugin.settings.mdFont)
@@ -3263,7 +3795,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         reload: true,
       },
     });
-
   }
 
   private renderNonExcalidrawFeaturesSection(): void {
@@ -3299,7 +3830,8 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         min: 1,
         max: 10,
         step: 0.5,
-        afterUpdate: () => this.plugin.excalidrawConfig.updateValues(this.plugin),
+        afterUpdate: () =>
+          this.plugin.excalidrawConfig.updateValues(this.plugin),
       },
     });
 
@@ -3325,7 +3857,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         },
       },
     });
-
   }
 
   private renderFontsSection(): void {
@@ -3373,13 +3904,10 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setName(t("FOURTH_FONT_NAME"))
       .setDesc(fragWithHTML(t("FOURTH_FONT_DESC")));
     this.fontPickers.push(
-      new FontPickerComponent(
-        fourthFontSetting.controlEl,
-        this.app,
-        () =>
-          getSelectableFontOptions(
-            this.app,
-            this.plugin.settings.fontAssetsPath,
+      new FontPickerComponent(fourthFontSetting.controlEl, this.app, () =>
+        getSelectableFontOptions(
+          this.app,
+          this.plugin.settings.fontAssetsPath,
             ["Virgil"],
           ),
       )
@@ -3427,7 +3955,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       name: t("LOAD_KOREAN_FONTS_NAME"),
       control: { type: "toggle", key: "loadKoreanFonts" },
     });
-
   }
 
   private renderExperimentalFeaturesSection(): void {
@@ -3557,13 +4084,10 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         capture: (text) => {
           taskboneAPIKeyText = text;
           configurePasswordTextInput(taskboneAPIKeyText);
-          taskboneAPIKeyText.setDisabled(
-            !this.plugin.settings.taskboneEnabled,
-          );
+          taskboneAPIKeyText.setDisabled(!this.plugin.settings.taskboneEnabled);
         },
       },
     });
-
   }
 
   private renderExcalidrawAutomateSection(): void {
@@ -3977,5 +4501,4 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         });
     }
   }
-
 }

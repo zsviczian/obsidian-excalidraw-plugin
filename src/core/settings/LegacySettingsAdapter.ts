@@ -47,6 +47,10 @@ export class LegacySettingsAdapter {
   /** Configures a row supplied by either the legacy or declarative host. */
   configure(setting: Setting, spec: SettingSpec): void {
     const control = spec.control;
+    const disabled =
+      typeof control.disabled === "function"
+        ? control.disabled()
+        : (control.disabled ?? false);
     if (control.type === "slider") {
       configureSliderWithText(setting, {
         name: spec.name,
@@ -58,19 +62,13 @@ export class LegacySettingsAdapter {
         minWidth: control.minWidth,
         onChange: (value) => this.bindings.setLegacySpecValue(spec, value),
       });
+      setting.setDisabled(disabled);
       return;
     }
 
     setting.setName(spec.name);
     if (spec.desc) {
       setting.setDesc(spec.desc);
-    }
-    const disabled =
-      typeof control.disabled === "function"
-        ? control.disabled()
-        : (control.disabled ?? false);
-    if (disabled) {
-      setting.setDisabled(true);
     }
 
     switch (control.type) {
@@ -82,7 +80,7 @@ export class LegacySettingsAdapter {
               this.bindings.setLegacySpecValue(spec, value),
             ),
         );
-        return;
+        break;
       case "text":
         setting.addText((text) => {
           control.capture?.(text);
@@ -107,7 +105,7 @@ export class LegacySettingsAdapter {
             );
           }
         });
-        return;
+        break;
       case "dropdown":
         setting.addDropdown((dropdown) => {
           for (const option of control.options) {
@@ -119,7 +117,7 @@ export class LegacySettingsAdapter {
               this.bindings.setLegacySpecValue(spec, value),
             );
         });
-        return;
+        break;
       case "number-dropdown":
         setting.addDropdown((dropdown) => {
           for (const option of control.options) {
@@ -132,5 +130,9 @@ export class LegacySettingsAdapter {
             );
         });
     }
+    // Setting#setDisabled only affects controls that already exist. Apply the
+    // initial predicate after configuring the row so dependent controls start
+    // in the same state in both legacy and declarative render paths.
+    setting.setDisabled(disabled);
   }
 }

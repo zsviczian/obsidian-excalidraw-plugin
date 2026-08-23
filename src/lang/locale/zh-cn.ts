@@ -680,6 +680,9 @@ export default {
   DISPLAY_HEAD: "界面 & 行为",
   DISPLAY_DESC:
     "包括：左手模式、动态样式、匹配 Excalidraw 和 Obsidian 主题、默认运行模式等。",
+  DISPLAY_EDITOR_PREVIEWS_HEAD: "编辑与预览",
+  DISPLAY_EDITOR_PREVIEWS_DESC:
+    "配置画布编辑手势，以及 Excalidraw 文件在阅读模式和悬停预览中的显示方式。",
   OVERRIDE_OBSIDIAN_FONT_SIZE_NAME: "限制 Obsidian 字体大小为编辑器文本",
   OVERRIDE_OBSIDIAN_FONT_SIZE_DESC:
     "Obsidian 的自定义字体大小设置会影响整个界面，包括 Excalidraw 和依赖默认字体大小的主题。" +
@@ -754,6 +757,8 @@ export default {
     `请参阅下方 <a href='#${TAG_PDFEXPORT}'>PDF 导出设置</a>。<br>` +
     `⚠️ 关闭并重新打开 Excalidraw/Markdown 文件后生效。`,
   MODES_HEAD: "UI 模式",
+  MODES_DESC:
+    "选择不同设备的 Excalidraw 界面布局、标题栏控件和左右手托盘位置。",
   DESKTOP_UI_MODE_NAME: "桌面端偏好模式",
   DESKTOP_UI_MODE_DESC: "桌面端设备默认 UI 模式。",
   TABLET_UI_MODE_NAME: "平板端偏好模式",
@@ -766,12 +771,19 @@ export default {
   MODE_PHONE: "Phone-mode",
   REAPPLY_UI_MODE_BUTTON: "重新应用 UI 模式",
   HOTKEY_OVERRIDE_HEAD: "热键覆盖",
+  HOTKEY_OVERRIDE_GROUP_DESC:
+    "管理应优先于冲突 Obsidian 热键的 Excalidraw 按键组合。",
+  HOTKEY_OVERRIDE_CONTROL_NAME: "管理热键覆盖",
   HOTKEY_OVERRIDE_DESC:
     `一些 Excalidraw 的热键，如 ${labelCTRL()}+Enter 用于编辑文本，或 ${labelCTRL()}+K 用于创建元素链接，` +
     "与 Obsidian 的热键设置冲突。您在下面添加的热键组合将在使用 Excalidraw 时覆盖 Obsidian 的热键设置，" +
     `因此如果您希望在 Excalidraw 中默认“编组”，而不是“查看关系图谱”（核心插件 - 关系图谱），您可以添加 ${labelCTRL()}+G。`,
   THEME_HEAD: "主题和样式",
+  THEME_DESC:
+    "控制界面样式、绘图和嵌入主题、打开模式以及移动设备安全区域间距。",
   ZOOM_AND_PAN_HEAD: "缩放和平移",
+  ZOOM_AND_PAN_DESC:
+    "配置鼠标、触控、打开、调整大小和缩放范围行为。",
   PAN_WITH_RIGHT_MOUSE_BUTTON_NAME: "右键拖动平移",
   PAN_WITH_RIGHT_MOUSE_BUTTON_DESC:
     "右键点击并拖动来平移绘图（和在线白板工具 Miro 类似）。按 'm' 键打开上下文菜单。",
@@ -804,7 +816,9 @@ export default {
   ZOOM_MAX_DESC:
     "绘图放大的极限。默认：3000%。通常无需修改，考虑完整性而提供。",
   PEN_HEAD: "手写笔",
+  PEN_DESC: "配置自动手写笔模式、触控手势、橡皮擦和自由绘制十字线。",
   GRID_HEAD: "网格",
+  GRID_DESC: "配置网格方向、自动或自定义颜色以及不透明度。",
   GRID_DYNAMIC_COLOR_NAME: "动态网格颜色",
   GRID_DYNAMIC_COLOR_DESC:
     "<b>开启：</b>更改网格颜色以匹配绘图颜色。<br><b>关闭：</b>将以下颜色用作网格颜色。",
@@ -817,6 +831,7 @@ export default {
   GRID_HORIZONTAL: "渲染水平网格",
   GRID_VERTICAL: "渲染垂直网格",
   LASER_HEAD: "激光笔工具（更多工具 > 激光笔）",
+  LASER_DESC: "配置激光笔颜色及其轨迹淡出的速度和长度。",
   LASER_COLOR: "激光笔颜色",
   LASER_DECAY_TIME_NAME: "激光笔消失时间",
   LASER_DECAY_TIME_DESC: "单位是毫秒，默认 1000（即 1 秒）。",
@@ -835,6 +850,20 @@ export default {
     "链接的源文件被重命名时，绘图中相应的 <code>[[内部链接]]</code> 也会同步更新。" +
     "若您不愿绘图中的链接外观因此而变化，可使用 <code>[[内部链接|别名]]</code>。",
   DRAG_MODIFIER_NAME: "修饰键",
+  DRAG_MODIFIER_GROUP_DESC:
+    "配置链接打开手势，以及点击和拖放操作的平台特定修饰键组合。",
+  LINK_OPENING_GESTURES_HEAD: "链接打开手势",
+  LINK_OPENING_GESTURES_DESC:
+    "配置嵌入绘图和查看模式中的长按延迟与双击打开链接。",
+  WEB_BROWSER_DRAG_ACTION_DESC:
+    "选择从网页浏览器拖入链接、图片、导入项和嵌入内容时的修饰键组合。",
+  LOCAL_FILE_DRAG_ACTION_DESC:
+    "选择从操作系统拖入链接、图片、导入项和嵌入内容时的修饰键组合。",
+  INTERNAL_DRAG_ACTION_DESC:
+    "选择在 Obsidian 内拖动链接、图片、全尺寸图片和嵌入内容时的修饰键组合。",
+  PANE_TARGET_DESC: "选择决定点击链接打开位置的修饰键组合。",
+  MODIFIER_KEY_USAGE_NAME: "配置修饰键",
+  MODIFIER_KEY_COMBINATIONS: "修饰键组合",
   DRAG_MODIFIER_DESC:
     `在您按住点击链接或拖动元素时，可以触发某些行为。您可以为这些行为添加修饰键。` +
     `Excalidraw 不会检查您的设置是否合理，因此请谨慎设置，避免冲突。` +
@@ -930,6 +959,20 @@ export default {
     "拖动链接到 Excalidraw 时，使用 <code>http" +
     "s://noembed" +
     ".com/embed?url=</code> 来获取 HTTPS 页面标题。",
+  LINK_BEHAVIOR_HEAD: "链接行为",
+  LINK_BEHAVIOR_DESC:
+    "配置链接同步、相关链接、悬停预览、点击处理和网页标题查询。",
+  LINK_USAGE_NAME: "在 Excalidraw 中使用链接",
+  LINK_OPENING_HEAD: "窗格和标签页行为",
+  LINK_OPENING_DESC:
+    "选择链接是否复用、聚焦或切换窗格、标签页和主工作区。",
+  LINK_APPEARANCE_HEAD: "链接外观",
+  LINK_APPEARANCE_DESC: "配置链接显示时使用的括号、前缀、图标和不透明度。",
+  TODO_HEAD: "待办事项",
+  TODO_GROUP_DESC: "配置待办事项解析以及未完成和已完成任务使用的图标。",
+  TRANSCLUSION_HEAD: "文本嵌入",
+  TRANSCLUSION_DESC:
+    "配置嵌入 Markdown 文本的字符限制、换行和引用符号清理。",
   PDF_TO_IMAGE: "以图像形式嵌入到绘图中的 PDF",
   PDF_TO_IMAGE_SCALE_NAME: "分辨率",
   PDF_TO_IMAGE_SCALE_DESC:

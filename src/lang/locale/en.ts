@@ -751,6 +751,9 @@ export default {
   DISPLAY_HEAD: "Excalidraw appearance and behavior",
   DISPLAY_DESC:
     "In the 'appearance and behavior' section of Excalidraw Settings, you can fine-tune how Excalidraw appears and behaves. This includes options for dynamic styling, left-handed mode, matching Excalidraw and Obsidian themes, default modes, and more.",
+  DISPLAY_EDITOR_PREVIEWS_HEAD: "Editing and previews",
+  DISPLAY_EDITOR_PREVIEWS_DESC:
+    "Configure canvas editing gestures and how Excalidraw files appear in reading mode and hover previews.",
   OVERRIDE_OBSIDIAN_FONT_SIZE_NAME: "Limit Obsidian Font Size to Editor Text",
   OVERRIDE_OBSIDIAN_FONT_SIZE_DESC:
     "Obsidian's custom font size setting affects the entire interface, including Excalidraw and themes that depend on the default font size. " +
@@ -831,6 +834,8 @@ export default {
     }'>Markdown Reading Mode</a> under 'Appearance and Behavior' further above.<br>` +
     `⚠️ You must close and reopen the Excalidraw/markdown file for changes to take effect. ⚠️`,
   MODES_HEAD: "UI Modes",
+  MODES_DESC:
+    "Choose device-specific Excalidraw interface layouts, title-bar controls, and left- or right-handed tray placement.",
   DESKTOP_UI_MODE_NAME: "Preferred Desktop Mode",
   DESKTOP_UI_MODE_DESC: "Select the default UI mode for desktop devices.",
   TABLET_UI_MODE_NAME: "Preferred Tablet Mode",
@@ -843,12 +848,19 @@ export default {
   MODE_PHONE: "Phone-mode",
   REAPPLY_UI_MODE_BUTTON: "Reapply UI mode now",
   HOTKEY_OVERRIDE_HEAD: "Hotkey overrides",
+  HOTKEY_OVERRIDE_GROUP_DESC:
+    "Manage Excalidraw key combinations that should take priority over conflicting Obsidian hotkeys.",
+  HOTKEY_OVERRIDE_CONTROL_NAME: "Manage hotkey overrides",
   HOTKEY_OVERRIDE_DESC:
     `Some of the Excalidraw hotkeys such as <code>${labelCTRL()}+Enter</code> to edit text or <code>${labelCTRL()}+K</code> to create an element link ` +
     "conflict with Obsidian hotkey settings. The hotkey combinations you add below will override Obsidian's hotkey settings while using Excalidraw, thus " +
     `you can add <code>${labelCTRL()}+G</code> if you want to default to Group Object in Excalidraw instead of opening Graph View.`,
   THEME_HEAD: "Theme and styling",
+  THEME_DESC:
+    "Control interface styling, drawing and embed themes, opening mode, and mobile safe-area spacing.",
   ZOOM_AND_PAN_HEAD: "Zoom and Pan",
+  ZOOM_AND_PAN_DESC:
+    "Configure mouse, touch, opening, resizing, and zoom-range behavior.",
   PAN_WITH_RIGHT_MOUSE_BUTTON_NAME: "Right-click drag to pan",
   PAN_WITH_RIGHT_MOUSE_BUTTON_DESC:
     "Right-click and drag to pan the canvas (Miro-style). Press 'm' to open the context menu.",
@@ -881,7 +893,11 @@ export default {
   ZOOM_MAX_DESC:
     "Upper zoom limit. Default: 3000%. Usually no need to change; included for completeness.",
   PEN_HEAD: "Pen",
+  PEN_DESC:
+    "Configure automatic pen mode, touch gestures, the eraser, and the freedraw crosshair.",
   GRID_HEAD: "Grid",
+  GRID_DESC:
+    "Configure grid direction, automatic or custom color, and opacity.",
   GRID_DYNAMIC_COLOR_NAME: "Dynamic grid color",
   GRID_DYNAMIC_COLOR_DESC:
     "<b><u>Toggle ON:</u></b>Change grid color to match the canvas color<br><b><u>Toggle OFF:</u></b>Use the color below as the grid color",
@@ -895,6 +911,8 @@ export default {
   GRID_HORIZONTAL: "Render horizontal grid",
   GRID_VERTICAL: "Render vertical grid",
   LASER_HEAD: "Laser pointer",
+  LASER_DESC:
+    "Configure the laser pointer color and how quickly and how far its trail fades.",
   LASER_COLOR: "Laser pointer color",
   LASER_DECAY_TIME_NAME: "Laser pointer decay time",
   LASER_DECAY_TIME_DESC:
@@ -914,6 +932,21 @@ export default {
     "When Obsidian files change, the matching <code>[[link]]</code> in your drawings will also change. " +
     "If you don't want text accidentally changing in your drawings use <code>[[links|with aliases]]</code>.",
   DRAG_MODIFIER_NAME: "Link Click and Drag&Drop Modifier Keys",
+  DRAG_MODIFIER_GROUP_DESC:
+    "Configure link-opening gestures and platform-specific modifier combinations for clicks and drag-and-drop actions.",
+  LINK_OPENING_GESTURES_HEAD: "Link-opening gestures",
+  LINK_OPENING_GESTURES_DESC:
+    "Configure long-press delays and double-click link opening for embedded drawings and view mode.",
+  WEB_BROWSER_DRAG_ACTION_DESC:
+    "Choose modifier combinations for links, images, imports, and embeddables dragged from a web browser.",
+  LOCAL_FILE_DRAG_ACTION_DESC:
+    "Choose modifier combinations for links, images, imports, and embeddables dragged from the operating system.",
+  INTERNAL_DRAG_ACTION_DESC:
+    "Choose modifier combinations for links, images, full-size images, and embeddables dragged inside Obsidian.",
+  PANE_TARGET_DESC:
+    "Choose modifier combinations that determine where clicked links open.",
+  MODIFIER_KEY_USAGE_NAME: "Configuring modifier keys",
+  MODIFIER_KEY_COMBINATIONS: "Modifier combinations",
   DRAG_MODIFIER_DESC:
     `Modifier key behavior when clicking links and dragging and dropping elements. ` +
     `Excalidraw will not validate your configuration... pay attention to avoid conflicting settings. ` +
@@ -1011,6 +1044,22 @@ export default {
     "Use the <code>http" +
     "s://noembed" +
     ".com/embed?url=</code> to get title of page when dropping an HTTPS link into Excalidraw",
+  LINK_BEHAVIOR_HEAD: "Link behavior",
+  LINK_BEHAVIOR_DESC:
+    "Configure link synchronization, related links, hover previews, click handling, and web-page title lookup.",
+  LINK_USAGE_NAME: "Using links in Excalidraw",
+  LINK_OPENING_HEAD: "Pane and tab behavior",
+  LINK_OPENING_DESC:
+    "Choose whether opened links reuse, focus, or move between panes, tabs, and the main workspace.",
+  LINK_APPEARANCE_HEAD: "Link appearance",
+  LINK_APPEARANCE_DESC:
+    "Configure brackets, prefixes, icons, and opacity used when links are displayed.",
+  TODO_HEAD: "TODOs",
+  TODO_GROUP_DESC:
+    "Configure TODO parsing and the icons used for open and completed tasks.",
+  TRANSCLUSION_HEAD: "Text transclusions",
+  TRANSCLUSION_DESC:
+    "Configure character limits, wrapping, and quote cleanup for transcluded Markdown text.",
   PDF_TO_IMAGE: "PDF to Image",
   PDF_TO_IMAGE_SCALE_NAME: "PDF to Image conversion scale",
   PDF_TO_IMAGE_SCALE_DESC:

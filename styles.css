@@ -1615,7 +1615,7 @@ button.excalidraw-font-picker {
   overflow-y: auto;
 }
 
-.excalidraw-settings .setting-item.excalidraw-declarative-full-width {
+.setting-item.excalidraw-declarative-full-width {
   display: block;
   width: 100%;
 }
