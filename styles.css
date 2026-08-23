@@ -1667,8 +1667,11 @@ button.excalidraw-font-picker {
   background: transparent;
   box-shadow: none;
   color: var(--text-accent);
+  cursor: pointer;
   font-size: inherit;
   font-weight: inherit;
+  text-decoration: none;
+  touch-action: manipulation;
 }
 
 .excalidraw-settings-breadcrumbs__link:hover {
@@ -1676,6 +1679,18 @@ button.excalidraw-font-picker {
   box-shadow: none;
   color: var(--text-accent-hover);
   text-decoration: underline;
+}
+
+.excalidraw-settings-breadcrumbs__link.is-disabled {
+  color: var(--text-muted);
+  cursor: default;
+  pointer-events: none;
+}
+
+.is-mobile .excalidraw-settings-breadcrumbs__link,
+.is-tablet .excalidraw-settings-breadcrumbs__link {
+  min-height: var(--interactive-normal);
+  padding-inline: var(--size-2-2);
 }
 
 .excalidraw-settings-breadcrumbs__current {
@@ -1692,14 +1707,11 @@ button.excalidraw-font-picker {
   color: var(--text-accent);
   font-weight: var(--font-medium);
   text-decoration: underline;
-  text-decoration-thickness: max(1px, 0.08em);
-  text-underline-offset: 0.15em;
 }
 
 .excalidraw-settings .setting-item-description a[href^="#"]:hover,
 .excalidraw-settings-page .setting-item-description a[href^="#"]:hover {
   color: var(--text-accent-hover);
-  text-decoration-thickness: max(2px, 0.12em);
 }
 
 .excalidraw-filename-information {

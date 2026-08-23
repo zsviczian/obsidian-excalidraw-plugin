@@ -596,12 +596,14 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       }
 
       const targetPath = pagePath.slice(0, index);
-      const link = breadcrumbs.createEl("button", {
+      const link = breadcrumbs.createEl("a", {
         text: segment,
+        href: "#",
         cls: "excalidraw-settings-breadcrumbs__link",
-        attr: { type: "button" },
       });
-      link.addEventListener("click", () => {
+      link.onClickEvent((event) => {
+        event.preventDefault();
+        event.stopPropagation();
         if (
           !navigateToSettingsPage(
             this.app,
@@ -609,7 +611,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             targetPath,
           )
         ) {
-          link.disabled = true;
+          link.removeAttribute("href");
+          link.setAttribute("aria-disabled", "true");
+          link.addClass("is-disabled");
         }
       });
     });
