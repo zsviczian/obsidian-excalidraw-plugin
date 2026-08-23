@@ -25,14 +25,15 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 - Improved loading performance for drawings with many cached embedded files by avoiding large cache rewrites, SVG reconstruction, unnecessary image measurement and hashing, premature cache-read timeouts, and duplicate SVG normalization when cached drawings are handed to the canvas. Cached and direct images now appear before uncached generated drawings. The disposable image cache is rebuilt once after updating; drawing backups are preserved.
 
 ## New
-- On Obsidian 1.13 and newer, Excalidraw settings use Obsidian's searchable multi-page interface by default. A top-level setting lets you switch between this interface and the legacy single-page layout after restarting Obsidian. Embed/export, image-cache, PDF, embedded-file, Markdown-image, and custom-pen options are included in the shared searchable hierarchy and remain grouped the same way in the legacy layout.
-- Declarative settings pages show clickable breadcrumbs. Cross-references in setting descriptions navigate to their related pages, and the inserted-file type and auto-export pages link directly to each other.
+- On Obsidian 1.13 and newer, Excalidraw settings use Obsidian's searchable multi-page interface by default. A top-level setting lets you switch between this interface and the legacy single-page layout after restarting Obsidian. Embed/export, image-cache, PDF, embedded-file, Markdown-image, custom-pen, font, miscellaneous, automation, installed-script, and compatibility options are included in the shared searchable hierarchy and remain grouped the same way in the legacy layout.
+- Declarative settings pages show clickable breadcrumbs in a compact shared header with the settings utility links. Cross-references in setting descriptions are clearly underlined and navigate to their related pages in both the searchable and legacy layouts, and the inserted-file type and auto-export pages link directly to each other.
 
 ## Fixed
 - Rapid text editing in Excalidraw settings no longer loses focus or collapses the active section. Settings writes are coalesced and serialized. Excalidraw now keeps a device-local last-known-good recovery copy: corrupted synchronized settings are rejected and repaired from memory while running, or restored automatically from recovery at startup. If the settings file is deliberately removed, Excalidraw asks whether to restore that backup or reset to factory defaults.
 - Changing a rendering-related Excalidraw setting no longer resets the live scroll and zoom position in open drawings. The default completed-TODO marker for new configurations is now ☑.
 - Interactive Markdown embed defaults now persist filename, properties, and locked-reading-mode changes immediately, and mutually exclusive background-source toggles keep their stored values consistent.
 - Built-in font previews in Excalidraw settings now render with their actual typefaces when Settings is opened in a different Obsidian window.
+- Taskbone's API-key field now starts disabled whenever Taskbone is off, including when opened from a settings search. The startup-script file action now uses a compact file icon with an Open/Create tooltip.
 - The Excalidraw color palette now uses its natural height when space is available instead of being unnecessarily limited to a short, vertically scrolling panel. Its native color control also remains aligned with the hex input.
 - The text-to-diagram chat history menu is visible again, allowing saved chats to be restored and deleted.
 - Stencil library is persisted with tab-indented JSON to support Git diffs. [#2883](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2883)
@@ -49,7 +50,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 \`\`\`ts
 registerElementActionProvider(getActions: (element: ExcalidrawElement) => readonly {id: string, title: string, icon: string, action: () => void}[]): (() => void) | null;
 \`\`\`
-- Scripts can now ask to be automatically re-run every time a new Excalidraw view is opened, with a user-confirmed Allow/Deny/Ask-me-later prompt; a fresh Allow also attaches the script to every other currently-open view immediately. Manage which scripts are allowed to autostart from the "Autostart scripts" command or the Compatibility settings section:
+- Scripts can now ask to be automatically re-run every time a new Excalidraw view is opened, with a user-confirmed Allow/Deny/Ask-me-later prompt; a fresh Allow also attaches the script to every other currently-open view immediately. Manage which scripts are allowed to autostart from the "Autostart scripts" command or the Excalidraw Automate settings section:
 \`\`\`ts
 registerAutostart(): Promise<"allow" | "deny" | "pending">;
 \`\`\`

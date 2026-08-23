@@ -1283,8 +1283,11 @@ export default {
   CUSTOM_PEN_DESC:
     "Verás estos lápices junto al Menú de Obsidian en el lienzo. Puedes personalizarlos manteniendo presionado el botón del lápiz en el lienzo.",
   EXPERIMENTAL_HEAD: "Funcionalidades misceláneas",
-  EXPERIMENTAL_DESC: `Estas funcionalidades misceláneas en Excalidraw incluyen opciones para establecer fórmulas LaTeX predeterminadas para nuevas ecuaciones, habilitar un sugeridor de campos para autocompletar, mostrar indicadores de tipo para archivos de Excalidraw, habilitar la incrustación de imágenes inmersivas en el modo de edición de vista en vivo y experimentar con el Reconocimiento Óptico de Caracteres (OCR) de Taskbone para la extracción de texto de imágenes y bosquejos. Los usuarios también pueden ingresar una clave de API de Taskbone para un uso extendido del servicio de OCR.`,
+  EXPERIMENTAL_DESC:
+    "Configura los valores predeterminados de LaTeX, los indicadores de tipo de archivo, el comportamiento de la vista previa en vivo, las sugerencias de propiedades y la integración experimental de OCR con Taskbone.",
   EA_HEAD: "Excalidraw Automate",
+  EA_GROUP_DESC:
+    "Configura los scripts de Excalidraw Automate, el comportamiento de inicio y autoarranque, los enlaces de comandos y los ajustes expuestos por los scripts instalados.",
   EA_DESC:
     "ExcalidrawAutomate es una API de scripting y automatización para Excalidraw. Desafortunadamente, la documentación de la API es escasa. " +
     `Te recomiendo leer el archivo <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_BLOB_MASTER_DOCS_API_EXCALIDRAWAUTOMATE_D_TS}">ExcalidrawAutomate.d.ts</a>, ` +
@@ -1307,7 +1310,7 @@ export default {
   AUTOSTART_SCRIPT_PROMPT:
     "quiere ejecutarse automáticamente cada vez que abras un dibujo de Excalidraw. ¿Deseas permitirlo?",
   AUTOSTART_SCRIPT_PROMPT_MANAGE_HINT:
-    'Puedes cambiar esto más tarde desde la paleta de comandos ("Scripts de inicio automático") o en Ajustes → Compatibilidad → Scripts de inicio automático.',
+    'Puedes cambiar esto más tarde desde la paleta de comandos ("Scripts de inicio automático") o en Ajustes → Excalidraw Automate → Scripts de inicio automático.',
   AUTOSTART_SCRIPT_ALLOW: "Inicio automático",
   AUTOSTART_SCRIPT_DENY: "Solo manual",
   AUTOSTART_SCRIPT_ASK_LATER: "Preguntar cada vez",
@@ -1377,6 +1380,8 @@ export default {
     "Otros formatos de fuente incrustarán la fuente completa en el archivo exportado, lo que podría resultar en tamaños de archivo significativamente mayores.",
   OFFLINE_CJK_NAME:
     "Soporte de fuentes CJK (chino, japonés y coreano) sin conexión",
+  OFFLINE_CJK_GROUP_DESC:
+    "Descarga y precarga de forma selectiva fuentes chinas, japonesas y coreanas para que Excalidraw pueda mostrarlas sin conexión a internet.",
   OFFLINE_CJK_DESC: `<strong>Los cambios que hagas aquí solo se aplicarán después de reiniciar Obsidian.</strong><br>
      Excalidraw.com ofrece fuentes CJK (chino, japonés, coreano) escritas a mano. Por defecto, estas fuentes no se incluyen en el complemento de forma local, sino que se obtienen de internet. 
      Si prefieres que Excalidraw funcione completamente sin conexión a internet, puedes descargar los <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RAW_REFS_HEADS_MASTER_ASSETS_EXCALIDRAW_FONTS_ZIP}" target="_blank">archivos de fuentes necesarios desde GitHub</a>.
@@ -1395,6 +1400,8 @@ export default {
   SCRIPT_SETTINGS_DESC:
     "Algunos de los scripts de Excalidraw Automate incluyen configuraciones. Las configuraciones están organizadas por script. Solo se harán visibles en esta lista después de que hayas ejecutado el script recién descargado al menos una vez.",
   TASKBONE_HEAD: "Reconocimiento Óptico de Caracteres de Taskbone",
+  TASKBONE_GROUP_DESC:
+    "Configura el servicio opcional de OCR en línea Taskbone para extraer texto que se pueda buscar de dibujos e imágenes.",
   TASKBONE_DESC:
     "Esta es una integración experimental del reconocimiento óptico de caracteres en Excalidraw. Ten en cuenta que Taskbone es un servicio externo independiente y no es proporcionado por Excalidraw ni por el proyecto del complemento Excalidraw-Obsidian. " +
     "El servicio de OCR capturará texto legible de las líneas de dibujo a mano alzada y de las imágenes incrustadas en tu lienzo y colocará el texto reconocido en el frontmatter de tu bosquejo, así como en el portapapeles. " +

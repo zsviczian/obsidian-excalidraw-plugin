@@ -1221,8 +1221,11 @@ export default {
   CUSTOM_PEN_DESC:
     "在绘图上的 Obsidian 菜单按钮旁边切换自定义画笔。长按（双击）画笔按钮可以修改其样式。",
   EXPERIMENTAL_HEAD: "杂项",
-  EXPERIMENTAL_DESC: `包括：默认的 LaTeX 公式，字段建议，绘图文件的类型标识符，OCR 等。`,
+  EXPERIMENTAL_DESC:
+    "配置 LaTeX 默认值、文件类型标识、实时预览行为、属性建议以及实验性的 Taskbone OCR 集成。",
   EA_HEAD: "Excalidraw 自动化",
+  EA_GROUP_DESC:
+    "配置 Excalidraw Automate 脚本、启动和自动启动行为、命令链接，以及已安装脚本提供的设置。",
   EA_DESC:
     `ExcalidrawAutomate 是用于 Excalidraw 自动化脚本的 API，但是目前说明文档还不够完善，` +
     `建议阅读 <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_BLOB_MASTER_DOCS_API_EXCALIDRAWAUTOMATE_D_TS}">ExcalidrawAutomate.d.ts</a> 文件源码，` +
@@ -1245,7 +1248,7 @@ export default {
   AUTOSTART_SCRIPT_PROMPT:
     "希望在你每次打开 Excalidraw 绘图时自动运行。是否允许？",
   AUTOSTART_SCRIPT_PROMPT_MANAGE_HINT:
-    "你以后可以在命令面板（“自动启动脚本”）或设置 → 兼容性 → 自动启动脚本中更改此设置。",
+    "你以后可以在命令面板（“自动启动脚本”）或设置 → Excalidraw 自动化 → 自动启动脚本中更改此设置。",
   AUTOSTART_SCRIPT_ALLOW: "自动启动",
   AUTOSTART_SCRIPT_DENY: "仅手动启动",
   AUTOSTART_SCRIPT_ASK_LATER: "每次都询问",
@@ -1307,6 +1310,8 @@ export default {
     "为了获得最佳性能，建议使用 .woff2 文件，因为当导出 SVG 格式的图片时，Excalidraw 只会编码必要的字形。" +
     `其他字体格式将在导出文件中嵌入整个字体，可能会导致文件大小显著增加。<b>译者注：</b>可在 <a href="${URLs.WANGCHUJIANG_COM_FREE_FONT}" target='_blank'>Free Font</a> 获取免费商用中文手写字体。`,
   OFFLINE_CJK_NAME: "离线 CJK 字体支持",
+  OFFLINE_CJK_GROUP_DESC:
+    "下载并按需预加载中文、日文和韩文字体，使 Excalidraw 无需互联网连接也能显示这些字体。",
   OFFLINE_CJK_DESC: `<strong>该项需要重启 Obsidian 才能生效。</strong><br>
     Excalidraw.com 提供手写风格的 CJK 字体。默认情况下，这些字体不会包含在插件本地，而是从互联网获取。
     如果您希望 Excalidraw 完全本地化，以便在没有互联网连接的情况下使用，可以从 <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RAW_REFS_HEADS_MASTER_ASSETS_EXCALIDRAW_FONTS_ZIP}" target="_blank">GitHub 下载所需的字体文件</a>。
@@ -1323,6 +1328,8 @@ export default {
   SCRIPT_SETTINGS_DESC:
     "有些 Excalidraw 自动化脚本包含设置项，当执行这些脚本时，它们会在该列表下添加设置项。",
   TASKBONE_HEAD: "Taskbone OCR（光学符号识别）",
+  TASKBONE_GROUP_DESC:
+    "配置可选的 Taskbone 在线 OCR 服务，从绘图和图像中提取可搜索文本。",
   TASKBONE_DESC:
     "这是一个将 OCR 融入 Excalidraw 的实验性功能。请注意，Taskbone 是一项独立的外部服务，而不是由 Excalidraw 或 obsidian-excalidraw-plugin 项目提供的。" +
     "OCR 能够对绘图上用自由画笔工具写下的涂鸦或者嵌入的图像进行文本识别，并将识别出来的文本写入绘图文件的 frontmatter，同时复制到剪贴板。" +

@@ -1314,8 +1314,11 @@ export default {
   CUSTOM_PEN_DESC:
     "You will see these pens next to the Obsidian Menu on the canvas. You can customize the pens on the canvas by long-pressing the pen button.",
   EXPERIMENTAL_HEAD: "Miscellaneous features",
-  EXPERIMENTAL_DESC: `These miscellaneous features in Excalidraw include options for setting default LaTeX formulas for new equations, enabling a Field Suggester for autocompletion, displaying type indicators for Excalidraw files, enabling immersive image embedding in live preview editing mode, and experimenting with Taskbone Optical Character Recognition for text extraction from images and drawings. Users can also enter a Taskbone API key for extended usage of the OCR service.`,
+  EXPERIMENTAL_DESC:
+    "Configure LaTeX defaults, file type indicators, live preview behavior, property suggestions, and the experimental Taskbone OCR integration.",
   EA_HEAD: "Excalidraw Automate",
+  EA_GROUP_DESC:
+    "Configure Excalidraw Automate scripting, startup and autostart behavior, command links, and settings exposed by installed scripts.",
   EA_DESC:
     "ExcalidrawAutomate is a scripting and automation API for Excalidraw. Unfortunately, the documentation of the API is sparse. " +
     `I recommend reading the <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_BLOB_MASTER_DOCS_API_EXCALIDRAWAUTOMATE_D_TS}">ExcalidrawAutomate.d.ts</a> file, ` +
@@ -1338,7 +1341,7 @@ export default {
   AUTOSTART_SCRIPT_PROMPT:
     "wants to run automatically every time you open an Excalidraw drawing. Do you want to allow this?",
   AUTOSTART_SCRIPT_PROMPT_MANAGE_HINT:
-    'You can change this later from the Command Palette ("Autostart scripts") or in Settings → Compatibility → Autostart scripts.',
+    'You can change this later from the Command Palette ("Autostart scripts") or in Settings → Excalidraw Automate → Autostart scripts.',
   AUTOSTART_SCRIPT_ALLOW: "Autostart",
   AUTOSTART_SCRIPT_DENY: "Manual start only",
   AUTOSTART_SCRIPT_ASK_LATER: "Ask every time",
@@ -1404,6 +1407,8 @@ export default {
     "For optimal performance, it is recommended to use a .woff2 file, as Excalidraw will encode only the necessary glyphs when exporting images to SVG. " +
     "Other font formats will embed the entire font in the exported file, potentially resulting in significantly larger file sizes.",
   OFFLINE_CJK_NAME: "Offline CJK font support",
+  OFFLINE_CJK_GROUP_DESC:
+    "Download and selectively preload Chinese, Japanese, and Korean fonts so Excalidraw can render them without an internet connection.",
   OFFLINE_CJK_DESC: `<strong>Changes you make here will only take effect after restarting Obsidian.</strong><br>
      Excalidraw.com offers handwritten CJK fonts. By default these fonts are not included in the plugin locally, but are served from the Internet. 
      If you prefer to keep Excalidraw fully local, allowing it to work without Internet access you can download the necessary <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RAW_REFS_HEADS_MASTER_ASSETS_EXCALIDRAW_FONTS_ZIP}" target="_blank">font files from GitHub</a>.
@@ -1420,6 +1425,8 @@ export default {
   SCRIPT_SETTINGS_DESC:
     "Some of the Excalidraw Automate Scripts include settings. Settings are organized by script. Settings will only become visible in this list after you have executed the newly downloaded script once.",
   TASKBONE_HEAD: "Taskbone Optical Character Recognition",
+  TASKBONE_GROUP_DESC:
+    "Configure the optional Taskbone online OCR service for extracting searchable text from drawings and images.",
   TASKBONE_DESC:
     "This is an experimental integration of optical character recognition into Excalidraw. Please note, that taskbone is an independent external service not provided by Excalidraw, nor the Excalidraw-Obsidian plugin project. " +
     "The OCR service will grab legible text from freedraw lines and embedded pictures on your canvas and place the recognized text in the frontmatter of your drawing as well as onto clipboard. " +

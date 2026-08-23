@@ -1626,7 +1626,7 @@ button.excalidraw-font-picker {
   justify-content: center;
   flex-wrap: wrap;
   gap: var(--size-4-2) var(--size-4-3);
-  margin-bottom: var(--size-4-3);
+  margin-bottom: var(--size-4-1);
   font-size: var(--font-ui-smaller);
 }
 
@@ -1652,9 +1652,10 @@ button.excalidraw-font-picker {
 .excalidraw-settings-breadcrumbs {
   display: flex;
   align-items: baseline;
+  justify-content: center;
   flex-wrap: wrap;
   gap: var(--size-4-1);
-  margin-bottom: var(--size-4-2);
+  margin: 0;
   color: var(--text-muted);
   font-size: var(--font-ui-small);
 }
@@ -1684,6 +1685,21 @@ button.excalidraw-font-picker {
 
 .excalidraw-settings-breadcrumbs__separator {
   color: var(--text-faint);
+}
+
+.excalidraw-settings .setting-item-description a[href^="#"],
+.excalidraw-settings-page .setting-item-description a[href^="#"] {
+  color: var(--text-accent);
+  font-weight: var(--font-medium);
+  text-decoration: underline;
+  text-decoration-thickness: max(1px, 0.08em);
+  text-underline-offset: 0.15em;
+}
+
+.excalidraw-settings .setting-item-description a[href^="#"]:hover,
+.excalidraw-settings-page .setting-item-description a[href^="#"]:hover {
+  color: var(--text-accent-hover);
+  text-decoration-thickness: max(2px, 0.12em);
 }
 
 .excalidraw-filename-information {

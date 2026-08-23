@@ -1221,8 +1221,11 @@ export default {
   CUSTOM_PEN_DESC:
     "在繪圖上的 Obsidian 選單按鈕旁邊切換自定義畫筆。長按（雙擊）畫筆按鈕可以修改其樣式。",
   EXPERIMENTAL_HEAD: "雜項",
-  EXPERIMENTAL_DESC: `包括：預設的 LaTeX 公式，欄位建議，繪圖檔案的型別識別符號，OCR 等。`,
+  EXPERIMENTAL_DESC:
+    "設定 LaTeX 預設值、檔案類型標記、即時預覽行為、屬性建議，以及實驗性的 Taskbone OCR 整合。",
   EA_HEAD: "Excalidraw 自動化",
+  EA_GROUP_DESC:
+    "設定 Excalidraw Automate 指令碼、啟動與自動啟動行為、命令連結，以及已安裝指令碼提供的設定。",
   EA_DESC:
     `ExcalidrawAutomate 是用於 Excalidraw 自動化指令碼的 API，但是目前說明文件還不夠完善，` +
     `建議閱讀 <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_BLOB_MASTER_DOCS_API_EXCALIDRAWAUTOMATE_D_TS}">ExcalidrawAutomate.d.ts</a> 檔案原始碼，` +
@@ -1245,7 +1248,7 @@ export default {
   AUTOSTART_SCRIPT_PROMPT:
     "希望在你每次開啟 Excalidraw 繪圖時自動執行。是否允許？",
   AUTOSTART_SCRIPT_PROMPT_MANAGE_HINT:
-    "你之後可以在命令選擇區（「自動啟動指令碼」）或設定 → 相容性 → 自動啟動指令碼中變更此設定。",
+    "你之後可以在命令選擇區（「自動啟動指令碼」）或設定 → Excalidraw 自動化 → 自動啟動指令碼中變更此設定。",
   AUTOSTART_SCRIPT_ALLOW: "自動啟動",
   AUTOSTART_SCRIPT_DENY: "僅手動啟動",
   AUTOSTART_SCRIPT_ASK_LATER: "每次都詢問",
@@ -1307,6 +1310,8 @@ export default {
     "為了獲得最佳效能，建議使用 .woff2 檔案，因為當匯出 SVG 格式的圖片時，Excalidraw 只會編碼必要的字形。" +
     `其他字型格式將在匯出檔案中嵌入整個字型，可能會導致檔案大小顯著增加。<b>譯者注：</b>可在 <a href="${URLs.WANGCHUJIANG_COM_FREE_FONT}" target='_blank'>Free Font</a> 獲取免費商用中文手寫字型。`,
   OFFLINE_CJK_NAME: "離線 CJK 字型支援",
+  OFFLINE_CJK_GROUP_DESC:
+    "下載並按需預先載入中文、日文和韓文字型，讓 Excalidraw 在沒有網際網路連線時也能顯示這些字型。",
   OFFLINE_CJK_DESC: `<strong>該項需要重啟 Obsidian 才能生效。</strong><br>
     Excalidraw.com 提供手寫風格的 CJK 字型。預設情況下，這些字型不會包含在外掛本地，而是從網際網路獲取。
     如果您希望 Excalidraw 完全本地化，以便在沒有網際網路連線的情況下使用，可以從 <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RAW_REFS_HEADS_MASTER_ASSETS_EXCALIDRAW_FONTS_ZIP}" target="_blank">GitHub 下載所需的字型檔案</a>。
@@ -1323,6 +1328,8 @@ export default {
   SCRIPT_SETTINGS_DESC:
     "有些 Excalidraw 自動化指令碼包含設定項，當執行這些指令碼時，它們會在該列表下新增設定項。",
   TASKBONE_HEAD: "Taskbone OCR（光學符號識別）",
+  TASKBONE_GROUP_DESC:
+    "設定選用的 Taskbone 線上 OCR 服務，從繪圖與影像中擷取可搜尋文字。",
   TASKBONE_DESC:
     "這是一個將 OCR 融入 Excalidraw 的實驗性功能。請注意，Taskbone 是一項獨立的外部服務，而不是由 Excalidraw 或 obsidian-excalidraw-plugin 專案提供的。" +
     "OCR 能夠對繪圖上用自由畫筆工具寫下的塗鴉或者嵌入的影像進行文字識別，並將識別出來的文字寫入繪圖檔案的 frontmatter，同時複製到剪貼簿。" +
