@@ -34,7 +34,7 @@ import {
 } from "../../utils/obsidianUtils";
 import { linkClickModifierType } from "../../utils/modifierkeyHelper";
 import { ImageKey, getImageCache } from "../../shared/ImageCache";
-import { initPaddingUI, wrapWithPaddingPopup } from "../../shared/PaddingUI";
+import { getAreaPaddingSize, initPaddingUI, wrapWithPaddingPopup } from "../../shared/PaddingUI";
 import { FILENAMEPARTS, PreviewImageType } from "../../types/utilTypes";
 import { CustomMutationObserver, DEBUGGING } from "../../utils/debugHelper";
 import { getExcalidrawFileForwardLinks } from "../../utils/excalidrawViewUtils";
@@ -913,13 +913,29 @@ const processInternalEmbed = async (
       ? fnameParts.linkpartReference
       : "");
   attr.file = file;
+  const reservedSize = getAreaPaddingSize(src.replace(/,padding=\d+/, ""));
+  if (reservedSize?.height) {
+    setStyle(internalEmbedEl as HTMLElement, {
+      minHeight: `${reservedSize.height}px`,
+    });
+  }
   const imgDiv = await createImageDiv(attr, false, internalEmbedEl);
   if (!imgDiv) {
     return null;
   }
 
   if (fnameParts.hasArearef) {
-    return wrapWithPaddingPopup(imgDiv, src, fnameParts);
+    const reRender = async (newSrc: string): Promise<HTMLDivElement> => {
+      const newParts = getEmbeddedFilenameParts(newSrc);
+      const newAttr = { ...attr };
+      newAttr.fname =
+        file?.path +
+        (newParts.hasBlockref || newParts.hasSectionref
+          ? newParts.linkpartReference
+          : "");
+      return await createImageDiv(newAttr, false, internalEmbedEl);
+    };
+    return wrapWithPaddingPopup(imgDiv, src, fnameParts, reRender);
   }
 
   return imgDiv;

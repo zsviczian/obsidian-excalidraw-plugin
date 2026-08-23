@@ -5,6 +5,21 @@ declare const mainDocument: Document;
 
 let plugin: ExcalidrawPlugin;
 
+const areaPaddingSizeCache = new Map<
+  string,
+  { width: number; height: number }
+>();
+
+export const getAreaPaddingSize = (key: string) =>
+  areaPaddingSizeCache.get(key);
+
+export const setAreaPaddingSize = (
+  key: string,
+  size: { width: number; height: number },
+) => {
+  areaPaddingSizeCache.set(key, size);
+};
+
 export const initPaddingUI = (_plugin: ExcalidrawPlugin) => {
   plugin = _plugin;
 };
@@ -23,17 +38,26 @@ export const wrapWithPaddingPopup = (
   imgDiv: HTMLDivElement,
   src: string,
   fnameParts: FILENAMEPARTS,
+  reRender: (newSrc: string) => Promise<HTMLDivElement>,
 ): HTMLDivElement => {
   const currentPadding =
     fnameParts.padding ?? plugin.settings.exportPaddingSVG;
 
   const bareRef = src.replace(/,padding=\d+/, "");
 
+  const rememberSize = () => {
+    setAreaPaddingSize(bareRef, {
+      width: imgDiv.offsetWidth,
+      height: imgDiv.offsetHeight,
+    });
+  };
+
   const wrapper = mainDocument.createElement("div");
   wrapper.className = "excalidraw-padding-wrapper";
   wrapper.setAttribute("data-bare-ref", bareRef);
   wrapper.setAttribute("data-area-id", fnameParts.blockref);
   wrapper.appendChild(imgDiv);
+  window.requestAnimationFrame(rememberSize);
 
   const icon = mainDocument.createElement("span");
   icon.className = "excalidraw-padding-zoom-icon";
@@ -65,6 +89,7 @@ export const wrapWithPaddingPopup = (
     if (existing) existing.remove();
 
     let value = currentPadding;
+    let committedValue = currentPadding;
     let debounceTimer: number;
     // Match the embed prefix so a plain wikilink to the same block ref isn't targeted.
     let target = `![[${fnameParts.filepath}${fnameParts.linkpartReference}`;
@@ -80,11 +105,34 @@ export const wrapWithPaddingPopup = (
     const occIdx = allWrappers.indexOf(wrapper);
     const hasOccurrence = occIdx !== -1;
 
-    const doSave = async () => {
+    const doSave = async (final: boolean) => {
+      const valueToWrite = value;
+      const defaultPad = plugin.settings.exportPaddingSVG;
+      const newSuffix =
+        valueToWrite === defaultPad ? "" : ",padding=" + valueToWrite;
+
+      if (!final) {
+        // Update the target image in place during drag, so the note layout doesn't reflow.
+        const newSrc =
+          fnameParts.filepath +
+          fnameParts.linkpartReference.replace(/,padding=\d+$/, "") +
+          newSuffix +
+          fnameParts.linkpartAlias;
+        const newImgDiv = await reRender(newSrc);
+        if (newImgDiv) {
+          wrapper.replaceChild(newImgDiv, imgDiv);
+          imgDiv = newImgDiv;
+          window.requestAnimationFrame(rememberSize);
+        }
+        return;
+      }
+
+      if (valueToWrite === committedValue) {
+        return;
+      }
+
       const file = plugin.app.workspace.getActiveFile();
       if (!file || !("extension" in file)) return;
-      const defaultPad = plugin.settings.exportPaddingSVG;
-      const newSuffix = value === defaultPad ? "" : ",padding=" + value;
       // `![[` makes the base embed-specific, so a plain `[[...]]` link with the
       // same area ref (e.g. in a task item) is never matched as occurrence zero.
       const base = `![[${fnameParts.filepath}${fnameParts.linkpartReference.replace(/,padding=\d+$/, "")}`;
@@ -116,6 +164,7 @@ export const wrapWithPaddingPopup = (
         target = replacement;
         return result;
       });
+      committedValue = valueToWrite;
     };
 
     const popup = doc.createElement("div");
@@ -162,7 +211,7 @@ export const wrapWithPaddingPopup = (
       label.textContent = String(value);
       updateKnob(value);
       window.clearTimeout(debounceTimer);
-      debounceTimer = window.setTimeout(doSave, 400);
+      debounceTimer = window.setTimeout(() => doSave(false), 400);
     };
 
     let dragging = false;
@@ -183,8 +232,11 @@ export const wrapWithPaddingPopup = (
       onValueChange(posToValue(ev.clientY));
     };
     const onPointerUp = () => {
+      const wasDragging = dragging;
       dragging = false;
-      doSave();
+      if (wasDragging) {
+        doSave(true);
+      }
     };
 
     track.addEventListener("pointerdown", onPointerDown);
@@ -220,7 +272,7 @@ export const wrapWithPaddingPopup = (
         doc.removeEventListener("pointermove", onPointerMove);
         doc.removeEventListener("pointerup", onPointerUp);
         window.clearTimeout(debounceTimer);
-        doSave();
+        doSave(true);
       }
     };
     setTimeout(() => doc.addEventListener("click", close), 0);
