@@ -73,9 +73,12 @@ Follow Obsidian's **Developer Policies** and **Plugin Guidelines**. In particula
 
 - Prefer Obsidian's established classes such as `mod-warning` before adding plugin-specific CSS. Consult the Obsidian CSS variables and component conventions when styling settings or dialogs.
 - Never use `document.createElement()`, `Document.createElement()`, or `Document.createDocumentFragment()`. Always use Obsidian's `createEl()`, `createDiv()`, `createSpan()`, `createSvg()`, and `createFragment()` helpers. When an element must deliberately belong to a specific document that Obsidian's helpers cannot target, such as a canvas used for drawing or an element inside an iframe, use the `deliberateCreateElement` function injected by `rollup.config.mjs` and declare it in the consuming module, for example `declare const deliberateCreateElement: (document: Document, tagName: string) => HTMLElement;`.
+- Use semantic interactive elements and Obsidian's event helpers. Link-like navigation should use a real anchor, not a button merely styled as a link; use `onClickEvent` when applying custom navigation behavior. Validate touch interactions on a physical mobile device because desktop mobile emulation proves layout, not native touch activation.
+- When a control already has a styled tooltip, do not also set an HTML `title` attribute. Keep its accessible name in `aria-label`; `title` produces a second native Chromium/Electron tooltip and must not replace accessible labeling.
 - Do not write an element's `style` attribute directly. Use `setStyle` and `removeStyle` from `src/utils/styleUtils.ts` when a dynamic inline style is genuinely necessary.
 - Use the existing visibility helpers instead of the native `hidden` property or attribute, which is not reliable in Obsidian's styled UI. Choose `hideElement`/`showElement` or `setComponentVisibility` from `src/utils/styleUtils.ts`, or `setElementHidden`/`setElementDisplay` from `src/utils/htmlUtils.ts` when a boolean/display-oriented API is clearer.
 - Search `src/utils/styleUtils.ts` and `src/utils/htmlUtils.ts` before introducing new DOM styling helpers or display classes.
+- Run Obsidian CodeScanner after CSS changes. Preserve compatibility with the declared minimum Obsidian version and prefer a widely supported property when it provides the same result; for example, a basic underline is preferable to optional underline-thickness/offset styling.
 - For a known vault path, use the most specific synchronous lookup: `app.vault.getFolderByPath()` for folders and `app.vault.getFileByPath()` for files. Use `getAbstractFileByPath()` only when either type is intentionally accepted, and avoid adapter-level existence checks when the Vault API already models the target.
 - Radix content in the customized Excalidraw package may be rendered through `ObsidianRadixPortal` directly under the owning document's body. A body portal escapes component ancestor selectors and modal stacking contexts. When a trigger is visible but its menu or popover is not, first inspect whether the content mounted behind a modal or lost ancestor-scoped styles. Use a class on the portaled content, a portal-safe selector, and an explicit stacking level when required; validate main-window, popout, click-outside, and Escape behavior.
 
@@ -111,6 +114,7 @@ Follow Obsidian's **Developer Policies** and **Plugin Guidelines**. In particula
 - Don't assume desktop-only behavior unless `isDesktopOnly` is `true`.
 - Avoid using desktop only objects and functions such as Node Buffer, SharedArrayBuffer, etc. For the special case when this is required, make proper mobile safe guards.
 - Avoid large in-memory structures; be mindful of memory and storage constraints.
+- Treat a physical phone or tablet as a separate validation environment for touch targets, synthesized clicks, scrolling gestures, focus, and the mobile WebView. Desktop mobile emulation is useful for responsive layout checks but is not a substitute for real touch testing.
 
 ## Agent do/don't
 
@@ -443,6 +447,21 @@ If a task changes persisted settings, inspect all relevant pieces.
 - any encryption or decryption logic for persisted keys
 
 Settings changes are often incomplete if only one of these surfaces is updated.
+
+## Declarative Settings And Persistence
+
+The plugin supports Obsidian 1.8.7 while optionally using the declarative settings API introduced in Obsidian 1.13. Preserve both compatibility paths.
+
+- Do not bump the `obsidian` dependency or `minAppVersion` merely to consume declarative settings. Gate the runtime path with `requireApiVersion("1.13.0")` and keep conservative placeholder declarations for the newer API.
+- `getSettingDefinitions()` must return the complete tree only when the runtime supports declarative settings and the restart-applied compatibility preference enables them. Returning an empty array is the intentional fallback to the legacy renderer.
+- The settings page model is the canonical hierarchy for declarative rendering, legacy single-page rendering, descriptions, search aliases, breadcrumbs, cross-page navigation, and Markdown export. Do not create separate setting lists or behavior implementations for the two layouts.
+- Controls that change each other's options, visibility, or disabled state must share one integrated component or one shared configurator. Apply dependent state during initial render as well as after changes. Scope captured control references to one rendered definition tree; generating an export-only tree must never replace bindings used by the mounted UI.
+- On Obsidian 1.13+, do not call `display()` to refresh a declarative page. Update the mounted controls through their binding/configurator path or ask Obsidian to rebuild definitions only when the definition tree itself changed.
+- Declarative page navigation uses guarded unpublished Obsidian APIs. Prefer `openPagePath`; retain the checked `findTabById`/`navigateToPage` fallback, derive localized paths from the canonical page model, and degrade to non-navigating text when the API is unavailable.
+- Route all settings writes through `PluginSettingsManager` and its serialized stable-snapshot writer. Save when values change; never make plugin shutdown or settings-tab closure the primary persistence boundary because Obsidian may not await asynchronous writes during termination. Avoid competing direct `saveData()` calls.
+- Missing and invalid `data.json` states are different. A first installation with no file is valid; a missing file with a recovery snapshot requires a restore-or-defaults choice; invalid startup data should restore a valid device-local snapshot or ask the user how to proceed; invalid data arriving during a running session must be rejected and repaired from the valid in-memory settings.
+- The last-known-good recovery snapshot is durable, device-local IndexedDB data owned by the main application window. Refresh it after every valid load or save, do not store large snapshots in `localStorage`, and do not create independent recovery databases for popouts.
+- Preserve unknown persisted keys. Do not derive a sanitizer from the TypeScript settings interface or treat unfamiliar keys as corruption.
 
 ## Script Engine And Automation Notes
 
