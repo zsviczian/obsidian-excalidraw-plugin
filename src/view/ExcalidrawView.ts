@@ -1624,7 +1624,7 @@ export default class ExcalidrawView
     //pointer/selection events land a few pixels off the cursor until the next
     //autosave tick refreshes the offsets (up to 60s later).
     //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1544
-    const offsetDriftGuard = () => {
+    const offsetDriftGuard = (e: PointerEvent) => {
       const now = Date.now();
       if (now - this.lastOffsetDriftCheck < 250) {
         return;
@@ -1637,12 +1637,32 @@ export default class ExcalidrawView
       }
       const { left, top } = container.getBoundingClientRect();
       const { offsetLeft, offsetTop } = api.getAppState();
-      if (Math.abs(left - offsetLeft) > 1 || Math.abs(top - offsetTop) > 1) {
-        this.refreshCanvasOffset();
+      if (Math.abs(left - offsetLeft) <= 1 && Math.abs(top - offsetTop) <= 1) {
+        return;
       }
+      //On the pointerdown path the refresh must land BEFORE React processes
+      //this same event, or the first click/stroke still uses the stale
+      //offsets. This capture listener on an ancestor runs ahead of React's
+      //delegated handlers, so flushSync commits the corrected offsets in
+      //time. Legal here: we are in a native event listener, not a lifecycle.
+      if (e.type === "pointerdown") {
+        const { flushSync } = this.packages.reactDOM as unknown as {
+          flushSync?: (fn: () => void) => void;
+        };
+        if (flushSync) {
+          try {
+            flushSync(() => this.refreshCanvasOffset());
+            return;
+          } catch {
+            //fall through to the async refresh below
+          }
+        }
+      }
+      this.refreshCanvasOffset();
     };
     //pointerenter catches drift before the click lands (mouse); the capture-phase
-    //pointerdown is the fallback for touch/pen where enter and down coincide
+    //pointerdown covers touch/pen where enter and down coincide, and flushes
+    //synchronously so even the first tap after a layout shift lands true
     this.registerDomEvent(this.containerEl, "pointerenter", offsetDriftGuard);
     this.registerDomEvent(this.containerEl, "pointerdown", offsetDriftGuard, {
       capture: true,
