@@ -1069,7 +1069,12 @@ export default {
   EMBED_TOEXCALIDRAW_DESC:
     "In the Embed Files section of Excalidraw Settings, you can configure how various files are embedded into Excalidraw. This includes options for embedding interactive markdown files, PDFs, and markdown files as images.",
   MD_HEAD: "Embed markdown into Excalidraw as image",
+  MD_GROUP_DESC:
+    "Set dimensions, font, colors, borders, and CSS for Markdown files rendered as images.",
   MD_EMBED_CUSTOMDATA_HEAD_NAME: "Interactive Markdown Files",
+  MD_EMBED_CUSTOMDATA_GROUP_DESC:
+    "Configure editing and default appearance for future interactive Markdown embeds.",
+  MD_EMBED_DEFAULTS_CONTROL_NAME: "Interactive Markdown appearance defaults",
   MD_EMBED_CUSTOMDATA_HEAD_DESC: `The below settings will only effect future embeds. Current embeds remain unchanged. The theme setting of embedded frames is under the "Excalidraw appearance and behavior" section.`,
   MD_EMBED_SINGLECLICK_EDIT_NAME: "Single click to edit embedded markdown",
   MD_EMBED_SINGLECLICK_EDIT_DESC:
@@ -1113,12 +1118,17 @@ export default {
   EMBED_HEAD: "Embedding Excalidraw into your Notes and Exporting",
   EMBED_DESC: `In the "Embed & Export" settings, you can configure how images and Excalidraw drawings are embedded and exported within your documents. Key settings include choosing the image type for markdown preview (such as Native SVG or PNG), specifying the type of file to insert into the document (original Excalidraw, PNG, or SVG), and managing image caching for embedding in markdown. You can also control image sizing, whether to embed drawings using wiki links or markdown links, and adjust settings related to image themes, background colors, and Obsidian integration. 
     Additionally, there are settings for auto-export, which automatically generates SVG and/or PNG files to match the title of your Excalidraw drawings, keeping them in sync with file renames and deletions.`,
+  EMBED_PREVIEW_LINKS_HEAD: "Previews, links, and Canvas",
+  EMBED_PREVIEW_LINKS_DESC:
+    "Choose preview and inserted-file formats, source-link behavior, placeholders, and immersive Canvas embeds.",
   EMBED_CANVAS: "Obsidian Canvas support",
   EMBED_CANVAS_NAME: "Immersive embedding",
   EMBED_CANVAS_DESC:
     "Hide canvas node border and background when embedding an Excalidraw drawing to Canvas. " +
     "Note that for a full transparent background for your image, you will still need to configure Excalidraw to export images with transparent background.",
   EMBED_CACHING: "Image caching and rendering optimization",
+  EMBED_CACHING_DESC:
+    "Tune rendering concurrency and local image caches, purge cached images or backups, and optionally reuse exported previews.",
   RENDERING_CONCURRENCY_NAME: "Image rendering concurrency",
   RENDERING_CONCURRENCY_DESC:
     "Number of parallel workers to use for image rendering. Increasing this number will speed up the rendering process, but may slow down the rest of the system. " +
@@ -1131,8 +1141,14 @@ export default {
     "The practical impact is local disk or browser-storage usage inside Obsidian. This can matter on phones and on desktops with tighter browser storage quotas or limited free disk space.<br><br>" +
     "Lower values reclaim local cache space sooner but may force more rerendering of PDFs and embedded drawings. Higher values keep repeat loads faster at the cost of more local cache storage.",
   EXPORT_SUBHEAD: "Export Settings",
+  EXPORT_SUBHEAD_DESC:
+    "Configure PDF rendering and exported scene data, image dimensions, theme and background, PDF defaults, and automatic PNG/SVG copies.",
   EMBED_SIZING: "Image sizing",
+  EMBED_SIZING_DESC:
+    "Set default embedded-image dimensions, PNG scale, and export padding.",
   EMBED_THEME_BACKGROUND: "Image theme and background color",
+  EMBED_THEME_BACKGROUND_DESC:
+    "Choose exported-image background and theme behavior and whether previews follow Obsidian's theme.",
   EMBED_IMAGE_CACHE_NAME: "Cache images for embedding in markdown",
   EMBED_IMAGE_CACHE_DESC:
     "Cache images for embedding in markdown. This will speed up the embedding process, but in case you compose images of several sub-component drawings, " +
@@ -1213,7 +1229,18 @@ export default {
     "Embed Excalidraw scene in exported image. Can be overridden at a file level by adding the <code>excalidraw-export-embed-scene: true/false</code> frontmatter key. " +
     "The setting only takes effect the next time you (re)open drawings.",
   PDF_EXPORT_SETTINGS: "PDF Export Settings",
+  PDF_EXPORT_SETTINGS_DESC:
+    "Choose default PDF page size, orientation, tiling, margins, paper color, and alignment.",
+  PDF_EXPORT_DEFAULTS_CONTROL_NAME: "Default PDF export layout",
   EXPORT_HEAD: "Auto-export Settings",
+  EXPORT_AUTOEXPORT_DESC:
+    "Keep exported files synchronized and automatically create SVG, PNG, light, and dark variants.",
+  SETTINGS_NAVIGATION_OPEN: "Open",
+  SETTINGS_BREADCRUMB_ARIA: "Settings path",
+  SETTINGS_RELATED_AUTOEXPORT_DESC:
+    "Enable automatic PNG or SVG copies to make those formats available in the inserted-file dropdown.",
+  SETTINGS_RELATED_EMBED_TYPE_DESC:
+    "Choose whether Excalidraw, PNG, or SVG is inserted when you embed a drawing in a document.",
   EXPORT_SYNC_NAME:
     "Keep the .SVG and/or .PNG filenames in sync with the drawing file",
   EXPORT_SYNC_DESC:

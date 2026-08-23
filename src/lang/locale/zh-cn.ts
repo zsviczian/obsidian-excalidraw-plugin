@@ -982,8 +982,13 @@ export default {
   EMBED_TOEXCALIDRAW_DESC:
     "包括：以图像形式嵌入到绘图中的 PDF、以交互或图像形式嵌入到绘图中的 Markdown 文档等。",
   MD_HEAD: "以图像形式嵌入到绘图中的 Markdown 文档（MD-Embed）",
+  MD_GROUP_DESC:
+    "设置以图像呈现的 Markdown 文件的尺寸、字体、颜色、边框和 CSS。",
   MD_EMBED_CUSTOMDATA_HEAD_NAME:
     "以交互形式嵌入到绘图中的 Markdown 文档（MD-Embeddable）",
+  MD_EMBED_CUSTOMDATA_GROUP_DESC:
+    "配置未来交互式 Markdown 嵌入的编辑方式和默认外观。",
+  MD_EMBED_DEFAULTS_CONTROL_NAME: "交互式 Markdown 默认外观",
   MD_EMBED_CUSTOMDATA_HEAD_DESC: `以下设置只会影响以后的嵌入。已存在的嵌入保持不变。嵌入框的主题设置位于“界面 & 行为”部分。`,
   MD_EMBED_SINGLECLICK_EDIT_NAME: "单击编辑嵌入的 Markdown",
   MD_EMBED_SINGLECLICK_EDIT_DESC:
@@ -1023,12 +1028,17 @@ export default {
   EMBED_HEAD: "嵌入到 Markdown 文档中的绘图",
   EMBED_DESC: `包括：嵌入到 Markdown 文档中的绘图的预览图类型（SVG、PNG）、源文件类型（Excalidraw、SVG、PNG）、缓存、图像尺寸、图像主题，以及嵌入的语法等。
     此外，还有自动导出 SVG 或 PNG 文件并保持与绘图文件状态同步的设置。`,
+  EMBED_PREVIEW_LINKS_HEAD: "预览、链接与 Canvas",
+  EMBED_PREVIEW_LINKS_DESC:
+    "选择预览和插入文件的格式、源链接行为、占位图像及沉浸式 Canvas 嵌入。",
   EMBED_CANVAS: "Obsidian 白板支持",
   EMBED_CANVAS_NAME: "沉浸式嵌入",
   EMBED_CANVAS_DESC:
     "当嵌入绘图到 Obsidian 白板中时，隐藏节点的边界和背景。" +
     "注意：如果想要背景完全透明，您依然需要设置导出背景为透明（关闭“导出图片包含背景”）。",
   EMBED_CACHING: "图像缓存和渲染优化",
+  EMBED_CACHING_DESC:
+    "调整并行渲染和本地图像缓存，清除缓存图像或备份，并可复用已导出的预览。",
   RENDERING_CONCURRENCY_NAME: "图像渲染并发性",
   RENDERING_CONCURRENCY_DESC:
     "用于图像渲染的并行工作线程数。增加该值可以加快渲染速度，但可能会减慢系统其他部分的运行速度。" +
@@ -1041,8 +1051,13 @@ export default {
     "实际影响在于 Obsidian 内部的本地磁盘或浏览器存储占用。在手机以及浏览器存储配额较紧、剩余磁盘空间有限的桌面设备上需要留意。<br><br>" +
     "较小的值会更快回收本地缓存空间，但可能导致 PDF 和嵌入绘图更频繁地重新渲染。较大的值会保留更久的缓存，以换取更快的加载速度。",
   EXPORT_SUBHEAD: "导出",
+  EXPORT_SUBHEAD_DESC:
+    "配置 PDF 渲染、导出的场景数据、图像尺寸、主题与背景、PDF 默认值及自动 PNG/SVG 副本。",
   EMBED_SIZING: "图像尺寸",
+  EMBED_SIZING_DESC: "设置嵌入图像的默认尺寸、PNG 缩放比例和导出边距。",
   EMBED_THEME_BACKGROUND: "图像的主题和背景色",
+  EMBED_THEME_BACKGROUND_DESC:
+    "选择导出图像的背景和主题，以及预览是否跟随 Obsidian 主题。",
   EMBED_IMAGE_CACHE_NAME: "为嵌入到 Markdown 文档中的绘图创建预览图缓存",
   EMBED_IMAGE_CACHE_DESC:
     "可提高下次嵌入的速度。" +
@@ -1122,7 +1137,18 @@ export default {
     "在导出图片中嵌入 Excalidraw 场景。可以在其 frontmatter 中添加如 <code>excalidraw-export-embed-scene: true/false</code> 的键值对来覆盖该项。" +
     "该项仅在您下次（重新）打开绘图时生效。",
   PDF_EXPORT_SETTINGS: "PDF 导出设置",
+  PDF_EXPORT_SETTINGS_DESC:
+    "选择默认 PDF 页面大小、方向、分页、边距、纸张颜色和对齐方式。",
+  PDF_EXPORT_DEFAULTS_CONTROL_NAME: "默认 PDF 导出布局",
   EXPORT_HEAD: "导出设置",
+  EXPORT_AUTOEXPORT_DESC:
+    "保持导出文件同步，并自动创建 SVG、PNG、浅色和深色版本。",
+  SETTINGS_NAVIGATION_OPEN: "打开",
+  SETTINGS_BREADCRUMB_ARIA: "设置路径",
+  SETTINGS_RELATED_AUTOEXPORT_DESC:
+    "启用自动 PNG 或 SVG 副本，使这些格式可在插入文件类型下拉列表中选择。",
+  SETTINGS_RELATED_EMBED_TYPE_DESC:
+    "选择在文档中嵌入绘图时插入 Excalidraw、PNG 还是 SVG。",
   EXPORT_SYNC_NAME: "保持 SVG/PNG 文件名与绘图文件同步",
   EXPORT_SYNC_DESC:
     "打开后，当绘图文件被重命名时，插件将同步更新同文件夹下的同名 .SVG 和 .PNG 文件。" +

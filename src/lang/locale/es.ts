@@ -1034,7 +1034,13 @@ export default {
   EMBED_TOEXCALIDRAW_DESC:
     "En la sección 'Incrustar archivos' de la Configuración de Excalidraw, puedes configurar cómo se incrustan varios tipos de archivos en Excalidraw. Esto incluye opciones para incrustar archivos Markdown interactivos, PDFs y archivos Markdown como imágenes.",
   MD_HEAD: "Incrustar Markdown en Excalidraw como imagen",
+  MD_GROUP_DESC:
+    "Configura las dimensiones, la fuente, los colores, los bordes y el CSS de los archivos Markdown renderizados como imágenes.",
   MD_EMBED_CUSTOMDATA_HEAD_NAME: "Archivos Markdown interactivos",
+  MD_EMBED_CUSTOMDATA_GROUP_DESC:
+    "Configura la edición y la apariencia predeterminada de futuras incrustaciones interactivas de Markdown.",
+  MD_EMBED_DEFAULTS_CONTROL_NAME:
+    "Valores predeterminados de apariencia de Markdown interactivo",
   MD_EMBED_CUSTOMDATA_HEAD_DESC: `Las siguientes configuraciones solo afectarán a futuras incrustaciones. Las incrustaciones actuales no se modificarán. La configuración del tema de los marcos incrustados se encuentra en la sección "Apariencia y comportamiento de Excalidraw`,
   MD_EMBED_SINGLECLICK_EDIT_NAME:
     "Un solo click para editar Markdown incrustado",
@@ -1080,19 +1086,30 @@ export default {
   EMBED_HEAD: "Incrustar Excalidraw en tus notas y exportar",
   EMBED_DESC: `En la configuración de "Incrustar y exportar", puedes configurar cómo se incrustan y exportan las imágenes y los bosquejos de Excalidraw en tus documentos. Las configuraciones clave incluyen elegir el tipo de imagen para la vista previa de Markdown (como SVG nativo o PNG), especificar el tipo de archivo a insertar en el documento (Excalidraw original, PNG o SVG) y gestionar el almacenamiento en caché de imágenes para incrustarlas en Markdown. También puedes controlar el tamaño de la imagen, si incrustar los bosquejos usando wikienlaces o enlaces Markdown y ajustar la configuración relacionada con los temas de imagen, colores de fondo y la integración de Obsidian. 
     Además, hay configuraciones para la autoexportación, que genera automáticamente archivos SVG y/o PNG que coinciden con el título de tus bosquejos de Excalidraw, manteniéndolos sincronizados con los cambios de nombre y eliminaciones de archivos.`,
+  EMBED_PREVIEW_LINKS_HEAD: "Vistas previas, enlaces y Canvas",
+  EMBED_PREVIEW_LINKS_DESC:
+    "Elige los formatos de vista previa y de archivo insertado, los enlaces de origen, los marcadores de posición y las incrustaciones inmersivas en Canvas.",
   EMBED_CANVAS: "Soporte para Obsidian Canvas",
   EMBED_CANVAS_NAME: "Incrustación inmersiva",
   EMBED_CANVAS_DESC:
     "Oculta el borde y el fondo del nodo del Canvas al incrustar un bosquejo de Excalidraw en un Canvas. " +
     "Ten en cuenta que para un fondo completamente transparente en tu imagen, aún necesitarás configurar Excalidraw para que exporte las imágenes con fondo transparente.",
   EMBED_CACHING: "Caché de imágenes y optimización de renderizado",
+  EMBED_CACHING_DESC:
+    "Ajusta la concurrencia de renderizado y las cachés locales, elimina imágenes o copias de seguridad almacenadas y reutiliza vistas previas exportadas.",
   RENDERING_CONCURRENCY_NAME: "Concurrencia de renderizado de imágenes",
   RENDERING_CONCURRENCY_DESC:
     "Número de parallel workers(trabajadores paralelos) a usar para el renderizado de imágenes. Aumentar este número acelerará el proceso de renderizado, pero puede ralentizar el resto del sistema. " +
     "El valor predeterminado es 3. Puedes aumentar este número si tienes un sistema potente.",
   EXPORT_SUBHEAD: "Configuraciones de Exportación",
+  EXPORT_SUBHEAD_DESC:
+    "Configura el renderizado de PDF, los datos de escena exportados, las dimensiones, el tema y fondo, los valores predeterminados de PDF y las copias PNG/SVG automáticas.",
   EMBED_SIZING: "Tamaño de imagen",
+  EMBED_SIZING_DESC:
+    "Define las dimensiones predeterminadas de las imágenes incrustadas, la escala PNG y el margen de exportación.",
   EMBED_THEME_BACKGROUND: "Tema de la imagen y color de fondo",
+  EMBED_THEME_BACKGROUND_DESC:
+    "Elige el fondo y el tema de las imágenes exportadas y si las vistas previas siguen el tema de Obsidian.",
   EMBED_IMAGE_CACHE_NAME:
     "Guardar imágenes en caché para incrustar en Markdown",
   EMBED_IMAGE_CACHE_DESC:
@@ -1178,7 +1195,19 @@ export default {
     "Incrusta la escena de Excalidraw en la imagen exportada. Se puede anular a nivel de archivo añadiendo la clave frontmatter <code>excalidraw-export-embed-scene: true/false</code> . " +
     "La configuración solo surtirá efecto la próxima vez que (re)abras los bosquejos.",
   PDF_EXPORT_SETTINGS: "Configuración de exportación a PDF",
+  PDF_EXPORT_SETTINGS_DESC:
+    "Elige el tamaño de página, la orientación, la distribución, los márgenes, el color del papel y la alineación predeterminados del PDF.",
+  PDF_EXPORT_DEFAULTS_CONTROL_NAME:
+    "Diseño predeterminado de exportación a PDF",
   EXPORT_HEAD: "Configuración de auto-exportación",
+  EXPORT_AUTOEXPORT_DESC:
+    "Mantén sincronizados los archivos exportados y crea automáticamente variantes SVG, PNG, claras y oscuras.",
+  SETTINGS_NAVIGATION_OPEN: "Abrir",
+  SETTINGS_BREADCRUMB_ARIA: "Ruta de configuración",
+  SETTINGS_RELATED_AUTOEXPORT_DESC:
+    "Activa las copias automáticas PNG o SVG para que esos formatos estén disponibles en el menú del tipo de archivo insertado.",
+  SETTINGS_RELATED_EMBED_TYPE_DESC:
+    "Elige si se inserta Excalidraw, PNG o SVG al incrustar un bosquejo en un documento.",
   EXPORT_SYNC_NAME:
     "Mantiene los nombres de archivo .SVG y/o .PNG sincronizados con el archivo del bosquejo",
   EXPORT_SYNC_DESC:

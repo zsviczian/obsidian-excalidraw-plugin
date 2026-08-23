@@ -11,6 +11,7 @@ import {
 } from "obsidian";
 import {
   DEVICE,
+  getCSSFontDefinition,
   LOGO_EXCALIDRAW_MASTERY,
   setRootElementSize,
 } from "src/constants/constants";
@@ -69,7 +70,10 @@ import { decryptProviderProfiles } from "src/utils/settingsKeyObfuscation";
 import { getGeminiSupportedSizes } from "src/utils/geminiImageModelUtils";
 import { URLs } from "src/constants/safeUrls";
 import { hideElement, setStyle, showElement } from "src/utils/styleUtils";
-import { getSelectableFontOptions } from "src/utils/fontUtils";
+import {
+  getMarkdownFontFamilyId,
+  getSelectableFontOptions,
+} from "src/utils/fontUtils";
 import { FontPickerComponent } from "src/shared/components/FontPickerComponent";
 import { VaultPathSuggest } from "src/shared/Suggesters/VaultPathSuggest";
 import { confirmAndCreateFolder } from "src/shared/Dialogs/CreateFolderPrompt";
@@ -96,12 +100,18 @@ import {
   annotateMarkdownDefinition,
   declarativeSettingsToMarkdown,
 } from "src/core/settings/declarativeSettingsMarkdown";
+import {
+  canNavigateSettingsPages,
+  navigateToSettingsPage,
+} from "src/core/settings/settingsNavigation";
 
 declare const mainDocument: Document;
 
 /** Strips characters that are invalid in filenames on common filesystems. */
 const sanitizeFilenameSegment = (value: string): string =>
   value.replaceAll(/[<>:"/\\|?*]/g, "_");
+
+const NAVIGATION_TAG_EMBED_PREVIEW = "EmbedPreview";
 
 const configurePasswordTextInput = (text: TextComponent) => {
   const { inputEl } = text;
@@ -119,6 +129,8 @@ const configurePasswordTextInput = (text: TextComponent) => {
 interface SettingsPageModel {
   name: string;
   description: string;
+  legacyId?: string;
+  navigationTags?: readonly string[];
   children?: SettingsPageModel[];
   buildDefinitions?: () => SettingDefinitionItem<SettingBindingKey>[];
   renderLegacy?: (container: HTMLElement) => void;
@@ -139,6 +151,10 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   private declarativeDisplayPrepared = false;
   private declarativeDefinitions: SettingDefinitionItem<SettingBindingKey>[] =
     [];
+  private declarativePagePathsByTag: ReadonlyMap<
+    string,
+    readonly string[]
+  > | null = null;
   private persistenceOwnerWindow: Window | null = null;
   private readonly flushOnSettingsWindowBlur = (): void => {
     void this.settingsPersistenceQueue.flush().catch((): void => undefined);
@@ -147,6 +163,8 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   private todoPrefixSetting: TextComponent | null = null;
   private donePrefixSetting: TextComponent | null = null;
   private gridColorSettingEl: HTMLElement | null = null;
+  private embedTypeDropdown: DropdownComponent | null = null;
+  private embedCommentSettingEl: HTMLElement | null = null;
   private fontPickers: FontPickerComponent[] = [];
   /**
    * Filename-sample preview element from the Saving section, refreshed by
@@ -196,6 +214,27 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       picker.destroy();
     }
     this.fontPickers = [];
+  }
+
+  private trackFontPicker(picker: FontPickerComponent): () => void {
+    this.fontPickers.push(picker);
+    return () => {
+      const index = this.fontPickers.indexOf(picker);
+      if (index !== -1) {
+        this.fontPickers.splice(index, 1);
+      }
+      picker.destroy();
+    };
+  }
+
+  private async getBuiltInMarkdownFontCss(
+    fontFamily: string,
+  ): Promise<string | null> {
+    const fontId = getMarkdownFontFamilyId(fontFamily);
+    if (fontId === null || typeof getCSSFontDefinition !== "function") {
+      return null;
+    }
+    return await getCSSFontDefinition(fontId);
   }
 
   private isEditableSettingControlFocused(): boolean {
@@ -342,7 +381,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     aliases?: string[];
     visible?: boolean | (() => boolean);
     controlType: string;
-    configure: (setting: Setting) => void;
+    configure: (setting: Setting) => void | (() => void);
   }): SettingDefinition<SettingBindingKey> {
     return annotateMarkdownDefinition(
       {
@@ -393,6 +432,172 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           if (includeMastery) {
             this.renderMasteryPromo(setting.settingEl);
           }
+          return this.attachDeclarativeSettingsCrossLinks(
+            setting.settingEl.parentElement,
+          );
+        },
+      },
+      { omit: true },
+    );
+  }
+
+  private getDeclarativePagePathByTag(tag: string): readonly string[] | null {
+    if (this.declarativePagePathsByTag) {
+      return this.declarativePagePathsByTag.get(tag) ?? null;
+    }
+
+    const pathsByTag = new Map<string, readonly string[]>();
+    const visit = (
+      pages: readonly SettingsPageModel[],
+      parentPath: readonly string[],
+    ): void => {
+      for (const page of pages) {
+        const pagePath = [...parentPath, page.name];
+        if (page.legacyId) {
+          pathsByTag.set(page.legacyId, pagePath);
+        }
+        for (const navigationTag of page.navigationTags ?? []) {
+          pathsByTag.set(navigationTag, pagePath);
+        }
+        visit(page.children ?? [], pagePath);
+      }
+    };
+
+    visit(this.getConvertedSettingsPages(), []);
+    this.declarativePagePathsByTag = pathsByTag;
+    return pathsByTag.get(tag) ?? null;
+  }
+
+  private attachDeclarativeSettingsCrossLinks(
+    container: HTMLElement | null,
+  ): () => void {
+    if (!container) {
+      return () => undefined;
+    }
+    const handleClick = (event: MouseEvent): void => {
+      const HTMLElementCtor = container.ownerDocument.defaultView?.HTMLElement;
+      if (
+        !HTMLElementCtor ||
+        !(event.target instanceof HTMLElementCtor) ||
+        !canNavigateSettingsPages(this.app)
+      ) {
+        return;
+      }
+      const anchor = event.target.closest<HTMLAnchorElement>('a[href^="#"]');
+      const href = anchor?.getAttribute("href");
+      if (!anchor || !href || !container.contains(anchor)) {
+        return;
+      }
+      const pagePath = this.getDeclarativePagePathByTag(
+        decodeURIComponent(href.slice(1)),
+      );
+      if (!pagePath) {
+        return;
+      }
+      event.preventDefault();
+      navigateToSettingsPage(this.app, this.plugin.manifest.id, pagePath);
+    };
+    container.addEventListener("click", handleClick);
+    return () => container.removeEventListener("click", handleClick);
+  }
+
+  private createDeclarativeBreadcrumbDefinition(
+    pagePath: readonly string[],
+  ): SettingDefinition<SettingBindingKey> {
+    return annotateMarkdownDefinition(
+      {
+        name: `${pagePath.join(" · ")} · breadcrumb`,
+        searchable: false,
+        render: (setting) => {
+          this.prepareFullWidthDeclarativeSetting(setting);
+          const breadcrumbs = setting.settingEl.createDiv({
+            cls: "excalidraw-settings-breadcrumbs",
+            attr: { "aria-label": t("SETTINGS_BREADCRUMB_ARIA") },
+          });
+          const segments = [this.plugin.manifest.name, ...pagePath];
+          const canNavigate = canNavigateSettingsPages(this.app);
+
+          segments.forEach((segment, index) => {
+            if (index > 0) {
+              breadcrumbs.createSpan({
+                text: "›",
+                cls: "excalidraw-settings-breadcrumbs__separator",
+                attr: { "aria-hidden": "true" },
+              });
+            }
+
+            const isCurrentPage = index === segments.length - 1;
+            if (isCurrentPage || !canNavigate) {
+              breadcrumbs.createSpan({
+                text: segment,
+                cls: isCurrentPage
+                  ? "excalidraw-settings-breadcrumbs__current"
+                  : undefined,
+                attr: isCurrentPage ? { "aria-current": "page" } : undefined,
+              });
+              return;
+            }
+
+            const targetPath = pagePath.slice(0, index);
+            const link = breadcrumbs.createEl("button", {
+              text: segment,
+              cls: "excalidraw-settings-breadcrumbs__link",
+              attr: { type: "button" },
+            });
+            link.addEventListener("click", () => {
+              if (
+                !navigateToSettingsPage(
+                  this.app,
+                  this.plugin.manifest.id,
+                  targetPath,
+                )
+              ) {
+                link.disabled = true;
+              }
+            });
+          });
+        },
+      },
+      { omit: true },
+    );
+  }
+
+  private createRelatedSettingsPageDefinition(options: {
+    key: string;
+    name: string;
+    description: string;
+    targetTag: string;
+  }): SettingDefinition<SettingBindingKey> {
+    return annotateMarkdownDefinition(
+      {
+        name: `${options.key} · related settings navigation`,
+        searchable: false,
+        visible: () =>
+          canNavigateSettingsPages(this.app) &&
+          this.getDeclarativePagePathByTag(options.targetTag) !== null,
+        render: (setting) => {
+          setting
+            .setName(options.name)
+            .setDesc(options.description)
+            .addButton((button) =>
+              button
+                .setButtonText(t("SETTINGS_NAVIGATION_OPEN"))
+                .onClick(() => {
+                  const targetPath = this.getDeclarativePagePathByTag(
+                    options.targetTag,
+                  );
+                  if (
+                    !targetPath ||
+                    !navigateToSettingsPage(
+                      this.app,
+                      this.plugin.manifest.id,
+                      targetPath,
+                    )
+                  ) {
+                    button.setDisabled(true);
+                  }
+                }),
+            );
         },
       },
       { omit: true },
@@ -400,12 +605,14 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   }
 
   private createDeclarativePageItems(
-    scope: string,
+    pagePath: readonly string[],
     description: string,
     items: SettingDefinitionItem<SettingBindingKey>[],
   ): SettingDefinitionItem<SettingBindingKey>[] {
+    const scope = pagePath.at(-1) ?? this.plugin.manifest.name;
     return [
       this.createDeclarativeUtilitiesDefinition(scope, false),
+      this.createDeclarativeBreadcrumbDefinition(pagePath),
       this.createSectionDescriptionDefinition(
         `${scope} · overview`,
         description,
@@ -464,7 +671,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     startAt?: number,
   ): SettingDefinition<SettingBindingKey> {
     return this.createRenderedDefinition({
-      name: `${scope} · YouTube`,
+      name: `${scope} · YouTube · ${videoId}`,
       searchable: false,
       omitFromMarkdown: true,
       render: (container) => addYouTubeThumbnail(container, videoId, startAt),
@@ -598,6 +805,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         {
           name: t("DISPLAY_EDITOR_PREVIEWS_HEAD"),
           description: t("DISPLAY_EDITOR_PREVIEWS_DESC"),
+          navigationTags: [TAG_MDREADINGMODE],
           buildDefinitions: () =>
             this.toDeclarativeDefinitions(this.getDisplayEditorPreviewSpecs()),
           renderLegacy: (container) =>
@@ -734,23 +942,134 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     return [displayPage, linksPage];
   }
 
+  private getCheckpoint4CPages(): SettingsPageModel[] {
+    const exportPage: SettingsPageModel = {
+      name: t("EXPORT_SUBHEAD"),
+      description: t("EXPORT_SUBHEAD_DESC"),
+      navigationTags: [TAG_PDFEXPORT],
+      buildDefinitions: () => [
+        this.createYouTubeDefinition(t("EXPORT_SUBHEAD"), "wTtaXmRJ7wg", 171),
+        ...this.toDeclarativeDefinitions(this.getExportGeneralSpecs()),
+      ],
+      renderLegacy: (container) => this.renderExportGeneralSettings(container),
+      children: [
+        {
+          name: t("EMBED_SIZING"),
+          description: t("EMBED_SIZING_DESC"),
+          buildDefinitions: () =>
+            this.toDeclarativeDefinitions(this.getExportSizingSpecs()),
+          renderLegacy: (container) =>
+            this.renderSettingSpecs(container, this.getExportSizingSpecs()),
+        },
+        {
+          name: t("EMBED_THEME_BACKGROUND"),
+          description: t("EMBED_THEME_BACKGROUND_DESC"),
+          buildDefinitions: () =>
+            this.toDeclarativeDefinitions(this.getExportThemeSpecs()),
+          renderLegacy: (container) =>
+            this.renderSettingSpecs(container, this.getExportThemeSpecs()),
+        },
+        {
+          name: t("PDF_EXPORT_SETTINGS"),
+          description: t("PDF_EXPORT_SETTINGS_DESC"),
+          buildDefinitions: () => [this.createPdfExportSettingsDefinition()],
+          renderLegacy: (container) =>
+            this.renderPdfExportSettings(container),
+        },
+        {
+          name: t("EXPORT_HEAD"),
+          description: t("EXPORT_AUTOEXPORT_DESC"),
+          legacyId: TAG_AUTOEXPORT,
+          buildDefinitions: () => this.getAutoExportDefinitions(),
+          renderLegacy: (container) => this.renderAutoExportSettings(container),
+        },
+      ],
+    };
+
+    const embedExportPage: SettingsPageModel = {
+      name: t("EMBED_HEAD"),
+      description: t("EMBED_DESC"),
+      children: [
+        {
+          name: t("EMBED_PREVIEW_LINKS_HEAD"),
+          description: t("EMBED_PREVIEW_LINKS_DESC"),
+          navigationTags: [NAVIGATION_TAG_EMBED_PREVIEW],
+          buildDefinitions: () => this.getEmbedPreviewDefinitions(),
+          renderLegacy: (container) =>
+            this.renderEmbedPreviewSettings(container),
+        },
+        {
+          name: t("EMBED_CACHING"),
+          description: t("EMBED_CACHING_DESC"),
+          buildDefinitions: () => this.getEmbedCacheDefinitions(),
+          renderLegacy: (container) => this.renderEmbedCacheSettings(container),
+        },
+        exportPage,
+      ],
+    };
+
+    const embeddingPage: SettingsPageModel = {
+      name: t("EMBED_TOEXCALIDRAW_HEAD"),
+      description: t("EMBED_TOEXCALIDRAW_DESC"),
+      buildDefinitions: () => [
+        this.createYouTubeDefinition(t("PDF_TO_IMAGE"), "nB4cOfn0xAs"),
+        ...this.toDeclarativeDefinitions(this.getPdfImportSpecs()),
+      ],
+      renderLegacy: (container) => this.renderPdfImportSettings(container),
+      children: [
+        {
+          name: t("MD_EMBED_CUSTOMDATA_HEAD_NAME"),
+          description: t("MD_EMBED_CUSTOMDATA_GROUP_DESC"),
+          buildDefinitions: () =>
+            this.getEmbeddableMarkdownDefaultsDefinitions(),
+          renderLegacy: (container) =>
+            this.renderEmbeddableMarkdownDefaults(container),
+        },
+        {
+          name: t("MD_HEAD"),
+          description: t("MD_GROUP_DESC"),
+          buildDefinitions: () => this.getMarkdownImageDefaultDefinitions(),
+          renderLegacy: (container) =>
+            this.renderMarkdownImageDefaultSettings(container),
+        },
+      ],
+    };
+
+    const nonstandardPage: SettingsPageModel = {
+      name: t("NONSTANDARD_HEAD"),
+      description: t("NONSTANDARD_DESC"),
+      buildDefinitions: () => this.getNonstandardDefinitions(),
+      renderLegacy: (container) => this.renderNonstandardSettings(container),
+    };
+
+    return [embedExportPage, embeddingPage, nonstandardPage];
+  }
+
   private getConvertedSettingsPages(): SettingsPageModel[] {
-    return [...this.getCheckpoint4APages(), ...this.getCheckpoint4BPages()];
+    return [
+      ...this.getCheckpoint4APages(),
+      ...this.getCheckpoint4BPages(),
+      ...this.getCheckpoint4CPages(),
+    ];
   }
 
   private toDeclarativePage(
     page: SettingsPageModel,
+    parentPath: readonly string[] = [],
   ): SettingDefinitionItem<SettingBindingKey> {
+    const pagePath = [...parentPath, page.name];
     const items = [
       ...(page.buildDefinitions?.() ?? []),
-      ...(page.children?.map((child) => this.toDeclarativePage(child)) ?? []),
+      ...(page.children?.map((child) =>
+        this.toDeclarativePage(child, pagePath),
+      ) ?? []),
     ];
     return {
       type: "page",
       name: page.name,
       desc: page.description,
       items: this.createDeclarativePageItems(
-        page.name,
+        pagePath,
         page.description,
         items,
       ),
@@ -770,6 +1089,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       cls: "setting-item-description",
     });
     const details = parent.createEl("details");
+    if (page.legacyId) {
+      details.setAttribute("id", page.legacyId);
+    }
     details.createEl("summary", {
       text: page.name,
       cls: `excalidraw-setting-h${headingLevel}`,
@@ -784,6 +1106,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   }
 
   private buildConvertedDefinitions(): SettingDefinitionItem<SettingBindingKey>[] {
+    this.declarativePagePathsByTag = null;
     this.declarativeSettingsAdapter.beginBuild();
     return [
       this.createDeclarativeUtilitiesDefinition("Root", true),
@@ -1006,9 +1329,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     this.renderLegacyPages(this.getCheckpoint4APages());
     this.renderAISection();
     this.renderLegacyPages(this.getCheckpoint4BPages());
-    this.renderEmbedAndExportSection();
-    this.renderEmbeddingSettingsSection();
-    this.renderNonExcalidrawFeaturesSection();
+    this.renderLegacyPages(this.getCheckpoint4CPages());
     this.renderFontsSection();
     this.renderExperimentalFeaturesSection();
     this.renderExcalidrawAutomateSection();
@@ -3146,8 +3467,13 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     options: {
       name: string;
       desc: string | DocumentFragment;
-      key: "pageTransclusionCharLimit" | "wordWrappingDefault";
+      key:
+        | "pageTransclusionCharLimit"
+        | "wordWrappingDefault"
+        | "mdSVGwidth"
+        | "mdSVGmaxHeight";
       emptyValue: number;
+      placeholder?: string;
     },
   ): void {
     setting
@@ -3155,7 +3481,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setDesc(options.desc)
       .addText((text) =>
         text
-          .setPlaceholder("Enter a number")
+          .setPlaceholder(options.placeholder ?? "Enter a number")
           .setValue(this.plugin.settings[options.key].toString())
           .onChange((value) => {
             const parsedValue = parseInt(value, 10);
@@ -3236,514 +3562,651 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     this.buildSetting(container, specs[1]);
   }
 
-  private renderEmbedAndExportSection(): void {
-    const { containerEl } = this;
-    let detailsEl: HTMLElement;
-    // ------------------------------------------------
-    // Embed and Export
-    // ------------------------------------------------
-    containerEl.createEl("hr", { cls: "excalidraw-setting-hr" });
-    containerEl.createDiv({
-      text: t("EMBED_DESC"),
-      cls: "setting-item-description",
-    });
-    detailsEl = this.containerEl.createEl("details");
-    const embedDetailsEl = detailsEl;
-    detailsEl.createEl("summary", {
-      text: t("EMBED_HEAD"),
-      cls: "excalidraw-setting-h1",
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("EMBED_PREVIEW_IMAGETYPE_NAME"),
-      desc: fragWithHTML(t("EMBED_PREVIEW_IMAGETYPE_DESC")),
-      control: {
-        type: "dropdown",
-        key: "previewImageType",
-        after: () => {
-          this.requestEmbedUpdate = true;
+  private getEmbedPreviewSpecs(): SettingSpec[] {
+    return [
+      {
+        name: t("EMBED_PREVIEW_IMAGETYPE_NAME"),
+        desc: fragWithHTML(t("EMBED_PREVIEW_IMAGETYPE_DESC")),
+        aliases: ["markdown preview", "native SVG", "SVG image", "PNG"],
+        control: {
+          type: "dropdown",
+          key: "previewImageType",
+          after: () => {
+            this.requestEmbedUpdate = true;
+          },
+          options: [
+            {
+              value: PreviewImageType.PNG,
+              label: t("EMBED_PREVIEW_IMAGETYPE_OPTION_PNG"),
+            },
+            {
+              value: PreviewImageType.SVG,
+              label: t("EMBED_PREVIEW_IMAGETYPE_OPTION_SVG"),
+            },
+            {
+              value: PreviewImageType.SVGIMG,
+              label: t("EMBED_PREVIEW_IMAGETYPE_OPTION_SVGIMG"),
+            },
+          ],
         },
-        options: [
-          {
-            value: PreviewImageType.PNG,
-            label: t("EMBED_PREVIEW_IMAGETYPE_OPTION_PNG"),
-          },
-          {
-            value: PreviewImageType.SVG,
-            label: t("EMBED_PREVIEW_IMAGETYPE_OPTION_SVG"),
-          },
-          {
-            value: PreviewImageType.SVGIMG,
-            label: t("EMBED_PREVIEW_IMAGETYPE_OPTION_SVGIMG"),
-          },
-        ],
       },
-    });
-    addYouTubeThumbnail(detailsEl, "yZQoJg2RCKI");
-    addYouTubeThumbnail(detailsEl, "opLd1SqaH_I", 8);
+      {
+        name: t("EMBED_WIKILINK_NAME"),
+        desc: fragWithHTML(t("EMBED_WIKILINK_DESC")),
+        aliases: ["wiki link", "markdown link", "embed drawing link"],
+        control: { type: "toggle", key: "embedWikiLink" },
+      },
+      {
+        name: t("EMBED_PLACEHOLDER_NAME"),
+        desc: fragWithHTML(t("EMBED_PLACEHOLDER_DESC")),
+        aliases: ["placeholder image", "missing drawing"],
+        control: { type: "toggle", key: "embedPlaceholderImage" },
+      },
+      {
+        name: t("EMBED_CANVAS_NAME"),
+        desc: fragWithHTML(t("EMBED_CANVAS_DESC")),
+        aliases: ["Obsidian Canvas", "immersive embed", "canvas border"],
+        control: { type: "toggle", key: "canvasImmersiveEmbed" },
+      },
+    ];
+  }
 
-    let dropdown: DropdownComponent;
-    new Setting(detailsEl)
+  private isEmbedTypeAvailable(
+    embedType: "excalidraw" | "PNG" | "SVG",
+  ): boolean {
+    return (
+      embedType === "excalidraw" ||
+      (embedType === "PNG" && this.plugin.settings.autoexportPNG) ||
+      (embedType === "SVG" && this.plugin.settings.autoexportSVG)
+    );
+  }
+
+  private normalizeEmbedType(): void {
+    if (this.isEmbedTypeAvailable(this.plugin.settings.embedType)) {
+      return;
+    }
+    this.plugin.settings.embedType = "excalidraw";
+    this.applySettingsUpdate();
+  }
+
+  private updateEmbedCommentVisibility(): void {
+    if (!this.embedCommentSettingEl?.isConnected) {
+      return;
+    }
+    if (this.plugin.settings.embedType === "excalidraw") {
+      hideElement(this.embedCommentSettingEl);
+    } else {
+      showElement(this.embedCommentSettingEl);
+    }
+  }
+
+  private configureEmbedTypeSetting(setting: Setting): void {
+    this.normalizeEmbedType();
+    setting
       .setName(t("EMBED_TYPE_NAME"))
       .setDesc(fragWithHTML(t("EMBED_TYPE_DESC")))
-      .addDropdown(async (d: DropdownComponent) => {
-        dropdown = d;
+      .addDropdown((dropdown) => {
+        this.embedTypeDropdown = dropdown;
         dropdown.addOption("excalidraw", "Excalidraw");
         if (this.plugin.settings.autoexportPNG) {
           dropdown.addOption("PNG", "PNG");
-        } else if (this.plugin.settings.embedType === "PNG") {
-          this.plugin.settings.embedType = "excalidraw";
-          this.applySettingsUpdate();
         }
         if (this.plugin.settings.autoexportSVG) {
           dropdown.addOption("SVG", "SVG");
-        } else if (this.plugin.settings.embedType === "SVG") {
-          this.plugin.settings.embedType = "excalidraw";
-          this.applySettingsUpdate();
         }
         dropdown
           .setValue(this.plugin.settings.embedType)
-          .onChange(async (value) => {
+          .onChange((value) => {
             this.plugin.settings.embedType =
               value as typeof this.plugin.settings.embedType;
-            if (value === "excalidraw") {
-              hideElement(embedComment.settingEl);
-            } else {
-              showElement(embedComment.settingEl);
-            }
+            this.updateEmbedCommentVisibility();
+            this.refreshDeclarativeDomState();
             this.applySettingsUpdate();
           });
       });
+  }
 
-    const embedComment = this.buildSetting(detailsEl, {
+  private createEmbedTypeDefinition(): SettingDefinition<SettingBindingKey> {
+    return this.createCustomSettingDefinition({
+      name: t("EMBED_TYPE_NAME"),
+      desc: fragWithHTML(t("EMBED_TYPE_DESC")),
+      aliases: ["insert Excalidraw", "insert PNG", "insert SVG"],
+      controlType: "dropdown",
+      configure: (setting) => this.configureEmbedTypeSetting(setting),
+    });
+  }
+
+  private configureEmbedCommentSetting(setting: Setting): void {
+    this.embedCommentSettingEl = setting.settingEl;
+    this.legacySettingsAdapter.configure(setting, {
       name: t("EMBED_MARKDOWN_COMMENT_NAME"),
       desc: fragWithHTML(t("EMBED_MARKDOWN_COMMENT_DESC")),
       control: { type: "toggle", key: "embedMarkdownCommentLinks" },
     });
+    this.updateEmbedCommentVisibility();
+  }
 
-    if (this.plugin.settings.embedType === "excalidraw") {
-      hideElement(embedComment.settingEl);
-    } else {
-      showElement(embedComment.settingEl);
-    }
-
-    this.buildSetting(detailsEl, {
-      name: t("EMBED_WIKILINK_NAME"),
-      desc: fragWithHTML(t("EMBED_WIKILINK_DESC")),
-      control: { type: "toggle", key: "embedWikiLink" },
+  private createEmbedCommentDefinition(): SettingDefinition<SettingBindingKey> {
+    return this.createCustomSettingDefinition({
+      name: t("EMBED_MARKDOWN_COMMENT_NAME"),
+      desc: fragWithHTML(t("EMBED_MARKDOWN_COMMENT_DESC")),
+      aliases: ["drawing source comment", "original Excalidraw link"],
+      visible: () => this.plugin.settings.embedType !== "excalidraw",
+      controlType: "toggle",
+      configure: (setting) => this.configureEmbedCommentSetting(setting),
     });
+  }
 
-    // Embed placeholder image setting
-    this.buildSetting(detailsEl, {
-      name: t("EMBED_PLACEHOLDER_NAME"),
-      desc: fragWithHTML(t("EMBED_PLACEHOLDER_DESC")),
-      control: { type: "toggle", key: "embedPlaceholderImage" },
-    });
-    detailsEl = embedDetailsEl.createEl("details");
-    detailsEl.createEl("summary", {
-      text: t("EMBED_CANVAS"),
-      cls: "excalidraw-setting-h3",
-    });
+  private getEmbedPreviewDefinitions(): SettingDefinitionItem<SettingBindingKey>[] {
+    const specs = this.getEmbedPreviewSpecs();
+    return [
+      this.declarativeSettingsAdapter.toDefinition(specs[0]),
+      this.createYouTubeDefinition(
+        t("EMBED_PREVIEW_IMAGETYPE_NAME"),
+        "yZQoJg2RCKI",
+      ),
+      this.createYouTubeDefinition(
+        t("EMBED_PREVIEW_IMAGETYPE_NAME"),
+        "opLd1SqaH_I",
+        8,
+      ),
+      this.createEmbedTypeDefinition(),
+      this.createRelatedSettingsPageDefinition({
+        key: "inserted file type to auto-export",
+        name: t("EXPORT_HEAD"),
+        description: t("SETTINGS_RELATED_AUTOEXPORT_DESC"),
+        targetTag: TAG_AUTOEXPORT,
+      }),
+      this.createEmbedCommentDefinition(),
+      ...this.toDeclarativeDefinitions(specs.slice(1)),
+    ];
+  }
 
-    this.buildSetting(detailsEl, {
-      name: t("EMBED_CANVAS_NAME"),
-      desc: fragWithHTML(t("EMBED_CANVAS_DESC")),
-      control: { type: "toggle", key: "canvasImmersiveEmbed" },
-    });
+  private renderEmbedPreviewSettings(container: HTMLElement): void {
+    const specs = this.getEmbedPreviewSpecs();
+    this.buildSetting(container, specs[0]);
+    addYouTubeThumbnail(container, "yZQoJg2RCKI");
+    addYouTubeThumbnail(container, "opLd1SqaH_I", 8);
+    this.configureEmbedTypeSetting(new Setting(container));
+    this.configureEmbedCommentSetting(new Setting(container));
+    this.renderSettingSpecs(container, specs.slice(1));
+  }
 
-    detailsEl = embedDetailsEl.createEl("details");
-    detailsEl.createEl("summary", {
-      text: t("EMBED_CACHING"),
-      cls: "excalidraw-setting-h3",
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("RENDERING_CONCURRENCY_NAME"),
-      desc: t("RENDERING_CONCURRENCY_DESC"),
-      control: {
-        type: "slider",
-        key: "renderingConcurrency",
-        min: 1,
-        max: 5,
-        step: 1,
+  private getEmbedCacheSpecs(): SettingSpec[] {
+    return [
+      {
+        name: t("RENDERING_CONCURRENCY_NAME"),
+        desc: t("RENDERING_CONCURRENCY_DESC"),
+        aliases: ["render workers", "parallel image rendering"],
+        control: {
+          type: "slider",
+          key: "renderingConcurrency",
+          min: 1,
+          max: 5,
+          step: 1,
+        },
       },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("IMAGE_CACHE_RETENTION_DAYS_NAME"),
-      desc: fragWithHTML(t("IMAGE_CACHE_RETENTION_DAYS_DESC")),
-      control: {
-        type: "slider",
-        key: "imageCacheRetentionDays",
-        min: 1,
-        max: 365,
-        step: 1,
-        minWidth: "3em",
+      {
+        name: t("IMAGE_CACHE_RETENTION_DAYS_NAME"),
+        desc: fragWithHTML(t("IMAGE_CACHE_RETENTION_DAYS_DESC")),
+        aliases: ["cache retention", "cache expiry", "local storage"],
+        control: {
+          type: "slider",
+          key: "imageCacheRetentionDays",
+          min: 1,
+          max: 365,
+          step: 1,
+          minWidth: "3em",
+        },
       },
-    });
+      {
+        name: t("EMBED_IMAGE_CACHE_NAME"),
+        desc: fragWithHTML(t("EMBED_IMAGE_CACHE_DESC")),
+        aliases: ["markdown image cache", "preview cache"],
+        control: { type: "toggle", key: "allowImageCache" },
+      },
+      {
+        name: t("SCENE_IMAGE_CACHE_NAME"),
+        desc: fragWithHTML(t("SCENE_IMAGE_CACHE_DESC")),
+        aliases: ["nested Excalidraw cache", "scene cache"],
+        control: { type: "toggle", key: "allowImageCacheInScene" },
+      },
+      {
+        name: t("EMBED_REUSE_EXPORTED_IMAGE_NAME"),
+        desc: fragWithHTML(t("EMBED_REUSE_EXPORTED_IMAGE_DESC")),
+        aliases: ["reuse exported image", "faster preview"],
+        control: {
+          type: "toggle",
+          key: "displayExportedImageIfAvailable",
+        },
+      },
+    ];
+  }
 
-    this.buildSetting(detailsEl, {
-      name: t("EMBED_IMAGE_CACHE_NAME"),
-      desc: fragWithHTML(t("EMBED_IMAGE_CACHE_DESC")),
-      control: { type: "toggle", key: "allowImageCache" },
-    });
-    this.buildSetting(detailsEl, {
-      name: t("SCENE_IMAGE_CACHE_NAME"),
-      desc: fragWithHTML(t("SCENE_IMAGE_CACHE_DESC")),
-      control: { type: "toggle", key: "allowImageCacheInScene" },
-    });
-    new Setting(detailsEl)
+  private configureClearImageCacheSetting(setting: Setting): void {
+    setting
       .setName(t("EMBED_IMAGE_CACHE_CLEAR"))
       .addButton((button) =>
         button.setButtonText(t("EMBED_IMAGE_CACHE_CLEAR")).onClick(() => {
           void getImageCache().clearImageCache();
         }),
       );
-    new Setting(detailsEl)
-      .setName(t("BACKUP_CACHE_CLEAR"))
-      .addButton((button) =>
-        button.setButtonText(t("BACKUP_CACHE_CLEAR")).onClick(() => {
-          const confirmationPrompt = new MultiOptionConfirmationPrompt(
-            this.plugin,
-            t("BACKUP_CACHE_CLEAR_CONFIRMATION"),
-          );
-          void confirmationPrompt.waitForClose.then((confirmed) => {
-            if (confirmed) {
-              void getImageCache().clearBackupCache();
-            }
-          });
-        }),
-      );
+  }
 
-    this.buildSetting(detailsEl, {
-      name: t("EMBED_REUSE_EXPORTED_IMAGE_NAME"),
-      desc: fragWithHTML(t("EMBED_REUSE_EXPORTED_IMAGE_DESC")),
-      control: { type: "toggle", key: "displayExportedImageIfAvailable" },
-    });
+  private configureClearBackupCacheSetting(setting: Setting): void {
+    setting.setName(t("BACKUP_CACHE_CLEAR")).addButton((button) =>
+      button.setButtonText(t("BACKUP_CACHE_CLEAR")).onClick(() => {
+        const confirmationPrompt = new MultiOptionConfirmationPrompt(
+          this.plugin,
+          t("BACKUP_CACHE_CLEAR_CONFIRMATION"),
+        );
+        void confirmationPrompt.waitForClose.then((confirmed) => {
+          if (confirmed) {
+            void getImageCache().clearBackupCache();
+          }
+        });
+      }),
+    );
+  }
 
-    detailsEl = embedDetailsEl.createEl("details");
-    const exportDetailsEl = detailsEl;
-    detailsEl.createEl("summary", {
-      text: t("EXPORT_SUBHEAD"),
-      cls: "excalidraw-setting-h3",
-    });
-    addYouTubeThumbnail(detailsEl, "wTtaXmRJ7wg", 171);
+  private getEmbedCacheDefinitions(): SettingDefinitionItem<SettingBindingKey>[] {
+    const specs = this.getEmbedCacheSpecs();
+    return [
+      ...this.toDeclarativeDefinitions(specs.slice(0, 4)),
+      this.createCustomSettingDefinition({
+        name: t("EMBED_IMAGE_CACHE_CLEAR"),
+        aliases: ["purge image cache", "clear image cache"],
+        controlType: "action button",
+        configure: (setting) => this.configureClearImageCacheSetting(setting),
+      }),
+      this.createCustomSettingDefinition({
+        name: t("BACKUP_CACHE_CLEAR"),
+        aliases: ["purge drawing backups", "clear backups"],
+        controlType: "action button",
+        configure: (setting) => this.configureClearBackupCacheSetting(setting),
+      }),
+      this.declarativeSettingsAdapter.toDefinition(specs[4]),
+    ];
+  }
 
-    const pdfExportEl = this.buildSetting(detailsEl, {
-      name: t("SHOW_DRAWING_OR_MD_IN_EXPORTPDF_NAME"),
-      desc: fragWithHTML(t("SHOW_DRAWING_OR_MD_IN_EXPORTPDF_DESC")),
-      control: { type: "toggle", key: "renderImageInMarkdownToPDF" },
-    });
-    pdfExportEl.nameEl.setAttribute("id", TAG_PDFEXPORT);
+  private renderEmbedCacheSettings(container: HTMLElement): void {
+    const specs = this.getEmbedCacheSpecs();
+    this.renderSettingSpecs(container, specs.slice(0, 4));
+    this.configureClearImageCacheSetting(new Setting(container));
+    this.configureClearBackupCacheSetting(new Setting(container));
+    this.buildSetting(container, specs[4]);
+  }
 
-    this.buildSetting(detailsEl, {
-      name: t("EXPORT_EMBED_SCENE_NAME"),
-      desc: fragWithHTML(t("EXPORT_EMBED_SCENE_DESC")),
-      control: { type: "toggle", key: "exportEmbedScene" },
-    });
+  private getExportGeneralSpecs(): SettingSpec[] {
+    return [
+      {
+        name: t("SHOW_DRAWING_OR_MD_IN_EXPORTPDF_NAME"),
+        desc: fragWithHTML(t("SHOW_DRAWING_OR_MD_IN_EXPORTPDF_DESC")),
+        aliases: ["PDF export", "render drawing in PDF"],
+        control: { type: "toggle", key: "renderImageInMarkdownToPDF" },
+      },
+      {
+        name: t("EXPORT_EMBED_SCENE_NAME"),
+        desc: fragWithHTML(t("EXPORT_EMBED_SCENE_DESC")),
+        aliases: ["embed scene", "editable exported SVG", "editable PNG"],
+        control: { type: "toggle", key: "exportEmbedScene" },
+      },
+    ];
+  }
 
-    detailsEl = exportDetailsEl.createEl("details");
-    detailsEl.createEl("summary", {
-      text: t("EMBED_SIZING"),
-      cls: "excalidraw-setting-h4",
-    });
-    this.buildSetting(detailsEl, {
-      name: t("EMBED_WIDTH_NAME"),
-      desc: fragWithHTML(t("EMBED_WIDTH_DESC")),
-      control: {
-        type: "text",
-        key: "width",
-        placeholder: "400",
-        afterUpdate: () => {
-          this.requestEmbedUpdate = true;
+  private renderExportGeneralSettings(container: HTMLElement): void {
+    addYouTubeThumbnail(container, "wTtaXmRJ7wg", 171);
+    const specs = this.getExportGeneralSpecs();
+    const pdfExportSetting = this.buildSetting(container, specs[0]);
+    pdfExportSetting?.nameEl.setAttribute("id", TAG_PDFEXPORT);
+    this.buildSetting(container, specs[1]);
+  }
+
+  private getExportSizingSpecs(): SettingSpec[] {
+    return [
+      {
+        name: t("EMBED_WIDTH_NAME"),
+        desc: fragWithHTML(t("EMBED_WIDTH_DESC")),
+        aliases: ["default embed width", "transcluded image width"],
+        control: {
+          type: "text",
+          key: "width",
+          placeholder: "400",
+          afterUpdate: () => {
+            this.requestEmbedUpdate = true;
+          },
         },
       },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("EMBED_HEIGHT_NAME"),
-      desc: fragWithHTML(t("EMBED_HEIGHT_DESC")),
-      control: {
-        type: "text",
-        key: "height",
-        placeholder: "400",
-        afterUpdate: () => {
-          this.requestEmbedUpdate = true;
+      {
+        name: t("EMBED_HEIGHT_NAME"),
+        desc: fragWithHTML(t("EMBED_HEIGHT_DESC")),
+        aliases: ["default embed height", "transcluded image height"],
+        control: {
+          type: "text",
+          key: "height",
+          placeholder: "400",
+          afterUpdate: () => {
+            this.requestEmbedUpdate = true;
+          },
         },
       },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("EXPORT_PNG_SCALE_NAME"),
-      desc: t("EXPORT_PNG_SCALE_DESC"),
-      control: {
-        type: "slider",
-        key: "pngExportScale",
-        min: 1,
-        max: 5,
-        step: 0.5,
-      },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("EXPORT_PADDING_NAME"),
-      desc: fragWithHTML(t("EXPORT_PADDING_DESC")),
-      control: {
-        type: "slider",
-        key: "exportPaddingSVG",
-        min: 0,
-        max: 50,
-        step: 5,
-      },
-    });
-
-    detailsEl = exportDetailsEl.createEl("details");
-    detailsEl.createEl("summary", {
-      text: t("EMBED_THEME_BACKGROUND"),
-      cls: "excalidraw-setting-h4",
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("EXPORT_BACKGROUND_NAME"),
-      desc: fragWithHTML(t("EXPORT_BACKGROUND_DESC")),
-      control: {
-        type: "toggle",
-        key: "exportWithBackground",
-        afterUpdate: () => {
-          this.requestEmbedUpdate = true;
+      {
+        name: t("EXPORT_PNG_SCALE_NAME"),
+        desc: t("EXPORT_PNG_SCALE_DESC"),
+        aliases: ["PNG scale", "PNG resolution"],
+        control: {
+          type: "slider",
+          key: "pngExportScale",
+          min: 1,
+          max: 5,
+          step: 0.5,
         },
       },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("EXPORT_THEME_NAME"),
-      desc: fragWithHTML(t("EXPORT_THEME_DESC")),
-      control: {
-        type: "toggle",
-        key: "exportWithTheme",
-        afterUpdate: () => {
-          this.requestEmbedUpdate = true;
+      {
+        name: t("EXPORT_PADDING_NAME"),
+        desc: fragWithHTML(t("EXPORT_PADDING_DESC")),
+        aliases: ["image padding", "export margin", "cropped edge"],
+        control: {
+          type: "slider",
+          key: "exportPaddingSVG",
+          min: 0,
+          max: 50,
+          step: 5,
         },
       },
-    });
+    ];
+  }
 
-    this.buildSetting(detailsEl, {
-      name: t("PREVIEW_MATCH_OBSIDIAN_NAME"),
-      desc: fragWithHTML(t("PREVIEW_MATCH_OBSIDIAN_DESC")),
-      control: { type: "toggle", key: "previewMatchObsidianTheme" },
-    });
+  private getExportThemeSpecs(): SettingSpec[] {
+    return [
+      {
+        name: t("EXPORT_BACKGROUND_NAME"),
+        desc: fragWithHTML(t("EXPORT_BACKGROUND_DESC")),
+        aliases: ["transparent background", "export background"],
+        control: {
+          type: "toggle",
+          key: "exportWithBackground",
+          afterUpdate: () => {
+            this.requestEmbedUpdate = true;
+          },
+        },
+      },
+      {
+        name: t("EXPORT_THEME_NAME"),
+        desc: fragWithHTML(t("EXPORT_THEME_DESC")),
+        aliases: ["export theme", "light export", "dark export"],
+        control: {
+          type: "toggle",
+          key: "exportWithTheme",
+          afterUpdate: () => {
+            this.requestEmbedUpdate = true;
+          },
+        },
+      },
+      {
+        name: t("PREVIEW_MATCH_OBSIDIAN_NAME"),
+        desc: fragWithHTML(t("PREVIEW_MATCH_OBSIDIAN_DESC")),
+        aliases: ["preview theme", "Obsidian theme", "dark mode preview"],
+        control: { type: "toggle", key: "previewMatchObsidianTheme" },
+      },
+    ];
+  }
 
-    detailsEl = exportDetailsEl.createEl("details");
-    detailsEl.createEl("summary", {
-      text: t("PDF_EXPORT_SETTINGS"),
-      cls: "excalidraw-setting-h4",
-    });
-
+  private renderPdfExportSettings(container: HTMLElement): void {
     new PDFExportSettingsComponent(
-      detailsEl,
+      container,
       this.plugin.settings.pdfSettings,
-      () => {
-        this.applySettingsUpdate();
-      },
+      () => this.applySettingsUpdate(),
     ).render();
+  }
 
-    detailsEl = exportDetailsEl.createEl("details");
-    detailsEl.createEl("summary", {
-      text: t("EXPORT_HEAD"),
-      cls: "excalidraw-setting-h4",
-    });
-    detailsEl.setAttribute("id", TAG_AUTOEXPORT);
-
-    this.buildSetting(detailsEl, {
-      name: t("EXPORT_SYNC_NAME"),
-      desc: fragWithHTML(t("EXPORT_SYNC_DESC")),
-      control: { type: "toggle", key: "keepInSync" },
-    });
-
-    const removeDropdownOption = (opt: string) => {
-      let i = 0;
-      for (i = 0; i < dropdown.selectEl.options.length; i++) {
-        if (dropdown.selectEl.item(i).label === opt) {
-          dropdown.selectEl.item(i).remove();
-        }
-      }
-    };
-
-    new Setting(detailsEl)
-      .setName(t("EXPORT_SVG_NAME"))
-      .setDesc(fragWithHTML(t("EXPORT_SVG_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.autoexportSVG)
-          .onChange(async (value) => {
-            if (value) {
-              dropdown.addOption("SVG", "SVG");
-            } else {
-              if (this.plugin.settings.embedType === "SVG") {
-                dropdown.setValue("excalidraw");
-                this.plugin.settings.embedType = "excalidraw";
-              }
-              removeDropdownOption("SVG");
-            }
-            this.plugin.settings.autoexportSVG = value;
-            this.applySettingsUpdate();
-          }),
-      );
-
-    new Setting(detailsEl)
-      .setName(t("EXPORT_PNG_NAME"))
-      .setDesc(fragWithHTML(t("EXPORT_PNG_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.autoexportPNG)
-          .onChange(async (value) => {
-            if (value) {
-              dropdown.addOption("PNG", "PNG");
-            } else {
-              if (this.plugin.settings.embedType === "PNG") {
-                dropdown.setValue("excalidraw");
-                this.plugin.settings.embedType = "excalidraw";
-              }
-              removeDropdownOption("PNG");
-            }
-            this.plugin.settings.autoexportPNG = value;
-            this.applySettingsUpdate();
-          }),
-      );
-
-    this.buildSetting(detailsEl, {
-      name: t("EXPORT_BOTH_DARK_AND_LIGHT_NAME"),
-      desc: fragWithHTML(t("EXPORT_BOTH_DARK_AND_LIGHT_DESC")),
-      control: { type: "toggle", key: "autoExportLightAndDark" },
+  private createPdfExportSettingsDefinition(): SettingDefinition<SettingBindingKey> {
+    return this.createRenderedDefinition({
+      name: t("PDF_EXPORT_DEFAULTS_CONTROL_NAME"),
+      desc: t("PDF_EXPORT_SETTINGS_DESC"),
+      aliases: [
+        t("EXPORTDIALOG_PAGE_SIZE"),
+        t("EXPORTDIALOG_PAGE_ORIENTATION"),
+        t("EXPORTDIALOG_PDF_FIT_TO_PAGE"),
+        t("EXPORTDIALOG_PDF_MARGIN"),
+        t("EXPORTDIALOG_PDF_PAPER_COLOR"),
+        t("EXPORTDIALOG_PDF_ALIGNMENT"),
+      ],
+      controlType: "PDF export settings",
+      render: (container) => this.renderPdfExportSettings(container),
     });
   }
 
-  private renderEmbeddingSettingsSection(): void {
-    const { containerEl } = this;
-    let detailsEl: HTMLElement;
-    // ------------------------------------------------
-    // Embedding settings
-    // ------------------------------------------------
-    containerEl.createEl("hr", { cls: "excalidraw-setting-hr" });
-    containerEl.createDiv({
-      text: t("EMBED_TOEXCALIDRAW_DESC"),
-      cls: "setting-item-description",
-    });
+  private updateEmbedTypeOption(
+    embedType: "PNG" | "SVG",
+    enabled: boolean,
+  ): void {
+    const dropdown = this.embedTypeDropdown;
+    if (!dropdown?.selectEl.isConnected) {
+      return;
+    }
+    const option = Array.from(dropdown.selectEl.options).find(
+      (candidate) => candidate.value === embedType,
+    );
+    if (enabled && !option) {
+      dropdown.addOption(embedType, embedType);
+    } else if (!enabled && option) {
+      option.remove();
+    }
+    dropdown.setValue(this.plugin.settings.embedType);
+  }
 
-    detailsEl = this.containerEl.createEl("details");
-    const embedFilesDetailsEl = detailsEl;
-    detailsEl.createEl("summary", {
-      text: t("EMBED_TOEXCALIDRAW_HEAD"),
-      cls: "excalidraw-setting-h1",
-    });
+  private setAutoExportEnabled(
+    embedType: "PNG" | "SVG",
+    enabled: boolean,
+  ): void {
+    if (embedType === "PNG") {
+      this.plugin.settings.autoexportPNG = enabled;
+    } else {
+      this.plugin.settings.autoexportSVG = enabled;
+    }
+    if (!enabled && this.plugin.settings.embedType === embedType) {
+      this.plugin.settings.embedType = "excalidraw";
+    }
+    this.updateEmbedTypeOption(embedType, enabled);
+    this.updateEmbedCommentVisibility();
+    this.refreshDeclarativeDomState();
+    this.applySettingsUpdate();
+  }
 
-    detailsEl = embedFilesDetailsEl.createEl("details");
-    detailsEl.createEl("summary", {
-      text: t("PDF_TO_IMAGE"),
-      cls: "excalidraw-setting-h3",
-    });
+  private configureAutoExportSetting(
+    setting: Setting,
+    embedType: "PNG" | "SVG",
+  ): void {
+    const isPng = embedType === "PNG";
+    setting
+      .setName(t(isPng ? "EXPORT_PNG_NAME" : "EXPORT_SVG_NAME"))
+      .setDesc(fragWithHTML(t(isPng ? "EXPORT_PNG_DESC" : "EXPORT_SVG_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(
+            isPng
+              ? this.plugin.settings.autoexportPNG
+              : this.plugin.settings.autoexportSVG,
+          )
+          .onChange((value) => this.setAutoExportEnabled(embedType, value)),
+      );
+  }
 
-    addYouTubeThumbnail(detailsEl, "nB4cOfn0xAs");
-    this.buildSetting(detailsEl, {
-      name: t("PDF_TO_IMAGE_SCALE_NAME"),
-      desc: fragWithHTML(t("PDF_TO_IMAGE_SCALE_DESC")),
-      control: {
-        type: "number-dropdown",
-        key: "pdfScale",
-        options: [0.5, 1, 2, 3, 4, 5, 6].map((value) => ({
-          value,
-          label: value.toString(),
-        })),
+  private createAutoExportDefinition(
+    embedType: "PNG" | "SVG",
+  ): SettingDefinition<SettingBindingKey> {
+    const isPng = embedType === "PNG";
+    return this.createCustomSettingDefinition({
+      name: t(isPng ? "EXPORT_PNG_NAME" : "EXPORT_SVG_NAME"),
+      desc: fragWithHTML(t(isPng ? "EXPORT_PNG_DESC" : "EXPORT_SVG_DESC")),
+      aliases: [
+        `auto-export ${embedType}`,
+        `automatic ${embedType}`,
+        `export ${embedType} copy`,
+      ],
+      controlType: "toggle",
+      configure: (setting) =>
+        this.configureAutoExportSetting(setting, embedType),
+    });
+  }
+
+  private getAutoExportDefinitions(): SettingDefinitionItem<SettingBindingKey>[] {
+    const specs = this.getAutoExportSpecs();
+    return [
+      this.createRelatedSettingsPageDefinition({
+        key: "auto-export to inserted file type",
+        name: t("EMBED_TYPE_NAME"),
+        description: t("SETTINGS_RELATED_EMBED_TYPE_DESC"),
+        targetTag: NAVIGATION_TAG_EMBED_PREVIEW,
+      }),
+      this.declarativeSettingsAdapter.toDefinition(specs[0]),
+      this.createAutoExportDefinition("SVG"),
+      this.createAutoExportDefinition("PNG"),
+      this.declarativeSettingsAdapter.toDefinition(specs[1]),
+    ];
+  }
+
+  private getAutoExportSpecs(): SettingSpec[] {
+    return [
+      {
+        name: t("EXPORT_SYNC_NAME"),
+        desc: fragWithHTML(t("EXPORT_SYNC_DESC")),
+        aliases: ["keep exported images in sync", "rename exported images"],
+        control: { type: "toggle", key: "keepInSync" },
       },
-    });
+      {
+        name: t("EXPORT_BOTH_DARK_AND_LIGHT_NAME"),
+        desc: fragWithHTML(t("EXPORT_BOTH_DARK_AND_LIGHT_DESC")),
+        aliases: ["light and dark export", "both themes"],
+        control: { type: "toggle", key: "autoExportLightAndDark" },
+      },
+    ];
+  }
 
-    detailsEl = embedFilesDetailsEl.createEl("details");
-    detailsEl.createEl("summary", {
-      text: t("MD_EMBED_CUSTOMDATA_HEAD_NAME"),
-      cls: "excalidraw-setting-h3",
-    });
+  private renderAutoExportSettings(container: HTMLElement): void {
+    const specs = this.getAutoExportSpecs();
+    this.buildSetting(container, specs[0]);
+    this.configureAutoExportSetting(new Setting(container), "SVG");
+    this.configureAutoExportSetting(new Setting(container), "PNG");
+    this.buildSetting(container, specs[1]);
+  }
 
-    this.buildSetting(detailsEl, {
-      name: t("MD_EMBED_SINGLECLICK_EDIT_NAME"),
-      desc: fragWithHTML(t("MD_EMBED_SINGLECLICK_EDIT_DESC")),
-      control: { type: "toggle", key: "markdownNodeOneClickEditing" },
-    });
+  private getPdfImportSpecs(): SettingSpec[] {
+    return [
+      {
+        name: t("PDF_TO_IMAGE_SCALE_NAME"),
+        desc: fragWithHTML(t("PDF_TO_IMAGE_SCALE_DESC")),
+        aliases: ["PDF image resolution", "PDF page scale", "PDF import"],
+        control: {
+          type: "number-dropdown",
+          key: "pdfScale",
+          options: [0.5, 1, 2, 3, 4, 5, 6].map((value) => ({
+            value,
+            label: value.toString(),
+          })),
+        },
+      },
+    ];
+  }
 
-    detailsEl.createEl("hr", { cls: "excalidraw-setting-hr" });
-    detailsEl.createSpan({}, (el) => {
-      setSanitizedHtml(el, t("MD_EMBED_CUSTOMDATA_HEAD_DESC"));
-    });
+  private renderPdfImportSettings(container: HTMLElement): void {
+    addYouTubeThumbnail(container, "nB4cOfn0xAs");
+    this.renderSettingSpecs(container, this.getPdfImportSpecs());
+  }
 
+  private getEmbeddableMarkdownSpecs(): SettingSpec[] {
+    return [
+      {
+        name: t("MD_EMBED_SINGLECLICK_EDIT_NAME"),
+        desc: fragWithHTML(t("MD_EMBED_SINGLECLICK_EDIT_DESC")),
+        aliases: ["single click markdown", "edit embeddable"],
+        control: { type: "toggle", key: "markdownNodeOneClickEditing" },
+      },
+    ];
+  }
+
+  private renderEmbeddableMarkdownDefaults(container: HTMLElement): void {
+    this.renderSettingSpecs(container, this.getEmbeddableMarkdownSpecs());
+    this.renderEmbeddableMarkdownDefaultsControl(container);
+  }
+
+  private renderEmbeddableMarkdownDefaultsControl(
+    container: HTMLElement,
+  ): void {
+    container.createSpan({}, (element) => {
+      setSanitizedHtml(element, t("MD_EMBED_CUSTOMDATA_HEAD_DESC"));
+    });
     new EmbeddalbeMDFileCustomDataSettingsComponent(
-      detailsEl,
+      container,
       this.plugin.settings.embeddableMarkdownDefaults,
-      (val?: boolean) => this.applySettingsUpdate(val),
+      (requestReloadDrawings?: boolean) =>
+        this.applySettingsUpdate(requestReloadDrawings),
     ).render();
+  }
 
-    detailsEl = embedFilesDetailsEl.createEl("details");
-    detailsEl.createEl("summary", {
-      text: t("MD_HEAD"),
-      cls: "excalidraw-setting-h3",
+  private createEmbeddableMarkdownDefaultsDefinition(): SettingDefinition<SettingBindingKey> {
+    return this.createRenderedDefinition({
+      name: t("MD_EMBED_DEFAULTS_CONTROL_NAME"),
+      desc: fragWithHTML(t("MD_EMBED_CUSTOMDATA_HEAD_DESC")),
+      aliases: [
+        t("ES_USE_OBSIDIAN_DEFAULTS"),
+        t("ES_FILENAME_VISIBLE"),
+        t("ES_PROPERTIES_VISIBLE_HEAD"),
+        t("ES_LOCKED_READING_MODE_HEAD"),
+        t("ES_BACKGROUND_MATCH_ELEMENT"),
+        t("ES_BACKGROUND_MATCH_CANVAS"),
+        t("ES_BACKGROUND_COLOR"),
+        t("ES_BACKGROUND_OPACITY"),
+        t("ES_BORDER_MATCH_ELEMENT"),
+        t("ES_BORDER_COLOR"),
+        t("ES_BORDER_OPACITY"),
+      ],
+      controlType: "Markdown embeddable defaults",
+      render: (container) =>
+        this.renderEmbeddableMarkdownDefaultsControl(container),
     });
+  }
 
-    new Setting(detailsEl)
-      .setName(t("MD_TRANSCLUDE_WIDTH_NAME"))
-      .setDesc(fragWithHTML(t("MD_TRANSCLUDE_WIDTH_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder("Enter a number e.g. 500")
-          .setValue(this.plugin.settings.mdSVGwidth.toString())
-          .onChange(async (value) => {
-            const intVal = parseInt(value);
-            if (isNaN(intVal) && value !== "") {
-              text.setValue(this.plugin.settings.mdSVGwidth.toString());
-              return;
-            }
-            this.requestEmbedUpdate = true;
-            if (value === "") {
-              this.plugin.settings.mdSVGwidth = 500;
-              this.applySettingsUpdate(true);
-              return;
-            }
-            this.plugin.settings.mdSVGwidth = intVal;
-            this.requestReloadDrawings = true;
-            text.setValue(this.plugin.settings.mdSVGwidth.toString());
-            this.applySettingsUpdate(true);
-          }),
-      );
+  private getEmbeddableMarkdownDefaultsDefinitions(): SettingDefinitionItem<SettingBindingKey>[] {
+    return [
+      ...this.toDeclarativeDefinitions(this.getEmbeddableMarkdownSpecs()),
+      this.createEmbeddableMarkdownDefaultsDefinition(),
+    ];
+  }
 
-    new Setting(detailsEl)
-      .setName(t("MD_TRANSCLUDE_HEIGHT_NAME"))
-      .setDesc(fragWithHTML(t("MD_TRANSCLUDE_HEIGHT_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder("Enter a number e.g. 800")
-          .setValue(this.plugin.settings.mdSVGmaxHeight.toString())
-          .onChange(async (value) => {
-            const intVal = parseInt(value);
-            if (isNaN(intVal) && value !== "") {
-              text.setValue(this.plugin.settings.mdSVGmaxHeight.toString());
-              return;
-            }
-            this.requestEmbedUpdate = true;
-            if (value === "") {
-              this.plugin.settings.mdSVGmaxHeight = 800;
-              this.applySettingsUpdate(true);
-              return;
-            }
-            this.plugin.settings.mdSVGmaxHeight = intVal;
-            this.requestReloadDrawings = true;
-            text.setValue(this.plugin.settings.mdSVGmaxHeight.toString());
-            this.applySettingsUpdate(true);
-          }),
-      );
+  private createMarkdownDimensionDefinition(options: {
+    name: string;
+    desc: string | DocumentFragment;
+    aliases: string[];
+    key: "mdSVGwidth" | "mdSVGmaxHeight";
+    emptyValue: number;
+    placeholder: string;
+  }): SettingDefinition<SettingBindingKey> {
+    return this.createCustomSettingDefinition({
+      name: options.name,
+      desc: options.desc,
+      aliases: options.aliases,
+      controlType: "number input",
+      configure: (setting) =>
+        this.configureIntegerTextSetting(setting, options),
+    });
+  }
 
-    const markdownFontSetting = new Setting(detailsEl)
+  private configureMarkdownFontSetting(setting: Setting): () => void {
+    setting
       .setName(t("MD_DEFAULT_FONT_NAME"))
       .setDesc(fragWithHTML(t("MD_DEFAULT_FONT_DESC")));
-    this.fontPickers.push(
-      new FontPickerComponent(markdownFontSetting.controlEl, this.app, () =>
-        getSelectableFontOptions(this.app, this.plugin.settings.fontAssetsPath),
+    return this.trackFontPicker(
+      new FontPickerComponent(
+        setting.controlEl,
+        this.app,
+        () =>
+          getSelectableFontOptions(
+            this.app,
+            this.plugin.settings.fontAssetsPath,
+          ),
+        (fontFamily) => this.getBuiltInMarkdownFontCss(fontFamily),
       )
         .setAriaLabel(t("MD_DEFAULT_FONT_NAME"))
         .setValue(this.plugin.settings.mdFont)
@@ -3753,110 +4216,157 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           this.applySettingsUpdate(true);
         }),
     );
+  }
 
-    this.buildSetting(detailsEl, {
-      name: t("MD_DEFAULT_COLOR_NAME"),
-      desc: fragWithHTML(t("MD_DEFAULT_COLOR_DESC")),
-      control: {
-        type: "text",
-        key: "mdFontColor",
-        placeholder: t("DEFAULT_COLOR_MD_DESC"),
-        before: () => {
-          this.requestReloadDrawings = true;
-        },
-        reload: true,
-      },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("MD_DEFAULT_BORDER_COLOR_NAME"),
-      desc: fragWithHTML(t("MD_DEFAULT_BORDER_COLOR_DESC")),
-      control: {
-        type: "text",
-        key: "mdBorderColor",
-        placeholder: t("DEFAULT_COLOR_MD_DESC"),
-        before: () => {
-          this.requestReloadDrawings = true;
-        },
-        reload: true,
-      },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("MD_CSS_NAME"),
-      desc: fragWithHTML(t("MD_CSS_DESC")),
-      control: {
-        type: "text",
-        key: "mdCSS",
-        placeholder: t("MD_CSS_PLACEHOLDER"),
-        before: () => {
-          this.requestReloadDrawings = true;
-        },
-        reload: true,
-      },
+  private createMarkdownFontDefinition(): SettingDefinition<SettingBindingKey> {
+    return this.createCustomSettingDefinition({
+      name: t("MD_DEFAULT_FONT_NAME"),
+      desc: fragWithHTML(t("MD_DEFAULT_FONT_DESC")),
+      aliases: ["Markdown image font", "embedded Markdown typeface"],
+      controlType: "font picker",
+      configure: (setting) => this.configureMarkdownFontSetting(setting),
     });
   }
 
-  private renderNonExcalidrawFeaturesSection(): void {
-    const { containerEl } = this;
-    let detailsEl: HTMLElement;
-    // ------------------------------------------------
-    // Non-excalidraw.com supported features
-    // ------------------------------------------------
-    containerEl.createEl("hr", { cls: "excalidraw-setting-hr" });
-    containerEl.createDiv({
-      text: t("NONSTANDARD_DESC"),
-      cls: "setting-item-description",
-    });
-    detailsEl = this.containerEl.createEl("details");
-    const nonstandardDetailsEl = detailsEl;
-    detailsEl.createEl("summary", {
-      text: t("NONSTANDARD_HEAD"),
-      cls: "excalidraw-setting-h1",
-    });
-
-    detailsEl = nonstandardDetailsEl.createEl("details");
-    detailsEl.createEl("summary", {
-      text: t("RENDER_TWEAK_HEAD"),
-      cls: "excalidraw-setting-h3",
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("MAX_IMAGE_ZOOM_IN_NAME"),
-      desc: fragWithHTML(t("MAX_IMAGE_ZOOM_IN_DESC")),
-      control: {
-        type: "slider",
-        key: "areaZoomLimit",
-        min: 1,
-        max: 10,
-        step: 0.5,
-        afterUpdate: () =>
-          this.plugin.excalidrawConfig.updateValues(this.plugin),
-      },
-    });
-
-    detailsEl = nonstandardDetailsEl.createEl("details");
-    detailsEl.createEl("summary", {
-      text: t("CUSTOM_PEN_HEAD"),
-      cls: "excalidraw-setting-h3",
-    });
-    addYouTubeThumbnail(detailsEl, "OjNhjaH2KjI", 69);
-    this.buildSetting(detailsEl, {
-      name: t("CUSTOM_PEN_NAME"),
-      desc: t("CUSTOM_PEN_DESC"),
-      control: {
-        type: "number-dropdown",
-        key: "numberOfCustomPens",
-        parse: "int",
-        options: Array.from({ length: 11 }, (_, value) => ({
-          value,
-          label: value.toString(),
-        })),
-        after: () => {
-          this.requestUpdatePinnedPens = true;
+  private getMarkdownImageStyleSpecs(): SettingSpec[] {
+    return [
+      {
+        name: t("MD_DEFAULT_COLOR_NAME"),
+        desc: fragWithHTML(t("MD_DEFAULT_COLOR_DESC")),
+        aliases: ["Markdown embed font color", "text color"],
+        control: {
+          type: "text",
+          key: "mdFontColor",
+          placeholder: t("DEFAULT_COLOR_MD_DESC"),
+          before: () => {
+            this.requestReloadDrawings = true;
+          },
+          reload: true,
         },
       },
+      {
+        name: t("MD_DEFAULT_BORDER_COLOR_NAME"),
+        desc: fragWithHTML(t("MD_DEFAULT_BORDER_COLOR_DESC")),
+        aliases: ["Markdown embed border", "border color"],
+        control: {
+          type: "text",
+          key: "mdBorderColor",
+          placeholder: t("DEFAULT_COLOR_MD_DESC"),
+          before: () => {
+            this.requestReloadDrawings = true;
+          },
+          reload: true,
+        },
+      },
+      {
+        name: t("MD_CSS_NAME"),
+        desc: fragWithHTML(t("MD_CSS_DESC")),
+        aliases: ["Markdown embed CSS", "CSS snippet", "CSS file"],
+        control: {
+          type: "text",
+          key: "mdCSS",
+          placeholder: t("MD_CSS_PLACEHOLDER"),
+          before: () => {
+            this.requestReloadDrawings = true;
+          },
+          reload: true,
+        },
+      },
+    ];
+  }
+
+  private getMarkdownImageDefaultDefinitions(): SettingDefinitionItem<SettingBindingKey>[] {
+    return [
+      this.createMarkdownDimensionDefinition({
+        name: t("MD_TRANSCLUDE_WIDTH_NAME"),
+        desc: fragWithHTML(t("MD_TRANSCLUDE_WIDTH_DESC")),
+        aliases: ["Markdown embed width", "transclusion width"],
+        key: "mdSVGwidth",
+        emptyValue: 500,
+        placeholder: "Enter a number e.g. 500",
+      }),
+      this.createMarkdownDimensionDefinition({
+        name: t("MD_TRANSCLUDE_HEIGHT_NAME"),
+        desc: fragWithHTML(t("MD_TRANSCLUDE_HEIGHT_DESC")),
+        aliases: ["Markdown embed height", "transclusion maximum height"],
+        key: "mdSVGmaxHeight",
+        emptyValue: 800,
+        placeholder: "Enter a number e.g. 800",
+      }),
+      this.createMarkdownFontDefinition(),
+      ...this.toDeclarativeDefinitions(this.getMarkdownImageStyleSpecs()),
+    ];
+  }
+
+  private renderMarkdownImageDefaultSettings(container: HTMLElement): void {
+    this.configureIntegerTextSetting(new Setting(container), {
+      name: t("MD_TRANSCLUDE_WIDTH_NAME"),
+      desc: fragWithHTML(t("MD_TRANSCLUDE_WIDTH_DESC")),
+      key: "mdSVGwidth",
+      emptyValue: 500,
+      placeholder: "Enter a number e.g. 500",
     });
+    this.configureIntegerTextSetting(new Setting(container), {
+      name: t("MD_TRANSCLUDE_HEIGHT_NAME"),
+      desc: fragWithHTML(t("MD_TRANSCLUDE_HEIGHT_DESC")),
+      key: "mdSVGmaxHeight",
+      emptyValue: 800,
+      placeholder: "Enter a number e.g. 800",
+    });
+    this.configureMarkdownFontSetting(new Setting(container));
+    this.renderSettingSpecs(container, this.getMarkdownImageStyleSpecs());
+  }
+
+  private getNonstandardSpecs(): SettingSpec[] {
+    return [
+      {
+        name: t("MAX_IMAGE_ZOOM_IN_NAME"),
+        desc: fragWithHTML(t("MAX_IMAGE_ZOOM_IN_DESC")),
+        aliases: ["image zoom resolution", "rendering multiplier"],
+        control: {
+          type: "slider",
+          key: "areaZoomLimit",
+          min: 1,
+          max: 10,
+          step: 0.5,
+          afterUpdate: () =>
+            this.plugin.excalidrawConfig.updateValues(this.plugin),
+        },
+      },
+      {
+        name: t("CUSTOM_PEN_NAME"),
+        desc: t("CUSTOM_PEN_DESC"),
+        aliases: ["custom pens", "pinned pens", "pen buttons"],
+        control: {
+          type: "number-dropdown",
+          key: "numberOfCustomPens",
+          parse: "int",
+          options: Array.from({ length: 11 }, (_, value) => ({
+            value,
+            label: value.toString(),
+          })),
+          after: () => {
+            this.requestUpdatePinnedPens = true;
+          },
+        },
+      },
+    ];
+  }
+
+  private getNonstandardDefinitions(): SettingDefinitionItem<SettingBindingKey>[] {
+    const specs = this.getNonstandardSpecs();
+    return [
+      this.declarativeSettingsAdapter.toDefinition(specs[0]),
+      this.createYouTubeDefinition(t("CUSTOM_PEN_HEAD"), "OjNhjaH2KjI", 69),
+      this.declarativeSettingsAdapter.toDefinition(specs[1]),
+    ];
+  }
+
+  private renderNonstandardSettings(container: HTMLElement): void {
+    const specs = this.getNonstandardSpecs();
+    this.buildSetting(container, specs[0]);
+    addYouTubeThumbnail(container, "OjNhjaH2KjI", 69);
+    this.buildSetting(container, specs[1]);
   }
 
   private renderFontsSection(): void {
@@ -3904,12 +4414,16 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setName(t("FOURTH_FONT_NAME"))
       .setDesc(fragWithHTML(t("FOURTH_FONT_DESC")));
     this.fontPickers.push(
-      new FontPickerComponent(fourthFontSetting.controlEl, this.app, () =>
-        getSelectableFontOptions(
-          this.app,
-          this.plugin.settings.fontAssetsPath,
+      new FontPickerComponent(
+        fourthFontSetting.controlEl,
+        this.app,
+        () =>
+          getSelectableFontOptions(
+            this.app,
+            this.plugin.settings.fontAssetsPath,
             ["Virgil"],
           ),
+        (fontFamily) => this.getBuiltInMarkdownFontCss(fontFamily),
       )
         .setAriaLabel(t("FOURTH_FONT_NAME"))
         .setValue(this.plugin.settings.experimantalFourthFont)

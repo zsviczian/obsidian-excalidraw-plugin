@@ -1649,6 +1649,43 @@ button.excalidraw-font-picker {
   text-decoration: underline;
 }
 
+.excalidraw-settings-breadcrumbs {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--size-4-1);
+  margin-bottom: var(--size-4-2);
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+}
+
+.excalidraw-settings-breadcrumbs__link {
+  height: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-accent);
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.excalidraw-settings-breadcrumbs__link:hover {
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-accent-hover);
+  text-decoration: underline;
+}
+
+.excalidraw-settings-breadcrumbs__current {
+  color: var(--text-normal);
+  font-weight: var(--font-semibold);
+}
+
+.excalidraw-settings-breadcrumbs__separator {
+  color: var(--text-faint);
+}
+
 .excalidraw-filename-information {
   display: grid;
   grid-template-columns: minmax(12rem, 0.8fr) minmax(18rem, 1.2fr);

@@ -9,6 +9,7 @@ import {
   Component,
   EventRef,
   WorkspaceContainer,
+  PluginSettingTab,
 } from "obsidian";
 import { ExcalidrawAutomate } from "../shared/ExcalidrawAutomate";
 import { ExcalidrawLib } from "./excalidrawLib";
@@ -45,7 +46,32 @@ type ObsidianInternalPluginsManager = {
 
 type ObsidianSettingsManager = {
   open(): void;
-  openTabById(tabId: string): void;
+  findTabById?(tabId: string): PluginSettingTab | null;
+  openTabById(tabId: string): PluginSettingTab | null;
+  /**
+   * Resolves a settings-tab identifier and opens its declarative page path.
+   * This is an unpublished Obsidian 1.13+ API and may be absent or change
+   * without notice; callers must guard it at runtime.
+   */
+  openPagePath?(
+    tabId: string,
+    pagePath: string[],
+  ): PluginSettingTab | null;
+  /**
+   * Opens a declarative settings page for a resolved tab object and localized
+   * page-name path. This is an unpublished Obsidian 1.13+ API and may be
+   * absent or change without notice; callers must guard it at runtime.
+   */
+  navigateToPage?(tab: PluginSettingTab, pagePath: string[]): void;
+  /**
+   * Opens and optionally scrolls to an indexed declarative setting. This is
+   * an unpublished Obsidian 1.13+ API and may be absent or change without
+   * notice; callers must guard it at runtime.
+   */
+  navigateToSearchResult?(
+    location: { tab: PluginSettingTab; pagePath: string[] },
+    match?: { entry: { definition: unknown } },
+  ): void;
 };
 
 type ObsidianViewRegistry = {
