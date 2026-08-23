@@ -3,7 +3,9 @@ import {
   ButtonComponent,
   DropdownComponent,
   normalizePath,
+  Notice,
   PluginSettingTab,
+  requireApiVersion,
   Setting,
   TextComponent,
 } from "obsidian";
@@ -23,7 +25,6 @@ import {
 import { addYouTubeThumbnail, fragWithHTML } from "src/utils/utils";
 import {
   setElementHidden,
-  setElementIconAndText,
   setSanitizedHtml,
 } from "src/utils/htmlUtils";
 import { getImageCache } from "src/shared/ImageCache";
@@ -76,7 +77,15 @@ import type {
   SettingBindingKey,
   SettingSpec,
 } from "src/core/settings/settingSpecs";
-import type { SettingDefinitionItem } from "src/types/obsidianDeclarativeSettings";
+import {
+  getDeclarativeSettingTabRuntime,
+  type SettingDefinition,
+  type SettingDefinitionItem,
+} from "src/types/obsidianDeclarativeSettings";
+import {
+  annotateMarkdownDefinition,
+  declarativeSettingsToMarkdown,
+} from "src/core/settings/declarativeSettingsMarkdown";
 
 declare const mainDocument: Document;
 
@@ -97,6 +106,13 @@ const configurePasswordTextInput = (text: TextComponent) => {
   });
 };
 
+interface SettingsPageModel {
+  name: string;
+  description: string;
+  children?: SettingsPageModel[];
+  buildDefinitions?: () => SettingDefinitionItem<SettingBindingKey>[];
+  renderLegacy?: (container: HTMLElement) => void;
+}
 
 export class ExcalidrawSettingTab extends PluginSettingTab {
   plugin: ExcalidrawPlugin;
@@ -108,6 +124,10 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   private readonly settingBindings: SettingBindingRegistry;
   private readonly legacySettingsAdapter: LegacySettingsAdapter;
   private readonly declarativeSettingsAdapter: DeclarativeSettingsAdapter;
+  private readonly useDeclarativeSettingsForSession: boolean;
+  private declarativeDefinitionsActive = false;
+  private declarativeDisplayPrepared = false;
+  private declarativeDefinitions: SettingDefinitionItem<SettingBindingKey>[] = [];
   private persistenceOwnerWindow: Window | null = null;
   private readonly flushOnSettingsWindowBlur = (): void => {
     void this.settingsPersistenceQueue.flush().catch((): void => undefined);
@@ -126,6 +146,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   constructor(app: App, plugin: ExcalidrawPlugin) {
     super(app, plugin);
     this.plugin = plugin;
+    this.useDeclarativeSettingsForSession =
+      requireApiVersion("1.13.0") &&
+      this.plugin.settings.useDeclarativeSettings !== false;
     this.settingBindings = new SettingBindingRegistry({
       getSettings: () => this.plugin.settings,
       queueSettingsUpdate: (requestReloadDrawings) =>
@@ -198,6 +221,53 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     return this.legacySettingsAdapter.render(container, spec);
   }
 
+  private renderSettingSpecs(
+    container: HTMLElement,
+    specs: readonly SettingSpec[],
+  ): void {
+    for (const spec of specs) {
+      this.buildSetting(container, spec);
+    }
+  }
+
+  private toDeclarativeDefinitions(
+    specs: readonly SettingSpec[],
+  ): SettingDefinition<SettingBindingKey>[] {
+    return specs.map((spec) =>
+      this.declarativeSettingsAdapter.toDefinition(spec),
+    );
+  }
+
+  private refreshSettingsUI(): void {
+    const runtime = getDeclarativeSettingTabRuntime(this);
+    if (this.declarativeDefinitionsActive && runtime) {
+      runtime.update();
+      return;
+    }
+    this.display();
+  }
+
+  private prepareDeclarativeDisplay(): void {
+    if (this.declarativeDisplayPrepared) {
+      return;
+    }
+    this.declarativeDisplayPrepared = true;
+    this.requestEmbedUpdate = false;
+    this.requestReloadDrawings = false;
+    this.destroyFontPickers();
+    this.containerEl.addClass("excalidraw-settings");
+    this.attachPersistenceWindowBlurHandler();
+  }
+
+  private getSettingsLayoutSpec(): SettingSpec {
+    return {
+      name: t("USE_DECLARATIVE_SETTINGS_NAME"),
+      desc: t("USE_DECLARATIVE_SETTINGS_DESC"),
+      aliases: ["searchable settings", "legacy settings", "settings layout"],
+      control: { type: "toggle", key: "useDeclarativeSettings" },
+    };
+  }
+
   private getFilenameSample(): string {
     return `${t(
       "FILENAME_SAMPLE",
@@ -211,6 +281,265 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     )}</a></b>`;
   }
 
+  private prepareFullWidthDeclarativeSetting(setting: Setting): void {
+    setting.settingEl.empty();
+    setting.settingEl.addClass("excalidraw-declarative-full-width");
+  }
+
+  private createSectionDescriptionDefinition(
+    name: string,
+    description: string,
+  ): SettingDefinition<SettingBindingKey> {
+    return annotateMarkdownDefinition(
+      {
+        name,
+        searchable: false,
+        render: (setting) => {
+          this.prepareFullWidthDeclarativeSetting(setting);
+          setting.settingEl.createDiv({
+            text: description,
+            cls: "setting-item-description",
+          });
+        },
+      },
+      { omit: true },
+    );
+  }
+
+  private createDeclarativeUtilitiesDefinition(
+    scope: string,
+    includeMastery: boolean,
+  ): SettingDefinition<SettingBindingKey> {
+    return annotateMarkdownDefinition(
+      {
+        name: `Excalidraw settings utilities · ${scope}`,
+        searchable: false,
+        render: (setting) => {
+          this.prepareDeclarativeDisplay();
+          this.prepareFullWidthDeclarativeSetting(setting);
+          this.renderSettingsUtilityBar(setting.settingEl, () => {
+            void this.copyDeclarativeSettingsAsMarkdown();
+          });
+          if (includeMastery) {
+            this.renderMasteryPromo(setting.settingEl);
+          }
+        },
+      },
+      { omit: true },
+    );
+  }
+
+  private createDeclarativePageItems(
+    scope: string,
+    description: string,
+    items: SettingDefinitionItem<SettingBindingKey>[],
+  ): SettingDefinitionItem<SettingBindingKey>[] {
+    return [
+      this.createDeclarativeUtilitiesDefinition(scope, false),
+      this.createSectionDescriptionDefinition(
+        `${scope} · overview`,
+        description,
+      ),
+      ...items,
+    ];
+  }
+
+  private createLibraryStorageDefinition(): SettingDefinition<SettingBindingKey> {
+    return annotateMarkdownDefinition(
+      {
+        name: t("LIBRARY_STORAGE_NAME"),
+        desc: t("LIBRARY_STORAGE_DESC"),
+        aliases: [
+          t("LIBRARY_STORAGE_VAULT"),
+          t("LIBRARY_STORAGE_DATA_JSON"),
+          "stencil library",
+        ],
+        render: (setting) => this.configureLibraryStorageSetting(setting),
+      },
+      { controlType: "dropdown" },
+    );
+  }
+
+  private createLibraryMigrationDefinition(): SettingDefinition<SettingBindingKey> {
+    return annotateMarkdownDefinition(
+      {
+        name: t("LIBRARY_MIGRATE_NOW"),
+        desc: t("LIBRARY_MIGRATE_NOW_DESC"),
+        aliases: [t("LIBRARY_MIGRATION_MIGRATE"), "stencil library"],
+        visible: () => this.isLibraryMigrationAvailable(),
+        render: (setting) => this.configureLibraryMigrationSetting(setting),
+      },
+      { controlType: "action" },
+    );
+  }
+
+  private createFilenameInformationDefinition(): SettingDefinition<SettingBindingKey> {
+    return annotateMarkdownDefinition(
+      {
+        name: t("FILENAME_HEAD"),
+        desc: t("FILENAME_DESC"),
+        aliases: ["filename preview", "file naming", "drawing name"],
+        render: (setting) => {
+          this.prepareFullWidthDeclarativeSetting(setting);
+          this.renderFilenameInformation(setting.settingEl);
+        },
+      },
+      { omit: true },
+    );
+  }
+
+  private createTemplateVideoDefinition(): SettingDefinition<SettingBindingKey> {
+    return annotateMarkdownDefinition(
+      {
+        name: `${t("TEMPLATE_NAME")} · YouTube`,
+        searchable: false,
+        render: (setting) => {
+          this.prepareFullWidthDeclarativeSetting(setting);
+          addYouTubeThumbnail(setting.settingEl, "jgUpYznHP9A", 216);
+        },
+      },
+      { omit: true },
+    );
+  }
+
+  private getCheckpoint4APages(): SettingsPageModel[] {
+    const basicPage: SettingsPageModel = {
+      name: t("BASIC_HEAD"),
+      description: t("BASIC_DESC"),
+      children: [
+        {
+          name: t("BASIC_UPDATES_STARTUP_HEAD"),
+          description: t("BASIC_UPDATES_STARTUP_DESC"),
+          buildDefinitions: () =>
+            this.toDeclarativeDefinitions(this.getGeneralStartupSpecs()),
+          renderLegacy: (container) =>
+            this.renderSettingSpecs(container, this.getGeneralStartupSpecs()),
+        },
+        {
+          name: t("BASIC_FILES_FOLDERS_HEAD"),
+          description: t("BASIC_FILES_FOLDERS_DESC"),
+          buildDefinitions: () => [
+            ...this.toDeclarativeDefinitions(
+              this.getGeneralDrawingFolderSpecs(),
+            ),
+            ...this.toDeclarativeDefinitions(this.getGeneralTrailingSpecs()),
+            ...this.toDeclarativeDefinitions(this.getGeneralScriptSpecs()),
+            this.createTemplateVideoDefinition(),
+          ],
+          renderLegacy: (container) => {
+            this.renderSettingSpecs(
+              container,
+              this.getGeneralDrawingFolderSpecs(),
+            );
+            this.renderSettingSpecs(container, this.getGeneralTrailingSpecs());
+            this.renderSettingSpecs(container, this.getGeneralScriptSpecs());
+            addYouTubeThumbnail(container, "jgUpYznHP9A", 216);
+          },
+        },
+        {
+          name: t("BASIC_STENCIL_LIBRARY_HEAD"),
+          description: t("BASIC_STENCIL_LIBRARY_DESC"),
+          buildDefinitions: () => [
+            this.createLibraryStorageDefinition(),
+            ...this.toDeclarativeDefinitions(this.getGeneralLibrarySpecs()),
+            this.createLibraryMigrationDefinition(),
+          ],
+          renderLegacy: (container) => {
+            this.configureLibraryStorageSetting(new Setting(container));
+            this.renderSettingSpecs(container, this.getGeneralLibrarySpecs());
+            if (this.isLibraryMigrationAvailable()) {
+              this.configureLibraryMigrationSetting(new Setting(container));
+            }
+          },
+        },
+      ],
+    };
+
+    const savingPage: SettingsPageModel = {
+      name: t("SAVING_HEAD"),
+      description: t("SAVING_DESC"),
+      children: [
+        {
+          name: t("SAVING_STORAGE_AUTOSAVE_HEAD"),
+          description: t("SAVING_STORAGE_AUTOSAVE_DESC"),
+          buildDefinitions: () =>
+            this.toDeclarativeDefinitions(this.getSavingSpecs()),
+          renderLegacy: (container) =>
+            this.renderSettingSpecs(container, this.getSavingSpecs()),
+        },
+        {
+          name: t("FILENAME_HEAD"),
+          description: t("FILENAME_GROUP_DESC"),
+          buildDefinitions: () => [
+            this.createFilenameInformationDefinition(),
+            ...this.toDeclarativeDefinitions(this.getFilenameSpecs()),
+          ],
+          renderLegacy: (container) => {
+            this.renderFilenameInformation(container);
+            this.renderSettingSpecs(container, this.getFilenameSpecs());
+          },
+        },
+      ],
+    };
+
+    return [basicPage, savingPage];
+  }
+
+  private toDeclarativePage(
+    page: SettingsPageModel,
+  ): SettingDefinitionItem<SettingBindingKey> {
+    const items = page.children
+      ? page.children.map((child) => this.toDeclarativePage(child))
+      : (page.buildDefinitions?.() ?? []);
+    return {
+      type: "page",
+      name: page.name,
+      desc: page.description,
+      items: this.createDeclarativePageItems(
+        page.name,
+        page.description,
+        items,
+      ),
+    };
+  }
+
+  private renderLegacyPage(
+    parent: HTMLElement,
+    page: SettingsPageModel,
+    headingLevel: 1 | 3 | 4,
+  ): void {
+    if (headingLevel !== 1) {
+      parent.createEl("hr", { cls: "excalidraw-setting-hr" });
+    }
+    parent.createDiv({
+      text: page.description,
+      cls: "setting-item-description",
+    });
+    const details = parent.createEl("details");
+    details.createEl("summary", {
+      text: page.name,
+      cls: `excalidraw-setting-h${headingLevel}`,
+    });
+
+    const childHeadingLevel = headingLevel === 1 ? 3 : 4;
+    page.children?.forEach((child) =>
+      this.renderLegacyPage(details, child, childHeadingLevel),
+    );
+    page.renderLegacy?.(details);
+  }
+
+  private buildCheckpoint4ADefinitions(): SettingDefinitionItem<SettingBindingKey>[] {
+    this.declarativeSettingsAdapter.beginBuild();
+    return [
+      this.createDeclarativeUtilitiesDefinition("Root", true),
+      this.declarativeSettingsAdapter.toDefinition(
+        this.getSettingsLayoutSpec(),
+      ),
+      ...this.getCheckpoint4APages().map((page) =>
+        this.toDeclarativePage(page),
+      ),
+    ];
+  }
   /**
    * Keeps the imperative settings UI active until every conversion batch and
    * the search/layout checkpoint are complete. Obsidian also calls this early
@@ -219,8 +548,16 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
    * @returns An empty list so Obsidian falls back to {@link display}.
    */
   getSettingDefinitions(): SettingDefinitionItem<SettingBindingKey>[] {
-    this.declarativeSettingsAdapter.beginBuild();
-    return [];
+    if (!this.useDeclarativeSettingsForSession) {
+      this.declarativeSettingsAdapter.beginBuild();
+      this.declarativeDefinitions = [];
+      this.declarativeDefinitionsActive = false;
+      return [];
+    }
+    const definitions = this.buildCheckpoint4ADefinitions();
+    this.declarativeDefinitions = definitions;
+    this.declarativeDefinitionsActive = definitions.length > 0;
+    return this.declarativeDefinitionsActive ? definitions : [];
   }
 
   /** Reads a registered declarative control through the canonical binding. */
@@ -369,6 +706,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   }
 
   hide() {
+    this.declarativeDisplayPrepared = false;
     this.detachPersistenceWindowBlurHandler();
     void this.settingsPersistenceQueue.flush().catch((): void => undefined);
     this.destroyFontPickers();
@@ -384,8 +722,8 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       setRootElementSize();
     }
 
-    this.hotkeyEditor.unload();
-    if (this.hotkeyEditor.isDirty) {
+    this.hotkeyEditor?.unload();
+    if (this.hotkeyEditor?.isDirty) {
       this.plugin.registerHotkeyOverrides();
     }
     this.plugin.scriptEngine.updateScriptPath();
@@ -398,16 +736,22 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     //await this.plugin.loadSettings(); //in case sync loaded changed settings in the background
     this.requestEmbedUpdate = false;
     this.requestReloadDrawings = false;
+    this.declarativeDisplayPrepared = false;
     this.destroyFontPickers();
     const { containerEl } = this;
     containerEl.addClass("excalidraw-settings");
     this.containerEl.empty();
     this.attachPersistenceWindowBlurHandler();
 
-    this.renderSearchSection();
-    this.renderPromoLinksSection();
-    this.renderGeneralSection();
-    this.renderSavingSection();
+    const contentSearcher = this.renderSearchSection();
+    this.renderSettingsUtilityBar(containerEl, () =>
+      contentSearcher.copyContentAsMarkdown(),
+    );
+    this.renderMasteryPromo(containerEl);
+    if (requireApiVersion("1.13.0")) {
+      this.buildSetting(containerEl, this.getSettingsLayoutSpec());
+    }
+    this.renderCheckpoint4ALegacyPages();
     this.renderAISection();
     this.renderDisplaySection();
     this.renderLinksAndTransclusionsSection();
@@ -420,35 +764,93 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     this.renderCompatibilitySection();
   }
 
-  private renderSearchSection(): void {
-    const { containerEl } = this;
-    // ------------------------------------------------
-    // Search and Settings to Clipboard
-    // ------------------------------------------------
-
-    const notebookLMLinkContainer = createDiv(
-      "setting-item-description excalidraw-settings-links-container",
+  private async copyDeclarativeSettingsAsMarkdown(): Promise<void> {
+    const markdown = declarativeSettingsToMarkdown(
+      this.declarativeDefinitions,
     );
-    new ContentSearcher(containerEl, notebookLMLinkContainer);
-    notebookLMLinkContainer.createEl(
-      "a",
+    const ownerWindow = this.containerEl.ownerDocument.defaultView;
+    if (!ownerWindow) {
+      return;
+    }
+    await ownerWindow.navigator.clipboard.writeText(markdown);
+    new Notice(t("SEARCH_COPIED_TO_CLIPBOARD"));
+  }
+
+  private renderSettingsUtilityBar(
+    container: HTMLElement,
+    copySettings: () => void,
+  ): void {
+    const toolbar = container.createDiv(
+      "excalidraw-declarative-settings-toolbar",
+    );
+    const copyButton = toolbar.createEl("button", {
+      text: t("SETTINGS_TOOLBAR_COPY"),
+      cls: "excalidraw-declarative-settings-toolbar__button",
+      attr: {
+        type: "button",
+        "aria-label": t("SEARCH_COPY_TO_CLIPBOARD_ARIA"),
+      },
+    });
+    copyButton.addEventListener("click", copySettings);
+
+    const links = [
       {
         href: URLs.NOTEBOOKLM_GOOGLE_COM_NOTEBOOK_42D76A2F_C11D_4002_9286_1683C43D0AB0,
-        attr: {
-          "aria-label": t("NOTEBOOKLM_LINK_ARIA"),
-          style: "margin: auto;",
-        },
+        aria: t("NOTEBOOKLM_LINK_ARIA"),
+        text: t("SETTINGS_TOOLBAR_NOTEBOOKLM"),
       },
-      (a) => {
-        setElementIconAndText(
-          a,
-          "message-circle-question-mark",
-          t("NOTEBOOKLM_LINK_TEXT"),
-        );
+      {
+        href: URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES,
+        aria: t("LINKS_BUGS_ARIA"),
+        text: t("SETTINGS_TOOLBAR_BUGS"),
       },
-    );
+      {
+        href: URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_WIKI,
+        aria: t("LINKS_WIKI_ARIA"),
+        text: t("SETTINGS_TOOLBAR_WIKI"),
+      },
+      {
+        href: URLs.WWW_YOUTUBE_COM_VISUALPKM,
+        aria: t("LINKS_YT_ARIA"),
+        text: t("SETTINGS_TOOLBAR_YOUTUBE"),
+      },
+      {
+        href: URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_EE,
+        aria: t("LINKS_JOIN_SYM_ARIA"),
+        text: t("SETTINGS_TOOLBAR_LEARN"),
+      },
+      {
+        href: URLs.TWITTER_COM_ZSVICZIAN,
+        aria: t("LINKS_TWITTER"),
+        text: t("SETTINGS_TOOLBAR_FOLLOW"),
+      },
+      {
+        href: URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_SYM,
+        aria: t("LINKS_BOOK_ARIA"),
+        text: t("SETTINGS_TOOLBAR_READ"),
+      },
+      {
+        href: URLs.KO_FI_COM_ZSOLT,
+        aria: t("SETTINGS_TOOLBAR_KOFI"),
+        text: t("SETTINGS_TOOLBAR_KOFI"),
+      },
+    ];
 
-    const excalidrawMasteryPromo = containerEl.createEl("details", {
+    for (const link of links) {
+      toolbar.createEl("a", {
+        text: link.text,
+        href: link.href,
+        attr: {
+          "aria-label": link.aria,
+          target: "_blank",
+          rel: "noopener noreferrer",
+        },
+      });
+    }
+  }
+
+  private renderMasteryPromo(container: HTMLElement): void {
+    const excalidrawMasteryPromo = container.createEl("details", {
       cls: "setting-item-description excalidraw-mastery-promo",
     });
     excalidrawMasteryPromo.open =
@@ -460,9 +862,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     const excalidrawMasterySummary = excalidrawMasteryPromo.createEl(
       "summary",
-      {
-        cls: "excalidraw-mastery-promo__summary",
-      },
+      { cls: "excalidraw-mastery-promo__summary" },
     );
     const excalidrawMasterySummaryTitle = excalidrawMasterySummary.createSpan({
       cls: "excalidraw-mastery-promo__summary-title",
@@ -472,7 +872,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       cls: "excalidraw-mastery-promo__summary-state",
     });
 
-    const excalidrawMasteryLink = URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_EM;
     const updateExcalidrawMasteryPromoState = (persist: boolean) => {
       const isCollapsed = !excalidrawMasteryPromo.open;
       const didStateChange =
@@ -500,7 +899,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     });
     const excalidrawMasteryImageLink = excalidrawMasteryContent.createEl("a", {
       cls: "excalidraw-mastery-promo__image-link",
-      href: excalidrawMasteryLink,
+      href: URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_EM,
       attr: {
         "aria-label": t("EXCALIDRAW_MASTERY_PROMO_ARIA"),
         target: "_blank",
@@ -526,466 +925,402 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         anchor.setAttribute("target", "_blank");
         anchor.setAttribute("rel", "noopener noreferrer");
       });
-
   }
 
-  private renderPromoLinksSection(): void {
-    const { containerEl } = this;
-    // ------------------------------------------------
-    // Promo links
-    // ------------------------------------------------
+  private renderSearchSection(): ContentSearcher {
+    return new ContentSearcher(this.containerEl);
+  }
 
-    const coffeeDiv = containerEl.createDiv("coffee");
-    coffeeDiv.addClass("ex-coffee-div");
-    const coffeeLink = coffeeDiv.createEl("a", {
-      href: URLs.KO_FI_COM_ZSOLT,
-    });
-    const coffeeImg = coffeeLink.createEl("img", {
-      attr: {
-        src: URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG,
-      },
-    });
-    coffeeImg.height = 45;
-
-    const iconLinks = [
+  private getGeneralStartupSpecs(): SettingSpec[] {
+    return [
       {
-        icon: "bug",
-        href: URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES,
-        aria: t("LINKS_BUGS_ARIA"),
-        text: t("LINKS_BUGS"),
+        name: t("RELEASE_NOTES_NAME"),
+        desc: fragWithHTML(t("RELEASE_NOTES_DESC")),
+        control: { type: "toggle", key: "showReleaseNotes" },
       },
       {
-        icon: "globe",
-        href: URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_WIKI,
-        aria: t("LINKS_WIKI_ARIA"),
-        text: t("LINKS_WIKI"),
+        name: t("WARN_ON_MANIFEST_MISMATCH_NAME"),
+        desc: fragWithHTML(t("WARN_ON_MANIFEST_MISMATCH_DESC")),
+        control: { type: "toggle", key: "compareManifestToPluginVersion" },
       },
       {
-        icon: "youtube",
-        href: URLs.WWW_YOUTUBE_COM_VISUALPKM,
-        aria: t("LINKS_YT_ARIA"),
-        text: t("LINKS_YT"),
+        name: t("NEWVERSION_NOTIFICATION_NAME"),
+        desc: fragWithHTML(t("NEWVERSION_NOTIFICATION_DESC")),
+        control: { type: "toggle", key: "showNewVersionNotification" },
       },
       {
-        icon: "graduation-cap",
-        href: URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_EE,
-        aria: t("LINKS_JOIN_SYM_ARIA"),
-        text: t("LINKS_JOIN_SYM"),
-      },
-      {
-        icon: "twitter",
-        href: URLs.TWITTER_COM_ZSVICZIAN,
-        aria: t("LINKS_TWITTER"),
-        text: t("LINKS_TWITTER"),
-      },
-      {
-        icon: "book",
-        href: URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_SYM,
-        aria: t("LINKS_BOOK_ARIA"),
-        text: t("LINKS_BOOK"),
+        name: t("TOGGLE_SPLASHSCREEN"),
+        control: { type: "toggle", key: "showSplashscreen" },
       },
     ];
-
-    const linksEl = containerEl.createDiv(
-      "setting-item-description excalidraw-settings-links-container",
-    );
-    iconLinks.forEach(({ icon, href, aria, text }) => {
-      linksEl.createEl("a", { href, attr: { "aria-label": aria } }, (a) => {
-        setElementIconAndText(a, icon, text);
-      });
-    });
-
   }
 
-  private renderGeneralSection(): void {
-    const { containerEl } = this;
-    let detailsEl: HTMLElement;
-    // ------------------------------------------------
-    // Saving
-    // ------------------------------------------------
-    containerEl.createEl("hr", { cls: "excalidraw-setting-hr" });
-    containerEl.createDiv({
-      text: t("BASIC_DESC"),
-      cls: "setting-item-description",
-    });
-    detailsEl = this.containerEl.createEl("details");
-    detailsEl.createEl("summary", {
-      text: t("BASIC_HEAD"),
-      cls: "excalidraw-setting-h1",
-    });
-    this.buildSetting(detailsEl, {
-      name: t("RELEASE_NOTES_NAME"),
-      desc: fragWithHTML(t("RELEASE_NOTES_DESC")),
-      control: { type: "toggle", key: "showReleaseNotes" },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("WARN_ON_MANIFEST_MISMATCH_NAME"),
-      desc: fragWithHTML(t("WARN_ON_MANIFEST_MISMATCH_DESC")),
-      control: { type: "toggle", key: "compareManifestToPluginVersion" },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("NEWVERSION_NOTIFICATION_NAME"),
-      desc: fragWithHTML(t("NEWVERSION_NOTIFICATION_DESC")),
-      control: { type: "toggle", key: "showNewVersionNotification" },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("TOGGLE_SPLASHSCREEN"),
-      control: { type: "toggle", key: "showSplashscreen" },
-    });
-
+  private getGeneralDrawingFolderSpecs(): SettingSpec[] {
     let previousFolder = "";
-    this.buildSetting(detailsEl, {
-      name: t("FOLDER_NAME"),
-      desc: fragWithHTML(t("FOLDER_DESC")),
-      control: {
-        type: "text",
-        key: "folder",
-        placeholder: t("FOLDER_PLACEHOLDER"),
-        before: () => {
-          previousFolder = this.plugin.settings.folder;
+    return [
+      {
+        name: t("FOLDER_NAME"),
+        desc: fragWithHTML(t("FOLDER_DESC")),
+        aliases: ["drawing folder", "save location"],
+        control: {
+          type: "text",
+          key: "folder",
+          placeholder: t("FOLDER_PLACEHOLDER"),
+          before: () => {
+            previousFolder = this.plugin.settings.folder;
+          },
+          after: (value) => {
+            if (
+              this.plugin.settings.libraryFolderPath ===
+              normalizePath(`${previousFolder}/Libraries`)
+            ) {
+              this.plugin.settings.libraryFolderPath = normalizePath(
+                `${value}/Libraries`,
+              );
+            }
+          },
+          vaultPath: { kind: "folder" },
         },
-        after: (value) => {
-          if (
-            this.plugin.settings.libraryFolderPath ===
-            normalizePath(`${previousFolder}/Libraries`)
-          ) {
-            this.plugin.settings.libraryFolderPath = normalizePath(
-              `${value}/Libraries`,
-            );
-          }
-        },
-        vaultPath: { kind: "folder" },
       },
-    });
+    ];
+  }
 
-    const libraryStorageSetting = new Setting(detailsEl)
+  private getGeneralLibrarySpecs(): SettingSpec[] {
+    const usesLegacyStorage =
+      this.plugin.settings.libraryStorageMode === "data-json";
+    return [
+      {
+        name: t("LIBRARY_FOLDER_NAME"),
+        desc: t("LIBRARY_FOLDER_DESC"),
+        aliases: ["stencil library folder", "library path"],
+        control: {
+          type: "text",
+          key: "libraryFolderPath",
+          after: () => this.plugin.stencilLibraryManager?.invalidate(),
+          reload: true,
+          disabled: () =>
+            this.plugin.settings.libraryStorageMode === "data-json",
+          vaultPath: {
+            kind: "folder",
+            options: {
+              optional: usesLegacyStorage,
+              createFolder: !usesLegacyStorage,
+              validate: !usesLegacyStorage,
+            },
+          },
+        },
+      },
+      {
+        name: t("LIBRARY_FILE_NAME"),
+        desc: t("LIBRARY_FILE_DESC"),
+        aliases: ["stencil library filename"],
+        control: {
+          type: "text",
+          key: "libraryFileName",
+          after: () => this.plugin.stencilLibraryManager?.invalidate(),
+          reload: true,
+          disabled: () =>
+            this.plugin.settings.libraryStorageMode === "data-json",
+        },
+      },
+    ];
+  }
+
+  private getGeneralTrailingSpecs(): SettingSpec[] {
+    return [
+      {
+        name: t("FOLDER_EMBED_NAME"),
+        desc: fragWithHTML(t("FOLDER_EMBED_DESC")),
+        control: { type: "toggle", key: "embedUseExcalidrawFolder" },
+      },
+      {
+        name: t("CROP_FOLDER_NAME"),
+        desc: fragWithHTML(t("CROP_FOLDER_DESC")),
+        control: {
+          type: "text",
+          key: "cropFolder",
+          placeholder: t("CROP_FOLDER_PLACEHOLDER"),
+          vaultPath: { kind: "folder", options: { optional: true } },
+        },
+      },
+      {
+        name: t("ANNOTATE_FOLDER_NAME"),
+        desc: fragWithHTML(t("ANNOTATE_FOLDER_DESC")),
+        control: {
+          type: "text",
+          key: "annotateFolder",
+          placeholder: t("ANNOTATE_FOLDER_PLACEHOLDER"),
+          vaultPath: { kind: "folder", options: { optional: true } },
+        },
+      },
+      {
+        name: t("TEMPLATE_NAME"),
+        desc: fragWithHTML(t("TEMPLATE_DESC")),
+        aliases: ["drawing template", "template file"],
+        control: {
+          type: "text",
+          key: "templateFilePath",
+          placeholder: t("TEMPLATE_PLACEHOLDER"),
+          vaultPath: {
+            kind: "file",
+            options: { optional: true, extensions: ["md", "excalidraw"] },
+          },
+        },
+      },
+    ];
+  }
+
+  private getGeneralScriptSpecs(): SettingSpec[] {
+    return [
+      {
+        name: t("SCRIPT_FOLDER_NAME"),
+        desc: fragWithHTML(t("SCRIPT_FOLDER_DESC")),
+        aliases: ["Excalidraw Automate scripts", "script path"],
+        control: {
+          type: "text",
+          key: "scriptFolderPath",
+          placeholder: t("SCRIPT_FOLDER_PLACEHOLDER"),
+          vaultPath: { kind: "folder" },
+        },
+      },
+    ];
+  }
+
+  private configureLibraryStorageSetting(setting: Setting): void {
+    setting
       .setName(t("LIBRARY_STORAGE_NAME"))
       .setDesc(t("LIBRARY_STORAGE_DESC"));
-    libraryStorageSetting.addDropdown((dropdown) =>
+    if (!this.plugin.stencilLibraryManager) {
+      setting.setDisabled(true);
+    }
+    setting.addDropdown((dropdown) =>
       dropdown
         .addOption("vault", t("LIBRARY_STORAGE_VAULT"))
         .addOption("data-json", t("LIBRARY_STORAGE_DATA_JSON"))
         .setValue(this.plugin.settings.libraryStorageMode)
         .onChange(async (value) => {
-          if (value === this.plugin.settings.libraryStorageMode) {
+          const manager = this.plugin.stencilLibraryManager;
+          if (!manager || value === this.plugin.settings.libraryStorageMode) {
             return;
           }
           if (value === "data-json") {
-            await this.plugin.stencilLibraryManager.switchToLegacyStorage();
-          } else if (this.plugin.stencilLibraryManager.hasLegacyItems()) {
-            await this.plugin.stencilLibraryManager.showMigrationPrompt();
+            await manager.switchToLegacyStorage();
+          } else if (manager.hasLegacyItems()) {
+            await manager.showMigrationPrompt();
           } else {
             this.plugin.settings.libraryStorageMode = "vault";
             this.plugin.settings.libraryMigrationStatus = "completed";
             this.plugin.settings.libraryMigrationSnoozeUntil = 0;
-            this.plugin.stencilLibraryManager.invalidate();
+            manager.invalidate();
             await this.plugin.saveSettings();
           }
-          this.display();
+          this.refreshSettingsUI();
         }),
     );
-
-    const libraryFolderSetting = this.buildSetting(detailsEl, {
-      name: t("LIBRARY_FOLDER_NAME"),
-      desc: t("LIBRARY_FOLDER_DESC"),
-      control: {
-        type: "text",
-        key: "libraryFolderPath",
-        after: () => this.plugin.stencilLibraryManager.invalidate(),
-        reload: true,
-        vaultPath: {
-          kind: "folder",
-          options: {
-            optional: this.plugin.settings.libraryStorageMode === "data-json",
-            createFolder: this.plugin.settings.libraryStorageMode === "vault",
-            validate: this.plugin.settings.libraryStorageMode === "vault",
-          },
-        },
-      },
-    });
-    libraryFolderSetting?.setDisabled(
-      this.plugin.settings.libraryStorageMode === "data-json",
-    );
-
-    const libraryFileSetting = this.buildSetting(detailsEl, {
-      name: t("LIBRARY_FILE_NAME"),
-      desc: t("LIBRARY_FILE_DESC"),
-      control: {
-        type: "text",
-        key: "libraryFileName",
-        after: () => this.plugin.stencilLibraryManager.invalidate(),
-        reload: true,
-      },
-    });
-    libraryFileSetting?.setDisabled(
-      this.plugin.settings.libraryStorageMode === "data-json",
-    );
-
-    if (
-      this.plugin.settings.libraryStorageMode === "data-json" &&
-      this.plugin.settings.libraryMigrationStatus !== "opted-out" &&
-      this.plugin.stencilLibraryManager.hasLegacyItems()
-    ) {
-      new Setting(detailsEl)
-        .setName(t("LIBRARY_MIGRATE_NOW"))
-        .setDesc(t("LIBRARY_MIGRATE_NOW_DESC"))
-        .addButton((button) =>
-          button
-            .setCta()
-            .setButtonText(t("LIBRARY_MIGRATION_MIGRATE"))
-            .onClick(async () => {
-              await this.plugin.stencilLibraryManager.showMigrationPrompt();
-              this.display();
-            }),
-        );
-    }
-
-    this.buildSetting(detailsEl, {
-      name: t("FOLDER_EMBED_NAME"),
-      desc: fragWithHTML(t("FOLDER_EMBED_DESC")),
-      control: { type: "toggle", key: "embedUseExcalidrawFolder" },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("CROP_FOLDER_NAME"),
-      desc: fragWithHTML(t("CROP_FOLDER_DESC")),
-      control: {
-        type: "text",
-        key: "cropFolder",
-        placeholder: t("CROP_FOLDER_PLACEHOLDER"),
-        vaultPath: { kind: "folder", options: { optional: true } },
-      },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("ANNOTATE_FOLDER_NAME"),
-      desc: fragWithHTML(t("ANNOTATE_FOLDER_DESC")),
-      control: {
-        type: "text",
-        key: "annotateFolder",
-        placeholder: t("ANNOTATE_FOLDER_PLACEHOLDER"),
-        vaultPath: { kind: "folder", options: { optional: true } },
-      },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("TEMPLATE_NAME"),
-      desc: fragWithHTML(t("TEMPLATE_DESC")),
-      control: {
-        type: "text",
-        key: "templateFilePath",
-        placeholder: t("TEMPLATE_PLACEHOLDER"),
-        vaultPath: {
-          kind: "file",
-          options: { optional: true, extensions: ["md", "excalidraw"] },
-        },
-      },
-    });
-    addYouTubeThumbnail(detailsEl, "jgUpYznHP9A", 216);
-
-    this.buildSetting(detailsEl, {
-      name: t("SCRIPT_FOLDER_NAME"),
-      desc: fragWithHTML(t("SCRIPT_FOLDER_DESC")),
-      control: {
-        type: "text",
-        key: "scriptFolderPath",
-        placeholder: t("SCRIPT_FOLDER_PLACEHOLDER"),
-        vaultPath: { kind: "folder" },
-      },
-    });
-
   }
 
-  private renderSavingSection(): void {
-    const { containerEl } = this;
-    let detailsEl: HTMLElement;
-    // ------------------------------------------------
-    // Saving
-    // ------------------------------------------------
-    containerEl.createEl("hr", { cls: "excalidraw-setting-hr" });
-    containerEl.createDiv({
-      text: t("SAVING_DESC"),
-      cls: "setting-item-description",
-    });
-    detailsEl = this.containerEl.createEl("details");
-    const savingDetailsEl = detailsEl;
-    detailsEl.createEl("summary", {
-      text: t("SAVING_HEAD"),
-      cls: "excalidraw-setting-h1",
-    });
+  private isLibraryMigrationAvailable(): boolean {
+    return Boolean(
+      this.plugin.settings.libraryStorageMode === "data-json" &&
+        this.plugin.settings.libraryMigrationStatus !== "opted-out" &&
+        this.plugin.stencilLibraryManager?.hasLegacyItems(),
+    );
+  }
 
-    this.buildSetting(detailsEl, {
-      name: t("COMPRESS_NAME"),
-      desc: fragWithHTML(t("COMPRESS_DESC")),
-      control: { type: "toggle", key: "compress" },
-    });
+  private configureLibraryMigrationSetting(setting: Setting): void {
+    setting
+      .setName(t("LIBRARY_MIGRATE_NOW"))
+      .setDesc(t("LIBRARY_MIGRATE_NOW_DESC"))
+      .addButton((button) =>
+        button
+          .setCta()
+          .setButtonText(t("LIBRARY_MIGRATION_MIGRATE"))
+          .onClick(async () => {
+            await this.plugin.stencilLibraryManager?.showMigrationPrompt();
+            this.refreshSettingsUI();
+          }),
+      );
+  }
 
-    this.buildSetting(detailsEl, {
-      name: t("DECOMPRESS_FOR_MD_NAME"),
-      desc: fragWithHTML(t("DECOMPRESS_FOR_MD_DESC")),
-      control: { type: "toggle", key: "decompressForMDView" },
-    });
+  private renderCheckpoint4ALegacyPages(): void {
+    for (const page of this.getCheckpoint4APages()) {
+      this.containerEl.createEl("hr", { cls: "excalidraw-setting-hr" });
+      this.renderLegacyPage(this.containerEl, page, 1);
+    }
+  }
 
-    this.buildSetting(detailsEl, {
-      name: t("AUTOSAVE_INTERVAL_DESKTOP_NAME"),
-      desc: fragWithHTML(t("AUTOSAVE_INTERVAL_DESKTOP_DESC")),
-      control: {
-        type: "number-dropdown",
-        key: "autosaveIntervalDesktop",
-        parse: "int",
-        options: [
-          { value: 15000, label: "Very frequent (every 15 seconds)" },
-          { value: 30000, label: "Frequent (every 30 seconds)" },
-          { value: 60000, label: "Moderate (every 60 seconds)" },
-          { value: 300000, label: "Rare (every 5 minutes)" },
-          { value: 900000, label: "Practically never (every 15 minutes)" },
-        ],
+  private getSavingSpecs(): SettingSpec[] {
+    return [
+      {
+        name: t("COMPRESS_NAME"),
+        desc: fragWithHTML(t("COMPRESS_DESC")),
+        control: { type: "toggle", key: "compress" },
       },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("AUTOSAVE_INTERVAL_MOBILE_NAME"),
-      desc: fragWithHTML(t("AUTOSAVE_INTERVAL_MOBILE_DESC")),
-      control: {
-        type: "number-dropdown",
-        key: "autosaveIntervalMobile",
-        parse: "int",
-        options: [
-          { value: 10000, label: "Very frequent (every 10 seconds)" },
-          { value: 20000, label: "Frequent (every 20 seconds)" },
-          { value: 30000, label: "Moderate (every 30 seconds)" },
-          { value: 60000, label: "Rare (every 1 minute)" },
-          { value: 300000, label: "Practically never (every 5 minutes)" },
-        ],
+      {
+        name: t("DECOMPRESS_FOR_MD_NAME"),
+        desc: fragWithHTML(t("DECOMPRESS_FOR_MD_DESC")),
+        control: { type: "toggle", key: "decompressForMDView" },
       },
-    });
+      {
+        name: t("AUTOSAVE_INTERVAL_DESKTOP_NAME"),
+        desc: fragWithHTML(t("AUTOSAVE_INTERVAL_DESKTOP_DESC")),
+        aliases: ["desktop autosave frequency"],
+        control: {
+          type: "number-dropdown",
+          key: "autosaveIntervalDesktop",
+          parse: "int",
+          options: [
+            { value: 15000, label: "Very frequent (every 15 seconds)" },
+            { value: 30000, label: "Frequent (every 30 seconds)" },
+            { value: 60000, label: "Moderate (every 60 seconds)" },
+            { value: 300000, label: "Rare (every 5 minutes)" },
+            { value: 900000, label: "Practically never (every 15 minutes)" },
+          ],
+        },
+      },
+      {
+        name: t("AUTOSAVE_INTERVAL_MOBILE_NAME"),
+        desc: fragWithHTML(t("AUTOSAVE_INTERVAL_MOBILE_DESC")),
+        aliases: ["mobile autosave frequency"],
+        control: {
+          type: "number-dropdown",
+          key: "autosaveIntervalMobile",
+          parse: "int",
+          options: [
+            { value: 10000, label: "Very frequent (every 10 seconds)" },
+            { value: 20000, label: "Frequent (every 20 seconds)" },
+            { value: 30000, label: "Moderate (every 30 seconds)" },
+            { value: 60000, label: "Rare (every 1 minute)" },
+            { value: 300000, label: "Practically never (every 5 minutes)" },
+          ],
+        },
+      },
+    ];
+  }
 
-    detailsEl = savingDetailsEl.createEl("details");
-    detailsEl.createEl("summary", {
-      text: t("FILENAME_HEAD"),
-      cls: "excalidraw-setting-h3",
-    });
-
-    detailsEl.createDiv("", (el) => {
+  private renderFilenameInformation(container: HTMLElement): void {
+    const informationEl = container.createDiv(
+      "excalidraw-filename-information",
+    );
+    informationEl.createDiv("", (el) => {
       setSanitizedHtml(el, t("FILENAME_DESC"));
     });
-
-    this.filenameSampleEl = detailsEl.createEl("p", { text: "" });
+    this.filenameSampleEl = informationEl.createEl("p", { text: "" });
     setSanitizedHtml(this.filenameSampleEl, this.getFilenameSample());
+  }
 
-    this.buildSetting(detailsEl, {
-      name: t("FILENAME_PREFIX_NAME"),
-      desc: fragWithHTML(t("FILENAME_PREFIX_DESC")),
-      control: {
-        type: "text",
-        key: "drawingFilenamePrefix",
-        placeholder: t("FILENAME_PREFIX_PLACEHOLDER"),
-        sanitize: sanitizeFilenameSegment,
-        after: () =>
-          setSanitizedHtml(this.filenameSampleEl, this.getFilenameSample()),
+  private refreshFilenameSample(): void {
+    if (this.filenameSampleEl?.isConnected) {
+      setSanitizedHtml(this.filenameSampleEl, this.getFilenameSample());
+    }
+  }
+
+  private getFilenameSpecs(): SettingSpec[] {
+    return [
+      {
+        name: t("FILENAME_PREFIX_NAME"),
+        desc: fragWithHTML(t("FILENAME_PREFIX_DESC")),
+        aliases: ["base filename prefix", "drawing name prefix"],
+        control: {
+          type: "text",
+          key: "drawingFilenamePrefix",
+          placeholder: t("FILENAME_PREFIX_PLACEHOLDER"),
+          sanitize: sanitizeFilenameSegment,
+          after: () => this.refreshFilenameSample(),
+        },
       },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("FILENAME_PREFIX_EMBED_NAME"),
-      desc: fragWithHTML(t("FILENAME_PREFIX_EMBED_DESC")),
-      control: {
-        type: "toggle",
-        key: "drawingEmbedPrefixWithFilename",
-        after: () =>
-          setSanitizedHtml(this.filenameSampleEl, this.getFilenameSample()),
+      {
+        name: t("FILENAME_PREFIX_EMBED_NAME"),
+        desc: fragWithHTML(t("FILENAME_PREFIX_EMBED_DESC")),
+        control: {
+          type: "toggle",
+          key: "drawingEmbedPrefixWithFilename",
+          after: () => this.refreshFilenameSample(),
+        },
       },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("FILENAME_POSTFIX_NAME"),
-      desc: fragWithHTML(t("FILENAME_POSTFIX_DESC")),
-      control: {
-        type: "text",
-        key: "drawingFilnameEmbedPostfix",
-        sanitize: sanitizeFilenameSegment,
-        after: () =>
-          setSanitizedHtml(this.filenameSampleEl, this.getFilenameSample()),
+      {
+        name: t("FILENAME_POSTFIX_NAME"),
+        desc: fragWithHTML(t("FILENAME_POSTFIX_DESC")),
+        aliases: ["embedded drawing filename postfix"],
+        control: {
+          type: "text",
+          key: "drawingFilnameEmbedPostfix",
+          sanitize: sanitizeFilenameSegment,
+          after: () => this.refreshFilenameSample(),
+        },
       },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("FILENAME_DATE_NAME"),
-      desc: fragWithHTML(t("FILENAME_DATE_DESC")),
-      control: {
-        type: "text",
-        key: "drawingFilenameDateTime",
-        placeholder: "YYYY-MM-DD HH.mm.ss",
-        sanitize: sanitizeFilenameSegment,
-        after: () =>
-          setSanitizedHtml(this.filenameSampleEl, this.getFilenameSample()),
+      {
+        name: t("FILENAME_DATE_NAME"),
+        desc: fragWithHTML(t("FILENAME_DATE_DESC")),
+        aliases: ["filename date format", "timestamp"],
+        control: {
+          type: "text",
+          key: "drawingFilenameDateTime",
+          placeholder: "YYYY-MM-DD HH.mm.ss",
+          sanitize: sanitizeFilenameSegment,
+          after: () => this.refreshFilenameSample(),
+        },
       },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("FILENAME_EXCALIDRAW_EXTENSION_NAME"),
-      desc: fragWithHTML(t("FILENAME_EXCALIDRAW_EXTENSION_DESC")),
-      control: {
-        type: "toggle",
-        key: "useExcalidrawExtension",
-        after: () =>
-          setSanitizedHtml(this.filenameSampleEl, this.getFilenameSample()),
+      {
+        name: t("FILENAME_EXCALIDRAW_EXTENSION_NAME"),
+        desc: fragWithHTML(t("FILENAME_EXCALIDRAW_EXTENSION_DESC")),
+        aliases: [".excalidraw.md extension"],
+        control: {
+          type: "toggle",
+          key: "useExcalidrawExtension",
+          after: () => this.refreshFilenameSample(),
+        },
       },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("CROP_PREFIX_NAME"),
-      desc: fragWithHTML(t("CROP_PREFIX_DESC")),
-      control: {
-        type: "text",
-        key: "cropPrefix",
-        placeholder: t("CROP_PREFIX_PLACEHOLDER"),
-        sanitize: sanitizeFilenameSegment,
+      {
+        name: t("CROP_PREFIX_NAME"),
+        desc: fragWithHTML(t("CROP_PREFIX_DESC")),
+        aliases: ["cropped image filename prefix"],
+        control: {
+          type: "text",
+          key: "cropPrefix",
+          placeholder: t("CROP_PREFIX_PLACEHOLDER"),
+          sanitize: sanitizeFilenameSegment,
+        },
       },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("CROP_SUFFIX_NAME"),
-      desc: fragWithHTML(t("CROP_SUFFIX_DESC")),
-      control: {
-        type: "text",
-        key: "cropSuffix",
-        placeholder: t("CROP_SUFFIX_PLACEHOLDER"),
-        sanitize: sanitizeFilenameSegment,
+      {
+        name: t("CROP_SUFFIX_NAME"),
+        desc: fragWithHTML(t("CROP_SUFFIX_DESC")),
+        aliases: ["cropped image filename suffix"],
+        control: {
+          type: "text",
+          key: "cropSuffix",
+          placeholder: t("CROP_SUFFIX_PLACEHOLDER"),
+          sanitize: sanitizeFilenameSegment,
+        },
       },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("ANNOTATE_PREFIX_NAME"),
-      desc: fragWithHTML(t("ANNOTATE_PREFIX_DESC")),
-      control: {
-        type: "text",
-        key: "annotatePrefix",
-        placeholder: t("ANNOTATE_PREFIX_PLACEHOLDER"),
-        sanitize: sanitizeFilenameSegment,
+      {
+        name: t("ANNOTATE_PREFIX_NAME"),
+        desc: fragWithHTML(t("ANNOTATE_PREFIX_DESC")),
+        aliases: ["annotated image filename prefix"],
+        control: {
+          type: "text",
+          key: "annotatePrefix",
+          placeholder: t("ANNOTATE_PREFIX_PLACEHOLDER"),
+          sanitize: sanitizeFilenameSegment,
+        },
       },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("ANNOTATE_SUFFIX_NAME"),
-      desc: fragWithHTML(t("ANNOTATE_SUFFIX_DESC")),
-      control: {
-        type: "text",
-        key: "annotateSuffix",
-        placeholder: t("ANNOTATE_SUFFIX_PLACEHOLDER"),
-        sanitize: sanitizeFilenameSegment,
+      {
+        name: t("ANNOTATE_SUFFIX_NAME"),
+        desc: fragWithHTML(t("ANNOTATE_SUFFIX_DESC")),
+        aliases: ["annotated image filename suffix"],
+        control: {
+          type: "text",
+          key: "annotateSuffix",
+          placeholder: t("ANNOTATE_SUFFIX_PLACEHOLDER"),
+          sanitize: sanitizeFilenameSegment,
+        },
       },
-    });
-
-    this.buildSetting(detailsEl, {
-      name: t("ANNOTATE_PRESERVE_SIZE_NAME"),
-      desc: fragWithHTML(t("ANNOTATE_PRESERVE_SIZE_DESC")),
-      control: { type: "toggle", key: "annotatePreserveSize" },
-    });
-
+      {
+        name: t("ANNOTATE_PRESERVE_SIZE_NAME"),
+        desc: fragWithHTML(t("ANNOTATE_PRESERVE_SIZE_DESC")),
+        control: { type: "toggle", key: "annotatePreserveSize" },
+      },
+    ];
   }
 
   private renderAISection(): void {
@@ -3390,8 +3725,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       control: {
         type: "toggle",
         key: "compatibilityMode",
-        after: () =>
-          setSanitizedHtml(this.filenameSampleEl, this.getFilenameSample()),
+        after: () => this.refreshFilenameSample(),
       },
     });
 

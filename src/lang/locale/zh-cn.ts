@@ -355,6 +355,18 @@ export default {
   SEARCH_SHOWHIDE_ARIA: "显示/隐藏搜索栏",
   SEARCH_NEXT: "下一个",
   SEARCH_PREVIOUS: "上一个",
+  SETTINGS_TOOLBAR_COPY: "复制设置",
+  SETTINGS_TOOLBAR_NOTEBOOKLM: "NotebookLM",
+  SETTINGS_TOOLBAR_BUGS: "问题",
+  SETTINGS_TOOLBAR_WIKI: "Wiki",
+  SETTINGS_TOOLBAR_YOUTUBE: "YouTube",
+  SETTINGS_TOOLBAR_LEARN: "学习",
+  SETTINGS_TOOLBAR_FOLLOW: "Twitter",
+  SETTINGS_TOOLBAR_READ: "阅读书籍",
+  SETTINGS_TOOLBAR_KOFI: "Ko-fi",
+  USE_DECLARATIVE_SETTINGS_NAME: "使用可搜索设置",
+  USE_DECLARATIVE_SETTINGS_DESC:
+    "使用 Obsidian 可搜索的多页面设置界面。关闭后将使用 Excalidraw 的旧版单页面设置。需要重启 Obsidian。",
 
   //settings.ts
   FOLDER_PLACEHOLDER: "e.g.: Excalidraw",
@@ -388,7 +400,6 @@ export default {
     "禁用 Excalidraw 的上下文菜单。这在移动设备上很有用，因为上下文菜单有时会在不需要的时候弹出。",
   NOTEBOOKLM_LINK_ARIA:
     "向 NotebookLM 咨询有关插件的帮助。此模型已预加载了我所有的视频转录稿、发布说明和其他帮助内容。与 NotebookLM 聊天，浏览我的 250+ 视频和 Excalidraw 文件。",
-  NOTEBOOKLM_LINK_TEXT: "学习插件。访问 NotebookLM 知识库。",
   EXCALIDRAW_MASTERY: "Excalidraw Mastery",
   EXCALIDRAW_MASTERY_PROMO_ARIA: "打开 Excalidraw Mastery",
   EXCALIDRAW_MASTERY_PROMO_HTML: `<p><b>在各种开关和菜单里找不着北？</b></p><p>Excalidraw 是一款为高强度工作流打造的 Visual PKM 强力工具，适合 <b>Visual-First Daily Notes</b>、深度 <b>PDF 研究</b>、<b>自动化</b>、<b>AI 集成</b> 和 <b>Visual Zettelkasten</b>。但强大能力也伴随着复杂度。</p><p>跳过反复试错。<a href="${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_EM}" target="_blank">👉 加入 Excalidraw Mastery</a>，一步一步学会这些具体配置。减少工具摩擦，与视觉思维社区伙伴一起掌握知识！</p>`,
@@ -419,6 +430,14 @@ export default {
     "<b>关闭：</b>您需要手动检查插件更新（设置 - 第三方插件 - 检查更新）。",
 
   BASIC_HEAD: "基本",
+  BASIC_UPDATES_STARTUP_HEAD: "更新与启动",
+  BASIC_UPDATES_STARTUP_DESC: "发行说明、更新检查与通知，以及启动欢迎画面。",
+  BASIC_FILES_FOLDERS_HEAD: "文件与文件夹",
+  BASIC_FILES_FOLDERS_DESC:
+    "设置绘图、裁剪、批注、模板和 Excalidraw Automate 脚本的默认文件夹与路径。",
+  BASIC_STENCIL_LIBRARY_HEAD: "素材库",
+  BASIC_STENCIL_LIBRARY_DESC:
+    "选择素材库数据的存储位置，并配置其仓库文件夹和本地素材库文件。",
   BASIC_DESC: `包括：更新说明，更新通知，新绘图文件、模板文件、脚本文件的存储路径等。`,
   FOLDER_NAME: "Excalidraw 文件夹（區分大小寫！）",
   FOLDER_DESC: "新绘图的默认存储路径。若为空，将在仓库根目录中创建新绘图。",
@@ -599,6 +618,9 @@ export default {
   AI_USAGE_SETTINGS_BUTTON_DESC:
     "按模型查看当前 Obsidian 会话的 AI Token 消耗明细。重启后将重置。",
   SAVING_HEAD: "保存",
+  SAVING_STORAGE_AUTOSAVE_HEAD: "存储与自动保存",
+  SAVING_STORAGE_AUTOSAVE_DESC:
+    "控制绘图 JSON 压缩，并选择桌面端和移动端的自动保存间隔。",
   SAVING_DESC: "包括：压缩，自动保存的时间间隔，文件的命名格式和扩展名等。",
   COMPRESS_NAME: "压缩 Excalidraw JSON",
   COMPRESS_DESC:
@@ -631,6 +653,8 @@ export default {
     "直接退出 Obsidian 应用（在应用切换器中划掉）不会触发自动保存。" +
     "此外，当您切换到其他应用时，有时系统会自动清理 Obsidian 后台以释放资源。这种情况下，自动保存会失效。",
   FILENAME_HEAD: "文件名",
+  FILENAME_GROUP_DESC:
+    "配置新建、嵌入、裁剪和批注绘图文件名的生成方式。",
   FILENAME_DESC: `<p>点击阅读 <a href="${URLs.MOMENTJS_COM_DOCS}">日期和时间格式参考</a>。</p>`,
   FILENAME_SAMPLE: "“新建绘图”系列命令创建的文件名如：",
   FILENAME_EMBED_SAMPLE:

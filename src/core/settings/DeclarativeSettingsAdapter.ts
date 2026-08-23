@@ -8,7 +8,10 @@ import type {
   SettingBindingKey,
   SettingSpec,
 } from "src/core/settings/settingSpecs";
-import type { SettingDefinitionItem } from "src/types/obsidianDeclarativeSettings";
+import type {
+  SettingDefinition,
+} from "src/types/obsidianDeclarativeSettings";
+import { annotateMarkdownDefinition } from "src/core/settings/declarativeSettingsMarkdown";
 
 /** Converts canonical setting rows into Obsidian 1.13 definitions. */
 export class DeclarativeSettingsAdapter {
@@ -31,13 +34,13 @@ export class DeclarativeSettingsAdapter {
   /** Converts a flat batch and rebuilds its binding registry. */
   toDefinitions(
     specs: readonly SettingSpec[],
-  ): SettingDefinitionItem<SettingBindingKey>[] {
+  ): SettingDefinition<SettingBindingKey>[] {
     this.beginBuild();
     return specs.map((spec) => this.toDefinition(spec));
   }
 
   /** Converts one canonical row during the current definition build. */
-  toDefinition(spec: SettingSpec): SettingDefinitionItem<SettingBindingKey> {
+  toDefinition(spec: SettingSpec): SettingDefinition<SettingBindingKey> {
     if (this.requiresCustomRender(spec)) {
       return this.toRenderedDefinition(spec);
     }
@@ -127,16 +130,19 @@ export class DeclarativeSettingsAdapter {
 
   private toRenderedDefinition(
     spec: SettingSpec,
-  ): SettingDefinitionItem<SettingBindingKey> {
-    return {
-      name: this.toSearchText(spec.name),
-      desc:
-        spec.desc === undefined ? undefined : this.toSearchText(spec.desc),
-      aliases: spec.aliases,
-      searchable: spec.searchable,
-      visible: spec.visible,
-      render: (setting) => this.legacyAdapter.configure(setting, spec),
-    };
+  ): SettingDefinition<SettingBindingKey> {
+    return annotateMarkdownDefinition(
+      {
+        name: this.toSearchText(spec.name),
+        desc:
+          spec.desc === undefined ? undefined : this.toSearchText(spec.desc),
+        aliases: spec.aliases,
+        searchable: spec.searchable,
+        visible: spec.visible,
+        render: (setting) => this.legacyAdapter.configure(setting, spec),
+      },
+      { controlType: spec.control.type },
+    );
   }
 
   private toSearchText(value: string | DocumentFragment): string {

@@ -390,12 +390,22 @@ export default {
   SEARCH_SHOWHIDE_ARIA: "Mostrar/Ocultar barra de búsqueda",
   SEARCH_NEXT: "Siguiente",
   SEARCH_PREVIOUS: "Anterior",
+  SETTINGS_TOOLBAR_COPY: "Copiar ajustes",
+  SETTINGS_TOOLBAR_NOTEBOOKLM: "NotebookLM",
+  SETTINGS_TOOLBAR_BUGS: "Errores",
+  SETTINGS_TOOLBAR_WIKI: "Wiki",
+  SETTINGS_TOOLBAR_YOUTUBE: "YouTube",
+  SETTINGS_TOOLBAR_LEARN: "Aprender",
+  SETTINGS_TOOLBAR_FOLLOW: "Twitter",
+  SETTINGS_TOOLBAR_READ: "Leer libro",
+  SETTINGS_TOOLBAR_KOFI: "Ko-fi",
+  USE_DECLARATIVE_SETTINGS_NAME: "Usar ajustes con búsqueda",
+  USE_DECLARATIVE_SETTINGS_DESC:
+    "Usa la interfaz de ajustes de Obsidian con búsqueda y varias páginas. Desactívala para usar los ajustes heredados de Excalidraw en una sola página. Requiere reiniciar Obsidian.",
 
   //settings.ts
   NOTEBOOKLM_LINK_ARIA:
     "Pídele ayuda a NotebookLM sobre el complemento. Este modelo viene precargado con todas mis transcripciones de videos, notas de lanzamiento y otro contenido útil. Chatea con NotebookLM para explorar mis más de 250 videos y la documentación de Excalidraw.",
-  NOTEBOOKLM_LINK_TEXT:
-    "Aprende sobre el complemento. Accede a la base de conocimientos de NotebookLM.",
   LINKS_BUGS_ARIA:
     "Reporta errores y solicita nuevas funciones en la página de GitHub del complemento",
   LINKS_BUGS: "Reportar Errores",
@@ -425,6 +435,15 @@ export default {
     "<b><u>Desactivado:</u></b> Modo silencioso. Necesitarás verificar las actualizaciones del complemento en Complementos Comunitarios.",
 
   BASIC_HEAD: "Básico",
+  BASIC_UPDATES_STARTUP_HEAD: "Actualizaciones e inicio",
+  BASIC_UPDATES_STARTUP_DESC:
+    "Notas de la versión, comprobaciones y avisos de actualizaciones, y la pantalla de inicio.",
+  BASIC_FILES_FOLDERS_HEAD: "Archivos y carpetas",
+  BASIC_FILES_FOLDERS_DESC:
+    "Carpetas y rutas predeterminadas para dibujos, recortes, anotaciones, plantillas y scripts de Excalidraw Automate.",
+  BASIC_STENCIL_LIBRARY_HEAD: "Biblioteca de elementos",
+  BASIC_STENCIL_LIBRARY_DESC:
+    "Elige dónde se guardan los datos de la biblioteca de elementos y configura su carpeta y archivo local.",
   BASIC_DESC: `En la configuración "Básico", puedes configurar opciones como mostrar las notas de la versión después de las actualizaciones, recibir notificaciones de actualización del complemento, establecer la ubicación predeterminada para nuevos bosquejos, especificar la carpeta de Excalidraw para incrustar bosquejos en documentos activos, definir un archivo de plantilla de Excalidraw, y designar una carpeta de scripts de Excalidraw Automate para gestionar scripts de automatización.`,
   FOLDER_NAME: "Carpeta de Excalidraw (¡Sensible a MAYÚSCULAS/minúsculas!)",
   FOLDER_DESC:
@@ -638,6 +657,9 @@ export default {
   AI_USAGE_SETTINGS_BUTTON_DESC:
     "Ver el consumo de tokens de IA en la sesión actual de Obsidian desglosado por modelo. El uso se reinicia al reiniciar.",
   SAVING_HEAD: "Guardar",
+  SAVING_STORAGE_AUTOSAVE_HEAD: "Almacenamiento y guardado automático",
+  SAVING_STORAGE_AUTOSAVE_DESC:
+    "Controla la compresión del JSON de los dibujos y los intervalos de guardado automático en escritorio y móvil.",
   SAVING_DESC:
     "En la sección 'Guardar' de la Configuración de Excalidraw, puedes configurar cómo se guardan tus bosquejos. Esto incluye opciones para comprimir el JSON de Excalidraw en Markdown, establecer intervalos de autoguardado para escritorio y móvil, definir formatos de nombre de archivo y elegir si usar la extensión de archivo .excalidraw.md o .md. ",
   COMPRESS_NAME: "Comprimir JSON de Excalidraw en Markdown",
@@ -672,6 +694,8 @@ export default {
     "Excalidraw no podrá guardar tu trabajo al cerrar Obsidian directamente (es decir, al deslizar la aplicación para cerrarla). También ten en cuenta que cuando cambias de aplicación en un dispositivo móvil, a veces Android e iOS cierran " +
     "Obsidian en segundo plano para ahorrar recursos del sistema. En tal caso, Excalidraw no podrá guardar los últimos cambios.",
   FILENAME_HEAD: "Nombre de archivo",
+  FILENAME_GROUP_DESC:
+    "Configura cómo se generan los nombres de dibujos nuevos, incrustados, recortados y anotados.",
   FILENAME_DESC:
     `<p>Haz click en este enlace para la <a href="${URLs.MOMENTJS_COM_DOCS}">` +
     `referencia de formato de fecha y hora</a>.</p>`,

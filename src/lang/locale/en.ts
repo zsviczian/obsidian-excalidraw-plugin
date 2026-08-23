@@ -399,6 +399,18 @@ export default {
   SEARCH_SHOWHIDE_ARIA: "Show/Hide search bar",
   SEARCH_NEXT: "Next",
   SEARCH_PREVIOUS: "Previous",
+  SETTINGS_TOOLBAR_COPY: "Copy settings",
+  SETTINGS_TOOLBAR_NOTEBOOKLM: "NotebookLM",
+  SETTINGS_TOOLBAR_BUGS: "Bugs",
+  SETTINGS_TOOLBAR_WIKI: "Wiki",
+  SETTINGS_TOOLBAR_YOUTUBE: "YouTube",
+  SETTINGS_TOOLBAR_LEARN: "Learn",
+  SETTINGS_TOOLBAR_FOLLOW: "Twitter",
+  SETTINGS_TOOLBAR_READ: "Read Book",
+  SETTINGS_TOOLBAR_KOFI: "Ko-fi",
+  USE_DECLARATIVE_SETTINGS_NAME: "Use searchable settings",
+  USE_DECLARATIVE_SETTINGS_DESC:
+    "Use Obsidian's searchable, multi-page settings interface. Turn this off to use Excalidraw's legacy single-page settings. Requires restarting Obsidian.",
 
   //settings.ts
   FOLDER_PLACEHOLDER: "e.g.: Excalidraw",
@@ -433,8 +445,6 @@ export default {
     "Disables the Excalidraw context menu. This can be useful on Mobile devices where the context menu pops up in unwanted moments.",
   NOTEBOOKLM_LINK_ARIA:
     "Ask NotebookLM for help about the plugin. This model is pre-loaded with all my video transcripts, release notes and other helpful content. Chat with NotebookLM to explore my 250+ videos and the Excalidraw documentation.",
-  NOTEBOOKLM_LINK_TEXT:
-    "Learn the Plugin. Access the NotebookLM knowledgebase.",
   EXCALIDRAW_MASTERY: "Excalidraw Mastery",
   EXCALIDRAW_MASTERY_PROMO_ARIA: "Open Excalidraw Mastery",
   EXCALIDRAW_MASTERY_PROMO_HTML: `<p><b>Feeling lost in the toggles and menus?</b></p><p>Excalidraw is a Visual PKM powerhouse built for heavy-duty workflows like <b>Visual-First Daily Notes</b>, deep <b>PDF research</b>, <b>automation</b>, <b>AI integration</b>, and <b>Visual Zettelkasten</b>. But all this power comes with complexity.</p><p>Skip the trial and error. <a href="${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_EM}" target="_blank">👉 Join Excalidraw Mastery</a> to learn these exact setups step-by-step. Overcome tool friction and master your knowledge alongside a supportive community of visual thinkers!</p>`,
@@ -468,6 +478,15 @@ export default {
     "<b><u>Toggle OFF:</u></b> Silent mode. You need to check for plugin updates in Community Plugins.",
 
   BASIC_HEAD: "Basic",
+  BASIC_UPDATES_STARTUP_HEAD: "Updates and startup",
+  BASIC_UPDATES_STARTUP_DESC:
+    "Release notes, update checks and notifications, and the startup splash screen.",
+  BASIC_FILES_FOLDERS_HEAD: "Files and folders",
+  BASIC_FILES_FOLDERS_DESC:
+    "Default folders and paths for drawings, crops, annotations, templates, and Excalidraw Automate scripts.",
+  BASIC_STENCIL_LIBRARY_HEAD: "Stencil Library",
+  BASIC_STENCIL_LIBRARY_DESC:
+    "Choose where stencil library data is stored and configure its vault folder and local library file.",
   BASIC_DESC: `In the "Basic" settings, you can configure options such as displaying release notes after updates, receiving plugin update notifications, setting the default location for new drawings, specifying the Excalidraw folder for embedding drawings into active documents, defining an Excalidraw template file, and designating an Excalidraw Automate script folder for managing automation scripts.`,
   FOLDER_NAME: "Excalidraw folder (CAsE sEnsITive!)",
   FOLDER_DESC:
@@ -667,6 +686,9 @@ export default {
   AI_USAGE_SETTINGS_BUTTON_DESC:
     "View AI token consumption for the current Obsidian session broken down by model. Usage resets on restart.",
   SAVING_HEAD: "Saving",
+  SAVING_STORAGE_AUTOSAVE_HEAD: "Storage and autosave",
+  SAVING_STORAGE_AUTOSAVE_DESC:
+    "Control drawing JSON compression and choose desktop and mobile autosave intervals.",
   SAVING_DESC:
     "In the 'Saving' section of Excalidraw Settings, you can configure how your drawings are saved. This includes options for compressing Excalidraw JSON in Markdown, setting autosave intervals for both desktop and mobile, defining filename formats, and choosing whether to use the .excalidraw.md or .md file extension. ",
   COMPRESS_NAME: "Compress Excalidraw JSON in Markdown",
@@ -700,6 +722,8 @@ export default {
     "Excalidraw will not be able to save your work when terminating Obsidian directly (i.e. swiping it away). Also note, that when you switch apps on a Mobile device, sometimes Android and iOS closes " +
     "Obsidian in the background to save system resources. In such a case Excalidraw will not be able to save the latest changes.",
   FILENAME_HEAD: "Filename",
+  FILENAME_GROUP_DESC:
+    "Configure how new, embedded, cropped, and annotated drawing filenames are generated.",
   FILENAME_DESC:
     `<p>Click this link for the <a href="${URLs.MOMENTJS_COM_DOCS}">` +
     "date and time format reference</a>.</p>",

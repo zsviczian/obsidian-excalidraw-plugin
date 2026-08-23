@@ -5,26 +5,26 @@ import { setStyle } from "src/utils/styleUtils";
 import { isInstanceOfHTMLElement } from "src/utils/typechecks";
 
 declare const mainDocument: Document;
-declare const deliberateCreateElement: (document: Document, tagName: string) => HTMLElement;
+declare const deliberateCreateElement: (
+  document: Document,
+  tagName: string,
+) => HTMLElement;
+
 export class ContentSearcher {
   private contentDiv: HTMLElement;
   private searchBar: HTMLInputElement;
   private prevButton: HTMLButtonElement;
   private nextButton: HTMLButtonElement;
-  private exportMarkdown: HTMLButtonElement;
   private showHideButton: HTMLButtonElement;
-  private customElemenentContainer: HTMLDivElement;
   private inputContainer: HTMLDivElement;
-  private customElement: HTMLElement;
   private hitCount: HTMLSpanElement;
   private searchBarWrapper: HTMLDivElement;
 
-  constructor(contentDiv: HTMLElement, customElement?: HTMLElement) {
+  constructor(contentDiv: HTMLElement) {
     this.contentDiv = contentDiv;
-    this.customElement = customElement;
     this.createSearchElements();
     this.setupEventListeners();
-    contentDiv.prepend(this.getSearchBarWrapper());
+    contentDiv.prepend(this.searchBarWrapper);
   }
 
   /**
@@ -68,16 +68,6 @@ export class ContentSearcher {
     });
     setIcon(this.nextButton, "arrow-down");
 
-    this.exportMarkdown = createEl("button", {
-      cls: ["clickable-icon", "document-search-button"],
-      attr: {
-        "aria-label": t("SEARCH_COPY_TO_CLIPBOARD_ARIA"),
-        "data-tooltip-position": "top",
-      },
-      type: "button",
-    });
-    setIcon(this.exportMarkdown, "clipboard-copy");
-
     this.showHideButton = createEl("button", {
       cls: ["clickable-icon", "document-search-button", "search-visible"],
       attr: {
@@ -90,19 +80,12 @@ export class ContentSearcher {
 
     buttonContainer.appendChild(this.prevButton);
     buttonContainer.appendChild(this.nextButton);
-    buttonContainer.appendChild(this.exportMarkdown);
     buttonContainer.appendChild(this.showHideButton);
 
     documentSearch.appendChild(this.inputContainer);
     documentSearch.appendChild(buttonContainer);
 
     this.searchBarWrapper.appendChild(documentSearch);
-
-    this.customElemenentContainer = createDiv();
-    if (this.customElement) {
-      this.customElemenentContainer.appendChild(this.customElement);
-      this.searchBarWrapper.appendChild(this.customElemenentContainer);
-    }
   }
 
   /**
@@ -111,56 +94,11 @@ export class ContentSearcher {
   private setupEventListeners(): void {
     this.nextButton.onclick = () => this.navigateSearchResults("next");
     this.prevButton.onclick = () => this.navigateSearchResults("previous");
-    this.exportMarkdown.onclick = () => {
-      const exportContent = this.contentDiv.cloneNode(true) as HTMLElement;
-      exportContent.querySelector(".excalidraw-search")?.remove();
-
-      const childNodes = Array.from(exportContent.childNodes);
-      const startIndex = childNodes.findIndex(
-        (node) => isInstanceOfHTMLElement(node) && node.tagName === "HR",
-      );
-      const nodesToExport =
-        startIndex > -1 ? childNodes.slice(startIndex) : childNodes;
-        // div should never be attached to the DOM
-      const htmlContainer = deliberateCreateElement(mainDocument, "div");
-
-      nodesToExport.forEach((node) => {
-        htmlContainer.appendChild(node.cloneNode(true));
-      });
-
-      const html = htmlContainer.innerHTML;
-
-      function replaceHeading(html: string, level: number): string {
-        const re = new RegExp(
-          `<summary class="excalidraw-setting-h${level}">([^<]+)</summary>`,
-          "g",
-        );
-        return html.replaceAll(
-          re,
-          `<summary class="excalidraw-setting-h${level}"><h${level}>$1</h${level}></summary>`,
-        );
-      }
-
-      let x = replaceHeading(html, 1);
-      x = replaceHeading(x, 2);
-      x = replaceHeading(x, 3);
-      x = replaceHeading(x, 4);
-      x = x.replaceAll(
-        /<div class="setting-item-name">([^<]+)<\/div>/g,
-        "<h5>$1</h5>",
-      );
-
-      const md = htmlToMarkdown(x);
-      void window.navigator.clipboard.writeText(md);
-      new Notice(t("SEARCH_COPIED_TO_CLIPBOARD"));
-    };
     this.showHideButton.onclick = () => {
       const setOpacity = (value: string | null) => {
         setStyle(this.inputContainer, { opacity: value });
         setStyle(this.prevButton, { opacity: value });
         setStyle(this.nextButton, { opacity: value });
-        setStyle(this.exportMarkdown, { opacity: value });
-        setStyle(this.customElemenentContainer, { opacity: value });
       };
       if (this.showHideButton.hasClass("search-visible")) {
         this.showHideButton.removeClass("search-visible");
@@ -207,11 +145,49 @@ export class ContentSearcher {
     });
   }
 
-  /**
-   * Get the search bar wrapper element to add to the DOM
-   */
-  public getSearchBarWrapper(): HTMLElement {
-    return this.searchBarWrapper;
+  /** Copies the complete legacy settings DOM as Markdown. */
+  public copyContentAsMarkdown(): void {
+    const exportContent = this.contentDiv.cloneNode(true) as HTMLElement;
+    exportContent.querySelector(".excalidraw-search")?.remove();
+    exportContent
+      .querySelectorAll(".excalidraw-declarative-settings-toolbar")
+      .forEach((toolbar) => toolbar.remove());
+
+    const childNodes = Array.from(exportContent.childNodes);
+    const startIndex = childNodes.findIndex(
+      (node) => isInstanceOfHTMLElement(node) && node.tagName === "HR",
+    );
+    const nodesToExport =
+      startIndex > -1 ? childNodes.slice(startIndex) : childNodes;
+    const htmlContainer = deliberateCreateElement(mainDocument, "div");
+
+    nodesToExport.forEach((node) => {
+      htmlContainer.appendChild(node.cloneNode(true));
+    });
+
+    const replaceHeading = (html: string, level: number): string => {
+      const expression = new RegExp(
+        `<summary class="excalidraw-setting-h${level}">([^<]+)</summary>`,
+        "g",
+      );
+      return html.replaceAll(
+        expression,
+        `<summary class="excalidraw-setting-h${level}"><h${level}>$1</h${level}></summary>`,
+      );
+    };
+
+    let html = htmlContainer.innerHTML;
+    for (let level = 1; level <= 4; level++) {
+      html = replaceHeading(html, level);
+    }
+    html = html.replaceAll(
+      /<div class="setting-item-name">([^<]+)<\/div>/g,
+      "<h5>$1</h5>",
+    );
+
+    const markdown = htmlToMarkdown(html);
+    void window.navigator.clipboard.writeText(markdown);
+    new Notice(t("SEARCH_COPIED_TO_CLIPBOARD"));
   }
 
   /**
@@ -239,7 +215,7 @@ export class ContentSearcher {
     nodesToReplace.forEach((node) => {
       const nodeContent = node.nodeValue;
       const newNode = createFragment();
-      
+
       let lastIndex = 0;
       let match;
       const regex = new RegExp(escapeRegExp(searchTerm), "gi");

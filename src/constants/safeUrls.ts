@@ -103,7 +103,7 @@ export const URL_REGISTRY = {
     UrlPurpose.SUPPORT,
   ),
   COMMUNITY_SKETCH_YOUR_MIND_COM_WIKI: defineUrl(
-    "https://community.sketch-your-mind.com/wiki",
+    "https://community.sketch-your-mind.com/Wiki",
     UrlPurpose.SUPPORT,
   ),
   WWW_YOUTUBE_COM_VISUALPKM: defineUrl(

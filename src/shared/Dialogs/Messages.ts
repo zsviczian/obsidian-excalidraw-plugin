@@ -24,6 +24,9 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 - Updated the plugin-private React and ReactDOM runtime to React 19.
 - Improved loading performance for drawings with many cached embedded files by avoiding large cache rewrites, SVG reconstruction, unnecessary image measurement and hashing, premature cache-read timeouts, and duplicate SVG normalization when cached drawings are handed to the canvas. Cached and direct images now appear before uncached generated drawings. The disposable image cache is rebuilt once after updating; drawing backups are preserved.
 
+## New
+- On Obsidian 1.13 and newer, Excalidraw settings use Obsidian's searchable multi-page interface by default. A top-level setting lets you switch between this interface and the legacy single-page layout after restarting Obsidian.
+
 ## Fixed
 - Rapid text editing in Excalidraw settings no longer loses focus or collapses the active section. Settings writes are coalesced and serialized. Excalidraw now keeps a device-local last-known-good recovery copy: corrupted synchronized settings are rejected and repaired from memory while running, or restored automatically from recovery at startup. If the settings file is deliberately removed, Excalidraw asks whether to restore that backup or reset to factory defaults.
 - The Excalidraw color palette now uses its natural height when space is available instead of being unnecessarily limited to a short, vertically scrolling panel. Its native color control also remains aligned with the hex input.

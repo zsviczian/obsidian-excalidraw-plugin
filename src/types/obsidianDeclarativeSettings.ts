@@ -122,13 +122,13 @@ type SettingDefinitionEmpty = SettingDefinitionBase & {
   render?: never;
 };
 
-type SettingDefinition<K extends string> =
+export type SettingDefinition<K extends string = string> =
   | SettingDefinitionControl<K>
   | SettingDefinitionAction
   | SettingDefinitionRender
   | SettingDefinitionEmpty;
 
-type SettingDefinitionPage<K extends string> = {
+type SettingDefinitionPage<K extends string = string> = {
   type: "page";
   name: string;
   desc?: string | DocumentFragment;
@@ -136,7 +136,7 @@ type SettingDefinitionPage<K extends string> = {
   visible?: boolean | (() => boolean);
 };
 
-type SettingDefinitionGroup<K extends string> = {
+type SettingDefinitionGroup<K extends string = string> = {
   type: "group";
   heading?: string;
   cls?: string;
