@@ -68,9 +68,6 @@ function getControlType(definition: SettingDefinition): string | undefined {
   if ("control" in definition && definition.control) {
     return normalizeControlType(definition.control.type);
   }
-  if ("action" in definition && definition.action) {
-    return "action";
-  }
   if ("render" in definition && definition.render) {
     return "custom control";
   }
@@ -96,7 +93,7 @@ function renderItems(
   const output: string[] = [];
 
   for (const item of items) {
-    if ("type" in item && item.type === "page") {
+    if ("type" in item) {
       output.push(`${"#".repeat(headingLevel)} ${item.name}`);
       const description = toMarkdown(item.desc);
       if (description) {
@@ -104,21 +101,6 @@ function renderItems(
       }
       if (item.items?.length) {
         output.push(...renderItems(item.items, headingLevel + 1));
-      }
-      continue;
-    }
-
-    if ("type" in item && item.type === "group") {
-      if (item.heading) {
-        output.push(`${"#".repeat(headingLevel)} ${item.heading}`);
-      }
-      if (item.items?.length) {
-        output.push(
-          ...renderItems(
-            item.items,
-            item.heading ? headingLevel + 1 : headingLevel,
-          ),
-        );
       }
       continue;
     }

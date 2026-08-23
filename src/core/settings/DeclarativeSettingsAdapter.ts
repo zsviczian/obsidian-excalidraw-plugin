@@ -17,6 +17,7 @@ import { annotateMarkdownDefinition } from "src/core/settings/declarativeSetting
 export class DeclarativeSettingsAdapter {
   private readonly bindings: SettingBindingRegistry;
   private readonly legacyAdapter: LegacySettingsAdapter;
+  private registerBindings = true;
 
   constructor(
     bindings: SettingBindingRegistry,
@@ -26,17 +27,12 @@ export class DeclarativeSettingsAdapter {
     this.legacyAdapter = legacyAdapter;
   }
 
-  /** Starts a definition build and invalidates bindings from the prior build. */
-  beginBuild(): void {
-    this.bindings.clear();
-  }
-
-  /** Converts a flat batch and rebuilds its binding registry. */
-  toDefinitions(
-    specs: readonly SettingSpec[],
-  ): SettingDefinition<SettingBindingKey>[] {
-    this.beginBuild();
-    return specs.map((spec) => this.toDefinition(spec));
+  /** Starts a definition build, optionally replacing the live control bindings. */
+  beginBuild(registerBindings: boolean = true): void {
+    this.registerBindings = registerBindings;
+    if (registerBindings) {
+      this.bindings.clear();
+    }
   }
 
   /** Converts one canonical row during the current definition build. */
@@ -45,7 +41,9 @@ export class DeclarativeSettingsAdapter {
       return this.toRenderedDefinition(spec);
     }
 
-    this.bindings.register(spec);
+    if (this.registerBindings) {
+      this.bindings.register(spec);
+    }
     const base = {
       name: this.toSearchText(spec.name),
       desc: spec.desc,

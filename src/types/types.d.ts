@@ -47,7 +47,7 @@ type ObsidianInternalPluginsManager = {
 type ObsidianSettingsManager = {
   open(): void;
   findTabById?(tabId: string): PluginSettingTab | null;
-  openTabById(tabId: string): PluginSettingTab | null;
+  openTabById(tabId: string): void;
   /**
    * Resolves a settings-tab identifier and opens its declarative page path.
    * This is an unpublished Obsidian 1.13+ API and may be absent or change
@@ -63,15 +63,6 @@ type ObsidianSettingsManager = {
    * absent or change without notice; callers must guard it at runtime.
    */
   navigateToPage?(tab: PluginSettingTab, pagePath: string[]): void;
-  /**
-   * Opens and optionally scrolls to an indexed declarative setting. This is
-   * an unpublished Obsidian 1.13+ API and may be absent or change without
-   * notice; callers must guard it at runtime.
-   */
-  navigateToSearchResult?(
-    location: { tab: PluginSettingTab; pagePath: string[] },
-    match?: { entry: { definition: unknown } },
-  ): void;
 };
 
 type ObsidianViewRegistry = {

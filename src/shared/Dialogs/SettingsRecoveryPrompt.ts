@@ -53,27 +53,6 @@ export class SettingsRecoveryPrompt extends Modal {
     });
 
     const buttons = new Setting(this.contentEl);
-    if (hasRecovery) {
-      buttons.addButton((button) =>
-        button
-          .setButtonText(t("SETTINGS_RECOVERY_RESET_DEFAULTS"))
-          .onClick(() => {
-            this.choice = "reset-defaults";
-            this.close();
-          }),
-      );
-      buttons.addButton((button) =>
-        button
-          .setCta()
-          .setButtonText(t("SETTINGS_RECOVERY_RESTORE_BACKUP"))
-          .onClick(() => {
-            this.choice = "restore-recovery";
-            this.close();
-          }),
-      );
-      return;
-    }
-
     buttons.addButton((button) =>
       button
         .setButtonText(t("SETTINGS_RECOVERY_RESET_DEFAULTS"))
@@ -85,9 +64,15 @@ export class SettingsRecoveryPrompt extends Modal {
     buttons.addButton((button) =>
       button
         .setCta()
-        .setButtonText(t("SETTINGS_RECOVERY_WAIT_FOR_FILE"))
+        .setButtonText(
+          t(
+            hasRecovery
+              ? "SETTINGS_RECOVERY_RESTORE_BACKUP"
+              : "SETTINGS_RECOVERY_WAIT_FOR_FILE",
+          ),
+        )
         .onClick(() => {
-          this.choice = "wait-for-file";
+          this.choice = hasRecovery ? "restore-recovery" : "wait-for-file";
           this.close();
         }),
     );

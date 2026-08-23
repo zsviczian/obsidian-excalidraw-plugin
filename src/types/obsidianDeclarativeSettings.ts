@@ -13,11 +13,8 @@
  */
 
 import type {
-  HexString,
   PluginSettingTab,
   Setting,
-  TFile,
-  TFolder,
 } from "obsidian";
 
 type SettingControlBase<V, K extends string> = {
@@ -41,25 +38,6 @@ type SettingTextControl<K extends string> = SettingControlBase<string, K> & {
   placeholder?: string;
 };
 
-type SettingTextAreaControl<K extends string> = SettingControlBase<string, K> & {
-  type: "textarea";
-  placeholder?: string;
-  rows?: number;
-};
-
-type SettingFileControl<K extends string> = SettingControlBase<string, K> & {
-  type: "file";
-  placeholder?: string;
-  filter?: (file: TFile) => boolean;
-};
-
-type SettingFolderControl<K extends string> = SettingControlBase<string, K> & {
-  type: "folder";
-  placeholder?: string;
-  filter?: (folder: TFolder) => boolean;
-  includeRoot?: boolean;
-};
-
 type SettingSliderControl<K extends string> = SettingControlBase<number, K> & {
   type: "slider";
   min: number;
@@ -67,19 +45,11 @@ type SettingSliderControl<K extends string> = SettingControlBase<number, K> & {
   step: number;
 };
 
-type SettingColorControl<K extends string> = SettingControlBase<HexString, K> & {
-  type: "color";
-};
-
 type SettingControl<K extends string> =
   | SettingToggleControl<K>
   | SettingDropdownControl<K>
   | SettingTextControl<K>
-  | SettingTextAreaControl<K>
-  | SettingFileControl<K>
-  | SettingFolderControl<K>
-  | SettingSliderControl<K>
-  | SettingColorControl<K>;
+  | SettingSliderControl<K>;
 
 type SettingDefinitionBase = {
   name: string;
@@ -92,13 +62,6 @@ type SettingDefinitionBase = {
 type SettingDefinitionControl<K extends string> = SettingDefinitionBase & {
   control: SettingControl<K>;
   action?: never;
-  render?: never;
-};
-
-type SettingDefinitionAction = SettingDefinitionBase & {
-  action: (el: HTMLElement, index: number) => void;
-  disabled?: boolean | (() => boolean);
-  control?: never;
   render?: never;
 };
 
@@ -116,31 +79,15 @@ type SettingDefinitionRender = SettingDefinitionBase & {
   control?: never;
 };
 
-type SettingDefinitionEmpty = SettingDefinitionBase & {
-  action?: never;
-  control?: never;
-  render?: never;
-};
-
 export type SettingDefinition<K extends string = string> =
   | SettingDefinitionControl<K>
-  | SettingDefinitionAction
-  | SettingDefinitionRender
-  | SettingDefinitionEmpty;
+  | SettingDefinitionRender;
 
 type SettingDefinitionPage<K extends string = string> = {
   type: "page";
   name: string;
   desc?: string | DocumentFragment;
   items?: SettingDefinitionItem<K>[];
-  visible?: boolean | (() => boolean);
-};
-
-type SettingDefinitionGroup<K extends string = string> = {
-  type: "group";
-  heading?: string;
-  cls?: string;
-  items?: (SettingDefinition<K> | SettingDefinitionPage<K>)[];
   visible?: boolean | (() => boolean);
 };
 
@@ -152,7 +99,6 @@ type SettingDefinitionGroup<K extends string = string> = {
  */
 export type SettingDefinitionItem<K extends string = string> =
   | SettingDefinition<K>
-  | SettingDefinitionGroup<K>
   | SettingDefinitionPage<K>;
 
 /**

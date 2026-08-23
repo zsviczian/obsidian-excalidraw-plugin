@@ -137,6 +137,16 @@ interface SettingsPageModel {
   renderLegacy?: (container: HTMLElement) => void;
 }
 
+/** Mutable component references scoped to one rendered settings tree. */
+interface SettingsRenderState {
+  filenameSampleEl: HTMLElement | null;
+  gridColorSettingEl: HTMLElement | null;
+  todoPrefixSetting: TextComponent | null;
+  donePrefixSetting: TextComponent | null;
+  embedTypeDropdown: DropdownComponent | null;
+  embedCommentSettingEl: HTMLElement | null;
+}
+
 export class ExcalidrawSettingTab extends PluginSettingTab {
   plugin: ExcalidrawPlugin;
   private requestEmbedUpdate: boolean = false;
@@ -150,8 +160,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   private readonly useDeclarativeSettingsForSession: boolean;
   private declarativeDefinitionsActive = false;
   private declarativeDisplayPrepared = false;
-  private declarativeDefinitions: SettingDefinitionItem<SettingBindingKey>[] =
-    [];
   private declarativePagePathsByTag: ReadonlyMap<
     string,
     readonly string[]
@@ -161,19 +169,8 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     void this.settingsPersistenceQueue.flush().catch((): void => undefined);
   };
   private hotkeyEditor: HotkeyEditor | null = null;
-  private todoPrefixSetting: TextComponent | null = null;
-  private donePrefixSetting: TextComponent | null = null;
-  private gridColorSettingEl: HTMLElement | null = null;
-  private embedTypeDropdown: DropdownComponent | null = null;
-  private embedCommentSettingEl: HTMLElement | null = null;
   private fontPickers: FontPickerComponent[] = [];
   private legacyCrossLinkCleanup: (() => void) | null = null;
-  /**
-   * Filename-sample preview element from the Saving section, refreshed by
-   * both that section and the Compatibility section's compatibilityMode
-   * toggle (which changes how sample filenames are generated).
-   */
-  private filenameSampleEl: HTMLElement;
   //private reloadMathJax: boolean = false;
   //private applyDebounceTimer: number = 0;
 
@@ -705,7 +702,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     );
   }
 
-  private createFilenameInformationDefinition(): SettingDefinition<SettingBindingKey> {
+  private createFilenameInformationDefinition(
+    renderState: SettingsRenderState,
+  ): SettingDefinition<SettingBindingKey> {
     return annotateMarkdownDefinition(
       {
         name: t("FILENAME_HEAD"),
@@ -713,7 +712,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         aliases: ["filename preview", "file naming", "drawing name"],
         render: (setting) => {
           this.prepareFullWidthDeclarativeSetting(setting);
-          this.renderFilenameInformation(setting.settingEl);
+          this.renderFilenameInformation(setting.settingEl, renderState);
         },
       },
       { omit: true },
@@ -733,7 +732,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     });
   }
 
-  private getCheckpoint4APages(): SettingsPageModel[] {
+  private getBasicAndSavingPages(
+    renderState: SettingsRenderState,
+  ): SettingsPageModel[] {
     const basicPage: SettingsPageModel = {
       name: t("BASIC_HEAD"),
       description: t("BASIC_DESC"),
@@ -806,12 +807,17 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           name: t("FILENAME_HEAD"),
           description: t("FILENAME_GROUP_DESC"),
           buildDefinitions: () => [
-            this.createFilenameInformationDefinition(),
-            ...this.toDeclarativeDefinitions(this.getFilenameSpecs()),
+            this.createFilenameInformationDefinition(renderState),
+            ...this.toDeclarativeDefinitions(
+              this.getFilenameSpecs(renderState),
+            ),
           ],
           renderLegacy: (container) => {
-            this.renderFilenameInformation(container);
-            this.renderSettingSpecs(container, this.getFilenameSpecs());
+            this.renderFilenameInformation(container, renderState);
+            this.renderSettingSpecs(
+              container,
+              this.getFilenameSpecs(renderState),
+            );
           },
         },
       ],
@@ -820,7 +826,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     return [basicPage, savingPage];
   }
 
-  private getCheckpoint4BPages(): SettingsPageModel[] {
+  private getDisplayAndLinksPages(
+    renderState: SettingsRenderState,
+  ): SettingsPageModel[] {
     const modifierKeyPage: SettingsPageModel = {
       name: t("DRAG_MODIFIER_NAME"),
       description: t("DRAG_MODIFIER_GROUP_DESC"),
@@ -933,8 +941,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         {
           name: t("GRID_HEAD"),
           description: t("GRID_DESC"),
-          buildDefinitions: () => this.getGridDefinitions(),
-          renderLegacy: (container) => this.renderGridSettings(container),
+          buildDefinitions: () => this.getGridDefinitions(renderState),
+          renderLegacy: (container) =>
+            this.renderGridSettings(container, renderState),
         },
         {
           name: t("LASER_HEAD"),
@@ -980,9 +989,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           name: t("TODO_HEAD"),
           description: t("TODO_GROUP_DESC"),
           buildDefinitions: () =>
-            this.toDeclarativeDefinitions(this.getTodoSpecs()),
+            this.toDeclarativeDefinitions(this.getTodoSpecs(renderState)),
           renderLegacy: (container) =>
-            this.renderSettingSpecs(container, this.getTodoSpecs()),
+            this.renderSettingSpecs(container, this.getTodoSpecs(renderState)),
         },
         {
           name: t("TRANSCLUSION_HEAD"),
@@ -997,7 +1006,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     return [displayPage, linksPage];
   }
 
-  private getCheckpoint4CPages(): SettingsPageModel[] {
+  private getEmbedAndExportPages(
+    renderState: SettingsRenderState,
+  ): SettingsPageModel[] {
     const exportPage: SettingsPageModel = {
       name: t("EXPORT_SUBHEAD"),
       description: t("EXPORT_SUBHEAD_DESC"),
@@ -1035,8 +1046,10 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           name: t("EXPORT_HEAD"),
           description: t("EXPORT_AUTOEXPORT_DESC"),
           legacyId: TAG_AUTOEXPORT,
-          buildDefinitions: () => this.getAutoExportDefinitions(),
-          renderLegacy: (container) => this.renderAutoExportSettings(container),
+          buildDefinitions: () =>
+            this.getAutoExportDefinitions(renderState),
+          renderLegacy: (container) =>
+            this.renderAutoExportSettings(container, renderState),
         },
       ],
     };
@@ -1049,9 +1062,10 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           name: t("EMBED_PREVIEW_LINKS_HEAD"),
           description: t("EMBED_PREVIEW_LINKS_DESC"),
           navigationTags: [NAVIGATION_TAG_EMBED_PREVIEW],
-          buildDefinitions: () => this.getEmbedPreviewDefinitions(),
+          buildDefinitions: () =>
+            this.getEmbedPreviewDefinitions(renderState),
           renderLegacy: (container) =>
-            this.renderEmbedPreviewSettings(container),
+            this.renderEmbedPreviewSettings(container, renderState),
         },
         {
           name: t("EMBED_CACHING"),
@@ -1100,7 +1114,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     return [embedExportPage, embeddingPage, nonstandardPage];
   }
 
-  private getCheckpoint4DPages(): SettingsPageModel[] {
+  private getFontsAutomationAndCompatibilityPages(
+    renderState: SettingsRenderState,
+  ): SettingsPageModel[] {
     const fontsPage: SettingsPageModel = {
       name: t("FONTS_HEAD"),
       description: t("FONTS_DESC"),
@@ -1152,15 +1168,20 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       name: t("COMPATIBILITY_HEAD"),
       description: t("COMPATIBILITY_DESC"),
       buildDefinitions: () =>
-        this.toDeclarativeDefinitions(this.getCompatibilitySpecs()),
+        this.toDeclarativeDefinitions(
+          this.getCompatibilitySpecs(renderState),
+        ),
       renderLegacy: (container) =>
-        this.renderSettingSpecs(container, this.getCompatibilitySpecs()),
+        this.renderSettingSpecs(
+          container,
+          this.getCompatibilitySpecs(renderState),
+        ),
     };
 
     return [fontsPage, experimentalPage, automatePage, compatibilityPage];
   }
 
-  private getCheckpoint4EPages(): SettingsPageModel[] {
+  private getAIPages(): SettingsPageModel[] {
     return [
       {
         name: t("AI_HEAD"),
@@ -1172,12 +1193,20 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   }
 
   private getSettingsPages(): SettingsPageModel[] {
+    const renderState: SettingsRenderState = {
+      filenameSampleEl: null,
+      gridColorSettingEl: null,
+      todoPrefixSetting: null,
+      donePrefixSetting: null,
+      embedTypeDropdown: null,
+      embedCommentSettingEl: null,
+    };
     return [
-      ...this.getCheckpoint4APages(),
-      ...this.getCheckpoint4EPages(),
-      ...this.getCheckpoint4BPages(),
-      ...this.getCheckpoint4CPages(),
-      ...this.getCheckpoint4DPages(),
+      ...this.getBasicAndSavingPages(renderState),
+      ...this.getAIPages(),
+      ...this.getDisplayAndLinksPages(renderState),
+      ...this.getEmbedAndExportPages(renderState),
+      ...this.getFontsAutomationAndCompatibilityPages(renderState),
     ];
   }
 
@@ -1241,9 +1270,11 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     );
   }
 
-  private buildSettingDefinitions(): SettingDefinitionItem<SettingBindingKey>[] {
+  private buildSettingDefinitions(
+    registerBindings: boolean = true,
+  ): SettingDefinitionItem<SettingBindingKey>[] {
     this.declarativePagePathsByTag = null;
-    this.declarativeSettingsAdapter.beginBuild();
+    this.declarativeSettingsAdapter.beginBuild(registerBindings);
     return [
       this.createDeclarativeUtilitiesDefinition("Root", true),
       this.declarativeSettingsAdapter.toDefinition(
@@ -1262,12 +1293,10 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   getSettingDefinitions(): SettingDefinitionItem<SettingBindingKey>[] {
     if (!this.useDeclarativeSettingsForSession) {
       this.declarativeSettingsAdapter.beginBuild();
-      this.declarativeDefinitions = [];
       this.declarativeDefinitionsActive = false;
       return [];
     }
     const definitions = this.buildSettingDefinitions();
-    this.declarativeDefinitions = definitions;
     this.declarativeDefinitionsActive = definitions.length > 0;
     return this.declarativeDefinitionsActive ? definitions : [];
   }
@@ -1462,19 +1491,14 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     if (requireApiVersion("1.13.0")) {
       this.buildSetting(containerEl, this.getSettingsLayoutSpec());
     }
-    this.renderLegacyPages(this.getCheckpoint4APages());
-    this.renderLegacyPages(this.getCheckpoint4EPages());
-    this.renderLegacyPages(this.getCheckpoint4BPages());
-    this.renderLegacyPages(this.getCheckpoint4CPages());
-    this.renderLegacyPages(this.getCheckpoint4DPages());
+    this.renderLegacyPages(this.getSettingsPages());
     this.attachLegacySettingsCrossLinks();
   }
 
   private async copyDeclarativeSettingsAsMarkdown(): Promise<void> {
     // Build fresh fragments because Obsidian may consume a DocumentFragment
     // while rendering a page. Rebuilding also exports unopened pages.
-    const definitions = this.buildSettingDefinitions();
-    this.declarativeDefinitions = definitions;
+    const definitions = this.buildSettingDefinitions(false);
     const markdown = declarativeSettingsToMarkdown(definitions);
     const ownerWindow = this.containerEl.ownerDocument.defaultView;
     if (!ownerWindow) {
@@ -1493,7 +1517,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     );
     const copyButton = toolbar.createEl("button", {
       text: t("SETTINGS_TOOLBAR_COPY"),
-      cls: "excalidraw-declarative-settings-toolbar__button",
       attr: {
         type: "button",
         "aria-label": t("SEARCH_COPY_TO_CLIPBOARD_ARIA"),
@@ -1906,24 +1929,30 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     ];
   }
 
-  private renderFilenameInformation(container: HTMLElement): void {
+  private renderFilenameInformation(
+    container: HTMLElement,
+    renderState: SettingsRenderState,
+  ): void {
     const informationEl = container.createDiv(
       "excalidraw-filename-information",
     );
     informationEl.createDiv("", (el) => {
       setSanitizedHtml(el, t("FILENAME_DESC"));
     });
-    this.filenameSampleEl = informationEl.createEl("p", { text: "" });
-    setSanitizedHtml(this.filenameSampleEl, this.getFilenameSample());
+    renderState.filenameSampleEl = informationEl.createEl("p", { text: "" });
+    setSanitizedHtml(renderState.filenameSampleEl, this.getFilenameSample());
   }
 
-  private refreshFilenameSample(): void {
-    if (this.filenameSampleEl?.isConnected) {
-      setSanitizedHtml(this.filenameSampleEl, this.getFilenameSample());
+  private refreshFilenameSample(renderState: SettingsRenderState): void {
+    if (renderState.filenameSampleEl?.isConnected) {
+      setSanitizedHtml(
+        renderState.filenameSampleEl,
+        this.getFilenameSample(),
+      );
     }
   }
 
-  private getFilenameSpecs(): SettingSpec[] {
+  private getFilenameSpecs(renderState: SettingsRenderState): SettingSpec[] {
     return [
       {
         name: t("FILENAME_PREFIX_NAME"),
@@ -1934,7 +1963,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           key: "drawingFilenamePrefix",
           placeholder: t("FILENAME_PREFIX_PLACEHOLDER"),
           sanitize: sanitizeFilenameSegment,
-          after: () => this.refreshFilenameSample(),
+          after: () => this.refreshFilenameSample(renderState),
         },
       },
       {
@@ -1943,7 +1972,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         control: {
           type: "toggle",
           key: "drawingEmbedPrefixWithFilename",
-          after: () => this.refreshFilenameSample(),
+          after: () => this.refreshFilenameSample(renderState),
         },
       },
       {
@@ -1954,7 +1983,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           type: "text",
           key: "drawingFilnameEmbedPostfix",
           sanitize: sanitizeFilenameSegment,
-          after: () => this.refreshFilenameSample(),
+          after: () => this.refreshFilenameSample(renderState),
         },
       },
       {
@@ -1966,7 +1995,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           key: "drawingFilenameDateTime",
           placeholder: "YYYY-MM-DD HH.mm.ss",
           sanitize: sanitizeFilenameSegment,
-          after: () => this.refreshFilenameSample(),
+          after: () => this.refreshFilenameSample(renderState),
         },
       },
       {
@@ -1976,7 +2005,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         control: {
           type: "toggle",
           key: "useExcalidrawExtension",
-          after: () => this.refreshFilenameSample(),
+          after: () => this.refreshFilenameSample(renderState),
         },
       },
       {
@@ -3195,7 +3224,10 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       );
   }
 
-  private configureDynamicGridColorSetting(setting: Setting): void {
+  private configureDynamicGridColorSetting(
+    setting: Setting,
+    renderState: SettingsRenderState,
+  ): void {
     setting
       .setName(t("GRID_DYNAMIC_COLOR_NAME"))
       .setDesc(fragWithHTML(t("GRID_DYNAMIC_COLOR_DESC")))
@@ -3205,13 +3237,13 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .onChange((value) => {
             this.plugin.settings.gridSettings.DYNAMIC_COLOR = value;
             if (
-              this.gridColorSettingEl &&
-              this.gridColorSettingEl.isConnected
+              renderState.gridColorSettingEl &&
+              renderState.gridColorSettingEl.isConnected
             ) {
               if (value) {
-                hideElement(this.gridColorSettingEl);
+                hideElement(renderState.gridColorSettingEl);
               } else {
-                showElement(this.gridColorSettingEl);
+                showElement(renderState.gridColorSettingEl);
               }
             }
             this.applySettingsUpdate();
@@ -3221,8 +3253,11 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       );
   }
 
-  private configureGridColorSetting(setting: Setting): void {
-    this.gridColorSettingEl = setting.settingEl;
+  private configureGridColorSetting(
+    setting: Setting,
+    renderState: SettingsRenderState,
+  ): void {
+    renderState.gridColorSettingEl = setting.settingEl;
     setting.setName(t("GRID_COLOR_NAME")).addColorPicker((colorPicker) =>
       colorPicker
         .setValue(this.plugin.settings.gridSettings.COLOR)
@@ -3256,7 +3291,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     });
   }
 
-  private getGridDefinitions(): SettingDefinitionItem<SettingBindingKey>[] {
+  private getGridDefinitions(
+    renderState: SettingsRenderState,
+  ): SettingDefinitionItem<SettingBindingKey>[] {
     return [
       this.createCustomSettingDefinition({
         name: t("GRID_DIRECTION_NAME"),
@@ -3270,14 +3307,16 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         desc: fragWithHTML(t("GRID_DYNAMIC_COLOR_DESC")),
         aliases: ["automatic grid color", "canvas color"],
         controlType: "toggle",
-        configure: (setting) => this.configureDynamicGridColorSetting(setting),
+        configure: (setting) =>
+          this.configureDynamicGridColorSetting(setting, renderState),
       }),
       this.createCustomSettingDefinition({
         name: t("GRID_COLOR_NAME"),
         aliases: ["custom grid color"],
         visible: () => !this.plugin.settings.gridSettings.DYNAMIC_COLOR,
         controlType: "color picker",
-        configure: (setting) => this.configureGridColorSetting(setting),
+        configure: (setting) =>
+          this.configureGridColorSetting(setting, renderState),
       }),
       this.createCustomSettingDefinition({
         name: t("GRID_OPACITY_NAME"),
@@ -3289,10 +3328,16 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     ];
   }
 
-  private renderGridSettings(container: HTMLElement): void {
+  private renderGridSettings(
+    container: HTMLElement,
+    renderState: SettingsRenderState,
+  ): void {
     this.configureGridDirectionSetting(new Setting(container));
-    this.configureDynamicGridColorSetting(new Setting(container));
-    this.configureGridColorSetting(new Setting(container));
+    this.configureDynamicGridColorSetting(
+      new Setting(container),
+      renderState,
+    );
+    this.configureGridColorSetting(new Setting(container), renderState);
     this.configureGridOpacitySetting(new Setting(container));
   }
 
@@ -3604,7 +3649,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     ];
   }
 
-  private getTodoSpecs(): SettingSpec[] {
+  private getTodoSpecs(renderState: SettingsRenderState): SettingSpec[] {
     return [
       {
         name: t("PARSE_TODO_NAME"),
@@ -3614,8 +3659,8 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           type: "toggle",
           key: "parseTODO",
           after: (value) => {
-            this.todoPrefixSetting?.setDisabled(!value);
-            this.donePrefixSetting?.setDisabled(!value);
+            renderState.todoPrefixSetting?.setDisabled(!value);
+            renderState.donePrefixSetting?.setDisabled(!value);
           },
           reload: true,
         },
@@ -3629,7 +3674,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           key: "todo",
           placeholder: t("INSERT_EMOJI"),
           capture: (text) => {
-            this.todoPrefixSetting = text;
+            renderState.todoPrefixSetting = text;
           },
           disabled: () => !this.plugin.settings.parseTODO,
           reload: true,
@@ -3644,7 +3689,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           key: "done",
           placeholder: t("INSERT_EMOJI"),
           capture: (text) => {
-            this.donePrefixSetting = text;
+            renderState.donePrefixSetting = text;
           },
           disabled: () => !this.plugin.settings.parseTODO,
           reload: true,
@@ -3846,24 +3891,29 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     this.applySettingsUpdate();
   }
 
-  private updateEmbedCommentVisibility(): void {
-    if (!this.embedCommentSettingEl?.isConnected) {
+  private updateEmbedCommentVisibility(
+    renderState: SettingsRenderState,
+  ): void {
+    if (!renderState.embedCommentSettingEl?.isConnected) {
       return;
     }
     if (this.plugin.settings.embedType === "excalidraw") {
-      hideElement(this.embedCommentSettingEl);
+      hideElement(renderState.embedCommentSettingEl);
     } else {
-      showElement(this.embedCommentSettingEl);
+      showElement(renderState.embedCommentSettingEl);
     }
   }
 
-  private configureEmbedTypeSetting(setting: Setting): void {
+  private configureEmbedTypeSetting(
+    setting: Setting,
+    renderState: SettingsRenderState,
+  ): void {
     this.normalizeEmbedType();
     setting
       .setName(t("EMBED_TYPE_NAME"))
       .setDesc(fragWithHTML(t("EMBED_TYPE_DESC")))
       .addDropdown((dropdown) => {
-        this.embedTypeDropdown = dropdown;
+        renderState.embedTypeDropdown = dropdown;
         dropdown.addOption("excalidraw", "Excalidraw");
         if (this.plugin.settings.autoexportPNG) {
           dropdown.addOption("PNG", "PNG");
@@ -3876,45 +3926,56 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .onChange((value) => {
             this.plugin.settings.embedType =
               value as typeof this.plugin.settings.embedType;
-            this.updateEmbedCommentVisibility();
+            this.updateEmbedCommentVisibility(renderState);
             this.refreshDeclarativeDomState();
             this.applySettingsUpdate();
           });
       });
   }
 
-  private createEmbedTypeDefinition(): SettingDefinition<SettingBindingKey> {
+  private createEmbedTypeDefinition(
+    renderState: SettingsRenderState,
+  ): SettingDefinition<SettingBindingKey> {
     return this.createCustomSettingDefinition({
       name: t("EMBED_TYPE_NAME"),
       desc: fragWithHTML(t("EMBED_TYPE_DESC")),
       aliases: ["insert Excalidraw", "insert PNG", "insert SVG"],
       controlType: "dropdown",
-      configure: (setting) => this.configureEmbedTypeSetting(setting),
+      configure: (setting) =>
+        this.configureEmbedTypeSetting(setting, renderState),
     });
   }
 
-  private configureEmbedCommentSetting(setting: Setting): void {
-    this.embedCommentSettingEl = setting.settingEl;
+  private configureEmbedCommentSetting(
+    setting: Setting,
+    renderState: SettingsRenderState,
+  ): void {
+    renderState.embedCommentSettingEl = setting.settingEl;
     this.legacySettingsAdapter.configure(setting, {
       name: t("EMBED_MARKDOWN_COMMENT_NAME"),
       desc: fragWithHTML(t("EMBED_MARKDOWN_COMMENT_DESC")),
       control: { type: "toggle", key: "embedMarkdownCommentLinks" },
     });
-    this.updateEmbedCommentVisibility();
+    this.updateEmbedCommentVisibility(renderState);
   }
 
-  private createEmbedCommentDefinition(): SettingDefinition<SettingBindingKey> {
+  private createEmbedCommentDefinition(
+    renderState: SettingsRenderState,
+  ): SettingDefinition<SettingBindingKey> {
     return this.createCustomSettingDefinition({
       name: t("EMBED_MARKDOWN_COMMENT_NAME"),
       desc: fragWithHTML(t("EMBED_MARKDOWN_COMMENT_DESC")),
       aliases: ["drawing source comment", "original Excalidraw link"],
       visible: () => this.plugin.settings.embedType !== "excalidraw",
       controlType: "toggle",
-      configure: (setting) => this.configureEmbedCommentSetting(setting),
+      configure: (setting) =>
+        this.configureEmbedCommentSetting(setting, renderState),
     });
   }
 
-  private getEmbedPreviewDefinitions(): SettingDefinitionItem<SettingBindingKey>[] {
+  private getEmbedPreviewDefinitions(
+    renderState: SettingsRenderState,
+  ): SettingDefinitionItem<SettingBindingKey>[] {
     const specs = this.getEmbedPreviewSpecs();
     return [
       this.declarativeSettingsAdapter.toDefinition(specs[0]),
@@ -3927,25 +3988,28 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         "opLd1SqaH_I",
         8,
       ),
-      this.createEmbedTypeDefinition(),
+      this.createEmbedTypeDefinition(renderState),
       this.createRelatedSettingsPageDefinition({
         key: "inserted file type to auto-export",
         name: t("EXPORT_HEAD"),
         description: t("SETTINGS_RELATED_AUTOEXPORT_DESC"),
         targetTag: TAG_AUTOEXPORT,
       }),
-      this.createEmbedCommentDefinition(),
+      this.createEmbedCommentDefinition(renderState),
       ...this.toDeclarativeDefinitions(specs.slice(1)),
     ];
   }
 
-  private renderEmbedPreviewSettings(container: HTMLElement): void {
+  private renderEmbedPreviewSettings(
+    container: HTMLElement,
+    renderState: SettingsRenderState,
+  ): void {
     const specs = this.getEmbedPreviewSpecs();
     this.buildSetting(container, specs[0]);
     addYouTubeThumbnail(container, "yZQoJg2RCKI");
     addYouTubeThumbnail(container, "opLd1SqaH_I", 8);
-    this.configureEmbedTypeSetting(new Setting(container));
-    this.configureEmbedCommentSetting(new Setting(container));
+    this.configureEmbedTypeSetting(new Setting(container), renderState);
+    this.configureEmbedCommentSetting(new Setting(container), renderState);
     this.renderSettingSpecs(container, specs.slice(1));
   }
 
@@ -4197,8 +4261,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   private updateEmbedTypeOption(
     embedType: "PNG" | "SVG",
     enabled: boolean,
+    renderState: SettingsRenderState,
   ): void {
-    const dropdown = this.embedTypeDropdown;
+    const dropdown = renderState.embedTypeDropdown;
     if (!dropdown?.selectEl.isConnected) {
       return;
     }
@@ -4216,6 +4281,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   private setAutoExportEnabled(
     embedType: "PNG" | "SVG",
     enabled: boolean,
+    renderState: SettingsRenderState,
   ): void {
     if (embedType === "PNG") {
       this.plugin.settings.autoexportPNG = enabled;
@@ -4225,8 +4291,8 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     if (!enabled && this.plugin.settings.embedType === embedType) {
       this.plugin.settings.embedType = "excalidraw";
     }
-    this.updateEmbedTypeOption(embedType, enabled);
-    this.updateEmbedCommentVisibility();
+    this.updateEmbedTypeOption(embedType, enabled, renderState);
+    this.updateEmbedCommentVisibility(renderState);
     this.refreshDeclarativeDomState();
     this.applySettingsUpdate();
   }
@@ -4234,6 +4300,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   private configureAutoExportSetting(
     setting: Setting,
     embedType: "PNG" | "SVG",
+    renderState: SettingsRenderState,
   ): void {
     const isPng = embedType === "PNG";
     setting
@@ -4246,12 +4313,15 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
               ? this.plugin.settings.autoexportPNG
               : this.plugin.settings.autoexportSVG,
           )
-          .onChange((value) => this.setAutoExportEnabled(embedType, value)),
+          .onChange((value) =>
+            this.setAutoExportEnabled(embedType, value, renderState),
+          ),
       );
   }
 
   private createAutoExportDefinition(
     embedType: "PNG" | "SVG",
+    renderState: SettingsRenderState,
   ): SettingDefinition<SettingBindingKey> {
     const isPng = embedType === "PNG";
     return this.createCustomSettingDefinition({
@@ -4264,11 +4334,13 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       ],
       controlType: "toggle",
       configure: (setting) =>
-        this.configureAutoExportSetting(setting, embedType),
+        this.configureAutoExportSetting(setting, embedType, renderState),
     });
   }
 
-  private getAutoExportDefinitions(): SettingDefinitionItem<SettingBindingKey>[] {
+  private getAutoExportDefinitions(
+    renderState: SettingsRenderState,
+  ): SettingDefinitionItem<SettingBindingKey>[] {
     const specs = this.getAutoExportSpecs();
     return [
       this.createRelatedSettingsPageDefinition({
@@ -4278,8 +4350,8 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         targetTag: NAVIGATION_TAG_EMBED_PREVIEW,
       }),
       this.declarativeSettingsAdapter.toDefinition(specs[0]),
-      this.createAutoExportDefinition("SVG"),
-      this.createAutoExportDefinition("PNG"),
+      this.createAutoExportDefinition("SVG", renderState),
+      this.createAutoExportDefinition("PNG", renderState),
       this.declarativeSettingsAdapter.toDefinition(specs[1]),
     ];
   }
@@ -4301,11 +4373,22 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     ];
   }
 
-  private renderAutoExportSettings(container: HTMLElement): void {
+  private renderAutoExportSettings(
+    container: HTMLElement,
+    renderState: SettingsRenderState,
+  ): void {
     const specs = this.getAutoExportSpecs();
     this.buildSetting(container, specs[0]);
-    this.configureAutoExportSetting(new Setting(container), "SVG");
-    this.configureAutoExportSetting(new Setting(container), "PNG");
+    this.configureAutoExportSetting(
+      new Setting(container),
+      "SVG",
+      renderState,
+    );
+    this.configureAutoExportSetting(
+      new Setting(container),
+      "PNG",
+      renderState,
+    );
     this.buildSetting(container, specs[1]);
   }
 
@@ -5180,7 +5263,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     });
   }
 
-  private getCompatibilitySpecs(): SettingSpec[] {
+  private getCompatibilitySpecs(
+    renderState: SettingsRenderState,
+  ): SettingSpec[] {
     return [
       {
         name: t("DUMMY_TEXT_ELEMENT_LINT_SUPPORT_NAME"),
@@ -5207,7 +5292,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         control: {
           type: "toggle",
           key: "compatibilityMode",
-          after: () => this.refreshFilenameSample(),
+          after: () => this.refreshFilenameSample(renderState),
         },
       },
       {
