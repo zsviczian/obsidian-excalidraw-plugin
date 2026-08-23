@@ -302,6 +302,14 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     this.display();
   }
 
+  /** Refreshes a mounted settings tab after a script changes its declarations. */
+  refreshAfterExternalSettingsChange(): void {
+    if (!this.containerEl.isConnected) {
+      return;
+    }
+    this.refreshSettingsUI();
+  }
+
   private refreshDeclarativeDomState(): void {
     if (!this.declarativeDefinitionsActive) {
       return;
@@ -514,36 +522,43 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   private attachLegacySettingsCrossLinks(): void {
     this.detachLegacySettingsCrossLinks();
     const { containerEl } = this;
-    const handleClick = (event: MouseEvent): void => {
-      const HTMLElementCtor =
-        containerEl.ownerDocument.defaultView?.HTMLElement;
-      if (!HTMLElementCtor || !(event.target instanceof HTMLElementCtor)) {
-        return;
-      }
-      const anchor = event.target.closest<HTMLAnchorElement>('a[href^="#"]');
-      const href = anchor?.getAttribute("href");
-      if (!anchor || !href || !containerEl.contains(anchor)) {
-        return;
-      }
-      const target = containerEl.ownerDocument.getElementById(
-        decodeURIComponent(href.slice(1)),
-      );
-      if (!target || !containerEl.contains(target)) {
-        return;
-      }
-      event.preventDefault();
-      let details = target.closest<HTMLDetailsElement>("details");
-      while (details && containerEl.contains(details)) {
-        details.open = true;
-        details = details.parentElement?.closest<HTMLDetailsElement>(
-          "details",
-        ) ?? null;
-      }
-      target.scrollIntoView({ block: "center" });
-    };
-    containerEl.addEventListener("click", handleClick);
-    this.legacyCrossLinkCleanup = () =>
-      containerEl.removeEventListener("click", handleClick);
+    const cleanup: (() => void)[] = [];
+    containerEl
+      .querySelectorAll<HTMLAnchorElement>('a[href^="#"]')
+      .forEach((anchor) => {
+        const href = anchor.getAttribute("href");
+        if (!href) {
+          return;
+        }
+        const targetId = decodeURIComponent(href.slice(1));
+        const target = Array.from(
+          containerEl.querySelectorAll<HTMLElement>("[id]"),
+        ).find((element) => element.id === targetId);
+        if (!target) {
+          return;
+        }
+        const handleClick = (event: MouseEvent): void => {
+          event.preventDefault();
+          event.stopPropagation();
+          let details = target.closest<HTMLDetailsElement>("details");
+          while (details && containerEl.contains(details)) {
+            details.open = true;
+            details =
+              details.parentElement?.closest<HTMLDetailsElement>("details") ??
+              null;
+          }
+          containerEl.ownerDocument.defaultView?.requestAnimationFrame(() => {
+            if (target.isConnected) {
+              target.scrollIntoView({ block: "center" });
+            }
+          });
+        };
+        anchor.addEventListener("click", handleClick, true);
+        cleanup.push(() =>
+          anchor.removeEventListener("click", handleClick, true),
+        );
+      });
+    this.legacyCrossLinkCleanup = () => cleanup.forEach((remove) => remove());
   }
 
   private detachLegacySettingsCrossLinks(): void {
@@ -1145,9 +1160,21 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     return [fontsPage, experimentalPage, automatePage, compatibilityPage];
   }
 
+  private getCheckpoint4EPages(): SettingsPageModel[] {
+    return [
+      {
+        name: t("AI_HEAD"),
+        description: t("AI_DESC"),
+        buildDefinitions: () => this.getAIDefinitions(),
+        renderLegacy: (container) => this.renderAISettings(container),
+      },
+    ];
+  }
+
   private getConvertedSettingsPages(): SettingsPageModel[] {
     return [
       ...this.getCheckpoint4APages(),
+      ...this.getCheckpoint4EPages(),
       ...this.getCheckpoint4BPages(),
       ...this.getCheckpoint4CPages(),
       ...this.getCheckpoint4DPages(),
@@ -1438,7 +1465,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       this.buildSetting(containerEl, this.getSettingsLayoutSpec());
     }
     this.renderLegacyPages(this.getCheckpoint4APages());
-    this.renderAISection();
+    this.renderLegacyPages(this.getCheckpoint4EPages());
     this.renderLegacyPages(this.getCheckpoint4BPages());
     this.renderLegacyPages(this.getCheckpoint4CPages());
     this.renderLegacyPages(this.getCheckpoint4DPages());
@@ -2006,47 +2033,29 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     ];
   }
 
-  private renderAISection(): void {
-    const { containerEl } = this;
-    let detailsEl: HTMLElement;
-    //------------------------------------------------
-    // AI Settings
-    //------------------------------------------------
-    containerEl.createEl("hr", { cls: "excalidraw-setting-hr" });
-    containerEl.createDiv({
-      text: t("AI_DESC"),
-      cls: "setting-item-description",
-    });
-    detailsEl = this.containerEl.createEl("details");
-    detailsEl.createEl("summary", {
-      text: t("AI_HEAD"),
-      cls: "excalidraw-setting-h1",
-    });
+  private isAIEnabled(): boolean {
+    return this.plugin.settings.aiEnabled ?? true;
+  }
 
-    new Setting(detailsEl)
+  private configureAIEnabledSetting(
+    setting: Setting,
+    onChange?: (value: boolean) => void,
+  ): void {
+    setting
       .setName(t("AI_ENABLED_NAME"))
       .setDesc(fragWithHTML(t("AI_ENABLED_DESC")))
       .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.aiEnabled ?? true)
-          .onChange(async (value) => {
-            if (value) {
-              showElement(aiEl);
-            } else {
-              hideElement(aiEl);
-            }
-            this.plugin.settings.aiEnabled = value;
-            this.applySettingsUpdate();
-          }),
+        toggle.setValue(this.isAIEnabled()).onChange((value) => {
+          this.plugin.settings.aiEnabled = value;
+          onChange?.(value);
+          this.refreshDeclarativeDomState();
+          this.applySettingsUpdate();
+        }),
       );
+  }
 
-    detailsEl = detailsEl.createDiv();
-    const aiEl = detailsEl;
-    if (!(this.plugin.settings.aiEnabled ?? true)) {
-      hideElement(detailsEl);
-    }
-
-    new Setting(detailsEl)
+  private configureAIUsageSetting(setting: Setting): void {
+    setting
       .setName(t("AI_USAGE_SETTINGS_BUTTON_NAME"))
       .setDesc(t("AI_USAGE_SETTINGS_BUTTON_DESC"))
       .addButton((button) => {
@@ -2059,13 +2068,174 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           new AIUsageModal(this.app, getAIUsage()).open();
         });
       });
+  }
 
-    this.buildSetting(detailsEl, {
+  private configureAINumberSetting(
+    setting: Setting,
+    name: string,
+    desc: string,
+    placeholder: string,
+    getter: () => number,
+    setter: (value: number) => void,
+  ): void {
+    setting
+      .setName(name)
+      .setDesc(fragWithHTML(desc))
+      .addText((text) =>
+        text
+          .setPlaceholder(placeholder)
+          .setValue(getter().toString())
+          .onChange((value) => {
+            const intVal = parseInt(value, 10);
+            if (isNaN(intVal) && value !== "") {
+              text.setValue(getter().toString());
+              return;
+            }
+            if (value === "") {
+              setter(0);
+              text.setValue("0");
+              this.applySettingsUpdate();
+              return;
+            }
+            if (intVal < 0) {
+              text.setValue(getter().toString());
+              return;
+            }
+            setter(intVal);
+            text.setValue(intVal.toString());
+            this.applySettingsUpdate();
+          }),
+      );
+  }
+
+  private getAIVerboseLoggingSpec(): SettingSpec {
+    return {
       name: t("AI_VERBOSE_LOGGING_NAME"),
       desc: fragWithHTML(t("AI_VERBOSE_LOGGING_DESC")),
+      aliases: ["AI diagnostics", "AI console logging"],
       control: { type: "toggle", key: "aiVerboseLogging" },
-    });
+    };
+  }
 
+  private configureAIOutgoingTokenSetting(setting: Setting): void {
+    this.configureAINumberSetting(
+      setting,
+      t("AI_PROVIDER_DEFAULT_MAX_OUTGOING_TOKENS_NAME"),
+      t("AI_PROVIDER_DEFAULT_MAX_OUTGOING_TOKENS_DESC"),
+      t("AI_PROVIDER_DEFAULT_MAX_OUTGOING_TOKENS_PLACEHOLDER"),
+      () => this.plugin.settings.aiDefaultMaxOutgoingTokens,
+      (value) => {
+        this.plugin.settings.aiDefaultMaxOutgoingTokens = value;
+      },
+    );
+  }
+
+  private configureAIResponseTokenSetting(setting: Setting): void {
+    this.configureAINumberSetting(
+      setting,
+      t("AI_PROVIDER_DEFAULT_MAX_RESPONSE_TOKENS_NAME"),
+      t("AI_PROVIDER_DEFAULT_MAX_RESPONSE_TOKENS_DESC"),
+      t("AI_PROVIDER_DEFAULT_MAX_RESPONSE_TOKENS_PLACEHOLDER"),
+      () => this.plugin.settings.aiDefaultMaxResponseTokens,
+      (value) => {
+        this.plugin.settings.aiDefaultMaxResponseTokens = value;
+      },
+    );
+  }
+
+  private getAIDefinitions(): SettingDefinitionItem<SettingBindingKey>[] {
+    const visible = () => this.isAIEnabled();
+    return [
+      this.createCustomSettingDefinition({
+        name: t("AI_ENABLED_NAME"),
+        desc: fragWithHTML(t("AI_ENABLED_DESC")),
+        aliases: ["AI", "artificial intelligence"],
+        controlType: "toggle",
+        configure: (setting) => this.configureAIEnabledSetting(setting),
+      }),
+      this.createCustomSettingDefinition({
+        name: t("AI_USAGE_SETTINGS_BUTTON_NAME"),
+        desc: t("AI_USAGE_SETTINGS_BUTTON_DESC"),
+        aliases: ["AI usage", "tokens", "session usage"],
+        visible,
+        controlType: "action",
+        configure: (setting) => this.configureAIUsageSetting(setting),
+      }),
+      this.declarativeSettingsAdapter.toDefinition({
+        ...this.getAIVerboseLoggingSpec(),
+        visible,
+      }),
+      this.createRenderedDefinition({
+        name: t("AI_PROVIDER_NAME"),
+        desc: fragWithHTML(t("AI_PROVIDER_DESC")),
+        aliases: [
+          t("AI_PROVIDER_DEFAULT_TEXT_MODEL_NAME"),
+          t("AI_PROVIDER_DEFAULT_IMAGE_MODEL_NAME"),
+          t("AI_PROVIDER_ADD"),
+          t("AI_PROVIDER_EDIT"),
+          t("AI_MODEL_ADD"),
+          t("AI_MODEL_EDIT"),
+          "AI provider profiles",
+          "API key",
+          "OpenAI",
+          "Anthropic",
+          "Claude",
+          "Google Gemini",
+          "xAI Grok",
+          "local AI",
+          "text model",
+          "multimodal model",
+          "vision model",
+          "image model",
+          "model endpoint",
+        ],
+        visible,
+        controlType: "provider and model editor",
+        render: (container) => this.renderAIProviderAndModelSettings(container),
+      }),
+      this.createCustomSettingDefinition({
+        name: t("AI_PROVIDER_DEFAULT_MAX_OUTGOING_TOKENS_NAME"),
+        desc: fragWithHTML(t("AI_PROVIDER_DEFAULT_MAX_OUTGOING_TOKENS_DESC")),
+        aliases: ["AI prompt token budget", "outgoing tokens"],
+        visible,
+        controlType: "number input",
+        configure: (setting) => this.configureAIOutgoingTokenSetting(setting),
+      }),
+      this.createCustomSettingDefinition({
+        name: t("AI_PROVIDER_DEFAULT_MAX_RESPONSE_TOKENS_NAME"),
+        desc: fragWithHTML(t("AI_PROVIDER_DEFAULT_MAX_RESPONSE_TOKENS_DESC")),
+        aliases: ["AI response limit", "response tokens", "max tokens"],
+        visible,
+        controlType: "number input",
+        configure: (setting) => this.configureAIResponseTokenSetting(setting),
+      }),
+    ];
+  }
+
+  private renderAISettings(container: HTMLElement): void {
+    const enabledSetting = new Setting(container);
+    const aiEl = container.createDiv();
+    this.configureAIEnabledSetting(enabledSetting, (value) => {
+      if (value) {
+        showElement(aiEl);
+      } else {
+        hideElement(aiEl);
+      }
+    });
+    if (!this.isAIEnabled()) {
+      hideElement(aiEl);
+    }
+
+    this.configureAIUsageSetting(new Setting(aiEl));
+
+    this.buildSetting(aiEl, this.getAIVerboseLoggingSpec());
+
+    this.renderAIProviderAndModelSettings(aiEl);
+    this.configureAIOutgoingTokenSetting(new Setting(aiEl));
+    this.configureAIResponseTokenSetting(new Setting(aiEl));
+  }
+
+  private renderAIProviderAndModelSettings(detailsEl: HTMLElement): void {
     let selectedProviderProfile =
       Object.keys(this.plugin.settings.aiProviderProfiles ?? {})[0] || "OpenAI";
     let selectedTextModelConfig =
@@ -2526,67 +2696,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       renderModelSetting("image");
     };
 
-    const addNumberSetting = (
-      parentEl: HTMLElement,
-      name: string,
-      desc: string,
-      placeholder: string,
-      getter: () => number,
-      setter: (value: number) => void,
-    ) => {
-      new Setting(parentEl)
-        .setName(name)
-        .setDesc(fragWithHTML(desc))
-        .addText((text) =>
-          text
-            .setPlaceholder(placeholder)
-            .setValue(getter().toString())
-            .onChange((value) => {
-              const intVal = parseInt(value, 10);
-              if (isNaN(intVal) && value !== "") {
-                text.setValue(getter().toString());
-                return;
-              }
-              if (value === "") {
-                setter(0);
-                text.setValue("0");
-                this.applySettingsUpdate();
-                return;
-              }
-              if (intVal < 0) {
-                text.setValue(getter().toString());
-                return;
-              }
-              setter(intVal);
-              text.setValue(intVal.toString());
-              this.applySettingsUpdate();
-            }),
-        );
-    };
-
     renderAISettings();
-
-    addNumberSetting(
-      detailsEl,
-      t("AI_PROVIDER_DEFAULT_MAX_OUTGOING_TOKENS_NAME"),
-      t("AI_PROVIDER_DEFAULT_MAX_OUTGOING_TOKENS_DESC"),
-      t("AI_PROVIDER_DEFAULT_MAX_OUTGOING_TOKENS_PLACEHOLDER"),
-      () => this.plugin.settings.aiDefaultMaxOutgoingTokens,
-      (value) => {
-        this.plugin.settings.aiDefaultMaxOutgoingTokens = value;
-      },
-    );
-
-    addNumberSetting(
-      detailsEl,
-      t("AI_PROVIDER_DEFAULT_MAX_RESPONSE_TOKENS_NAME"),
-      t("AI_PROVIDER_DEFAULT_MAX_RESPONSE_TOKENS_DESC"),
-      t("AI_PROVIDER_DEFAULT_MAX_RESPONSE_TOKENS_PLACEHOLDER"),
-      () => this.plugin.settings.aiDefaultMaxResponseTokens,
-      (value) => {
-        this.plugin.settings.aiDefaultMaxResponseTokens = value;
-      },
-    );
   }
 
   private getDisplayEditorPreviewSpecs(): SettingSpec[] {
@@ -4917,13 +5027,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
   private getInstalledScriptNames(): string[] {
     const { scriptEngine } = this.plugin;
+    const configured = Object.keys(this.plugin.settings.scriptEngineSettings);
+    // Obsidian can index declarative definitions before layout-ready creates
+    // ScriptEngine. Preserve discoverability during that early pass; once the
+    // engine exists, continue hiding settings for scripts no longer installed.
+    if (!scriptEngine) {
+      return configured;
+    }
     const installed =
       scriptEngine
         ?.getListofScripts()
         ?.map((file) => scriptEngine.getScriptName(file)) ?? [];
-    return Object.keys(this.plugin.settings.scriptEngineSettings).filter(
-      (scriptName) => installed.includes(scriptName),
-    );
+    return configured.filter((scriptName) => installed.includes(scriptName));
   }
 
   private isVisibleScriptSetting(value: unknown): boolean {

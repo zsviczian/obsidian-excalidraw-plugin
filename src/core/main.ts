@@ -154,6 +154,7 @@ export default class ExcalidrawPlugin extends Plugin {
   private commandManager: CommandManager;
   private eventManager: EventManager;
   private settingsManager: PluginSettingsManager;
+  private settingsTab: ExcalidrawSettingTab;
   private footerSafeAreaManager: FooterSafeAreaManager;
   private fontManager: FontManager;
   private startupTimer: StartupTimer;
@@ -393,7 +394,8 @@ export default class ExcalidrawPlugin extends Plugin {
       this.settings.onceOffCompressFlagReset = true;
       await this.saveSettings();
     }
-    this.addSettingTab(new ExcalidrawSettingTab(this.app, this));
+    this.settingsTab = new ExcalidrawSettingTab(this.app, this);
+    this.addSettingTab(this.settingsTab);
     this.settingsReady = true;
   }
 
@@ -969,6 +971,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.lastActiveExcalidrawFilePath = null;
 
     this.settingsManager.destroy();
+    this.settingsTab = null;
     this.settings = null;
     //pluginPackages = null;
     //PLUGIN_VERSION = null;
@@ -989,6 +992,11 @@ export default class ExcalidrawPlugin extends Plugin {
   /** Persists the current settings through the plugin-owned settings manager. */
   async saveSettings(): Promise<void> {
     await this.settingsManager.saveSettings();
+  }
+
+  /** Refreshes the mounted settings tab after script-defined settings change. */
+  public refreshSettingsTab(): void {
+    this.settingsTab?.refreshAfterExternalSettingsChange();
   }
 
   /** Reloads externally changed settings and invalidates cached libraries. */
