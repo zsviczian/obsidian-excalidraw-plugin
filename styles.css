@@ -723,29 +723,6 @@ root {
   --excalidraw-caret-color: initial;
 }
 
-.excalidraw-settings-links-container {
-  align-items: center;
-  color: inherit;
-  display: flex;
-  gap: .3em;
-  text-align: center;
-  text-decoration: none;
-  flex-wrap: wrap;
-  justify-content: center;
-  flex-direction: row;
-}
-
-.excalidraw-settings-links-container a {
-  display: flex;
-  /* Align children horizontally */
-  align-items: center;
-  /* Center items vertically */
-  text-align: left;
-  margin-right: 4px;
-  margin-left: 4px;
-}
-
-.excalidraw-settings-links-container svg,
 .ex-setting-actions-container svg {
   margin-right: 8px;
   height: 30px;
@@ -1636,4 +1613,108 @@ button.excalidraw-font-picker {
 .menu.excalidraw-font-picker-menu--desktop {
   max-height: min(420px, 60vh);
   overflow-y: auto;
+}
+
+.setting-item.excalidraw-declarative-full-width {
+  display: block;
+  width: 100%;
+}
+
+.excalidraw-declarative-settings-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--size-4-2) var(--size-4-3);
+  margin-bottom: var(--size-4-1);
+  font-size: var(--font-ui-smaller);
+}
+
+.excalidraw-declarative-settings-toolbar button,
+.excalidraw-declarative-settings-toolbar a {
+  white-space: nowrap;
+}
+
+.excalidraw-declarative-settings-toolbar button {
+  font-size: inherit;
+}
+
+.excalidraw-declarative-settings-toolbar a {
+  color: var(--text-accent);
+  text-decoration: none;
+}
+
+.excalidraw-declarative-settings-toolbar a:hover {
+  color: var(--text-accent-hover);
+  text-decoration: underline;
+}
+
+.excalidraw-settings-breadcrumbs {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--size-4-1);
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+}
+
+.excalidraw-settings-breadcrumbs__link {
+  height: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-accent);
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.excalidraw-settings-breadcrumbs__link:hover {
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-accent-hover);
+  text-decoration: underline;
+}
+
+.excalidraw-settings-breadcrumbs__current {
+  color: var(--text-normal);
+  font-weight: var(--font-semibold);
+}
+
+.excalidraw-settings-breadcrumbs__separator {
+  color: var(--text-faint);
+}
+
+.excalidraw-settings .setting-item-description a[href^="#"],
+.excalidraw-settings-page .setting-item-description a[href^="#"] {
+  color: var(--text-accent);
+  font-weight: var(--font-medium);
+  text-decoration: underline;
+  text-decoration-thickness: max(1px, 0.08em);
+  text-underline-offset: 0.15em;
+}
+
+.excalidraw-settings .setting-item-description a[href^="#"]:hover,
+.excalidraw-settings-page .setting-item-description a[href^="#"]:hover {
+  color: var(--text-accent-hover);
+  text-decoration-thickness: max(2px, 0.12em);
+}
+
+.excalidraw-filename-information {
+  display: grid;
+  grid-template-columns: minmax(12rem, 0.8fr) minmax(18rem, 1.2fr);
+  gap: var(--size-4-4);
+  align-items: start;
+}
+
+.excalidraw-filename-information > :first-child {
+  min-width: 0;
+}
+
+@media (max-width: 700px) {
+  .excalidraw-filename-information {
+    grid-template-columns: 1fr;
+  }
 }

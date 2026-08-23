@@ -4497,6 +4497,7 @@ export class ExcalidrawAutomate {
     }
     this.plugin.settings.scriptEngineSettings[this.activeScript] = settings;
     await this.plugin.saveSettings();
+    this.plugin.refreshSettingsTab();
   }
 
   public setScriptSettingValue(key: string, value: ScriptSettingValue): void {
@@ -4521,6 +4522,7 @@ export class ExcalidrawAutomate {
   public async saveScriptSettings(): Promise<void> {
     ensureActiveScriptSettingsObject(this);
     await this.plugin.saveSettings();
+    this.plugin.refreshSettingsTab();
   }
 
   /**

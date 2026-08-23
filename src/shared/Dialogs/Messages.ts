@@ -18,30 +18,37 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
   "2.27.0": `
-## Maintenance
-- Refactoring the plugin. Removed unused functions, improved code structure and readability. Removed the obsolete Draw.io/Diagram plugin integration (since the other plugin no longer works and is not maintained) and retired the Create DrawIO file script from the script library.
-- Migrated the embedded Excalidraw runtime from the retired UMD build path to a dedicated ESM-source-based Obsidian package while preserving offline operation, popout windows, and runtime Mermaid loading through Excalidraw Extras. The Assistant UI font is now bundled instead of fetched from the internet, and the plugin-private React runtime is generated from the official npm package entrypoints instead of legacy UMD files.
-- Updated the plugin-private React and ReactDOM runtime to React 19.
-- Improved loading performance for drawings with many cached embedded files by avoiding large cache rewrites, SVG reconstruction, unnecessary image measurement and hashing, premature cache-read timeouts, and duplicate SVG normalization when cached drawings are handed to the canvas. Cached and direct images now appear before uncached generated drawings. The disposable image cache is rebuilt once after updating; drawing backups are preserved.
-
-## Fixed
-- The Excalidraw color palette now uses its natural height when space is available instead of being unnecessarily limited to a short, vertically scrolling panel. Its native color control also remains aligned with the hex input.
-- The text-to-diagram chat history menu is visible again, allowing saved chats to be restored and deleted.
-- Stencil library is persisted with tab-indented JSON to support Git diffs. [#2883](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2883)
-- Custom color-picker top picks (pinned by dragging a color onto the strip) are now saved with the drawing instead of being forgotten on reload.
-- Changing the canvas background color from the color-picker popover no longer leaves the popover's own theming out of sync until it's closed and reopened.
+## New
+- On Obsidian 1.13 and newer, Excalidraw now uses Obsidian's searchable, multi-page settings. Settings are organized into clearer sections with breadcrumbs, compact help links, and clickable links between related options.
+  - Prefer the previous experience? Turn off **Use searchable settings** at the top of Excalidraw settings and restart Obsidian. Older Obsidian versions continue using the legacy single-page layout automatically.
+  - Settings exposed by installed Excalidraw Automate scripts have moved to **Excalidraw Automate → Settings for installed scripts** and update when a script adds or changes its settings.
 
 ## New from Excalidraw.com
-- Improved bucket tool and eyedropper support [#11849](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/11849)
-- Respect box selection mode ('contain' vs 'overlap') in lasso selection [#11862](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/11862)
-- Color-picker top picks can now be customized by dragging a color from the palette onto the strip; right-click the strip to reset [#11872](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/11872)
+- Improved bucket tool and eyedropper support. [#11849](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/11849)
+- Lasso selection now respects box selection mode: contain or overlap. [#11862](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/11862)
+- Customize color-picker top picks by dragging colors onto the strip; right-click the strip to reset it. [#11872](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/11872)
+
+## Fixed
+- Settings changes are saved promptly without collapsing sections or interrupting fast typing. Writes are serialized, and Excalidraw keeps a device-local recovery copy so an empty or corrupted synchronized **data.json** cannot silently erase a large settings configuration.
+- Interdependent settings now initialize and refresh consistently, including TODO icons, auto-export formats, Taskbone credentials, filename previews, and custom grid colors. Built-in font previews also use the correct typeface in secondary Obsidian windows.
+- Applying a rendering-related setting no longer resets the live zoom and scroll position of an open drawing. New configurations use ☑ as the completed-TODO marker.
+- Interactive Markdown embed defaults now save filename, properties, locked-reading-mode, and background-source changes reliably.
+- The color palette uses the available height, keeps its native picker aligned, remembers customized top picks after reload, and updates popover theming immediately after a canvas background change.
+- Text-to-diagram chat history is visible again, so saved chats can be restored or deleted.
+- Stencil-library JSON is now tab-indented for cleaner Git diffs. [#2883](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2883)
+
+## Maintenance
+- This is one of the Plugin's largest internal maintenance releases. The settings system, persistence pipeline, plugin lifecycle, runtime packaging, and several major managers were reorganized into clearer, independently maintained components. The visible workflow remains familiar, but the foundation is substantially safer for future features and fixes.
+- The embedded Excalidraw runtime now uses a modern ESM-source build and React 19 instead of the retired UMD pipeline. Offline use and popout windows remain supported; the Assistant UI font is bundled locally and Mermaid still loads on demand through Excalidraw Extras.
+- Drawings with many cached embedded files load more efficiently by avoiding redundant cache rewrites, SVG reconstruction, image measurement, hashing, and normalization. Cached and direct images can appear before slower generated drawings, while drawing backups remain protected.
+- Removed unused code and the obsolete Draw.io/Diagram integration, and retired the non-functional Create DrawIO file script.
 
 ## New in Excalidraw Automate
-- Scripts can now register custom buttons in the selected-element context menu (the small toolbar shown above a selected element):
+- Scripts can register custom buttons in the selected-element context menu:
 \`\`\`ts
 registerElementActionProvider(getActions: (element: ExcalidrawElement) => readonly {id: string, title: string, icon: string, action: () => void}[]): (() => void) | null;
 \`\`\`
-- Scripts can now ask to be automatically re-run every time a new Excalidraw view is opened, with a user-confirmed Allow/Deny/Ask-me-later prompt; a fresh Allow also attaches the script to every other currently-open view immediately. Manage which scripts are allowed to autostart from the "Autostart scripts" command or the Compatibility settings section:
+- Scripts can request permission to run automatically whenever an Excalidraw view opens. Manage permissions with the **Autostart scripts** command or under Excalidraw Automate settings:
 \`\`\`ts
 registerAutostart(): Promise<"allow" | "deny" | "pending">;
 \`\`\`

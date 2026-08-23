@@ -197,6 +197,7 @@ export interface ExcalidrawSettings {
   };
   previousRelease: string;
   showReleaseNotes: boolean;
+  useDeclarativeSettings: boolean;
   excalidrawMasteryPromoCollapsed: boolean;
   compareManifestToPluginVersion: boolean;
   showNewVersionNotification: boolean;
@@ -560,7 +561,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   urlPrefix: "",
   parseTODO: false,
   todo: "☐",
-  done: "🗹",
+  done: "☑",
   hoverPreviewWithoutCTRL: false,
   linkOpacity: 1,
   openInAdjacentPane: true,
@@ -650,6 +651,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   autostartScriptFailures: {},
   previousRelease: "0.0.0",
   showReleaseNotes: true,
+  useDeclarativeSettings: true,
   excalidrawMasteryPromoCollapsed: false,
   compareManifestToPluginVersion: true,
   showNewVersionNotification: true,

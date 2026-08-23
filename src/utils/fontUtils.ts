@@ -3,13 +3,30 @@ import type { SelectableFontOption } from "src/types/fontTypes";
 
 const LOCAL_FONT_EXTENSIONS = ["ttf", "woff", "woff2", "otf"];
 
-export const MARKDOWN_FONT_FAMILIES = [
-  "Virgil",
-  "Cascadia",
-  "Excalifont",
-  "Comic Shanns",
-  "Liberation Sans",
-] as const;
+const MARKDOWN_FONT_FAMILY_IDS = {
+  Virgil: 1,
+  Cascadia: 3,
+  Excalifont: 5,
+  "Comic Shanns": 8,
+  "Liberation Sans": 9,
+} as const;
+
+type MarkdownFontFamily = keyof typeof MARKDOWN_FONT_FAMILY_IDS;
+
+export const MARKDOWN_FONT_FAMILIES: readonly MarkdownFontFamily[] =
+  Object.freeze(
+    Object.keys(MARKDOWN_FONT_FAMILY_IDS) as MarkdownFontFamily[],
+  );
+
+/** Returns Excalidraw's numeric identifier for a built-in Markdown font. */
+export function getMarkdownFontFamilyId(fontFamily: string): number | null {
+  return Object.prototype.hasOwnProperty.call(
+    MARKDOWN_FONT_FAMILY_IDS,
+    fontFamily,
+  )
+    ? MARKDOWN_FONT_FAMILY_IDS[fontFamily as MarkdownFontFamily]
+    : null;
+}
 
 /** Returns vault font files that are eligible for user-selectable font lists. */
 export function getSelectableFontFiles(

@@ -2171,16 +2171,26 @@ export default class ExcalidrawView
   }
 
   /**
-   * reload is triggered by the modifyEventHandler in main.ts whenever an excalidraw drawing that is currently open
-   * in a workspace leaf is modified. There can be two reasons for the file change:
-   * - The user saves the drawing in the active view (either force-save or autosave)
-   * - The file is modified by some other process, typically as a result of background sync, or because the drawing is open
-   *   side by side, e.g. the canvas in one view and markdown view in the other.
-   * @param fullreload
-   * @param file
-   * @returns
+   * Reloads scene content after a rendering-related plugin setting changes,
+   * while retaining the live viewport that is intentionally not persisted as
+   * an ordinary drawing edit.
    */
-  public async reload(fullreload: boolean = false, file?: TFile) {
+  public async reloadAfterSettingsChange(): Promise<void> {
+    await this.reload(true, undefined, true);
+  }
+
+  /**
+   * Reloads an open drawing after a local save or an external file change.
+   *
+   * @param fullreload - Whether to parse the complete drawing data again.
+   * @param file - Modified file when the reload originated from a file event.
+   * @param preserveViewport - Whether to retain live scroll and zoom values.
+   */
+  public async reload(
+    fullreload: boolean = false,
+    file?: TFile,
+    preserveViewport: boolean = false,
+  ) {
     const loadOnModifyTrigger = file && file === this.file;
 
     //once you've finished editing the embeddable, the first time the file
@@ -2229,7 +2239,12 @@ export default class ExcalidrawView
       await this.excalidrawData.setTextMode(this.textMode);
     }
     this.excalidrawData.scene.appState.theme = api.getAppState().theme;
-    await this.loadDrawing(loadOnModifyTrigger, undefined, true);
+    await this.loadDrawing(
+      loadOnModifyTrigger,
+      undefined,
+      true,
+      preserveViewport,
+    );
     this.clearDirty();
   }
 
@@ -3052,17 +3067,30 @@ export default class ExcalidrawView
   }
 
   /**
+   * Loads the parsed scene into the Excalidraw runtime.
    *
-   * @param justloaded - a flag to trigger zoom to fit after the drawing has been loaded
+   * @param justloaded - Whether to trigger initial-load behavior such as zoom to fit.
+   * @param deletedElements - Deleted elements retained during save-related reloads.
+   * @param isReloading - Whether this replaces an already loaded scene.
+   * @param preserveViewport - Whether to omit persisted scroll and zoom state.
    */
   public async loadDrawing(
     justloaded: boolean,
     deletedElements?: ExcalidrawElement[],
     isReloading: boolean = false,
+    preserveViewport: boolean = false,
   ) {
     const excalidrawData = this.excalidrawData.scene;
     const isOpenInMultipleLeaves =
       getExcalidraAndMarkdowViewsForFile(this.app, this.file).length > 1;
+    const appState =
+      isReloading && (isOpenInMultipleLeaves || preserveViewport)
+        ? deleteAppStateKeys(excalidrawData.appState as AppState, [
+            "scrollX",
+            "scrollY",
+            "zoom",
+          ])
+        : excalidrawData.appState;
     this.semaphores.justLoaded = justloaded;
     this.clearDirty();
     const om = this.excalidrawData.getOpenMode();
@@ -3091,13 +3119,7 @@ export default class ExcalidrawView
       this.updateScene({
         //elements: excalidrawData.elements.concat(deletedElements??[]), //need to preserve deleted elements during autosave if images, links, etc. are updated
         appState: {
-          ...(isReloading && isOpenInMultipleLeaves
-            ? deleteAppStateKeys(excalidrawData.appState as AppState, [
-                "scrollX",
-                "scrollY",
-                "zoom",
-              ])
-            : excalidrawData.appState),
+          ...appState,
           ...(this.excalidrawData.selectedElementIds //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/609
             ? this.excalidrawData.selectedElementIds
             : {}),
@@ -3146,13 +3168,7 @@ export default class ExcalidrawView
       await this.instantiateExcalidraw({
         elements: excalidrawData.elements,
         appState: {
-          ...(isReloading && isOpenInMultipleLeaves
-            ? deleteAppStateKeys(excalidrawData.appState as AppState, [
-                "scrollX",
-                "scrollY",
-                "zoom",
-              ])
-            : excalidrawData.appState),
+          ...appState,
           ...(excalidrawData.appState.frameRendering &&
           excalidrawData.appState.frameRendering.markerName === undefined
             ? {

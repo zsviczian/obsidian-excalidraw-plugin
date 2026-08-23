@@ -53,6 +53,7 @@ export class EmbeddalbeMDFileCustomDataSettingsComponent {
             .setValue(this.mdCustomData.filenameVisible)
             .onChange((value) => {
               this.mdCustomData.filenameVisible = value;
+              this.update();
             }),
         );
 
@@ -72,6 +73,7 @@ export class EmbeddalbeMDFileCustomDataSettingsComponent {
             .setValue(this.mdCustomData.propertiesVisible ?? true)
             .onChange((value) => {
               this.mdCustomData.propertiesVisible = value;
+              this.update();
             });
           if (!this.isFullFile || isGlobalHidden) {
             toggle.setDisabled(true);
@@ -91,6 +93,7 @@ export class EmbeddalbeMDFileCustomDataSettingsComponent {
             .setValue(!!this.mdCustomData.lockedReadingMode)
             .onChange((value) => {
               this.mdCustomData.lockedReadingMode = value;
+              this.update();
             }),
         );
     }
@@ -120,6 +123,7 @@ export class EmbeddalbeMDFileCustomDataSettingsComponent {
             if (value) {
               hideElement(bgSetting.settingEl);
               if (this.mdCustomData.backgroundMatchCanvas) {
+                this.mdCustomData.backgroundMatchCanvas = false;
                 bgMatchCanvasToggle.setValue(false);
               }
             } else if (!this.mdCustomData.backgroundMatchCanvas) {
@@ -140,6 +144,7 @@ export class EmbeddalbeMDFileCustomDataSettingsComponent {
             if (value) {
               hideElement(bgSetting.settingEl);
               if (this.mdCustomData.backgroundMatchElement) {
+                this.mdCustomData.backgroundMatchElement = false;
                 bgMatchElementToggle.setValue(false);
               }
             } else if (!this.mdCustomData.backgroundMatchElement) {

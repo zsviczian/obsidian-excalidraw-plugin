@@ -19,6 +19,23 @@ export default {
   // Sugester
   SELECT_FILE_TO_INSERT: "Selecciona un archivo para insertar",
   // main.ts
+  SETTINGS_DATA_INVALID:
+    "Excalidraw está esperando un archivo data.json válido. Los cambios no se guardarán hasta que se restaure el archivo o reinicies Obsidian y elijas Restablecer valores predeterminados.",
+  SETTINGS_DATA_REPAIRED_FROM_MEMORY:
+    "Se recibió y rechazó un archivo de configuración de Excalidraw vacío o ilegible. La configuración activa se volvió a guardar para reparar data.json.",
+  SETTINGS_DATA_RECOVERED:
+    "El archivo data.json de Excalidraw estaba vacío o no se podía leer. La última configuración válida se restauró automáticamente.",
+  SETTINGS_RECOVERY_MISSING_TITLE:
+    "Falta el archivo de configuración de Excalidraw",
+  SETTINGS_RECOVERY_MISSING_DESC:
+    "Existe una copia válida de la configuración en este dispositivo. Restaura la copia o restablece Excalidraw a los valores de fábrica. Al cerrar este mensaje se restaurará la copia.",
+  SETTINGS_RECOVERY_CORRUPT_TITLE:
+    "El archivo de configuración de Excalidraw está dañado",
+  SETTINGS_RECOVERY_CORRUPT_DESC:
+    "El archivo está vacío o no se puede leer y no hay una copia de recuperación en este dispositivo. Restablece Excalidraw a los valores de fábrica o deja el archivo sin cambios mientras restauras un data.json válido desde otra fuente. Al cerrar este mensaje se esperará un archivo de reemplazo.",
+  SETTINGS_RECOVERY_RESTORE_BACKUP: "Restaurar copia",
+  SETTINGS_RECOVERY_RESET_DEFAULTS: "Restablecer valores predeterminados",
+  SETTINGS_RECOVERY_WAIT_FOR_FILE: "Esperar archivo restaurado",
   CONVERT_URL_TO_FILE: "Guardar imagen desde el URL en un archivo local",
   UNZIP_CURRENT_FILE: "Descomprimir el archivo Excalidraw actual",
   PUBLISH_SVG_CHECK:
@@ -373,12 +390,22 @@ export default {
   SEARCH_SHOWHIDE_ARIA: "Mostrar/Ocultar barra de búsqueda",
   SEARCH_NEXT: "Siguiente",
   SEARCH_PREVIOUS: "Anterior",
+  SETTINGS_TOOLBAR_COPY: "Copiar ajustes",
+  SETTINGS_TOOLBAR_NOTEBOOKLM: "NotebookLM",
+  SETTINGS_TOOLBAR_BUGS: "Errores",
+  SETTINGS_TOOLBAR_WIKI: "Wiki",
+  SETTINGS_TOOLBAR_YOUTUBE: "YouTube",
+  SETTINGS_TOOLBAR_LEARN: "Aprender",
+  SETTINGS_TOOLBAR_FOLLOW: "Twitter",
+  SETTINGS_TOOLBAR_READ: "Leer libro",
+  SETTINGS_TOOLBAR_KOFI: "Ko-fi",
+  USE_DECLARATIVE_SETTINGS_NAME: "Usar ajustes con búsqueda",
+  USE_DECLARATIVE_SETTINGS_DESC:
+    "Usa la interfaz de ajustes de Obsidian con búsqueda y varias páginas. Desactívala para usar los ajustes heredados de Excalidraw en una sola página. Requiere reiniciar Obsidian.",
 
   //settings.ts
   NOTEBOOKLM_LINK_ARIA:
     "Pídele ayuda a NotebookLM sobre el complemento. Este modelo viene precargado con todas mis transcripciones de videos, notas de lanzamiento y otro contenido útil. Chatea con NotebookLM para explorar mis más de 250 videos y la documentación de Excalidraw.",
-  NOTEBOOKLM_LINK_TEXT:
-    "Aprende sobre el complemento. Accede a la base de conocimientos de NotebookLM.",
   LINKS_BUGS_ARIA:
     "Reporta errores y solicita nuevas funciones en la página de GitHub del complemento",
   LINKS_BUGS: "Reportar Errores",
@@ -408,6 +435,15 @@ export default {
     "<b><u>Desactivado:</u></b> Modo silencioso. Necesitarás verificar las actualizaciones del complemento en Complementos Comunitarios.",
 
   BASIC_HEAD: "Básico",
+  BASIC_UPDATES_STARTUP_HEAD: "Actualizaciones e inicio",
+  BASIC_UPDATES_STARTUP_DESC:
+    "Notas de la versión, comprobaciones y avisos de actualizaciones, y la pantalla de inicio.",
+  BASIC_FILES_FOLDERS_HEAD: "Archivos y carpetas",
+  BASIC_FILES_FOLDERS_DESC:
+    "Carpetas y rutas predeterminadas para dibujos, recortes, anotaciones, plantillas y scripts de Excalidraw Automate.",
+  BASIC_STENCIL_LIBRARY_HEAD: "Biblioteca de elementos",
+  BASIC_STENCIL_LIBRARY_DESC:
+    "Elige dónde se guardan los datos de la biblioteca de elementos y configura su carpeta y archivo local.",
   BASIC_DESC: `En la configuración "Básico", puedes configurar opciones como mostrar las notas de la versión después de las actualizaciones, recibir notificaciones de actualización del complemento, establecer la ubicación predeterminada para nuevos bosquejos, especificar la carpeta de Excalidraw para incrustar bosquejos en documentos activos, definir un archivo de plantilla de Excalidraw, y designar una carpeta de scripts de Excalidraw Automate para gestionar scripts de automatización.`,
   FOLDER_NAME: "Carpeta de Excalidraw (¡Sensible a MAYÚSCULAS/minúsculas!)",
   FOLDER_DESC:
@@ -621,6 +657,9 @@ export default {
   AI_USAGE_SETTINGS_BUTTON_DESC:
     "Ver el consumo de tokens de IA en la sesión actual de Obsidian desglosado por modelo. El uso se reinicia al reiniciar.",
   SAVING_HEAD: "Guardar",
+  SAVING_STORAGE_AUTOSAVE_HEAD: "Almacenamiento y guardado automático",
+  SAVING_STORAGE_AUTOSAVE_DESC:
+    "Controla la compresión del JSON de los dibujos y los intervalos de guardado automático en escritorio y móvil.",
   SAVING_DESC:
     "En la sección 'Guardar' de la Configuración de Excalidraw, puedes configurar cómo se guardan tus bosquejos. Esto incluye opciones para comprimir el JSON de Excalidraw en Markdown, establecer intervalos de autoguardado para escritorio y móvil, definir formatos de nombre de archivo y elegir si usar la extensión de archivo .excalidraw.md o .md. ",
   COMPRESS_NAME: "Comprimir JSON de Excalidraw en Markdown",
@@ -655,6 +694,8 @@ export default {
     "Excalidraw no podrá guardar tu trabajo al cerrar Obsidian directamente (es decir, al deslizar la aplicación para cerrarla). También ten en cuenta que cuando cambias de aplicación en un dispositivo móvil, a veces Android e iOS cierran " +
     "Obsidian en segundo plano para ahorrar recursos del sistema. En tal caso, Excalidraw no podrá guardar los últimos cambios.",
   FILENAME_HEAD: "Nombre de archivo",
+  FILENAME_GROUP_DESC:
+    "Configura cómo se generan los nombres de dibujos nuevos, incrustados, recortados y anotados.",
   FILENAME_DESC:
     `<p>Haz click en este enlace para la <a href="${URLs.MOMENTJS_COM_DOCS}">` +
     `referencia de formato de fecha y hora</a>.</p>`,
@@ -683,6 +724,9 @@ export default {
   DISPLAY_HEAD: "Apariencia y Comportamiento de Excalidraw",
   DISPLAY_DESC:
     "En la sección 'Apariencia y Comportamiento' de la Configuración de Excalidraw, puedes ajustar cómo se ve y se comporta Excalidraw. Esto incluye opciones para estilos dinámicos, modo para zurdos, coincidencia de temas de Excalidraw y Obsidian, modos predeterminados y más.",
+  DISPLAY_EDITOR_PREVIEWS_HEAD: "Edición y vistas previas",
+  DISPLAY_EDITOR_PREVIEWS_DESC:
+    "Configura los gestos de edición del lienzo y cómo aparecen los archivos de Excalidraw en el modo de lectura y las vistas previas al pasar el cursor.",
   OVERRIDE_OBSIDIAN_FONT_SIZE_NAME:
     "Limitar tamaño de fuente de Obsidian al texto del editor",
   OVERRIDE_OBSIDIAN_FONT_SIZE_DESC:
@@ -762,13 +806,22 @@ export default {
     }'>Modo de Lectura de Markdown</a> en 'Apariencia y Comportamiento' más arriba.<br>` +
     `⚠️ Debes cerrar y volver a abrir el archivo de Excalidraw/Markdown para que los cambios surtan efecto. ⚠️`,
   MODES_HEAD: "Modos",
+  MODES_DESC:
+    "Elige diseños de interfaz específicos para cada dispositivo, controles de la barra de título y la posición de la bandeja para diestros o zurdos.",
   HOTKEY_OVERRIDE_HEAD: "Anulaciones de atajos de teclado",
+  HOTKEY_OVERRIDE_GROUP_DESC:
+    "Administra las combinaciones de Excalidraw que deben tener prioridad sobre los atajos de Obsidian en conflicto.",
+  HOTKEY_OVERRIDE_CONTROL_NAME: "Administrar anulaciones de atajos",
   HOTKEY_OVERRIDE_DESC:
     `Algunos de los atajos de teclado de Excalidraw, como <code>${labelCTRL()}+Enter</code> para editar texto o <code>${labelCTRL()}+K</code> para crear un enlace de elemento ` +
     "entran en conflicto con la configuración de atajos de teclado de Obsidian. Las combinaciones de atajos de teclado que agregues a continuación anularán la configuración de atajos de teclado de Obsidian mientras usas Excalidraw. Por lo tanto, " +
     `puedes agregar <code>${labelCTRL()}+G</code> si quieres que el comportamiento predeterminado sea Agrupar Objeto en Excalidraw en lugar de abrir la Vista de Gráfico.`,
   THEME_HEAD: "Tema y estilo",
+  THEME_DESC:
+    "Controla el estilo de la interfaz, los temas de dibujos e incrustaciones, el modo de apertura y el espacio seguro en móviles.",
   ZOOM_AND_PAN_HEAD: "Zoom y panorámica",
+  ZOOM_AND_PAN_DESC:
+    "Configura el comportamiento del ratón, el tacto, la apertura, el cambio de tamaño y el intervalo de zoom.",
   PAN_WITH_RIGHT_MOUSE_BUTTON_NAME:
     "Desplazar el lienzo con el botón derecho del mouse (abrir menú con 'm')",
   PAN_WITH_RIGHT_MOUSE_BUTTON_DESC:
@@ -802,7 +855,11 @@ export default {
   ZOOM_MAX_DESC:
     "Límite superior del zoom. Predeterminado: 3000%. Por lo general, no es necesario cambiarlo; se incluye para ser exhaustivos.",
   PEN_HEAD: "Lápiz",
+  PEN_DESC:
+    "Configura el modo lápiz automático, los gestos táctiles, el borrador y la cruz de dibujo libre.",
   GRID_HEAD: "Cuadrícula",
+  GRID_DESC:
+    "Configura la dirección de la cuadrícula, el color automático o personalizado y la opacidad.",
   GRID_DYNAMIC_COLOR_NAME: "Color de cuadrícula dinámica",
   GRID_DYNAMIC_COLOR_DESC:
     "<b><u>Activado:</u></b> Cambia el color de la cuadrícula para que coincida con el color del lienzo<br><b><u>Desactivado:</u></bUsar el color de abajo como color de la cuadrícula",
@@ -817,6 +874,8 @@ export default {
   GRID_HORIZONTAL: "Renderizar cuadrícula horizontal",
   GRID_VERTICAL: "Renderizar cuadrícula vertical",
   LASER_HEAD: "Puntero láser",
+  LASER_DESC:
+    "Configura el color del puntero láser y la rapidez y distancia con que se desvanece su rastro.",
   LASER_COLOR: "Color del puntero láser",
   LASER_DECAY_TIME_NAME: "Tiempo de desvanecimiento del puntero láser",
   LASER_DECAY_TIME_DESC:
@@ -837,6 +896,21 @@ export default {
     "Si no quieres que el texto cambie accidentalmente en tus bosquejos, usa <code>[[enlaces|con alias]]</code>.",
   DRAG_MODIFIER_NAME:
     "Teclas modificadoras para click de enlace y Arrastrar y Soltar(Drag&Drop)",
+  DRAG_MODIFIER_GROUP_DESC:
+    "Configura gestos para abrir enlaces y combinaciones de modificadores para clics y acciones de arrastrar y soltar.",
+  LINK_OPENING_GESTURES_HEAD: "Gestos para abrir enlaces",
+  LINK_OPENING_GESTURES_DESC:
+    "Configura retrasos de pulsación prolongada y la apertura con doble clic en dibujos incrustados y el modo de vista.",
+  WEB_BROWSER_DRAG_ACTION_DESC:
+    "Elige modificadores para enlaces, imágenes, importaciones e incrustaciones arrastradas desde un navegador web.",
+  LOCAL_FILE_DRAG_ACTION_DESC:
+    "Elige modificadores para enlaces, imágenes, importaciones e incrustaciones arrastradas desde el sistema operativo.",
+  INTERNAL_DRAG_ACTION_DESC:
+    "Elige modificadores para enlaces, imágenes, imágenes a tamaño completo e incrustaciones arrastradas dentro de Obsidian.",
+  PANE_TARGET_DESC:
+    "Elige combinaciones de modificadores que determinan dónde se abren los enlaces.",
+  MODIFIER_KEY_USAGE_NAME: "Configurar teclas modificadoras",
+  MODIFIER_KEY_COMBINATIONS: "Combinaciones de modificadores",
   DRAG_MODIFIER_DESC:
     `Comportamiento de la tecla modificadora al hacer click en enlaces y arrastrar y soltar elementos. ` +
     `Excalidraw no validará tu configuración... presta atención para evitar configuraciones conflictivas. ` +
@@ -935,6 +1009,22 @@ export default {
     "Usa <code>http" +
     "s://noembed" +
     ".com/embed?url=</code> para obtener el título de la página al soltar un enlace HTTPS en Excalidraw.",
+  LINK_BEHAVIOR_HEAD: "Comportamiento de enlaces",
+  LINK_BEHAVIOR_DESC:
+    "Configura la sincronización, enlaces relacionados, vistas previas, clics y la búsqueda de títulos web.",
+  LINK_USAGE_NAME: "Usar enlaces en Excalidraw",
+  LINK_OPENING_HEAD: "Comportamiento de paneles y pestañas",
+  LINK_OPENING_DESC:
+    "Elige si los enlaces reutilizan, enfocan o cambian entre paneles, pestañas y el espacio de trabajo principal.",
+  LINK_APPEARANCE_HEAD: "Apariencia de enlaces",
+  LINK_APPEARANCE_DESC:
+    "Configura corchetes, prefijos, iconos y opacidad al mostrar enlaces.",
+  TODO_HEAD: "Tareas pendientes",
+  TODO_GROUP_DESC:
+    "Configura el análisis de tareas y los iconos para tareas abiertas y completadas.",
+  TRANSCLUSION_HEAD: "Transclusiones de texto",
+  TRANSCLUSION_DESC:
+    "Configura límites de caracteres, ajuste de línea y limpieza de citas para texto Markdown transcluido.",
   PDF_TO_IMAGE: "PDF a Image",
   PDF_TO_IMAGE_SCALE_NAME: "Escala de conversión de PDF a imagen",
   PDF_TO_IMAGE_SCALE_DESC:
@@ -944,7 +1034,13 @@ export default {
   EMBED_TOEXCALIDRAW_DESC:
     "En la sección 'Incrustar archivos' de la Configuración de Excalidraw, puedes configurar cómo se incrustan varios tipos de archivos en Excalidraw. Esto incluye opciones para incrustar archivos Markdown interactivos, PDFs y archivos Markdown como imágenes.",
   MD_HEAD: "Incrustar Markdown en Excalidraw como imagen",
+  MD_GROUP_DESC:
+    "Configura las dimensiones, la fuente, los colores, los bordes y el CSS de los archivos Markdown renderizados como imágenes.",
   MD_EMBED_CUSTOMDATA_HEAD_NAME: "Archivos Markdown interactivos",
+  MD_EMBED_CUSTOMDATA_GROUP_DESC:
+    "Configura la edición y la apariencia predeterminada de futuras incrustaciones interactivas de Markdown.",
+  MD_EMBED_DEFAULTS_CONTROL_NAME:
+    "Valores predeterminados de apariencia de Markdown interactivo",
   MD_EMBED_CUSTOMDATA_HEAD_DESC: `Las siguientes configuraciones solo afectarán a futuras incrustaciones. Las incrustaciones actuales no se modificarán. La configuración del tema de los marcos incrustados se encuentra en la sección "Apariencia y comportamiento de Excalidraw`,
   MD_EMBED_SINGLECLICK_EDIT_NAME:
     "Un solo click para editar Markdown incrustado",
@@ -990,19 +1086,30 @@ export default {
   EMBED_HEAD: "Incrustar Excalidraw en tus notas y exportar",
   EMBED_DESC: `En la configuración de "Incrustar y exportar", puedes configurar cómo se incrustan y exportan las imágenes y los bosquejos de Excalidraw en tus documentos. Las configuraciones clave incluyen elegir el tipo de imagen para la vista previa de Markdown (como SVG nativo o PNG), especificar el tipo de archivo a insertar en el documento (Excalidraw original, PNG o SVG) y gestionar el almacenamiento en caché de imágenes para incrustarlas en Markdown. También puedes controlar el tamaño de la imagen, si incrustar los bosquejos usando wikienlaces o enlaces Markdown y ajustar la configuración relacionada con los temas de imagen, colores de fondo y la integración de Obsidian. 
     Además, hay configuraciones para la autoexportación, que genera automáticamente archivos SVG y/o PNG que coinciden con el título de tus bosquejos de Excalidraw, manteniéndolos sincronizados con los cambios de nombre y eliminaciones de archivos.`,
+  EMBED_PREVIEW_LINKS_HEAD: "Vistas previas, enlaces y Canvas",
+  EMBED_PREVIEW_LINKS_DESC:
+    "Elige los formatos de vista previa y de archivo insertado, los enlaces de origen, los marcadores de posición y las incrustaciones inmersivas en Canvas.",
   EMBED_CANVAS: "Soporte para Obsidian Canvas",
   EMBED_CANVAS_NAME: "Incrustación inmersiva",
   EMBED_CANVAS_DESC:
     "Oculta el borde y el fondo del nodo del Canvas al incrustar un bosquejo de Excalidraw en un Canvas. " +
     "Ten en cuenta que para un fondo completamente transparente en tu imagen, aún necesitarás configurar Excalidraw para que exporte las imágenes con fondo transparente.",
   EMBED_CACHING: "Caché de imágenes y optimización de renderizado",
+  EMBED_CACHING_DESC:
+    "Ajusta la concurrencia de renderizado y las cachés locales, elimina imágenes o copias de seguridad almacenadas y reutiliza vistas previas exportadas.",
   RENDERING_CONCURRENCY_NAME: "Concurrencia de renderizado de imágenes",
   RENDERING_CONCURRENCY_DESC:
     "Número de parallel workers(trabajadores paralelos) a usar para el renderizado de imágenes. Aumentar este número acelerará el proceso de renderizado, pero puede ralentizar el resto del sistema. " +
     "El valor predeterminado es 3. Puedes aumentar este número si tienes un sistema potente.",
   EXPORT_SUBHEAD: "Configuraciones de Exportación",
+  EXPORT_SUBHEAD_DESC:
+    "Configura el renderizado de PDF, los datos de escena exportados, las dimensiones, el tema y fondo, los valores predeterminados de PDF y las copias PNG/SVG automáticas.",
   EMBED_SIZING: "Tamaño de imagen",
+  EMBED_SIZING_DESC:
+    "Define las dimensiones predeterminadas de las imágenes incrustadas, la escala PNG y el margen de exportación.",
   EMBED_THEME_BACKGROUND: "Tema de la imagen y color de fondo",
+  EMBED_THEME_BACKGROUND_DESC:
+    "Elige el fondo y el tema de las imágenes exportadas y si las vistas previas siguen el tema de Obsidian.",
   EMBED_IMAGE_CACHE_NAME:
     "Guardar imágenes en caché para incrustar en Markdown",
   EMBED_IMAGE_CACHE_DESC:
@@ -1088,7 +1195,19 @@ export default {
     "Incrusta la escena de Excalidraw en la imagen exportada. Se puede anular a nivel de archivo añadiendo la clave frontmatter <code>excalidraw-export-embed-scene: true/false</code> . " +
     "La configuración solo surtirá efecto la próxima vez que (re)abras los bosquejos.",
   PDF_EXPORT_SETTINGS: "Configuración de exportación a PDF",
+  PDF_EXPORT_SETTINGS_DESC:
+    "Elige el tamaño de página, la orientación, la distribución, los márgenes, el color del papel y la alineación predeterminados del PDF.",
+  PDF_EXPORT_DEFAULTS_CONTROL_NAME:
+    "Diseño predeterminado de exportación a PDF",
   EXPORT_HEAD: "Configuración de auto-exportación",
+  EXPORT_AUTOEXPORT_DESC:
+    "Mantén sincronizados los archivos exportados y crea automáticamente variantes SVG, PNG, claras y oscuras.",
+  SETTINGS_NAVIGATION_OPEN: "Abrir",
+  SETTINGS_BREADCRUMB_ARIA: "Ruta de configuración",
+  SETTINGS_RELATED_AUTOEXPORT_DESC:
+    "Activa las copias automáticas PNG o SVG para que esos formatos estén disponibles en el menú del tipo de archivo insertado.",
+  SETTINGS_RELATED_EMBED_TYPE_DESC:
+    "Elige si se inserta Excalidraw, PNG o SVG al incrustar un bosquejo en un documento.",
   EXPORT_SYNC_NAME:
     "Mantiene los nombres de archivo .SVG y/o .PNG sincronizados con el archivo del bosquejo",
   EXPORT_SYNC_DESC:
@@ -1164,8 +1283,11 @@ export default {
   CUSTOM_PEN_DESC:
     "Verás estos lápices junto al Menú de Obsidian en el lienzo. Puedes personalizarlos manteniendo presionado el botón del lápiz en el lienzo.",
   EXPERIMENTAL_HEAD: "Funcionalidades misceláneas",
-  EXPERIMENTAL_DESC: `Estas funcionalidades misceláneas en Excalidraw incluyen opciones para establecer fórmulas LaTeX predeterminadas para nuevas ecuaciones, habilitar un sugeridor de campos para autocompletar, mostrar indicadores de tipo para archivos de Excalidraw, habilitar la incrustación de imágenes inmersivas en el modo de edición de vista en vivo y experimentar con el Reconocimiento Óptico de Caracteres (OCR) de Taskbone para la extracción de texto de imágenes y bosquejos. Los usuarios también pueden ingresar una clave de API de Taskbone para un uso extendido del servicio de OCR.`,
+  EXPERIMENTAL_DESC:
+    "Configura los valores predeterminados de LaTeX, los indicadores de tipo de archivo, el comportamiento de la vista previa en vivo, las sugerencias de propiedades y la integración experimental de OCR con Taskbone.",
   EA_HEAD: "Excalidraw Automate",
+  EA_GROUP_DESC:
+    "Configura los scripts de Excalidraw Automate, el comportamiento de inicio y autoarranque, los enlaces de comandos y los ajustes expuestos por los scripts instalados.",
   EA_DESC:
     "ExcalidrawAutomate es una API de scripting y automatización para Excalidraw. Desafortunadamente, la documentación de la API es escasa. " +
     `Te recomiendo leer el archivo <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_BLOB_MASTER_DOCS_API_EXCALIDRAWAUTOMATE_D_TS}">ExcalidrawAutomate.d.ts</a>, ` +
@@ -1188,7 +1310,7 @@ export default {
   AUTOSTART_SCRIPT_PROMPT:
     "quiere ejecutarse automáticamente cada vez que abras un dibujo de Excalidraw. ¿Deseas permitirlo?",
   AUTOSTART_SCRIPT_PROMPT_MANAGE_HINT:
-    'Puedes cambiar esto más tarde desde la paleta de comandos ("Scripts de inicio automático") o en Ajustes → Compatibilidad → Scripts de inicio automático.',
+    'Puedes cambiar esto más tarde desde la paleta de comandos ("Scripts de inicio automático") o en Ajustes → Excalidraw Automate → Scripts de inicio automático.',
   AUTOSTART_SCRIPT_ALLOW: "Inicio automático",
   AUTOSTART_SCRIPT_DENY: "Solo manual",
   AUTOSTART_SCRIPT_ASK_LATER: "Preguntar cada vez",
@@ -1258,6 +1380,8 @@ export default {
     "Otros formatos de fuente incrustarán la fuente completa en el archivo exportado, lo que podría resultar en tamaños de archivo significativamente mayores.",
   OFFLINE_CJK_NAME:
     "Soporte de fuentes CJK (chino, japonés y coreano) sin conexión",
+  OFFLINE_CJK_GROUP_DESC:
+    "Descarga y precarga de forma selectiva fuentes chinas, japonesas y coreanas para que Excalidraw pueda mostrarlas sin conexión a internet.",
   OFFLINE_CJK_DESC: `<strong>Los cambios que hagas aquí solo se aplicarán después de reiniciar Obsidian.</strong><br>
      Excalidraw.com ofrece fuentes CJK (chino, japonés, coreano) escritas a mano. Por defecto, estas fuentes no se incluyen en el complemento de forma local, sino que se obtienen de internet. 
      Si prefieres que Excalidraw funcione completamente sin conexión a internet, puedes descargar los <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RAW_REFS_HEADS_MASTER_ASSETS_EXCALIDRAW_FONTS_ZIP}" target="_blank">archivos de fuentes necesarios desde GitHub</a>.
@@ -1276,6 +1400,8 @@ export default {
   SCRIPT_SETTINGS_DESC:
     "Algunos de los scripts de Excalidraw Automate incluyen configuraciones. Las configuraciones están organizadas por script. Solo se harán visibles en esta lista después de que hayas ejecutado el script recién descargado al menos una vez.",
   TASKBONE_HEAD: "Reconocimiento Óptico de Caracteres de Taskbone",
+  TASKBONE_GROUP_DESC:
+    "Configura el servicio opcional de OCR en línea Taskbone para extraer texto que se pueda buscar de dibujos e imágenes.",
   TASKBONE_DESC:
     "Esta es una integración experimental del reconocimiento óptico de caracteres en Excalidraw. Ten en cuenta que Taskbone es un servicio externo independiente y no es proporcionado por Excalidraw ni por el proyecto del complemento Excalidraw-Obsidian. " +
     "El servicio de OCR capturará texto legible de las líneas de dibujo a mano alzada y de las imágenes incrustadas en tu lienzo y colocará el texto reconocido en el frontmatter de tu bosquejo, así como en el portapapeles. " +
