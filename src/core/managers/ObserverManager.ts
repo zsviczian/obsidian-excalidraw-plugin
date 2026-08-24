@@ -282,7 +282,8 @@ export class ObserverManager {
       }
       this.removeModalContainerObserver();
     }
-    //The user clicks settings, or "open another vault", or the command palette
+    //The user clicks settings, or "open another vault", or the command palette.
+    //Other body portals, including inline suggestions, must not interrupt editing with a save.
     const modalContainerObserverFn: MutationCallback = (
       m: MutationRecord[],
     ) => {
@@ -291,6 +292,8 @@ export class ObserverManager {
         m.length !== 1 ||
         m[0].type !== "childList" ||
         m[0].addedNodes.length !== 1 ||
+        !isInstanceOfElement(m[0].addedNodes[0]) ||
+        !m[0].addedNodes[0].matches(".modal-container") ||
         !view ||
         view.semaphores?.viewunload ||
         !view.isDirty()

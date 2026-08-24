@@ -292,6 +292,32 @@ interface WorkspaceItemExt extends WorkspaceItem {
   containerEl: HTMLElement;
 }
 
+interface SaveSideEffectPolicy {
+  reason: string;
+  triggerAutoexport: boolean;
+}
+
+interface ForceSavePolicy {
+  refreshSceneFiles: boolean;
+  triggerAutoexport: boolean;
+}
+
+const DIRECT_SAVE_SIDE_EFFECT_POLICY: Readonly<SaveSideEffectPolicy> = {
+  reason: "direct",
+  triggerAutoexport: true,
+};
+
+const PUBLIC_FORCE_SAVE_POLICY: Readonly<ForceSavePolicy> = {
+  refreshSceneFiles: true,
+  triggerAutoexport: true,
+};
+
+const WINDOW_BLUR_FORCE_SAVE_POLICY: Readonly<ForceSavePolicy> = {
+  refreshSceneFiles: false,
+  // Autoexport is a documented save-time contract, including for blur-triggered saves.
+  triggerAutoexport: true,
+};
+
 export const addFiles = async (
   files: FileData[],
   view: ExcalidrawView,
@@ -873,7 +899,21 @@ export default class ExcalidrawView
     preventReload: boolean = true,
     forcesave: boolean = false,
     overrideEmbeddableIsEditingSelfDebounce: boolean = false,
-  ) {
+  ): Promise<void> {
+    await this.saveWithSideEffectPolicy(
+      preventReload,
+      forcesave,
+      overrideEmbeddableIsEditingSelfDebounce,
+      DIRECT_SAVE_SIDE_EFFECT_POLICY,
+    );
+  }
+
+  private async saveWithSideEffectPolicy(
+    preventReload: boolean,
+    forcesave: boolean,
+    overrideEmbeddableIsEditingSelfDebounce: boolean,
+    sideEffectPolicy: Readonly<SaveSideEffectPolicy>,
+  ): Promise<void> {
     const diagnosticsEnabled = performanceDiagnosticsEnabled();
     const diagnosticId = diagnosticsEnabled
       ? nextPerformanceDiagnosticId("save")
@@ -883,8 +923,10 @@ export default class ExcalidrawView
     performanceDiagnosticLog("save.request", {
       id: diagnosticId,
       viewId: this.id,
+      reason: sideEffectPolicy.reason,
       force: forcesave,
       preventReload,
+      triggerAutoexport: sideEffectPolicy.triggerAutoexport,
       autosaving: this.semaphores.autosaving,
       dirty: this.isDirty(),
     });
@@ -1119,6 +1161,7 @@ export default class ExcalidrawView
       // !triggerReload means file has not changed. No need to re-export
       //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1209 (added popout unload to the condition)
       if (
+        sideEffectPolicy.triggerAutoexport &&
         !triggerReload &&
         !this.semaphores.autosaving &&
         (!this.semaphores.viewunload || this.semaphores.popoutUnload)
@@ -1163,6 +1206,7 @@ export default class ExcalidrawView
           performanceDiagnosticLog("autoexport.scheduled", {
             id: diagnosticId,
             viewId: this.id,
+            reason: sideEffectPolicy.reason,
             kind: "svg",
           });
           void this.saveSVG({ autoexportConfig });
@@ -1172,6 +1216,7 @@ export default class ExcalidrawView
           performanceDiagnosticLog("autoexport.scheduled", {
             id: diagnosticId,
             viewId: this.id,
+            reason: sideEffectPolicy.reason,
             kind: "png",
           });
           void this.savePNG({ autoexportConfig });
@@ -1181,10 +1226,19 @@ export default class ExcalidrawView
           performanceDiagnosticLog("autoexport.scheduled", {
             id: diagnosticId,
             viewId: this.id,
+            reason: sideEffectPolicy.reason,
             kind: "excalidraw",
           });
           this.saveExcalidraw();
         }
+      } else if (!sideEffectPolicy.triggerAutoexport) {
+        performanceDiagnosticIncrement("autoexportSuppressed");
+        performanceDiagnosticLog("autoexport.skipped", {
+          id: diagnosticId,
+          viewId: this.id,
+          reason: sideEffectPolicy.reason,
+          skipReason: "persistence-only-policy",
+        });
       }
     } catch (e) {
       errorlog({
@@ -1207,6 +1261,7 @@ export default class ExcalidrawView
     performanceDiagnosticLog("save.complete", {
       id: diagnosticId,
       viewId: this.id,
+      reason: sideEffectPolicy.reason,
       actualWrite: allowSave,
       triggerReload,
       totalMs: diagnosticsEnabled
@@ -1763,7 +1818,7 @@ export default class ExcalidrawView
       silent,
       waitIfBusy,
       diagnosticReason,
-      true,
+      PUBLIC_FORCE_SAVE_POLICY,
     );
   }
 
@@ -1771,7 +1826,7 @@ export default class ExcalidrawView
     silent: boolean,
     waitIfBusy: boolean,
     diagnosticReason: string,
-    refreshSceneFiles: boolean,
+    policy: Readonly<ForceSavePolicy>,
   ): Promise<void> {
     const diagnosticsEnabled = performanceDiagnosticsEnabled();
     const diagnosticId = diagnosticsEnabled
@@ -1785,7 +1840,8 @@ export default class ExcalidrawView
       reason: diagnosticReason,
       silent,
       waitIfBusy,
-      refreshSceneFiles,
+      refreshSceneFiles: policy.refreshSceneFiles,
+      triggerAutoexport: policy.triggerAutoexport,
       autosaving: this.semaphores.autosaving,
       saving: this.semaphores.saving,
     });
@@ -1820,13 +1876,16 @@ export default class ExcalidrawView
     this.semaphores.preventReload = false;
     this.semaphores.forceSaving = true;
     const saveStart = diagnosticsEnabled ? performanceDiagnosticNow() : 0;
-    await this.save(false, true, true);
+    await this.saveWithSideEffectPolicy(false, true, true, {
+      reason: diagnosticReason,
+      triggerAutoexport: policy.triggerAutoexport,
+    });
     const saveMs = diagnosticsEnabled
       ? performanceDiagnosticNow() - saveStart
       : 0;
     this.plugin.triggerEmbedUpdates();
     let loadSceneFilesMs = 0;
-    if (refreshSceneFiles) {
+    if (policy.refreshSceneFiles) {
       const loadSceneFilesStart = diagnosticsEnabled
         ? performanceDiagnosticNow()
         : 0;
@@ -1846,7 +1905,8 @@ export default class ExcalidrawView
       id: diagnosticId,
       viewId: this.id,
       reason: diagnosticReason,
-      refreshSceneFiles,
+      refreshSceneFiles: policy.refreshSceneFiles,
+      triggerAutoexport: policy.triggerAutoexport,
       saveMs: diagnosticsEnabled ? saveMs : undefined,
       loadSceneFilesMs: diagnosticsEnabled ? loadSceneFilesMs : undefined,
       totalMs: diagnosticsEnabled
@@ -2148,7 +2208,7 @@ export default class ExcalidrawView
             true,
             false,
             "window-blur",
-            false,
+            WINDOW_BLUR_FORCE_SAVE_POLICY,
           );
         }
       };
