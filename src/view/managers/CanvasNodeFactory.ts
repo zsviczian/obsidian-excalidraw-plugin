@@ -16,6 +16,7 @@ import {
   isObsidianThemeDark,
 } from "../../utils/obsidianUtils";
 import { CustomMutationObserver, DEBUGGING } from "../../utils/debugHelper";
+import { performanceDiagnosticLog } from "../../utils/performanceDiagnostics";
 
 declare const mainDocument: Document;
 
@@ -109,6 +110,10 @@ export class CanvasNodeFactory {
     node.containerEl.querySelector(".canvas-node-content-blocker")?.remove();
     containerEl.appendChild(node.containerEl);
     this.nodes.set(elementId, node);
+    performanceDiagnosticLog("canvasNode.created", {
+      viewId: this.view.id,
+      nodes: this.nodes.size,
+    });
     return node;
   }
 
@@ -207,24 +212,54 @@ export class CanvasNodeFactory {
     }
   }
 
-  removeNode(node: ObsidianCanvasNode) {
+  /**
+   * Removes a Canvas node and releases the factory's reference to it.
+   *
+   * The optional element ID is the map's canonical key. The identity check
+   * prevents a stale React cleanup from deleting a replacement node that was
+   * already registered for the same Excalidraw element.
+   */
+  public removeNode(node: ObsidianCanvasNode, elementId?: string) {
     if (!this.initialized || !node) {
       return;
     }
-    this.nodes.delete(node.file.path);
+    const before = this.nodes.size;
+    let deleted = false;
+    if (elementId && this.nodes.get(elementId) === node) {
+      deleted = this.nodes.delete(elementId);
+    } else {
+      for (const [registeredElementId, registeredNode] of this.nodes) {
+        if (registeredNode === node) {
+          deleted = this.nodes.delete(registeredElementId);
+          break;
+        }
+      }
+    }
     this.canvas.removeNode(node);
     node.detach();
+    performanceDiagnosticLog("canvasNode.removed", {
+      viewId: this.view.id,
+      before,
+      after: this.nodes.size,
+      mapEntryDeleted: deleted,
+    });
   }
 
   public purgeNodes() {
     if (!this.initialized) {
       return;
     }
+    const before = this.nodes.size;
     this.nodes.forEach((node) => {
       this.canvas.removeNode(node);
       node.detach();
     });
     this.nodes.clear();
+    performanceDiagnosticLog("canvasNode.purged", {
+      viewId: this.view.id,
+      before,
+      after: this.nodes.size,
+    });
   }
 
   destroy() {

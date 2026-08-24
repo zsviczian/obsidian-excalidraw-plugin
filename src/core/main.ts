@@ -66,7 +66,7 @@ import {
 } from "./managers/MarkdownPostProcessor";
 import { FieldSuggester } from "../shared/Suggesters/FieldSuggester";
 import { ReleaseNotes } from "../shared/Dialogs/ReleaseNotes";
-import { DeviceType, Packages } from "../types/types";
+import { DeviceType, PackageLease, Packages } from "../types/types";
 import { PaneTarget } from "../types/utilTypes";
 import {
   emulateCTRLClickForLinks,
@@ -1238,6 +1238,11 @@ export default class ExcalidrawPlugin extends Plugin {
 
   public getPackage(win: Window): Packages {
     return this.packageManager.getPackage(win);
+  }
+
+  /** Acquires explicit ownership of the runtime package for one view window. */
+  public acquirePackage(win: Window): PackageLease {
+    return this.packageManager.acquirePackage(win);
   }
 
   public deletePackage(win: Window) {

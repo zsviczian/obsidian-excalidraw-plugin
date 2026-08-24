@@ -213,6 +213,15 @@ import { createExcalidrawRootElement } from "./components/ExcalidrawRoot";
 import { nanoid } from "nanoid";
 import { CustomMutationObserver, DEBUGGING } from "../utils/debugHelper";
 import {
+  nextPerformanceDiagnosticId,
+  performanceDiagnosticIncrement,
+  performanceDiagnosticLog,
+  performanceDiagnosticNow,
+  performanceDiagnosticRecordDuration,
+  performanceDiagnosticsEnabled,
+  performanceDiagnosticSummary,
+} from "../utils/performanceDiagnostics";
+import {
   errorHTML,
   extractCodeBlocks,
   generateAIText,
@@ -220,7 +229,7 @@ import {
 } from "../utils/AIUtils";
 import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import { SelectCard } from "../shared/Dialogs/SelectCard";
-import { Packages } from "../types/types";
+import { PackageLease, Packages } from "../types/types";
 import React from "react";
 import { diagramToHTML } from "../utils/matic";
 import { IS_WORKER_SUPPORTED } from "../shared/Workers/compression-worker";
@@ -288,6 +297,9 @@ export const addFiles = async (
   view: ExcalidrawView,
   isDark?: boolean,
 ) => {
+  const diagnosticsEnabled = performanceDiagnosticsEnabled();
+  const diagnosticsStart = diagnosticsEnabled ? performanceDiagnosticNow() : 0;
+  const requestedFiles = files?.length ?? 0;
   if (!files || files.length === 0 || !view) {
     return;
   }
@@ -383,6 +395,22 @@ export const addFiles = async (
     }
   }
   api.addFiles({ files, skipSvgNormalization });
+  const durationMs = diagnosticsEnabled
+    ? performanceDiagnosticNow() - diagnosticsStart
+    : 0;
+  if (diagnosticsEnabled) {
+    performanceDiagnosticIncrement("addFilesBatch");
+    performanceDiagnosticIncrement("addFilesFile", files.length);
+    performanceDiagnosticRecordDuration("addFiles", durationMs);
+  }
+  performanceDiagnosticLog("sceneFiles.addFiles", {
+    viewId: view.id,
+    requestedFiles,
+    acceptedFiles: files.length,
+    dirtySceneUpdate: s.dirty,
+    durationMs: diagnosticsEnabled ? durationMs : undefined,
+    apiBinaryFiles: Object.keys(api.getFiles()).length,
+  });
 };
 
 const warningUnknowSeriousError = () => {
@@ -514,6 +542,7 @@ export default class ExcalidrawView
     reactDOM: null,
     excalidrawLib: null,
   };
+  private packageLease: PackageLease | null = null;
   private lastAppState: AppState | null = null;
   private lastElementsVersion: number = -1;
 
@@ -815,7 +844,7 @@ export default class ExcalidrawView
     // aborting: a same-file back-of-the-note embeddable is about to open its own editor on this
     // same file, so the disk copy must be current or the embeddable's editor will load a stale
     // version and a later save from it can clobber pending Markdown-image edits.
-    await this.forceSave(true, true);
+    await this.forceSave(true, true, "embeddable-edit-handoff");
   }
 
   /** Debounces self-edit reloads without forcing a disk save. */
@@ -845,11 +874,31 @@ export default class ExcalidrawView
     forcesave: boolean = false,
     overrideEmbeddableIsEditingSelfDebounce: boolean = false,
   ) {
+    const diagnosticsEnabled = performanceDiagnosticsEnabled();
+    const diagnosticId = diagnosticsEnabled
+      ? nextPerformanceDiagnosticId("save")
+      : "";
+    const saveStart = diagnosticsEnabled ? performanceDiagnosticNow() : 0;
+    performanceDiagnosticIncrement("saveRequest");
+    performanceDiagnosticLog("save.request", {
+      id: diagnosticId,
+      viewId: this.id,
+      force: forcesave,
+      preventReload,
+      autosaving: this.semaphores.autosaving,
+      dirty: this.isDirty(),
+    });
+
     /*if(this.semaphores.viewunload && (this.ownerWindow !== window)) {
       return;
     }*/
 
     if (!this.isLoaded) {
+      performanceDiagnosticLog("save.skipped", {
+        id: diagnosticId,
+        viewId: this.id,
+        reason: "not-loaded",
+      });
       return;
     }
     if (this.markdownImageController.markdownImageDeletionPrompt !== null) {
@@ -859,9 +908,19 @@ export default class ExcalidrawView
       !overrideEmbeddableIsEditingSelfDebounce &&
       this.semaphores.embeddableIsEditingSelf
     ) {
+      performanceDiagnosticLog("save.skipped", {
+        id: diagnosticId,
+        viewId: this.id,
+        reason: "embeddable-editing",
+      });
       return;
     }
     if (this.semaphores.saving) {
+      performanceDiagnosticLog("save.skipped", {
+        id: diagnosticId,
+        viewId: this.id,
+        reason: "save-in-flight",
+      });
       return;
     }
     this.semaphores.saving = true;
@@ -879,29 +938,79 @@ export default class ExcalidrawView
       !this.app.vault.getAbstractFileByPath(this.file.path) //file was recently deleted
     ) {
       this.semaphores.saving = false;
+      performanceDiagnosticLog("save.skipped", {
+        id: diagnosticId,
+        viewId: this.id,
+        reason: "missing-runtime-or-file",
+      });
       return;
     }
 
     const allowSave = this.isDirty() || forcesave; //removed this.semaphores.autosaving
     try {
       if (allowSave) {
+        performanceDiagnosticIncrement("actualSave");
+        const snapshotStart = diagnosticsEnabled
+          ? performanceDiagnosticNow()
+          : 0;
         const scene = this.getScene();
+        const snapshotDurationMs = diagnosticsEnabled
+          ? performanceDiagnosticNow() - snapshotStart
+          : 0;
+        if (diagnosticsEnabled) {
+          performanceDiagnosticRecordDuration(
+            "saveSceneSnapshot",
+            snapshotDurationMs,
+          );
+        }
 
+        const syncStart = diagnosticsEnabled ? performanceDiagnosticNow() : 0;
+        let syncChanged = false;
         if (this.compatibilityMode) {
-          await this.excalidrawData.syncElements(scene);
-        } else if (
-          (await this.excalidrawData.syncElements(
+          syncChanged = await this.excalidrawData.syncElements(scene);
+        } else {
+          syncChanged = await this.excalidrawData.syncElements(
             scene,
             this.excalidrawAPI.getAppState().selectedElementIds,
-          )) &&
+          );
+        }
+        const syncDurationMs = diagnosticsEnabled
+          ? performanceDiagnosticNow() - syncStart
+          : 0;
+        if (diagnosticsEnabled) {
+          performanceDiagnosticRecordDuration("saveSyncElements", syncDurationMs);
+        }
+        performanceDiagnosticLog("save.sync", {
+          id: diagnosticId,
+          viewId: this.id,
+          changed: syncChanged,
+          elements: scene?.elements?.length ?? 0,
+          files: scene?.files ? Object.keys(scene.files).length : 0,
+          snapshotMs: diagnosticsEnabled ? snapshotDurationMs : undefined,
+          syncMs: diagnosticsEnabled ? syncDurationMs : undefined,
+        });
+
+        if (
+          !this.compatibilityMode &&
+          syncChanged &&
           !this.semaphores.popoutUnload //Obsidian going black after REACT 18 migration when closing last leaf on popout
         ) {
+          const loadDrawingStart = diagnosticsEnabled
+            ? performanceDiagnosticNow()
+            : 0;
           await this.loadDrawing(
             false,
             this.excalidrawAPI
               .getSceneElementsIncludingDeleted()
               .filter((el: ExcalidrawElement) => el.isDeleted),
           );
+          performanceDiagnosticLog("save.syncLoadDrawing", {
+            id: diagnosticId,
+            viewId: this.id,
+            durationMs: diagnosticsEnabled
+              ? performanceDiagnosticNow() - loadDrawingStart
+              : undefined,
+          });
         }
 
         //reload() is triggered indirectly when saving by the modifyEventHandler in main.ts
@@ -911,12 +1020,12 @@ export default class ExcalidrawView
         this.clearPreventReloadTimer();
 
         this.semaphores.preventReload = preventReload;
-        await this.prepareGetViewData();
+        await this.prepareGetViewData(diagnosticId);
 
         //added this to avoid Electron crash when terminating a popout window and saving the drawing, need to check back
         //can likely be removed once this is resolved: https://github.com/electron/electron/issues/40607
         if (this.semaphores?.viewunload) {
-          await this.prepareGetViewData();
+          await this.prepareGetViewData(diagnosticId);
           const d = this.getViewData();
           const plugin = this.plugin;
           const file = this.file;
@@ -931,18 +1040,55 @@ export default class ExcalidrawView
             })();
           }, 200);
           this.semaphores.saving = false;
+          performanceDiagnosticLog("save.viewUnloadScheduled", {
+            id: diagnosticId,
+            viewId: this.id,
+            totalMs: diagnosticsEnabled
+              ? performanceDiagnosticNow() - saveStart
+              : undefined,
+          });
           return;
         }
 
+        const superSaveStart = diagnosticsEnabled ? performanceDiagnosticNow() : 0;
         await super.save();
+        performanceDiagnosticLog("save.diskWrite", {
+          id: diagnosticId,
+          viewId: this.id,
+          durationMs: diagnosticsEnabled
+            ? performanceDiagnosticNow() - superSaveStart
+            : undefined,
+          bytes: this.lastSavedData?.length ?? 0,
+        });
 
         //saving to backup with a delay in case application closes in the meantime, I want to avoid both save and backup corrupted.
         const path = this.file.path;
         const data = this.lastSavedData;
         //if the scene is empty, do not save to BAK (this could be due to a crash when the BAK should not be updated)
         if (scene && scene.elements && scene.elements.length > 0) {
+          performanceDiagnosticIncrement("backupScheduled");
+          performanceDiagnosticLog("backup.scheduled", {
+            id: diagnosticId,
+            viewId: this.id,
+            bytes: data?.length ?? 0,
+          });
           window.setTimeout(() => {
-            void getImageCache().addBAKToCache(path, data);
+            const backupStart = performanceDiagnosticsEnabled()
+              ? performanceDiagnosticNow()
+              : 0;
+            void getImageCache()
+              .addBAKToCache(path, data)
+              .then(() => {
+                performanceDiagnosticIncrement("backupWrite");
+                performanceDiagnosticLog("backup.complete", {
+                  id: diagnosticId,
+                  viewId: this.id,
+                  durationMs: performanceDiagnosticsEnabled()
+                    ? performanceDiagnosticNow() - backupStart
+                    : undefined,
+                  bytes: data?.length ?? 0,
+                });
+              });
           }, 50);
         }
         triggerReload =
@@ -1003,12 +1149,30 @@ export default class ExcalidrawView
         }
 
         if (autoexportConfig.svg) {
+          performanceDiagnosticIncrement("autoexport");
+          performanceDiagnosticLog("autoexport.scheduled", {
+            id: diagnosticId,
+            viewId: this.id,
+            kind: "svg",
+          });
           void this.saveSVG({ autoexportConfig });
         }
         if (autoexportConfig.png) {
+          performanceDiagnosticIncrement("autoexport");
+          performanceDiagnosticLog("autoexport.scheduled", {
+            id: diagnosticId,
+            viewId: this.id,
+            kind: "png",
+          });
           void this.savePNG({ autoexportConfig });
         }
         if (autoexportConfig.excalidraw) {
+          performanceDiagnosticIncrement("autoexport");
+          performanceDiagnosticLog("autoexport.scheduled", {
+            id: diagnosticId,
+            viewId: this.id,
+            kind: "excalidraw",
+          });
           this.saveExcalidraw();
         }
       }
@@ -1024,6 +1188,24 @@ export default class ExcalidrawView
     if (triggerReload) {
       await this.reload(true, this.file);
     }
+    if (diagnosticsEnabled) {
+      performanceDiagnosticRecordDuration(
+        "saveTotal",
+        performanceDiagnosticNow() - saveStart,
+      );
+    }
+    performanceDiagnosticLog("save.complete", {
+      id: diagnosticId,
+      viewId: this.id,
+      actualWrite: allowSave,
+      triggerReload,
+      totalMs: diagnosticsEnabled
+        ? performanceDiagnosticNow() - saveStart
+        : undefined,
+      canvasNodes: this.canvasNodeFactory?.nodes?.size ?? 0,
+      filesMaster: this.plugin?.filesMaster?.size ?? 0,
+      markdownImagesMaster: this.plugin?.markdownImagesMaster?.size ?? 0,
+    });
     this.resetAutosaveTimer(); //next autosave period starts after save
   }
 
@@ -1036,15 +1218,31 @@ export default class ExcalidrawView
    */
   private viewSaveData: string = "";
 
-  async prepareGetViewData(): Promise<void> {
+  async prepareGetViewData(diagnosticId: string = ""): Promise<void> {
+    const diagnosticsEnabled = performanceDiagnosticsEnabled();
+    const totalStart = diagnosticsEnabled ? performanceDiagnosticNow() : 0;
     if (!this.excalidrawAPI || !this.excalidrawData.loaded) {
       this.viewSaveData = this.data;
+      performanceDiagnosticLog("save.serializeSkipped", {
+        id: diagnosticId,
+        viewId: this.id,
+        reason: "runtime-not-ready",
+      });
       return;
     }
 
+    const snapshotStart = diagnosticsEnabled ? performanceDiagnosticNow() : 0;
     const scene = this.getScene();
+    const snapshotMs = diagnosticsEnabled
+      ? performanceDiagnosticNow() - snapshotStart
+      : 0;
     if (!scene) {
       this.viewSaveData = this.data;
+      performanceDiagnosticLog("save.serializeSkipped", {
+        id: diagnosticId,
+        viewId: this.id,
+        reason: "scene-missing",
+      });
       return;
     }
 
@@ -1095,6 +1293,7 @@ export default class ExcalidrawView
         this.exportDialog.dirty = false;
       }
 
+      const headerStart = diagnosticsEnabled ? performanceDiagnosticNow() : 0;
       const header = syncMarkdownImagesInHeader(
         getExcalidrawMarkdownHeaderSection(this.data, keys),
         this.excalidrawData.markdownImages,
@@ -1102,34 +1301,74 @@ export default class ExcalidrawView
       const tail = this.plugin.settings.zoteroCompatibility
         ? (RE_TAIL.exec(this.data)?.[1] ?? "")
         : "";
+      const headerMs = diagnosticsEnabled
+        ? performanceDiagnosticNow() - headerStart
+        : 0;
 
       if (!this.excalidrawData.disableCompression) {
         this.excalidrawData.disableCompression =
           this.plugin.settings.decompressForMDView &&
           this.isEditedAsMarkdownInOtherView();
       }
-      const result = IS_WORKER_SUPPORTED
-        ? header +
-          (await this.excalidrawData.generateMDAsync(
-            this.excalidrawAPI
-              .getSceneElementsIncludingDeleted()
-              .filter((el: ExcalidrawElement) => el.isDeleted), //will be concatenated to scene.elements
-          )) +
-          tail
-        : header +
-          this.excalidrawData.generateMDSync(
-            this.excalidrawAPI
-              .getSceneElementsIncludingDeleted()
-              .filter((el: ExcalidrawElement) => el.isDeleted), //will be concatenated to scene.elements
-          ) +
-          tail;
+
+      const deletedStart = diagnosticsEnabled ? performanceDiagnosticNow() : 0;
+      const deletedElements = this.excalidrawAPI
+        .getSceneElementsIncludingDeleted()
+        .filter((el: ExcalidrawElement) => el.isDeleted);
+      const deletedElementsMs = diagnosticsEnabled
+        ? performanceDiagnosticNow() - deletedStart
+        : 0;
+      const generateStart = diagnosticsEnabled ? performanceDiagnosticNow() : 0;
+      const generated = IS_WORKER_SUPPORTED
+        ? await this.excalidrawData.generateMDAsync(deletedElements)
+        : this.excalidrawData.generateMDSync(deletedElements);
+      const generateMs = diagnosticsEnabled
+        ? performanceDiagnosticNow() - generateStart
+        : 0;
+      const result = header + generated + tail;
 
       this.excalidrawData.disableCompression = false;
       this.viewSaveData = result;
+      performanceDiagnosticLog("save.serialize", {
+        id: diagnosticId,
+        viewId: this.id,
+        mode: "markdown",
+        worker: IS_WORKER_SUPPORTED,
+        elements: scene.elements.length,
+        files: Object.keys(scene.files ?? {}).length,
+        deletedElements: deletedElements.length,
+        snapshotMs: diagnosticsEnabled ? snapshotMs : undefined,
+        headerMs: diagnosticsEnabled ? headerMs : undefined,
+        deletedElementsMs: diagnosticsEnabled ? deletedElementsMs : undefined,
+        generateMs: diagnosticsEnabled ? generateMs : undefined,
+        totalMs: diagnosticsEnabled
+          ? performanceDiagnosticNow() - totalStart
+          : undefined,
+        bytes: result.length,
+      });
       return;
     }
     if (this.compatibilityMode) {
+      const stringifyStart = diagnosticsEnabled
+        ? performanceDiagnosticNow()
+        : 0;
       this.viewSaveData = JSON.stringify(scene, null, "\t");
+      const stringifyMs = diagnosticsEnabled
+        ? performanceDiagnosticNow() - stringifyStart
+        : 0;
+      performanceDiagnosticLog("save.serialize", {
+        id: diagnosticId,
+        viewId: this.id,
+        mode: "compatibility",
+        elements: scene.elements.length,
+        files: Object.keys(scene.files ?? {}).length,
+        snapshotMs: diagnosticsEnabled ? snapshotMs : undefined,
+        stringifyMs: diagnosticsEnabled ? stringifyMs : undefined,
+        totalMs: diagnosticsEnabled
+          ? performanceDiagnosticNow() - totalStart
+          : undefined,
+        bytes: this.viewSaveData.length,
+      });
       return;
     }
 
@@ -1154,7 +1393,7 @@ export default class ExcalidrawView
   async openLaTeXEditor(eqId: string) {
     if (await this.excalidrawData.syncElements(this.getScene())) {
       //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1994
-      await this.forceSave(true);
+      await this.forceSave(true, false, "latex-editor-preflight");
     }
     const el = this.getViewElements().find(
       (el: ExcalidrawElement) => el.id === eqId && el.type === "image",
@@ -1237,6 +1476,7 @@ export default class ExcalidrawView
             new Set([fileId]),
             resolve,
             new Set([fileId]),
+            "embedded-link-editor",
           );
         });
 
@@ -1454,13 +1694,23 @@ export default class ExcalidrawView
     elements: readonly ExcalidrawElement[],
   ) => number;
   getSceneVersion(elements: readonly ExcalidrawElement[]): number {
+    const diagnosticsEnabled = performanceDiagnosticsEnabled();
+    const start = diagnosticsEnabled ? performanceDiagnosticNow() : 0;
     if (!this.excalidrawHashElementsVersion) {
       this.excalidrawHashElementsVersion =
         this.packages.excalidrawLib.hashElementsVersion;
     }
-    return this.excalidrawHashElementsVersion(
+    const version = this.excalidrawHashElementsVersion(
       elements.filter((el) => !el.isDeleted),
     );
+    if (diagnosticsEnabled) {
+      performanceDiagnosticIncrement("fullSceneHash");
+      performanceDiagnosticRecordDuration(
+        "fullSceneHash",
+        performanceDiagnosticNow() - start,
+      );
+    }
+    return version;
   }
 
   /**
@@ -1470,7 +1720,26 @@ export default class ExcalidrawView
    * pass true; the default preserves the existing "abort and notify" behavior for callers such as
    * the manual save button, where an immediate abort is the expected feedback.
    */
-  public async forceSave(silent: boolean = false, waitIfBusy: boolean = false) {
+  public async forceSave(
+    silent: boolean = false,
+    waitIfBusy: boolean = false,
+    diagnosticReason: string = "unspecified",
+  ) {
+    const diagnosticsEnabled = performanceDiagnosticsEnabled();
+    const diagnosticId = diagnosticsEnabled
+      ? nextPerformanceDiagnosticId("forceSave")
+      : "";
+    const start = diagnosticsEnabled ? performanceDiagnosticNow() : 0;
+    performanceDiagnosticIncrement(`forceSaveReason.${diagnosticReason}`);
+    performanceDiagnosticLog("forceSave.request", {
+      id: diagnosticId,
+      viewId: this.id,
+      reason: diagnosticReason,
+      silent,
+      waitIfBusy,
+      autosaving: this.semaphores.autosaving,
+      saving: this.semaphores.saving,
+    });
     if (waitIfBusy) {
       let counter = 0;
       while (
@@ -1484,6 +1753,15 @@ export default class ExcalidrawView
       if (!silent) {
         new Notice(t("FORCE_SAVE_ABORTED"));
       }
+      performanceDiagnosticLog("forceSave.skipped", {
+        id: diagnosticId,
+        viewId: this.id,
+        requestReason: diagnosticReason,
+        reason: "save-in-flight",
+        totalMs: diagnosticsEnabled
+          ? performanceDiagnosticNow() - start
+          : undefined,
+      });
       return;
     }
     if (this.preventReloadResetTimer) {
@@ -1492,10 +1770,36 @@ export default class ExcalidrawView
     }
     this.semaphores.preventReload = false;
     this.semaphores.forceSaving = true;
+    const saveStart = diagnosticsEnabled ? performanceDiagnosticNow() : 0;
     await this.save(false, true, true);
+    const saveMs = diagnosticsEnabled
+      ? performanceDiagnosticNow() - saveStart
+      : 0;
     this.plugin.triggerEmbedUpdates();
-    await this.loadSceneFiles();
+    const loadSceneFilesStart = diagnosticsEnabled
+      ? performanceDiagnosticNow()
+      : 0;
+    await this.loadSceneFiles(
+      false,
+      undefined,
+      undefined,
+      undefined,
+      `force-save:${diagnosticReason}`,
+    );
+    const loadSceneFilesMs = diagnosticsEnabled
+      ? performanceDiagnosticNow() - loadSceneFilesStart
+      : 0;
     this.semaphores.forceSaving = false;
+    performanceDiagnosticLog("forceSave.complete", {
+      id: diagnosticId,
+      viewId: this.id,
+      reason: diagnosticReason,
+      saveMs: diagnosticsEnabled ? saveMs : undefined,
+      loadSceneFilesMs: diagnosticsEnabled ? loadSceneFilesMs : undefined,
+      totalMs: diagnosticsEnabled
+        ? performanceDiagnosticNow() - start
+        : undefined,
+    });
     if (!silent) {
       new Notice("Save successful", 1000);
     }
@@ -1514,7 +1818,7 @@ export default class ExcalidrawView
           save: this.addAction(
             DISK_ICON_NAME,
             !DEVICE.isMobile ? t("FORCE_SAVE") : "",
-            async () => this.forceSave(),
+            async () => this.forceSave(false, false, "manual-titlebar"),
           ),
           isRaw: this.addAction(
             TEXT_DISPLAY_RAW_ICON_NAME,
@@ -1560,7 +1864,21 @@ export default class ExcalidrawView
     const apiMissing = Boolean(
       typeof this.containerEl.onWindowMigrated === "undefined",
     );
-    this.packages = this.plugin.getPackage(this.ownerWindow);
+    const packageStart = performanceDiagnosticsEnabled()
+      ? performanceDiagnosticNow()
+      : 0;
+    this.packageLease = this.plugin.acquirePackage(this.ownerWindow);
+    this.packages = this.packageLease.packages;
+    performanceDiagnosticLog("view.packageReady", {
+      viewId: this.id,
+      window: this.ownerWindow === window ? "main" : "popout",
+      durationMs: performanceDiagnosticsEnabled()
+        ? performanceDiagnosticNow() - packageStart
+        : undefined,
+      filesMaster: this.plugin.filesMaster?.size ?? 0,
+      markdownImagesMaster: this.plugin.markdownImagesMaster?.size ?? 0,
+      blobUrls: getImageCache().getObsidianURLCacheSize(),
+    });
 
     if (DEVICE.isDesktop && !apiMissing) {
       if (this.ownerWindow !== window) {
@@ -1569,15 +1887,54 @@ export default class ExcalidrawView
       this.destroyers.push(
         //this.containerEl.onWindowMigrated(this.leaf.rebuildView.bind(this))
         this.containerEl.onWindowMigrated(async () => {
+          const diagnosticsEnabled = performanceDiagnosticsEnabled();
+          const migrationId = diagnosticsEnabled
+            ? nextPerformanceDiagnosticId("migration")
+            : "";
+          const migrationStart = diagnosticsEnabled
+            ? performanceDiagnosticNow()
+            : 0;
           const f = this.file;
           const l = this.leaf;
+          const api = this.excalidrawAPI;
+          performanceDiagnosticIncrement("windowMigration");
+          performanceDiagnosticLog("migration.begin", {
+            id: migrationId,
+            viewId: this.id,
+            elements: api?.getSceneElementsIncludingDeleted().length ?? 0,
+            binaryFiles: api ? Object.keys(api.getFiles()).length : 0,
+            canvasNodes: this.canvasNodeFactory?.nodes?.size ?? 0,
+            filesMaster: this.plugin.filesMaster?.size ?? 0,
+            markdownImagesMaster: this.plugin.markdownImagesMaster?.size ?? 0,
+            blobUrls: getImageCache().getObsidianURLCacheSize(),
+          });
+          const closeStart = diagnosticsEnabled
+            ? performanceDiagnosticNow()
+            : 0;
           await closeLeafView(l);
+          performanceDiagnosticLog("migration.oldViewClosed", {
+            id: migrationId,
+            viewId: this.id,
+            durationMs: diagnosticsEnabled
+              ? performanceDiagnosticNow() - closeStart
+              : undefined,
+            elapsedMs: diagnosticsEnabled
+              ? performanceDiagnosticNow() - migrationStart
+              : undefined,
+          });
           windowMigratedDisableZoomOnce = true;
           void l.setViewState({
             type: VIEW_TYPE_EXCALIDRAW,
             state: {
               file: f.path,
             },
+          });
+          performanceDiagnosticLog("migration.rebuildScheduled", {
+            id: migrationId,
+            viewId: l.id,
+            elapsedMs: diagnosticsEnabled
+              ? performanceDiagnosticNow() - migrationStart
+              : undefined,
           });
         }),
       );
@@ -1734,7 +2091,7 @@ export default class ExcalidrawView
           st.activeTool.type !== "image" &&
           st.activeEmbeddable?.state !== "active"
         ) {
-          void this.forceSave(true);
+          void this.forceSave(true, false, "window-blur");
         }
       };
 
@@ -2033,6 +2390,18 @@ export default class ExcalidrawView
 
   //onClose happens after onunload
   protected async onClose(): Promise<void> {
+    performanceDiagnosticLog("view.closeRequested", {
+      viewId: this.id,
+      hasDropManager: Boolean(this.dropManager),
+      hasExcalidrawRoot: Boolean(this.excalidrawRoot),
+      hasFile: Boolean(this.file),
+      currentWindow: this.ownerWindow === window ? "main" : "popout",
+      packageWindow: this.packageLease
+        ? this.packageLease.window === window
+          ? "main"
+          : "popout"
+        : "none",
+    });
     //I noticed Obsidian calls this function twice when disabling the plugin
     //once from "unregisterView"
     //the from "detachLeavesOfType"
@@ -2048,6 +2417,15 @@ export default class ExcalidrawView
     if (!this.file) {
       return;
     }
+
+    performanceDiagnosticSummary("view-close-start", {
+      viewId: this.id,
+      window: this.ownerWindow === window ? "main" : "popout",
+      canvasNodes: this.canvasNodeFactory?.nodes?.size ?? 0,
+      filesMaster: this.plugin?.filesMaster?.size ?? 0,
+      markdownImagesMaster: this.plugin?.markdownImagesMaster?.size ?? 0,
+      blobUrls: getImageCache().getObsidianURLCacheSize(),
+    });
 
     this.exitFullscreen();
 
@@ -2118,21 +2496,22 @@ export default class ExcalidrawView
       this.containerEl.onWindowMigrated = null;
     }
 
-    this.packages = null; //{react:null, reactDOM:null, excalidrawLib:null};
-
+    const packageOwnerWindow = this.packageLease?.window;
     let leafcount = 0;
-    this.app.workspace.iterateAllLeaves((l) => {
-      if (l === this.leaf) {
-        return;
-      }
+    if (packageOwnerWindow) {
+      this.app.workspace.iterateAllLeaves((l) => {
+        if (l === this.leaf) {
+          return;
+        }
 
-      if (l.containerEl?.ownerDocument.defaultView === this.ownerWindow) {
-        leafcount++;
-      }
-    });
-    if (leafcount === 0 && this.plugin) {
-      this.plugin.deletePackage(this.ownerWindow);
+        if (l.containerEl?.ownerDocument.defaultView === packageOwnerWindow) {
+          leafcount++;
+        }
+      });
     }
+    this.packages = null; //{react:null, reactDOM:null, excalidrawLib:null};
+    this.packageLease?.release();
+    this.packageLease = null;
 
     this.lastMouseEvent = null;
     this.requestSave = null;
@@ -2142,6 +2521,14 @@ export default class ExcalidrawView
 
     //super.onClose will unmount Excalidraw, need to save before that
     await super.onClose();
+    performanceDiagnosticLog("view.closeComplete", {
+      viewId: this.id,
+      window: this.ownerWindow === window ? "main" : "popout",
+      remainingLeavesInWindow: leafcount,
+      filesMaster: this.plugin?.filesMaster?.size ?? 0,
+      markdownImagesMaster: this.plugin?.markdownImagesMaster?.size ?? 0,
+      blobUrls: getImageCache().getObsidianURLCacheSize(),
+    });
     this._plugin = null;
     this._hookServer = null;
     this.excalidrawData = null;
@@ -2152,6 +2539,16 @@ export default class ExcalidrawView
 
   //onunload is called first
   onunload() {
+    performanceDiagnosticLog("view.unloadRequested", {
+      viewId: this.id,
+      hasFile: Boolean(this.file),
+      currentWindow: this.ownerWindow === window ? "main" : "popout",
+      packageWindow: this.packageLease
+        ? this.packageLease.window === window
+          ? "main"
+          : "popout"
+        : "none",
+    });
     super.onunload();
     this.destroyers.forEach((destroyer) => destroyer());
     this.restoreMobileLeaves();
@@ -2538,6 +2935,14 @@ export default class ExcalidrawView
 
   public isLoaded: boolean = false;
   setViewData(data: string, clear: boolean = false) {
+    const diagnosticsEnabled = performanceDiagnosticsEnabled();
+    const diagnosticsStart = diagnosticsEnabled ? performanceDiagnosticNow() : 0;
+    performanceDiagnosticLog("view.setViewData.request", {
+      viewId: this.id,
+      clear,
+      bytes: data.length,
+      window: this.ownerWindow === window ? "main" : "popout",
+    });
     //I am using last loaded file to control when the view reloads.
     //It seems text file view gets the modified file event after sync before the modifyEventHandler in main.ts
     //reload can only be triggered via reload()
@@ -2595,6 +3000,7 @@ export default class ExcalidrawView
           return;
         }
         this.compatibilityMode = this.file.extension === "excalidraw";
+        const parseStart = diagnosticsEnabled ? performanceDiagnosticNow() : 0;
         //await this.plugin.loadSettings();
         if (this.compatibilityMode) {
           this.plugin.enableLegacyFilePopoverObserver();
@@ -2703,6 +3109,17 @@ export default class ExcalidrawView
           }
         }
 
+        performanceDiagnosticLog("view.sceneParsed", {
+          viewId: this.id,
+          mode: this.compatibilityMode ? "compatibility" : "markdown",
+          durationMs: diagnosticsEnabled
+            ? performanceDiagnosticNow() - parseStart
+            : undefined,
+          elements: this.excalidrawData.scene?.elements?.length ?? 0,
+          embeddedFiles: this.excalidrawData.getFiles().length,
+          markdownImages: this.excalidrawData.markdownImages?.size ?? 0,
+        });
+
         if (
           getImageCache().isReady() &&
           this.excalidrawData.scene &&
@@ -2766,7 +3183,7 @@ export default class ExcalidrawView
               where: "ExcalidrawView.setViewData.onFileOpenHook",
               error: e,
             });
-          } finally {
+         } finally {
             tempEA.destroy();
           }
         }
@@ -2814,6 +3231,27 @@ export default class ExcalidrawView
           }
         }
         this.isLoaded = true;
+        performanceDiagnosticLog("view.setViewData.complete", {
+          viewId: this.id,
+          totalMs: diagnosticsEnabled
+            ? performanceDiagnosticNow() - diagnosticsStart
+            : undefined,
+          elements: this.excalidrawData.scene?.elements?.length ?? 0,
+          binaryFiles: this.excalidrawAPI
+            ? Object.keys(this.excalidrawAPI.getFiles()).length
+            : 0,
+          canvasNodes: this.canvasNodeFactory?.nodes?.size ?? 0,
+          filesMaster: this.plugin.filesMaster?.size ?? 0,
+          markdownImagesMaster: this.plugin.markdownImagesMaster?.size ?? 0,
+          blobUrls: getImageCache().getObsidianURLCacheSize(),
+        });
+        performanceDiagnosticSummary("view-loaded", {
+          viewId: this.id,
+          canvasNodes: this.canvasNodeFactory?.nodes?.size ?? 0,
+          filesMaster: this.plugin.filesMaster?.size ?? 0,
+          markdownImagesMaster: this.plugin.markdownImagesMaster?.size ?? 0,
+          blobUrls: getImageCache().getObsidianURLCacheSize(),
+        });
       });
     })();
   }
@@ -2858,11 +3296,13 @@ export default class ExcalidrawView
     fileIDs: Set<FileId>,
     isThemeChange: boolean = false,
     forceEmitFromCache: boolean = false,
+    diagnosticReason: string = "unspecified",
   ) {
     this.sceneFileManager.scheduleSceneFileDeferredValidation(
       fileIDs,
       isThemeChange,
       forceEmitFromCache,
+      diagnosticReason,
     );
   }
 
@@ -2873,12 +3313,14 @@ export default class ExcalidrawView
     fileIDWhiteList?: Set<FileId>,
     callback?: () => void,
     forceReloadFileIDs?: Set<FileId>,
+    diagnosticReason: string = "unspecified",
   ) {
     await this.sceneFileManager.loadSceneFiles(
       isThemeChange,
       fileIDWhiteList,
       callback,
       forceReloadFileIDs,
+      diagnosticReason,
     );
   }
 
@@ -3107,7 +3549,13 @@ export default class ExcalidrawView
         captureUpdate: CaptureUpdateAction.IMMEDIATELY,
       });
       if (reloadFiles.size > 0) {
-        await this.loadSceneFiles(false, reloadFiles);
+        await this.loadSceneFiles(
+          false,
+          reloadFiles,
+          undefined,
+          undefined,
+          "synchronize-with-data",
+        );
       }
     } catch (e) {
       errorlog({
@@ -3134,6 +3582,9 @@ export default class ExcalidrawView
     isReloading: boolean = false,
     preserveViewport: boolean = false,
   ) {
+    const diagnosticsEnabled = performanceDiagnosticsEnabled();
+    const diagnosticsStart = diagnosticsEnabled ? performanceDiagnosticNow() : 0;
+    const hadApi = Boolean(this.excalidrawAPI);
     const excalidrawData = this.excalidrawData.scene;
     const isOpenInMultipleLeaves =
       getExcalidraAndMarkdowViewsForFile(this.app, this.file).length > 1;
@@ -3262,6 +3713,19 @@ export default class ExcalidrawView
     ) {
       this.setDirty();
     }
+    performanceDiagnosticLog("view.loadDrawing", {
+      viewId: this.id,
+      path: hadApi ? "update-scene" : "instantiate-runtime",
+      justloaded,
+      isReloading,
+      preserveViewport,
+      elements: excalidrawData.elements.length,
+      files: Object.keys(excalidrawData.files ?? {}).length,
+      deletedElements: deletedElements?.length ?? 0,
+      durationMs: diagnosticsEnabled
+        ? performanceDiagnosticNow() - diagnosticsStart
+        : undefined,
+    });
   }
 
   isEditedAsMarkdownInOtherView(): boolean {
@@ -3274,7 +3738,13 @@ export default class ExcalidrawView
   }
 
   private onAfterLoadScene(justloaded: boolean) {
-    void this.loadSceneFiles();
+    void this.loadSceneFiles(
+      false,
+      undefined,
+      undefined,
+      undefined,
+      justloaded ? "after-initial-load" : "after-scene-reload",
+    );
     this.updateContainerSize(null, true, justloaded);
     void this.initializeToolsIconPanelAfterLoading();
     const uiMode = calculateUIModeValue(this.plugin.settings);
@@ -4853,106 +5323,120 @@ export default class ExcalidrawView
   }
 
   public onChange(et: ExcalidrawElement[], st: AppState, files: BinaryFiles) {
-    this.selectedElementActionsMenu?.update(et, st);
-    if (st.activeTool?.type) {
-      if (st.activeTool.type === "image") {
-        if (
-          st.selectedElementIds &&
-          Object.keys(st.selectedElementIds).length === 1
-        ) {
-          const selectedElement = et.filter(
-            (el) => el.id === Object.keys(st.selectedElementIds)[0],
-          )[0];
-          if (selectedElement && selectedElement.type === "image") {
-            this.setShouldSaveImportedImageFlag();
+    const diagnosticsEnabled = performanceDiagnosticsEnabled();
+    const diagnosticsStart = diagnosticsEnabled
+      ? performanceDiagnosticNow()
+      : 0;
+    performanceDiagnosticIncrement("onChange");
+    try {
+      this.selectedElementActionsMenu?.update(et, st);
+      if (st.activeTool?.type) {
+        if (st.activeTool.type === "image") {
+          if (
+            st.selectedElementIds &&
+            Object.keys(st.selectedElementIds).length === 1
+          ) {
+            const selectedElement = et.filter(
+              (el) => el.id === Object.keys(st.selectedElementIds)[0],
+            )[0];
+            if (selectedElement && selectedElement.type === "image") {
+              this.setShouldSaveImportedImageFlag();
+            }
           }
         }
       }
-    }
-    if (
-      this.semaphores.shouldSaveImportedImage &&
-      Object.values(files).some(
-        (file) => !Object.hasOwn(file ?? {}, "hasSVGwithBitmap"),
-      )
-    ) {
-      window.setTimeout(() => {
-        void this.forceSave(true); //image is being added to the scene
-      });
-    }
+      if (
+        this.semaphores.shouldSaveImportedImage &&
+        Object.values(files).some(
+          (file) => !Object.hasOwn(file ?? {}, "hasSVGwithBitmap"),
+        )
+      ) {
+        window.setTimeout(() => {
+          void this.forceSave(true, false, "imported-image-onchange"); //image is being added to the scene
+        });
+      }
 
-    if ((st.newElement as ExcalidrawElement)?.type === "freedraw") {
-      this.freedrawLastActiveTimestamp = Date.now();
-    }
-    if (
-      st.newElement ||
-      st.editingTextElement ||
-      (st.selectedLinearElement && st.selectedLinearElement.isEditing)
-    ) {
-      this.plugin.wasPenModeActivePreviously = st.penMode;
-    }
-    this.viewModeEnabled = st.viewModeEnabled;
-    if (this.semaphores.justLoaded) {
-      const elcount = this.excalidrawData?.scene?.elements?.length ?? 0;
-      if (elcount > 0 && et.length === 0) {
+      if ((st.newElement as ExcalidrawElement)?.type === "freedraw") {
+        this.freedrawLastActiveTimestamp = Date.now();
+      }
+      if (
+        st.newElement ||
+        st.editingTextElement ||
+        (st.selectedLinearElement && st.selectedLinearElement.isEditing)
+      ) {
+        this.plugin.wasPenModeActivePreviously = st.penMode;
+      }
+      this.viewModeEnabled = st.viewModeEnabled;
+      if (this.semaphores.justLoaded) {
+        const elcount = this.excalidrawData?.scene?.elements?.length ?? 0;
+        if (elcount > 0 && et.length === 0) {
+          return;
+        }
+        this.semaphores.justLoaded = false;
+        if (
+          !this.semaphores.preventAutozoom &&
+          this.plugin.settings.zoomToFitOnOpen
+        ) {
+          if (
+            getExcalidraAndMarkdowViewsForFile(this.app, this.file).length === 1
+          ) {
+            this.zoomToFit(false, true);
+          }
+        }
+        this.previousSceneVersion = this.getSceneVersion(et);
+        this.previousBackgroundColor = st.viewBackgroundColor;
+        this.previousTheme = st.theme;
+        this.canvasColorChangeHook(st);
         return;
       }
-      this.semaphores.justLoaded = false;
       if (
-        !this.semaphores.preventAutozoom &&
-        this.plugin.settings.zoomToFitOnOpen
+        st.theme !== this.previousTheme &&
+        this.file === this.excalidrawData.file
       ) {
-        if (
-          getExcalidraAndMarkdowViewsForFile(this.app, this.file).length === 1
-        ) {
-          this.zoomToFit(false, true);
+        this.previousTheme = st.theme;
+        this.setDirty();
+      }
+      if (
+        st.viewBackgroundColor !== this.previousBackgroundColor &&
+        this.file === this.excalidrawData.file
+      ) {
+        this.previousBackgroundColor = st.viewBackgroundColor;
+        this.setDirty();
+        if (this.colorChangeTimer) {
+          window.clearTimeout(this.colorChangeTimer);
         }
+        this.colorChangeTimer = window.setTimeout(() => {
+          this.canvasColorChangeHook(st);
+          this.colorChangeTimer = null;
+        }, 50); //just enough time if the user is playing with color picker, the change is not too frequent.
       }
-      this.previousSceneVersion = this.getSceneVersion(et);
-      this.previousBackgroundColor = st.viewBackgroundColor;
-      this.previousTheme = st.theme;
-      this.canvasColorChangeHook(st);
-      return;
-    }
-    if (
-      st.theme !== this.previousTheme &&
-      this.file === this.excalidrawData.file
-    ) {
-      this.previousTheme = st.theme;
-      this.setDirty();
-    }
-    if (
-      st.viewBackgroundColor !== this.previousBackgroundColor &&
-      this.file === this.excalidrawData.file
-    ) {
-      this.previousBackgroundColor = st.viewBackgroundColor;
-      this.setDirty();
-      if (this.colorChangeTimer) {
-        window.clearTimeout(this.colorChangeTimer);
+      if (
+        !this.semaphores.dirty &&
+        st.editingTextElement === null &&
+        //Removed because of
+        //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/565
+        /*st.resizingElement === null &&
+        st.newElement === null &&
+        st.editingGroupId === null &&*/
+        (st.selectedLinearElement === null || !st.selectedLinearElement.isEditing)
+      ) {
+        this.checkSceneVersion(et);
       }
-      this.colorChangeTimer = window.setTimeout(() => {
-        this.canvasColorChangeHook(st);
-        this.colorChangeTimer = null;
-      }, 50); //just enough time if the user is playing with color picker, the change is not too frequent.
-    }
-    if (
-      !this.semaphores.dirty &&
-      st.editingTextElement === null &&
-      //Removed because of
-      //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/565
-      /*st.resizingElement === null && 
-      st.newElement === null &&
-      st.editingGroupId === null &&*/
-      (st.selectedLinearElement === null || !st.selectedLinearElement.isEditing)
-    ) {
-      this.checkSceneVersion(et);
-    }
 
-    handleMarkdownImageEditorSelection(
-      this,
-      et,
-      st.selectedElementIds,
-    );
-    this.triggerSceneChangeHooks(et, st, files);
+      handleMarkdownImageEditorSelection(
+        this,
+        et,
+        st.selectedElementIds,
+      );
+      this.triggerSceneChangeHooks(et, st, files);
+    } finally {
+      if (diagnosticsEnabled) {
+        performanceDiagnosticRecordDuration(
+          "onChangeSync",
+          performanceDiagnosticNow() - diagnosticsStart,
+        );
+      }
+    }
   }
 
   public onLibraryChange(items: LibraryItems) {
@@ -5308,7 +5792,13 @@ export default class ExcalidrawView
 
   public async onThemeChange(newTheme: string) {
     this.excalidrawData.scene.appState.theme = newTheme as "dark" | "light";
-    await this.loadSceneFiles(true);
+    await this.loadSceneFiles(
+      true,
+      undefined,
+      undefined,
+      undefined,
+      "theme-change",
+    );
     this.toolsPanelRef?.current?.setTheme(newTheme as "dark" | "light");
     //Timeout is to allow appState to update
     window.setTimeout(() =>
@@ -6511,6 +7001,12 @@ export default class ExcalidrawView
   public onExcalidrawInitialize(api: ExcalidrawImperativeAPI) {
     // Ensure we keep the latest editor API reference before running scene-dependent setup.
     this.setExcalidrawAPI(api);
+    performanceDiagnosticLog("view.excalidrawInitialized", {
+      viewId: this.id,
+      window: this.ownerWindow === window ? "main" : "popout",
+      elements: api.getSceneElementsIncludingDeleted().length,
+      binaryFiles: Object.keys(api.getFiles()).length,
+    });
     window.setTimeout(() => {
       // window migration scenario
       if (!this.plugin) {
@@ -6518,6 +7014,21 @@ export default class ExcalidrawView
       }
       this.onAfterLoadScene(true);
       this.excalidrawContainer?.focus();
+      const ownerWindow = this.ownerWindow ?? window;
+      ownerWindow.requestAnimationFrame(() => {
+        ownerWindow.requestAnimationFrame(() => {
+          performanceDiagnosticLog("view.doubleAnimationFrame", {
+            viewId: this.id,
+            window: this.ownerWindow === window ? "main" : "popout",
+            elements: this.excalidrawAPI
+              ?.getSceneElementsIncludingDeleted().length ?? 0,
+            binaryFiles: this.excalidrawAPI
+              ? Object.keys(this.excalidrawAPI.getFiles()).length
+              : 0,
+            blobUrls: getImageCache().getObsidianURLCacheSize(),
+          });
+        });
+      });
     });
   }
 

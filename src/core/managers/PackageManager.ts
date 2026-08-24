@@ -1,6 +1,6 @@
 import { updateExcalidrawLib } from "src/constants/constants";
 import { ExcalidrawLib } from "../../types/excalidrawLib";
-import { Packages } from "../../types/types";
+import { PackageLease, Packages } from "../../types/types";
 import { Notice } from "obsidian";
 import type ExcalidrawPlugin from "src/core/main";
 import { errorHandler } from "../../utils/ErrorHandler";
@@ -8,6 +8,13 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { createObsidianCommonHostAdapter } from "./obsidianCommonHostAdapter";
 import { createObsidianExcalidrawHostAdapter } from "./obsidianExcalidrawHostAdapter";
+import {
+  performanceDiagnosticIncrement,
+  performanceDiagnosticLog,
+  performanceDiagnosticNow,
+  performanceDiagnosticRecordDuration,
+  performanceDiagnosticsEnabled,
+} from "../../utils/performanceDiagnostics";
 
 declare let REACT_PACKAGES: string;
 declare let react: typeof React;
@@ -27,6 +34,7 @@ export class PackageManager {
   private EXCALIDRAW_PACKAGE: string;
   private plugin: ExcalidrawPlugin;
   private fallbackPackage: Packages | null = null;
+  private packageLeaseCountMap = new Map<Window, number>();
   private commonHostDisposerMap = new Map<Window, () => void>();
   private excalidrawHostDisposerMap = new Map<Window, () => void>();
 
@@ -189,6 +197,10 @@ export class PackageManager {
         throw normalizeError(error);
       }
       this.packageMap.set(window, pkg);
+      performanceDiagnosticLog("package.set", {
+        packageWindows: this.packageMap.size,
+        window: window === globalThis.window ? "main" : "popout",
+      });
 
       // Update fallback if we don't have one
       if (!this.fallbackPackage) {
@@ -207,15 +219,88 @@ export class PackageManager {
   }
 
   /**
+   * Acquires an idempotent lease for the package owned by `win`.
+   *
+   * @remarks
+   * Popout packages are deleted when their last lease is released. The main
+   * package remains pinned for the plugin lifetime because it is also the
+   * fallback runtime and is initialized as part of plugin startup.
+   */
+  public acquirePackage(win: Window): PackageLease {
+    const packages = this.getPackage(win);
+    const leaseCount = (this.packageLeaseCountMap.get(win) ?? 0) + 1;
+    this.packageLeaseCountMap.set(win, leaseCount);
+    performanceDiagnosticLog("package.leaseAcquired", {
+      window: win === window ? "main" : "popout",
+      leases: leaseCount,
+      packageWindows: this.packageMap.size,
+    });
+
+    let released = false;
+    return {
+      window: win,
+      packages,
+      release: () => {
+        if (released) {
+          return;
+        }
+        released = true;
+        this.releasePackageLease(win);
+      },
+    };
+  }
+
+  /** Releases one view-owned package lease without consulting mutable DOM. */
+  private releasePackageLease(win: Window): void {
+    const leaseCount = this.packageLeaseCountMap.get(win);
+    if (leaseCount === undefined) {
+      return;
+    }
+
+    const remainingLeases = Math.max(0, leaseCount - 1);
+    if (remainingLeases === 0) {
+      this.packageLeaseCountMap.delete(win);
+      if (win !== window) {
+        this.deletePackage(win);
+      }
+    } else {
+      this.packageLeaseCountMap.set(win, remainingLeases);
+    }
+
+    performanceDiagnosticLog("package.leaseReleased", {
+      window: win === window ? "main" : "popout",
+      leases: remainingLeases,
+      packageWindows: this.packageMap.size,
+    });
+  }
+
+  /**
    * Gets a package for a window, creating it if necessary
    * with robust error handling
    */
   public getPackage(win: Window): Packages {
+    const diagnosticsEnabled = performanceDiagnosticsEnabled();
+    const diagnosticsStart = diagnosticsEnabled ? performanceDiagnosticNow() : 0;
     try {
       // Return existing package if available
       if (this.packageMap.has(win)) {
         const pkg = this.packageMap.get(win);
         if (this.validatePackage(pkg)) {
+          if (diagnosticsEnabled) {
+            performanceDiagnosticIncrement("packageCacheHit");
+            performanceDiagnosticRecordDuration(
+              "packageGet",
+              performanceDiagnosticNow() - diagnosticsStart,
+            );
+          }
+          performanceDiagnosticLog("package.get", {
+            source: "cache",
+            window: win === globalThis.window ? "main" : "popout",
+            packageWindows: this.packageMap.size,
+            durationMs: diagnosticsEnabled
+              ? performanceDiagnosticNow() - diagnosticsStart
+              : undefined,
+          });
           return pkg;
         }
         // If package exists but is invalid, delete it so we can recreate it
@@ -254,6 +339,21 @@ export class PackageManager {
           };
 
           this.setPackage(win, newPackage);
+          if (diagnosticsEnabled) {
+            performanceDiagnosticIncrement("packageCreated");
+            performanceDiagnosticRecordDuration(
+              "packageGet",
+              performanceDiagnosticNow() - diagnosticsStart,
+            );
+          }
+          performanceDiagnosticLog("package.get", {
+            source: "created",
+            window: win === globalThis.window ? "main" : "popout",
+            packageWindows: this.packageMap.size,
+            durationMs: diagnosticsEnabled
+              ? performanceDiagnosticNow() - diagnosticsStart
+              : undefined,
+          });
           return newPackage;
         },
         "PackageManager.getPackage",
@@ -277,6 +377,7 @@ export class PackageManager {
 
   public deletePackage(win: Window) {
     try {
+      const packageWindowsBefore = this.packageMap.size;
       this.disposeObsidianHosts(win);
 
       const pkg = this.packageMap.get(win);
@@ -292,6 +393,12 @@ export class PackageManager {
       }
 
       this.packageMap.delete(win);
+      performanceDiagnosticIncrement("packageDeleted");
+      performanceDiagnosticLog("package.deleted", {
+        window: win === globalThis.window ? "main" : "popout",
+        before: packageWindowsBefore,
+        after: this.packageMap.size,
+      });
     } catch (error: unknown) {
       errorHandler.handleError(
         normalizeError(error),
@@ -313,6 +420,7 @@ export class PackageManager {
       });
 
       this.packageMap.clear();
+      this.packageLeaseCountMap.clear();
       this.commonHostDisposerMap.clear();
       this.excalidrawHostDisposerMap.clear();
       this.EXCALIDRAW_PACKAGE = "";

@@ -68,6 +68,12 @@ import { URLs } from "src/constants/safeUrls";
 import { errorlog } from "src/utils/coreUtils";
 import { log } from "src/utils/debugHelper";
 import {
+  performanceDiagnosticLog,
+  performanceDiagnosticNow,
+  performanceDiagnosticRecordDuration,
+  performanceDiagnosticsEnabled,
+} from "src/utils/performanceDiagnostics";
+import {
   MARKDOWN_IMAGE_CUSTOM_DATA_KEY,
   MARKDOWN_IMAGE_EMBEDDED_FILE_TOKEN,
   type MarkdownImageCustomData,
@@ -1377,6 +1383,8 @@ export class ExcalidrawData {
    */
   disableCompression: boolean = false;
   generateMDBase(deletedElements: ExcalidrawElement[] = []) {
+    const diagnosticsEnabled = performanceDiagnosticsEnabled();
+    const metadataStart = diagnosticsEnabled ? performanceDiagnosticNow() : 0;
     const syncTextLinks = this.plugin.settings.syncElementLinkWithText;
     let outString = this.textElementCommentedOut ? "%%\n" : "";
     outString += `# Excalidraw Data\n\n## Text Elements\n`;
@@ -1452,6 +1460,10 @@ export class ExcalidrawData {
     }
     //outString += this.equations.size > 0 || this.files.size > 0 ? "\n" : "";
 
+    const metadataMs = diagnosticsEnabled
+      ? performanceDiagnosticNow() - metadataStart
+      : 0;
+    const stringifyStart = diagnosticsEnabled ? performanceDiagnosticNow() : 0;
     const sceneJSONstring = JSON.stringify(
       {
         type: this.scene.type,
@@ -1464,34 +1476,101 @@ export class ExcalidrawData {
       null,
       "\t",
     );
+    const stringifyMs = diagnosticsEnabled
+      ? performanceDiagnosticNow() - stringifyStart
+      : 0;
+    if (diagnosticsEnabled) {
+      performanceDiagnosticRecordDuration("serializeMetadata", metadataMs);
+      performanceDiagnosticRecordDuration("serializeStringify", stringifyMs);
+    }
+    performanceDiagnosticLog("serialize.generateBase", {
+      viewId: this.view?.id,
+      elements: this.scene.elements.length,
+      deletedElements: deletedElements.length,
+      textElements: this.textElements.size,
+      embeddedFiles: this.files.size,
+      markdownImages: this.markdownImages.size,
+      equations: this.equations.size,
+      mermaids: this.mermaids.size,
+      metadataMs: diagnosticsEnabled ? metadataMs : undefined,
+      stringifyMs: diagnosticsEnabled ? stringifyMs : undefined,
+      metadataBytes: outString.length,
+      sceneJsonBytes: sceneJSONstring.length,
+    });
     return { outString, sceneJSONstring };
   }
 
   async generateMDAsync(
     deletedElements: ExcalidrawElement[] = [],
   ): Promise<string> {
+    const diagnosticsEnabled = performanceDiagnosticsEnabled();
+    const totalStart = diagnosticsEnabled ? performanceDiagnosticNow() : 0;
     const { outString, sceneJSONstring } = this.generateMDBase(deletedElements);
+    const compressionStart = diagnosticsEnabled
+      ? performanceDiagnosticNow()
+      : 0;
     const drawingSection = await getMarkdownDrawingSectionAsync(
       sceneJSONstring,
       this.disableCompression ? false : this.plugin.settings.compress,
     );
+    const compressionMs = diagnosticsEnabled
+      ? performanceDiagnosticNow() - compressionStart
+      : 0;
     const result =
       outString +
       (this.textElementCommentedOut ? "" : "%%\n") +
       drawingSection;
+    if (diagnosticsEnabled) {
+      performanceDiagnosticRecordDuration("serializeCompression", compressionMs);
+    }
+    performanceDiagnosticLog("serialize.compression", {
+      viewId: this.view?.id,
+      mode: "async",
+      compressed:
+        !this.disableCompression && this.plugin.settings.compress,
+      inputBytes: sceneJSONstring.length,
+      drawingSectionBytes: drawingSection.length,
+      compressionMs: diagnosticsEnabled ? compressionMs : undefined,
+      totalMs: diagnosticsEnabled
+        ? performanceDiagnosticNow() - totalStart
+        : undefined,
+    });
     return result;
   }
 
   generateMDSync(deletedElements: ExcalidrawElement[] = []): string {
+    const diagnosticsEnabled = performanceDiagnosticsEnabled();
+    const totalStart = diagnosticsEnabled ? performanceDiagnosticNow() : 0;
     const { outString, sceneJSONstring } = this.generateMDBase(deletedElements);
+    const compressionStart = diagnosticsEnabled
+      ? performanceDiagnosticNow()
+      : 0;
     const drawingSection = getMarkdownDrawingSection(
       sceneJSONstring,
       this.disableCompression ? false : this.plugin.settings.compress,
     );
+    const compressionMs = diagnosticsEnabled
+      ? performanceDiagnosticNow() - compressionStart
+      : 0;
     const result =
       outString +
       (this.textElementCommentedOut ? "" : "%%\n") +
       drawingSection;
+    if (diagnosticsEnabled) {
+      performanceDiagnosticRecordDuration("serializeCompression", compressionMs);
+    }
+    performanceDiagnosticLog("serialize.compression", {
+      viewId: this.view?.id,
+      mode: "sync",
+      compressed:
+        !this.disableCompression && this.plugin.settings.compress,
+      inputBytes: sceneJSONstring.length,
+      drawingSectionBytes: drawingSection.length,
+      compressionMs: diagnosticsEnabled ? compressionMs : undefined,
+      totalMs: diagnosticsEnabled
+        ? performanceDiagnosticNow() - totalStart
+        : undefined,
+    });
     return result;
   }
 

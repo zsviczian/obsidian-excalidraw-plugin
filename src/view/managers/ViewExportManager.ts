@@ -32,6 +32,12 @@ import {
   getPageDimensions,
 } from "../../utils/exportUtils";
 import type ExcalidrawView from "../ExcalidrawView";
+import {
+  performanceDiagnosticLog,
+  performanceDiagnosticNow,
+  performanceDiagnosticRecordDuration,
+  performanceDiagnosticsEnabled,
+} from "../../utils/performanceDiagnostics";
 
 /** Runtime dependencies supplied by the view's existing import graph. */
 export interface ViewExportDependencies {
@@ -266,6 +272,10 @@ export class ViewExportManager {
     embedScene?: boolean;
     autoexportConfig?: AutoexportConfig;
   }): Promise<void | false> {
+    const diagnosticsEnabled = performanceDiagnosticsEnabled();
+    const diagnosticsStart = diagnosticsEnabled
+      ? performanceDiagnosticNow()
+      : 0;
     if (!data) {
       data = {};
     }
@@ -319,6 +329,18 @@ export class ViewExportManager {
         autoexportConfig?.theme,
       );
     }
+    const durationMs = diagnosticsEnabled
+      ? performanceDiagnosticNow() - diagnosticsStart
+      : 0;
+    if (diagnosticsEnabled) {
+      performanceDiagnosticRecordDuration("autoexportSvg", durationMs);
+    }
+    performanceDiagnosticLog("autoexport.complete", {
+      viewId: this.view.id,
+      kind: "svg",
+      durationMs: diagnosticsEnabled ? durationMs : undefined,
+      elements: scene.elements.length,
+    });
   }
 
   /** Downloads an SVG export of the current or selected scene. */
@@ -454,6 +476,10 @@ export class ViewExportManager {
     embedScene?: boolean;
     autoexportConfig?: AutoexportConfig;
   }): Promise<void | false> {
+    const diagnosticsEnabled = performanceDiagnosticsEnabled();
+    const diagnosticsStart = diagnosticsEnabled
+      ? performanceDiagnosticNow()
+      : 0;
     if (!data) {
       data = {};
     }
@@ -504,6 +530,18 @@ export class ViewExportManager {
         autoexportConfig?.theme,
       );
     }
+    const durationMs = diagnosticsEnabled
+      ? performanceDiagnosticNow() - diagnosticsStart
+      : 0;
+    if (diagnosticsEnabled) {
+      performanceDiagnosticRecordDuration("autoexportPng", durationMs);
+    }
+    performanceDiagnosticLog("autoexport.complete", {
+      viewId: this.view.id,
+      kind: "png",
+      durationMs: diagnosticsEnabled ? durationMs : undefined,
+      elements: scene.elements.length,
+    });
   }
 
   /** Copies a PNG export of the current or selected scene to the clipboard. */

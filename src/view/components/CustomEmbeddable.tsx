@@ -956,7 +956,7 @@ function RenderObsidianView({
       if (!leafRef.current) {
         return;
       }
-      view.canvasNodeFactory.removeNode(leafRef.current.node);
+      view.canvasNodeFactory.removeNode(leafRef.current.node, element.id);
       leafRef.current.leaf?.detach();
       leafRef.current = null;
     }; //cleanup on unmount

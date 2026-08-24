@@ -85,6 +85,13 @@ import {
 } from "src/types/markdownImageTypes";
 import { resolveMarkdownImageRenderSettings } from "src/utils/markdownImageUtils";
 import { addAppendUpdateCustomData } from "src/utils/elementCustomDataUtils";
+import {
+  performanceDiagnosticIncrement,
+  performanceDiagnosticLog,
+  performanceDiagnosticNow,
+  performanceDiagnosticRecordDuration,
+  performanceDiagnosticsEnabled,
+} from "src/utils/performanceDiagnostics";
 
 //declared in rollup.config.mjs
 declare const deliberateFetch: (
@@ -103,6 +110,15 @@ declare const mainDocument: Document;
 const markdownRendererRecursionWatcthdog = new Set<TFile>();
 
 type CacheValidationMode = "validated" | "stale-first";
+const SCENE_FILE_LOAD_STALL_TIMEOUT_MS = 30_000;
+
+export type EmbeddedFilesLoaderTerminalState =
+  | "idle"
+  | "running"
+  | "completed"
+  | "terminated"
+  | "timed-out"
+  | "failed";
 
 /** Describes the lightweight work required after a stale-first cache hit. */
 export type DeferredCacheValidation =
@@ -681,6 +697,7 @@ export class EmbeddedFilesLoader {
   private plugin: ExcalidrawPlugin;
   private isDark: boolean;
   public terminate = false;
+  public terminalState: EmbeddedFilesLoaderTerminalState = "idle";
   public uid: string;
 
   constructor(plugin: ExcalidrawPlugin, isDark?: boolean) {
@@ -850,6 +867,10 @@ export class EmbeddedFilesLoader {
 
     let cachedSize: Size | undefined;
     let cachedHasSVGwithBitmap: boolean | undefined;
+    const diagnosticsEnabled = performanceDiagnosticsEnabled();
+    const cacheLookupStart = diagnosticsEnabled
+      ? performanceDiagnosticNow()
+      : 0;
     const maybeSVG = shouldUseCache
       ? await getImageCache().getImageFromCache(cacheKey, {
           skipDependencyCheck: cacheValidation === "stale-first",
@@ -868,6 +889,15 @@ export class EmbeddedFilesLoader {
           },
         })
       : undefined;
+    if (diagnosticsEnabled && shouldUseCache) {
+      performanceDiagnosticRecordDuration(
+        "imageCacheLookup",
+        performanceDiagnosticNow() - cacheLookupStart,
+      );
+      performanceDiagnosticIncrement(
+        typeof maybeSVG === "string" ? "imageCacheHit" : "imageCacheMiss",
+      );
+    }
 
     if (this.terminate) {
       return { dataURL: "" as DataURL, hasSVGwithBitmap: false };
@@ -893,38 +923,49 @@ export class EmbeddedFilesLoader {
       };
     }
 
+    const generationStart = diagnosticsEnabled
+      ? performanceDiagnosticNow()
+      : 0;
+    const generatedSVG = await createSVG(
+      hasFilenameParts
+        ? filenameParts.hasGroupref ||
+          filenameParts.hasBlockref ||
+          filenameParts.hasSectionref ||
+          filenameParts.hasFrameref ||
+          filenameParts.hasClippedFrameref
+          ? filenameParts.filepath + filenameParts.linkpartReference
+          : file.path
+        : file?.path,
+      false, //false
+      hasFilenameParts && filenameParts.hasClippedFrameref
+        ? {
+            ...exportSettings,
+            frameRendering: {
+              enabled: true,
+              name: false,
+              outline: false,
+              clip: true,
+            },
+          }
+        : exportSettings,
+      this,
+      forceTheme,
+      null,
+      null,
+      elements,
+      this.plugin,
+      depth + 1,
+      getExportPadding(this.plugin, file),
+    );
+    if (diagnosticsEnabled) {
+      performanceDiagnosticIncrement("imageGeneration");
+      performanceDiagnosticRecordDuration(
+        "imageGeneration",
+        performanceDiagnosticNow() - generationStart,
+      );
+    }
     const svg = replaceSVGColors(
-      await createSVG(
-        hasFilenameParts
-          ? filenameParts.hasGroupref ||
-            filenameParts.hasBlockref ||
-            filenameParts.hasSectionref ||
-            filenameParts.hasFrameref ||
-            filenameParts.hasClippedFrameref
-            ? filenameParts.filepath + filenameParts.linkpartReference
-            : file.path
-          : file?.path,
-        false, //false
-        hasFilenameParts && filenameParts.hasClippedFrameref
-          ? {
-              ...exportSettings,
-              frameRendering: {
-                enabled: true,
-                name: false,
-                outline: false,
-                clip: true,
-              },
-            }
-          : exportSettings,
-        this,
-        forceTheme,
-        null,
-        null,
-        elements,
-        this.plugin,
-        depth + 1,
-        getExportPadding(this.plugin, file),
-      ),
+      generatedSVG,
       inFile instanceof EmbeddedFile ? inFile.colorMap : null,
     ) as SVGSVGElement;
     if (this.terminate) {
@@ -1024,6 +1065,8 @@ export class EmbeddedFilesLoader {
     depth: number,
     options?: LoadImageOptions,
   ): Promise<ImgData> {
+    const diagnosticsEnabled = performanceDiagnosticsEnabled();
+    const diagnosticsStart = diagnosticsEnabled ? performanceDiagnosticNow() : 0;
     if (!this.plugin || !inFile) {
       return null;
     }
@@ -1212,14 +1255,25 @@ export class EmbeddedFilesLoader {
             ? inFile.filenameparts?.linkpartReference
             : undefined,
         ));
+      const loadedFromCache = isExcalidrawFile
+        ? excalidrawLoadedFromCache
+        : pdfLoadedFromCache;
+      if (diagnosticsEnabled) {
+        performanceDiagnosticIncrement("assetLoad");
+        performanceDiagnosticIncrement(
+          loadedFromCache ? "assetLoadedFromCache" : "assetLoadedWithoutCache",
+        );
+        performanceDiagnosticRecordDuration(
+          "assetLoad",
+          performanceDiagnosticNow() - diagnosticsStart,
+        );
+      }
       return {
         mimeType,
         fileId: generatedFileId,
         dataURL,
         created: isHyperLink || isLocalLink ? 0 : file.stat.mtime,
-        loadedFromCache: isExcalidrawFile
-          ? excalidrawLoadedFromCache
-          : pdfLoadedFromCache,
+        loadedFromCache,
         hasSVGwithBitmap,
         size,
         pdfPageViewProps,
@@ -1272,8 +1326,23 @@ export class EmbeddedFilesLoader {
     deferredCacheValidation?: ReadonlyMap<FileId, DeferredCacheValidation>;
     sceneElements?: readonly ExcalidrawElement[];
   }) {
+    this.terminalState = "running";
+    if (this.isDark === undefined) {
+      this.isDark = excalidrawData?.scene?.appState?.theme === "dark";
+    }
     if (depth > 7) {
+      this.terminalState = "failed";
       new Notice(t("INFINITE_LOOP_WARNING") + depth.toString(), 6000);
+      try {
+        addFiles([], this.isDark, true);
+      } catch (error: unknown) {
+        errorlog({
+          where: "EmbeddedFileLoader.loadSceneFiles",
+          uid: this.uid,
+          phase: "depth-limit",
+          error,
+        });
+      }
       return;
     }
     const entries = Array.from(excalidrawData.getFileEntries());
@@ -1288,9 +1357,7 @@ export class EmbeddedFilesLoader {
       markdownImageElements.map((element) => element.fileId),
     );
     //debug({where:"EmbeddedFileLoader.loadSceneFiles",uid:this.uid,isDark:this.isDark,sceneTheme:excalidrawData.scene.appState.theme});
-    if (this.isDark === undefined) {
-      this.isDark = excalidrawData?.scene?.appState?.theme === "dark";
-    }
+    let onLoadTaskSettled: (() => void) | null = null;
     const createSafeLoadTask = (
       task: () => Promise<void>,
       context: Record<string, unknown>,
@@ -1305,6 +1372,8 @@ export class EmbeddedFilesLoader {
             ...context,
             error,
           });
+        } finally {
+          onLoadTaskSettled?.();
         }
       });
     const files: FileData[][] = [];
@@ -1637,10 +1706,62 @@ export class EmbeddedFilesLoader {
       }
     }
 
+    const runLoadPool = async (
+      iterator: Generator<Promise<void>>,
+      concurrency: number,
+      phase: "initial" | "deferred-generation",
+    ): Promise<boolean> => {
+      let stallTimer: number | null = null;
+      let resolveStall!: () => void;
+      const stalled = new Promise<"stalled">((resolve) => {
+        resolveStall = () => resolve("stalled");
+      });
+      const resetStallTimer = () => {
+        if (stallTimer !== null) {
+          window.clearTimeout(stallTimer);
+        }
+        stallTimer = window.setTimeout(
+          resolveStall,
+          SCENE_FILE_LOAD_STALL_TIMEOUT_MS,
+        );
+      };
+
+      onLoadTaskSettled = resetStallTimer;
+      resetStallTimer();
+      const poolCompleted = new PromisePool(iterator, concurrency)
+        .all()
+        .then(() => "completed" as const);
+      const result = await Promise.race([poolCompleted, stalled]);
+      onLoadTaskSettled = null;
+      if (stallTimer !== null) {
+        window.clearTimeout(stallTimer);
+      }
+      if (result === "completed") {
+        return true;
+      }
+
+      this.terminalState = "timed-out";
+      this.terminate = true;
+      performanceDiagnosticIncrement("sceneFileLoaderStalled");
+      performanceDiagnosticLog("sceneFiles.loaderStalled", {
+        loaderId: this.uid,
+        phase,
+        stallTimeoutMs: SCENE_FILE_LOAD_STALL_TIMEOUT_MS,
+      });
+      return false;
+    };
+
+    let finalFlushed = false;
     const flushFiles = (
       batchFiles: FileData[] | undefined,
       final: boolean,
     ) => {
+      if (final && finalFlushed) {
+        return;
+      }
+      if (final) {
+        finalFlushed = true;
+      }
       try {
         addFiles(batchFiles, this.isDark, final);
       } catch (e: unknown) {
@@ -1670,10 +1791,13 @@ export class EmbeddedFilesLoader {
         validationConcurrency ?? this.plugin.settings.renderingConcurrency;
       const iterator = loadIterator(this, entries, true, true);
       if (!this.terminate) {
-        await new PromisePool(iterator, concurency).all();
+        await runLoadPool(iterator, concurency, "initial");
       }
 
       if (this.terminate) {
+        if (this.terminalState === "running") {
+          this.terminalState = "terminated";
+        }
         flushFiles(undefined, true);
         return;
       }
@@ -1699,11 +1823,18 @@ export class EmbeddedFilesLoader {
             false,
             false,
           );
-          await new PromisePool(deferredIterator, concurency).all();
+          await runLoadPool(
+            deferredIterator,
+            concurency,
+            "deferred-generation",
+          );
         }
       }
 
       if (this.terminate) {
+        if (this.terminalState === "running") {
+          this.terminalState = "terminated";
+        }
         flushFiles(undefined, true);
         return;
       }
@@ -1717,9 +1848,34 @@ export class EmbeddedFilesLoader {
       );
       // The helper retains the try/catch because the user may have closed the
       // view by the time the asynchronous image work completes.
+      this.terminalState = "completed";
+      flushFiles(batchFiles, true);
+    } catch (error: unknown) {
+      this.terminalState = "failed";
+      errorlog({
+        where: "EmbeddedFileLoader.loadSceneFiles",
+        uid: this.uid,
+        phase: "pool",
+        error,
+      });
+      const batchFiles = files[batch].filter(
+        (f) => emitPolicy === "all" || !f.loadedFromCache,
+      );
       flushFiles(batchFiles, true);
     } finally {
+      onLoadTaskSettled = null;
       window.clearInterval(addFilesTimer);
+      if (!finalFlushed) {
+        if (this.terminalState === "running") {
+          this.terminalState = this.terminate ? "terminated" : "failed";
+        }
+        const batchFiles = this.terminate
+          ? undefined
+          : files[batch].filter(
+              (f) => emitPolicy === "all" || !f.loadedFromCache,
+            );
+        flushFiles(batchFiles, true);
+      }
       this.emptyPDFDocsMap();
     }
   }
