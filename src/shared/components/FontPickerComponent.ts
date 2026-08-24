@@ -3,6 +3,15 @@ import { DEVICE } from "src/constants/constants";
 import type { SelectableFontOption } from "src/types/fontTypes";
 import { removeStyle, setStyle } from "src/utils/styleUtils";
 
+declare const deliberateCreateElement: (
+  document: Document,
+  tagName: "style",
+) => HTMLStyleElement;
+
+type BuiltInFontCssProvider = (
+  fontFamily: string,
+) => Promise<string | null>;
+
 type LoadedPreviewFont = {
   document: Document;
   face: FontFace;
@@ -21,7 +30,8 @@ const quoteFontFamily = (fontFamily: string): string =>
  * The option provider is invoked whenever the menu opens, allowing vault font
  * additions, removals, and renames to appear without maintaining a file cache.
  * Local font binaries are loaded only for the selected option and visible menu
- * rows, and are registered in the document that owns the control.
+ * rows. Callers may also provide built-in font CSS when their owning document
+ * does not already receive Excalidraw's window-scoped font registration.
  */
 export class FontPickerComponent extends ValueComponent<string> {
   public readonly buttonEl: HTMLButtonElement;
@@ -33,12 +43,15 @@ export class FontPickerComponent extends ValueComponent<string> {
   private menu: Menu | null = null;
   private optionObserver: IntersectionObserver | null = null;
   private readonly loadedPreviewFonts = new Map<string, LoadedPreviewFont>();
+  private readonly builtInPreviewStyles = new Map<string, HTMLStyleElement>();
+  private readonly builtInPreviewLoads = new Map<string, Promise<void>>();
   private readonly handleClick = (): void => this.openMenu();
 
   public constructor(
     containerEl: HTMLElement,
     private readonly app: App,
     private readonly getOptions: () => SelectableFontOption[],
+    private readonly getBuiltInFontCss?: BuiltInFontCssProvider,
   ) {
     super();
     this.buttonEl = containerEl.createEl("button", {
@@ -97,6 +110,11 @@ export class FontPickerComponent extends ValueComponent<string> {
       loaded.document.fonts.delete(loaded.face);
     }
     this.loadedPreviewFonts.clear();
+    for (const styleElement of this.builtInPreviewStyles.values()) {
+      styleElement.remove();
+    }
+    this.builtInPreviewStyles.clear();
+    this.builtInPreviewLoads.clear();
     this.buttonEl.remove();
   }
 
@@ -232,6 +250,42 @@ export class FontPickerComponent extends ValueComponent<string> {
       return;
     }
     setStyle(element, { fontFamily: quoteFontFamily(family) });
+    if (!option.fontFile) {
+      void this.ensureBuiltInPreviewFont(family).catch((): void => undefined);
+    }
+  }
+
+  private async ensureBuiltInPreviewFont(fontFamily: string): Promise<void> {
+    if (
+      !this.getBuiltInFontCss ||
+      this.builtInPreviewStyles.has(fontFamily)
+    ) {
+      return;
+    }
+    const pendingLoad = this.builtInPreviewLoads.get(fontFamily);
+    if (pendingLoad !== undefined) {
+      await pendingLoad;
+      return;
+    }
+
+    const load = this.loadBuiltInPreviewFont(fontFamily).finally(() => {
+      this.builtInPreviewLoads.delete(fontFamily);
+    });
+    this.builtInPreviewLoads.set(fontFamily, load);
+    await load;
+  }
+
+  private async loadBuiltInPreviewFont(fontFamily: string): Promise<void> {
+    const css = await this.getBuiltInFontCss?.(fontFamily);
+    if (!css || !this.buttonEl.isConnected) {
+      return;
+    }
+    const doc = this.buttonEl.ownerDocument;
+    const styleElement = deliberateCreateElement(doc, "style");
+    styleElement.textContent = css;
+    doc.head.appendChild(styleElement);
+    this.builtInPreviewStyles.set(fontFamily, styleElement);
+    await doc.fonts.load(`20px ${quoteFontFamily(fontFamily)}`);
   }
 
   private ensureLocalPreviewFont(file: TFile): string | null {

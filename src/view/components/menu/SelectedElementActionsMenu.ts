@@ -148,7 +148,8 @@ export class SelectedElementActionsMenu {
         cls: "ToolIcon_type_button ToolIcon_size_small ToolIcon_type_button--show ToolIcon",
         attr: {
           type: "button",
-          title: action.title,
+          // A title attribute adds a native browser tooltip alongside the
+          // styled Excalidraw tooltip. Keep the accessible name only.
           "aria-label": action.title,
         },
       });

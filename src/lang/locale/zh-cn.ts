@@ -15,6 +15,21 @@ export default {
   // Sugester
   SELECT_FILE_TO_INSERT: "选择要嵌入到当前绘图中的文件",
   // main.ts
+  SETTINGS_DATA_INVALID:
+    "Excalidraw 正在等待有效的替代 data.json。在恢复该文件，或重新启动 Obsidian 并选择重置为默认值之前，设置更改不会保存。",
+  SETTINGS_DATA_REPAIRED_FROM_MEMORY:
+    "收到的 Excalidraw 设置文件为空或无法读取，已拒绝该文件。当前设置已写回，以修复 data.json。",
+  SETTINGS_DATA_RECOVERED:
+    "Excalidraw 的 data.json 为空或无法读取。已自动恢复最近的有效设置。",
+  SETTINGS_RECOVERY_MISSING_TITLE: "Excalidraw 设置文件缺失",
+  SETTINGS_RECOVERY_MISSING_DESC:
+    "此设备上存在最近的有效设置备份。你可以恢复该备份，或将 Excalidraw 重置为出厂默认值。关闭此消息将恢复备份。",
+  SETTINGS_RECOVERY_CORRUPT_TITLE: "Excalidraw 设置文件已损坏",
+  SETTINGS_RECOVERY_CORRUPT_DESC:
+    "设置文件为空或无法读取，并且此设备上没有恢复备份。你可以将 Excalidraw 重置为出厂默认值，或保持文件不变，同时从其他来源恢复有效的 data.json。关闭此消息将等待替代文件。",
+  SETTINGS_RECOVERY_RESTORE_BACKUP: "恢复备份",
+  SETTINGS_RECOVERY_RESET_DEFAULTS: "重置为默认值",
+  SETTINGS_RECOVERY_WAIT_FOR_FILE: "等待恢复文件",
   ERROR_INITIALIZING_EA: "初始化 Excalidraw Automate 时出错",
   CONVERT_URL_TO_FILE: "从 URL 下载图片到本地",
   UNZIP_CURRENT_FILE: "解压当前 Excalidraw 文件",
@@ -340,6 +355,18 @@ export default {
   SEARCH_SHOWHIDE_ARIA: "显示/隐藏搜索栏",
   SEARCH_NEXT: "下一个",
   SEARCH_PREVIOUS: "上一个",
+  SETTINGS_TOOLBAR_COPY: "复制设置",
+  SETTINGS_TOOLBAR_NOTEBOOKLM: "NotebookLM",
+  SETTINGS_TOOLBAR_BUGS: "问题",
+  SETTINGS_TOOLBAR_WIKI: "Wiki",
+  SETTINGS_TOOLBAR_YOUTUBE: "YouTube",
+  SETTINGS_TOOLBAR_LEARN: "学习",
+  SETTINGS_TOOLBAR_FOLLOW: "Twitter",
+  SETTINGS_TOOLBAR_READ: "阅读书籍",
+  SETTINGS_TOOLBAR_KOFI: "Ko-fi",
+  USE_DECLARATIVE_SETTINGS_NAME: "使用可搜索设置",
+  USE_DECLARATIVE_SETTINGS_DESC:
+    "使用 Obsidian 可搜索的多页面设置界面。关闭后将使用 Excalidraw 的旧版单页面设置。需要重启 Obsidian。",
 
   //settings.ts
   FOLDER_PLACEHOLDER: "e.g.: Excalidraw",
@@ -373,7 +400,6 @@ export default {
     "禁用 Excalidraw 的上下文菜单。这在移动设备上很有用，因为上下文菜单有时会在不需要的时候弹出。",
   NOTEBOOKLM_LINK_ARIA:
     "向 NotebookLM 咨询有关插件的帮助。此模型已预加载了我所有的视频转录稿、发布说明和其他帮助内容。与 NotebookLM 聊天，浏览我的 250+ 视频和 Excalidraw 文件。",
-  NOTEBOOKLM_LINK_TEXT: "学习插件。访问 NotebookLM 知识库。",
   EXCALIDRAW_MASTERY: "Excalidraw Mastery",
   EXCALIDRAW_MASTERY_PROMO_ARIA: "打开 Excalidraw Mastery",
   EXCALIDRAW_MASTERY_PROMO_HTML: `<p><b>在各种开关和菜单里找不着北？</b></p><p>Excalidraw 是一款为高强度工作流打造的 Visual PKM 强力工具，适合 <b>Visual-First Daily Notes</b>、深度 <b>PDF 研究</b>、<b>自动化</b>、<b>AI 集成</b> 和 <b>Visual Zettelkasten</b>。但强大能力也伴随着复杂度。</p><p>跳过反复试错。<a href="${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_EM}" target="_blank">👉 加入 Excalidraw Mastery</a>，一步一步学会这些具体配置。减少工具摩擦，与视觉思维社区伙伴一起掌握知识！</p>`,
@@ -404,6 +430,14 @@ export default {
     "<b>关闭：</b>您需要手动检查插件更新（设置 - 第三方插件 - 检查更新）。",
 
   BASIC_HEAD: "基本",
+  BASIC_UPDATES_STARTUP_HEAD: "更新与启动",
+  BASIC_UPDATES_STARTUP_DESC: "发行说明、更新检查与通知，以及启动欢迎画面。",
+  BASIC_FILES_FOLDERS_HEAD: "文件与文件夹",
+  BASIC_FILES_FOLDERS_DESC:
+    "设置绘图、裁剪、批注、模板和 Excalidraw Automate 脚本的默认文件夹与路径。",
+  BASIC_STENCIL_LIBRARY_HEAD: "素材库",
+  BASIC_STENCIL_LIBRARY_DESC:
+    "选择素材库数据的存储位置，并配置其仓库文件夹和本地素材库文件。",
   BASIC_DESC: `包括：更新说明，更新通知，新绘图文件、模板文件、脚本文件的存储路径等。`,
   FOLDER_NAME: "Excalidraw 文件夹（區分大小寫！）",
   FOLDER_DESC: "新绘图的默认存储路径。若为空，将在仓库根目录中创建新绘图。",
@@ -584,6 +618,9 @@ export default {
   AI_USAGE_SETTINGS_BUTTON_DESC:
     "按模型查看当前 Obsidian 会话的 AI Token 消耗明细。重启后将重置。",
   SAVING_HEAD: "保存",
+  SAVING_STORAGE_AUTOSAVE_HEAD: "存储与自动保存",
+  SAVING_STORAGE_AUTOSAVE_DESC:
+    "控制绘图 JSON 压缩，并选择桌面端和移动端的自动保存间隔。",
   SAVING_DESC: "包括：压缩，自动保存的时间间隔，文件的命名格式和扩展名等。",
   COMPRESS_NAME: "压缩 Excalidraw JSON",
   COMPRESS_DESC:
@@ -616,6 +653,8 @@ export default {
     "直接退出 Obsidian 应用（在应用切换器中划掉）不会触发自动保存。" +
     "此外，当您切换到其他应用时，有时系统会自动清理 Obsidian 后台以释放资源。这种情况下，自动保存会失效。",
   FILENAME_HEAD: "文件名",
+  FILENAME_GROUP_DESC:
+    "配置新建、嵌入、裁剪和批注绘图文件名的生成方式。",
   FILENAME_DESC: `<p>点击阅读 <a href="${URLs.MOMENTJS_COM_DOCS}">日期和时间格式参考</a>。</p>`,
   FILENAME_SAMPLE: "“新建绘图”系列命令创建的文件名如：",
   FILENAME_EMBED_SAMPLE:
@@ -641,6 +680,9 @@ export default {
   DISPLAY_HEAD: "界面 & 行为",
   DISPLAY_DESC:
     "包括：左手模式、动态样式、匹配 Excalidraw 和 Obsidian 主题、默认运行模式等。",
+  DISPLAY_EDITOR_PREVIEWS_HEAD: "编辑与预览",
+  DISPLAY_EDITOR_PREVIEWS_DESC:
+    "配置画布编辑手势，以及 Excalidraw 文件在阅读模式和悬停预览中的显示方式。",
   OVERRIDE_OBSIDIAN_FONT_SIZE_NAME: "限制 Obsidian 字体大小为编辑器文本",
   OVERRIDE_OBSIDIAN_FONT_SIZE_DESC:
     "Obsidian 的自定义字体大小设置会影响整个界面，包括 Excalidraw 和依赖默认字体大小的主题。" +
@@ -715,6 +757,8 @@ export default {
     `请参阅下方 <a href='#${TAG_PDFEXPORT}'>PDF 导出设置</a>。<br>` +
     `⚠️ 关闭并重新打开 Excalidraw/Markdown 文件后生效。`,
   MODES_HEAD: "UI 模式",
+  MODES_DESC:
+    "选择不同设备的 Excalidraw 界面布局、标题栏控件和左右手托盘位置。",
   DESKTOP_UI_MODE_NAME: "桌面端偏好模式",
   DESKTOP_UI_MODE_DESC: "桌面端设备默认 UI 模式。",
   TABLET_UI_MODE_NAME: "平板端偏好模式",
@@ -727,12 +771,19 @@ export default {
   MODE_PHONE: "Phone-mode",
   REAPPLY_UI_MODE_BUTTON: "重新应用 UI 模式",
   HOTKEY_OVERRIDE_HEAD: "热键覆盖",
+  HOTKEY_OVERRIDE_GROUP_DESC:
+    "管理应优先于冲突 Obsidian 热键的 Excalidraw 按键组合。",
+  HOTKEY_OVERRIDE_CONTROL_NAME: "管理热键覆盖",
   HOTKEY_OVERRIDE_DESC:
     `一些 Excalidraw 的热键，如 ${labelCTRL()}+Enter 用于编辑文本，或 ${labelCTRL()}+K 用于创建元素链接，` +
     "与 Obsidian 的热键设置冲突。您在下面添加的热键组合将在使用 Excalidraw 时覆盖 Obsidian 的热键设置，" +
     `因此如果您希望在 Excalidraw 中默认“编组”，而不是“查看关系图谱”（核心插件 - 关系图谱），您可以添加 ${labelCTRL()}+G。`,
   THEME_HEAD: "主题和样式",
+  THEME_DESC:
+    "控制界面样式、绘图和嵌入主题、打开模式以及移动设备安全区域间距。",
   ZOOM_AND_PAN_HEAD: "缩放和平移",
+  ZOOM_AND_PAN_DESC:
+    "配置鼠标、触控、打开、调整大小和缩放范围行为。",
   PAN_WITH_RIGHT_MOUSE_BUTTON_NAME: "右键拖动平移",
   PAN_WITH_RIGHT_MOUSE_BUTTON_DESC:
     "右键点击并拖动来平移绘图（和在线白板工具 Miro 类似）。按 'm' 键打开上下文菜单。",
@@ -765,7 +816,9 @@ export default {
   ZOOM_MAX_DESC:
     "绘图放大的极限。默认：3000%。通常无需修改，考虑完整性而提供。",
   PEN_HEAD: "手写笔",
+  PEN_DESC: "配置自动手写笔模式、触控手势、橡皮擦和自由绘制十字线。",
   GRID_HEAD: "网格",
+  GRID_DESC: "配置网格方向、自动或自定义颜色以及不透明度。",
   GRID_DYNAMIC_COLOR_NAME: "动态网格颜色",
   GRID_DYNAMIC_COLOR_DESC:
     "<b>开启：</b>更改网格颜色以匹配绘图颜色。<br><b>关闭：</b>将以下颜色用作网格颜色。",
@@ -778,6 +831,7 @@ export default {
   GRID_HORIZONTAL: "渲染水平网格",
   GRID_VERTICAL: "渲染垂直网格",
   LASER_HEAD: "激光笔工具（更多工具 > 激光笔）",
+  LASER_DESC: "配置激光笔颜色及其轨迹淡出的速度和长度。",
   LASER_COLOR: "激光笔颜色",
   LASER_DECAY_TIME_NAME: "激光笔消失时间",
   LASER_DECAY_TIME_DESC: "单位是毫秒，默认 1000（即 1 秒）。",
@@ -796,6 +850,20 @@ export default {
     "链接的源文件被重命名时，绘图中相应的 <code>[[内部链接]]</code> 也会同步更新。" +
     "若您不愿绘图中的链接外观因此而变化，可使用 <code>[[内部链接|别名]]</code>。",
   DRAG_MODIFIER_NAME: "修饰键",
+  DRAG_MODIFIER_GROUP_DESC:
+    "配置链接打开手势，以及点击和拖放操作的平台特定修饰键组合。",
+  LINK_OPENING_GESTURES_HEAD: "链接打开手势",
+  LINK_OPENING_GESTURES_DESC:
+    "配置嵌入绘图和查看模式中的长按延迟与双击打开链接。",
+  WEB_BROWSER_DRAG_ACTION_DESC:
+    "选择从网页浏览器拖入链接、图片、导入项和嵌入内容时的修饰键组合。",
+  LOCAL_FILE_DRAG_ACTION_DESC:
+    "选择从操作系统拖入链接、图片、导入项和嵌入内容时的修饰键组合。",
+  INTERNAL_DRAG_ACTION_DESC:
+    "选择在 Obsidian 内拖动链接、图片、全尺寸图片和嵌入内容时的修饰键组合。",
+  PANE_TARGET_DESC: "选择决定点击链接打开位置的修饰键组合。",
+  MODIFIER_KEY_USAGE_NAME: "配置修饰键",
+  MODIFIER_KEY_COMBINATIONS: "修饰键组合",
   DRAG_MODIFIER_DESC:
     `在您按住点击链接或拖动元素时，可以触发某些行为。您可以为这些行为添加修饰键。` +
     `Excalidraw 不会检查您的设置是否合理，因此请谨慎设置，避免冲突。` +
@@ -891,6 +959,20 @@ export default {
     "拖动链接到 Excalidraw 时，使用 <code>http" +
     "s://noembed" +
     ".com/embed?url=</code> 来获取 HTTPS 页面标题。",
+  LINK_BEHAVIOR_HEAD: "链接行为",
+  LINK_BEHAVIOR_DESC:
+    "配置链接同步、相关链接、悬停预览、点击处理和网页标题查询。",
+  LINK_USAGE_NAME: "在 Excalidraw 中使用链接",
+  LINK_OPENING_HEAD: "窗格和标签页行为",
+  LINK_OPENING_DESC:
+    "选择链接是否复用、聚焦或切换窗格、标签页和主工作区。",
+  LINK_APPEARANCE_HEAD: "链接外观",
+  LINK_APPEARANCE_DESC: "配置链接显示时使用的括号、前缀、图标和不透明度。",
+  TODO_HEAD: "待办事项",
+  TODO_GROUP_DESC: "配置待办事项解析以及未完成和已完成任务使用的图标。",
+  TRANSCLUSION_HEAD: "文本嵌入",
+  TRANSCLUSION_DESC:
+    "配置嵌入 Markdown 文本的字符限制、换行和引用符号清理。",
   PDF_TO_IMAGE: "以图像形式嵌入到绘图中的 PDF",
   PDF_TO_IMAGE_SCALE_NAME: "分辨率",
   PDF_TO_IMAGE_SCALE_DESC:
@@ -900,8 +982,13 @@ export default {
   EMBED_TOEXCALIDRAW_DESC:
     "包括：以图像形式嵌入到绘图中的 PDF、以交互或图像形式嵌入到绘图中的 Markdown 文档等。",
   MD_HEAD: "以图像形式嵌入到绘图中的 Markdown 文档（MD-Embed）",
+  MD_GROUP_DESC:
+    "设置以图像呈现的 Markdown 文件的尺寸、字体、颜色、边框和 CSS。",
   MD_EMBED_CUSTOMDATA_HEAD_NAME:
     "以交互形式嵌入到绘图中的 Markdown 文档（MD-Embeddable）",
+  MD_EMBED_CUSTOMDATA_GROUP_DESC:
+    "配置未来交互式 Markdown 嵌入的编辑方式和默认外观。",
+  MD_EMBED_DEFAULTS_CONTROL_NAME: "交互式 Markdown 默认外观",
   MD_EMBED_CUSTOMDATA_HEAD_DESC: `以下设置只会影响以后的嵌入。已存在的嵌入保持不变。嵌入框的主题设置位于“界面 & 行为”部分。`,
   MD_EMBED_SINGLECLICK_EDIT_NAME: "单击编辑嵌入的 Markdown",
   MD_EMBED_SINGLECLICK_EDIT_DESC:
@@ -941,12 +1028,17 @@ export default {
   EMBED_HEAD: "嵌入到 Markdown 文档中的绘图",
   EMBED_DESC: `包括：嵌入到 Markdown 文档中的绘图的预览图类型（SVG、PNG）、源文件类型（Excalidraw、SVG、PNG）、缓存、图像尺寸、图像主题，以及嵌入的语法等。
     此外，还有自动导出 SVG 或 PNG 文件并保持与绘图文件状态同步的设置。`,
+  EMBED_PREVIEW_LINKS_HEAD: "预览、链接与 Canvas",
+  EMBED_PREVIEW_LINKS_DESC:
+    "选择预览和插入文件的格式、源链接行为、占位图像及沉浸式 Canvas 嵌入。",
   EMBED_CANVAS: "Obsidian 白板支持",
   EMBED_CANVAS_NAME: "沉浸式嵌入",
   EMBED_CANVAS_DESC:
     "当嵌入绘图到 Obsidian 白板中时，隐藏节点的边界和背景。" +
     "注意：如果想要背景完全透明，您依然需要设置导出背景为透明（关闭“导出图片包含背景”）。",
   EMBED_CACHING: "图像缓存和渲染优化",
+  EMBED_CACHING_DESC:
+    "调整并行渲染和本地图像缓存，清除缓存图像或备份，并可复用已导出的预览。",
   RENDERING_CONCURRENCY_NAME: "图像渲染并发性",
   RENDERING_CONCURRENCY_DESC:
     "用于图像渲染的并行工作线程数。增加该值可以加快渲染速度，但可能会减慢系统其他部分的运行速度。" +
@@ -959,8 +1051,13 @@ export default {
     "实际影响在于 Obsidian 内部的本地磁盘或浏览器存储占用。在手机以及浏览器存储配额较紧、剩余磁盘空间有限的桌面设备上需要留意。<br><br>" +
     "较小的值会更快回收本地缓存空间，但可能导致 PDF 和嵌入绘图更频繁地重新渲染。较大的值会保留更久的缓存，以换取更快的加载速度。",
   EXPORT_SUBHEAD: "导出",
+  EXPORT_SUBHEAD_DESC:
+    "配置 PDF 渲染、导出的场景数据、图像尺寸、主题与背景、PDF 默认值及自动 PNG/SVG 副本。",
   EMBED_SIZING: "图像尺寸",
+  EMBED_SIZING_DESC: "设置嵌入图像的默认尺寸、PNG 缩放比例和导出边距。",
   EMBED_THEME_BACKGROUND: "图像的主题和背景色",
+  EMBED_THEME_BACKGROUND_DESC:
+    "选择导出图像的背景和主题，以及预览是否跟随 Obsidian 主题。",
   EMBED_IMAGE_CACHE_NAME: "为嵌入到 Markdown 文档中的绘图创建预览图缓存",
   EMBED_IMAGE_CACHE_DESC:
     "可提高下次嵌入的速度。" +
@@ -1040,7 +1137,18 @@ export default {
     "在导出图片中嵌入 Excalidraw 场景。可以在其 frontmatter 中添加如 <code>excalidraw-export-embed-scene: true/false</code> 的键值对来覆盖该项。" +
     "该项仅在您下次（重新）打开绘图时生效。",
   PDF_EXPORT_SETTINGS: "PDF 导出设置",
+  PDF_EXPORT_SETTINGS_DESC:
+    "选择默认 PDF 页面大小、方向、分页、边距、纸张颜色和对齐方式。",
+  PDF_EXPORT_DEFAULTS_CONTROL_NAME: "默认 PDF 导出布局",
   EXPORT_HEAD: "导出设置",
+  EXPORT_AUTOEXPORT_DESC:
+    "保持导出文件同步，并自动创建 SVG、PNG、浅色和深色版本。",
+  SETTINGS_NAVIGATION_OPEN: "打开",
+  SETTINGS_BREADCRUMB_ARIA: "设置路径",
+  SETTINGS_RELATED_AUTOEXPORT_DESC:
+    "启用自动 PNG 或 SVG 副本，使这些格式可在插入文件类型下拉列表中选择。",
+  SETTINGS_RELATED_EMBED_TYPE_DESC:
+    "选择在文档中嵌入绘图时插入 Excalidraw、PNG 还是 SVG。",
   EXPORT_SYNC_NAME: "保持 SVG/PNG 文件名与绘图文件同步",
   EXPORT_SYNC_DESC:
     "打开后，当绘图文件被重命名时，插件将同步更新同文件夹下的同名 .SVG 和 .PNG 文件。" +
@@ -1113,8 +1221,11 @@ export default {
   CUSTOM_PEN_DESC:
     "在绘图上的 Obsidian 菜单按钮旁边切换自定义画笔。长按（双击）画笔按钮可以修改其样式。",
   EXPERIMENTAL_HEAD: "杂项",
-  EXPERIMENTAL_DESC: `包括：默认的 LaTeX 公式，字段建议，绘图文件的类型标识符，OCR 等。`,
+  EXPERIMENTAL_DESC:
+    "配置 LaTeX 默认值、文件类型标识、实时预览行为、属性建议以及实验性的 Taskbone OCR 集成。",
   EA_HEAD: "Excalidraw 自动化",
+  EA_GROUP_DESC:
+    "配置 Excalidraw Automate 脚本、启动和自动启动行为、命令链接，以及已安装脚本提供的设置。",
   EA_DESC:
     `ExcalidrawAutomate 是用于 Excalidraw 自动化脚本的 API，但是目前说明文档还不够完善，` +
     `建议阅读 <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_BLOB_MASTER_DOCS_API_EXCALIDRAWAUTOMATE_D_TS}">ExcalidrawAutomate.d.ts</a> 文件源码，` +
@@ -1137,7 +1248,7 @@ export default {
   AUTOSTART_SCRIPT_PROMPT:
     "希望在你每次打开 Excalidraw 绘图时自动运行。是否允许？",
   AUTOSTART_SCRIPT_PROMPT_MANAGE_HINT:
-    "你以后可以在命令面板（“自动启动脚本”）或设置 → 兼容性 → 自动启动脚本中更改此设置。",
+    "你以后可以在命令面板（“自动启动脚本”）或设置 → Excalidraw 自动化 → 自动启动脚本中更改此设置。",
   AUTOSTART_SCRIPT_ALLOW: "自动启动",
   AUTOSTART_SCRIPT_DENY: "仅手动启动",
   AUTOSTART_SCRIPT_ASK_LATER: "每次都询问",
@@ -1199,6 +1310,8 @@ export default {
     "为了获得最佳性能，建议使用 .woff2 文件，因为当导出 SVG 格式的图片时，Excalidraw 只会编码必要的字形。" +
     `其他字体格式将在导出文件中嵌入整个字体，可能会导致文件大小显著增加。<b>译者注：</b>可在 <a href="${URLs.WANGCHUJIANG_COM_FREE_FONT}" target='_blank'>Free Font</a> 获取免费商用中文手写字体。`,
   OFFLINE_CJK_NAME: "离线 CJK 字体支持",
+  OFFLINE_CJK_GROUP_DESC:
+    "下载并按需预加载中文、日文和韩文字体，使 Excalidraw 无需互联网连接也能显示这些字体。",
   OFFLINE_CJK_DESC: `<strong>该项需要重启 Obsidian 才能生效。</strong><br>
     Excalidraw.com 提供手写风格的 CJK 字体。默认情况下，这些字体不会包含在插件本地，而是从互联网获取。
     如果您希望 Excalidraw 完全本地化，以便在没有互联网连接的情况下使用，可以从 <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RAW_REFS_HEADS_MASTER_ASSETS_EXCALIDRAW_FONTS_ZIP}" target="_blank">GitHub 下载所需的字体文件</a>。
@@ -1215,6 +1328,8 @@ export default {
   SCRIPT_SETTINGS_DESC:
     "有些 Excalidraw 自动化脚本包含设置项，当执行这些脚本时，它们会在该列表下添加设置项。",
   TASKBONE_HEAD: "Taskbone OCR（光学符号识别）",
+  TASKBONE_GROUP_DESC:
+    "配置可选的 Taskbone 在线 OCR 服务，从绘图和图像中提取可搜索文本。",
   TASKBONE_DESC:
     "这是一个将 OCR 融入 Excalidraw 的实验性功能。请注意，Taskbone 是一项独立的外部服务，而不是由 Excalidraw 或 obsidian-excalidraw-plugin 项目提供的。" +
     "OCR 能够对绘图上用自由画笔工具写下的涂鸦或者嵌入的图像进行文本识别，并将识别出来的文本写入绘图文件的 frontmatter，同时复制到剪贴板。" +

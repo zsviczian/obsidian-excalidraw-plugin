@@ -35,6 +35,8 @@ Because Obsidian runs across a variety of environments, please manually test you
 - Desktop: Mac, Windows, Linux
 - Mobile: Android, iOS (Test on both Phones and Tablets)
 
+Desktop mobile emulation is useful for checking responsive layout, but it does not reproduce every touch event, synthesized click, focus, scroll gesture, or mobile WebView behavior. If a change affects an interactive mobile control, validate it on at least one physical phone or tablet.
+
 Use a risk-based test plan rather than a generic smoke test. Every change should identify the most likely regression and whether it needs separate coverage in:
 
 - the main Obsidian window
@@ -42,6 +44,12 @@ Use a risk-based test plan rather than a generic smoke test. Every change should
 - plugin reload and cold application startup
 - desktop and mobile layouts
 - offline mode, when the change affects packaged assets or runtime loading
+
+For UI and CSS changes:
+
+- Use semantic controls and Obsidian's event helpers. Link-like navigation should use a real anchor; custom navigation handlers should use `onClickEvent`.
+- Keep accessible names in `aria-label`. If a styled tooltip is already present, omit the HTML `title` attribute to avoid a second native browser tooltip.
+- Run Obsidian CodeScanner and resolve compatibility warnings against the supported Obsidian baseline. Prefer simple, broadly supported CSS when advanced styling is only decorative.
 
 Timers, observers, autosave coordination, and undocumented Obsidian API workarounds may exist for platform behavior outside the plugin's control. Trace their purpose before simplifying them.
 
@@ -155,6 +163,16 @@ Radix menus and popovers may be portaled to the owning document body by `Obsidia
 Use `RefactorPlan.md` as the living record for ongoing structural work. Refactors should be small enough to build and test independently. Move cohesive code intact before redesigning it, update the progress table and action log, and provide a risk-based test checklist at the end of each step.
 
 `ExcalidrawView` must remain an Obsidian `TextFileView`; it should not be converted wholesale into React. React owns the child UI, while the view remains the Obsidian lifecycle and compatibility boundary. ExcalidrawAutomate, command IDs, settings, serialized data, and existing plugin integrations must remain backwards compatible.
+
+### 6. Settings UI and persistence
+
+The plugin keeps Obsidian 1.8.7 compatibility while using searchable declarative settings on Obsidian 1.13 and newer.
+
+- Do not bump the Obsidian dependency or minimum version just to use the declarative API. Gate it at runtime; returning an empty definition array is the intentional legacy fallback.
+- Maintain one canonical settings hierarchy and shared control behavior for both the declarative multi-page and legacy single-page layouts, including descriptions and Markdown export. Do not fork the two experiences into independent implementations.
+- Keep interdependent controls together and apply their visibility, options, and disabled state during initial render as well as after changes.
+- Persist settings through `PluginSettingsManager`; do not add independent `saveData()` calls or rely on plugin shutdown to finish an asynchronous save.
+- Treat a missing `data.json`, invalid/corrupted data, and a valid externally synchronized update as separate cases. Preserve the device-local recovery workflow and unknown forward-compatible setting keys.
 
 ## 🌍 Localization & User-Facing Text
 
