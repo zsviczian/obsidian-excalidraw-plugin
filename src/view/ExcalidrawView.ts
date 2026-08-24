@@ -4730,9 +4730,11 @@ export default class ExcalidrawView
     const files = { ...api.getFiles() };
 
     if (files) {
-      const imgIds = el.filter((e) => e.type === "image").map((e) => e.fileId);
+      const imageFileIds = new Set(
+        el.filter((e) => e.type === "image").map((e) => e.fileId),
+      );
       const toDelete = Object.keys(files).filter(
-        (k) => !imgIds.contains(k as FileId),
+        (key) => !imageFileIds.has(key as FileId),
       );
       toDelete.forEach((k) => delete files[k]);
     }
