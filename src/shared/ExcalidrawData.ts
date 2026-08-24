@@ -1711,11 +1711,26 @@ export class ExcalidrawData {
     const scene = this.scene;
 
     //remove files and equations that no longer have a corresponding image element
-    const images = scene.elements.filter(
-      (e) => e.type === "image",
-    ) as ExcalidrawImageElement[];
-    const fileIds = images.map((e) => e.fileId);
-    const fileIdSet = new Set(fileIds);
+    const images: Mutable<ExcalidrawImageElement>[] = [];
+    const fileIds: FileId[] = [];
+    const imagesByFileId = new Map<
+      FileId,
+      Mutable<ExcalidrawImageElement>[]
+    >();
+    for (const element of scene.elements) {
+      if (element.type !== "image") {
+        continue;
+      }
+      images.push(element);
+      fileIds.push(element.fileId);
+      const imagesForFile = imagesByFileId.get(element.fileId);
+      if (imagesForFile) {
+        imagesForFile.push(element);
+      } else {
+        imagesByFileId.set(element.fileId, [element]);
+      }
+    }
+    const fileIdSet = new Set(imagesByFileId.keys());
     this.files.forEach((value, key) => {
       if (!fileIdSet.has(key)) {
         this.files.delete(key);
@@ -1755,6 +1770,9 @@ export class ExcalidrawData {
     //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/601
     //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/593
     //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/297
+    // Keep fileIds as the original iteration snapshot, while imagesByFileId
+    // follows mutations so each later duplicate selects only elements that
+    // still carry the original ID and the scene.files pass sees current IDs.
     const processedIds = new Set<string>();
     fileIds.forEach((fileId, idx) => {
       if (processedIds.has(fileId)) {
@@ -1794,19 +1812,24 @@ export class ExcalidrawData {
           return;
         }
 
-        const newId = fileid();
-        (
-          scene.elements
-            .filter((el: ExcalidrawImageElement) => el.fileId === fileId)
-            .sort((a, b) =>
-              a.updated < b.updated ? 1 : -1,
-            )[0] as Mutable<ExcalidrawImageElement>
-        ).fileId = newId as FileId;
+        const newId = fileid() as FileId;
+        const imagesForFile = imagesByFileId.get(fileId);
+        const newestImage = imagesForFile
+          .slice()
+          .sort((a, b) => (a.updated < b.updated ? 1 : -1))[0];
+        newestImage.fileId = newId;
+        imagesForFile.splice(imagesForFile.indexOf(newestImage), 1);
+        const imagesForNewId = imagesByFileId.get(newId);
+        if (imagesForNewId) {
+          imagesForNewId.push(newestImage);
+        } else {
+          imagesByFileId.set(newId, [newestImage]);
+        }
         dirty = true;
         processedIds.add(newId);
         if (embeddedFile) {
           this.setFile(
-            newId as FileId,
+            newId,
             new EmbeddedFile(
               this.plugin,
               this.file.path,
@@ -1815,7 +1838,7 @@ export class ExcalidrawData {
           );
         }
         if (equation) {
-          this.setEquation(newId as FileId, {
+          this.setEquation(newId, {
             latex: equation.latex,
             isLoaded: false,
           });
@@ -1829,9 +1852,7 @@ export class ExcalidrawData {
         name?: string;
       };
       const mermaidElements = getMermaidImageElements(
-        scene.elements.filter(
-          (el: ExcalidrawImageElement) => el.fileId === key,
-        ),
+        imagesByFileId.get(key as FileId) ?? [],
       );
       if (
         !(
