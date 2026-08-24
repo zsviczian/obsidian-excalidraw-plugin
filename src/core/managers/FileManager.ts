@@ -50,6 +50,10 @@ import { errorlog, getExportTheme } from "src/utils/utils";
 import { getImageCache } from "src/shared/ImageCache";
 import { PaneTarget } from "src/types/utilTypes";
 import { t } from "src/lang/helpers";
+import {
+  performanceDiagnosticIncrement,
+  performanceDiagnosticLog,
+} from "src/utils/performanceDiagnostics";
 
 export class PluginFileManager {
   private plugin: ExcalidrawPlugin;
@@ -79,6 +83,16 @@ export class PluginFileManager {
     });
   }
 
+  /**
+   * Returns whether a vault file is an Excalidraw drawing.
+   *
+   * Parsed frontmatter is authoritative when available. During a vault write,
+   * Obsidian can temporarily remove that frontmatter from the metadata cache;
+   * in that gap, retain the last confirmed classification from
+   * {@link excalidrawFiles}. The metadata `changed` event updates that set, so
+   * deliberately removing the Excalidraw frontmatter still declassifies the
+   * file once the replacement metadata is published.
+   */
   public isExcalidrawFile(f: TFile): boolean {
     if (!f) {
       return false;
@@ -86,11 +100,19 @@ export class PluginFileManager {
     if (f.extension === "excalidraw") {
       return true;
     }
-    const fileCache = f ? this.plugin.app.metadataCache.getFileCache(f) : null;
-    return (
-      !!fileCache?.frontmatter &&
-      !!fileCache.frontmatter[FRONTMATTER_KEYS.plugin.name]
-    );
+    const frontmatter = this.plugin.app.metadataCache.getFileCache(f)?.frontmatter;
+    if (frontmatter) {
+      return !!frontmatter[FRONTMATTER_KEYS.plugin.name];
+    }
+
+    const retainedClassification = this.excalidrawFiles.has(f);
+    if (retainedClassification) {
+      performanceDiagnosticIncrement("knownExcalidrawFileFallback");
+      performanceDiagnosticLog("file.classificationFallback", {
+        extension: f.extension,
+      });
+    }
+    return retainedClassification;
   }
 
   //managing my own list of Excalidraw files because in the onDelete event handler
