@@ -1724,7 +1724,21 @@ export default class ExcalidrawView
     silent: boolean = false,
     waitIfBusy: boolean = false,
     diagnosticReason: string = "unspecified",
-  ) {
+  ): Promise<void> {
+    await this.forceSaveWithPolicy(
+      silent,
+      waitIfBusy,
+      diagnosticReason,
+      true,
+    );
+  }
+
+  private async forceSaveWithPolicy(
+    silent: boolean,
+    waitIfBusy: boolean,
+    diagnosticReason: string,
+    refreshSceneFiles: boolean,
+  ): Promise<void> {
     const diagnosticsEnabled = performanceDiagnosticsEnabled();
     const diagnosticId = diagnosticsEnabled
       ? nextPerformanceDiagnosticId("forceSave")
@@ -1737,6 +1751,7 @@ export default class ExcalidrawView
       reason: diagnosticReason,
       silent,
       waitIfBusy,
+      refreshSceneFiles,
       autosaving: this.semaphores.autosaving,
       saving: this.semaphores.saving,
     });
@@ -1776,24 +1791,28 @@ export default class ExcalidrawView
       ? performanceDiagnosticNow() - saveStart
       : 0;
     this.plugin.triggerEmbedUpdates();
-    const loadSceneFilesStart = diagnosticsEnabled
-      ? performanceDiagnosticNow()
-      : 0;
-    await this.loadSceneFiles(
-      false,
-      undefined,
-      undefined,
-      undefined,
-      `force-save:${diagnosticReason}`,
-    );
-    const loadSceneFilesMs = diagnosticsEnabled
-      ? performanceDiagnosticNow() - loadSceneFilesStart
-      : 0;
+    let loadSceneFilesMs = 0;
+    if (refreshSceneFiles) {
+      const loadSceneFilesStart = diagnosticsEnabled
+        ? performanceDiagnosticNow()
+        : 0;
+      await this.loadSceneFiles(
+        false,
+        undefined,
+        undefined,
+        undefined,
+        `force-save:${diagnosticReason}`,
+      );
+      loadSceneFilesMs = diagnosticsEnabled
+        ? performanceDiagnosticNow() - loadSceneFilesStart
+        : 0;
+    }
     this.semaphores.forceSaving = false;
     performanceDiagnosticLog("forceSave.complete", {
       id: diagnosticId,
       viewId: this.id,
       reason: diagnosticReason,
+      refreshSceneFiles,
       saveMs: diagnosticsEnabled ? saveMs : undefined,
       loadSceneFilesMs: diagnosticsEnabled ? loadSceneFilesMs : undefined,
       totalMs: diagnosticsEnabled
@@ -2091,7 +2110,12 @@ export default class ExcalidrawView
           st.activeTool.type !== "image" &&
           st.activeEmbeddable?.state !== "active"
         ) {
-          void this.forceSave(true, false, "window-blur");
+          void this.forceSaveWithPolicy(
+            true,
+            false,
+            "window-blur",
+            false,
+          );
         }
       };
 
