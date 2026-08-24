@@ -953,7 +953,11 @@ export default class ExcalidrawView
         const snapshotStart = diagnosticsEnabled
           ? performanceDiagnosticNow()
           : 0;
-        const scene = this.getScene();
+        const appStateSnapshot = this.excalidrawAPI.getAppState();
+        const scene = this.getSceneWithAppState(undefined, appStateSnapshot);
+        const deletedElements = this.excalidrawAPI
+          .getSceneElementsIncludingDeleted()
+          .filter((element: ExcalidrawElement) => element.isDeleted);
         const snapshotDurationMs = diagnosticsEnabled
           ? performanceDiagnosticNow() - snapshotStart
           : 0;
@@ -971,7 +975,7 @@ export default class ExcalidrawView
         } else {
           syncChanged = await this.excalidrawData.syncElements(
             scene,
-            this.excalidrawAPI.getAppState().selectedElementIds,
+            appStateSnapshot.selectedElementIds,
           );
         }
         const syncDurationMs = diagnosticsEnabled
@@ -1000,9 +1004,7 @@ export default class ExcalidrawView
             : 0;
           await this.loadDrawing(
             false,
-            this.excalidrawAPI
-              .getSceneElementsIncludingDeleted()
-              .filter((el: ExcalidrawElement) => el.isDeleted),
+            deletedElements,
           );
           performanceDiagnosticLog("save.syncLoadDrawing", {
             id: diagnosticId,
@@ -1020,12 +1022,20 @@ export default class ExcalidrawView
         this.clearPreventReloadTimer();
 
         this.semaphores.preventReload = preventReload;
-        await this.prepareGetViewData(diagnosticId);
+        await this.prepareGetViewDataFromSnapshot(
+          diagnosticId,
+          scene,
+          deletedElements,
+        );
 
         //added this to avoid Electron crash when terminating a popout window and saving the drawing, need to check back
         //can likely be removed once this is resolved: https://github.com/electron/electron/issues/40607
         if (this.semaphores?.viewunload) {
-          await this.prepareGetViewData(diagnosticId);
+          await this.prepareGetViewDataFromSnapshot(
+            diagnosticId,
+            scene,
+            deletedElements,
+          );
           const d = this.getViewData();
           const plugin = this.plugin;
           const file = this.file;
@@ -1219,6 +1229,15 @@ export default class ExcalidrawView
   private viewSaveData: string = "";
 
   async prepareGetViewData(diagnosticId: string = ""): Promise<void> {
+    await this.prepareGetViewDataFromSnapshot(diagnosticId);
+  }
+
+  /** Serializes one save-owned scene/deletion snapshot when supplied. */
+  private async prepareGetViewDataFromSnapshot(
+    diagnosticId: string,
+    sceneSnapshot?: ReturnType<ExcalidrawView["getScene"]>,
+    deletedElementsSnapshot?: ExcalidrawElement[],
+  ): Promise<void> {
     const diagnosticsEnabled = performanceDiagnosticsEnabled();
     const totalStart = diagnosticsEnabled ? performanceDiagnosticNow() : 0;
     if (!this.excalidrawAPI || !this.excalidrawData.loaded) {
@@ -1231,10 +1250,14 @@ export default class ExcalidrawView
       return;
     }
 
-    const snapshotStart = diagnosticsEnabled ? performanceDiagnosticNow() : 0;
-    const scene = this.getScene();
+    const captureScene = typeof sceneSnapshot === "undefined";
+    const snapshotStart =
+      diagnosticsEnabled && captureScene ? performanceDiagnosticNow() : 0;
+    const scene = captureScene ? this.getScene() : sceneSnapshot;
     const snapshotMs = diagnosticsEnabled
-      ? performanceDiagnosticNow() - snapshotStart
+      ? captureScene
+        ? performanceDiagnosticNow() - snapshotStart
+        : 0
       : 0;
     if (!scene) {
       this.viewSaveData = this.data;
@@ -1311,12 +1334,21 @@ export default class ExcalidrawView
           this.isEditedAsMarkdownInOtherView();
       }
 
-      const deletedStart = diagnosticsEnabled ? performanceDiagnosticNow() : 0;
-      const deletedElements = this.excalidrawAPI
-        .getSceneElementsIncludingDeleted()
-        .filter((el: ExcalidrawElement) => el.isDeleted);
+      const captureDeletedElements =
+        typeof deletedElementsSnapshot === "undefined";
+      const deletedStart =
+        diagnosticsEnabled && captureDeletedElements
+          ? performanceDiagnosticNow()
+          : 0;
+      const deletedElements = captureDeletedElements
+        ? this.excalidrawAPI
+            .getSceneElementsIncludingDeleted()
+            .filter((element: ExcalidrawElement) => element.isDeleted)
+        : deletedElementsSnapshot;
       const deletedElementsMs = diagnosticsEnabled
-        ? performanceDiagnosticNow() - deletedStart
+        ? captureDeletedElements
+          ? performanceDiagnosticNow() - deletedStart
+          : 0
         : 0;
       const generateStart = diagnosticsEnabled ? performanceDiagnosticNow() : 0;
       const generated = IS_WORKER_SUPPORTED
@@ -1337,6 +1369,7 @@ export default class ExcalidrawView
         elements: scene.elements.length,
         files: Object.keys(scene.files ?? {}).length,
         deletedElements: deletedElements.length,
+        snapshotReused: !captureScene,
         snapshotMs: diagnosticsEnabled ? snapshotMs : undefined,
         headerMs: diagnosticsEnabled ? headerMs : undefined,
         deletedElementsMs: diagnosticsEnabled ? deletedElementsMs : undefined,
@@ -1362,6 +1395,7 @@ export default class ExcalidrawView
         mode: "compatibility",
         elements: scene.elements.length,
         files: Object.keys(scene.files ?? {}).length,
+        snapshotReused: !captureScene,
         snapshotMs: diagnosticsEnabled ? snapshotMs : undefined,
         stringifyMs: diagnosticsEnabled ? stringifyMs : undefined,
         totalMs: diagnosticsEnabled
@@ -4716,6 +4750,13 @@ export default class ExcalidrawView
   }
 
   public getScene(selectedOnly?: boolean) {
+    return this.getSceneWithAppState(selectedOnly);
+  }
+
+  private getSceneWithAppState(
+    selectedOnly?: boolean,
+    appStateSnapshot?: AppState,
+  ) {
     /*    if (this.lastSceneSnapshot) {
       return this.lastSceneSnapshot;
     }*/
@@ -4726,7 +4767,7 @@ export default class ExcalidrawView
     const el: readonly NonDeletedExcalidrawElement[] = selectedOnly
       ? (this.getViewSelectedElements() as NonDeletedExcalidrawElement[])
       : api.getSceneElements();
-    const st: AppState = api.getAppState();
+    const st = appStateSnapshot ?? api.getAppState();
     const files = { ...api.getFiles() };
 
     if (files) {
