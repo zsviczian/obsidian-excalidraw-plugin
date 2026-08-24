@@ -740,12 +740,13 @@ export class PluginFileManager {
       return;
     }
     //this will not work in the short period when Obsidian is starting up, however
-    //this will only effect a very few files, statistically unlikely to cause
-    //much/any real user impact.
-    //a proper queuing feels overkill for this.
+    //this will only affect very few files, statistically unlikely to cause
+    //much/any real user impact. Flush the shared queue so a recently scheduled
+    //backup is moved with the drawing instead of later recreating the old key.
     if (!getImageCache().isReady()) {
       return;
     }
+    await getImageCache().flushPendingBAK(oldPath);
     const backup = await getImageCache().getBAKFromCache(oldPath);
     if (backup) {
       await getImageCache().addBAKToCache(newPath, `${backup}`);

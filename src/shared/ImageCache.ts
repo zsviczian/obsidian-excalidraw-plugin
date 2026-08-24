@@ -15,6 +15,7 @@ import {
   performanceDiagnosticRecordDuration,
   performanceDiagnosticsEnabled,
 } from "../utils/performanceDiagnostics";
+import { BackupPersistenceQueue } from "./BackupPersistenceQueue";
 
 type FileCacheData = {
   schemaVersion: 2;
@@ -93,6 +94,18 @@ class ImageCache {
   private purgeInvalidBackupTimer: number = null;
   private touchedCacheKeys = new Set<string>();
   private cacheReadinessPromise: Promise<void> | null = null;
+  private backupWrites = new BackupPersistenceQueue({
+    ownerWindow: window,
+    write: (filepath, data) => this.addBAKToCache(filepath, data),
+    getTimestamp: () =>
+      performanceDiagnosticsEnabled() ? performanceDiagnosticNow() : undefined,
+    onError: (error, stage) =>
+      errorlog({
+        where: "ImageCache.backupWrites",
+        fn: stage,
+        error,
+      }),
+  });
 
   private getCacheRetentionCutoff(): number {
     const retentionDays = Math.max(
@@ -134,6 +147,7 @@ class ImageCache {
     if (this.purgeInvalidBackupTimer) {
       window.clearTimeout(this.purgeInvalidBackupTimer);
     }
+    this.backupWrites.destroy();
     this.db?.close();
     this.db = null;
     this.plugin = null;
@@ -856,9 +870,41 @@ class ImageCache {
     const transaction = this.db.transaction(this.backupStoreName, "readwrite");
     const store = transaction.objectStore(this.backupStoreName);
     store.put(data, filepath);
+
+    return new Promise<void>((resolve, reject) => {
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () =>
+        reject(
+          transaction.error ??
+            new Error(`Failed to update backup file with key: ${filepath}`),
+        );
+      transaction.onabort = () =>
+        reject(
+          transaction.error ??
+            new Error(`Backup update aborted for key: ${filepath}`),
+        );
+    });
+  }
+
+  /**
+   * Schedules the latest backup payload through the plugin-global queue.
+   */
+  public scheduleBAKToCache(
+    filepath: string,
+    data: BackupData,
+    delayMs: number,
+    onComplete?: (durationMs: number | undefined) => void,
+  ): boolean {
+    return this.backupWrites.schedule(filepath, data, delayMs, onComplete);
+  }
+
+  /** Flushes any queued backup before a drawing path is renamed. */
+  public async flushPendingBAK(filepath: string): Promise<void> {
+    await this.backupWrites.flush(filepath);
   }
 
   public async removeBAKFromCache(filepath: string): Promise<void> {
+    await this.backupWrites.cancel(filepath);
     if (!this.isReady()) {
       return; // Database not initialized yet
     }
@@ -893,6 +939,7 @@ class ImageCache {
   }
 
   public async clearBackupCache(): Promise<void> {
+    await this.backupWrites.cancelAll();
     if (!this.isReady()) {
       return; // Database not initialized yet
     }

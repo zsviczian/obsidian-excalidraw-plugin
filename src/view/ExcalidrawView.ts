@@ -1077,29 +1077,29 @@ export default class ExcalidrawView
         //if the scene is empty, do not save to BAK (this could be due to a crash when the BAK should not be updated)
         if (scene && scene.elements && scene.elements.length > 0) {
           performanceDiagnosticIncrement("backupScheduled");
+          const backupCoalesced = getImageCache().scheduleBAKToCache(
+            path,
+            data,
+            50,
+            (durationMs) => {
+              performanceDiagnosticIncrement("backupWrite");
+              performanceDiagnosticLog("backup.complete", {
+                id: diagnosticId,
+                viewId: this.id,
+                durationMs,
+                bytes: data?.length ?? 0,
+              });
+            },
+          );
+          if (backupCoalesced) {
+            performanceDiagnosticIncrement("backupCoalesced");
+          }
           performanceDiagnosticLog("backup.scheduled", {
             id: diagnosticId,
             viewId: this.id,
             bytes: data?.length ?? 0,
+            coalesced: backupCoalesced,
           });
-          window.setTimeout(() => {
-            const backupStart = performanceDiagnosticsEnabled()
-              ? performanceDiagnosticNow()
-              : 0;
-            void getImageCache()
-              .addBAKToCache(path, data)
-              .then(() => {
-                performanceDiagnosticIncrement("backupWrite");
-                performanceDiagnosticLog("backup.complete", {
-                  id: diagnosticId,
-                  viewId: this.id,
-                  durationMs: performanceDiagnosticsEnabled()
-                    ? performanceDiagnosticNow() - backupStart
-                    : undefined,
-                  bytes: data?.length ?? 0,
-                });
-              });
-          }, 50);
         }
         triggerReload =
           this.lastSaveTimestamp === this.file.stat.mtime &&
