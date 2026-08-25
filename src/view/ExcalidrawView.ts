@@ -255,6 +255,11 @@ import { ViewLinkNavigationManager } from "./managers/ViewLinkNavigationManager"
 import { ViewExcalidrawExtensionRenderer } from "./managers/ViewExcalidrawExtensionRenderer";
 import { MarkdownImageController } from "./managers/MarkdownImageController";
 import { ViewSceneFileManager } from "./managers/ViewSceneFileManager";
+import {
+  type SaveSideEffectPolicy,
+  ViewSaveCoordinator,
+  WINDOW_BLUR_FORCE_SAVE_POLICY,
+} from "./managers/ViewSaveCoordinator";
 import { ImageInfo } from "src/types/excalidrawAutomateTypes";
 import { PageOrientation, PageSize } from "src/types/exportUtilTypes";
 import { CaptureUpdateAction } from "src/constants/constants";
@@ -291,32 +296,6 @@ declare const mainDocument: Document;
 interface WorkspaceItemExt extends WorkspaceItem {
   containerEl: HTMLElement;
 }
-
-interface SaveSideEffectPolicy {
-  reason: string;
-  triggerAutoexport: boolean;
-}
-
-interface ForceSavePolicy {
-  refreshSceneFiles: boolean;
-  triggerAutoexport: boolean;
-}
-
-const DIRECT_SAVE_SIDE_EFFECT_POLICY: Readonly<SaveSideEffectPolicy> = {
-  reason: "direct",
-  triggerAutoexport: true,
-};
-
-const PUBLIC_FORCE_SAVE_POLICY: Readonly<ForceSavePolicy> = {
-  refreshSceneFiles: true,
-  triggerAutoexport: true,
-};
-
-const WINDOW_BLUR_FORCE_SAVE_POLICY: Readonly<ForceSavePolicy> = {
-  refreshSceneFiles: false,
-  // Autoexport is a documented save-time contract, including for blur-triggered saves.
-  triggerAutoexport: true,
-};
 
 export const addFiles = async (
   files: FileData[],
@@ -458,6 +437,7 @@ export default class ExcalidrawView
   private excalidrawExtensionRenderer: ViewExcalidrawExtensionRenderer;
   private markdownImageController: MarkdownImageController;
   private sceneFileManager: ViewSceneFileManager;
+  private saveCoordinator: ViewSaveCoordinator;
   public hoverPopover: HoverPopover | null = null;
   private freedrawLastActiveTimestamp: number = 0;
   public exportDialog: ExportDialog | null = null;
@@ -518,7 +498,6 @@ export default class ExcalidrawView
   };
 
   public _plugin: ExcalidrawPlugin;
-  public autosaveTimer: number | null = null;
   public textMode: TextMode = TextMode.raw;
   private actionButtons: Record<ActionButtons, HTMLElement> = {} as Record<
     ActionButtons,
@@ -577,6 +556,41 @@ export default class ExcalidrawView
     this._plugin = plugin;
     this.excalidrawData = new ExcalidrawData(plugin, this);
     this.canvasNodeFactory = new CanvasNodeFactory(this);
+    this.saveCoordinator = new ViewSaveCoordinator(this, {
+      performSave: (
+        preventReload,
+        forcesave,
+        overrideEmbeddableIsEditingSelfDebounce,
+        sideEffectPolicy,
+      ) =>
+        this.performSaveWithSideEffectPolicy(
+          preventReload,
+          forcesave,
+          overrideEmbeddableIsEditingSelfDebounce,
+          sideEffectPolicy,
+        ),
+      requestSave: (
+        preventReload,
+        forcesave,
+        overrideEmbeddableIsEditingSelfDebounce,
+      ) =>
+        this.save(
+          preventReload,
+          forcesave,
+          overrideEmbeddableIsEditingSelfDebounce,
+        ),
+      isDirty: () => this.isDirty(),
+      checkSceneVersion: () => {
+        if (this.excalidrawAPI) {
+          this.checkSceneVersion(this.excalidrawAPI.getSceneElements());
+        }
+      },
+      refreshCanvasOffset: () => this.refreshCanvasOffset(),
+      getFreedrawLastActiveTimestamp: () =>
+        this.freedrawLastActiveTimestamp,
+      markDirtyVisuals: () => this.markDirtyVisuals(),
+      clearDirtyVisuals: () => this.clearDirtyVisuals(),
+    });
     this.exportManager = new ViewExportManager(this, {
       getOrCreateExportDialog: () => this.getOrCreateExportDialog(),
       createEmbeddedFilesLoader: (isDark) =>
@@ -900,15 +914,14 @@ export default class ExcalidrawView
     forcesave: boolean = false,
     overrideEmbeddableIsEditingSelfDebounce: boolean = false,
   ): Promise<void> {
-    await this.saveWithSideEffectPolicy(
+    await this.saveCoordinator.save(
       preventReload,
       forcesave,
       overrideEmbeddableIsEditingSelfDebounce,
-      DIRECT_SAVE_SIDE_EFFECT_POLICY,
     );
   }
 
-  private async saveWithSideEffectPolicy(
+  private async performSaveWithSideEffectPolicy(
     preventReload: boolean,
     forcesave: boolean,
     overrideEmbeddableIsEditingSelfDebounce: boolean,
@@ -1271,7 +1284,7 @@ export default class ExcalidrawView
       filesMaster: this.plugin?.filesMaster?.size ?? 0,
       markdownImagesMaster: this.plugin?.markdownImagesMaster?.size ?? 0,
     });
-    this.resetAutosaveTimer(); //next autosave period starts after save
+    this.saveCoordinator.resetAutosaveTimer(); //next autosave period starts after save
   }
 
   // get the new file content
@@ -1814,108 +1827,11 @@ export default class ExcalidrawView
     waitIfBusy: boolean = false,
     diagnosticReason: string = "unspecified",
   ): Promise<void> {
-    await this.forceSaveWithPolicy(
+    await this.saveCoordinator.forceSave(
       silent,
       waitIfBusy,
       diagnosticReason,
-      PUBLIC_FORCE_SAVE_POLICY,
     );
-  }
-
-  private async forceSaveWithPolicy(
-    silent: boolean,
-    waitIfBusy: boolean,
-    diagnosticReason: string,
-    policy: Readonly<ForceSavePolicy>,
-  ): Promise<void> {
-    const diagnosticsEnabled = performanceDiagnosticsEnabled();
-    const diagnosticId = diagnosticsEnabled
-      ? nextPerformanceDiagnosticId("forceSave")
-      : "";
-    const start = diagnosticsEnabled ? performanceDiagnosticNow() : 0;
-    performanceDiagnosticIncrement(`forceSaveReason.${diagnosticReason}`);
-    performanceDiagnosticLog("forceSave.request", {
-      id: diagnosticId,
-      viewId: this.id,
-      reason: diagnosticReason,
-      silent,
-      waitIfBusy,
-      refreshSceneFiles: policy.refreshSceneFiles,
-      triggerAutoexport: policy.triggerAutoexport,
-      autosaving: this.semaphores.autosaving,
-      saving: this.semaphores.saving,
-    });
-    if (waitIfBusy) {
-      let counter = 0;
-      while (
-        (this.semaphores.autosaving || this.semaphores.saving) &&
-        counter++ < 100
-      ) {
-        await sleep(50);
-      }
-    }
-    if (this.semaphores.autosaving || this.semaphores.saving) {
-      if (!silent) {
-        new Notice(t("FORCE_SAVE_ABORTED"));
-      }
-      performanceDiagnosticLog("forceSave.skipped", {
-        id: diagnosticId,
-        viewId: this.id,
-        requestReason: diagnosticReason,
-        reason: "save-in-flight",
-        totalMs: diagnosticsEnabled
-          ? performanceDiagnosticNow() - start
-          : undefined,
-      });
-      return;
-    }
-    if (this.preventReloadResetTimer) {
-      window.clearTimeout(this.preventReloadResetTimer);
-      this.preventReloadResetTimer = null;
-    }
-    this.semaphores.preventReload = false;
-    this.semaphores.forceSaving = true;
-    const saveStart = diagnosticsEnabled ? performanceDiagnosticNow() : 0;
-    await this.saveWithSideEffectPolicy(false, true, true, {
-      reason: diagnosticReason,
-      triggerAutoexport: policy.triggerAutoexport,
-    });
-    const saveMs = diagnosticsEnabled
-      ? performanceDiagnosticNow() - saveStart
-      : 0;
-    this.plugin.triggerEmbedUpdates();
-    let loadSceneFilesMs = 0;
-    if (policy.refreshSceneFiles) {
-      const loadSceneFilesStart = diagnosticsEnabled
-        ? performanceDiagnosticNow()
-        : 0;
-      await this.loadSceneFiles(
-        false,
-        undefined,
-        undefined,
-        undefined,
-        `force-save:${diagnosticReason}`,
-      );
-      loadSceneFilesMs = diagnosticsEnabled
-        ? performanceDiagnosticNow() - loadSceneFilesStart
-        : 0;
-    }
-    this.semaphores.forceSaving = false;
-    performanceDiagnosticLog("forceSave.complete", {
-      id: diagnosticId,
-      viewId: this.id,
-      reason: diagnosticReason,
-      refreshSceneFiles: policy.refreshSceneFiles,
-      triggerAutoexport: policy.triggerAutoexport,
-      saveMs: diagnosticsEnabled ? saveMs : undefined,
-      loadSceneFilesMs: diagnosticsEnabled ? loadSceneFilesMs : undefined,
-      totalMs: diagnosticsEnabled
-        ? performanceDiagnosticNow() - start
-        : undefined,
-    });
-    if (!silent) {
-      new Notice("Save successful", 1000);
-    }
   }
 
   addTabTitlebarButtons() {
@@ -2204,7 +2120,7 @@ export default class ExcalidrawView
           st.activeTool.type !== "image" &&
           st.activeEmbeddable?.state !== "active"
         ) {
-          void this.forceSaveWithPolicy(
+          void this.saveCoordinator.forceSaveWithPolicy(
             true,
             false,
             "window-blur",
@@ -2363,82 +2279,30 @@ export default class ExcalidrawView
     this.blockTextModeChange = false;
   }
 
-  public autosaveFunction: (() => void) | null;
+  public get autosaveTimer(): number | null {
+    return this.saveCoordinator.autosaveTimer;
+  }
+
+  public set autosaveTimer(timer: number | null) {
+    this.saveCoordinator.autosaveTimer = timer;
+  }
+
+  public get autosaveFunction(): (() => void) | null {
+    return this.saveCoordinator.autosaveFunction;
+  }
+
+  public set autosaveFunction(timer: (() => void) | null) {
+    this.saveCoordinator.autosaveFunction = timer;
+  }
+
   get autosaveInterval() {
     return DEVICE.isMobile
       ? this.plugin.settings.autosaveIntervalMobile
       : this.plugin.settings.autosaveIntervalDesktop;
   }
 
-  public setupAutosaveTimer() {
-    const timer = () => {
-      void (async () => {
-        if (!this.isLoaded) {
-          this.autosaveTimer = window.setTimeout(timer, this.autosaveInterval);
-          return;
-        }
-
-        const api = this.excalidrawAPI;
-        if (!api) {
-          warningUnknowSeriousError();
-          return;
-        }
-        const st = api.getAppState() as AppState;
-        const isFreedrawActive =
-          st.activeTool?.type === "freedraw" &&
-          this.freedrawLastActiveTimestamp > Date.now() - 2000;
-        const isEditingText = st.editingTextElement !== null;
-        const isEditingNewElement = st.newElement !== null;
-        //this will reset positioning of the cursor in case due to the popup keyboard,
-        //or the command palette, or some other unexpected reason the onResize would not fire...
-        this.refreshCanvasOffset();
-        if (
-          this.isDirty() &&
-          this.plugin.autosaveEnabled &&
-          !this.semaphores.forceSaving &&
-          !this.semaphores.autosaving &&
-          !this.semaphores.embeddableIsEditingSelf &&
-          !isFreedrawActive &&
-          !isEditingText &&
-          !isEditingNewElement //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/630
-        ) {
-          this.autosaveTimer = null;
-          if (this.excalidrawAPI) {
-            this.semaphores.autosaving = true;
-            //changed from await to then to avoid lag during saving of large file
-            void this.save().then(() => (this.semaphores.autosaving = false));
-          }
-          this.autosaveTimer = window.setTimeout(timer, this.autosaveInterval);
-        } else {
-          this.autosaveTimer = window.setTimeout(
-            timer,
-            this.plugin.activeExcalidrawView === this &&
-              this.semaphores.dirty &&
-              this.plugin.autosaveEnabled
-              ? 1000 //try again in 1 second
-              : this.autosaveInterval,
-          );
-        }
-      })();
-    };
-
-    this.autosaveFunction = timer;
-    this.resetAutosaveTimer();
-  }
-
-  private resetAutosaveTimer() {
-    if (!this.autosaveFunction) {
-      return;
-    }
-
-    if (this.autosaveTimer) {
-      window.clearTimeout(this.autosaveTimer);
-      this.autosaveTimer = null;
-    } // clear previous timer if one exists
-    this.autosaveTimer = window.setTimeout(
-      this.autosaveFunction,
-      this.autosaveInterval,
-    );
+  public setupAutosaveTimer(): void {
+    this.saveCoordinator.setupAutosaveTimer();
   }
 
   unload(): void {
@@ -2466,44 +2330,7 @@ export default class ExcalidrawView
   }
 
   private async forceSaveIfRequired(): Promise<boolean> {
-    let watchdog = 0;
-    let dirty = false;
-    //if saving was already in progress
-    //the function awaits the save to finish.
-    if (!this.excalidrawAPI) {
-      return false;
-    }
-    this.checkSceneVersion(this.excalidrawAPI.getSceneElements());
-    if (!this.isDirty()) {
-      if (!this.semaphores.saving) {
-        return false;
-      }
-      //check for Excalibrain view
-      if (
-        this.hookServer &&
-        this.hookServer.onViewUnloadHook?.toString() ===
-          "e=>{this.scene&&this.scene.leaf===e.leaf&&this.stop()}"
-      ) {
-        return false;
-      }
-    }
-    while (this.semaphores.saving && watchdog++ < 200) {
-      dirty = true;
-      await sleep(40);
-    }
-    if (this.excalidrawAPI) {
-      this.checkSceneVersion(this.excalidrawAPI.getSceneElements());
-      if (this.isDirty()) {
-        const path = this.file?.path;
-        const plugin = this.plugin;
-        window.setTimeout(() => {
-          plugin.triggerEmbedUpdates(path);
-        }, 400);
-        dirty = true;
-        await this.save(true, true, true);
-      }
-    }
-    return dirty;
+    return this.saveCoordinator.forceSaveIfRequired();
   }
 
   //onClose happens after onunload
@@ -2700,11 +2527,7 @@ export default class ExcalidrawView
     }
     this.removeParentMoveObserver();
     this.removeSlidingPanesListner();
-    if (this.autosaveTimer) {
-      window.clearTimeout(this.autosaveTimer);
-      this.autosaveTimer = null;
-    }
-    this.autosaveFunction = null;
+    this.saveCoordinator.destroy();
 
     if (this.dropManager) {
       this.dropManager.destroy();
@@ -3869,15 +3692,11 @@ export default class ExcalidrawView
     this.setUIMode(uiMode);
   }
 
-  public setDirty() {
-    if (this.semaphores.saving) {
-      return;
-    } //do not set dirty if saving
-    if (!this.isDirty()) {
-      //the autosave timer should start when the first stroke was made... thus avoiding an immediate impact by saving right then
-      this.resetAutosaveTimer();
-    }
-    this.semaphores.dirty = this.file?.path;
+  public setDirty(): void {
+    this.saveCoordinator.setDirty();
+  }
+
+  private markDirtyVisuals(): void {
     this.actionButtons?.save?.querySelector("svg").addClass("excalidraw-dirty");
     if (!this.semaphores.viewunload && this.toolsPanelRef?.current) {
       this.toolsPanelRef.current.setDirty(true);
@@ -3894,22 +3713,19 @@ export default class ExcalidrawView
     }
   }
 
-  public isDirty() {
-    return (
-      Boolean(this.semaphores?.dirty) &&
-      this.semaphores.dirty === this.file?.path
-    );
+  public isDirty(): boolean {
+    return this.saveCoordinator.isDirty();
   }
 
-  public clearDirty() {
-    if (this.semaphores.viewunload) {
-      return;
-    }
+  public clearDirty(): void {
+    this.saveCoordinator.clearDirty();
+  }
+
+  private clearDirtyVisuals(): void {
     const api = this.excalidrawAPI;
     if (!api) {
       return;
     }
-    this.semaphores.dirty = null;
     if (this.toolsPanelRef?.current) {
       this.toolsPanelRef.current.setDirty(false);
     }
