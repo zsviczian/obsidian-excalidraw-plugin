@@ -43,7 +43,7 @@ let lastPeriodicSummaryAt = 0;
 const enabled = (() => {
   try {
     return (
-      globalThis.localStorage?.getItem(PERFORMANCE_DIAGNOSTICS_STORAGE_KEY) ===
+      window.localStorage?.getItem(PERFORMANCE_DIAGNOSTICS_STORAGE_KEY) ===
       "1"
     );
   } catch {
@@ -72,7 +72,7 @@ function formatValue(value: DiagnosticValue): string {
 }
 
 function getMemoryFields(): DiagnosticFields {
-  const memory = (globalThis.performance as PerformanceWithMemory | undefined)
+  const memory = (window.performance as PerformanceWithMemory | undefined)
     ?.memory;
   if (!memory) {
     return {};
@@ -114,7 +114,7 @@ export function performanceDiagnosticsEnabled(): boolean {
 }
 
 export function performanceDiagnosticNow(): number {
-  return globalThis.performance?.now?.() ?? Date.now();
+  return window.performance?.now?.() ?? Date.now();
 }
 
 export function nextPerformanceDiagnosticId(prefix: string): string {
@@ -187,14 +187,14 @@ export function performanceDiagnosticSummary(
   performanceDiagnosticLog("summary", summaryFields);
 }
 
-type PerformanceDiagnosticsGlobal = typeof globalThis & {
+type PerformanceDiagnosticsWindow = Window & {
   EXCALIDRAW_PERF_PHASE0_CHECKPOINT?: (label?: string) => void;
 };
 
 // Manual checkpoints are useful around an explicit DevTools "Collect garbage"
 // action. Keep this opt-in and text-only like every other Phase 0 record.
 if (enabled) {
-  (globalThis as PerformanceDiagnosticsGlobal).EXCALIDRAW_PERF_PHASE0_CHECKPOINT =
+  (window as PerformanceDiagnosticsWindow).EXCALIDRAW_PERF_PHASE0_CHECKPOINT =
     (label: string = "manual") => {
       performanceDiagnosticSummary(`manual-${label}`);
     };

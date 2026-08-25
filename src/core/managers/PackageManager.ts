@@ -187,19 +187,19 @@ export class PackageManager {
   /**
    * Store a package for a specific window
    */
-  public setPackage(window: Window, pkg: Packages) {
+  public setPackage(win: Window, pkg: Packages) {
     if (this.validatePackage(pkg)) {
       try {
-        this.configureObsidianCommonHost(window, pkg);
-        this.configureObsidianExcalidrawHost(window, pkg);
+        this.configureObsidianCommonHost(win, pkg);
+        this.configureObsidianExcalidrawHost(win, pkg);
       } catch (error: unknown) {
-        this.disposeObsidianHosts(window);
+        this.disposeObsidianHosts(win);
         throw normalizeError(error);
       }
-      this.packageMap.set(window, pkg);
+      this.packageMap.set(win, pkg);
       performanceDiagnosticLog("package.set", {
         packageWindows: this.packageMap.size,
-        window: window === globalThis.window ? "main" : "popout",
+        window: win === window ? "main" : "popout",
       });
 
       // Update fallback if we don't have one
@@ -295,7 +295,7 @@ export class PackageManager {
           }
           performanceDiagnosticLog("package.get", {
             source: "cache",
-            window: win === globalThis.window ? "main" : "popout",
+            window: win === window ? "main" : "popout",
             packageWindows: this.packageMap.size,
             durationMs: diagnosticsEnabled
               ? performanceDiagnosticNow() - diagnosticsStart
@@ -348,7 +348,7 @@ export class PackageManager {
           }
           performanceDiagnosticLog("package.get", {
             source: "created",
-            window: win === globalThis.window ? "main" : "popout",
+            window: win === window ? "main" : "popout",
             packageWindows: this.packageMap.size,
             durationMs: diagnosticsEnabled
               ? performanceDiagnosticNow() - diagnosticsStart
@@ -395,7 +395,7 @@ export class PackageManager {
       this.packageMap.delete(win);
       performanceDiagnosticIncrement("packageDeleted");
       performanceDiagnosticLog("package.deleted", {
-        window: win === globalThis.window ? "main" : "popout",
+        window: win === window ? "main" : "popout",
         before: packageWindowsBefore,
         after: this.packageMap.size,
       });
