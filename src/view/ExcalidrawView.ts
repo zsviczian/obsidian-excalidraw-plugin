@@ -418,6 +418,11 @@ export default class ExcalidrawView
   public excalidrawRoot: ReturnType<Packages["reactDOM"]["createRoot"]> | null =
     null;
   public excalidrawAPI: ExcalidrawImperativeAPI = null;
+  private windowMigrationSaveSnapshot: {
+    scene: NonNullable<ReturnType<ExcalidrawView["getScene"]>>;
+    deletedElements: ExcalidrawElement[];
+    selectedElementIds: AppState["selectedElementIds"];
+  } | null = null;
   public excalidrawWrapperRef: React.RefObject<HTMLDivElement | null> | null =
     null;
   public toolsPanelRef: React.RefObject<ToolsPanel | null> | null = null;
@@ -454,6 +459,7 @@ export default class ExcalidrawView
     warnAboutLinearElementLinkClick: true,
     embeddableIsEditingSelf: false,
     popoutUnload: false,
+    windowMigrating: false,
     viewloaded: false,
     viewunload: false,
     scriptsReady: false,
@@ -707,7 +713,7 @@ export default class ExcalidrawView
   }
 
   private getOrCreateExportDialog(): ExportDialog | null {
-    if (!this.file) {
+    if (!this.file || !this.excalidrawAPI) {
       return null;
     }
     if (!this.exportDialog) {
@@ -928,8 +934,9 @@ export default class ExcalidrawView
     //triggerReload is used to flag if there were no changes but file should be reloaded anyway
     let triggerReload: boolean = false;
 
+    const windowMigrationSaveSnapshot = this.windowMigrationSaveSnapshot;
     if (
-      !this.excalidrawAPI ||
+      (!this.excalidrawAPI && !windowMigrationSaveSnapshot) ||
       !this.isLoaded ||
       !this.file ||
       !this.app.vault.getAbstractFileByPath(this.file.path) //file was recently deleted
@@ -944,11 +951,17 @@ export default class ExcalidrawView
       : "unchanged";
     try {
       if (allowSave) {
-        const appStateSnapshot = this.excalidrawAPI.getAppState();
-        const scene = this.getSceneWithAppState(undefined, appStateSnapshot);
-        const deletedElements = this.excalidrawAPI
-          .getSceneElementsIncludingDeleted()
-          .filter((element: ExcalidrawElement) => element.isDeleted);
+        const appStateSnapshot = windowMigrationSaveSnapshot
+          ? null
+          : this.excalidrawAPI.getAppState();
+        const scene = windowMigrationSaveSnapshot
+          ? windowMigrationSaveSnapshot.scene
+          : this.getSceneWithAppState(undefined, appStateSnapshot);
+        const deletedElements = windowMigrationSaveSnapshot
+          ? windowMigrationSaveSnapshot.deletedElements
+          : this.excalidrawAPI
+              .getSceneElementsIncludingDeleted()
+              .filter((element: ExcalidrawElement) => element.isDeleted);
 
         let syncChanged = false;
         if (this.compatibilityMode) {
@@ -956,14 +969,16 @@ export default class ExcalidrawView
         } else {
           syncChanged = await this.excalidrawData.syncElements(
             scene,
-            appStateSnapshot.selectedElementIds,
+            windowMigrationSaveSnapshot?.selectedElementIds ??
+              appStateSnapshot.selectedElementIds,
           );
         }
 
         if (
           !this.compatibilityMode &&
           syncChanged &&
-          !this.semaphores.popoutUnload //Obsidian going black after REACT 18 migration when closing last leaf on popout
+          !this.semaphores.popoutUnload && //Obsidian going black after REACT 18 migration when closing last leaf on popout
+          !this.semaphores.windowMigrating
         ) {
           await this.loadDrawing(false, deletedElements);
         }
@@ -976,8 +991,46 @@ export default class ExcalidrawView
         this.semaphores.preventReload = preventReload;
         await this.prepareGetViewDataFromSnapshot(scene, deletedElements);
 
-        //added this to avoid Electron crash when terminating a popout window and saving the drawing, need to check back
-        //can likely be removed once this is resolved: https://github.com/electron/electron/issues/40607
+        // Persist from the plugin's main-window realm before closing a runtime
+        // whose container moved between windows. Calling TextFileView.save()
+        // from a migrated popout can retain the destroyed Electron window in
+        // the Node file operation.
+        if (this.semaphores?.windowMigrating) {
+          const d = this.getViewData();
+          const plugin = this.plugin;
+          const file = this.file;
+          const sourceWindow = this.packageLease?.window;
+          if (sourceWindow && sourceWindow !== window) {
+            plugin.registerViewMigrationPersistenceHandoff({
+              leafId: this.leaf.id,
+              filePath: file.path,
+              data: d,
+            });
+            this.data = d;
+            this.semaphores.saving = false;
+            return { status: "window-migration-handed-off" };
+          }
+          await new Promise<void>((resolve, reject) => {
+            window.setTimeout(() => {
+              if (!d) {
+                resolve();
+                return;
+              }
+              void plugin.app.vault.modify(file, d).then(resolve, reject);
+              // This is a shady edge case: do not sacrifice the BAK file in
+              // case the drawing is empty.
+              // await getImageCache().addBAKToCache(file.path, d);
+            }, 200);
+          });
+          this.data = d;
+          this.lastSavedData = d;
+          this.lastSaveTimestamp = file.stat.mtime;
+          this.semaphores.saving = false;
+          return { status: "window-migration-persisted" };
+        }
+
+        // Existing delayed view-unload workaround for ordinary close/plugin
+        // teardown. Migration takes the awaited branch above instead.
         if (this.semaphores?.viewunload) {
           await this.prepareGetViewDataFromSnapshot(scene, deletedElements);
           const d = this.getViewData();
@@ -989,8 +1042,9 @@ export default class ExcalidrawView
                 return;
               }
               await plugin.app.vault.modify(file, d);
-              //this is a shady edge case, don't scrifice the BAK file in case the drawing is empty
-              //await getImageCache().addBAKToCache(file.path,d);
+              // This is a shady edge case: do not sacrifice the BAK file in
+              // case the drawing is empty.
+              // await getImageCache().addBAKToCache(file.path, d);
             })();
           }, 200);
           this.semaphores.saving = false;
@@ -1024,6 +1078,8 @@ export default class ExcalidrawView
       // !triggerReload means file has not changed. No need to re-export
       //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1209 (added popout unload to the condition)
       if (
+        !this.semaphores.windowMigrating &&
+        this.excalidrawAPI &&
         sideEffectPolicy.triggerAutoexport &&
         !triggerReload &&
         !this.semaphores.autosaving &&
@@ -1109,7 +1165,10 @@ export default class ExcalidrawView
     sceneSnapshot?: ReturnType<ExcalidrawView["getScene"]>,
     deletedElementsSnapshot?: ExcalidrawElement[],
   ): Promise<void> {
-    if (!this.excalidrawAPI || !this.excalidrawData.loaded) {
+    if (
+      (!this.excalidrawAPI && typeof sceneSnapshot === "undefined") ||
+      !this.excalidrawData.loaded
+    ) {
       this.viewSaveData = this.data;
       return;
     }
@@ -1618,7 +1677,31 @@ export default class ExcalidrawView
         this.containerEl.onWindowMigrated(async () => {
           const f = this.file;
           const l = this.leaf;
-          await closeLeafView(l);
+          // Obsidian may destroy the source Electron window before the normal
+          // unload callbacks select detached-view persistence. Capture every
+          // API-owned value synchronously, then unmount before the first await.
+          this.semaphores.windowMigrating = true;
+          this.sceneFileManager.terminateActiveLoaders();
+          const migrationSaveRequired =
+            this.captureWindowMigrationSaveSnapshot();
+          this.unmountExcalidrawRoot();
+          if (migrationSaveRequired) {
+            await this.saveCoordinator.flush();
+          }
+          if (this.isDirty()) {
+            this.semaphores.windowMigrating = false;
+            warningUnknowSeriousError();
+            return;
+          }
+          this.windowMigrationSaveSnapshot = null;
+          try {
+            await closeLeafView(l);
+          } catch (error: unknown) {
+            this.plugin.discardViewMigrationPersistenceHandoff(l.id);
+            this.setDirty();
+            this.semaphores.windowMigrating = false;
+            throw error;
+          }
           windowMigratedDisableZoomOnce = true;
           void l.setViewState({
             type: VIEW_TYPE_EXCALIDRAW,
@@ -1769,6 +1852,7 @@ export default class ExcalidrawView
 
       const onBlurOrLeave = () => {
         if (
+          this.semaphores.windowMigrating ||
           !this.excalidrawAPI ||
           !this.excalidrawData.loaded ||
           !this.isDirty()
@@ -1986,11 +2070,55 @@ export default class ExcalidrawView
       new Notice("Unknown error, save is taking too long");
       return;
     }
-    await this.forceSaveIfRequired();
+    if (!this.semaphores.windowMigrating) {
+      await this.forceSaveIfRequired();
+    }
   }
 
   private async forceSaveIfRequired(): Promise<boolean> {
     return this.saveCoordinator.forceSaveIfRequired();
+  }
+
+  /**
+   * Captures all API-owned save inputs before a window migration tears down
+   * the source runtime.
+   *
+   * @remarks
+   * The caller must unmount the source React root immediately after this
+   * synchronous method returns and before its first `await`. Delaying unmount
+   * until after synchronization, compression, or native file access can let
+   * Electron destroy the source popout window first and freeze Obsidian.
+   */
+  private captureWindowMigrationSaveSnapshot(): boolean {
+    const api = this.excalidrawAPI;
+    if (!api) {
+      return false;
+    }
+    this.checkSceneVersion(api.getSceneElements());
+    if (!this.isDirty()) {
+      return false;
+    }
+    const appState = api.getAppState();
+    const scene = this.getSceneWithAppState(undefined, appState);
+    if (!scene) {
+      return false;
+    }
+    this.windowMigrationSaveSnapshot = {
+      scene,
+      deletedElements: api
+        .getSceneElementsIncludingDeleted()
+        .filter((element: ExcalidrawElement) => element.isDeleted),
+      selectedElementIds: appState.selectedElementIds,
+    };
+    return true;
+  }
+
+  private unmountExcalidrawRoot(): void {
+    if (!this.excalidrawRoot) {
+      return;
+    }
+    this.excalidrawRoot.unmount();
+    this.excalidrawRoot = null;
   }
 
   //onClose happens after onunload
@@ -2013,11 +2141,10 @@ export default class ExcalidrawView
 
     this.exitFullscreen();
 
-    await this.forceSaveIfRequired();
-    if (this.excalidrawRoot) {
-      this.excalidrawRoot.unmount();
-      this.excalidrawRoot = null;
+    if (!this.semaphores.windowMigrating) {
+      await this.forceSaveIfRequired();
     }
+    this.unmountExcalidrawRoot();
 
     this.sceneFileManager.terminateActiveLoaders();
     if (this.plugin) {
@@ -2496,6 +2623,16 @@ export default class ExcalidrawView
       if (!this.file) {
         return;
       }
+      const migrationHandoffData = this.isInMainObsidianWorkspace
+        ? this.plugin.consumeViewMigrationPersistenceHandoff(
+            this.leaf.id,
+            this.file.path,
+          )
+        : null;
+      let migrationHandoffPersistenceFailed = false;
+      if (migrationHandoffData !== null) {
+        data = migrationHandoffData;
+      }
       if (this.plugin.settings.compareManifestToPluginVersion) {
         void checkVersionMismatch(this.plugin);
       }
@@ -2521,6 +2658,22 @@ export default class ExcalidrawView
       this.lastSaveTimestamp = this.file.stat.mtime;
       this.lastLoadedFile = this.file;
       data = this.data = data.replaceAll("\r\n", "\n").replaceAll("\r", "\n");
+      if (migrationHandoffData !== null) {
+        try {
+          await this.app.vault.modify(this.file, data);
+          this.viewSaveData = data;
+          this.lastSavedData = data;
+          this.lastSaveTimestamp = this.file.stat.mtime;
+        } catch (error: unknown) {
+          migrationHandoffPersistenceFailed = true;
+          errorlog({
+            where: "ExcalidrawView.setViewData",
+            fn: "persistViewMigrationHandoff",
+            error,
+          });
+          warningUnknowSeriousError();
+        }
+      }
       this.app.workspace.onLayoutReady(async () => {
         //the leaf moved to a window and ExcalidrawView was destructed
         //Happens during Obsidian startup if View opens in new window.
@@ -2760,6 +2913,9 @@ export default class ExcalidrawView
           }
         }
         this.isLoaded = true;
+        if (migrationHandoffPersistenceFailed) {
+          this.setDirty();
+        }
       });
     })();
   }
@@ -2829,7 +2985,11 @@ export default class ExcalidrawView
   }
 
   public async synchronizeWithData(inData: ExcalidrawData) {
-    if (this.semaphores.embeddableIsEditingSelf) {
+    if (
+      this.semaphores.windowMigrating ||
+      !this.excalidrawAPI ||
+      this.semaphores.embeddableIsEditingSelf
+    ) {
       return;
     }
     //check if saving, wait until not
@@ -2843,6 +3003,9 @@ export default class ExcalidrawView
         message: `Aborting sync with received file (${this.file.path}) because semaphores.saving remained true for ower 3 seconds`,
         fn: "synchronizeWithData",
       });
+      return;
+    }
+    if (this.semaphores.windowMigrating || !this.excalidrawAPI) {
       return;
     }
     if (!inData.scene) {

@@ -257,6 +257,10 @@ The host adapters are an internal protocol between this plugin and its exact `@z
 - Do not replace this with a naive global singleton approach.
 - The runtime is built from official npm package entry points and kept in plugin/package lexical scope. Do not assign React or ReactDOM to `window`; only the documented `window.ExcalidrawLib` compatibility surface remains global.
 - Rendering, DOM ownership, events, observers, portals, and React roots must use the owning view window where appropriate.
+- Treat `HTMLElement.onWindowMigrated()` as a destructive runtime boundary. Its callback runs after Obsidian has moved the view container to another document, while the existing React root and Excalidraw API still belong to the source window runtime.
+- For a dirty migration, synchronously capture every API-owned value needed for persistence and unmount the source React root **before the first `await`**. Do not move synchronization, compression, Vault/native file access, `closeLeafView()`, or another asynchronous step ahead of that unmount. On macOS/Electron, doing so reproducibly allowed the source popout window to be destroyed before `root.unmount()`, freezing Obsidian and disconnecting DevTools.
+- The migration callback owns the single persistence flush. Generic `onClose()` and `onUnloadFile()` safeguards must not start duplicate migration saves, and the retired source view must reject blur-save side effects and vault-modify synchronization after its API is unmounted.
+- A popout-to-main migration may serialize from a synchronously captured drawing snapshot, but the replacement main-window view must perform the final drawing-file write. Never initiate the final Vault/native write from the source popout callback.
 
 ### Main-Window Persistent Storage
 

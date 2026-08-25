@@ -633,7 +633,10 @@ export class PluginFileManager {
     const excalidrawViews = getExcalidrawViews(this.app);
     excalidrawViews.forEach((excalidrawView) => {
       void (async () => {
-        if (excalidrawView.semaphores?.viewunload) {
+        if (
+          excalidrawView.semaphores?.viewunload ||
+          excalidrawView.semaphores?.windowMigrating
+        ) {
           return;
         }
         if (

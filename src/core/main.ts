@@ -112,6 +112,10 @@ import { PluginSettingsManager } from "./managers/PluginSettingsManager";
 import { FooterSafeAreaManager } from "./managers/FooterSafeAreaManager";
 import { FontManager } from "./managers/FontManager";
 import { StartupTimer } from "./managers/StartupTimer";
+import {
+  ViewMigrationPersistenceHandoffManager,
+  type ViewMigrationPersistenceHandoff,
+} from "./managers/ViewMigrationPersistenceHandoffManager";
 
 declare const PLUGIN_VERSION: string;
 declare const INITIAL_TIMESTAMP: number;
@@ -158,6 +162,7 @@ export default class ExcalidrawPlugin extends Plugin {
   private footerSafeAreaManager: FooterSafeAreaManager;
   private fontManager: FontManager;
   private startupTimer: StartupTimer;
+  private viewMigrationPersistenceHandoffManager: ViewMigrationPersistenceHandoffManager;
   public stencilLibraryManager: StencilLibraryManager;
   public eaInstances = new WeakArray<ExcalidrawAutomate>();
   public fourthFontLoaded: boolean = false;
@@ -201,6 +206,8 @@ export default class ExcalidrawPlugin extends Plugin {
     super(app, manifest);
     this.loadTimestamp = INITIAL_TIMESTAMP;
     this.startupTimer = new StartupTimer(this.loadTimestamp, PLUGIN_VERSION);
+    this.viewMigrationPersistenceHandoffManager =
+      new ViewMigrationPersistenceHandoffManager();
     this.filesMaster = new Map<
       FileId,
       {
@@ -977,6 +984,7 @@ export default class ExcalidrawPlugin extends Plugin {
     //PLUGIN_VERSION = null;
     delete window.PolyBool;
     this.packageManager.destroy();
+    this.viewMigrationPersistenceHandoffManager.destroy();
     this.commandManager?.destroy();
     this.eventManager.destroy();
     terminateCompressionWorker();
@@ -1247,6 +1255,29 @@ export default class ExcalidrawPlugin extends Plugin {
 
   public deletePackage(win: Window) {
     this.packageManager.deletePackage(win);
+  }
+
+  /** Registers serialized drawing text for a popout-to-main migration. */
+  public registerViewMigrationPersistenceHandoff(
+    handoff: ViewMigrationPersistenceHandoff,
+  ): void {
+    this.viewMigrationPersistenceHandoffManager.register(handoff);
+  }
+
+  /** Consumes serialized drawing text for the replacement main-window view. */
+  public consumeViewMigrationPersistenceHandoff(
+    leafId: string,
+    filePath: string,
+  ): string | null {
+    return this.viewMigrationPersistenceHandoffManager.consume(
+      leafId,
+      filePath,
+    );
+  }
+
+  /** Discards a handoff when the old view could not be replaced. */
+  public discardViewMigrationPersistenceHandoff(leafId: string): void {
+    this.viewMigrationPersistenceHandoffManager.discard(leafId);
   }
 
   get taskbone() {

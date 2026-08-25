@@ -12,6 +12,8 @@ export interface SaveSideEffectPolicy {
 /** Terminal outcome reported by the view-owned persistence implementation. */
 export type SaveExecutionStatus =
   | "persisted"
+  | "window-migration-handed-off"
+  | "window-migration-persisted"
   | "view-unload-scheduled"
   | "unchanged"
   | "skipped"
@@ -190,6 +192,8 @@ export class ViewSaveCoordinator {
   ): void {
     if (
       result.status === "persisted" ||
+      result.status === "window-migration-handed-off" ||
+      result.status === "window-migration-persisted" ||
       result.status === "view-unload-scheduled" ||
       result.status === "unchanged"
     ) {
@@ -275,6 +279,10 @@ export class ViewSaveCoordinator {
       },
       revision: this.currentRevision,
     });
+    if (this.view.semaphores.windowMigrating) {
+      this.view.semaphores.forceSaving = false;
+      return;
+    }
     this.view.plugin.triggerEmbedUpdates();
     if (policy.refreshSceneFiles) {
       await this.view.loadSceneFiles();
