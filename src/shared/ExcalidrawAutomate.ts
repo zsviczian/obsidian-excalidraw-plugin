@@ -3411,7 +3411,6 @@ export class ExcalidrawAutomate {
           fileIDWhiteList,
           resolve,
           undefined,
-          "excalidraw-automate-svg-color-map",
         );
       });
     }

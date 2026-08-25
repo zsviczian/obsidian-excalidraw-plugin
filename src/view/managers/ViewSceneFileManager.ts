@@ -6,14 +6,6 @@ import type {
 } from "../../shared/EmbeddedFileLoader";
 import type { FileData } from "../../types/embeddedFileLoaderTypes";
 import type ExcalidrawView from "../ExcalidrawView";
-import {
-  nextPerformanceDiagnosticId,
-  performanceDiagnosticIncrement,
-  performanceDiagnosticLog,
-  performanceDiagnosticNow,
-  performanceDiagnosticRecordDuration,
-  performanceDiagnosticsEnabled,
-} from "../../utils/performanceDiagnostics";
 
 /** Runtime dependencies supplied by the composition root to avoid adding a
  * circular import.
@@ -106,16 +98,11 @@ export class ViewSceneFileManager {
   private deferredValidationLoader: EmbeddedFilesLoader = null;
   private deferredValidationTimer: number | null = null;
   private deferredValidationFilePath: string | null = null;
-  private nextLoaderDiagnosticContext: {
-    requestId: string;
-    reason: string;
-  } | null = null;
   private queuedLoadSceneFilesRequest: {
     isThemeChange: boolean;
     fileIDWhiteList?: Set<FileId>;
     forceReloadFileIDs?: Set<FileId>;
     callback?: () => void;
-    diagnosticReason: string;
   } | null = null;
   // Cache metadata collected during the stale-first pass. These are the only
   // files that need validation after the scene is already visible.
@@ -143,7 +130,6 @@ export class ViewSceneFileManager {
       this.nextLoader.emptyPDFDocsMap();
       this.nextLoader = null;
     }
-    this.nextLoaderDiagnosticContext = null;
   }
 
   private cancelDeferredSceneFileValidation() {
@@ -175,7 +161,6 @@ export class ViewSceneFileManager {
     candidates: Map<FileId, DeferredCacheValidation>,
     isThemeChange: boolean,
     emitPolicy: "changed-only" | "all" = "changed-only",
-    diagnosticReason: string = "unspecified",
   ) {
     this.cancelDeferredSceneFileValidation();
     if (
@@ -190,26 +175,8 @@ export class ViewSceneFileManager {
     const fileIDs = new Set(candidates.keys());
     const currentFile = this.view.file.path;
     const loader = this.dependencies.createEmbeddedFilesLoader();
-    const diagnosticsEnabled = performanceDiagnosticsEnabled();
-    const diagnosticId = diagnosticsEnabled
-      ? nextPerformanceDiagnosticId("sceneValidation")
-      : "";
-    performanceDiagnosticIncrement("sceneFileDeferredValidationScheduled");
-    performanceDiagnosticLog("sceneFiles.validationScheduled", {
-      id: diagnosticId,
-      viewId: this.view.id,
-      candidates: fileIDs.size,
-      themeChange: isThemeChange,
-      emitPolicy,
-      reason: diagnosticReason,
-    });
     this.deferredValidationFilePath = currentFile;
     this.deferredValidationTimer = window.setTimeout(() => {
-      const validationStart = diagnosticsEnabled
-        ? performanceDiagnosticNow()
-        : 0;
-      let emittedFiles = 0;
-      let emittedBatches = 0;
       this.deferredValidationTimer = null;
       if (
         !this.view.file ||
@@ -243,8 +210,6 @@ export class ViewSceneFileManager {
             return;
           }
           if (files && files.length > 0) {
-            emittedFiles += files.length;
-            emittedBatches += 1;
             void this.dependencies.addFiles(files, this.view, isDark);
           }
           if (!final) {
@@ -255,24 +220,6 @@ export class ViewSceneFileManager {
             this.deferredValidationLoader = null;
           }
           this.deferredValidationFilePath = null;
-          const validationMs = diagnosticsEnabled
-            ? performanceDiagnosticNow() - validationStart
-            : 0;
-          if (diagnosticsEnabled) {
-            performanceDiagnosticRecordDuration(
-              "sceneFileDeferredValidation",
-              validationMs,
-            );
-          }
-          performanceDiagnosticLog("sceneFiles.validationComplete", {
-            id: diagnosticId,
-            viewId: this.view.id,
-            candidates: fileIDs.size,
-            emittedFiles,
-            emittedBatches,
-            reason: diagnosticReason,
-            durationMs: diagnosticsEnabled ? validationMs : undefined,
-          });
           const queuedLoad = this.queuedLoadSceneFilesRequest;
           this.queuedLoadSceneFilesRequest = null;
           if (queuedLoad && this.view.file?.path === currentFile) {
@@ -281,7 +228,6 @@ export class ViewSceneFileManager {
               queuedLoad.fileIDWhiteList,
               queuedLoad.callback,
               queuedLoad.forceReloadFileIDs,
-              queuedLoad.diagnosticReason,
             );
           }
         },
@@ -301,7 +247,6 @@ export class ViewSceneFileManager {
     fileIDs: Set<FileId>,
     isThemeChange: boolean = false,
     forceEmitFromCache: boolean = false,
-    diagnosticReason: string = "unspecified",
   ) {
     if (!this.view.excalidrawAPI || !fileIDs || fileIDs.size === 0) {
       return;
@@ -326,7 +271,6 @@ export class ViewSceneFileManager {
       ),
       isThemeChange,
       forceEmitFromCache ? "all" : "changed-only",
-      diagnosticReason,
     );
   }
 
@@ -335,69 +279,8 @@ export class ViewSceneFileManager {
     fileIDWhiteList?: Set<FileId>,
     callback?: () => void,
     forceReloadFileIDs?: Set<FileId>,
-    diagnosticReason: string = "unspecified",
   ) {
-    const diagnosticsEnabled = performanceDiagnosticsEnabled();
-    const requestId = diagnosticsEnabled
-      ? nextPerformanceDiagnosticId("sceneLoad")
-      : "";
-    const embeddedFileEntries = diagnosticsEnabled
-      ? Array.from(this.view.excalidrawData.files.entries())
-      : [];
-    const apiFileIds = new Set(
-      diagnosticsEnabled && this.view.excalidrawAPI
-        ? Object.keys(this.view.excalidrawAPI.getFiles())
-        : [],
-    );
-    const unresolvedEmbeddedFiles = diagnosticsEnabled
-      ? embeddedFileEntries.filter(([, embeddedFile]) => !embeddedFile?.file)
-          .length
-      : undefined;
-    const unresolvedVaultFiles = diagnosticsEnabled
-      ? embeddedFileEntries.filter(
-          ([, embeddedFile]) =>
-            embeddedFile &&
-            !embeddedFile.file &&
-            !embeddedFile.isHyperLink &&
-            !embeddedFile.isLocalLink,
-        ).length
-      : undefined;
-    const externalOrLocalFiles = diagnosticsEnabled
-      ? embeddedFileEntries.filter(
-          ([, embeddedFile]) =>
-            embeddedFile?.isHyperLink || embeddedFile?.isLocalLink,
-        ).length
-      : undefined;
-    const missingApiBinaryFiles = diagnosticsEnabled
-      ? embeddedFileEntries.filter(([fileId]) => !apiFileIds.has(fileId)).length
-      : undefined;
-    performanceDiagnosticIncrement("loadSceneFilesRequest");
-    performanceDiagnosticIncrement(`loadSceneFilesReason.${diagnosticReason}`);
-    performanceDiagnosticLog("sceneFiles.request", {
-      id: requestId,
-      viewId: this.view.id,
-      reason: diagnosticReason,
-      themeChange: isThemeChange,
-      whitelist: fileIDWhiteList?.size ?? 0,
-      forceReload: forceReloadFileIDs?.size ?? 0,
-      embeddedFiles: this.view.excalidrawData?.getFiles().length ?? 0,
-      apiBinaryFiles: diagnosticsEnabled ? apiFileIds.size : undefined,
-      missingApiBinaryFiles,
-      unresolvedEmbeddedFiles,
-      unresolvedVaultFiles,
-      externalOrLocalFiles,
-      activeLoader: Boolean(this.activeLoader),
-      deferredValidation: Boolean(
-        this.deferredValidationLoader || this.deferredValidationTimer,
-      ),
-    });
     if (!this.view.excalidrawAPI) {
-      performanceDiagnosticLog("sceneFiles.skipped", {
-        id: requestId,
-        viewId: this.view.id,
-        reason: diagnosticReason,
-        skipReason: "api-missing",
-      });
       return;
     }
 
@@ -415,15 +298,7 @@ export class ViewSceneFileManager {
         fileIDWhiteList,
         callback,
         forceReloadFileIDs,
-        diagnosticReason,
       };
-      performanceDiagnosticIncrement("loadSceneFilesQueued");
-      performanceDiagnosticLog("sceneFiles.queued", {
-        id: requestId,
-        viewId: this.view.id,
-        reason: diagnosticReason,
-        queueReason: "deferred-validation",
-      });
       return;
     }
 
@@ -434,35 +309,10 @@ export class ViewSceneFileManager {
 
     const loader = this.dependencies.createEmbeddedFilesLoader();
 
-    const runLoader = (
-      l: EmbeddedFilesLoader,
-      effectiveRequestId: string = requestId,
-      effectiveReason: string = diagnosticReason,
-    ) => {
+    const runLoader = (l: EmbeddedFilesLoader) => {
       this.nextLoader = null;
-      this.nextLoaderDiagnosticContext = null;
       this.activeLoader = l;
-      const runId = diagnosticsEnabled
-        ? nextPerformanceDiagnosticId("sceneLoadRun")
-        : "";
-      const runStart = diagnosticsEnabled ? performanceDiagnosticNow() : 0;
-      let emittedFiles = 0;
-      let emittedBatches = 0;
       const prioritizedFileIds = getVisibleImageFileIds(this.view);
-      performanceDiagnosticIncrement("loadSceneFilesRun");
-      performanceDiagnosticLog("sceneFiles.runStart", {
-        id: runId,
-        requestId: effectiveRequestId,
-        parameterSourceRequestId: requestId,
-        viewId: this.view.id,
-        reason: effectiveReason,
-        themeChange: isThemeChange,
-        whitelist: fileIDWhiteList?.size ?? 0,
-        forceReload: forceReloadFileIDs?.size ?? 0,
-        sceneElements: this.view.getViewElements().length,
-        embeddedFiles: this.view.excalidrawData.getFiles().length,
-        prioritizedFiles: prioritizedFileIds.size,
-      });
       void l.loadSceneFiles({
         excalidrawData: this.view.excalidrawData,
         sceneElements: this.view.getViewElements(),
@@ -478,44 +328,18 @@ export class ViewSceneFileManager {
             return; //The view was closed in the mean time
           }
           if (files && files.length > 0) {
-            emittedFiles += files.length;
-            emittedBatches += 1;
             void this.dependencies.addFiles(files, this.view, isDark);
           }
           if (!final) {
             return;
           }
-          const runMs = diagnosticsEnabled
-            ? performanceDiagnosticNow() - runStart
-            : 0;
-          if (diagnosticsEnabled) {
-            performanceDiagnosticRecordDuration("loadSceneFiles", runMs);
-          }
-          performanceDiagnosticLog("sceneFiles.runComplete", {
-            id: runId,
-            requestId: effectiveRequestId,
-            parameterSourceRequestId: requestId,
-            viewId: this.view.id,
-            reason: effectiveReason,
-            emittedFiles,
-            emittedBatches,
-            terminalState: l.terminalState,
-            apiBinaryFiles: Object.keys(this.view.excalidrawAPI.getFiles()).length,
-            deferredCandidates: this.pendingDeferredValidationCandidates.size,
-            durationMs: diagnosticsEnabled ? runMs : undefined,
-          });
           this.view.lastSceneLoadTime = Date.now();
           if (this.activeLoader === l) {
             this.activeLoader = null;
           }
           if (this.nextLoader) {
             const nextLoader = this.nextLoader;
-            const nextDiagnosticContext = this.nextLoaderDiagnosticContext;
-            runLoader(
-              nextLoader,
-              nextDiagnosticContext?.requestId ?? effectiveRequestId,
-              nextDiagnosticContext?.reason ?? effectiveReason,
-            );
+            runLoader(nextLoader);
           } else {
             // Once the scene is painted, validate cached candidates in the background
             // so unchanged cache hits do not delay the initial scene load.
@@ -524,7 +348,6 @@ export class ViewSceneFileManager {
                 new Map(this.pendingDeferredValidationCandidates),
                 isThemeChange,
                 "changed-only",
-                "post-stale-first-load",
               );
               this.pendingDeferredValidationCandidates.clear();
             }
@@ -543,19 +366,7 @@ export class ViewSceneFileManager {
               const retryFileIDs = new Set(
                 retryCandidates.map(([fileId]) => fileId),
               );
-              const retryCandidate = retryCandidates[0][1];
-              performanceDiagnosticIncrement("sceneFileRetryScheduled");
-              performanceDiagnosticLog("sceneFiles.retryScheduled", {
-                viewId: this.view.id,
-                reason: "unresolved-embedded-file",
-                candidates: diagnosticsEnabled
-                  ? retryCandidates.length
-                  : undefined,
-                attemptCounter: retryCandidate.attemptCounter,
-                delayMs: 2000,
-              });
               const currentFile = this.view.file.path;
-              let deferredWaitCount = 0;
               const retryLoadSceneFiles = () => {
                 if (
                   !this ||
@@ -570,21 +381,14 @@ export class ViewSceneFileManager {
                   this.deferredValidationLoader ||
                   this.deferredValidationTimer
                 ) {
-                  deferredWaitCount += 1;
                   window.setTimeout(retryLoadSceneFiles, 500);
                   return;
                 }
-                performanceDiagnosticLog("sceneFiles.retryExecuting", {
-                  viewId: this.view.id,
-                  reason: "unresolved-embedded-file",
-                  deferredWaitMs: deferredWaitCount * 500,
-                });
                 void this.loadSceneFiles(
                   false,
                   retryFileIDs,
                   undefined,
                   undefined,
-                  "retry-unresolved-embedded-file",
                 );
               };
               window.setTimeout(() => {
@@ -610,17 +414,6 @@ export class ViewSceneFileManager {
       runLoader(loader);
     } else {
       this.nextLoader = loader;
-      this.nextLoaderDiagnosticContext = {
-        requestId,
-        reason: diagnosticReason,
-      };
-      performanceDiagnosticIncrement("loadSceneFilesQueued");
-      performanceDiagnosticLog("sceneFiles.queued", {
-        id: requestId,
-        viewId: this.view.id,
-        reason: diagnosticReason,
-        queueReason: "active-loader",
-      });
     }
   }
 }

@@ -85,13 +85,6 @@ import {
 } from "src/types/markdownImageTypes";
 import { resolveMarkdownImageRenderSettings } from "src/utils/markdownImageUtils";
 import { addAppendUpdateCustomData } from "src/utils/elementCustomDataUtils";
-import {
-  performanceDiagnosticIncrement,
-  performanceDiagnosticLog,
-  performanceDiagnosticNow,
-  performanceDiagnosticRecordDuration,
-  performanceDiagnosticsEnabled,
-} from "src/utils/performanceDiagnostics";
 
 //declared in rollup.config.mjs
 declare const deliberateFetch: (
@@ -868,10 +861,6 @@ export class EmbeddedFilesLoader {
 
     let cachedSize: Size | undefined;
     let cachedHasSVGwithBitmap: boolean | undefined;
-    const diagnosticsEnabled = performanceDiagnosticsEnabled();
-    const cacheLookupStart = diagnosticsEnabled
-      ? performanceDiagnosticNow()
-      : 0;
     const maybeSVG = shouldUseCache
       ? await getImageCache().getImageFromCache(cacheKey, {
           skipDependencyCheck: cacheValidation === "stale-first",
@@ -890,16 +879,6 @@ export class EmbeddedFilesLoader {
           },
         })
       : undefined;
-    if (diagnosticsEnabled && shouldUseCache) {
-      performanceDiagnosticRecordDuration(
-        "imageCacheLookup",
-        performanceDiagnosticNow() - cacheLookupStart,
-      );
-      performanceDiagnosticIncrement(
-        typeof maybeSVG === "string" ? "imageCacheHit" : "imageCacheMiss",
-      );
-    }
-
     if (this.terminate) {
       return { dataURL: "" as DataURL, hasSVGwithBitmap: false };
     }
@@ -924,9 +903,6 @@ export class EmbeddedFilesLoader {
       };
     }
 
-    const generationStart = diagnosticsEnabled
-      ? performanceDiagnosticNow()
-      : 0;
     const generatedSVG = await createSVG(
       hasFilenameParts
         ? filenameParts.hasGroupref ||
@@ -958,13 +934,6 @@ export class EmbeddedFilesLoader {
       depth + 1,
       getExportPadding(this.plugin, file),
     );
-    if (diagnosticsEnabled) {
-      performanceDiagnosticIncrement("imageGeneration");
-      performanceDiagnosticRecordDuration(
-        "imageGeneration",
-        performanceDiagnosticNow() - generationStart,
-      );
-    }
     const svg = replaceSVGColors(
       generatedSVG,
       inFile instanceof EmbeddedFile ? inFile.colorMap : null,
@@ -1066,8 +1035,6 @@ export class EmbeddedFilesLoader {
     depth: number,
     options?: LoadImageOptions,
   ): Promise<ImgData> {
-    const diagnosticsEnabled = performanceDiagnosticsEnabled();
-    const diagnosticsStart = diagnosticsEnabled ? performanceDiagnosticNow() : 0;
     if (!this.plugin || !inFile) {
       return null;
     }
@@ -1259,16 +1226,6 @@ export class EmbeddedFilesLoader {
       const loadedFromCache = isExcalidrawFile
         ? excalidrawLoadedFromCache
         : pdfLoadedFromCache;
-      if (diagnosticsEnabled) {
-        performanceDiagnosticIncrement("assetLoad");
-        performanceDiagnosticIncrement(
-          loadedFromCache ? "assetLoadedFromCache" : "assetLoadedWithoutCache",
-        );
-        performanceDiagnosticRecordDuration(
-          "assetLoad",
-          performanceDiagnosticNow() - diagnosticsStart,
-        );
-      }
       return {
         mimeType,
         fileId: generatedFileId,
@@ -1721,7 +1678,6 @@ export class EmbeddedFilesLoader {
     const runLoadPool = async (
       iterator: Generator<Promise<void>>,
       concurrency: number,
-      phase: "initial" | "deferred-generation",
     ): Promise<boolean> => {
       let stallTimer: number | null = null;
       let resolveStall!: () => void;
@@ -1754,12 +1710,6 @@ export class EmbeddedFilesLoader {
 
       this.terminalState = "timed-out";
       this.terminate = true;
-      performanceDiagnosticIncrement("sceneFileLoaderStalled");
-      performanceDiagnosticLog("sceneFiles.loaderStalled", {
-        loaderId: this.uid,
-        phase,
-        stallTimeoutMs: SCENE_FILE_LOAD_STALL_TIMEOUT_MS,
-      });
       return false;
     };
 
@@ -1864,7 +1814,7 @@ export class EmbeddedFilesLoader {
         validationConcurrency ?? this.plugin.settings.renderingConcurrency;
       const iterator = loadIterator(this, entries, true, true);
       if (!this.terminate) {
-        await runLoadPool(iterator, concurency, "initial");
+        await runLoadPool(iterator, concurency);
       }
 
       if (this.terminate) {
@@ -1897,11 +1847,7 @@ export class EmbeddedFilesLoader {
             false,
             false,
           );
-          await runLoadPool(
-            deferredIterator,
-            concurency,
-            "deferred-generation",
-          );
+          await runLoadPool(deferredIterator, concurency);
         }
       }
 

@@ -9,12 +9,6 @@ import { hasExcalidrawEmbeddedImagesTreeChanged } from "../utils/fileUtils";
 import { EXCALIDRAW_PLUGIN } from "src/constants/constants";
 import { blobToDataURL } from "../utils/coreUtils";
 import { isInstanceOfSVGSVGElement } from "../utils/typechecks";
-import {
-  performanceDiagnosticIncrement,
-  performanceDiagnosticNow,
-  performanceDiagnosticRecordDuration,
-  performanceDiagnosticsEnabled,
-} from "../utils/performanceDiagnostics";
 import { BackupPersistenceQueue } from "./BackupPersistenceQueue";
 
 type FileCacheData = {
@@ -97,8 +91,6 @@ class ImageCache {
   private backupWrites = new BackupPersistenceQueue({
     ownerWindow: window,
     write: (filepath, data) => this.addBAKToCache(filepath, data),
-    getTimestamp: () =>
-      performanceDiagnosticsEnabled() ? performanceDiagnosticNow() : undefined,
     onError: (error, stage) =>
       errorlog({
         where: "ImageCache.backupWrites",
@@ -532,38 +524,19 @@ class ImageCache {
     key_: ImageKey,
     options?: GetImageFromCacheOptions,
   ): Promise<{ cacheData: FileCacheData; key: string } | undefined> {
-    const diagnosticsEnabled = performanceDiagnosticsEnabled();
-    const totalStart = diagnosticsEnabled ? performanceDiagnosticNow() : 0;
     const key = getKey(key_);
     if (!this.isReady()) {
-      performanceDiagnosticIncrement("imageCacheRejectNotReady");
       return undefined;
     }
 
     try {
-      const readyStart = diagnosticsEnabled ? performanceDiagnosticNow() : 0;
       await this.ensureCacheStoreReady();
-      if (diagnosticsEnabled) {
-        performanceDiagnosticRecordDuration(
-          "imageCacheReadyWait",
-          performanceDiagnosticNow() - readyStart,
-        );
-      }
 
-      const idbStart = diagnosticsEnabled ? performanceDiagnosticNow() : 0;
       const cachedData = await this.getCacheData(key);
-      if (diagnosticsEnabled) {
-        performanceDiagnosticRecordDuration(
-          "imageCacheIndexedDbRead",
-          performanceDiagnosticNow() - idbStart,
-        );
-      }
       if (!cachedData) {
-        performanceDiagnosticIncrement("imageCacheRejectMissing");
         return undefined;
       }
       if (!this.isCurrentCacheData(cachedData)) {
-        performanceDiagnosticIncrement("imageCacheRejectInvalidSchema");
         const transaction = this.db.transaction(
           [this.cacheStoreName, this.cacheAccessStoreName],
           "readwrite",
@@ -576,34 +549,20 @@ class ImageCache {
 
       const file = this.app.vault.getFileByPath(key_.filepath.split("#")[0]);
       if (!file) {
-        performanceDiagnosticIncrement("imageCacheRejectFileMissing");
         return undefined;
       }
       if (cachedData.mtime < file.stat.mtime) {
-        performanceDiagnosticIncrement("imageCacheRejectStaleMtime");
         return undefined;
       }
       if (!options?.skipDependencyCheck) {
-        const dependencyStart = diagnosticsEnabled
-          ? performanceDiagnosticNow()
-          : 0;
         const dependencyChanged = hasExcalidrawEmbeddedImagesTreeChanged(
           file,
           cachedData.mtime,
           this.plugin,
         );
-        if (diagnosticsEnabled) {
-          performanceDiagnosticRecordDuration(
-            "imageCacheDependencyCheck",
-            performanceDiagnosticNow() - dependencyStart,
-          );
-        }
         if (dependencyChanged) {
-          performanceDiagnosticIncrement("imageCacheRejectDependencyChanged");
           return undefined;
         }
-      } else {
-        performanceDiagnosticIncrement("imageCacheDependencyCheckSkipped");
       }
       // Validated reads can require a minimum render scale so lower-resolution PDF
       // snapshots are upgraded in the background without blocking the first paint.
@@ -612,14 +571,12 @@ class ImageCache {
         options?.minRenderScale &&
         cachedRenderScale < options.minRenderScale
       ) {
-        performanceDiagnosticIncrement("imageCacheRejectRenderScale");
         return undefined;
       }
       if (
         options?.expectedPayloadKind &&
         cachedData.payloadKind !== options.expectedPayloadKind
       ) {
-        performanceDiagnosticIncrement("imageCacheRejectPayloadKind");
         return undefined;
       }
       if (
@@ -627,7 +584,6 @@ class ImageCache {
         cachedData.payloadKind === "svg" &&
         typeof cachedData.hasSVGwithBitmap !== "boolean"
       ) {
-        performanceDiagnosticIncrement("imageCacheRejectSvgMetadata");
         return undefined;
       }
       options?.onCacheHit?.({
@@ -638,14 +594,8 @@ class ImageCache {
         payloadKind: cachedData.payloadKind,
       });
       this.touchCacheData(key);
-      performanceDiagnosticIncrement(
-        cachedData.payloadKind === "svg"
-          ? "imageCacheResolvedSvg"
-          : "imageCacheResolvedRaster",
-      );
       return { cacheData: cachedData, key };
     } catch (error) {
-      performanceDiagnosticIncrement("imageCacheResolveError");
       console.error(
         "unexpected error in getResolvedCacheData",
         "ImageCache.getResolvedCacheData",
@@ -653,13 +603,6 @@ class ImageCache {
         error,
       );
       return undefined;
-    } finally {
-      if (diagnosticsEnabled) {
-        performanceDiagnosticRecordDuration(
-          "imageCacheResolveTotal",
-          performanceDiagnosticNow() - totalStart,
-        );
-      }
     }
   }
 
@@ -674,104 +617,23 @@ class ImageCache {
     key_: ImageKey,
     options?: GetImageFromCacheOptions,
   ): Promise<string | SVGSVGElement | undefined> {
-    const diagnosticsEnabled = performanceDiagnosticsEnabled();
-    const totalStart = diagnosticsEnabled ? performanceDiagnosticNow() : 0;
     const resolved = await this.getResolvedCacheData(key_, options);
     if (!resolved) {
-      if (diagnosticsEnabled) {
-        performanceDiagnosticRecordDuration(
-          "imageCacheGetImageTotal",
-          performanceDiagnosticNow() - totalStart,
-        );
-      }
       return undefined;
     }
 
     const { cacheData, key } = resolved;
-    const materializeStart = diagnosticsEnabled
-      ? performanceDiagnosticNow()
-      : 0;
     if (cacheData.payloadKind === "svg") {
       if (options?.svgFormat === "data-url") {
-        const convertStart = diagnosticsEnabled
-          ? performanceDiagnosticNow()
-          : 0;
-        const dataUrl = await blobToDataURL(cacheData.blob);
-        if (diagnosticsEnabled) {
-          performanceDiagnosticRecordDuration(
-            "imageCacheSvgDataUrl",
-            performanceDiagnosticNow() - convertStart,
-          );
-          performanceDiagnosticRecordDuration(
-            "imageCacheMaterialize",
-            performanceDiagnosticNow() - materializeStart,
-          );
-          performanceDiagnosticRecordDuration(
-            "imageCacheGetImageTotal",
-            performanceDiagnosticNow() - totalStart,
-          );
-        }
-        return dataUrl;
+        return blobToDataURL(cacheData.blob);
       }
-      const blobReadStart = diagnosticsEnabled
-        ? performanceDiagnosticNow()
-        : 0;
       const svgText = await cacheData.blob.text();
-      if (diagnosticsEnabled) {
-        performanceDiagnosticRecordDuration(
-          "imageCacheSvgBlobRead",
-          performanceDiagnosticNow() - blobReadStart,
-        );
-      }
-      const parseStart = diagnosticsEnabled ? performanceDiagnosticNow() : 0;
-      const svg = convertSVGStringToElement(svgText);
-      if (diagnosticsEnabled) {
-        performanceDiagnosticRecordDuration(
-          "imageCacheSvgParse",
-          performanceDiagnosticNow() - parseStart,
-        );
-        performanceDiagnosticRecordDuration(
-          "imageCacheMaterialize",
-          performanceDiagnosticNow() - materializeStart,
-        );
-        performanceDiagnosticRecordDuration(
-          "imageCacheGetImageTotal",
-          performanceDiagnosticNow() - totalStart,
-        );
-      }
-      return svg;
+      return convertSVGStringToElement(svgText);
     }
     if (this.obsidanURLCache.has(key)) {
-      performanceDiagnosticIncrement("imageCacheRasterUrlMemoryHit");
-      if (diagnosticsEnabled) {
-        performanceDiagnosticRecordDuration(
-          "imageCacheMaterialize",
-          performanceDiagnosticNow() - materializeStart,
-        );
-        performanceDiagnosticRecordDuration(
-          "imageCacheGetImageTotal",
-          performanceDiagnosticNow() - totalStart,
-        );
-      }
       return this.obsidanURLCache.get(key);
     }
-    const objectUrlStart = diagnosticsEnabled ? performanceDiagnosticNow() : 0;
     const obsidianURL = URL.createObjectURL(cacheData.blob);
-    performanceDiagnosticIncrement("imageCacheRasterUrlCreated");
-    if (diagnosticsEnabled) {
-      performanceDiagnosticRecordDuration(
-        "imageCacheRasterObjectUrl",
-        performanceDiagnosticNow() - objectUrlStart,
-      );
-      performanceDiagnosticRecordDuration(
-        "imageCacheMaterialize",
-        performanceDiagnosticNow() - materializeStart,
-      );
-      performanceDiagnosticRecordDuration(
-        "imageCacheGetImageTotal",
-        performanceDiagnosticNow() - totalStart,
-      );
-    }
     this.obsidanURLCache.set(key, obsidianURL);
     return obsidianURL;
   }
@@ -824,12 +686,11 @@ class ImageCache {
     const isSVGElement = isInstanceOfSVGSVGElement(image);
     const payloadKind =
       isSVGElement || image.type === "image/svg+xml" ? "svg" : "raster";
-    const blob =
-      isSVGElement
-        ? new Blob([image.outerHTML.replaceAll("&nbsp;", " ")], {
-            type: "image/svg+xml",
-          })
-        : image;
+    const blob = isSVGElement
+      ? new Blob([image.outerHTML.replaceAll("&nbsp;", " ")], {
+          type: "image/svg+xml",
+        })
+      : image;
     const now = Date.now();
     const data: FileCacheData = {
       schemaVersion: 2,
@@ -893,9 +754,8 @@ class ImageCache {
     filepath: string,
     data: BackupData,
     delayMs: number,
-    onComplete?: (durationMs: number | undefined) => void,
   ): boolean {
-    return this.backupWrites.schedule(filepath, data, delayMs, onComplete);
+    return this.backupWrites.schedule(filepath, data, delayMs);
   }
 
   /** Flushes any queued backup before a drawing path is renamed. */

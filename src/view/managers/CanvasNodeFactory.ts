@@ -16,7 +16,6 @@ import {
   isObsidianThemeDark,
 } from "../../utils/obsidianUtils";
 import { CustomMutationObserver, DEBUGGING } from "../../utils/debugHelper";
-import { performanceDiagnosticLog } from "../../utils/performanceDiagnostics";
 
 declare const mainDocument: Document;
 
@@ -110,10 +109,6 @@ export class CanvasNodeFactory {
     node.containerEl.querySelector(".canvas-node-content-blocker")?.remove();
     containerEl.appendChild(node.containerEl);
     this.nodes.set(elementId, node);
-    performanceDiagnosticLog("canvasNode.created", {
-      viewId: this.view.id,
-      nodes: this.nodes.size,
-    });
     return node;
   }
 
@@ -223,43 +218,29 @@ export class CanvasNodeFactory {
     if (!this.initialized || !node) {
       return;
     }
-    const before = this.nodes.size;
-    let deleted = false;
     if (elementId && this.nodes.get(elementId) === node) {
-      deleted = this.nodes.delete(elementId);
+      this.nodes.delete(elementId);
     } else {
       for (const [registeredElementId, registeredNode] of this.nodes) {
         if (registeredNode === node) {
-          deleted = this.nodes.delete(registeredElementId);
+          this.nodes.delete(registeredElementId);
           break;
         }
       }
     }
     this.canvas.removeNode(node);
     node.detach();
-    performanceDiagnosticLog("canvasNode.removed", {
-      viewId: this.view.id,
-      before,
-      after: this.nodes.size,
-      mapEntryDeleted: deleted,
-    });
   }
 
   public purgeNodes() {
     if (!this.initialized) {
       return;
     }
-    const before = this.nodes.size;
     this.nodes.forEach((node) => {
       this.canvas.removeNode(node);
       node.detach();
     });
     this.nodes.clear();
-    performanceDiagnosticLog("canvasNode.purged", {
-      viewId: this.view.id,
-      before,
-      after: this.nodes.size,
-    });
   }
 
   destroy() {

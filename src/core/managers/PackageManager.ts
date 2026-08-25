@@ -8,13 +8,6 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { createObsidianCommonHostAdapter } from "./obsidianCommonHostAdapter";
 import { createObsidianExcalidrawHostAdapter } from "./obsidianExcalidrawHostAdapter";
-import {
-  performanceDiagnosticIncrement,
-  performanceDiagnosticLog,
-  performanceDiagnosticNow,
-  performanceDiagnosticRecordDuration,
-  performanceDiagnosticsEnabled,
-} from "../../utils/performanceDiagnostics";
 
 declare let REACT_PACKAGES: string;
 declare let react: typeof React;
@@ -197,10 +190,6 @@ export class PackageManager {
         throw normalizeError(error);
       }
       this.packageMap.set(win, pkg);
-      performanceDiagnosticLog("package.set", {
-        packageWindows: this.packageMap.size,
-        window: win === window ? "main" : "popout",
-      });
 
       // Update fallback if we don't have one
       if (!this.fallbackPackage) {
@@ -230,11 +219,6 @@ export class PackageManager {
     const packages = this.getPackage(win);
     const leaseCount = (this.packageLeaseCountMap.get(win) ?? 0) + 1;
     this.packageLeaseCountMap.set(win, leaseCount);
-    performanceDiagnosticLog("package.leaseAcquired", {
-      window: win === window ? "main" : "popout",
-      leases: leaseCount,
-      packageWindows: this.packageMap.size,
-    });
 
     let released = false;
     return {
@@ -267,11 +251,6 @@ export class PackageManager {
       this.packageLeaseCountMap.set(win, remainingLeases);
     }
 
-    performanceDiagnosticLog("package.leaseReleased", {
-      window: win === window ? "main" : "popout",
-      leases: remainingLeases,
-      packageWindows: this.packageMap.size,
-    });
   }
 
   /**
@@ -279,28 +258,11 @@ export class PackageManager {
    * with robust error handling
    */
   public getPackage(win: Window): Packages {
-    const diagnosticsEnabled = performanceDiagnosticsEnabled();
-    const diagnosticsStart = diagnosticsEnabled ? performanceDiagnosticNow() : 0;
     try {
       // Return existing package if available
       if (this.packageMap.has(win)) {
         const pkg = this.packageMap.get(win);
         if (this.validatePackage(pkg)) {
-          if (diagnosticsEnabled) {
-            performanceDiagnosticIncrement("packageCacheHit");
-            performanceDiagnosticRecordDuration(
-              "packageGet",
-              performanceDiagnosticNow() - diagnosticsStart,
-            );
-          }
-          performanceDiagnosticLog("package.get", {
-            source: "cache",
-            window: win === window ? "main" : "popout",
-            packageWindows: this.packageMap.size,
-            durationMs: diagnosticsEnabled
-              ? performanceDiagnosticNow() - diagnosticsStart
-              : undefined,
-          });
           return pkg;
         }
         // If package exists but is invalid, delete it so we can recreate it
@@ -339,21 +301,6 @@ export class PackageManager {
           };
 
           this.setPackage(win, newPackage);
-          if (diagnosticsEnabled) {
-            performanceDiagnosticIncrement("packageCreated");
-            performanceDiagnosticRecordDuration(
-              "packageGet",
-              performanceDiagnosticNow() - diagnosticsStart,
-            );
-          }
-          performanceDiagnosticLog("package.get", {
-            source: "created",
-            window: win === window ? "main" : "popout",
-            packageWindows: this.packageMap.size,
-            durationMs: diagnosticsEnabled
-              ? performanceDiagnosticNow() - diagnosticsStart
-              : undefined,
-          });
           return newPackage;
         },
         "PackageManager.getPackage",
@@ -377,7 +324,6 @@ export class PackageManager {
 
   public deletePackage(win: Window) {
     try {
-      const packageWindowsBefore = this.packageMap.size;
       this.disposeObsidianHosts(win);
 
       const pkg = this.packageMap.get(win);
@@ -393,12 +339,6 @@ export class PackageManager {
       }
 
       this.packageMap.delete(win);
-      performanceDiagnosticIncrement("packageDeleted");
-      performanceDiagnosticLog("package.deleted", {
-        window: win === window ? "main" : "popout",
-        before: packageWindowsBefore,
-        after: this.packageMap.size,
-      });
     } catch (error: unknown) {
       errorHandler.handleError(
         normalizeError(error),

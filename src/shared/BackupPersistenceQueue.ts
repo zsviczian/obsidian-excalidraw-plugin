@@ -1,6 +1,5 @@
 type PendingBackup = {
   data: string;
-  onComplete?: (durationMs: number | undefined) => void;
 };
 
 type BackupWriteState = {
@@ -12,8 +11,7 @@ type BackupWriteState = {
 type BackupPersistenceQueueOptions = {
   ownerWindow: Window;
   write: (filepath: string, data: string) => Promise<void>;
-  getTimestamp?: () => number | undefined;
-  onError?: (error: unknown, stage: "write" | "onComplete") => void;
+  onError?: (error: unknown, stage: "write") => void;
 };
 
 /**
@@ -27,14 +25,12 @@ type BackupPersistenceQueueOptions = {
 export class BackupPersistenceQueue {
   private readonly ownerWindow: Window;
   private readonly write: BackupPersistenceQueueOptions["write"];
-  private readonly getTimestamp?: BackupPersistenceQueueOptions["getTimestamp"];
   private readonly onError?: BackupPersistenceQueueOptions["onError"];
   private readonly writes = new Map<string, BackupWriteState>();
 
   constructor(options: BackupPersistenceQueueOptions) {
     this.ownerWindow = options.ownerWindow;
     this.write = options.write;
-    this.getTimestamp = options.getTimestamp;
     this.onError = options.onError;
   }
 
@@ -44,12 +40,7 @@ export class BackupPersistenceQueue {
    * @returns `true` when an older pending payload was replaced or the new
    * payload was coalesced behind an active write.
    */
-  public schedule(
-    filepath: string,
-    data: string,
-    delayMs: number,
-    onComplete?: PendingBackup["onComplete"],
-  ): boolean {
+  public schedule(filepath: string, data: string, delayMs: number): boolean {
     let state = this.writes.get(filepath);
     if (!state) {
       state = { timer: null, inFlight: null, pending: null };
@@ -57,7 +48,7 @@ export class BackupPersistenceQueue {
     }
 
     const coalesced = state.pending !== null || state.inFlight !== null;
-    state.pending = { data, onComplete };
+    state.pending = { data };
     this.clearTimer(state);
     if (state.inFlight === null) {
       this.scheduleDrain(filepath, state, delayMs);
@@ -154,21 +145,10 @@ export class BackupPersistenceQueue {
 
     const pending = state.pending;
     state.pending = null;
-    const start = this.getTimestamp?.();
     const write = this.write(filepath, pending.data);
     state.inFlight = write;
     try {
       await write;
-      if (this.writes.get(filepath) === state) {
-        try {
-          const end = start === undefined ? undefined : this.getTimestamp?.();
-          pending.onComplete?.(
-            start !== undefined && end !== undefined ? end - start : undefined,
-          );
-        } catch (error: unknown) {
-          this.onError?.(error, "onComplete");
-        }
-      }
     } catch (error: unknown) {
       this.onError?.(error, "write");
     } finally {

@@ -50,10 +50,6 @@ import { errorlog, getExportTheme } from "src/utils/utils";
 import { getImageCache } from "src/shared/ImageCache";
 import { PaneTarget } from "src/types/utilTypes";
 import { t } from "src/lang/helpers";
-import {
-  performanceDiagnosticIncrement,
-  performanceDiagnosticLog,
-} from "src/utils/performanceDiagnostics";
 
 export class PluginFileManager {
   private plugin: ExcalidrawPlugin;
@@ -105,14 +101,7 @@ export class PluginFileManager {
       return !!frontmatter[FRONTMATTER_KEYS.plugin.name];
     }
 
-    const retainedClassification = this.excalidrawFiles.has(f);
-    if (retainedClassification) {
-      performanceDiagnosticIncrement("knownExcalidrawFileFallback");
-      performanceDiagnosticLog("file.classificationFallback", {
-        extension: f.extension,
-      });
-    }
-    return retainedClassification;
+    return this.excalidrawFiles.has(f);
   }
 
   //managing my own list of Excalidraw files because in the onDelete event handler

@@ -402,7 +402,6 @@ export class EventManager {
               changedDependencyFileIDs,
               false,
               true,
-              "active-leaf-change",
             );
           }
         }, 2000);

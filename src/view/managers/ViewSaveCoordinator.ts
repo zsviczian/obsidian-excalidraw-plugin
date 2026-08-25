@@ -2,18 +2,10 @@ import { Notice } from "obsidian";
 import type { AppState } from "@zsviczian/excalidraw/types/excalidraw/types";
 
 import { t } from "../../lang/helpers";
-import {
-  nextPerformanceDiagnosticId,
-  performanceDiagnosticIncrement,
-  performanceDiagnosticLog,
-  performanceDiagnosticNow,
-  performanceDiagnosticsEnabled,
-} from "../../utils/performanceDiagnostics";
 import type ExcalidrawView from "../ExcalidrawView";
 
 /** Side effects selected for one save request. */
 export interface SaveSideEffectPolicy {
-  reason: string;
   triggerAutoexport: boolean;
 }
 
@@ -37,7 +29,6 @@ export interface ForceSavePolicy {
 }
 
 export const DIRECT_SAVE_SIDE_EFFECT_POLICY: Readonly<SaveSideEffectPolicy> = {
-  reason: "direct",
   triggerAutoexport: true,
 };
 
@@ -131,16 +122,6 @@ export class ViewSaveCoordinator {
     }
 
     if (this.saveLoopPromise !== null) {
-      performanceDiagnosticIncrement("saveCoalesced");
-      performanceDiagnosticLog("saveCoordinator.coalesced", {
-        viewId: this.view.id,
-        reason: request.sideEffectPolicy.reason,
-        revision: request.revision,
-        activeRevision: this.activeSaveRevision,
-        pendingRevision: this.pendingSaveRequest.revision,
-        currentRevision: this.currentRevision,
-        savedRevision: this.savedRevision,
-      });
       return this.saveLoopPromise;
     }
 
@@ -167,7 +148,6 @@ export class ViewSaveCoordinator {
         current.overrideEmbeddableIsEditingSelfDebounce ||
         incoming.overrideEmbeddableIsEditingSelfDebounce,
       sideEffectPolicy: {
-        reason: selected.sideEffectPolicy.reason,
         triggerAutoexport:
           current.sideEffectPolicy.triggerAutoexport ||
           incoming.sideEffectPolicy.triggerAutoexport,
@@ -186,24 +166,7 @@ export class ViewSaveCoordinator {
         !request.forcesave &&
         request.revision <= this.savedRevision
       ) {
-        performanceDiagnosticLog("saveCoordinator.trailingSatisfied", {
-          viewId: this.view.id,
-          reason: request.sideEffectPolicy.reason,
-          revision: request.revision,
-          currentRevision: this.currentRevision,
-          savedRevision: this.savedRevision,
-        });
         continue;
-      }
-      if (completedRequest) {
-        performanceDiagnosticIncrement("saveTrailingRun");
-        performanceDiagnosticLog("saveCoordinator.trailingStart", {
-          viewId: this.view.id,
-          reason: request.sideEffectPolicy.reason,
-          revision: request.revision,
-          currentRevision: this.currentRevision,
-          savedRevision: this.savedRevision,
-        });
       }
       this.activeSaveRevision = request.revision;
       try {
@@ -233,16 +196,6 @@ export class ViewSaveCoordinator {
       this.savedRevision = Math.max(this.savedRevision, request.revision);
       this.reconcileDirtyState();
     }
-    performanceDiagnosticLog("saveCoordinator.completed", {
-      viewId: this.view.id,
-      reason: request.sideEffectPolicy.reason,
-      status: result.status,
-      saveRevision: request.revision,
-      currentRevision: this.currentRevision,
-      savedRevision: this.savedRevision,
-      trailingQueued: Boolean(this.pendingSaveRequest),
-      dirty: this.isDirty(),
-    });
   }
 
   private queueTrailingSave(): void {
@@ -256,14 +209,6 @@ export class ViewSaveCoordinator {
     this.pendingSaveRequest = this.pendingSaveRequest
       ? this.mergeSaveRequests(this.pendingSaveRequest, request)
       : request;
-    performanceDiagnosticIncrement("saveTrailingQueued");
-    performanceDiagnosticLog("saveCoordinator.trailingQueued", {
-      viewId: this.view.id,
-      revision: this.currentRevision,
-      activeRevision: this.activeSaveRevision,
-      pendingRevision: this.pendingSaveRequest.revision,
-      savedRevision: this.savedRevision,
-    });
   }
 
   private reconcileDirtyState(): void {
@@ -283,12 +228,10 @@ export class ViewSaveCoordinator {
   public async forceSave(
     silent: boolean = false,
     waitIfBusy: boolean = false,
-    diagnosticReason: string = "unspecified",
   ): Promise<void> {
     await this.forceSaveWithPolicy(
       silent,
       waitIfBusy,
-      diagnosticReason,
       PUBLIC_FORCE_SAVE_POLICY,
     );
   }
@@ -297,26 +240,8 @@ export class ViewSaveCoordinator {
   public async forceSaveWithPolicy(
     silent: boolean,
     waitIfBusy: boolean,
-    diagnosticReason: string,
     policy: Readonly<ForceSavePolicy>,
   ): Promise<void> {
-    const diagnosticsEnabled = performanceDiagnosticsEnabled();
-    const diagnosticId = diagnosticsEnabled
-      ? nextPerformanceDiagnosticId("forceSave")
-      : "";
-    const start = diagnosticsEnabled ? performanceDiagnosticNow() : 0;
-    performanceDiagnosticIncrement(`forceSaveReason.${diagnosticReason}`);
-    performanceDiagnosticLog("forceSave.request", {
-      id: diagnosticId,
-      viewId: this.view.id,
-      reason: diagnosticReason,
-      silent,
-      waitIfBusy,
-      refreshSceneFiles: policy.refreshSceneFiles,
-      triggerAutoexport: policy.triggerAutoexport,
-      autosaving: this.view.semaphores.autosaving,
-      saving: this.view.semaphores.saving,
-    });
     if (waitIfBusy) {
       let counter = 0;
       while (
@@ -336,64 +261,25 @@ export class ViewSaveCoordinator {
       if (!silent) {
         new Notice(t("FORCE_SAVE_ABORTED"));
       }
-      performanceDiagnosticLog("forceSave.skipped", {
-        id: diagnosticId,
-        viewId: this.view.id,
-        requestReason: diagnosticReason,
-        reason: "save-in-flight",
-        totalMs: diagnosticsEnabled
-          ? performanceDiagnosticNow() - start
-          : undefined,
-      });
       return;
     }
     this.view.clearPreventReloadTimer();
     this.view.semaphores.preventReload = false;
     this.view.semaphores.forceSaving = true;
-    const saveStart = diagnosticsEnabled ? performanceDiagnosticNow() : 0;
     await this.enqueueSave({
       preventReload: false,
       forcesave: true,
       overrideEmbeddableIsEditingSelfDebounce: true,
       sideEffectPolicy: {
-        reason: diagnosticReason,
         triggerAutoexport: policy.triggerAutoexport,
       },
       revision: this.currentRevision,
     });
-    const saveMs = diagnosticsEnabled
-      ? performanceDiagnosticNow() - saveStart
-      : 0;
     this.view.plugin.triggerEmbedUpdates();
-    let loadSceneFilesMs = 0;
     if (policy.refreshSceneFiles) {
-      const loadSceneFilesStart = diagnosticsEnabled
-        ? performanceDiagnosticNow()
-        : 0;
-      await this.view.loadSceneFiles(
-        false,
-        undefined,
-        undefined,
-        undefined,
-        `force-save:${diagnosticReason}`,
-      );
-      loadSceneFilesMs = diagnosticsEnabled
-        ? performanceDiagnosticNow() - loadSceneFilesStart
-        : 0;
+      await this.view.loadSceneFiles();
     }
     this.view.semaphores.forceSaving = false;
-    performanceDiagnosticLog("forceSave.complete", {
-      id: diagnosticId,
-      viewId: this.view.id,
-      reason: diagnosticReason,
-      refreshSceneFiles: policy.refreshSceneFiles,
-      triggerAutoexport: policy.triggerAutoexport,
-      saveMs: diagnosticsEnabled ? saveMs : undefined,
-      loadSceneFilesMs: diagnosticsEnabled ? loadSceneFilesMs : undefined,
-      totalMs: diagnosticsEnabled
-        ? performanceDiagnosticNow() - start
-        : undefined,
-    });
     if (!silent) {
       new Notice("Save successful", 1000);
     }
