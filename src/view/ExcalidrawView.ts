@@ -388,6 +388,14 @@ export const addFiles = async (
       skipSvgNormalization.add(file.id);
     }
   }
+  if (
+    view.excalidrawAPI !== api ||
+    api.isDestroyed ||
+    view.semaphores?.windowMigrating ||
+    view.semaphores?.viewunload
+  ) {
+    return;
+  }
   api.addFiles({ files, skipSvgNormalization });
 };
 
@@ -489,6 +497,7 @@ export default class ExcalidrawView
   private destroyers: Array<() => void> = [];
   private previousContentElHeight: number = 0;
   private resizeBatchTimer: number | null = null;
+  private excalidrawInitializeTimer: number | null = null;
   private resizeBatchWindowStart: number = 0;
   private lastAggregatedDh = 0;
   private lastOffsetDriftCheck: number = 0;
@@ -1681,6 +1690,7 @@ export default class ExcalidrawView
           // unload callbacks select detached-view persistence. Capture every
           // API-owned value synchronously, then unmount before the first await.
           this.semaphores.windowMigrating = true;
+          this.clearExcalidrawInitializeTimer();
           this.sceneFileManager.terminateActiveLoaders();
           const migrationSaveRequired =
             this.captureWindowMigrationSaveSnapshot();
@@ -2128,6 +2138,7 @@ export default class ExcalidrawView
     //the from "detachLeavesOfType"
     this.clearPreventReloadTimer();
     this.clearEmbeddableNodeIsEditingTimer();
+    this.clearExcalidrawInitializeTimer();
     if (!this.dropManager && !this.excalidrawRoot) {
       return;
     } //the view is already closed
@@ -2290,6 +2301,7 @@ export default class ExcalidrawView
       window.clearTimeout(this.colorChangeTimer);
       this.colorChangeTimer = null;
     }
+    this.clearExcalidrawInitializeTimer();
     if (this.semaphores?.wheelTimeout) {
       window.clearTimeout(this.semaphores.wheelTimeout);
       this.semaphores.wheelTimeout = null;
@@ -3381,6 +3393,15 @@ export default class ExcalidrawView
   }
 
   private onAfterLoadScene(justloaded: boolean) {
+    const api = this.excalidrawAPI;
+    if (
+      !api ||
+      api.isDestroyed ||
+      this.semaphores?.windowMigrating ||
+      this.semaphores?.viewunload
+    ) {
+      return;
+    }
     void this.loadSceneFiles(false, undefined, undefined, undefined);
     this.updateContainerSize(null, true, justloaded);
     void this.initializeToolsIconPanelAfterLoading();
@@ -6614,12 +6635,27 @@ export default class ExcalidrawView
     this.pendingUIMode = null;
   }
 
+  private clearExcalidrawInitializeTimer(): void {
+    if (this.excalidrawInitializeTimer !== null) {
+      window.clearTimeout(this.excalidrawInitializeTimer);
+      this.excalidrawInitializeTimer = null;
+    }
+  }
+
   public onExcalidrawInitialize(api: ExcalidrawImperativeAPI) {
     // Ensure we keep the latest editor API reference before running scene-dependent setup.
+    this.clearExcalidrawInitializeTimer();
     this.setExcalidrawAPI(api);
-    window.setTimeout(() => {
+    this.excalidrawInitializeTimer = window.setTimeout(() => {
+      this.excalidrawInitializeTimer = null;
       // window migration scenario
-      if (!this.plugin) {
+      if (
+        !this.plugin ||
+        this.excalidrawAPI !== api ||
+        api.isDestroyed ||
+        this.semaphores?.windowMigrating ||
+        this.semaphores?.viewunload
+      ) {
         return;
       }
       this.onAfterLoadScene(true);

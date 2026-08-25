@@ -1,4 +1,7 @@
 import type { FileId } from "@zsviczian/excalidraw/types/element/src/types";
+import type {
+  ExcalidrawImperativeAPI,
+} from "@zsviczian/excalidraw/types/excalidraw/types";
 
 import type {
   DeferredCacheValidation,
@@ -116,6 +119,21 @@ export class ViewSceneFileManager {
     private readonly dependencies: ViewSceneFileManagerDependencies,
   ) {}
 
+  private isRuntimeCurrent(
+    api: ExcalidrawImperativeAPI,
+    filePath: string | null,
+  ): boolean {
+    // A replacement view can open the same file while callbacks from the
+    // source window are still queued, so file identity alone is insufficient.
+    return (
+      this.view.excalidrawAPI === api &&
+      !api.isDestroyed &&
+      !this.view.semaphores?.windowMigrating &&
+      !this.view.semaphores?.viewunload &&
+      (this.view.file?.path ?? null) === filePath
+    );
+  }
+
   /** Terminates any in-flight loaders and cancels deferred validation. Called
    * from `ExcalidrawView.onClose()`, `onunload()`, and `clear()`. */
   public terminateActiveLoaders(): void {
@@ -163,11 +181,15 @@ export class ViewSceneFileManager {
     emitPolicy: "changed-only" | "all" = "changed-only",
   ) {
     this.cancelDeferredSceneFileValidation();
+    const api = this.view.excalidrawAPI;
     if (
       !candidates ||
       candidates.size === 0 ||
       !this.view.file ||
-      !this.view.excalidrawAPI
+      !api ||
+      api.isDestroyed ||
+      this.view.semaphores?.windowMigrating ||
+      this.view.semaphores?.viewunload
     ) {
       return;
     }
@@ -178,11 +200,9 @@ export class ViewSceneFileManager {
     this.deferredValidationFilePath = currentFile;
     this.deferredValidationTimer = window.setTimeout(() => {
       this.deferredValidationTimer = null;
-      if (
-        !this.view.file ||
-        !this.view.excalidrawAPI ||
-        this.view.file.path !== currentFile
-      ) {
+      if (!this.isRuntimeCurrent(api, currentFile)) {
+        loader.terminate = true;
+        loader.emptyPDFDocsMap();
         this.deferredValidationFilePath = null;
         return;
       }
@@ -198,12 +218,10 @@ export class ViewSceneFileManager {
           isDark: boolean,
           final: boolean = true,
         ) => {
-          if (
-            !this.view.file ||
-            !this.view.excalidrawAPI ||
-            this.view.file.path !== currentFile
-          ) {
-            if (final && this.deferredValidationLoader === loader) {
+          if (!this.isRuntimeCurrent(api, currentFile)) {
+            loader.terminate = true;
+            loader.emptyPDFDocsMap();
+            if (this.deferredValidationLoader === loader) {
               this.deferredValidationLoader = null;
               this.deferredValidationFilePath = null;
             }
@@ -248,7 +266,15 @@ export class ViewSceneFileManager {
     isThemeChange: boolean = false,
     forceEmitFromCache: boolean = false,
   ) {
-    if (!this.view.excalidrawAPI || !fileIDs || fileIDs.size === 0) {
+    const api = this.view.excalidrawAPI;
+    if (
+      !api ||
+      api.isDestroyed ||
+      this.view.semaphores?.windowMigrating ||
+      this.view.semaphores?.viewunload ||
+      !fileIDs ||
+      fileIDs.size === 0
+    ) {
       return;
     }
     if (this.activeLoader) {
@@ -280,11 +306,19 @@ export class ViewSceneFileManager {
     callback?: () => void,
     forceReloadFileIDs?: Set<FileId>,
   ) {
-    if (!this.view.excalidrawAPI) {
+    const requestAPI = this.view.excalidrawAPI;
+    if (
+      !requestAPI ||
+      requestAPI.isDestroyed ||
+      this.view.semaphores?.windowMigrating ||
+      this.view.semaphores?.viewunload
+    ) {
       return;
     }
 
     const requestFilePath = this.view.file?.path ?? null;
+    const requestIsCurrent = () =>
+      this.isRuntimeCurrent(requestAPI, requestFilePath);
     const deferredValidationForSameFile =
       !!requestFilePath &&
       this.deferredValidationFilePath === requestFilePath &&
@@ -310,6 +344,17 @@ export class ViewSceneFileManager {
     const loader = this.dependencies.createEmbeddedFilesLoader();
 
     const runLoader = (l: EmbeddedFilesLoader) => {
+      if (!requestIsCurrent()) {
+        l.terminate = true;
+        l.emptyPDFDocsMap();
+        if (this.activeLoader === l) {
+          this.activeLoader = null;
+        }
+        if (this.nextLoader === l) {
+          this.nextLoader = null;
+        }
+        return;
+      }
       this.nextLoader = null;
       this.activeLoader = l;
       const prioritizedFileIds = getVisibleImageFileIds(this.view);
@@ -321,11 +366,19 @@ export class ViewSceneFileManager {
           isDark: boolean,
           final: boolean = true,
         ) => {
+          if (!requestIsCurrent()) {
+            l.terminate = true;
+            l.emptyPDFDocsMap();
+            if (this.activeLoader === l) {
+              this.activeLoader = null;
+            }
+            if (this.nextLoader === l) {
+              this.nextLoader = null;
+            }
+            return;
+          }
           if (callback && final) {
             callback();
-          }
-          if (!this.view.file || !this.view.excalidrawAPI) {
-            return; //The view was closed in the mean time
           }
           if (files && files.length > 0) {
             void this.dependencies.addFiles(files, this.view, isDark);
@@ -370,7 +423,7 @@ export class ViewSceneFileManager {
               const retryLoadSceneFiles = () => {
                 if (
                   !this ||
-                  !this.view.excalidrawAPI ||
+                  !requestIsCurrent() ||
                   currentFile !== this.view.file.path
                 ) {
                   return;
