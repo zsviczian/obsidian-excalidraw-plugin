@@ -111,6 +111,7 @@ const markdownRendererRecursionWatcthdog = new Set<TFile>();
 
 type CacheValidationMode = "validated" | "stale-first";
 const SCENE_FILE_LOAD_STALL_TIMEOUT_MS = 30_000;
+const SCENE_FILE_PROGRESSIVE_BATCH_SIZE = 8;
 
 export type EmbeddedFilesLoaderTerminalState =
   | "idle"
@@ -1310,6 +1311,8 @@ export class EmbeddedFilesLoader {
     onDeferredValidationCandidates,
     deferredCacheValidation,
     sceneElements,
+    waitForRender,
+    prioritizedFileIds,
   }: {
     excalidrawData: ExcalidrawData;
     addFiles: (files: FileData[], isDark: boolean, final?: boolean) => void;
@@ -1325,6 +1328,8 @@ export class EmbeddedFilesLoader {
     ) => void;
     deferredCacheValidation?: ReadonlyMap<FileId, DeferredCacheValidation>;
     sceneElements?: readonly ExcalidrawElement[];
+    waitForRender?: () => Promise<void>;
+    prioritizedFileIds?: ReadonlySet<FileId>;
   }) {
     this.terminalState = "running";
     if (this.isDark === undefined) {
@@ -1346,6 +1351,13 @@ export class EmbeddedFilesLoader {
       return;
     }
     const entries = Array.from(excalidrawData.getFileEntries());
+    if (prioritizedFileIds?.size) {
+      entries.sort(
+        ([fileIdA], [fileIdB]) =>
+          Number(prioritizedFileIds.has(fileIdB)) -
+          Number(prioritizedFileIds.has(fileIdA)),
+      );
+    }
     const markdownImageElements = (
       sceneElements ?? excalidrawData.scene.elements
     ).filter(
@@ -1769,12 +1781,73 @@ export class EmbeddedFilesLoader {
       }
     };
 
+    let progressivePaintPromise: Promise<void> | null = null;
+    const flushProgressiveBatch = (): boolean => {
+      if (
+        !waitForRender ||
+        files[batch].length <= SCENE_FILE_PROGRESSIVE_BATCH_SIZE
+      ) {
+        return false;
+      }
+
+      if (prioritizedFileIds?.size) {
+        files[batch].sort(
+          (fileA, fileB) =>
+            Number(prioritizedFileIds.has(fileB.id)) -
+            Number(prioritizedFileIds.has(fileA.id)),
+        );
+      }
+      const batchFiles = files[batch]
+        .splice(0, SCENE_FILE_PROGRESSIVE_BATCH_SIZE)
+        .filter((f) => emitPolicy === "all" || !f.loadedFromCache);
+      if (batchFiles.length === 0) {
+        return false;
+      }
+
+      flushFiles(batchFiles, false);
+      const paintPromise = Promise.resolve()
+        .then(waitForRender)
+        .catch((error: unknown) => {
+          errorlog({
+            where: "EmbeddedFileLoader.loadSceneFiles",
+            phase: "progressive-batch-paint",
+            error,
+          });
+        });
+      progressivePaintPromise = paintPromise;
+      void paintPromise.finally(() => {
+        if (progressivePaintPromise === paintPromise) {
+          progressivePaintPromise = null;
+        }
+      });
+      return true;
+    };
+
+    const waitForProgressivePaint = async () => {
+      if (progressivePaintPromise !== null) {
+        await progressivePaintPromise;
+      }
+    };
+
+    const drainProgressiveBatches = async () => {
+      await waitForProgressivePaint();
+      while (flushProgressiveBatch()) {
+        await waitForProgressivePaint();
+      }
+    };
+
     const addFilesTimer = window.setInterval(() => {
       if (this.terminate) {
         window.clearInterval(addFilesTimer);
         return;
       }
       if (files[batch].length === 0) {
+        return;
+      }
+      if (progressivePaintPromise !== null) {
+        return;
+      }
+      if (flushProgressiveBatch()) {
         return;
       }
       // During deferred validation, only regenerated results should reach addFiles.
@@ -1804,6 +1877,7 @@ export class EmbeddedFilesLoader {
       if (deferredGenerationEntries.length > 0) {
         // Publish everything that was available from cache or direct file reads
         // before expensive generated SVG work can monopolize the main thread.
+        await drainProgressiveBatches();
         const fastFiles = files[batch].filter(
           (f) => emitPolicy === "all" || !f.loadedFromCache,
         );
@@ -1842,6 +1916,7 @@ export class EmbeddedFilesLoader {
       if (deferredValidationCandidates.size > 0) {
         onDeferredValidationCandidates?.(deferredValidationCandidates);
       }
+      await drainProgressiveBatches();
       // Same filter for the final flush so validated cache hits remain a no-op.
       const batchFiles = files[batch].filter(
         (f) => emitPolicy === "all" || !f.loadedFromCache,

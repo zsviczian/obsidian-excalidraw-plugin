@@ -31,6 +31,57 @@ export interface ViewSceneFileManagerDependencies {
   addFiles: typeof import("../ExcalidrawView").addFiles;
 }
 
+const waitForWindowPaint = (getOwnerWindow: () => Window): Promise<void> =>
+  new Promise((resolve) => {
+    let settled = false;
+    const finish = () => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      window.clearTimeout(fallbackTimer);
+      resolve();
+    };
+    const fallbackTimer = window.setTimeout(finish, 250);
+
+    try {
+      const ownerWindow = getOwnerWindow();
+      ownerWindow.requestAnimationFrame(() => {
+        ownerWindow.requestAnimationFrame(finish);
+      });
+    } catch {
+      finish();
+    }
+  });
+
+const getVisibleImageFileIds = (view: ExcalidrawView): Set<FileId> => {
+  const visibleFileIds = new Set<FileId>();
+  const appState = view.excalidrawAPI?.getAppState();
+  if (!appState) {
+    return visibleFileIds;
+  }
+
+  const zoom = appState.zoom.value;
+  const left = -appState.scrollX;
+  const top = -appState.scrollY;
+  const right = left + appState.width / zoom;
+  const bottom = top + appState.height / zoom;
+  for (const element of view.getViewElements()) {
+    if (
+      element.type === "image" &&
+      !element.isDeleted &&
+      element.fileId &&
+      element.x + element.width >= left &&
+      element.y + element.height >= top &&
+      element.x <= right &&
+      element.y <= bottom
+    ) {
+      visibleFileIds.add(element.fileId);
+    }
+  }
+  return visibleFileIds;
+};
+
 /**
  * Owns the embedded-file loading pipeline (RefactorPlan.md Phase 6,
  * "ViewSceneFileManager"): the active/next loader pair, the deferred
@@ -397,6 +448,7 @@ export class ViewSceneFileManager {
       const runStart = diagnosticsEnabled ? performanceDiagnosticNow() : 0;
       let emittedFiles = 0;
       let emittedBatches = 0;
+      const prioritizedFileIds = getVisibleImageFileIds(this.view);
       performanceDiagnosticIncrement("loadSceneFilesRun");
       performanceDiagnosticLog("sceneFiles.runStart", {
         id: runId,
@@ -409,6 +461,7 @@ export class ViewSceneFileManager {
         forceReload: forceReloadFileIDs?.size ?? 0,
         sceneElements: this.view.getViewElements().length,
         embeddedFiles: this.view.excalidrawData.getFiles().length,
+        prioritizedFiles: prioritizedFileIds.size,
       });
       void l.loadSceneFiles({
         excalidrawData: this.view.excalidrawData,
@@ -548,6 +601,9 @@ export class ViewSceneFileManager {
         onDeferredValidationCandidates: (candidates) => {
           this.addDeferredValidationCandidates(candidates);
         },
+        waitForRender: () =>
+          waitForWindowPaint(() => this.view.ownerWindow ?? window),
+        prioritizedFileIds,
       });
     };
     if (!this.activeLoader) {
