@@ -17,6 +17,19 @@ export interface SaveSideEffectPolicy {
   triggerAutoexport: boolean;
 }
 
+/** Terminal outcome reported by the view-owned persistence implementation. */
+export type SaveExecutionStatus =
+  | "persisted"
+  | "view-unload-scheduled"
+  | "unchanged"
+  | "skipped"
+  | "failed";
+
+/** Result used by the coordinator to advance the saved revision safely. */
+export interface SaveExecutionResult {
+  status: SaveExecutionStatus;
+}
+
 /** Side effects selected for one forced-save request. */
 export interface ForceSavePolicy {
   refreshSceneFiles: boolean;
@@ -47,7 +60,7 @@ export interface ViewSaveCoordinatorDependencies {
     forcesave: boolean,
     overrideEmbeddableIsEditingSelfDebounce: boolean,
     sideEffectPolicy: Readonly<SaveSideEffectPolicy>,
-  ) => Promise<void>;
+  ) => Promise<SaveExecutionResult>;
   requestSave: (
     preventReload?: boolean,
     forcesave?: boolean,
@@ -61,18 +74,31 @@ export interface ViewSaveCoordinatorDependencies {
   clearDirtyVisuals: () => void;
 }
 
+interface SaveRequest {
+  preventReload: boolean;
+  forcesave: boolean;
+  overrideEmbeddableIsEditingSelfDebounce: boolean;
+  sideEffectPolicy: Readonly<SaveSideEffectPolicy>;
+  revision: number;
+}
+
 /**
  * Coordinates persistence entry points, dirty state, and autosave scheduling
  * for one Excalidraw view.
  *
  * The view retains its public facade and the `TextFileView.save()` disk-write
- * implementation. This first extraction deliberately preserves the existing
- * semaphore and timer behavior; revision and coalescing semantics are a
- * separate checkpoint.
+ * implementation. Durable edit revisions prevent a completed save from
+ * clearing newer changes, and one merged trailing request bounds concurrent
+ * persistence work without dropping edits made while a save is in flight.
  */
 export class ViewSaveCoordinator {
   public autosaveTimer: number | null = null;
   public autosaveFunction: (() => void) | null = null;
+  private currentRevision = 0;
+  private savedRevision = 0;
+  private activeSaveRevision: number | null = null;
+  private pendingSaveRequest: SaveRequest | null = null;
+  private saveLoopPromise: Promise<void> | null = null;
 
   public constructor(
     private readonly view: ExcalidrawView,
@@ -85,12 +111,172 @@ export class ViewSaveCoordinator {
     forcesave: boolean = false,
     overrideEmbeddableIsEditingSelfDebounce: boolean = false,
   ): Promise<void> {
-    await this.dependencies.performSave(
+    await this.enqueueSave({
       preventReload,
       forcesave,
       overrideEmbeddableIsEditingSelfDebounce,
-      DIRECT_SAVE_SIDE_EFFECT_POLICY,
-    );
+      sideEffectPolicy: DIRECT_SAVE_SIDE_EFFECT_POLICY,
+      revision: this.currentRevision,
+    });
+  }
+
+  private enqueueSave(request: SaveRequest): Promise<void> {
+    if (this.pendingSaveRequest) {
+      this.pendingSaveRequest = this.mergeSaveRequests(
+        this.pendingSaveRequest,
+        request,
+      );
+    } else {
+      this.pendingSaveRequest = request;
+    }
+
+    if (this.saveLoopPromise !== null) {
+      performanceDiagnosticIncrement("saveCoalesced");
+      performanceDiagnosticLog("saveCoordinator.coalesced", {
+        viewId: this.view.id,
+        reason: request.sideEffectPolicy.reason,
+        revision: request.revision,
+        activeRevision: this.activeSaveRevision,
+        pendingRevision: this.pendingSaveRequest.revision,
+        currentRevision: this.currentRevision,
+        savedRevision: this.savedRevision,
+      });
+      return this.saveLoopPromise;
+    }
+
+    const loop = Promise.resolve().then(() => this.drainSaveQueue());
+    const trackedLoop = loop.finally(() => {
+      if (this.saveLoopPromise === trackedLoop) {
+        this.saveLoopPromise = null;
+      }
+    });
+    this.saveLoopPromise = trackedLoop;
+    return trackedLoop;
+  }
+
+  private mergeSaveRequests(
+    current: SaveRequest,
+    incoming: SaveRequest,
+  ): SaveRequest {
+    const selected =
+      current.forcesave && !incoming.forcesave ? current : incoming;
+    return {
+      ...selected,
+      forcesave: current.forcesave || incoming.forcesave,
+      overrideEmbeddableIsEditingSelfDebounce:
+        current.overrideEmbeddableIsEditingSelfDebounce ||
+        incoming.overrideEmbeddableIsEditingSelfDebounce,
+      sideEffectPolicy: {
+        reason: selected.sideEffectPolicy.reason,
+        triggerAutoexport:
+          current.sideEffectPolicy.triggerAutoexport ||
+          incoming.sideEffectPolicy.triggerAutoexport,
+      },
+      revision: Math.max(current.revision, incoming.revision),
+    };
+  }
+
+  private async drainSaveQueue(): Promise<void> {
+    let completedRequest = false;
+    while (this.pendingSaveRequest) {
+      const request = this.pendingSaveRequest;
+      this.pendingSaveRequest = null;
+      if (
+        completedRequest &&
+        !request.forcesave &&
+        request.revision <= this.savedRevision
+      ) {
+        performanceDiagnosticLog("saveCoordinator.trailingSatisfied", {
+          viewId: this.view.id,
+          reason: request.sideEffectPolicy.reason,
+          revision: request.revision,
+          currentRevision: this.currentRevision,
+          savedRevision: this.savedRevision,
+        });
+        continue;
+      }
+      if (completedRequest) {
+        performanceDiagnosticIncrement("saveTrailingRun");
+        performanceDiagnosticLog("saveCoordinator.trailingStart", {
+          viewId: this.view.id,
+          reason: request.sideEffectPolicy.reason,
+          revision: request.revision,
+          currentRevision: this.currentRevision,
+          savedRevision: this.savedRevision,
+        });
+      }
+      this.activeSaveRevision = request.revision;
+      try {
+        const result = await this.dependencies.performSave(
+          request.preventReload,
+          request.forcesave,
+          request.overrideEmbeddableIsEditingSelfDebounce,
+          request.sideEffectPolicy,
+        );
+        this.completeSaveRevision(request, result);
+      } finally {
+        this.activeSaveRevision = null;
+      }
+      completedRequest = true;
+    }
+  }
+
+  private completeSaveRevision(
+    request: SaveRequest,
+    result: SaveExecutionResult,
+  ): void {
+    if (
+      result.status === "persisted" ||
+      result.status === "view-unload-scheduled" ||
+      result.status === "unchanged"
+    ) {
+      this.savedRevision = Math.max(this.savedRevision, request.revision);
+      this.reconcileDirtyState();
+    }
+    performanceDiagnosticLog("saveCoordinator.completed", {
+      viewId: this.view.id,
+      reason: request.sideEffectPolicy.reason,
+      status: result.status,
+      saveRevision: request.revision,
+      currentRevision: this.currentRevision,
+      savedRevision: this.savedRevision,
+      trailingQueued: Boolean(this.pendingSaveRequest),
+      dirty: this.isDirty(),
+    });
+  }
+
+  private queueTrailingSave(): void {
+    const request: SaveRequest = {
+      preventReload: true,
+      forcesave: false,
+      overrideEmbeddableIsEditingSelfDebounce: false,
+      sideEffectPolicy: DIRECT_SAVE_SIDE_EFFECT_POLICY,
+      revision: this.currentRevision,
+    };
+    this.pendingSaveRequest = this.pendingSaveRequest
+      ? this.mergeSaveRequests(this.pendingSaveRequest, request)
+      : request;
+    performanceDiagnosticIncrement("saveTrailingQueued");
+    performanceDiagnosticLog("saveCoordinator.trailingQueued", {
+      viewId: this.view.id,
+      revision: this.currentRevision,
+      activeRevision: this.activeSaveRevision,
+      pendingRevision: this.pendingSaveRequest.revision,
+      savedRevision: this.savedRevision,
+    });
+  }
+
+  private reconcileDirtyState(): void {
+    if (this.currentRevision > this.savedRevision) {
+      this.view.semaphores.dirty = this.view.file?.path;
+      this.dependencies.markDirtyVisuals();
+      return;
+    }
+    if (this.view.semaphores.viewunload || !this.view.excalidrawAPI) {
+      return;
+    }
+    this.view.semaphores.dirty = null;
+    this.dependencies.clearDirtyVisuals();
   }
 
   /** Runs the historical public force-save policy. */
@@ -134,13 +320,19 @@ export class ViewSaveCoordinator {
     if (waitIfBusy) {
       let counter = 0;
       while (
-        (this.view.semaphores.autosaving || this.view.semaphores.saving) &&
+        (this.view.semaphores.autosaving ||
+          this.view.semaphores.saving ||
+          this.saveLoopPromise !== null) &&
         counter++ < 100
       ) {
         await sleep(50);
       }
     }
-    if (this.view.semaphores.autosaving || this.view.semaphores.saving) {
+    if (
+      this.view.semaphores.autosaving ||
+      this.view.semaphores.saving ||
+      this.saveLoopPromise !== null
+    ) {
       if (!silent) {
         new Notice(t("FORCE_SAVE_ABORTED"));
       }
@@ -159,9 +351,15 @@ export class ViewSaveCoordinator {
     this.view.semaphores.preventReload = false;
     this.view.semaphores.forceSaving = true;
     const saveStart = diagnosticsEnabled ? performanceDiagnosticNow() : 0;
-    await this.dependencies.performSave(false, true, true, {
-      reason: diagnosticReason,
-      triggerAutoexport: policy.triggerAutoexport,
+    await this.enqueueSave({
+      preventReload: false,
+      forcesave: true,
+      overrideEmbeddableIsEditingSelfDebounce: true,
+      sideEffectPolicy: {
+        reason: diagnosticReason,
+        triggerAutoexport: policy.triggerAutoexport,
+      },
+      revision: this.currentRevision,
     });
     const saveMs = diagnosticsEnabled
       ? performanceDiagnosticNow() - saveStart
@@ -210,7 +408,7 @@ export class ViewSaveCoordinator {
     }
     this.dependencies.checkSceneVersion();
     if (!this.dependencies.isDirty()) {
-      if (!this.view.semaphores.saving) {
+      if (!this.view.semaphores.saving && this.saveLoopPromise === null) {
         return false;
       }
       // Preserve the existing Excalibrain unload compatibility check.
@@ -222,9 +420,14 @@ export class ViewSaveCoordinator {
         return false;
       }
     }
-    while (this.view.semaphores.saving && watchdog++ < 200) {
+    if (this.saveLoopPromise !== null) {
       dirty = true;
-      await sleep(40);
+      await this.saveLoopPromise;
+    } else {
+      while (this.view.semaphores.saving && watchdog++ < 200) {
+        dirty = true;
+        await sleep(40);
+      }
     }
     if (this.view.excalidrawAPI) {
       this.dependencies.checkSceneVersion();
@@ -235,10 +438,27 @@ export class ViewSaveCoordinator {
           plugin.triggerEmbedUpdates(path);
         }, 400);
         dirty = true;
-        await this.dependencies.requestSave(true, true, true);
+        await this.flush();
       }
     }
     return dirty;
+  }
+
+  /** Waits for queued saves, then persists any revision still left dirty. */
+  public async flush(): Promise<void> {
+    if (this.saveLoopPromise !== null) {
+      await this.saveLoopPromise;
+    }
+    if (!this.isDirty()) {
+      return;
+    }
+    await this.enqueueSave({
+      preventReload: true,
+      forcesave: true,
+      overrideEmbeddableIsEditingSelfDebounce: true,
+      sideEffectPolicy: DIRECT_SAVE_SIDE_EFFECT_POLICY,
+      revision: this.currentRevision,
+    });
   }
 
   /** Starts the recursive autosave timer with the existing scheduling rules. */
@@ -329,21 +549,26 @@ export class ViewSaveCoordinator {
     this.autosaveFunction = null;
   }
 
-  /** Marks the current file dirty unless a save is in progress. */
+  /** Advances the edit revision and queues one trailing save when necessary. */
   public setDirty(): void {
-    if (this.view.semaphores.saving) {
+    if (this.view.semaphores.saving && this.activeSaveRevision === null) {
       return;
     }
     if (!this.dependencies.isDirty()) {
       this.resetAutosaveTimer();
     }
+    this.currentRevision += 1;
     this.view.semaphores.dirty = this.view.file?.path;
     this.dependencies.markDirtyVisuals();
+    if (this.saveLoopPromise !== null) {
+      this.queueTrailingSave();
+    }
   }
 
   /** Returns whether the dirty marker belongs to the current file. */
   public isDirty(): boolean {
     return (
+      this.currentRevision > this.savedRevision &&
       Boolean(this.view.semaphores?.dirty) &&
       this.view.semaphores.dirty === this.view.file?.path
     );
@@ -351,9 +576,15 @@ export class ViewSaveCoordinator {
 
   /** Clears the current file's dirty marker and updates its clean baseline. */
   public clearDirty(): void {
-    if (this.view.semaphores.viewunload || !this.view.excalidrawAPI) {
+    if (
+      this.saveLoopPromise !== null ||
+      this.view.semaphores.viewunload ||
+      !this.view.excalidrawAPI
+    ) {
       return;
     }
+    this.currentRevision += 1;
+    this.savedRevision = this.currentRevision;
     this.view.semaphores.dirty = null;
     this.dependencies.clearDirtyVisuals();
   }

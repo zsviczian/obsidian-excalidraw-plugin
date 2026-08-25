@@ -256,6 +256,7 @@ import { ViewExcalidrawExtensionRenderer } from "./managers/ViewExcalidrawExtens
 import { MarkdownImageController } from "./managers/MarkdownImageController";
 import { ViewSceneFileManager } from "./managers/ViewSceneFileManager";
 import {
+  type SaveExecutionResult,
   type SaveSideEffectPolicy,
   ViewSaveCoordinator,
   WINDOW_BLUR_FORCE_SAVE_POLICY,
@@ -926,7 +927,7 @@ export default class ExcalidrawView
     forcesave: boolean,
     overrideEmbeddableIsEditingSelfDebounce: boolean,
     sideEffectPolicy: Readonly<SaveSideEffectPolicy>,
-  ): Promise<void> {
+  ): Promise<SaveExecutionResult> {
     const diagnosticsEnabled = performanceDiagnosticsEnabled();
     const diagnosticId = diagnosticsEnabled
       ? nextPerformanceDiagnosticId("save")
@@ -954,7 +955,7 @@ export default class ExcalidrawView
         viewId: this.id,
         reason: "not-loaded",
       });
-      return;
+      return { status: "skipped" };
     }
     if (this.markdownImageController.markdownImageDeletionPrompt !== null) {
       await this.markdownImageController.markdownImageDeletionPrompt;
@@ -968,7 +969,7 @@ export default class ExcalidrawView
         viewId: this.id,
         reason: "embeddable-editing",
       });
-      return;
+      return { status: "skipped" };
     }
     if (this.semaphores.saving) {
       performanceDiagnosticLog("save.skipped", {
@@ -976,7 +977,7 @@ export default class ExcalidrawView
         viewId: this.id,
         reason: "save-in-flight",
       });
-      return;
+      return { status: "skipped" };
     }
     this.semaphores.saving = true;
 
@@ -998,10 +999,13 @@ export default class ExcalidrawView
         viewId: this.id,
         reason: "missing-runtime-or-file",
       });
-      return;
+      return { status: "skipped" };
     }
 
     const allowSave = this.isDirty() || forcesave; //removed this.semaphores.autosaving
+    let executionStatus: SaveExecutionResult["status"] = allowSave
+      ? "persisted"
+      : "unchanged";
     try {
       if (allowSave) {
         performanceDiagnosticIncrement("actualSave");
@@ -1073,7 +1077,6 @@ export default class ExcalidrawView
         //reload() is triggered indirectly when saving by the modifyEventHandler in main.ts
         //prevent reload is set here to override reload when not wanted: typically when the user is editing
         //and we do not want to interrupt the flow by reloading the drawing into the canvas.
-        this.clearDirty();
         this.clearPreventReloadTimer();
 
         this.semaphores.preventReload = preventReload;
@@ -1112,7 +1115,7 @@ export default class ExcalidrawView
               ? performanceDiagnosticNow() - saveStart
               : undefined,
           });
-          return;
+          return { status: "view-unload-scheduled" };
         }
 
         const superSaveStart = diagnosticsEnabled ? performanceDiagnosticNow() : 0;
@@ -1254,6 +1257,7 @@ export default class ExcalidrawView
         });
       }
     } catch (e) {
+      executionStatus = "failed";
       errorlog({
         where: "ExcalidrawView.save",
         fn: "save",
@@ -1285,6 +1289,7 @@ export default class ExcalidrawView
       markdownImagesMaster: this.plugin?.markdownImagesMaster?.size ?? 0,
     });
     this.saveCoordinator.resetAutosaveTimer(); //next autosave period starts after save
+    return { status: executionStatus };
   }
 
   // get the new file content
@@ -5251,6 +5256,10 @@ export default class ExcalidrawView
     if (event.type !== "durable") {
       return;
     }
+    // Durable increments are the precise edit boundary needed by the save
+    // coordinator. Unlike the legacy dirty boolean, they continue to arrive
+    // while compression or disk persistence is in flight.
+    this.setDirty();
     Object.values(event.change.elements).forEach((element) => {
       if (element.type !== "image" || !element.isDeleted) {
         return;
