@@ -17,6 +17,16 @@ declare let ReactJSXRuntime: unknown;
 declare let ReactJSXDevRuntime: unknown;
 declare const unpackExcalidraw: () => string;
 
+/**
+ * Feasibility spike: let popout views use the React/Excalidraw runtime that was
+ * evaluated in the main Obsidian window.
+ *
+ * Keep this switch isolated until owner-document event, portal, observer, and
+ * teardown behavior has been validated in Obsidian. Window leases deliberately
+ * remain keyed by the view's real owner window; only the package value is shared.
+ */
+const USE_SHARED_MAIN_WINDOW_RUNTIME_FOR_POPOUTS = true;
+
 const normalizeError = (error: unknown): Error =>
   error instanceof Error
     ? error
@@ -30,6 +40,7 @@ export class PackageManager {
   private packageLeaseCountMap = new Map<Window, number>();
   private commonHostDisposerMap = new Map<Window, () => void>();
   private excalidrawHostDisposerMap = new Map<Window, () => void>();
+  private sharedRuntimeAliasWindows = new Set<Window>();
 
   constructor(plugin: ExcalidrawPlugin) {
     this.plugin = plugin;
@@ -269,6 +280,19 @@ export class PackageManager {
         this.deletePackage(win);
       }
 
+      if (
+        USE_SHARED_MAIN_WINDOW_RUNTIME_FOR_POPOUTS &&
+        win !== window &&
+        this.fallbackPackage &&
+        this.validatePackage(this.fallbackPackage)
+      ) {
+        // Preserve the documented compatibility surface in the popout without
+        // evaluating another React/Excalidraw runtime in that window.
+        win.ExcalidrawLib = this.fallbackPackage.excalidrawLib;
+        this.sharedRuntimeAliasWindows.add(win);
+        return this.fallbackPackage;
+      }
+
       // Create new package
       return errorHandler.wrapWithTryCatch(
         () => {
@@ -324,21 +348,22 @@ export class PackageManager {
 
   public deletePackage(win: Window) {
     try {
-      this.disposeObsidianHosts(win);
-
       const pkg = this.packageMap.get(win);
-      if (!pkg) {
-        return;
-      }
-
-      const { excalidrawLib } = pkg;
-      if (win.ExcalidrawLib === excalidrawLib) {
+      const sharedRuntimeAlias = this.sharedRuntimeAliasWindows.has(win)
+        ? this.fallbackPackage?.excalidrawLib
+        : null;
+      const packageLib = pkg?.excalidrawLib ?? sharedRuntimeAlias;
+      if (packageLib && win.ExcalidrawLib === packageLib) {
         errorHandler.wrapWithTryCatch(() => {
           delete win.ExcalidrawLib;
         }, "PackageManager.deletePackage - cleanup ExcalidrawLib");
       }
+      this.sharedRuntimeAliasWindows.delete(win);
 
-      this.packageMap.delete(win);
+      if (pkg) {
+        this.disposeObsidianHosts(win);
+        this.packageMap.delete(win);
+      }
     } catch (error: unknown) {
       errorHandler.handleError(
         normalizeError(error),
@@ -355,6 +380,9 @@ export class PackageManager {
     try {
       REACT_PACKAGES = "";
 
+      Array.from(this.sharedRuntimeAliasWindows).forEach((win) => {
+        this.deletePackage(win);
+      });
       Array.from(this.packageMap.entries()).forEach(([win, _]) => {
         this.deletePackage(win);
       });
@@ -363,6 +391,7 @@ export class PackageManager {
       this.packageLeaseCountMap.clear();
       this.commonHostDisposerMap.clear();
       this.excalidrawHostDisposerMap.clear();
+      this.sharedRuntimeAliasWindows.clear();
       this.EXCALIDRAW_PACKAGE = "";
       this.fallbackPackage = null;
 

@@ -3,6 +3,7 @@ import {
   ExcalidrawInitialDataState,
 } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/src/types";
+import type { ComponentProps, ComponentType } from "react";
 
 import { DEVICE, obsidianToExcalidrawMap } from "../../constants/constants";
 import { t } from "../../lang/helpers";
@@ -53,6 +54,9 @@ export function createExcalidrawRootElement(
 ) {
   const React = view.packages.react;
   const { Excalidraw } = view.packages.excalidrawLib;
+  const OwnerDocumentAwareExcalidraw = Excalidraw as ComponentType<
+    ComponentProps<typeof Excalidraw> & { ownerDocument?: Document }
+  >;
 
   const excalidrawWrapperRef = React.useRef<HTMLDivElement>(null);
   const toolsPanelRef = React.useRef<ToolsPanel>(null);
@@ -161,8 +165,9 @@ export function createExcalidrawRootElement(
         onDragLeave: view.dropManager?.onDragLeave.bind(view.dropManager),
       },
       React.createElement(
-        Excalidraw,
+        OwnerDocumentAwareExcalidraw,
         {
+          ownerDocument: view.ownerDocument,
           onExcalidrawAPI: (api) => view.setExcalidrawAPI(api),
           onInitialize: (api) => view.onExcalidrawInitialize(api),
           UIOptions: {
