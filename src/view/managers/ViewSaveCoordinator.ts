@@ -24,6 +24,12 @@ export interface SaveExecutionResult {
   status: SaveExecutionStatus;
 }
 
+/** Clean durability baseline transferred with a migrated drawing. */
+export interface ViewSaveMigrationState {
+  currentRevision: number;
+  savedRevision: number;
+}
+
 /** Side effects selected for one forced-save request. */
 export interface ForceSavePolicy {
   refreshSceneFiles: boolean;
@@ -481,5 +487,43 @@ export class ViewSaveCoordinator {
     this.savedRevision = this.currentRevision;
     this.view.semaphores.dirty = null;
     this.dependencies.clearDirtyVisuals();
+  }
+
+  /** Exports a settled revision baseline for a migration handoff. */
+  public exportMigrationState(): ViewSaveMigrationState | null {
+    if (
+      this.saveLoopPromise !== null ||
+      this.activeSaveRevision !== null ||
+      this.pendingSaveRequest !== null ||
+      this.currentRevision !== this.savedRevision ||
+      this.isDirty()
+    ) {
+      return null;
+    }
+    return {
+      currentRevision: this.currentRevision,
+      savedRevision: this.savedRevision,
+    };
+  }
+
+  /** Adopts a validated, settled durability baseline in a new view. */
+  public adoptMigrationState(state: ViewSaveMigrationState): boolean {
+    if (
+      this.saveLoopPromise !== null ||
+      this.activeSaveRevision !== null ||
+      this.pendingSaveRequest !== null ||
+      !Number.isSafeInteger(state.currentRevision) ||
+      !Number.isSafeInteger(state.savedRevision) ||
+      state.currentRevision < 0 ||
+      state.savedRevision < 0 ||
+      state.currentRevision !== state.savedRevision
+    ) {
+      return false;
+    }
+    this.currentRevision = state.currentRevision;
+    this.savedRevision = state.savedRevision;
+    this.view.semaphores.dirty = null;
+    this.dependencies.clearDirtyVisuals();
+    return true;
   }
 }

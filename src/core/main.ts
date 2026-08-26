@@ -116,6 +116,12 @@ import {
   ViewMigrationPersistenceHandoffManager,
   type ViewMigrationPersistenceHandoff,
 } from "./managers/ViewMigrationPersistenceHandoffManager";
+import {
+  ViewMigrationHandoffManager,
+  type ViewMigrationDrawingState,
+  type ViewMigrationHandoffRegistration,
+  type ViewMigrationHandoffRequest,
+} from "./managers/ViewMigrationHandoffManager";
 
 declare const PLUGIN_VERSION: string;
 declare const INITIAL_TIMESTAMP: number;
@@ -162,6 +168,7 @@ export default class ExcalidrawPlugin extends Plugin {
   private footerSafeAreaManager: FooterSafeAreaManager;
   private fontManager: FontManager;
   private startupTimer: StartupTimer;
+  private viewMigrationHandoffManager: ViewMigrationHandoffManager;
   private viewMigrationPersistenceHandoffManager: ViewMigrationPersistenceHandoffManager;
   public stencilLibraryManager: StencilLibraryManager;
   public eaInstances = new WeakArray<ExcalidrawAutomate>();
@@ -206,6 +213,7 @@ export default class ExcalidrawPlugin extends Plugin {
     super(app, manifest);
     this.loadTimestamp = INITIAL_TIMESTAMP;
     this.startupTimer = new StartupTimer(this.loadTimestamp, PLUGIN_VERSION);
+    this.viewMigrationHandoffManager = new ViewMigrationHandoffManager();
     this.viewMigrationPersistenceHandoffManager =
       new ViewMigrationPersistenceHandoffManager();
     this.filesMaster = new Map<
@@ -984,6 +992,7 @@ export default class ExcalidrawPlugin extends Plugin {
     //PLUGIN_VERSION = null;
     delete window.PolyBool;
     this.packageManager.destroy();
+    this.viewMigrationHandoffManager.destroy();
     this.viewMigrationPersistenceHandoffManager.destroy();
     this.commandManager?.destroy();
     this.eventManager.destroy();
@@ -1255,6 +1264,20 @@ export default class ExcalidrawPlugin extends Plugin {
 
   public deletePackage(win: Window) {
     this.packageManager.deletePackage(win);
+  }
+
+  /** Registers drawing-owned runtime state for one recreated view. */
+  public registerViewMigrationHandoff(
+    registration: ViewMigrationHandoffRegistration,
+  ): string {
+    return this.viewMigrationHandoffManager.register(registration);
+  }
+
+  /** Consumes validated drawing-owned runtime state for one recreated view. */
+  public consumeViewMigrationHandoff(
+    request: ViewMigrationHandoffRequest,
+  ): ViewMigrationDrawingState | null {
+    return this.viewMigrationHandoffManager.consume(request);
   }
 
   /** Registers serialized drawing text for a popout-to-main migration. */
