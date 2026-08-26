@@ -6646,6 +6646,17 @@ export default class ExcalidrawView
     // Ensure we keep the latest editor API reference before running scene-dependent setup.
     this.clearExcalidrawInitializeTimer();
     this.setExcalidrawAPI(api);
+    const activeLeafMatches =
+      this.app.workspace.getMostRecentLeaf() === this.leaf;
+    const replacementLeafMatches =
+      this.plugin.activeExcalidrawView?.leaf === this.leaf;
+    if (activeLeafMatches || replacementLeafMatches) {
+      // Rebuilding a view in the same leaf during window migration may not emit
+      // active-leaf-change. Refresh the plugin's active instance and bind its
+      // modal observer from the live destination document.
+      this.plugin.activeExcalidrawView = this;
+      this.plugin.addModalContainerObserver(this);
+    }
     this.excalidrawInitializeTimer = window.setTimeout(() => {
       this.excalidrawInitializeTimer = null;
       // window migration scenario

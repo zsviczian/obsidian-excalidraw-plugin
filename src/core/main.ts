@@ -1232,8 +1232,8 @@ export default class ExcalidrawPlugin extends Plugin {
     this.observerManager.removeThemeObserver();
   }
 
-  public addModalContainerObserver() {
-    this.observerManager.addModalContainerObserver();
+  public addModalContainerObserver(view?: ExcalidrawView) {
+    this.observerManager.addModalContainerObserver(view);
   }
 
   public removeModalContainerObserver() {
