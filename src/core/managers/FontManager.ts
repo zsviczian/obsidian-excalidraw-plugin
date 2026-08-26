@@ -17,7 +17,7 @@ declare const deliberateCreateElement: (
   tagName: string,
 ) => HTMLStyleElement;
 
-type PackageMapProvider = () => Map<Window, Packages>;
+type RuntimePackageProvider = () => Packages;
 
 /**
  * Owns CJK and custom-font discovery, registration, document stylesheets, and
@@ -30,7 +30,7 @@ export class FontManager {
 
   public constructor(
     private readonly plugin: ExcalidrawPlugin,
-    private readonly getPackageMap: PackageMapProvider,
+    private readonly getRuntimePackage: RuntimePackageProvider,
   ) {}
 
   /** Whether font initialization permits the plugin readiness wait to finish. */
@@ -76,7 +76,7 @@ export class FontManager {
 
   /**
    * Loads configured CJK and custom fonts into every open Obsidian document
-   * and registers custom font metrics with each window-scoped Excalidraw package.
+   * and registers custom font metrics with the shared Excalidraw runtime.
    */
   public async initializeFonts(): Promise<void> {
     const cjkFontDataURLs = await getCJKDataURLs(this.plugin);
@@ -128,15 +128,13 @@ export class FontManager {
         lineHeight: 1.2,
       };
     }
-    this.getPackageMap().forEach(({ excalidrawLib }) => {
-      if (!fontMetrics) {
-        return;
-      }
+    const { excalidrawLib } = this.getRuntimePackage();
+    if (fontMetrics) {
       excalidrawLib.registerLocalFont(
         { metrics: fontMetrics },
         fourthFontDataURL,
       );
-    });
+    }
     for (const ownerDocument of this.getOpenObsidianDocuments()) {
       await this.addFonts(
         [

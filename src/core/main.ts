@@ -228,7 +228,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.settingsManager = new PluginSettingsManager(this);
     this.footerSafeAreaManager = new FooterSafeAreaManager(this);
     this.fontManager = new FontManager(this, () =>
-      this.packageManager.getPackageMap(),
+      this.packageManager.getRuntimePackage(),
     );
 
     setExcalidrawPlugin(this);
