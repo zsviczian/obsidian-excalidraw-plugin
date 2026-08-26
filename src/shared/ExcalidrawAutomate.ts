@@ -3406,7 +3406,12 @@ export class ExcalidrawAutomate {
     if (fileIDWhiteList.size > 0) {
       this.targetView.setDirty();
       await new Promise<void>((resolve) => {
-        void this.targetView.loadSceneFiles(false, fileIDWhiteList, resolve);
+        void this.targetView.loadSceneFiles(
+          false,
+          fileIDWhiteList,
+          resolve,
+          undefined,
+        );
       });
     }
   }

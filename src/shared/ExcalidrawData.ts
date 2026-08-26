@@ -139,6 +139,11 @@ type ExcalidrawDataScene = Omit<
 
 type RegExpMatchIteratorResult = IteratorResult<RegExpMatchArray, undefined>;
 
+type SceneElementIndexes = {
+  linkedNonTextElementsById: Map<string, ExcalidrawElement>;
+  textElementsById: Map<string, Mutable<ExcalidrawTextElement>>;
+};
+
 type MarkdownBlockNode = {
   type: string;
   id?: string;
@@ -1111,17 +1116,35 @@ export class ExcalidrawData {
     return dirty;
   }
 
-  private updateElementLinksFromScene() {
+  private getSceneElementIndexes(): SceneElementIndexes {
+    const linkedNonTextElementsById = new Map<string, ExcalidrawElement>();
+    const textElementsById = new Map<
+      string,
+      Mutable<ExcalidrawTextElement>
+    >();
+
+    for (const element of this.scene.elements) {
+      if (element.type === "text") {
+        if (!textElementsById.has(element.id)) {
+          textElementsById.set(element.id, element);
+        }
+      } else if (element.link && !linkedNonTextElementsById.has(element.id)) {
+        linkedNonTextElementsById.set(element.id, element);
+      }
+    }
+
+    return { linkedNonTextElementsById, textElementsById };
+  }
+
+  private updateElementLinksFromScene(
+    linkedNonTextElementsById: Map<string, ExcalidrawElement>,
+  ) {
     for (const key of this.elementLinks.keys()) {
-      //find element in the scene
-      const el = this.scene.elements?.filter(
-        (el: ExcalidrawElement) =>
-          el.type !== "text" && el.id === key && el.link, //&&
-      );
-      if (el.length === 0) {
+      const element = linkedNonTextElementsById.get(key);
+      if (!element) {
         this.elementLinks.delete(key); //if no longer in the scene, delete the text element
       } else {
-        this.elementLinks.set(key, el[0].link);
+        this.elementLinks.set(key, element.link);
       }
     }
   }
@@ -1130,21 +1153,20 @@ export class ExcalidrawData {
    * update text element map by deleting entries that are no long in the scene
    * and updating the textElement map based on the text updated in the scene
    */
-  private async updateTextElementsFromScene() {
+  private async updateTextElementsFromScene(
+    sceneTextElementsById: Map<string, Mutable<ExcalidrawTextElement>>,
+  ) {
     for (const key of this.textElements.keys()) {
-      //find text element in the scene
-      const el = this.scene.elements?.filter(
-        (el: ExcalidrawElement) => el.type === "text" && el.id === key,
-      ) as Mutable<ExcalidrawTextElement>[];
-      if (el.length === 0) {
+      const element = sceneTextElementsById.get(key);
+      if (!element) {
         this.textElements.delete(key); //if no longer in the scene, delete the text element
       } else {
         const text = await this.getText(key);
         const raw =
           this.scene.prevTextMode === TextMode.parsed
-            ? el[0].rawText
-            : (el[0].originalText ?? el[0].text);
-        if (text !== (el[0].originalText ?? el[0].text)) {
+            ? element.rawText
+            : (element.originalText ?? element.text);
+        if (text !== (element.originalText ?? element.text)) {
           const parseRes = await this.parse(text);
           this.textElements.set(key, {
             raw,
@@ -1384,20 +1406,29 @@ export class ExcalidrawData {
       outString += `\n^_dummy!_\n\n`;
     }
     const textElementLinks = new Map<string, string>();
+    const uniqueSceneElementsById = new Map<
+      string,
+      ExcalidrawElement | null
+    >();
+    for (const element of this.scene.elements) {
+      uniqueSceneElementsById.set(
+        element.id,
+        uniqueSceneElementsById.has(element.id) ? null : element,
+      );
+    }
     for (const key of this.textElements.keys()) {
       //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/566
-      const element = this.scene.elements.filter(
-        (el: ExcalidrawElement) => el.id === key,
-      ) as Mutable<ExcalidrawTextElement>[];
+      const element = uniqueSceneElementsById.get(key) as Mutable<
+        ExcalidrawTextElement
+      > | null;
       const elementString = this.textElements.get(key).raw;
       if (
         element &&
-        element.length === 1 &&
-        element[0].link &&
-        (!syncTextLinks || element[0].rawText === element[0].originalText)
+        element.link &&
+        (!syncTextLinks || element.rawText === element.originalText)
       ) {
         //if(element[0].link.match(/^\[\[[^\]]*]]$/g)) { //apply this only to markdown links
-        textElementLinks.set(key, element[0].link);
+        textElementLinks.set(key, element.link);
         //elementString = `%%***>>>text element-link:${element[0].link}<<<***%%` + elementString;
         //}
       }
@@ -1475,11 +1506,11 @@ export class ExcalidrawData {
       sceneJSONstring,
       this.disableCompression ? false : this.plugin.settings.compress,
     );
-    const result =
+    return (
       outString +
       (this.textElementCommentedOut ? "" : "%%\n") +
-      drawingSection;
-    return result;
+      drawingSection
+    );
   }
 
   generateMDSync(deletedElements: ExcalidrawElement[] = []): string {
@@ -1488,11 +1519,11 @@ export class ExcalidrawData {
       sceneJSONstring,
       this.disableCompression ? false : this.plugin.settings.compress,
     );
-    const result =
+    return (
       outString +
       (this.textElementCommentedOut ? "" : "%%\n") +
-      drawingSection;
-    return result;
+      drawingSection
+    );
   }
 
   public async saveDataURLtoVault(
@@ -1601,33 +1632,49 @@ export class ExcalidrawData {
     const scene = this.scene;
 
     //remove files and equations that no longer have a corresponding image element
-    const images = scene.elements.filter(
-      (e) => e.type === "image",
-    ) as ExcalidrawImageElement[];
-    const fileIds = images.map((e) => e.fileId);
+    const images: Mutable<ExcalidrawImageElement>[] = [];
+    const fileIds: FileId[] = [];
+    const imagesByFileId = new Map<
+      FileId,
+      Mutable<ExcalidrawImageElement>[]
+    >();
+    for (const element of scene.elements) {
+      if (element.type !== "image") {
+        continue;
+      }
+      images.push(element);
+      fileIds.push(element.fileId);
+      const imagesForFile = imagesByFileId.get(element.fileId);
+      if (imagesForFile) {
+        imagesForFile.push(element);
+      } else {
+        imagesByFileId.set(element.fileId, [element]);
+      }
+    }
+    const fileIdSet = new Set(imagesByFileId.keys());
     this.files.forEach((value, key) => {
-      if (!fileIds.contains(key)) {
+      if (!fileIdSet.has(key)) {
         this.files.delete(key);
         dirty = true;
       }
     });
 
     this.equations.forEach((value, key) => {
-      if (!fileIds.contains(key)) {
+      if (!fileIdSet.has(key)) {
         this.equations.delete(key);
         dirty = true;
       }
     });
 
     this.mermaids.forEach((value, key) => {
-      if (!fileIds.contains(key)) {
+      if (!fileIdSet.has(key)) {
         this.mermaids.delete(key);
         dirty = true;
       }
     });
 
     this.markdownImages.forEach((value, key) => {
-      if (!fileIds.contains(key)) {
+      if (!fileIdSet.has(key)) {
         this.markdownImages.delete(key);
         dirty = true;
       }
@@ -1644,6 +1691,9 @@ export class ExcalidrawData {
     //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/601
     //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/593
     //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/297
+    // Keep fileIds as the original iteration snapshot, while imagesByFileId
+    // follows mutations so each later duplicate selects only elements that
+    // still carry the original ID and the scene.files pass sees current IDs.
     const processedIds = new Set<string>();
     fileIds.forEach((fileId, idx) => {
       if (processedIds.has(fileId)) {
@@ -1683,19 +1733,24 @@ export class ExcalidrawData {
           return;
         }
 
-        const newId = fileid();
-        (
-          scene.elements
-            .filter((el: ExcalidrawImageElement) => el.fileId === fileId)
-            .sort((a, b) =>
-              a.updated < b.updated ? 1 : -1,
-            )[0] as Mutable<ExcalidrawImageElement>
-        ).fileId = newId as FileId;
+        const newId = fileid() as FileId;
+        const imagesForFile = imagesByFileId.get(fileId);
+        const newestImage = imagesForFile
+          .slice()
+          .sort((a, b) => (a.updated < b.updated ? 1 : -1))[0];
+        newestImage.fileId = newId;
+        imagesForFile.splice(imagesForFile.indexOf(newestImage), 1);
+        const imagesForNewId = imagesByFileId.get(newId);
+        if (imagesForNewId) {
+          imagesForNewId.push(newestImage);
+        } else {
+          imagesByFileId.set(newId, [newestImage]);
+        }
         dirty = true;
         processedIds.add(newId);
         if (embeddedFile) {
           this.setFile(
-            newId as FileId,
+            newId,
             new EmbeddedFile(
               this.plugin,
               this.file.path,
@@ -1704,7 +1759,7 @@ export class ExcalidrawData {
           );
         }
         if (equation) {
-          this.setEquation(newId as FileId, {
+          this.setEquation(newId, {
             latex: equation.latex,
             isLoaded: false,
           });
@@ -1718,9 +1773,7 @@ export class ExcalidrawData {
         name?: string;
       };
       const mermaidElements = getMermaidImageElements(
-        scene.elements.filter(
-          (el: ExcalidrawImageElement) => el.fileId === key,
-        ),
+        imagesByFileId.get(key as FileId) ?? [],
       );
       if (
         !(
@@ -1754,7 +1807,9 @@ export class ExcalidrawData {
       result = await this.syncFiles();
       this.scene.files = {}; //files contains the dataURLs of files. Once synced these are all saved to disk
     }
-    this.updateElementLinksFromScene();
+    const { linkedNonTextElementsById, textElementsById } =
+      this.getSceneElementIndexes();
+    this.updateElementLinksFromScene(linkedNonTextElementsById);
     result =
       result ||
       this.syncCroppedPDFs() ||
@@ -1762,21 +1817,23 @@ export class ExcalidrawData {
       this.setUrlPrefix() ||
       this.setShowLinkBrackets() ||
       this.findNewElementLinksInScene();
-    await this.updateTextElementsFromScene();
+    await this.updateTextElementsFromScene(textElementsById);
     return result || this.findNewTextElementsInScene(selectedElementIds);
   }
 
   public async updateScene(newScene: string) {
     //console.log("Excalidraw.Data.updateScene()");
     this.scene = JSON_parse(newScene);
-    this.updateElementLinksFromScene();
+    const { linkedNonTextElementsById, textElementsById } =
+      this.getSceneElementIndexes();
+    this.updateElementLinksFromScene(linkedNonTextElementsById);
     const result =
       this.setLinkPrefix() ||
       this.setUrlPrefix() ||
       this.setShowLinkBrackets() ||
       this.setembeddableThemePreference() ||
       this.findNewElementLinksInScene();
-    await this.updateTextElementsFromScene();
+    await this.updateTextElementsFromScene(textElementsById);
     if (result || this.findNewTextElementsInScene()) {
       await this.updateSceneTextElements();
       return true;

@@ -207,11 +207,27 @@ export class CanvasNodeFactory {
     }
   }
 
-  removeNode(node: ObsidianCanvasNode) {
+  /**
+   * Removes a Canvas node and releases the factory's reference to it.
+   *
+   * The optional element ID is the map's canonical key. The identity check
+   * prevents a stale React cleanup from deleting a replacement node that was
+   * already registered for the same Excalidraw element.
+   */
+  public removeNode(node: ObsidianCanvasNode, elementId?: string) {
     if (!this.initialized || !node) {
       return;
     }
-    this.nodes.delete(node.file.path);
+    if (elementId && this.nodes.get(elementId) === node) {
+      this.nodes.delete(elementId);
+    } else {
+      for (const [registeredElementId, registeredNode] of this.nodes) {
+        if (registeredNode === node) {
+          this.nodes.delete(registeredElementId);
+          break;
+        }
+      }
+    }
     this.canvas.removeNode(node);
     node.detach();
   }

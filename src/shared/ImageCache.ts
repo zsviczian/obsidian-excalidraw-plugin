@@ -9,6 +9,7 @@ import { hasExcalidrawEmbeddedImagesTreeChanged } from "../utils/fileUtils";
 import { EXCALIDRAW_PLUGIN } from "src/constants/constants";
 import { blobToDataURL } from "../utils/coreUtils";
 import { isInstanceOfSVGSVGElement } from "../utils/typechecks";
+import { BackupPersistenceQueue } from "./BackupPersistenceQueue";
 
 type FileCacheData = {
   schemaVersion: 2;
@@ -87,6 +88,16 @@ class ImageCache {
   private purgeInvalidBackupTimer: number = null;
   private touchedCacheKeys = new Set<string>();
   private cacheReadinessPromise: Promise<void> | null = null;
+  private backupWrites = new BackupPersistenceQueue({
+    ownerWindow: window,
+    write: (filepath, data) => this.addBAKToCache(filepath, data),
+    onError: (error, stage) =>
+      errorlog({
+        where: "ImageCache.backupWrites",
+        fn: stage,
+        error,
+      }),
+  });
 
   private getCacheRetentionCutoff(): number {
     const retentionDays = Math.max(
@@ -128,6 +139,7 @@ class ImageCache {
     if (this.purgeInvalidBackupTimer) {
       window.clearTimeout(this.purgeInvalidBackupTimer);
     }
+    this.backupWrites.destroy();
     this.db?.close();
     this.db = null;
     this.plugin = null;
@@ -519,6 +531,7 @@ class ImageCache {
 
     try {
       await this.ensureCacheStoreReady();
+
       const cachedData = await this.getCacheData(key);
       if (!cachedData) {
         return undefined;
@@ -541,15 +554,15 @@ class ImageCache {
       if (cachedData.mtime < file.stat.mtime) {
         return undefined;
       }
-      if (
-        !options?.skipDependencyCheck &&
-        hasExcalidrawEmbeddedImagesTreeChanged(
+      if (!options?.skipDependencyCheck) {
+        const dependencyChanged = hasExcalidrawEmbeddedImagesTreeChanged(
           file,
           cachedData.mtime,
           this.plugin,
-        )
-      ) {
-        return undefined;
+        );
+        if (dependencyChanged) {
+          return undefined;
+        }
       }
       // Validated reads can require a minimum render scale so lower-resolution PDF
       // snapshots are upgraded in the background without blocking the first paint.
@@ -614,7 +627,8 @@ class ImageCache {
       if (options?.svgFormat === "data-url") {
         return blobToDataURL(cacheData.blob);
       }
-      return convertSVGStringToElement(await cacheData.blob.text());
+      const svgText = await cacheData.blob.text();
+      return convertSVGStringToElement(svgText);
     }
     if (this.obsidanURLCache.has(key)) {
       return this.obsidanURLCache.get(key);
@@ -622,6 +636,11 @@ class ImageCache {
     const obsidianURL = URL.createObjectURL(cacheData.blob);
     this.obsidanURLCache.set(key, obsidianURL);
     return obsidianURL;
+  }
+
+  /** Returns the number of live raster blob URLs retained by the session cache. */
+  public getObsidianURLCacheSize(): number {
+    return this.obsidanURLCache?.size ?? 0;
   }
 
   public releaseObsidianURL(url: string): void {
@@ -667,12 +686,11 @@ class ImageCache {
     const isSVGElement = isInstanceOfSVGSVGElement(image);
     const payloadKind =
       isSVGElement || image.type === "image/svg+xml" ? "svg" : "raster";
-    const blob =
-      isSVGElement
-        ? new Blob([image.outerHTML.replaceAll("&nbsp;", " ")], {
-            type: "image/svg+xml",
-          })
-        : image;
+    const blob = isSVGElement
+      ? new Blob([image.outerHTML.replaceAll("&nbsp;", " ")], {
+          type: "image/svg+xml",
+        })
+      : image;
     const now = Date.now();
     const data: FileCacheData = {
       schemaVersion: 2,
@@ -713,9 +731,40 @@ class ImageCache {
     const transaction = this.db.transaction(this.backupStoreName, "readwrite");
     const store = transaction.objectStore(this.backupStoreName);
     store.put(data, filepath);
+
+    return new Promise<void>((resolve, reject) => {
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () =>
+        reject(
+          transaction.error ??
+            new Error(`Failed to update backup file with key: ${filepath}`),
+        );
+      transaction.onabort = () =>
+        reject(
+          transaction.error ??
+            new Error(`Backup update aborted for key: ${filepath}`),
+        );
+    });
+  }
+
+  /**
+   * Schedules the latest backup payload through the plugin-global queue.
+   */
+  public scheduleBAKToCache(
+    filepath: string,
+    data: BackupData,
+    delayMs: number,
+  ): boolean {
+    return this.backupWrites.schedule(filepath, data, delayMs);
+  }
+
+  /** Flushes any queued backup before a drawing path is renamed. */
+  public async flushPendingBAK(filepath: string): Promise<void> {
+    await this.backupWrites.flush(filepath);
   }
 
   public async removeBAKFromCache(filepath: string): Promise<void> {
+    await this.backupWrites.cancel(filepath);
     if (!this.isReady()) {
       return; // Database not initialized yet
     }
@@ -750,6 +799,7 @@ class ImageCache {
   }
 
   public async clearBackupCache(): Promise<void> {
+    await this.backupWrites.cancelAll();
     if (!this.isReady()) {
       return; // Database not initialized yet
     }

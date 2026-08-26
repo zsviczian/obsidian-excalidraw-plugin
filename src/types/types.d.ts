@@ -149,6 +149,19 @@ export type Packages = {
   excalidrawLib: typeof ExcalidrawLib | null;
 };
 
+/**
+ * An idempotent ownership handle for one window-scoped runtime package.
+ *
+ * @remarks
+ * The captured window remains the package owner even if Obsidian reparents the
+ * consuming view's DOM into another window before view teardown completes.
+ */
+export type PackageLease = {
+  readonly window: Window;
+  readonly packages: Packages;
+  release(): void;
+};
+
 export type ValueOf<T> = T[keyof T];
 
 export type DynamicStyle = "none" | "gray" | "colorful";

@@ -1,6 +1,6 @@
 import { updateExcalidrawLib } from "src/constants/constants";
 import { ExcalidrawLib } from "../../types/excalidrawLib";
-import { Packages } from "../../types/types";
+import { PackageLease, Packages } from "../../types/types";
 import { Notice } from "obsidian";
 import type ExcalidrawPlugin from "src/core/main";
 import { errorHandler } from "../../utils/ErrorHandler";
@@ -27,6 +27,7 @@ export class PackageManager {
   private EXCALIDRAW_PACKAGE: string;
   private plugin: ExcalidrawPlugin;
   private fallbackPackage: Packages | null = null;
+  private packageLeaseCountMap = new Map<Window, number>();
   private commonHostDisposerMap = new Map<Window, () => void>();
   private excalidrawHostDisposerMap = new Map<Window, () => void>();
 
@@ -179,16 +180,16 @@ export class PackageManager {
   /**
    * Store a package for a specific window
    */
-  public setPackage(window: Window, pkg: Packages) {
+  public setPackage(win: Window, pkg: Packages) {
     if (this.validatePackage(pkg)) {
       try {
-        this.configureObsidianCommonHost(window, pkg);
-        this.configureObsidianExcalidrawHost(window, pkg);
+        this.configureObsidianCommonHost(win, pkg);
+        this.configureObsidianExcalidrawHost(win, pkg);
       } catch (error: unknown) {
-        this.disposeObsidianHosts(window);
+        this.disposeObsidianHosts(win);
         throw normalizeError(error);
       }
-      this.packageMap.set(window, pkg);
+      this.packageMap.set(win, pkg);
 
       // Update fallback if we don't have one
       if (!this.fallbackPackage) {
@@ -204,6 +205,52 @@ export class PackageManager {
 
   public getPackageMap() {
     return this.packageMap;
+  }
+
+  /**
+   * Acquires an idempotent lease for the package owned by `win`.
+   *
+   * @remarks
+   * Popout packages are deleted when their last lease is released. The main
+   * package remains pinned for the plugin lifetime because it is also the
+   * fallback runtime and is initialized as part of plugin startup.
+   */
+  public acquirePackage(win: Window): PackageLease {
+    const packages = this.getPackage(win);
+    const leaseCount = (this.packageLeaseCountMap.get(win) ?? 0) + 1;
+    this.packageLeaseCountMap.set(win, leaseCount);
+
+    let released = false;
+    return {
+      window: win,
+      packages,
+      release: () => {
+        if (released) {
+          return;
+        }
+        released = true;
+        this.releasePackageLease(win);
+      },
+    };
+  }
+
+  /** Releases one view-owned package lease without consulting mutable DOM. */
+  private releasePackageLease(win: Window): void {
+    const leaseCount = this.packageLeaseCountMap.get(win);
+    if (leaseCount === undefined) {
+      return;
+    }
+
+    const remainingLeases = Math.max(0, leaseCount - 1);
+    if (remainingLeases === 0) {
+      this.packageLeaseCountMap.delete(win);
+      if (win !== window) {
+        this.deletePackage(win);
+      }
+    } else {
+      this.packageLeaseCountMap.set(win, remainingLeases);
+    }
+
   }
 
   /**
@@ -313,6 +360,7 @@ export class PackageManager {
       });
 
       this.packageMap.clear();
+      this.packageLeaseCountMap.clear();
       this.commonHostDisposerMap.clear();
       this.excalidrawHostDisposerMap.clear();
       this.EXCALIDRAW_PACKAGE = "";

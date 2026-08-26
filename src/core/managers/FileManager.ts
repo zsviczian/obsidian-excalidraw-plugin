@@ -79,6 +79,16 @@ export class PluginFileManager {
     });
   }
 
+  /**
+   * Returns whether a vault file is an Excalidraw drawing.
+   *
+   * Parsed frontmatter is authoritative when available. During a vault write,
+   * Obsidian can temporarily remove that frontmatter from the metadata cache;
+   * in that gap, retain the last confirmed classification from
+   * {@link excalidrawFiles}. The metadata `changed` event updates that set, so
+   * deliberately removing the Excalidraw frontmatter still declassifies the
+   * file once the replacement metadata is published.
+   */
   public isExcalidrawFile(f: TFile): boolean {
     if (!f) {
       return false;
@@ -86,11 +96,12 @@ export class PluginFileManager {
     if (f.extension === "excalidraw") {
       return true;
     }
-    const fileCache = f ? this.plugin.app.metadataCache.getFileCache(f) : null;
-    return (
-      !!fileCache?.frontmatter &&
-      !!fileCache.frontmatter[FRONTMATTER_KEYS.plugin.name]
-    );
+    const frontmatter = this.plugin.app.metadataCache.getFileCache(f)?.frontmatter;
+    if (frontmatter) {
+      return !!frontmatter[FRONTMATTER_KEYS.plugin.name];
+    }
+
+    return this.excalidrawFiles.has(f);
   }
 
   //managing my own list of Excalidraw files because in the onDelete event handler
@@ -622,7 +633,10 @@ export class PluginFileManager {
     const excalidrawViews = getExcalidrawViews(this.app);
     excalidrawViews.forEach((excalidrawView) => {
       void (async () => {
-        if (excalidrawView.semaphores?.viewunload) {
+        if (
+          excalidrawView.semaphores?.viewunload ||
+          excalidrawView.semaphores?.windowMigrating
+        ) {
           return;
         }
         if (
@@ -718,12 +732,13 @@ export class PluginFileManager {
       return;
     }
     //this will not work in the short period when Obsidian is starting up, however
-    //this will only effect a very few files, statistically unlikely to cause
-    //much/any real user impact.
-    //a proper queuing feels overkill for this.
+    //this will only affect very few files, statistically unlikely to cause
+    //much/any real user impact. Flush the shared queue so a recently scheduled
+    //backup is moved with the drawing instead of later recreating the old key.
     if (!getImageCache().isReady()) {
       return;
     }
+    await getImageCache().flushPendingBAK(oldPath);
     const backup = await getImageCache().getBAKFromCache(oldPath);
     if (backup) {
       await getImageCache().addBAKToCache(newPath, `${backup}`);
