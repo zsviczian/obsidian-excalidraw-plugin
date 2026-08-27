@@ -766,6 +766,9 @@ export default class ExcalidrawPlugin extends Plugin {
     keepOriginal: boolean = false,
   ): Promise<TFile> {
     const data = await this.app.vault.read(file);
+    const hasEmbeddedFiles = Object.keys(
+      (JSON_parse<{ files?: Record<string, unknown> }>(data).files ?? {}),
+    ).length > 0;
     const filename =
       file.name.substring(0, file.name.lastIndexOf(".excalidraw")) +
       (replaceExtension ? ".md" : ".excalidraw.md");
@@ -775,11 +778,17 @@ export default class ExcalidrawPlugin extends Plugin {
       normalizePath(file.path.substring(0, file.path.lastIndexOf(file.name))),
     );
     log(fname);
-    const result = await createOrOverwriteFile(
-      this.app,
-      fname,
-      FRONTMATTER + (await this.fileManager.exportSceneToMD(data, false)),
-    );
+    const initialMarkdown =
+      FRONTMATTER + (await this.fileManager.exportSceneToMD(data, false));
+    const result = await createOrOverwriteFile(this.app, fname, initialMarkdown);
+    if (hasEmbeddedFiles) {
+      const convertedMarkdown =
+        await this.fileManager.persistLegacySceneFilesInMarkdown(
+          initialMarkdown,
+          result,
+        );
+      await this.app.vault.modify(result, convertedMarkdown);
+    }
     if (this.settings.keepInSync) {
       EXPORT_TYPES.forEach((ext: string) => {
         const oldIMGpath =
