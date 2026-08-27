@@ -145,7 +145,7 @@ export type ConnectionPoint = "top" | "bottom" | "left" | "right" | null;
 
 export type Packages = {
   react: typeof import("react");
-  reactDOM: typeof import("react-dom/client");
+  reactDOM: typeof import("react-dom") & typeof import("react-dom/client");
   excalidrawLib: typeof ExcalidrawLib | null;
 };
 

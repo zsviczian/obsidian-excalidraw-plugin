@@ -70,9 +70,9 @@ Timers, observers, autosave coordination, and undocumented Obsidian API workarou
 This project consists of multiple sub-components and non-standard integrations to support Obsidian-specific features.
 
 ### 1. React & Package Manager
-Because the plugin must support Obsidian's native popout windows, React and Excalidraw cannot be loaded as simple global singletons.
+The plugin bundles one private React/ReactDOM runtime and combines it with one evaluated Excalidraw runtime. Every main-window and popout view leases that shared package while supplying its own stable `ownerDocument`.
 - References to React and ReactDOM are handled via `PackageManager.ts` (`src/core/managers/PackageManager.ts`).
-- The runtime is assembled from official React npm entry points and loaded separately for each Obsidian window.
+- React and its JSX runtimes are bundled normally from official npm entry points. They must remain external to the separately built Excalidraw artifact and to the plugin's library build so neither path creates a second React copy.
 - Do not introduce direct `ReactDOM.createRoot()` calls outside this package-manager model.
 - Do not publish React or ReactDOM on `window`. The documented `window.ExcalidrawLib` scripting surface is the deliberate exception.
 

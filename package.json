@@ -70,7 +70,6 @@
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4",
     "@zsviczian/excalidraw-extras-api": "^0.0.13",
-    "@zsviczian/rollup-plugin-postprocess": "^1.0.3",
     "cross-env": "^7.0.3",
     "cssnano": "^6.0.2",
     "eslint": "^9.39.4",

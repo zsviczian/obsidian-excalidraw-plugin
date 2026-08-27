@@ -198,7 +198,6 @@ This project uses a non-trivial Rollup build because startup time, popout-window
 
 The build embeds or injects runtime code for:
 
-- React, ReactDOM/client, and the official JSX runtime entry points built from the installed npm packages
 - the customized `@zsviczian/excalidraw` Obsidian artifact built from Excalidraw's ESM source graph
 - `MathjaxToSVG`
 - `lz-string`
@@ -206,7 +205,7 @@ The build embeds or injects runtime code for:
 
 These payloads are executed or unpacked at runtime. This is intentional.
 
-React and the Excalidraw package are separate payloads. React must not be bundled into the Excalidraw artifact, because the plugin evaluates one matching private React runtime and supplies it to the single Excalidraw runtime used by every view. Mermaid is also intentionally absent from the artifact and is loaded lazily at runtime through Excalidraw Extras. All other required Excalidraw assets are expected to work offline except the deliberately lazy CJK font subsets.
+React, ReactDOM, and the official JSX runtime entry points are normal modules in the main Rollup bundle, not separately compressed or evaluated payloads. React must remain external to the separately built Excalidraw artifact: the plugin supplies its one bundled private React runtime to the single evaluated Excalidraw runtime used by every view. Mermaid is also intentionally absent from the artifact and is loaded lazily at runtime through Excalidraw Extras. All other required Excalidraw assets are expected to work offline except the deliberately lazy CJK font subsets.
 
 ### Two-Repository Excalidraw Workflow
 
@@ -252,10 +251,10 @@ The host adapters are an internal protocol between this plugin and its exact `@z
 
 ### Popout Window Support
 
-- `src/core/managers/PackageManager.ts` evaluates one private React/ReactDOM/Excalidraw runtime in the main application realm and leases that runtime to every view.
+- `src/core/managers/PackageManager.ts` combines the plugin bundle's one private React/ReactDOM runtime with one evaluated Excalidraw artifact in the main application realm and leases that package to every view.
 - A lease retains the view's actual acquisition window for migration and persistence decisions; package evaluation ownership must never substitute for that identity.
 - Popouts receive only a temporary `window.ExcalidrawLib` compatibility alias. Remove it after the final lease for that window while keeping the shared runtime alive until plugin unload.
-- The runtime is built from official npm package entry points and kept in plugin/package lexical scope. Do not assign React or ReactDOM to `window`; only the documented `window.ExcalidrawLib` compatibility surface remains global.
+- React and ReactDOM are bundled normally from their official npm entry points and kept in plugin/package lexical scope. Do not restore a compressed/evaluated React bootstrap or assign React or ReactDOM to `window`; only the documented `window.ExcalidrawLib` compatibility surface remains global.
 - Every Excalidraw root must receive its stable owning document. Rendering, DOM ownership, events, observers, portals, realm constructors, fonts, timers, and React roots must derive from the owning view document/window where appropriate; do not turn the shared runtime into a mutable "current window" singleton.
 - Treat `HTMLElement.onWindowMigrated()` as a destructive runtime boundary. Its callback runs after Obsidian has moved the view container to another document, while the existing React root and Excalidraw API still belong to the source window runtime.
 - For a dirty migration, synchronously capture every API-owned value needed for persistence and unmount the source React root **before the first `await`**. Do not move synchronization, compression, Vault/native file access, `closeLeafView()`, or another asynchronous step ahead of that unmount. On macOS/Electron, doing so reproducibly allowed the source popout window to be destroyed before `root.unmount()`, freezing Obsidian and disconnecting DevTools.
@@ -411,9 +410,9 @@ Backwards compatibility is a strong requirement in this repository.
 
 ## React Runtime Import Model
 
-React usage in this repository is special because one private React/ReactDOM runtime is package-managed across main-window and popout roots.
+React usage in this repository is special because one normally bundled private React/ReactDOM runtime is package-managed across main-window and popout roots.
 
-- It is fine to import React for types, component definitions, JSX compilation, and nearby established patterns.
+- Import React, ReactDOM, and JSX runtime entry points normally. Rollup must bundle them into the main plugin but keep them external in the library build and in the separately built Excalidraw artifact.
 - The shared runtime is safe only because each root and Excalidraw instance receives stable owner-document state. Never recover view ownership from the runtime's lexical main window.
 - For view-bound rendering and roots, follow `src/view/ExcalidrawView.ts` and use `view.packages.react` and `view.packages.reactDOM` through the package-manager flow.
 - For view-owned React objects such as refs or runtime-created elements, follow neighboring patterns such as `src/view/components/menu/ToolsPanel.tsx` and `src/view/components/CustomEmbeddable.tsx`, which intentionally use the package-managed React instance.
