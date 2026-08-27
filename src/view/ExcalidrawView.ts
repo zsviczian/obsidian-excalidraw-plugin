@@ -245,13 +245,18 @@ import { ViewFullscreenManager } from "./managers/ViewFullscreenManager";
 import { ViewLinkNavigationManager } from "./managers/ViewLinkNavigationManager";
 import { ViewExcalidrawExtensionRenderer } from "./managers/ViewExcalidrawExtensionRenderer";
 import { MarkdownImageController } from "./managers/MarkdownImageController";
-import { ViewSceneFileManager } from "./managers/ViewSceneFileManager";
+import {
+  getVisibleImageFileIds,
+  ViewSceneFileManager,
+  waitForWindowPaint,
+} from "./managers/ViewSceneFileManager";
 import {
   type SaveExecutionResult,
   type SaveSideEffectPolicy,
   ViewSaveCoordinator,
   WINDOW_BLUR_FORCE_SAVE_POLICY,
 } from "./managers/ViewSaveCoordinator";
+import type { ViewMigrationDrawingState } from "../core/managers/ViewMigrationHandoffManager";
 import { ImageInfo } from "src/types/excalidrawAutomateTypes";
 import { PageOrientation, PageSize } from "src/types/exportUtilTypes";
 import { CaptureUpdateAction } from "src/constants/constants";
@@ -280,7 +285,12 @@ import { setElementDisplay } from "src/utils/htmlUtils";
 
 const EMBEDDABLE_SEMAPHORE_TIMEOUT = 2000;
 const PREVENT_RELOAD_TIMEOUT = 2000;
+const MIGRATION_BINARY_FILE_BATCH_SIZE = 4;
 const RE_TAIL = /^## Drawing\n[\s\S]*\n%%$(.*)/ms;
+
+type MigrationImageAPI = ExcalidrawImperativeAPI & {
+  awaitImageFiles?: (fileIds: readonly FileId[]) => Promise<void>;
+};
 
 declare const PLUGIN_VERSION: string;
 declare const mainDocument: Document;
@@ -538,6 +548,9 @@ export default class ExcalidrawView
   private packageLease: PackageLease | null = null;
   private lastAppState: AppState | null = null;
   private lastElementsVersion: number = -1;
+  private pendingMigrationHandoffToken: string | null = null;
+  private pendingMigrationBinaryFiles: BinaryFiles | null = null;
+  private migrationBinaryFilePublication: Promise<void> | null = null;
 
   constructor(leaf: WorkspaceLeaf, plugin: ExcalidrawPlugin) {
     super(leaf);
@@ -1686,14 +1699,17 @@ export default class ExcalidrawView
         this.containerEl.onWindowMigrated(async () => {
           const f = this.file;
           const l = this.leaf;
+          const plugin = this.plugin;
           // Obsidian may destroy the source Electron window before the normal
           // unload callbacks select detached-view persistence. Capture every
           // API-owned value synchronously, then unmount before the first await.
           this.semaphores.windowMigrating = true;
           this.clearExcalidrawInitializeTimer();
           this.sceneFileManager.terminateActiveLoaders();
+          this.windowMigrationSaveSnapshot = null;
+          const migrationSnapshot = this.captureWindowMigrationSnapshot();
           const migrationSaveRequired =
-            this.captureWindowMigrationSaveSnapshot();
+            this.windowMigrationSaveSnapshot !== null;
           this.unmountExcalidrawRoot();
           if (migrationSaveRequired) {
             await this.saveCoordinator.flush();
@@ -1703,20 +1719,32 @@ export default class ExcalidrawView
             warningUnknowSeriousError();
             return;
           }
+          const migrationDrawingState = migrationSnapshot
+            ? this.createWindowMigrationDrawingState(migrationSnapshot)
+            : null;
           this.windowMigrationSaveSnapshot = null;
           try {
             await closeLeafView(l);
           } catch (error: unknown) {
-            this.plugin.discardViewMigrationPersistenceHandoff(l.id);
+            plugin.discardViewMigrationPersistenceHandoff(l.id);
             this.setDirty();
             this.semaphores.windowMigrating = false;
             throw error;
           }
+          const handoffToken = migrationDrawingState
+            ? plugin.registerViewMigrationHandoff({
+                leafId: l.id,
+                filePath: f.path,
+                fileMtime: f.stat.mtime,
+                drawing: migrationDrawingState,
+              })
+            : null;
           windowMigratedDisableZoomOnce = true;
           void l.setViewState({
             type: VIEW_TYPE_EXCALIDRAW,
             state: {
               file: f.path,
+              ...(handoffToken ? { migrationHandoffToken: handoffToken } : {}),
             },
           });
         }),
@@ -2090,8 +2118,7 @@ export default class ExcalidrawView
   }
 
   /**
-   * Captures all API-owned save inputs before a window migration tears down
-   * the source runtime.
+   * Captures all API-owned drawing and save inputs before window teardown.
    *
    * @remarks
    * The caller must unmount the source React root immediately after this
@@ -2099,28 +2126,56 @@ export default class ExcalidrawView
    * until after synchronization, compression, or native file access can let
    * Electron destroy the source popout window first and freeze Obsidian.
    */
-  private captureWindowMigrationSaveSnapshot(): boolean {
+  private captureWindowMigrationSnapshot(): {
+    scene: NonNullable<ReturnType<ExcalidrawView["getScene"]>>;
+    files: BinaryFiles;
+  } | null {
     const api = this.excalidrawAPI;
     if (!api) {
-      return false;
+      return null;
     }
     this.checkSceneVersion(api.getSceneElements());
-    if (!this.isDirty()) {
-      return false;
-    }
     const appState = api.getAppState();
     const scene = this.getSceneWithAppState(undefined, appState);
     if (!scene) {
-      return false;
+      return null;
     }
-    this.windowMigrationSaveSnapshot = {
+    const files = { ...(scene.files ?? {}) };
+    if (this.isDirty()) {
+      this.windowMigrationSaveSnapshot = {
+        scene,
+        deletedElements: api
+          .getSceneElementsIncludingDeleted()
+          .filter((element: ExcalidrawElement) => element.isDeleted),
+        selectedElementIds: appState.selectedElementIds,
+      };
+    }
+    return {
       scene,
-      deletedElements: api
-        .getSceneElementsIncludingDeleted()
-        .filter((element: ExcalidrawElement) => element.isDeleted),
-      selectedElementIds: appState.selectedElementIds,
+      files,
     };
-    return true;
+  }
+
+  /** Creates a transferable drawing after any required save has settled. */
+  private createWindowMigrationDrawingState(snapshot: {
+    scene: NonNullable<ReturnType<ExcalidrawView["getScene"]>>;
+    files: BinaryFiles;
+  }): ViewMigrationDrawingState | null {
+    const excalidrawData = this.excalidrawData.exportMigrationState();
+    const save = this.saveCoordinator.exportMigrationState();
+    if (!excalidrawData || !save) {
+      return null;
+    }
+    const scene = this.windowMigrationSaveSnapshot?.scene ?? snapshot.scene;
+    return {
+      elements: [...scene.elements],
+      appState: { ...scene.appState } as AppState,
+      files: { ...snapshot.files },
+      textMode: this.textMode,
+      compatibilityMode: this.compatibilityMode,
+      excalidrawData,
+      save,
+    };
   }
 
   private unmountExcalidrawRoot(): void {
@@ -2622,7 +2677,22 @@ export default class ExcalidrawView
   }
 
   public isLoaded: boolean = false;
+
+  /** Captures the one-shot handoff token before the base view loads data. */
+  public async setState(
+    state: Record<string, unknown>,
+    result: ViewStateResult,
+  ): Promise<void> {
+    this.pendingMigrationHandoffToken =
+      typeof state?.migrationHandoffToken === "string"
+        ? state.migrationHandoffToken
+        : null;
+    await super.setState(state, result);
+  }
+
   setViewData(data: string, clear: boolean = false) {
+    const migrationHandoffToken = this.pendingMigrationHandoffToken;
+    this.pendingMigrationHandoffToken = null;
     //I am using last loaded file to control when the view reloads.
     //It seems text file view gets the modified file event after sync before the modifyEventHandler in main.ts
     //reload can only be triggered via reload()
@@ -2635,6 +2705,14 @@ export default class ExcalidrawView
       if (!this.file) {
         return;
       }
+      const migrationDrawingHandoff = migrationHandoffToken
+        ? this.plugin.consumeViewMigrationHandoff({
+            token: migrationHandoffToken,
+            leafId: this.leaf.id,
+            filePath: this.file.path,
+            fileMtime: this.file.stat.mtime,
+          })
+        : null;
       const migrationHandoffData = this.isInMainObsidianWorkspace
         ? this.plugin.consumeViewMigrationPersistenceHandoff(
             this.leaf.id,
@@ -2706,8 +2784,54 @@ export default class ExcalidrawView
           return;
         }
         this.compatibilityMode = this.file.extension === "excalidraw";
+        let migrationDrawingAdopted = false;
+        if (
+          migrationDrawingHandoff &&
+          migrationDrawingHandoff.compatibilityMode ===
+            this.compatibilityMode &&
+          this.excalidrawData.adoptMigrationState(
+            migrationDrawingHandoff.excalidrawData,
+            this.file,
+          ) &&
+          this.saveCoordinator.adoptMigrationState(
+            migrationDrawingHandoff.save,
+          )
+        ) {
+          this.excalidrawData.scene = {
+            ...this.excalidrawData.scene,
+            elements: [...migrationDrawingHandoff.elements],
+            appState: {
+              ...this.excalidrawData.scene.appState,
+              ...migrationDrawingHandoff.appState,
+            },
+            files: { ...migrationDrawingHandoff.files },
+          };
+          this.textMode = migrationDrawingHandoff.textMode;
+          this.prevTextMode =
+            migrationDrawingHandoff.excalidrawData.scene.prevTextMode ??
+            migrationDrawingHandoff.textMode;
+          this.pendingMigrationBinaryFiles = {
+            ...migrationDrawingHandoff.files,
+          };
+          migrationDrawingAdopted = true;
+        }
         //await this.plugin.loadSettings();
-        if (this.compatibilityMode) {
+        if (migrationDrawingAdopted) {
+          if (this.compatibilityMode) {
+            this.plugin.enableLegacyFilePopoverObserver();
+            this.actionButtons?.isRaw?.hide();
+            this.actionButtons?.link?.hide();
+            this.excalidrawData.disableCompression = true;
+          } else {
+            this.actionButtons?.link?.show();
+            this.excalidrawData.disableCompression = false;
+            if (this.textMode === TextMode.parsed) {
+              this.actionButtons?.isRaw?.hide();
+            } else {
+              this.actionButtons?.isRaw?.show();
+            }
+          }
+        } else if (this.compatibilityMode) {
           this.plugin.enableLegacyFilePopoverObserver();
           this.actionButtons?.isRaw?.hide();
           // this.actionButtons.isParsed.hide();
@@ -3367,7 +3491,13 @@ export default class ExcalidrawView
           ),
           gridDirection: this.plugin.settings.gridSettings.GRID_DIRECTION,
         },
-        files: excalidrawData.files,
+        // A migration publishes its already-transferred files progressively
+        // after initialization so one all-at-once decode cannot block the
+        // replacement editor's first paint.
+        files:
+          this.pendingMigrationBinaryFiles === null
+            ? excalidrawData.files
+            : {},
         libraryItems: await this.getLibrary(),
       });
       //files are loaded when excalidrawAPI is mounted
@@ -3392,6 +3522,110 @@ export default class ExcalidrawView
     );
   }
 
+  /**
+   * Publishes transferred migration files in visible-first bounded batches.
+   *
+   * The replacement editor starts without `initialData.files` because the
+   * component otherwise decodes every transferred data URL before its first
+   * useful paint. Each batch still uses Excalidraw's ordinary `addFiles()`
+   * and image-cache path; the fork's narrow await boundary only lets this host
+   * wait for that work before yielding two destination-window frames.
+   */
+  private async publishMigrationBinaryFiles(
+    api: ExcalidrawImperativeAPI,
+  ): Promise<void> {
+    const files = this.pendingMigrationBinaryFiles;
+    this.pendingMigrationBinaryFiles = null;
+    if (files === null) {
+      return;
+    }
+
+    const migrationAPI = api as MigrationImageAPI;
+    if (typeof migrationAPI.awaitImageFiles !== "function") {
+      errorlog({
+        where: "ExcalidrawView.publishMigrationBinaryFiles",
+        message: "The installed Excalidraw runtime cannot pace migration files",
+      });
+      if (this.excalidrawAPI === api && !api.isDestroyed) {
+        void this.loadSceneFiles(false, undefined, undefined, undefined);
+      }
+      return;
+    }
+
+    const isCurrent = () =>
+      this.excalidrawAPI === api &&
+      !api.isDestroyed &&
+      !this.semaphores?.windowMigrating &&
+      !this.semaphores?.viewunload;
+    const visibleFileIds = getVisibleImageFileIds(this);
+    const allFiles = Object.values(files);
+    const orderedFiles = [
+      ...allFiles.filter((file) => visibleFileIds.has(file.id)),
+      ...allFiles.filter((file) => !visibleFileIds.has(file.id)),
+    ];
+
+    try {
+      for (
+        let offset = 0;
+        offset < orderedFiles.length;
+        offset += MIGRATION_BINARY_FILE_BATCH_SIZE
+      ) {
+        if (!isCurrent()) {
+          return;
+        }
+        const batch = orderedFiles.slice(
+          offset,
+          offset + MIGRATION_BINARY_FILE_BATCH_SIZE,
+        );
+        const fileIds = batch.map((file) => file.id);
+        const skipSvgNormalization = new Set(
+          batch
+            .filter((file) => file.mimeType === "image/svg+xml")
+            .map((file) => file.id),
+        );
+        api.addFiles({ files: batch, skipSvgNormalization });
+        await migrationAPI.awaitImageFiles(fileIds);
+        if (!isCurrent()) {
+          return;
+        }
+        await waitForWindowPaint(() => this.ownerWindow ?? window);
+      }
+
+      if (!isCurrent()) {
+        return;
+      }
+      const loadedFiles = api.getFiles();
+      const missingFileIds = new Set<FileId>();
+      for (const element of api.getSceneElements()) {
+        if (
+          element.type === "image" &&
+          element.fileId &&
+          !loadedFiles[element.fileId]
+        ) {
+          missingFileIds.add(element.fileId);
+        }
+      }
+      if (missingFileIds.size > 0) {
+        void this.loadSceneFiles(
+          false,
+          missingFileIds,
+          undefined,
+          undefined,
+        );
+      } else {
+        this.lastSceneLoadTime = Date.now();
+      }
+    } catch (error: unknown) {
+      errorlog({
+        where: "ExcalidrawView.publishMigrationBinaryFiles",
+        error,
+      });
+      if (isCurrent()) {
+        void this.loadSceneFiles(false, undefined, undefined, undefined);
+      }
+    }
+  }
+
   private onAfterLoadScene(justloaded: boolean) {
     const api = this.excalidrawAPI;
     if (
@@ -3402,7 +3636,19 @@ export default class ExcalidrawView
     ) {
       return;
     }
-    void this.loadSceneFiles(false, undefined, undefined, undefined);
+    if (
+      this.pendingMigrationBinaryFiles !== null ||
+      this.migrationBinaryFilePublication !== null
+    ) {
+      if (this.migrationBinaryFilePublication === null) {
+        this.migrationBinaryFilePublication =
+          this.publishMigrationBinaryFiles(api).finally(() => {
+            this.migrationBinaryFilePublication = null;
+          });
+      }
+    } else {
+      void this.loadSceneFiles(false, undefined, undefined, undefined);
+    }
     this.updateContainerSize(null, true, justloaded);
     void this.initializeToolsIconPanelAfterLoading();
     const uiMode = calculateUIModeValue(this.plugin.settings);
@@ -6646,6 +6892,17 @@ export default class ExcalidrawView
     // Ensure we keep the latest editor API reference before running scene-dependent setup.
     this.clearExcalidrawInitializeTimer();
     this.setExcalidrawAPI(api);
+    const activeLeafMatches =
+      this.app.workspace.getMostRecentLeaf() === this.leaf;
+    const replacementLeafMatches =
+      this.plugin.activeExcalidrawView?.leaf === this.leaf;
+    if (activeLeafMatches || replacementLeafMatches) {
+      // Rebuilding a view in the same leaf during window migration may not emit
+      // active-leaf-change. Refresh the plugin's active instance and bind its
+      // modal observer from the live destination document.
+      this.plugin.activeExcalidrawView = this;
+      this.plugin.addModalContainerObserver(this);
+    }
     this.excalidrawInitializeTimer = window.setTimeout(() => {
       this.excalidrawInitializeTimer = null;
       // window migration scenario

@@ -349,7 +349,7 @@ export class EventManager {
     this.previouslyActiveLeaf = leaf;
 
     if (newActiveviewEV) {
-      this.plugin.addModalContainerObserver();
+      this.plugin.addModalContainerObserver(newActiveviewEV);
       this.plugin.lastActiveExcalidrawFilePath = newActiveviewEV.file?.path;
     } else {
       this.plugin.removeModalContainerObserver();

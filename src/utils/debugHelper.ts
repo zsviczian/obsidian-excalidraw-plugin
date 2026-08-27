@@ -57,7 +57,9 @@ export class CustomMutationObserver {
       }
     };
 
-    this.observer = new MutationObserver(wrappedCallback);
+    const Observer =
+      target.ownerDocument?.defaultView?.MutationObserver ?? MutationObserver;
+    this.observer = new Observer(wrappedCallback);
 
     // Start observing with the modified callback
     this.observer.observe(target, options);

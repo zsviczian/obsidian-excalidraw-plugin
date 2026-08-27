@@ -30,7 +30,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 
 ## Fixed
 - Moving a dirty drawing out of a popout window now safely transfers and persists its latest edits from the replacement main-window view.
-- Opening inline link suggestions while editing text no longer triggers a save that can end text editing, including after duplicating a LaTeX formula.
+- Opening the command palette or another Obsidian modal reliably saves dirty drawings, while inline link suggestions no longer trigger a save that can end text editing.
 - Settings changes are saved promptly without collapsing sections or interrupting fast typing. Writes are serialized, and Excalidraw keeps a device-local recovery copy so an empty or corrupted synchronized **data.json** cannot silently erase a large settings configuration.
 - Interdependent settings now initialize and refresh consistently, including TODO icons, auto-export formats, Taskbone credentials, filename previews, and custom grid colors. Built-in font previews also use the correct typeface in secondary Obsidian windows.
 - Applying a rendering-related setting no longer resets the live zoom and scroll position of an open drawing. New configurations use ☑ as the completed-TODO marker.

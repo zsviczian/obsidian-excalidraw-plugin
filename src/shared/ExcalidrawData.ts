@@ -120,7 +120,7 @@ type LegacyGridColor = NonNullable<
  * `.find()` call on `scene.elements` to `any`. Omitting them first makes
  * this an actual override.
  */
-type ExcalidrawDataScene = Omit<
+export type ExcalidrawDataScene = Omit<
   SceneDataWithFiles,
   "elements" | "appState"
 > & {
@@ -251,11 +251,37 @@ export const REG_LINKINDEX_HYPERLINK = /^\w+:\/\//;
 export type EquationItem = { latex: string; isLoaded: boolean };
 export type MermaidItem = { mermaid: string; isLoaded: boolean };
 
+type TextElementData = {
+  raw: string;
+  parsed: string;
+  hasTextLink: boolean;
+};
+
+/** Drawing-owned metadata transferred without retaining an old view. */
+export interface ExcalidrawDataMigrationState {
+  sourceFilePath: string;
+  textElements: ReadonlyMap<string, TextElementData>;
+  scene: ExcalidrawDataScene;
+  deletedElements: readonly ExcalidrawElement[];
+  showLinkBrackets: boolean;
+  linkPrefix: string;
+  embeddableTheme: "light" | "dark" | "auto" | "default";
+  urlPrefix: string;
+  autoexportPreference: AutoexportPreference;
+  textMode: TextMode;
+  loaded: boolean;
+  elementLinks: ReadonlyMap<string, string>;
+  files: ReadonlyMap<FileId, EmbeddedFile>;
+  markdownImages: ReadonlyMap<FileId, MarkdownImageData>;
+  equations: ReadonlyMap<FileId, EquationItem>;
+  mermaids: ReadonlyMap<FileId, MermaidItem>;
+  compatibilityMode: boolean;
+  textElementCommentedOut: boolean;
+  selectedElementIds: Readonly<Record<string, boolean>>;
+}
+
 export class ExcalidrawData {
-  public textElements: Map<
-    string,
-    { raw: string; parsed: string; hasTextLink: boolean }
-  > = null;
+  public textElements: Map<string, TextElementData> = null;
   public scene: ExcalidrawDataScene = null;
   public deletedElements: ExcalidrawElement[] = [];
   public file: TFile = null;
@@ -315,6 +341,110 @@ export class ExcalidrawData {
     this.compatibilityMode = null;
     this.textElementCommentedOut = null;
     this.selectedElementIds = null;
+  }
+
+  /**
+   * Exports drawing-owned state for a one-shot window migration.
+   *
+   * Collection containers and mutable metadata records are copied. Immutable
+   * Excalidraw elements and `EmbeddedFile` descriptors are transferred by
+   * reference: neither owns a view, DOM node, `Window`, React runtime, or
+   * package lease, and retaining their cached asset metadata is intentional.
+   */
+  public exportMigrationState(): ExcalidrawDataMigrationState | null {
+    if (
+      !this.loaded ||
+      !this.file ||
+      !this.scene ||
+      !this.textElements ||
+      !this.elementLinks ||
+      !this.files ||
+      !this.markdownImages ||
+      !this.equations ||
+      !this.mermaids
+    ) {
+      return null;
+    }
+    return {
+      sourceFilePath: this.file.path,
+      textElements: new Map(
+        Array.from(this.textElements, ([id, value]) => [id, { ...value }]),
+      ),
+      scene: {
+        ...this.scene,
+        elements: [...this.scene.elements],
+        appState: { ...this.scene.appState },
+        files: { ...(this.scene.files ?? {}) },
+      },
+      deletedElements: [...this.deletedElements],
+      showLinkBrackets: this.showLinkBrackets,
+      linkPrefix: this.linkPrefix,
+      embeddableTheme: this.embeddableTheme,
+      urlPrefix: this.urlPrefix,
+      autoexportPreference: this.autoexportPreference,
+      textMode: this.textMode,
+      loaded: this.loaded,
+      elementLinks: new Map(this.elementLinks),
+      files: new Map(this.files),
+      markdownImages: new Map(
+        Array.from(this.markdownImages, ([id, value]) => [
+          id,
+          { ...value },
+        ]),
+      ),
+      equations: new Map(
+        Array.from(this.equations, ([id, value]) => [id, { ...value }]),
+      ),
+      mermaids: new Map(
+        Array.from(this.mermaids, ([id, value]) => [id, { ...value }]),
+      ),
+      compatibilityMode: this.compatibilityMode,
+      textElementCommentedOut: this.textElementCommentedOut,
+      selectedElementIds: { ...this.selectedElementIds },
+    };
+  }
+
+  /** Adopts a validated drawing-state export into this new view-owned model. */
+  public adoptMigrationState(
+    state: ExcalidrawDataMigrationState,
+    file: TFile,
+  ): boolean {
+    if (!file || state.sourceFilePath !== file.path || !state.loaded) {
+      return false;
+    }
+    this.textElements = new Map(
+      Array.from(state.textElements, ([id, value]) => [id, { ...value }]),
+    );
+    this.scene = {
+      ...state.scene,
+      elements: [...state.scene.elements],
+      appState: { ...state.scene.appState },
+      files: { ...(state.scene.files ?? {}) },
+    };
+    this.deletedElements = [...state.deletedElements];
+    this.file = file;
+    this.showLinkBrackets = state.showLinkBrackets;
+    this.linkPrefix = state.linkPrefix;
+    this.embeddableTheme = state.embeddableTheme;
+    this.urlPrefix = state.urlPrefix;
+    this.autoexportPreference = state.autoexportPreference;
+    this.textMode = state.textMode;
+    this.loaded = state.loaded;
+    this.elementLinks = new Map(state.elementLinks);
+    this.files = new Map(state.files);
+    this.markdownImages = new Map(
+      Array.from(state.markdownImages, ([id, value]) => [id, { ...value }]),
+    );
+    this.equations = new Map(
+      Array.from(state.equations, ([id, value]) => [id, { ...value }]),
+    );
+    this.mermaids = new Map(
+      Array.from(state.mermaids, ([id, value]) => [id, { ...value }]),
+    );
+    this.compatibilityMode = state.compatibilityMode;
+    this.textElementCommentedOut = state.textElementCommentedOut;
+    this.selectedElementIds = { ...state.selectedElementIds };
+    return true;
   }
 
   /**

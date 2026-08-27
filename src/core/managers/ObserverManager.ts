@@ -12,14 +12,30 @@ import {
   isInstanceOfDocumentFragment,
   isInstanceOfElement,
 } from "src/utils/typechecks";
+import type ExcalidrawView from "src/view/ExcalidrawView";
 
 declare const mainDocument: Document;
+const MODAL_CONTAINER_SELECTOR = ".modal-container";
+
+/**
+ * Checks an observed DOM node without relying on cross-window constructors.
+ *
+ * Mutation records can contain nodes from an Obsidian popout realm whose
+ * `instanceof Element` identity is not reliable after window migration.
+ */
+const isObservedElement = (node: Node): node is Element =>
+  node.nodeType === 1 && typeof (node as Element).matches === "function";
+
 export class ObserverManager {
   private plugin: ExcalidrawPlugin;
   private app: App;
   private themeObserver: MutationObserver | CustomMutationObserver;
   private fileExplorerObserver: MutationObserver | CustomMutationObserver;
-  private modalContainerObserver: MutationObserver | CustomMutationObserver;
+  private modalContainerObserver:
+    | MutationObserver
+    | CustomMutationObserver
+    | null = null;
+  private modalObservedView: ExcalidrawView | null = null;
   private workspaceDrawerLeftObserver:
     | MutationObserver
     | CustomMutationObserver;
@@ -267,16 +283,19 @@ export class ObserverManager {
   }
 
   /**
-   * Monitors if the user clicks outside the Excalidraw view, and saves the drawing if it's dirty
-   * @returns
+   * Saves a dirty drawing when an Obsidian modal opens in its live document.
+   *
+   * @param view - The active or same-leaf replacement view to observe.
    */
-  public addModalContainerObserver() {
-    if (!this.plugin.activeExcalidrawView) {
+  public addModalContainerObserver(view = this.plugin.activeExcalidrawView) {
+    if (!view) {
       return;
     }
+    const activeViewDoc = view.containerEl.ownerDocument;
     if (this.modalContainerObserver) {
       if (
-        this.activeViewDoc === this.plugin.activeExcalidrawView.ownerDocument
+        this.activeViewDoc === activeViewDoc &&
+        this.modalObservedView === view
       ) {
         return;
       }
@@ -285,36 +304,49 @@ export class ObserverManager {
     //The user clicks settings, or "open another vault", or the command palette.
     //Other body portals, including inline suggestions, must not interrupt editing with a save.
     const modalContainerObserverFn: MutationCallback = (
-      m: MutationRecord[],
+      mutations: MutationRecord[],
     ) => {
-      const view = this.plugin.activeExcalidrawView;
+      const observedView = this.modalObservedView;
+      const addedNodes = mutations.flatMap((mutation) =>
+        mutation.type === "childList"
+          ? Array.from(mutation.addedNodes)
+          : [],
+      );
+      const modalOpened = addedNodes.some(
+        (node) =>
+          isObservedElement(node) &&
+          (node.matches(MODAL_CONTAINER_SELECTOR) ||
+            node.querySelector(MODAL_CONTAINER_SELECTOR) !== null),
+      );
       if (
-        m.length !== 1 ||
-        m[0].type !== "childList" ||
-        m[0].addedNodes.length !== 1 ||
-        !isInstanceOfElement(m[0].addedNodes[0]) ||
-        !m[0].addedNodes[0].matches(".modal-container") ||
-        !view ||
-        view.semaphores?.viewunload ||
-        !view.isDirty()
+        !modalOpened ||
+        !observedView ||
+        observedView.semaphores?.viewunload ||
+        !observedView.isDirty() ||
+        !observedView.excalidrawAPI
       ) {
         return;
       }
 
-      const { errorMessage } = view.excalidrawAPI.getAppState();
+      const { errorMessage } = observedView.excalidrawAPI.getAppState();
       if (!errorMessage) {
-        void this.plugin.activeExcalidrawView.save();
+        void observedView.save();
       }
     };
 
+    this.activeViewDoc = activeViewDoc;
+    this.modalObservedView = view;
+    // Keep the observer constructor and target in the same window realm so a
+    // migrated view never depends on its destroyed source window.
     this.modalContainerObserver = DEBUGGING
       ? new CustomMutationObserver(
           modalContainerObserverFn,
           "modalContainerObserver",
         )
-      : new MutationObserver(modalContainerObserverFn);
-    this.activeViewDoc = this.plugin.activeExcalidrawView.ownerDocument;
-    this.modalContainerObserver.observe(this.activeViewDoc.body, {
+      : new (activeViewDoc.defaultView?.MutationObserver ?? MutationObserver)(
+          modalContainerObserverFn,
+        );
+    this.modalContainerObserver.observe(activeViewDoc.body, {
       childList: true,
     });
   }
@@ -324,8 +356,9 @@ export class ObserverManager {
       return;
     }
     this.modalContainerObserver.disconnect();
-    this.activeViewDoc = null;
     this.modalContainerObserver = null;
+    this.modalObservedView = null;
+    this.activeViewDoc = null;
   }
 
   private addWorkspaceDrawerObserver() {

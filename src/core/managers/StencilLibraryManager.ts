@@ -38,6 +38,8 @@ export class StencilLibraryManager {
   private itemSource = new Map<LibraryItem["id"], string>();
   private currentItems: LibraryItems = [];
   private loaded = false;
+  private loadRevision = 0;
+  private loadPromise: Promise<void> | null = null;
   private migrationPrompt: Promise<void> | null = null;
   private saveQueue: Promise<void> = Promise.resolve();
   private reloadTimer: number | null = null;
@@ -86,6 +88,7 @@ export class StencilLibraryManager {
   }
 
   public invalidate(): void {
+    this.loadRevision++;
     this.loaded = false;
     this.itemSource.clear();
     this.currentItems = [];
@@ -109,7 +112,7 @@ export class StencilLibraryManager {
       await this.migrateLegacyLibrary();
     }
     if (!this.loaded) {
-      await this.loadFromVault();
+      await this.ensureLoaded();
     }
     return this.currentItems;
   }
@@ -156,7 +159,7 @@ export class StencilLibraryManager {
     }
     await this.saveQueue;
     this.invalidate();
-    await this.loadFromVault();
+    await this.ensureLoaded();
     this.isUpdatingOpenViews = true;
     try {
       for (const view of getExcalidrawViews(this.plugin.app, true)) {
@@ -286,8 +289,39 @@ export class StencilLibraryManager {
     }
   }
 
-  private async loadFromVault(): Promise<void> {
-    this.itemSource.clear();
+  /** Coalesces concurrent view initialization into one vault-library load. */
+  private async ensureLoaded(): Promise<void> {
+    while (!this.loaded) {
+      if (this.loadPromise === null) {
+        const revision = this.loadRevision;
+        this.loadPromise = this.loadFromVault().then(
+          ({ itemSource, items }) => {
+            if (revision !== this.loadRevision) {
+              return;
+            }
+            this.itemSource = itemSource;
+            this.currentItems = items;
+            this.loaded = true;
+          },
+        );
+      }
+      const activeLoad: Promise<void> = this.loadPromise;
+      try {
+        await activeLoad;
+      } finally {
+        if (this.loadPromise === activeLoad) {
+          this.loadPromise = null;
+        }
+      }
+    }
+  }
+
+  /** Reads a coherent library snapshot without mutating the active cache. */
+  private async loadFromVault(): Promise<{
+    itemSource: Map<LibraryItem["id"], string>;
+    items: LibraryItems;
+  }> {
+    const itemSource = new Map<LibraryItem["id"], string>();
     const folderPath = this.getFolderPath();
     const localPath = this.getLocalLibraryPath();
     const files = this.plugin.app.vault
@@ -315,25 +349,24 @@ export class StencilLibraryManager {
         isLocalFile ? "unpublished" : "published",
       );
       for (const item of items) {
-        if (this.itemSource.has(item.id)) {
+        if (itemSource.has(item.id)) {
           console.warn(
             `Duplicate stencil library item id '${item.id}' in ${file.path}; keeping the first occurrence.`,
           );
           continue;
         }
-        this.itemSource.set(item.id, file.path);
+        itemSource.set(item.id, file.path);
         combined.push(
           isLocalFile ? item : { ...item, status: "published" as const },
         );
       }
     }
-    this.currentItems = combined;
-    this.loaded = true;
+    return { itemSource, items: combined };
   }
 
   private async persistChanges(nextItems: LibraryItems): Promise<void> {
     if (!this.loaded) {
-      await this.loadFromVault();
+      await this.ensureLoaded();
     }
     const previousById = new Map(
       this.currentItems.map((item) => [item.id, item]),

@@ -206,7 +206,7 @@ The build embeds or injects runtime code for:
 
 These payloads are executed or unpacked at runtime. This is intentional.
 
-React and the Excalidraw package are separate payloads. React must not be bundled into the Excalidraw artifact, because the plugin creates a matching private React runtime in every Obsidian window. Mermaid is also intentionally absent from the artifact and is loaded lazily at runtime through Excalidraw Extras. All other required Excalidraw assets are expected to work offline except the deliberately lazy CJK font subsets.
+React and the Excalidraw package are separate payloads. React must not be bundled into the Excalidraw artifact, because the plugin evaluates one matching private React runtime and supplies it to the single Excalidraw runtime used by every view. Mermaid is also intentionally absent from the artifact and is loaded lazily at runtime through Excalidraw Extras. All other required Excalidraw assets are expected to work offline except the deliberately lazy CJK font subsets.
 
 ### Two-Repository Excalidraw Workflow
 
@@ -233,9 +233,9 @@ The customized Excalidraw runtime receives Obsidian capabilities through typed h
 - Keep adapters narrow and semantic. They may expose operations such as reading a current limit or running a named action, but never the plugin instance, the complete settings object, or an active view.
 - Capabilities used by `@excalidraw/common` or lower layers belong in `ObsidianCommonHostAdapter`. Capabilities used only by the Excalidraw package belong in `ObsidianExcalidrawHostAdapter`.
 - View-specific state must remain instance-scoped. Do not put an active view into either window-runtime adapter; expose a semantic plugin-side action when the component genuinely requires such behavior.
-- `PackageManager` registers both adapters once per evaluated Excalidraw runtime and window. React components and individual `ExcalidrawView` instances must not configure or dispose them.
+- `PackageManager` registers both adapters once with the shared Excalidraw runtime. React components and individual `ExcalidrawView` instances must not configure or dispose them.
 - Adapter methods must read live plugin state instead of capturing settings snapshots during registration.
-- `PackageManager` owns the complete lifetime: dispose registrations before removing a package or window runtime, make cleanup idempotent, and roll back all registrations if configuring any adapter fails.
+- `PackageManager` owns the complete lifetime: dispose registrations before releasing the shared runtime, make cleanup idempotent, and roll back all registrations if configuring either adapter fails.
 
 A closure that references the plugin is not itself a memory leak. The risk is allowing a registry, listener, or evaluated runtime retaining that closure to outlive its owning `PackageManager` registration.
 
@@ -252,11 +252,11 @@ The host adapters are an internal protocol between this plugin and its exact `@z
 
 ### Popout Window Support
 
-- `src/core/managers/PackageManager.ts` manages window-scoped React/ReactDOM/Excalidraw packages.
-- This is necessary because the plugin must work in Obsidian/Electron popout windows.
-- Do not replace this with a naive global singleton approach.
+- `src/core/managers/PackageManager.ts` evaluates one private React/ReactDOM/Excalidraw runtime in the main application realm and leases that runtime to every view.
+- A lease retains the view's actual acquisition window for migration and persistence decisions; package evaluation ownership must never substitute for that identity.
+- Popouts receive only a temporary `window.ExcalidrawLib` compatibility alias. Remove it after the final lease for that window while keeping the shared runtime alive until plugin unload.
 - The runtime is built from official npm package entry points and kept in plugin/package lexical scope. Do not assign React or ReactDOM to `window`; only the documented `window.ExcalidrawLib` compatibility surface remains global.
-- Rendering, DOM ownership, events, observers, portals, and React roots must use the owning view window where appropriate.
+- Every Excalidraw root must receive its stable owning document. Rendering, DOM ownership, events, observers, portals, realm constructors, fonts, timers, and React roots must derive from the owning view document/window where appropriate; do not turn the shared runtime into a mutable "current window" singleton.
 - Treat `HTMLElement.onWindowMigrated()` as a destructive runtime boundary. Its callback runs after Obsidian has moved the view container to another document, while the existing React root and Excalidraw API still belong to the source window runtime.
 - For a dirty migration, synchronously capture every API-owned value needed for persistence and unmount the source React root **before the first `await`**. Do not move synchronization, compression, Vault/native file access, `closeLeafView()`, or another asynchronous step ahead of that unmount. On macOS/Electron, doing so reproducibly allowed the source popout window to be destroyed before `root.unmount()`, freezing Obsidian and disconnecting DevTools.
 - Cancel deferred initialization and scene-file loaders before migration unmount, and require delayed loader callbacks to match the exact API instance and file path that started them. Component-owned image decoding can still outlive a synchronous `addFiles()` call, so the Excalidraw runtime must also stop after an awaited decode when its editor has unmounted; never delay migration unmount to wait for image work.
@@ -411,10 +411,10 @@ Backwards compatibility is a strong requirement in this repository.
 
 ## React Runtime Import Model
 
-React usage in this repository is special because React and ReactDOM are package-managed per window to support Obsidian popout windows and runtime package injection.
+React usage in this repository is special because one private React/ReactDOM runtime is package-managed across main-window and popout roots.
 
 - It is fine to import React for types, component definitions, JSX compilation, and nearby established patterns.
-- Do not assume a single global React/ReactDOM runtime is safe for rendering, root creation, or view-owned objects.
+- The shared runtime is safe only because each root and Excalidraw instance receives stable owner-document state. Never recover view ownership from the runtime's lexical main window.
 - For view-bound rendering and roots, follow `src/view/ExcalidrawView.ts` and use `view.packages.react` and `view.packages.reactDOM` through the package-manager flow.
 - For view-owned React objects such as refs or runtime-created elements, follow neighboring patterns such as `src/view/components/menu/ToolsPanel.tsx` and `src/view/components/CustomEmbeddable.tsx`, which intentionally use the package-managed React instance.
 - Do not introduce a new direct `ReactDOM.createRoot()` path outside the package-manager model unless you have verified popout-window safety.
@@ -430,7 +430,7 @@ Use this routing guide before editing.
 - Commands and command registration: `src/core/managers/CommandManager.ts`
 - Vault or workspace event handling: `src/core/managers/EventManager.ts` and `src/core/managers/FileManager.ts`
 - Markdown rendering or markdown embeds: `src/core/managers/MarkdownPostProcessor.ts`
-- Package/runtime loading across windows: `src/core/managers/PackageManager.ts`
+- Shared package/runtime loading and per-window leases: `src/core/managers/PackageManager.ts`
 - Styling setup and style injection: `src/core/managers/StylesManager.ts`, `styles.css`, `src/utils/dynamicStyling.ts`
 - Main canvas/editor behavior: `src/view/ExcalidrawView.ts`
 - Sidepanel behavior: `src/view/sidepanel/`
@@ -491,7 +491,7 @@ These areas require extra care:
 - `rollup.config.mjs`: payload injection, localization, manifest/versioning, CSS bundling
 - `src/core/main.ts`: lifecycle order, settings migration, startup initialization
 - `src/view/ExcalidrawView.ts`: very large, stateful, performance-sensitive, and central to user behavior
-- `src/core/managers/PackageManager.ts`: cross-window package loading and runtime evaluation
+- `src/core/managers/PackageManager.ts`: shared runtime evaluation, host registration, and cross-window lease/alias lifetime
 - `src/lang/helpers.ts`: build-token compatibility for compressed locales
 - AI/provider settings and persisted credentials handling
 - PDF/export code paths and Electron/Obsidian-specific integrations

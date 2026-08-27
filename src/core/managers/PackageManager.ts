@@ -22,20 +22,26 @@ const normalizeError = (error: unknown): Error =>
     ? error
     : new Error(typeof error === "string" ? error : "Unknown error");
 
+/**
+ * Owns the plugin's single private React/Excalidraw runtime.
+ *
+ * Each view receives the same package but retains an idempotent lease keyed by
+ * its actual window. The window key governs migration persistence and the
+ * temporary `ExcalidrawLib` compatibility alias only; rendering ownership is
+ * supplied independently through each Excalidraw instance's `ownerDocument`.
+ */
 export class PackageManager {
-  private packageMap: Map<Window, Packages> = new Map<Window, Packages>();
-  private EXCALIDRAW_PACKAGE: string;
-  private plugin: ExcalidrawPlugin;
-  private fallbackPackage: Packages | null = null;
+  private runtimePackage: Packages | null = null;
   private packageLeaseCountMap = new Map<Window, number>();
-  private commonHostDisposerMap = new Map<Window, () => void>();
-  private excalidrawHostDisposerMap = new Map<Window, () => void>();
+  private commonHostDisposer: (() => void) | null = null;
+  private excalidrawHostDisposer: (() => void) | null = null;
+  private runtimeAliasWindows = new Set<Window>();
 
-  constructor(plugin: ExcalidrawPlugin) {
-    this.plugin = plugin;
+  constructor(private readonly plugin: ExcalidrawPlugin) {
+    let excalidrawPackage = "";
 
     try {
-      this.EXCALIDRAW_PACKAGE = unpackExcalidraw();
+      excalidrawPackage = unpackExcalidraw();
 
       // Evaluate Excalidraw in the main window with the same private React
       // instance used by the plugin bundle. The runtime is passed explicitly
@@ -49,7 +55,7 @@ export class PackageManager {
         ) => typeof ExcalidrawLib
       >(
         `(function(React, ReactDOM, ReactJSXRuntime, ReactJSXDevRuntime) {
-          ${this.EXCALIDRAW_PACKAGE};
+          ${excalidrawPackage};
           return ExcalidrawLib;
         })`,
         "PackageManager constructor - excalidrawLib initialization",
@@ -74,8 +80,7 @@ export class PackageManager {
 
       // Validate the package before storing
       if (this.validatePackage(initialPackage)) {
-        this.setPackage(window, initialPackage);
-        this.fallbackPackage = initialPackage; // Store a valid package as fallback
+        this.setRuntimePackage(initialPackage);
       } else {
         throw new Error("Invalid initial package");
       }
@@ -89,6 +94,14 @@ export class PackageManager {
         10000,
       );
       console.error("Error loading the Excalidraw package", e);
+    } finally {
+      // Per-window evaluation has been removed. Release the decompressed source
+      // strings after the one runtime is initialized instead of retaining them
+      // for hypothetical future popouts.
+      excalidrawPackage = "";
+      REACT_PACKAGES = "";
+      ReactJSXRuntime = null;
+      ReactJSXDevRuntime = null;
     }
 
     plugin.logStartupEvent("Excalidraw package unpacked");
@@ -120,9 +133,9 @@ export class PackageManager {
   /**
    * Registers plugin capabilities with one evaluated Excalidraw runtime.
    */
-  private configureObsidianCommonHost(win: Window, pkg: Packages): void {
-    this.commonHostDisposerMap.get(win)?.();
-    this.commonHostDisposerMap.delete(win);
+  private configureObsidianCommonHost(pkg: Packages): void {
+    this.commonHostDisposer?.();
+    this.commonHostDisposer = null;
 
     const lib = pkg.excalidrawLib;
     if (
@@ -137,16 +150,13 @@ export class PackageManager {
       this.plugin,
       lib.OBSIDIAN_COMMON_HOST_PROTOCOL_VERSION,
     );
-    this.commonHostDisposerMap.set(
-      win,
-      lib.configureObsidianCommonHost(adapter),
-    );
+    this.commonHostDisposer = lib.configureObsidianCommonHost(adapter);
   }
 
   /** Registers plugin-wide settings with one evaluated Excalidraw runtime. */
-  private configureObsidianExcalidrawHost(win: Window, pkg: Packages): void {
-    this.excalidrawHostDisposerMap.get(win)?.();
-    this.excalidrawHostDisposerMap.delete(win);
+  private configureObsidianExcalidrawHost(pkg: Packages): void {
+    this.excalidrawHostDisposer?.();
+    this.excalidrawHostDisposer = null;
 
     const lib = pkg.excalidrawLib;
     if (
@@ -163,57 +173,52 @@ export class PackageManager {
       this.plugin,
       lib.OBSIDIAN_EXCALIDRAW_HOST_PROTOCOL_VERSION,
     );
-    this.excalidrawHostDisposerMap.set(
-      win,
-      lib.configureObsidianExcalidrawHost(adapter),
-    );
+    this.excalidrawHostDisposer =
+      lib.configureObsidianExcalidrawHost(adapter);
   }
 
-  /** Disposes every host registration owned by an evaluated window runtime. */
-  private disposeObsidianHosts(win: Window): void {
-    this.commonHostDisposerMap.get(win)?.();
-    this.commonHostDisposerMap.delete(win);
-    this.excalidrawHostDisposerMap.get(win)?.();
-    this.excalidrawHostDisposerMap.delete(win);
+  /** Disposes the plugin capabilities registered with the shared runtime. */
+  private disposeObsidianHosts(): void {
+    this.commonHostDisposer?.();
+    this.commonHostDisposer = null;
+    this.excalidrawHostDisposer?.();
+    this.excalidrawHostDisposer = null;
   }
 
-  /**
-   * Store a package for a specific window
-   */
-  public setPackage(win: Window, pkg: Packages) {
+  /** Stores and configures the plugin's single evaluated runtime package. */
+  private setRuntimePackage(pkg: Packages): void {
     if (this.validatePackage(pkg)) {
       try {
-        this.configureObsidianCommonHost(win, pkg);
-        this.configureObsidianExcalidrawHost(win, pkg);
+        this.configureObsidianCommonHost(pkg);
+        this.configureObsidianExcalidrawHost(pkg);
       } catch (error: unknown) {
-        this.disposeObsidianHosts(win);
+        this.disposeObsidianHosts();
         throw normalizeError(error);
       }
-      this.packageMap.set(win, pkg);
-
-      // Update fallback if we don't have one
-      if (!this.fallbackPackage) {
-        this.fallbackPackage = pkg;
-      }
+      this.runtimePackage = pkg;
     } else {
       errorHandler.handleError(
         "Attempted to set invalid package",
-        "PackageManager.setPackage",
+        "PackageManager.setRuntimePackage",
       );
     }
   }
 
-  public getPackageMap() {
-    return this.packageMap;
+  /** Returns the one runtime used by every main-window and popout view. */
+  public getRuntimePackage(): Packages {
+    if (!this.runtimePackage || !this.validatePackage(this.runtimePackage)) {
+      throw new Error("Excalidraw runtime package is unavailable");
+    }
+    return this.runtimePackage;
   }
 
   /**
-   * Acquires an idempotent lease for the package owned by `win`.
+   * Acquires the shared runtime while retaining the view's actual window.
    *
    * @remarks
-   * Popout packages are deleted when their last lease is released. The main
-   * package remains pinned for the plugin lifetime because it is also the
-   * fallback runtime and is initialized as part of plugin startup.
+   * Window identity remains view-owned migration/persistence state. Popout
+   * leases additionally own the temporary `window.ExcalidrawLib` compatibility
+   * alias and remove it when the final view in that window releases its lease.
    */
   public acquirePackage(win: Window): PackageLease {
     const packages = this.getPackage(win);
@@ -245,100 +250,49 @@ export class PackageManager {
     if (remainingLeases === 0) {
       this.packageLeaseCountMap.delete(win);
       if (win !== window) {
-        this.deletePackage(win);
+        this.removeRuntimeAlias(win);
       }
     } else {
       this.packageLeaseCountMap.set(win, remainingLeases);
     }
-
   }
 
   /**
-   * Gets a package for a window, creating it if necessary
-   * with robust error handling
+   * Returns the shared runtime and exposes its compatibility API in `win`.
+   *
+   * @remarks
+   * The runtime is never evaluated in the supplied window. Rendering ownership
+   * is provided separately through Excalidraw's stable `ownerDocument` prop.
    */
   public getPackage(win: Window): Packages {
-    try {
-      // Return existing package if available
-      if (this.packageMap.has(win)) {
-        const pkg = this.packageMap.get(win);
-        if (this.validatePackage(pkg)) {
-          return pkg;
-        }
-        // If package exists but is invalid, delete it so we can recreate it
-        this.deletePackage(win);
-      }
-
-      // Create new package
-      return errorHandler.wrapWithTryCatch(
-        () => {
-          // Use safe evaluation to load packages in the window context
-          const evalResult = errorHandler.safeEval<{
-            react: typeof React;
-            reactDOM: typeof ReactDOM;
-            excalidrawLib: typeof ExcalidrawLib;
-          }>(
-            `(function() {
-            ${REACT_PACKAGES + this.EXCALIDRAW_PACKAGE};
-            return {
-              react: React,
-              reactDOM: ReactDOM,
-              excalidrawLib: ExcalidrawLib,
-            };
-          })()`,
-            "PackageManager.getPackage - package evaluation",
-            win,
-          );
-
-          if (!evalResult || !this.validatePackage(evalResult)) {
-            throw new Error("Failed to create valid package");
-          }
-
-          const newPackage = {
-            react: evalResult.react,
-            reactDOM: evalResult.reactDOM,
-            excalidrawLib: evalResult.excalidrawLib,
-          };
-
-          this.setPackage(win, newPackage);
-          return newPackage;
-        },
-        "PackageManager.getPackage",
-        this.fallbackPackage,
-      );
-    } catch (error: unknown) {
-      errorHandler.handleError(
-        normalizeError(error),
-        "PackageManager.getPackage",
-      );
-
-      // Return fallback package if available to prevent data loss
-      if (this.fallbackPackage) {
-        return this.fallbackPackage;
-      }
-
-      // If no fallback, throw error to prevent undefined behavior
-      throw new Error("Failed to get package and no fallback available");
+    const pkg = this.getRuntimePackage();
+    if (win !== window) {
+      win.ExcalidrawLib = pkg.excalidrawLib;
+      this.runtimeAliasWindows.add(win);
     }
+    return pkg;
   }
 
+  /** Removes only the window-local alias; the shared runtime remains alive. */
+  private removeRuntimeAlias(win: Window): void {
+    const packageLib = this.runtimePackage?.excalidrawLib;
+    errorHandler.wrapWithTryCatch(() => {
+      if (packageLib && win.ExcalidrawLib === packageLib) {
+        delete win.ExcalidrawLib;
+      }
+    }, "PackageManager.removeRuntimeAlias");
+    this.runtimeAliasWindows.delete(win);
+  }
+
+  /**
+   * Compatibility facade retained for callers that explicitly clean a window.
+   * The plugin-wide runtime and host registrations live until `destroy()`.
+   */
   public deletePackage(win: Window) {
     try {
-      this.disposeObsidianHosts(win);
-
-      const pkg = this.packageMap.get(win);
-      if (!pkg) {
-        return;
+      if (win !== window) {
+        this.removeRuntimeAlias(win);
       }
-
-      const { excalidrawLib } = pkg;
-      if (win.ExcalidrawLib === excalidrawLib) {
-        errorHandler.wrapWithTryCatch(() => {
-          delete win.ExcalidrawLib;
-        }, "PackageManager.deletePackage - cleanup ExcalidrawLib");
-      }
-
-      this.packageMap.delete(win);
     } catch (error: unknown) {
       errorHandler.handleError(
         normalizeError(error),
@@ -347,24 +301,19 @@ export class PackageManager {
     }
   }
 
-  public setExcalidrawPackage(pkg: string) {
-    this.EXCALIDRAW_PACKAGE = pkg;
-  }
-
   public destroy() {
     try {
       REACT_PACKAGES = "";
 
-      Array.from(this.packageMap.entries()).forEach(([win, _]) => {
-        this.deletePackage(win);
+      Array.from(this.runtimeAliasWindows).forEach((win) => {
+        this.removeRuntimeAlias(win);
       });
+      this.removeRuntimeAlias(window);
 
-      this.packageMap.clear();
       this.packageLeaseCountMap.clear();
-      this.commonHostDisposerMap.clear();
-      this.excalidrawHostDisposerMap.clear();
-      this.EXCALIDRAW_PACKAGE = "";
-      this.fallbackPackage = null;
+      this.runtimeAliasWindows.clear();
+      this.disposeObsidianHosts();
+      this.runtimePackage = null;
 
       react = null;
       reactDOM = null;

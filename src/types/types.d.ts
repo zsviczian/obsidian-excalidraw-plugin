@@ -150,11 +150,13 @@ export type Packages = {
 };
 
 /**
- * An idempotent ownership handle for one window-scoped runtime package.
+ * An idempotent handle for the shared runtime acquired by one view.
  *
  * @remarks
- * The captured window remains the package owner even if Obsidian reparents the
- * consuming view's DOM into another window before view teardown completes.
+ * The captured window remains the view's acquisition window even if Obsidian
+ * reparents its DOM before teardown completes. All leases share the one package
+ * evaluated in the main application realm, so lifecycle code must use `window`
+ * for migration ownership and never infer package evaluation ownership from it.
  */
 export type PackageLease = {
   readonly window: Window;
