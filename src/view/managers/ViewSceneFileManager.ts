@@ -26,7 +26,10 @@ export interface ViewSceneFileManagerDependencies {
   addFiles: typeof import("../ExcalidrawView").addFiles;
 }
 
-const waitForWindowPaint = (getOwnerWindow: () => Window): Promise<void> =>
+/** Waits for two frames in the current view window, with a bounded fallback. */
+export const waitForWindowPaint = (
+  getOwnerWindow: () => Window,
+): Promise<void> =>
   new Promise((resolve) => {
     let settled = false;
     const finish = () => {
@@ -49,7 +52,10 @@ const waitForWindowPaint = (getOwnerWindow: () => Window): Promise<void> =>
     }
   });
 
-const getVisibleImageFileIds = (view: ExcalidrawView): Set<FileId> => {
+/** Returns image file IDs intersecting the view's current scene viewport. */
+export const getVisibleImageFileIds = (
+  view: ExcalidrawView,
+): Set<FileId> => {
   const visibleFileIds = new Set<FileId>();
   const appState = view.excalidrawAPI?.getAppState();
   if (!appState) {

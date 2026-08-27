@@ -245,7 +245,11 @@ import { ViewFullscreenManager } from "./managers/ViewFullscreenManager";
 import { ViewLinkNavigationManager } from "./managers/ViewLinkNavigationManager";
 import { ViewExcalidrawExtensionRenderer } from "./managers/ViewExcalidrawExtensionRenderer";
 import { MarkdownImageController } from "./managers/MarkdownImageController";
-import { ViewSceneFileManager } from "./managers/ViewSceneFileManager";
+import {
+  getVisibleImageFileIds,
+  ViewSceneFileManager,
+  waitForWindowPaint,
+} from "./managers/ViewSceneFileManager";
 import {
   type SaveExecutionResult,
   type SaveSideEffectPolicy,
@@ -281,7 +285,12 @@ import { setElementDisplay } from "src/utils/htmlUtils";
 
 const EMBEDDABLE_SEMAPHORE_TIMEOUT = 2000;
 const PREVENT_RELOAD_TIMEOUT = 2000;
+const MIGRATION_BINARY_FILE_BATCH_SIZE = 4;
 const RE_TAIL = /^## Drawing\n[\s\S]*\n%%$(.*)/ms;
+
+type MigrationImageAPI = ExcalidrawImperativeAPI & {
+  awaitImageFiles?: (fileIds: readonly FileId[]) => Promise<void>;
+};
 
 declare const PLUGIN_VERSION: string;
 declare const mainDocument: Document;
@@ -540,6 +549,8 @@ export default class ExcalidrawView
   private lastAppState: AppState | null = null;
   private lastElementsVersion: number = -1;
   private pendingMigrationHandoffToken: string | null = null;
+  private pendingMigrationBinaryFiles: BinaryFiles | null = null;
+  private migrationBinaryFilePublication: Promise<void> | null = null;
 
   constructor(leaf: WorkspaceLeaf, plugin: ExcalidrawPlugin) {
     super(leaf);
@@ -2799,6 +2810,9 @@ export default class ExcalidrawView
           this.prevTextMode =
             migrationDrawingHandoff.excalidrawData.scene.prevTextMode ??
             migrationDrawingHandoff.textMode;
+          this.pendingMigrationBinaryFiles = {
+            ...migrationDrawingHandoff.files,
+          };
           migrationDrawingAdopted = true;
         }
         //await this.plugin.loadSettings();
@@ -3477,7 +3491,13 @@ export default class ExcalidrawView
           ),
           gridDirection: this.plugin.settings.gridSettings.GRID_DIRECTION,
         },
-        files: excalidrawData.files,
+        // A migration publishes its already-transferred files progressively
+        // after initialization so one all-at-once decode cannot block the
+        // replacement editor's first paint.
+        files:
+          this.pendingMigrationBinaryFiles === null
+            ? excalidrawData.files
+            : {},
         libraryItems: await this.getLibrary(),
       });
       //files are loaded when excalidrawAPI is mounted
@@ -3502,6 +3522,110 @@ export default class ExcalidrawView
     );
   }
 
+  /**
+   * Publishes transferred migration files in visible-first bounded batches.
+   *
+   * The replacement editor starts without `initialData.files` because the
+   * component otherwise decodes every transferred data URL before its first
+   * useful paint. Each batch still uses Excalidraw's ordinary `addFiles()`
+   * and image-cache path; the fork's narrow await boundary only lets this host
+   * wait for that work before yielding two destination-window frames.
+   */
+  private async publishMigrationBinaryFiles(
+    api: ExcalidrawImperativeAPI,
+  ): Promise<void> {
+    const files = this.pendingMigrationBinaryFiles;
+    this.pendingMigrationBinaryFiles = null;
+    if (files === null) {
+      return;
+    }
+
+    const migrationAPI = api as MigrationImageAPI;
+    if (typeof migrationAPI.awaitImageFiles !== "function") {
+      errorlog({
+        where: "ExcalidrawView.publishMigrationBinaryFiles",
+        message: "The installed Excalidraw runtime cannot pace migration files",
+      });
+      if (this.excalidrawAPI === api && !api.isDestroyed) {
+        void this.loadSceneFiles(false, undefined, undefined, undefined);
+      }
+      return;
+    }
+
+    const isCurrent = () =>
+      this.excalidrawAPI === api &&
+      !api.isDestroyed &&
+      !this.semaphores?.windowMigrating &&
+      !this.semaphores?.viewunload;
+    const visibleFileIds = getVisibleImageFileIds(this);
+    const allFiles = Object.values(files);
+    const orderedFiles = [
+      ...allFiles.filter((file) => visibleFileIds.has(file.id)),
+      ...allFiles.filter((file) => !visibleFileIds.has(file.id)),
+    ];
+
+    try {
+      for (
+        let offset = 0;
+        offset < orderedFiles.length;
+        offset += MIGRATION_BINARY_FILE_BATCH_SIZE
+      ) {
+        if (!isCurrent()) {
+          return;
+        }
+        const batch = orderedFiles.slice(
+          offset,
+          offset + MIGRATION_BINARY_FILE_BATCH_SIZE,
+        );
+        const fileIds = batch.map((file) => file.id);
+        const skipSvgNormalization = new Set(
+          batch
+            .filter((file) => file.mimeType === "image/svg+xml")
+            .map((file) => file.id),
+        );
+        api.addFiles({ files: batch, skipSvgNormalization });
+        await migrationAPI.awaitImageFiles(fileIds);
+        if (!isCurrent()) {
+          return;
+        }
+        await waitForWindowPaint(() => this.ownerWindow ?? window);
+      }
+
+      if (!isCurrent()) {
+        return;
+      }
+      const loadedFiles = api.getFiles();
+      const missingFileIds = new Set<FileId>();
+      for (const element of api.getSceneElements()) {
+        if (
+          element.type === "image" &&
+          element.fileId &&
+          !loadedFiles[element.fileId]
+        ) {
+          missingFileIds.add(element.fileId);
+        }
+      }
+      if (missingFileIds.size > 0) {
+        void this.loadSceneFiles(
+          false,
+          missingFileIds,
+          undefined,
+          undefined,
+        );
+      } else {
+        this.lastSceneLoadTime = Date.now();
+      }
+    } catch (error: unknown) {
+      errorlog({
+        where: "ExcalidrawView.publishMigrationBinaryFiles",
+        error,
+      });
+      if (isCurrent()) {
+        void this.loadSceneFiles(false, undefined, undefined, undefined);
+      }
+    }
+  }
+
   private onAfterLoadScene(justloaded: boolean) {
     const api = this.excalidrawAPI;
     if (
@@ -3512,7 +3636,19 @@ export default class ExcalidrawView
     ) {
       return;
     }
-    void this.loadSceneFiles(false, undefined, undefined, undefined);
+    if (
+      this.pendingMigrationBinaryFiles !== null ||
+      this.migrationBinaryFilePublication !== null
+    ) {
+      if (this.migrationBinaryFilePublication === null) {
+        this.migrationBinaryFilePublication =
+          this.publishMigrationBinaryFiles(api).finally(() => {
+            this.migrationBinaryFilePublication = null;
+          });
+      }
+    } else {
+      void this.loadSceneFiles(false, undefined, undefined, undefined);
+    }
     this.updateContainerSize(null, true, justloaded);
     void this.initializeToolsIconPanelAfterLoading();
     const uiMode = calculateUIModeValue(this.plugin.settings);
