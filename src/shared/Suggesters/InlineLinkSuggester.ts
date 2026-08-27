@@ -88,6 +88,7 @@ export class InlineLinkSuggester
   private paragraphItems: ParagraphSuggestion[] = [];
   private frameItems: FrameSuggestion[] = [];
   private tagItems: TagSuggestion[] = [];
+  private linkItemsLoaded = false;
 
   constructor(
     app: App,
@@ -98,8 +99,7 @@ export class InlineLinkSuggester
     surpessPlaceholder: boolean = false,
     collisionBoundary?: HTMLElement,
   ) {
-    const items = getLinkSuggestionsFiltered(app);
-    super(app, inputEl, items, collisionBoundary);
+    super(app, inputEl, [], collisionBoundary);
     this.plugin = plugin;
     this.getSourcePath = getSourcePath;
     this.widthHost = widthWrapper ?? inputEl;
@@ -152,7 +152,7 @@ export class InlineLinkSuggester
   }
 
   getItems(): InlineSuggestion[] {
-    return getLinkSuggestionsFiltered(this.app);
+    return this.items;
   }
 
   /**
@@ -205,7 +205,21 @@ export class InlineLinkSuggester
    * Refreshes the suggestion data (e.g. when vault changes) without recreating the instance.
    */
   public refreshItems() {
+    if (!this.linkItemsLoaded) {
+      return;
+    }
     this.items = getLinkSuggestionsFiltered(this.app);
+  }
+
+  /**
+   * Loads the vault-wide file-link candidates only after a wikilink is active.
+   */
+  private ensureLinkItemsLoaded() {
+    if (this.linkItemsLoaded) {
+      return;
+    }
+    this.items = getLinkSuggestionsFiltered(this.app);
+    this.linkItemsLoaded = true;
   }
 
   modifyInput(input: string): string {
@@ -246,6 +260,10 @@ export class InlineLinkSuggester
       if (context.inAlias) {
         this.resetSuggestions();
         return;
+      }
+
+      if (this.mode === "file") {
+        this.ensureLinkItemsLoaded();
       }
 
       void (async () => {
