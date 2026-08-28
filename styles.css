@@ -1096,6 +1096,12 @@ End Obsidian Sheets Plus support
   min-width: calc(6 * var(--default-button-size));
 }
 
+/* Radix portals the canvas menu under the owning document's body. Keep it on
+   Obsidian's menu layer so body-level Obsidian tooltips remain above it. */
+body > [data-radix-portal] .main-menu {
+  z-index: var(--layer-menu);
+}
+
 .excalidraw-pen-settings-floating-actions {
   position: sticky;
   bottom: -20px;
