@@ -70,6 +70,11 @@ import { decryptProviderProfiles } from "src/utils/settingsKeyObfuscation";
 import { getGeminiSupportedSizes } from "src/utils/geminiImageModelUtils";
 import { URLs } from "src/constants/safeUrls";
 import { hideElement, setStyle, showElement } from "src/utils/styleUtils";
+import { errorlog } from "src/utils/coreUtils";
+import {
+  replaceScriptFileExtension,
+  resolveConfiguredStartupScriptPath,
+} from "src/utils/scriptFileUtils";
 import {
   getMarkdownFontFamilyId,
   getSelectableFontOptions,
@@ -4967,6 +4972,19 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         control: { type: "toggle", key: "fieldSuggester" },
       },
       {
+        name: t("ALLOW_JS_FILES_NAME"),
+        desc: fragWithHTML(t("ALLOW_JS_FILES_DESC")),
+        aliases: ["JavaScript files", ".js scripts", "sync scripts"],
+        control: {
+          type: "toggle",
+          key: "allowJavaScriptFiles",
+          afterUpdate: async () => {
+            await this.plugin.scriptEngine?.reloadScripts();
+            this.refreshSettingsUI();
+          },
+        },
+      },
+      {
         name: t("ENABLE_ONLOAD_SCRIPTS_NAME"),
         desc: fragWithHTML(t("ENABLE_ONLOAD_SCRIPTS_DESC")),
         aliases: ["drawing onload script", "file script"],
@@ -4995,6 +5013,164 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     });
   }
 
+  private configureScriptFileStorageSetting(setting: Setting): void {
+    setting
+      .setName(t("STORE_SCRIPTS_AS_JS_NAME"))
+      .setDesc(fragWithHTML(t("STORE_SCRIPTS_AS_JS_DESC")))
+      .addDropdown((dropdown) =>
+        dropdown
+          .addOption("md", t("SCRIPT_FILE_EXTENSION_MARKDOWN"))
+          .addOption("js", t("SCRIPT_FILE_EXTENSION_JAVASCRIPT"))
+          .setValue(
+            this.plugin.settings.storeScriptFilesAsJavaScript ? "js" : "md",
+          )
+          .onChange((value) => {
+            this.plugin.settings.storeScriptFilesAsJavaScript = value === "js";
+            this.applySettingsUpdate();
+            this.refreshSettingsUI();
+          }),
+      );
+  }
+
+  private configureScriptFileMigrationSetting(setting: Setting): void {
+    const targetExtension = this.plugin.settings
+      .storeScriptFilesAsJavaScript
+      ? "js"
+      : "md";
+    const plan =
+      this.plugin.scriptEngine.getScriptFileMigrationPlan(targetExtension);
+    const buttonText =
+      targetExtension === "js"
+        ? t("MIGRATE_SCRIPTS_TO_JS_BUTTON")
+        : t("MIGRATE_SCRIPTS_TO_MD_BUTTON");
+    const skippedStatus = plan.conflicts.length
+      ? t("MIGRATE_SCRIPT_FILES_SKIPPED").replace(
+          "{count}",
+          String(plan.conflicts.length),
+        )
+      : "";
+    const getSkippedDetails = (conflicts: string[]): string =>
+      t("MIGRATE_SCRIPT_FILES_SKIPPED_DETAILS")
+        .replace("{count}", String(conflicts.length))
+        .replace(
+          "{files}",
+          conflicts
+            .map(
+              (sourcePath) =>
+                `${sourcePath} → ${replaceScriptFileExtension(
+                  sourcePath,
+                  targetExtension,
+                )}`,
+            )
+            .join("\n"),
+        );
+
+    setting
+      .setName(buttonText)
+      .setDesc(
+        t("MIGRATE_SCRIPT_FILES_STATUS")
+          .replace("{eligible}", String(plan.renames.length))
+          .replace("{extension}", `.${targetExtension}`)
+          .replace("{skipped}", skippedStatus),
+      )
+      .addButton((button) =>
+        button
+          .setButtonText(buttonText)
+          .setDisabled(plan.renames.length === 0)
+          .onClick(async () => {
+            const currentPlan =
+              this.plugin.scriptEngine.getScriptFileMigrationPlan(
+                targetExtension,
+              );
+            if (currentPlan.renames.length === 0) {
+              const message = currentPlan.conflicts.length
+                ? `${t("MIGRATE_SCRIPT_FILES_NONE")}\n\n${getSkippedDetails(
+                    currentPlan.conflicts,
+                  )}`
+                : t("MIGRATE_SCRIPT_FILES_NONE");
+              new Notice(message, 10000);
+              this.refreshSettingsUI();
+              return;
+            }
+
+            const startupNote = currentPlan.includesStartupScript
+              ? t("MIGRATE_SCRIPT_FILES_STARTUP_INCLUDED")
+              : "";
+            const skippedNote = currentPlan.conflicts.length
+              ? t("MIGRATE_SCRIPT_FILES_SKIPPED").replace(
+                  "{count}",
+                  String(currentPlan.conflicts.length),
+                )
+              : "";
+            const confirmation = new MultiOptionConfirmationPrompt<boolean>(
+              this.plugin,
+              t("MIGRATE_SCRIPT_FILES_CONFIRM")
+                .replace("{count}", String(currentPlan.renames.length))
+                .replace("{extension}", `.${targetExtension}`)
+                .replace("{startup}", startupNote)
+                .replace("{skipped}", skippedNote),
+              new Map<string, boolean>([
+                [t("PROMPT_BUTTON_CANCEL"), false],
+                [buttonText, true],
+              ]),
+              buttonText,
+            );
+            if (!(await confirmation.waitForClose)) {
+              return;
+            }
+
+            button.setDisabled(true);
+            try {
+              const count =
+                await this.plugin.scriptEngine.migrateScriptFiles(currentPlan);
+              const completeMessage = t("MIGRATE_SCRIPT_FILES_COMPLETE")
+                .replace("{count}", String(count))
+                .replace("{extension}", `.${targetExtension}`);
+              const message = currentPlan.conflicts.length
+                ? `${completeMessage}\n\n${getSkippedDetails(
+                    currentPlan.conflicts,
+                  )}`
+                : completeMessage;
+              new Notice(
+                message,
+                currentPlan.conflicts.length > 0 ? 15000 : undefined,
+              );
+            } catch (error: unknown) {
+              errorlog({
+                where:
+                  "ExcalidrawSettingTab.configureScriptFileMigrationSetting",
+                error,
+              });
+              new Notice(t("MIGRATE_SCRIPT_FILES_FAILED"));
+            } finally {
+              this.refreshSettingsUI();
+            }
+          }),
+      );
+  }
+
+  private createScriptFileStorageDefinition(): SettingDefinition<SettingBindingKey> {
+    return this.createCustomSettingDefinition({
+      name: t("STORE_SCRIPTS_AS_JS_NAME"),
+      desc: fragWithHTML(t("STORE_SCRIPTS_AS_JS_DESC")),
+      aliases: ["download scripts as JavaScript", "convert scripts to .js"],
+      visible: () => this.plugin.settings.allowJavaScriptFiles,
+      controlType: "dropdown",
+      configure: (setting) => this.configureScriptFileStorageSetting(setting),
+    });
+  }
+
+  private createScriptFileMigrationDefinition(): SettingDefinition<SettingBindingKey> {
+    return this.createCustomSettingDefinition({
+      name: t("MIGRATE_SCRIPT_FILES_NAME"),
+      aliases: ["rename script files", "convert scripts", ".md", ".js"],
+      visible: () => this.plugin.settings.allowJavaScriptFiles,
+      controlType: "action button",
+      configure: (setting) =>
+        this.configureScriptFileMigrationSetting(setting),
+    });
+  }
+
   private createStartupScriptDefinition(): SettingDefinition<SettingBindingKey> {
     return this.createCustomSettingDefinition({
       name: t("STARTUP_SCRIPT_NAME"),
@@ -5018,9 +5194,13 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   }
 
   private getAutomateDefinitions(): SettingDefinitionItem<SettingBindingKey>[] {
+    const specs = this.getAutomateSpecs();
     return [
       this.createAutomateInformationDefinition(),
-      ...this.toDeclarativeDefinitions(this.getAutomateSpecs()),
+      ...this.toDeclarativeDefinitions(specs.slice(0, 2)),
+      this.createScriptFileStorageDefinition(),
+      this.createScriptFileMigrationDefinition(),
+      ...this.toDeclarativeDefinitions(specs.slice(2)),
       this.createStartupScriptDefinition(),
       this.createAutostartScriptsDefinition(),
     ];
@@ -5029,7 +5209,13 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   private renderAutomateSettings(container: HTMLElement): void {
     const description = container.createDiv({ cls: "setting-item-description" });
     setSanitizedHtml(description, t("EA_DESC"));
-    this.renderSettingSpecs(container, this.getAutomateSpecs());
+    const specs = this.getAutomateSpecs();
+    this.renderSettingSpecs(container, specs.slice(0, 2));
+    if (this.plugin.settings.allowJavaScriptFiles) {
+      this.configureScriptFileStorageSetting(new Setting(container));
+      this.configureScriptFileMigrationSetting(new Setting(container));
+    }
+    this.renderSettingSpecs(container, specs.slice(2));
     this.configureStartupScriptSetting(new Setting(container));
     new AutostartScriptsSettingsComponent(
       container.createDiv(),
@@ -5040,13 +5226,24 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   private configureStartupScriptSetting(setting: Setting): void {
     let startupScriptPathText: TextComponent;
     let startupScriptButton: ButtonComponent;
+    const resolveStartupPath = (value: string): string | null => {
+      if (this.plugin.scriptEngine) {
+        return this.plugin.scriptEngine.resolveStartupScriptPath(value);
+      }
+      const path = resolveConfiguredStartupScriptPath(value);
+      if (!path) {
+        return null;
+      }
+      if (path.toLowerCase().endsWith(".js")) {
+        return this.plugin.settings.allowJavaScriptFiles ? path : null;
+      }
+      return path;
+    };
     const scriptExists = () => {
-      const startupPath = normalizePath(
-        this.plugin.settings.startupScriptPath.endsWith(".md")
-          ? this.plugin.settings.startupScriptPath
-          : `${this.plugin.settings.startupScriptPath}.md`,
+      const startupPath = resolveStartupPath(
+        this.plugin.settings.startupScriptPath,
       );
-      return Boolean(this.app.vault.getAbstractFileByPath(startupPath));
+      return Boolean(startupPath && this.app.vault.getFileByPath(startupPath));
     };
     const updateStartupScriptButton = (button: ButtonComponent): void => {
       const exists = scriptExists();
@@ -5072,9 +5269,10 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           });
         this.addVaultPathSupport(setting, text, "file", {
           optional: true,
-          extensions: ["md"],
-          resolvePath: (value) =>
-            value && !value.endsWith(".md") ? `${value}.md` : value,
+          extensions: this.plugin.settings.allowJavaScriptFiles
+            ? ["md", "js"]
+            : ["md"],
+          resolvePath: (value) => resolveStartupPath(value) ?? value,
         });
       })
       .addButton((button) => {
@@ -5090,12 +5288,14 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             );
             this.applySettingsUpdate();
           }
-          const startupPath = normalizePath(
-            this.plugin.settings.startupScriptPath.endsWith(".md")
-              ? this.plugin.settings.startupScriptPath
-              : `${this.plugin.settings.startupScriptPath}.md`,
+          const startupPath = resolveStartupPath(
+            this.plugin.settings.startupScriptPath,
           );
-          let file = this.app.vault.getAbstractFileByPath(startupPath);
+          if (!startupPath) {
+            new Notice(t("STARTUP_SCRIPT_JS_DISABLED"));
+            return;
+          }
+          let file = this.app.vault.getFileByPath(startupPath);
           if (!file) {
             file = await createOrOverwriteFile(
               this.app,

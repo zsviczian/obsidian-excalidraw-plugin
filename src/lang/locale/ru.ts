@@ -1205,6 +1205,34 @@ export default {
   FIELD_SUGGESTER_DESC:
     "Предложение полей (Suggester) позаимствован у плагинов Breadcrumbs и Templater. Предложение полей (Suggester) полей будет показывать " +
     "меню автозаполнения при вводе текста с описанием функций <code>excalidraw-</code> или <code>ea.</code> в качестве подсказок для отдельных элементов в списке.",
+  ALLOW_JS_FILES_NAME: "Загружать файлы JavaScript из папки скриптов",
+  ALLOW_JS_FILES_DESC:
+    "Если включено, Excalidraw Automate отслеживает и запускает файлы <code>.js</code> в папке скриптов и принимает скрипт запуска <code>.js</code>. " +
+    "По умолчанию Obsidian Sync не синхронизирует файлы, отличные от Markdown, Obsidian не открывает файлы <code>.js</code> для редактирования, а проводник файлов скрывает их. При необходимости включите <b>Синхронизировать все остальные типы</b> и <b>Показывать все типы файлов</b> в Obsidian. Если существуют одноимённые скрипты <code>.md</code> и <code>.js</code>, используется файл Markdown.",
+  STORE_SCRIPTS_AS_JS_NAME: "Хранить загруженные скрипты как",
+  STORE_SCRIPTS_AS_JS_DESC:
+    "Выберите локальный тип файла для новых загрузок и обновлений из библиотеки скриптов. Он не зависит от того, имеет ли удалённый источник расширение <code>.md</code> или <code>.js</code>.",
+  SCRIPT_FILE_EXTENSION_MARKDOWN: "Markdown (.md)",
+  SCRIPT_FILE_EXTENSION_JAVASCRIPT: "JavaScript (.js)",
+  MIGRATE_SCRIPT_FILES_NAME: "Переместить существующие файлы скриптов",
+  MIGRATE_SCRIPTS_TO_JS_BUTTON: "Переместить существующие скрипты в .js",
+  MIGRATE_SCRIPTS_TO_MD_BUTTON: "Переместить существующие скрипты в .md",
+  MIGRATE_SCRIPT_FILES_STATUS:
+    "Можно переместить файлов скриптов в {extension}: {eligible}. {skipped}",
+  MIGRATE_SCRIPT_FILES_CONFIRM:
+    "Перед продолжением создайте резервную копию хранилища.<br><br><b>{count}</b> файл(ов) скриптов будет переименовано в <code>{extension}</code>. Пути закреплённых скриптов будут обновлены. {startup} {skipped}",
+  MIGRATE_SCRIPT_FILES_STARTUP_INCLUDED:
+    "Настроенный скрипт запуска и его параметр также будут обновлены.",
+  MIGRATE_SCRIPT_FILES_SKIPPED:
+    "Одноимённых пар .md/.js, которые не будут перемещены: {count}.",
+  MIGRATE_SCRIPT_FILES_SKIPPED_DETAILS:
+    "Пропущено файлов скриптов, поскольку целевой файл уже существует: {count}.\n{files}",
+  MIGRATE_SCRIPT_FILES_NONE:
+    "Не найдено подходящих файлов скриптов для перемещения.",
+  MIGRATE_SCRIPT_FILES_COMPLETE:
+    "Перемещено файлов скриптов в {extension}: {count}.",
+  MIGRATE_SCRIPT_FILES_FAILED:
+    "Не удалось переместить файлы скриптов. Выполненные переименования по возможности отменены.",
   ENABLE_ONLOAD_SCRIPTS_NAME: "Включить onload-скрипты",
   ENABLE_ONLOAD_SCRIPTS_CONFIRMATION:
     "Этот файл содержит <code>excalidraw-onload-script</code>. Включить onload-скрипты?",
@@ -1237,9 +1265,10 @@ export default {
     "Это создаёт риск при открытии рисунков из неизвестных источников: вредоносный рисунок может превратить обычный клик в запуск привилегированной команды. " +
     "Включайте это только если доверяете файлу и его источнику.",
   STARTUP_SCRIPT_NAME: "Сценарий запуска",
+  STARTUP_SCRIPT_JS_DISABLED:
+    "Сценарии запуска JavaScript отключены. Сначала включите файлы JavaScript в настройках Excalidraw Automate.",
   STARTUP_SCRIPT_DESC:
-    "Если этот параметр установлен, excalidraw будет выполнять скрипт при запуске плагина. Это полезно, если вы хотите установить какой-либо из крючков Excalidraw Automate. " +
-    "Скрипт запуска - это файл в формате markdown, который должен содержать код javascript, который вы хотите выполнять при запуске Excalidraw.",
+    "Если задано, Excalidraw выполнит скрипт при запуске плагина. Это полезно для настройки крючков Excalidraw Automate. Пути без расширения используют файл Markdown; файлы <code>.js</code> принимаются, когда включена загрузка файлов JavaScript.",
   STARTUP_SCRIPT_BUTTON_CREATE: "Создание сценария запуска",
   STARTUP_SCRIPT_BUTTON_OPEN: "Открыть сценарий запуска",
   FILETYPE_NAME:

@@ -548,6 +548,40 @@ export class PluginFileManager {
     );
   }
 
+  /**
+   * Extracts binary files embedded in a converted legacy scene and rewrites
+   * the Markdown drawing with durable vault attachment links.
+   *
+   * The target file must already exist because Obsidian determines its
+   * attachment folder relative to that file. This method resolves only after
+   * every embedded file has been persisted.
+   */
+  public async persistLegacySceneFilesInMarkdown(
+    markdown: string,
+    file: TFile,
+  ): Promise<string> {
+    const convertedData = new ExcalidrawData(this.plugin);
+    try {
+      const loaded = await convertedData.loadData(
+        markdown,
+        file,
+        getTextMode(markdown),
+      );
+      if (!loaded) {
+        throw new Error(`Failed to load converted drawing: ${file.path}`);
+      }
+
+      convertedData.disableCompression = true;
+      await convertedData.syncElements(convertedData.scene);
+      return (
+        FRONTMATTER +
+        (await convertedData.generateMDAsync(convertedData.deletedElements))
+      );
+    } finally {
+      convertedData.destroy();
+    }
+  }
+
   // -------------------------------------------------------
   // ------------------ Event Handlers ---------------------
   // -------------------------------------------------------

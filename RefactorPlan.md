@@ -1737,8 +1737,8 @@ changes elsewhere, including `getViewColorPalette()` since its logic itself
 was already confirmed correct and unchanged.
 
 **Done (2026-08-14, session 4): `ExcalidrawAutomate.ts` fully triaged, 57 → 0.**
-On `master` (the `excalidraw-type-import-fix` PR was merged as #2892 in the
-interim; `master` is now at `2.27.0-beta.2`). Same methodology, three
+On `master` after the `excalidraw-type-import-fix` was merged (now at
+`2.27.0-beta.2`). Same methodology, three
 clusters:
 
 1. **Safe, fixed (49 of 57).** `cloneElement()`/`cloneElements()`'s inner

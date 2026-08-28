@@ -31,6 +31,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 ## Fixed
 - Moving a dirty drawing out of a popout window now safely transfers and persists its latest edits from the replacement main-window view.
 - Opening the command palette or another Obsidian modal reliably saves dirty drawings, while inline link suggestions no longer trigger a save that can end text editing.
+- Converting a legacy ".excalidraw" drawing now persists its embedded images as vault attachments during conversion, before the source file can be removed. [#2898](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2898)
 - Entering text editing no longer scans and sorts the entire vault for link suggestions; file-link candidates are loaded only after typing \`[[\`. [#2907](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2907)
 - Settings changes are saved promptly without collapsing sections or interrupting fast typing. Writes are serialized, and Excalidraw keeps a device-local recovery copy so an empty or corrupted synchronized **data.json** cannot silently erase a large settings configuration.
 - Interdependent settings now initialize and refresh consistently, including TODO icons, auto-export formats, Taskbone credentials, filename previews, and custom grid colors. Built-in font previews also use the correct typeface in secondary Obsidian windows.
@@ -47,6 +48,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 - Removed unused code and the obsolete Draw.io/Diagram integration, and retired the non-functional Create DrawIO file script.
 
 ## New in Excalidraw Automate
+- Excalidraw Automate can optionally load and monitor JavaScript (\`.js\`) files in the Scripts folder, use an explicit \`.js\` startup script, and store Script Library downloads as either Markdown or JavaScript. Existing scripts can be moved between the two formats while updating startup and pinned-script paths. [#2901](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2901)
 - Scripts can register custom buttons in the selected-element context menu:
 \`\`\`ts
 registerElementActionProvider(getActions: (element: ExcalidrawElement) => readonly {id: string, title: string, icon: string, action: () => void}[]): (() => void) | null;

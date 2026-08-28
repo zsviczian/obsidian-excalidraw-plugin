@@ -1236,6 +1236,33 @@ export default {
   FIELD_SUGGESTER_DESC:
     "开启后，当您在编辑器中输入 <code>excalidraw-</code> 或者 <code>ea.</code> 时，会弹出一个带有函数说明的自动补全提示菜单。<br>" +
     "该功能借鉴了 Breadcrumbs 和 Templater 插件。",
+  ALLOW_JS_FILES_NAME: "从 Scripts 文件夹加载 JavaScript 文件",
+  ALLOW_JS_FILES_DESC:
+    "启用后，Excalidraw Automate 会监视并运行 Scripts 文件夹中的 <code>.js</code> 文件，也允许使用 <code>.js</code> 启动脚本。" +
+    "默认情况下，Obsidian Sync 不同步非 Markdown 文件，Obsidian 不会打开 <code>.js</code> 文件进行编辑，文件列表也会隐藏它们。需要时请在 Obsidian 中启用<b>同步所有其他文件类型</b>和<b>显示所有文件类型</b>。如果存在同名的 <code>.md</code> 和 <code>.js</code> 脚本，将使用 Markdown 文件。",
+  STORE_SCRIPTS_AS_JS_NAME: "将下载的脚本存储为",
+  STORE_SCRIPTS_AS_JS_DESC:
+    "选择脚本库新下载和更新在本地使用的文件类型。无论远程源是 <code>.md</code> 还是 <code>.js</code>，都会使用此设置。",
+  SCRIPT_FILE_EXTENSION_MARKDOWN: "Markdown (.md)",
+  SCRIPT_FILE_EXTENSION_JAVASCRIPT: "JavaScript (.js)",
+  MIGRATE_SCRIPT_FILES_NAME: "迁移现有脚本文件",
+  MIGRATE_SCRIPTS_TO_JS_BUTTON: "将现有脚本迁移为 .js",
+  MIGRATE_SCRIPTS_TO_MD_BUTTON: "将现有脚本迁移为 .md",
+  MIGRATE_SCRIPT_FILES_STATUS:
+    "有 {eligible} 个脚本文件可迁移为 {extension}。{skipped}",
+  MIGRATE_SCRIPT_FILES_CONFIRM:
+    "继续前请备份仓库。<br><br><b>{count}</b> 个脚本文件将重命名为 <code>{extension}</code>，固定脚本的路径也会更新。{startup} {skipped}",
+  MIGRATE_SCRIPT_FILES_STARTUP_INCLUDED:
+    "已配置的启动脚本及其设置也会更新。",
+  MIGRATE_SCRIPT_FILES_SKIPPED:
+    "有 {count} 对同名 .md/.js 文件不会被迁移。",
+  MIGRATE_SCRIPT_FILES_SKIPPED_DETAILS:
+    "因目标文件已存在，已跳过 {count} 个脚本文件：\n{files}",
+  MIGRATE_SCRIPT_FILES_NONE: "没有找到可迁移的脚本文件。",
+  MIGRATE_SCRIPT_FILES_COMPLETE:
+    "已将 {count} 个脚本文件迁移为 {extension}。",
+  MIGRATE_SCRIPT_FILES_FAILED:
+    "无法迁移脚本文件。已尽可能回滚完成的重命名。",
   ENABLE_ONLOAD_SCRIPTS_NAME: "加载期脚本（onload）",
   ENABLE_ONLOAD_SCRIPTS_CONFIRMATION:
     "此文件包含 <code>excalidraw-onload-script</code>。是否启用加载期脚本？",
@@ -1267,9 +1294,10 @@ export default {
     "如果你打开未知来源的绘图，这会带来风险：恶意绘图可以让一次普通点击触发高权限命令。" +
     "只有在你信任该文件及其来源时才启用此功能。",
   STARTUP_SCRIPT_NAME: "启动期脚本（startup）",
+  STARTUP_SCRIPT_JS_DISABLED:
+    "JavaScript 启动脚本已禁用。请先在 Excalidraw Automate 设置中启用 JavaScript 文件。",
   STARTUP_SCRIPT_DESC:
-    "插件启动时将自动执行该脚本。可用于设置 Excalidraw 自动化钩子。" +
-    "该脚本是包含 javascript 代码的 Markdown 文件。",
+    "插件启动时将自动执行该脚本，可用于设置 Excalidraw Automate 钩子。没有扩展名的路径使用 Markdown 文件；启用 JavaScript 文件加载后可使用 <code>.js</code> 文件。",
   STARTUP_SCRIPT_BUTTON_CREATE: "创建启动期脚本",
   STARTUP_SCRIPT_BUTTON_OPEN: "打开启动期脚本",
   FILETYPE_NAME: "在文件浏览器中为 excalidraw.md 文件添加类型标识符（如 ✏️）",

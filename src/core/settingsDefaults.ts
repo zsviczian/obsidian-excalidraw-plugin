@@ -56,6 +56,8 @@ export interface ExcalidrawSettings {
   embedUseExcalidrawFolder: boolean;
   templateFilePath: string;
   scriptFolderPath: string;
+  allowJavaScriptFiles: boolean;
+  storeScriptFilesAsJavaScript: boolean;
   fontAssetsPath: string;
   loadChineseFonts: boolean;
   loadJapaneseFonts: boolean;
@@ -501,6 +503,8 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   embedUseExcalidrawFolder: false,
   templateFilePath: "Excalidraw/Template.excalidraw",
   scriptFolderPath: "Excalidraw/Scripts",
+  allowJavaScriptFiles: false,
+  storeScriptFilesAsJavaScript: false,
   fontAssetsPath: "Excalidraw/CJK Fonts",
   loadChineseFonts: false,
   loadJapaneseFonts: false,
