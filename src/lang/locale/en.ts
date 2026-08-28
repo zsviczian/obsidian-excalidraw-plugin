@@ -1329,6 +1329,33 @@ export default {
   FIELD_SUGGESTER_DESC:
     "Field Suggester borrowed from Breadcrumbs and Templater plugins. The Field Suggester will show an autocomplete menu " +
     "when you type <code>excalidraw-</code> or <code>ea.</code> with function description as hints on the individual items in the list.",
+  ALLOW_JS_FILES_NAME: "Load JavaScript files from the Scripts folder",
+  ALLOW_JS_FILES_DESC:
+    "When enabled, Excalidraw Automate monitors and runs <code>.js</code> files in the Scripts folder and accepts a <code>.js</code> startup script. " +
+    "By default, Obsidian Sync does not sync non-Markdown files, Obsidian does not open <code>.js</code> files for editing, and File Explorer hides them. Enable <b>Sync all other types</b> and <b>Show all file types</b> in Obsidian when needed. If matching <code>.md</code> and <code>.js</code> scripts exist, the Markdown file is used.",
+  STORE_SCRIPTS_AS_JS_NAME: "Store downloaded scripts as",
+  STORE_SCRIPTS_AS_JS_DESC:
+    "Choose the local file type used for new Script Library downloads and updates. This is independent of whether the remote source is <code>.md</code> or <code>.js</code>.",
+  SCRIPT_FILE_EXTENSION_MARKDOWN: "Markdown (.md)",
+  SCRIPT_FILE_EXTENSION_JAVASCRIPT: "JavaScript (.js)",
+  MIGRATE_SCRIPT_FILES_NAME: "Move existing script files",
+  MIGRATE_SCRIPTS_TO_JS_BUTTON: "Move existing scripts to .js",
+  MIGRATE_SCRIPTS_TO_MD_BUTTON: "Move existing scripts to .md",
+  MIGRATE_SCRIPT_FILES_STATUS:
+    "{eligible} script file(s) can be moved to {extension}. {skipped}",
+  MIGRATE_SCRIPT_FILES_CONFIRM:
+    "Back up your vault before continuing.<br><br><b>{count}</b> script file(s) will be renamed to <code>{extension}</code>. Pinned script paths will be updated. {startup} {skipped}",
+  MIGRATE_SCRIPT_FILES_STARTUP_INCLUDED:
+    "The configured startup script and its setting will also be updated.",
+  MIGRATE_SCRIPT_FILES_SKIPPED:
+    "{count} same-named .md/.js pair(s) will not be moved.",
+  MIGRATE_SCRIPT_FILES_SKIPPED_DETAILS:
+    "Skipped {count} script file(s) because the destination already exists:\n{files}",
+  MIGRATE_SCRIPT_FILES_NONE: "No eligible script files were found to move.",
+  MIGRATE_SCRIPT_FILES_COMPLETE:
+    "Moved {count} script file(s) to {extension}.",
+  MIGRATE_SCRIPT_FILES_FAILED:
+    "Could not move the script files. Completed renames were rolled back where possible.",
   ENABLE_ONLOAD_SCRIPTS_NAME: "Enable onload scripts",
   ENABLE_ONLOAD_SCRIPTS_CONFIRMATION:
     "This file includes an <code>excalidraw-onload-script</code>. Do you want to enable onload scripts?",
@@ -1361,9 +1388,10 @@ export default {
     "This creates a risk if you open drawings from unknown sources: a malicious drawing can make a normal click trigger privileged commands. " +
     "Only enable this if you trust the file and its source.",
   STARTUP_SCRIPT_NAME: "Startup script",
+  STARTUP_SCRIPT_JS_DISABLED:
+    "JavaScript startup scripts are disabled. Enable JavaScript files in Excalidraw Automate settings first.",
   STARTUP_SCRIPT_DESC:
-    "If set, excalidraw will execute the script at plugin startup. This is useful if you want to set any of the Excalidraw Automate hooks. The startup script is a markdown file " +
-    "that should contain the javascript code you want to execute when Excalidraw starts.",
+    "If set, Excalidraw will execute the script at plugin startup. This is useful for configuring Excalidraw Automate hooks. Extensionless paths use a Markdown file; <code>.js</code> files are accepted when JavaScript-file loading is enabled.",
   STARTUP_SCRIPT_BUTTON_CREATE: "Create startup script",
   STARTUP_SCRIPT_BUTTON_OPEN: "Open startup script",
   FILETYPE_NAME: "Display type (✏️) for excalidraw.md files in File Explorer",

@@ -48,6 +48,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 - Removed unused code and the obsolete Draw.io/Diagram integration, and retired the non-functional Create DrawIO file script.
 
 ## New in Excalidraw Automate
+- Excalidraw Automate can optionally load and monitor JavaScript (\`.js\`) files in the Scripts folder, use an explicit \`.js\` startup script, and store Script Library downloads as either Markdown or JavaScript. Existing scripts can be moved between the two formats while updating startup and pinned-script paths. [#2901](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2901)
 - Scripts can register custom buttons in the selected-element context menu:
 \`\`\`ts
 registerElementActionProvider(getActions: (element: ExcalidrawElement) => readonly {id: string, title: string, icon: string, action: () => void}[]): (() => void) | null;

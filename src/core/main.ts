@@ -46,7 +46,6 @@ import {
   getNewUniqueFilepath,
 } from "../utils/fileUtils";
 import {
-  errorlog,
   isVersionNewerThanOther,
   versionUpdateCheckTimer,
   calculateUIModeValue,
@@ -675,29 +674,22 @@ export default class ExcalidrawPlugin extends Plugin {
 
   private registerInstallCodeblockProcessor() {
     const codeblockProcessor = async (source: string, el: HTMLElement) => {
-      //Button next to the "List of available scripts" at the top
-      //In try/catch block because this approach is very error prone, depends on
-      //MarkdownRenderer() and index.md structure, in case these are not as
-      //expected this code will break
+      // The mirrored update button is only available in the Script Library
+      // index layout. Other render contexts do not have the adjacent heading.
       let button2: HTMLButtonElement = null;
-      try {
-        const link: HTMLElement = el.parentElement.querySelector(
-          `a[href="#${el.previousElementSibling.getAttribute(
-            "data-heading",
-          )}"]`,
-        );
+      const heading = el.previousElementSibling?.getAttribute("data-heading");
+      const link = heading
+        ? Array.from(el.parentElement?.querySelectorAll("a") ?? []).find(
+            (anchor) => anchor.getAttribute("href") === `#${heading}`,
+          )
+        : null;
+      if (link?.parentElement) {
         link.addClass("excalidraw-installCodeBlock-link");
         button2 = link.parentElement.createEl("button", null, (b) => {
           b.setText(t("UPDATE_SCRIPT"));
           b.addClass("mod-muted");
           setButtonBgColor(b, "success");
           hideElement(b);
-        });
-      } catch (e: unknown) {
-        errorlog({
-          where: "this.registerInstallCodeblockProcessor",
-          source,
-          error: e,
         });
       }
 
@@ -835,9 +827,13 @@ export default class ExcalidrawPlugin extends Plugin {
     ) {
       return;
     }
-    const path = this.settings.startupScriptPath.endsWith(".md")
-      ? this.settings.startupScriptPath
-      : `${this.settings.startupScriptPath}.md`;
+    const path = this.scriptEngine.resolveStartupScriptPath(
+      this.settings.startupScriptPath,
+    );
+    if (!path) {
+      new Notice(t("STARTUP_SCRIPT_JS_DISABLED"));
+      return;
+    }
     const f = this.app.vault.getFileByPath(path);
     if (!f || !(f instanceof TFile)) {
       new Notice(`Startup script not found: ${path}`);

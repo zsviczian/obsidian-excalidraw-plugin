@@ -1737,8 +1737,8 @@ changes elsewhere, including `getViewColorPalette()` since its logic itself
 was already confirmed correct and unchanged.
 
 **Done (2026-08-14, session 4): `ExcalidrawAutomate.ts` fully triaged, 57 → 0.**
-On `master` (the `excalidraw-type-import-fix` PR was merged as #2892 in the
-interim; `master` is now at `2.27.0-beta.2`). Same methodology, three
+On `master` after the `excalidraw-type-import-fix` was merged (now at
+`2.27.0-beta.2`). Same methodology, three
 clusters:
 
 1. **Safe, fixed (49 of 57).** `cloneElement()`/`cloneElements()`'s inner
@@ -1933,20 +1933,6 @@ since it touches the same file.
 | --- | --- | --- | --- |
 | 2026-08-14 | Extracted Markdown/frontmatter parsing and the four embedded-data registries out of `ExcalidrawData.ts` (see the two numbered items above) | `ExcalidrawData.ts` reduced from 2,845 to 2,285 lines via two new files, `excalidrawMarkdownParsing.ts` (474 lines) and `EmbeddedDataRegistries.ts` (285 lines); all existing external import paths preserved via re-exports/delegates | `npm run build`, `npm run lib`, `node --check dist/main.js` all passed; circular-dependency baseline unchanged at 33 (after fixing one transient new edge caught by the first build, via constructor-injecting `EmbeddedFile` instead of value-importing it in the new registries file); targeted ESLint on the three touched/new files and a full `src/` run both confirm zero new findings (64 pre-existing `ExcalidrawData.ts` findings now split 63+1 across the two files; full-repo count unchanged at 470); `dist/main.js` is 4,716,854 bytes; `git diff --check` passed. Manual testing pending: embedding/pasting images, equations, local Markdown images, and Mermaid diagrams across drawings (registry extraction); opening drawings with unusual header structures, theme-switching a Markdown file, and back-of-card text-element parsing (parsing extraction). |
 | 2026-08-14 | Closed the `ExcalidrawData.ts` structural-extraction validation checkpoint | Manual testing of both extractions found no issues | User confirmed testing completed with no issues; committed |
-
-## Small features and fixes — 2026-08-27
-
-### Progress
-
-| Issue | Status | Outcome |
-| --- | --- | --- |
-| [#2898](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2898) | Complete | Legacy-to-Markdown conversion now extracts and awaits embedded binary files, writes durable `## Embedded Files` links, and clears the inline `files` payload before the legacy source may be removed. Drawings without embedded files retain the previous fast path. |
-
-### Action log
-
-| Date | Action | Outcome | Validation |
-| --- | --- | --- | --- |
-| 2026-08-27 | Fixed legacy conversion ownership of embedded images | Conversion now owns attachment persistence instead of relying on the converted drawing's first-open loader side effect; incomplete extraction prevents reaching source-file cleanup | `npm run build` passed; `git diff --check` passed; temporary `EXCALIDRAW_CONVERSION_DIAG` instrumentation was removed from source and bundle; user confirmed the reported conversion bug is fixed. |
 
 ## Related, separate effort: script-registered element actions + autostart permissions
 

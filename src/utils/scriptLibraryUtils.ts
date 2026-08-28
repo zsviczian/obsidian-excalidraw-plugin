@@ -8,6 +8,10 @@ import { errorlog } from "./coreUtils";
 import { getIMGFilename, createOrOverwriteFile } from "./fileUtils";
 import { hideElement, setButtonBgColor, showElement } from "./styleUtils";
 import type ExcalidrawPlugin from "src/core/main";
+import {
+  getManagedScriptFileExtension,
+  getScriptFileStem,
+} from "./scriptFileUtils";
 
 export const installButton = async (
   plugin: ExcalidrawPlugin,
@@ -61,13 +65,17 @@ export const installButton = async (
     });
   }
   const fname = decodedURI.substring(decodedURI.lastIndexOf("/") + 1);
+  const scriptStem = getScriptFileStem(fname);
   const folder = `${plugin.settings.scriptFolderPath}/${SCRIPT_INSTALL_FOLDER}`;
-  const downloaded = plugin.app.vault
-    .getFiles()
-    .filter((f) => f.path.startsWith(folder) && f.name === fname)
-    .sort((a, b) => (a.path > b.path ? 1 : -1));
-  let scriptFile = downloaded[0];
-  const scriptPath = scriptFile?.path ?? `${folder}/${fname}`;
+  const getLocalScriptPath = (): string =>
+    `${folder}/${scriptStem}.${getManagedScriptFileExtension(
+      plugin.settings.allowJavaScriptFiles,
+      plugin.settings.storeScriptFilesAsJavaScript,
+    )}`;
+  let scriptFile =
+    plugin.app.vault.getFileByPath(`${folder}/${scriptStem}.md`) ??
+    plugin.app.vault.getFileByPath(`${folder}/${scriptStem}.js`);
+  let scriptPath = getLocalScriptPath();
   const svgPath = getIMGFilename(scriptPath, "svg");
   let svgFile = plugin.app.vault.getFileByPath(svgPath);
   setButtonText(scriptFile ? "CHECKING" : "INSTALL");
@@ -89,6 +97,19 @@ export const installButton = async (
     };
 
     try {
+      scriptPath = getLocalScriptPath();
+      if (scriptFile && scriptFile.path !== scriptPath) {
+        if (plugin.app.vault.getFileByPath(scriptPath)) {
+          // Keep the authoritative Markdown variant when both extensions
+          // already exist; format migration reports and skips this pair.
+          scriptPath = scriptFile.path;
+        } else {
+          await plugin.scriptEngine.renameManagedScriptFile(
+            scriptFile,
+            scriptPath,
+          );
+        }
+      }
       scriptFile = await download(source, scriptFile, scriptPath);
       if (!scriptFile) {
         setButtonText("ERROR");
@@ -97,7 +118,7 @@ export const installButton = async (
       svgFile = await download(getIMGFilename(source, "svg"), svgFile, svgPath);
       setButtonText("UPTODATE");
       if (Object.keys(plugin.scriptEngine.scriptIconMap).length === 0) {
-        plugin.scriptEngine.loadScripts();
+        await plugin.scriptEngine.loadScripts();
       }
       const restartSidepanelTabIfActive = async () => {
         if (!plugin.scriptEngine || !(scriptFile instanceof TFile)) {
@@ -110,7 +131,7 @@ export const installButton = async (
         }
         try {
           await spView.restartTabForScript(scriptName);
-        } catch (error) {
+        } catch (error: unknown) {
           errorlog({
             where:
               "ExcalidrawPlugin.registerInstallCodeblockProcessor.restartSidepanelTab",
@@ -121,7 +142,7 @@ export const installButton = async (
       };
       await restartSidepanelTabIfActive();
       new Notice(`Installed: ${scriptFile.basename}`);
-    } catch (e) {
+    } catch (e: unknown) {
       new Notice(`Error installing script: ${fname}`);
       errorlog({
         where:
@@ -141,11 +162,12 @@ export const installButton = async (
   }
 
   const files = new Map<string, number>();
-  JSON.parse(
+  const directoryInfo = JSON.parse(
     await request({
       url: URLs.RAW_GITHUBUSERCONTENT_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_MASTER_EA_SCRIPTS_DIRECTORY_INFO_JSON,
     }),
-  ).forEach((f: RemoteDirectoryInfo) => files.set(f.fname, f.mtime));
+  ) as RemoteDirectoryInfo[];
+  directoryInfo.forEach((file) => files.set(file.fname, file.mtime));
 
   const checkModifyDate = (
     gitFilename: string,

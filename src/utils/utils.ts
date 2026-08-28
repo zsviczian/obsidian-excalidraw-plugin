@@ -53,6 +53,11 @@ import { getEmptyDrawingElementsRuntime } from "src/constants/emptydrawing";
 import { makeEntitiesXmlSafe, sanitizedFragment } from "./htmlUtils";
 import { URLs } from "src/constants/safeUrls";
 import { isInstanceOfSVGSVGElement } from "./typechecks";
+import {
+  getPreferredScriptFiles,
+  getScriptFileStem,
+  isScriptFilePath,
+} from "./scriptFileUtils";
 export { arrayToMap };
 export { errorlog, getDataURL } from "./coreUtils";
 export { addAppendUpdateCustomData } from "./elementCustomDataUtils";
@@ -159,10 +164,14 @@ async function checkScriptUpdates() {
       return;
     }
 
-    const folder = `${EXCALIDRAW_PLUGIN.settings.scriptFolderPath}/${SCRIPT_INSTALL_FOLDER}/`;
-    const installedScripts = EXCALIDRAW_PLUGIN.app.vault
-      .getFiles()
-      .filter((f) => f.path.startsWith(folder) && f.extension === "md");
+    const folder = `${EXCALIDRAW_PLUGIN.settings.scriptFolderPath}/${SCRIPT_INSTALL_FOLDER}`;
+    const installedScripts = getPreferredScriptFiles(
+      EXCALIDRAW_PLUGIN.app.vault
+        .getFiles()
+        .filter(
+          (file) => file.parent?.path === folder && isScriptFilePath(file.path),
+        ),
+    );
 
     if (installedScripts.length === 0) {
       return;
@@ -185,24 +194,23 @@ async function checkScriptUpdates() {
 
     // Check if any installed scripts have updates
     const updates: string[] = [];
-    let hasUpdates = false;
     for (const scriptFile of installedScripts) {
-      const filename = scriptFile.name;
-      if (files.has(filename)) {
-        const mtime = files.get(filename);
-        if (mtime > scriptFile.stat.mtime) {
-          updates.push(scriptFile.path.split(folder)?.[1]?.split(".md")[0]);
-          hasUpdates = true;
-        }
+      const stem = getScriptFileStem(scriptFile.name);
+      const remoteMtime = Math.max(
+        files.get(`${stem}.md`) ?? 0,
+        files.get(`${stem}.js`) ?? 0,
+      );
+      if (remoteMtime > scriptFile.stat.mtime) {
+        updates.push(stem);
       }
     }
 
-    if (hasUpdates) {
+    if (updates.length > 0) {
       const message = `${t("SCRIPT_UPDATES_AVAILABLE")}\n\n${updates.sort().join("\n")}`;
       new Notice(message, 8000 + updates.length * 1000);
       log(message);
     }
-  } catch (e) {
+  } catch (e: unknown) {
     log({ where: "Utils/checkScriptUpdates", error: e });
   }
 }

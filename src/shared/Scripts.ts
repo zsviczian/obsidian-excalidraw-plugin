@@ -20,10 +20,27 @@ import {
 } from "../utils/obsidianUtils";
 import { ButtonDefinition, InputPromptOptions } from "src/types/promptTypes";
 import { errorlog } from "src/utils/coreUtils";
+import {
+  type ScriptFileExtension,
+  getPreferredScriptFiles,
+  isScriptFilePath,
+  replaceScriptFileExtension,
+  resolveConfiguredStartupScriptPath,
+} from "src/utils/scriptFileUtils";
 
 export type ScriptIconMap = {
   [key: string]: { name: string; group: string; svgString: string };
 };
+
+export interface ScriptFileRenamePlan {
+  renames: Array<{
+    file: TFile;
+    sourcePath: string;
+    destinationPath: string;
+  }>;
+  conflicts: string[];
+  includesStartupScript: boolean;
+}
 
 export class ScriptEngine {
   private plugin: ExcalidrawPlugin;
@@ -39,12 +56,15 @@ export class ScriptEngine {
    * linger in views that are still open.
    */
   private elementActionProviders = new Map<string, Set<() => void>>();
+  private scriptFileEventsSuspended = false;
+  private scriptRegistryGeneration = 0;
+  private loadedScriptPaths = new Set<string>();
 
   constructor(plugin: ExcalidrawPlugin) {
     this.plugin = plugin;
     this.app = plugin.app;
     this.scriptIconMap = {};
-    this.loadScripts();
+    void this.loadScripts();
     this.registerEventHandlers();
   }
 
@@ -69,63 +89,114 @@ export class ScriptEngine {
     this.eaInstances.clear();
     this.eaInstances = null;
     this.elementActionProviders.clear();
+    this.loadedScriptPaths.clear();
     this.scriptIconMap = null;
     this.plugin = null;
     this.scriptPath = null;
   }
 
-  private handleSvgFileChange(path: string) {
-    if (!path.endsWith(".svg")) {
-      return;
-    }
-    const scriptFile = this.app.vault.getAbstractFileByPath(
-      getIMGFilename(path, "md"),
+  private isInScriptFolder(path: string): boolean {
+    return Boolean(
+      this.scriptPath && path.startsWith(`${normalizePath(this.scriptPath)}/`),
     );
-    if (scriptFile && scriptFile instanceof TFile) {
-      this.unloadScript(this.getScriptName(scriptFile), scriptFile.path);
-      this.loadScript(scriptFile);
+  }
+
+  private isJavaScriptPath(path: string): boolean {
+    return path.toLowerCase().endsWith(".js");
+  }
+
+  private isScriptPath(path: string): boolean {
+    return (
+      path.toLowerCase().endsWith(".md") ||
+      (this.plugin.settings.allowJavaScriptFiles && this.isJavaScriptPath(path))
+    );
+  }
+
+  /**
+   * Resolves the configured startup-script path without changing the stored
+   * setting. Extensionless paths retain the historical `.md` default; an
+   * explicit `.js` path is accepted only when JavaScript-file loading is
+   * enabled.
+   */
+  public resolveStartupScriptPath(configuredPath: string): string | null {
+    const path = resolveConfiguredStartupScriptPath(configuredPath);
+    if (!path) {
+      return null;
     }
+    if (this.isJavaScriptPath(path)) {
+      return this.plugin.settings.allowJavaScriptFiles ? path : null;
+    }
+    return path;
   }
 
   private async deleteEventHandler(file: TFile) {
+    if (this.scriptFileEventsSuspended) {
+      return;
+    }
     if (!(file instanceof TFile)) {
       return;
     }
-    if (!file.path.startsWith(this.scriptPath)) {
+    if (!this.isInScriptFolder(file.path)) {
       return;
     }
-    const scriptName = this.getScriptName(file);
-    this.unloadScript(scriptName, file.path);
-    await this.purgeAutostartPermission(scriptName);
-    this.handleSvgFileChange(file.path);
+    if (isScriptFilePath(file.path)) {
+      const scriptName = this.getScriptName(file);
+      const wasLoaded = Boolean(this.scriptIconMap[file.path]);
+      if (wasLoaded || !this.isJavaScriptPath(file.path)) {
+        await this.reloadScripts();
+      }
+      if (!this.getScriptFileByName(scriptName)) {
+        await this.purgeAutostartPermission(scriptName);
+      }
+      return;
+    }
+    if (file.extension.toLowerCase() === "svg") {
+      await this.reloadScripts();
+    }
   }
 
   private async createEventHandler(file: TFile) {
+    if (this.scriptFileEventsSuspended) {
+      return;
+    }
     if (!(file instanceof TFile)) {
       return;
     }
-    if (!file.path.startsWith(this.scriptPath)) {
+    if (!this.isInScriptFolder(file.path)) {
       return;
     }
-    this.loadScript(file);
-    this.handleSvgFileChange(file.path);
+    if (
+      this.isScriptPath(file.path) ||
+      file.extension.toLowerCase() === "svg"
+    ) {
+      await this.reloadScripts();
+    }
   }
 
   private async renameEventHandler(file: TAbstractFile, oldPath: string) {
+    if (this.scriptFileEventsSuspended) {
+      return;
+    }
     if (!(file instanceof TFile)) {
       return;
     }
-    const oldFileIsScript = oldPath.startsWith(this.scriptPath);
-    const newFileIsScript = file.path.startsWith(this.scriptPath);
-    if (oldFileIsScript) {
-      const oldScriptName = this.getScriptName(oldPath);
-      this.unloadScript(oldScriptName, oldPath);
-      await this.purgeAutostartPermission(oldScriptName);
-      this.handleSvgFileChange(oldPath);
+    const oldPathWasLoaded = Boolean(this.scriptIconMap[oldPath]);
+    const oldFileWasScript =
+      this.isInScriptFolder(oldPath) && isScriptFilePath(oldPath);
+    const newFileIsScript =
+      this.isInScriptFolder(file.path) && this.isScriptPath(file.path);
+    const iconChanged =
+      (this.isInScriptFolder(oldPath) &&
+        oldPath.toLowerCase().endsWith(".svg")) ||
+      (this.isInScriptFolder(file.path) &&
+        file.extension.toLowerCase() === "svg");
+    const oldScriptName = oldFileWasScript ? this.getScriptName(oldPath) : null;
+
+    if (oldPathWasLoaded || newFileIsScript || iconChanged) {
+      await this.reloadScripts();
     }
-    if (newFileIsScript) {
-      this.loadScript(file);
-      this.handleSvgFileChange(file.path);
+    if (oldScriptName && !this.getScriptFileByName(oldScriptName)) {
+      await this.purgeAutostartPermission(oldScriptName);
     }
   }
 
@@ -151,10 +222,7 @@ export class ScriptEngine {
     if (this.scriptPath === this.plugin.settings.scriptFolderPath) {
       return;
     }
-    if (this.scriptPath) {
-      this.unloadScripts();
-    }
-    this.loadScripts();
+    void this.reloadScripts();
   }
 
   public getListofScripts(): TFile[] {
@@ -163,19 +231,208 @@ export class ScriptEngine {
       return;
     }
     this.scriptPath = normalizePath(this.scriptPath);
-    if (!this.app.vault.getAbstractFileByPath(this.scriptPath)) {
+    if (!this.app.vault.getFolderByPath(this.scriptPath)) {
       return;
     }
-    return this.app.vault
-      .getFiles()
-      .filter(
-        (f: TFile) =>
-          f.path.startsWith(`${this.scriptPath}/`) && f.extension === "md",
-      );
+    return getPreferredScriptFiles(
+      this.app.vault
+        .getFiles()
+        .filter(
+          (file) =>
+            this.isInScriptFolder(file.path) && this.isScriptPath(file.path),
+        ),
+    );
   }
 
-  loadScripts() {
-    this.getListofScripts()?.forEach((f) => this.loadScript(f));
+  async loadScripts(
+    generation: number = this.scriptRegistryGeneration,
+  ): Promise<void> {
+    await Promise.all(
+      this.getListofScripts()?.map((file) =>
+        this.loadScript(file, generation),
+      ) ?? [],
+    );
+  }
+
+  /** Reloads the script command and toolbar registry after discovery changes. */
+  public async reloadScripts(): Promise<void> {
+    const generation = ++this.scriptRegistryGeneration;
+    this.unloadScripts();
+    await this.loadScripts(generation);
+    if (generation !== this.scriptRegistryGeneration) {
+      return;
+    }
+    getExcalidrawViews(this.app, true).forEach((view) =>
+      view.updatePinnedScripts(),
+    );
+  }
+
+  /**
+   * Builds a non-destructive plan for moving scripts to the selected local
+   * extension. A configured startup script outside the Scripts folder is
+   * included. Same-named destination files are reported and skipped.
+   */
+  public getScriptFileMigrationPlan(
+    targetExtension: ScriptFileExtension,
+  ): ScriptFileRenamePlan {
+    const sourceExtension = targetExtension === "js" ? "md" : "js";
+    const scriptFolder = normalizePath(
+      this.plugin.settings.scriptFolderPath.trim(),
+    );
+    const scriptFolderPrefix = scriptFolder ? `${scriptFolder}/` : "";
+    const renamesBySource = new Map<
+      string,
+      ScriptFileRenamePlan["renames"][number]
+    >();
+
+    if (scriptFolderPrefix) {
+      this.app.vault
+        .getFiles()
+        .filter(
+          (file) =>
+            file.path.startsWith(scriptFolderPrefix) &&
+            file.extension.toLowerCase() === sourceExtension,
+        )
+        .forEach((file) => {
+          renamesBySource.set(file.path, {
+            file,
+            sourcePath: file.path,
+            destinationPath: replaceScriptFileExtension(
+              file.path,
+              targetExtension,
+            ),
+          });
+        });
+    }
+
+    const resolvedStartupPath = resolveConfiguredStartupScriptPath(
+      this.plugin.settings.startupScriptPath,
+    );
+    if (resolvedStartupPath?.toLowerCase().endsWith(`.${sourceExtension}`)) {
+      const startupFile = this.app.vault.getFileByPath(resolvedStartupPath);
+      if (startupFile) {
+        const destinationPath = replaceScriptFileExtension(
+          startupFile.path,
+          targetExtension,
+        );
+        if (!renamesBySource.has(startupFile.path)) {
+          renamesBySource.set(startupFile.path, {
+            file: startupFile,
+            sourcePath: startupFile.path,
+            destinationPath,
+          });
+        }
+      }
+    }
+
+    const renames: ScriptFileRenamePlan["renames"] = [];
+    const conflicts: string[] = [];
+    for (const rename of renamesBySource.values()) {
+      if (this.app.vault.getAbstractFileByPath(rename.destinationPath)) {
+        conflicts.push(rename.sourcePath);
+      } else {
+        renames.push(rename);
+      }
+    }
+
+    return {
+      renames,
+      conflicts,
+      includesStartupScript: Boolean(
+        resolvedStartupPath &&
+        renames.some(({ sourcePath }) => sourcePath === resolvedStartupPath),
+      ),
+    };
+  }
+
+  /**
+   * Applies a previously confirmed script-extension migration. File events
+   * are suppressed during the batch, pinned paths and the startup path are
+   * updated atomically with settings, and completed renames are rolled back
+   * if a later rename or settings write fails.
+   */
+  public async migrateScriptFiles(plan: ScriptFileRenamePlan): Promise<number> {
+    for (const rename of plan.renames) {
+      if (
+        rename.file.path !== rename.sourcePath ||
+        this.app.vault.getAbstractFileByPath(rename.destinationPath)
+      ) {
+        throw new Error(`Script migration plan is stale: ${rename.sourcePath}`);
+      }
+    }
+
+    const originalPinnedScripts = [...this.plugin.settings.pinnedScripts];
+    const originalStartupScriptPath = this.plugin.settings.startupScriptPath;
+    const destinationBySource = new Map(
+      plan.renames.map(({ sourcePath, destinationPath }) => [
+        sourcePath,
+        destinationPath,
+      ]),
+    );
+    const resolvedStartupPath = resolveConfiguredStartupScriptPath(
+      originalStartupScriptPath,
+    );
+    const completed: ScriptFileRenamePlan["renames"] = [];
+    this.scriptFileEventsSuspended = true;
+
+    try {
+      for (const rename of plan.renames) {
+        await this.app.fileManager.renameFile(
+          rename.file,
+          rename.destinationPath,
+        );
+        completed.push(rename);
+      }
+
+      this.plugin.settings.pinnedScripts = originalPinnedScripts.map(
+        (path) => destinationBySource.get(path) ?? path,
+      );
+      const startupDestinationPath = resolvedStartupPath
+        ? destinationBySource.get(resolvedStartupPath)
+        : null;
+      if (startupDestinationPath) {
+        this.plugin.settings.startupScriptPath = startupDestinationPath;
+      }
+      await this.plugin.saveSettings();
+      return completed.length;
+    } catch (error: unknown) {
+      this.plugin.settings.pinnedScripts = originalPinnedScripts;
+      this.plugin.settings.startupScriptPath = originalStartupScriptPath;
+      for (const rename of completed.reverse()) {
+        try {
+          await this.app.fileManager.renameFile(rename.file, rename.sourcePath);
+        } catch (rollbackError: unknown) {
+          errorlog({
+            where: "ScriptEngine.migrateScriptFiles.rollback",
+            sourcePath: rename.sourcePath,
+            error: rollbackError,
+          });
+        }
+      }
+      throw error;
+    } finally {
+      this.scriptFileEventsSuspended = false;
+      await this.reloadScripts();
+    }
+  }
+
+  /**
+   * Renames one managed script to the requested local extension while keeping
+   * pinned-script and startup-script paths synchronized.
+   */
+  public async renameManagedScriptFile(
+    file: TFile,
+    destinationPath: string,
+  ): Promise<void> {
+    const sourcePath = file.path;
+    const startupScriptPath = resolveConfiguredStartupScriptPath(
+      this.plugin.settings.startupScriptPath,
+    );
+    await this.migrateScriptFiles({
+      renames: [{ file, sourcePath, destinationPath }],
+      conflicts: [],
+      includesStartupScript: startupScriptPath === sourcePath,
+    });
   }
 
   public getScriptName(f: TFile | string): string {
@@ -210,11 +467,17 @@ export class ScriptEngine {
     );
   }
 
-  async addScriptIconToMap(scriptPath: string, name: string) {
+  async addScriptIconToMap(
+    scriptPath: string,
+    name: string,
+    generation: number = this.scriptRegistryGeneration,
+  ): Promise<void> {
     const svgFilePath = getIMGFilename(scriptPath, "svg");
-    const file = this.app.vault.getAbstractFileByPath(svgFilePath);
-    const svgString: string =
-      file && file instanceof TFile ? await this.app.vault.read(file) : null;
+    const file = this.app.vault.getFileByPath(svgFilePath);
+    const svgString: string = file ? await this.app.vault.read(file) : null;
+    if (generation !== this.scriptRegistryGeneration) {
+      return;
+    }
     this.scriptIconMap = {
       ...this.scriptIconMap,
     };
@@ -227,12 +490,15 @@ export class ScriptEngine {
     this.updateToolPannels();
   }
 
-  loadScript(f: TFile) {
-    if (f.extension !== "md") {
+  async loadScript(
+    f: TFile,
+    generation: number = this.scriptRegistryGeneration,
+  ): Promise<void> {
+    if (!this.isScriptPath(f.path)) {
       return;
     }
     const scriptName = this.getScriptName(f);
-    void this.addScriptIconToMap(f.path, scriptName);
+    const iconLoad = this.addScriptIconToMap(f.path, scriptName, generation);
     this.plugin.addCommand({
       id: scriptName,
       name: `(Script) ${scriptName}`,
@@ -255,14 +521,13 @@ export class ScriptEngine {
         return false;
       },
     });
+    this.loadedScriptPaths.add(f.path);
+    await iconLoad;
   }
 
   unloadScripts() {
-    const scripts = this.app.vault
-      .getFiles()
-      .filter((f: TFile) => f.path.startsWith(this.scriptPath));
-    scripts.forEach((f) => {
-      this.unloadScript(this.getScriptName(f), f.path);
+    Array.from(this.loadedScriptPaths).forEach((path) => {
+      this.unloadScript(this.getScriptName(path), path);
     });
   }
 
@@ -410,9 +675,7 @@ export class ScriptEngine {
   }
 
   unloadScript(basename: string, path: string) {
-    if (!path.endsWith(".md")) {
-      return;
-    }
+    this.loadedScriptPaths.delete(path);
     delete this.scriptIconMap[path];
     this.scriptIconMap = { ...this.scriptIconMap };
     this.updateToolPannels();
