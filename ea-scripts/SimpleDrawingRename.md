@@ -4,7 +4,7 @@ name: SimpleDrawingRename
 description: Renames a new drawing to the name of the PDF file by pressing a hotkey.
 author: anicev1
 type: action
-jpg: https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/AutoRenameDrawing.png
+jpg: https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/SimpleDrawingRename.png
 */
 
 /*
