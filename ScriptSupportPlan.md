@@ -126,7 +126,7 @@ Planned changes:
   - update [ea-scripts/index-new.md](ea-scripts/index-new.md) manually
   - update [ea-scripts/directory-info.json](ea-scripts/directory-info.json) in the same PR
   - for script updates, refresh the target script `mtime` entry in [ea-scripts/directory-info.json](ea-scripts/directory-info.json)
-  - run `npm run doc`
+  - keep AI training material updates out of script publishing PRs
   - open PR with focused diff and validation notes
 - Explicitly avoid automating `index-new.md`.
 
@@ -178,9 +178,9 @@ Current status:
 - Checkpoint is considered unblocked and ready for scoped implementation once approved.
 
 Design note: AI support files in template repo
-- Preferred default: link-first strategy (lean `.ai/` bootstrap files that point to canonical, generated references in this repository).
-- Optional fallback: pinned local snapshot mode (copy selected reference files into template repo on demand) for environments without URL access.
-- Reasoning: ExcalidrawAutomate evolves continuously; link-first avoids stale embedded training while retaining an opt-in offline snapshot path.
+- Preferred default: synchronized local snapshot under `.ai/excalidraw-automate/`, copied from canonical generated references in this repository.
+- Routing note: keep canonical GitHub links in SKILL content, but ensure local references and script examples are present for environments without URL access.
+- Reasoning: local snapshot gives immediate offline usability while preserving canonical source of truth in plugin-generated outputs.
 
 Design note: template usage model
 - Recommended model: single `ea-script-template` repository used as a multi-script workspace (one folder per script project) with shared utilities.
@@ -194,7 +194,7 @@ Acceptance:
 
 Status:
 - Complete.
-- `npm run doc` now refreshes a link-first bootstrap in the sibling `ea-script-template` workspace under `.ai/excalidraw-automate/` when the repo is available.
+- `npm run doc` now refreshes a full local skill snapshot in the sibling `ea-script-template` workspace under `.ai/excalidraw-automate/` when the repo is available.
 
 ## Validation approach
 
@@ -227,3 +227,4 @@ Risk: template sync introduces hard dependency on external repo.
 | 2026-08-29 | Implemented checkpoint 1 unified generator | Consolidated duplicated generation logic into [scripts/excalidraw-docs-generator-core.mjs](scripts/excalidraw-docs-generator-core.mjs), with wrapper entrypoints preserved at [scripts/generate-script-library.mjs](scripts/generate-script-library.mjs) and [scripts/skill-builder.mjs](scripts/skill-builder.mjs) | `npm run doc` completed successfully and regenerated legacy + skill outputs from one code path |
 | 2026-08-29 | Implemented checkpoint 5 image naming validator | Added warning-only preview filename validation and surfaced the `scripts-{slug}.{ext}` rule in generated publishing guidance | `npm run doc` completed successfully and emitted the expected warning for legacy preview names |
 | 2026-08-29 | Implemented checkpoint 6 template bootstrap sync | `npm run doc` now refreshes a link-first bootstrap in the sibling `ea-script-template` workspace under `.ai/excalidraw-automate/` | `npm run doc` completed successfully and refreshed the sibling template bootstrap files |
+| 2026-08-29 | Hardened checkpoint 6 for offline and advanced script authoring | Template sync now mirrors full generated references and script examples instead of only link stubs | `npm run doc` and `npm run sync-refs` now produce local skill + references + scripts snapshot in `.ai/excalidraw-automate/` |

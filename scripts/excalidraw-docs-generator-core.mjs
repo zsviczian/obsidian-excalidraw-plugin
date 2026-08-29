@@ -361,6 +361,23 @@ function makeSectionHeader(relPath) {
   ].join('\n') + '\n';
 }
 
+function collectTypeDefFilesRecursively(absDir, relDir) {
+  const out = [];
+  const entries = fs.readdirSync(absDir, { withFileTypes: true });
+  for (const entry of entries) {
+    const absPath = path.join(absDir, entry.name);
+    const relPath = path.posix.join(relDir, entry.name);
+    if (entry.isDirectory()) {
+      out.push(...collectTypeDefFilesRecursively(absPath, relPath));
+      continue;
+    }
+    if (entry.isFile() && entry.name.endsWith('.d.ts')) {
+      out.push({ rel: relPath, abs: absPath });
+    }
+  }
+  return out;
+}
+
 function buildTypeDefMarkdown() {
   const entries = [];
 
@@ -378,13 +395,7 @@ function buildTypeDefMarkdown() {
       continue;
     }
 
-    const dirEntries = fs
-      .readdirSync(absDir, { withFileTypes: true })
-      .filter((entry) => entry.isFile() && entry.name.endsWith('.d.ts'))
-      .map((entry) => ({
-        rel: path.posix.join(dir, entry.name),
-        abs: path.join(absDir, entry.name),
-      }));
+    const dirEntries = collectTypeDefFilesRecursively(absDir, dir);
 
     entries.push(...dirEntries);
   }
@@ -463,7 +474,21 @@ function writeTemplateBootstrapFile(relativePath, content) {
   fs.writeFileSync(targetPath, content, 'utf8');
 }
 
-function syncTemplateRepository() {
+function copyDirectoryRecursive(sourceDir, targetDir) {
+  fs.mkdirSync(targetDir, { recursive: true });
+  const entries = fs.readdirSync(sourceDir, { withFileTypes: true });
+  for (const entry of entries) {
+    const sourcePath = path.join(sourceDir, entry.name);
+    const targetPath = path.join(targetDir, entry.name);
+    if (entry.isDirectory()) {
+      copyDirectoryRecursive(sourcePath, targetPath);
+      continue;
+    }
+    fs.copyFileSync(sourcePath, targetPath);
+  }
+}
+
+function syncTemplateRepository(mode = 'full') {
   if (!fs.existsSync(TEMPLATE_REPO_ROOT)) {
     return;
   }
@@ -472,6 +497,19 @@ function syncTemplateRepository() {
   const legacyNestedBootstrapDir = path.join(TEMPLATE_BOOTSTRAP_DIR, '.ai');
   if (fs.existsSync(legacyNestedBootstrapDir)) {
     fs.rmSync(legacyNestedBootstrapDir, { recursive: true, force: true });
+  }
+
+  if (mode === 'full' && fs.existsSync(SKILL_DIR)) {
+    fs.rmSync(TEMPLATE_BOOTSTRAP_DIR, { recursive: true, force: true });
+    copyDirectoryRecursive(SKILL_DIR, TEMPLATE_BOOTSTRAP_DIR);
+    writeTemplateBootstrapFile('README.md', `# ExcalidrawAutomate skill snapshot
+
+This directory is synchronized from the plugin repository:
+https://github.com/zsviczian/obsidian-excalidraw-plugin/tree/master/docs/AITrainingData/excalidraw-automate
+
+Update source content by running npm run doc in the plugin repository.
+`);
+    return;
   }
 
   writeTemplateBootstrapFile('SKILL.md', `---
@@ -865,10 +903,12 @@ export function runUnifiedGeneration(options = {}) {
       .replaceAll('https://www.youtube.com/', 'YouTube: ');
 
   fs.writeFileSync(AI_TRAINING_OUT, combined, 'utf8');
-  syncTemplateRepository();
 
   if (mode === 'full') {
     writeSkillOutputs(scriptFiles, typeDefs, excalidrawLibFunctionsSection, startupSection);
+    syncTemplateRepository('full');
+  } else {
+    syncTemplateRepository(mode);
   }
 
   return {
