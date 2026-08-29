@@ -35,6 +35,7 @@ import {
 import { linkClickModifierType } from "../../utils/modifierkeyHelper";
 import { ImageKey, getImageCache } from "../../shared/ImageCache";
 import { getAreaPaddingSize, initPaddingUI, wrapWithPaddingPopup } from "../../shared/PaddingUI";
+import { PADDING_PARAMETER_REGEX } from "../../utils/embeddedFilenameParts";
 import { FILENAMEPARTS, PreviewImageType } from "../../types/utilTypes";
 import { CustomMutationObserver, DEBUGGING } from "../../utils/debugHelper";
 import { getExcalidrawFileForwardLinks } from "../../utils/excalidrawViewUtils";
@@ -913,7 +914,7 @@ const processInternalEmbed = async (
       ? fnameParts.linkpartReference
       : "");
   attr.file = file;
-  const reservedSize = getAreaPaddingSize(src.replace(/,padding=\d+/, ""));
+  const reservedSize = getAreaPaddingSize(src.replace(PADDING_PARAMETER_REGEX, ""));
   if (reservedSize?.height) {
     setStyle(internalEmbedEl as HTMLElement, {
       minHeight: `${reservedSize.height}px`,
@@ -935,7 +936,7 @@ const processInternalEmbed = async (
           : "");
       return await createImageDiv(newAttr, false, internalEmbedEl);
     };
-    return wrapWithPaddingPopup(imgDiv, src, fnameParts, reRender);
+    return wrapWithPaddingPopup(imgDiv, src, fnameParts, file, reRender);
   }
 
   return imgDiv;

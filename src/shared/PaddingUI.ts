@@ -1,9 +1,17 @@
+import type { TFile } from "obsidian";
 import type ExcalidrawPlugin from "../core/main";
 import type { FILENAMEPARTS } from "../types/utilTypes";
+import { PADDING_PARAMETER_REGEX } from "../utils/embeddedFilenameParts";
 
-declare const mainDocument: Document;
+declare const deliberateCreateElement: (
+  document: Document,
+  tagName: string,
+) => HTMLElement;
 
 let plugin: ExcalidrawPlugin;
+
+/** Force-closes the currently open popup before another one opens. */
+let closeActivePopup: (() => void) | null = null;
 
 const areaPaddingSizeCache = new Map<
   string,
@@ -38,12 +46,20 @@ export const wrapWithPaddingPopup = (
   imgDiv: HTMLDivElement,
   src: string,
   fnameParts: FILENAMEPARTS,
+  file: TFile,
   reRender: (newSrc: string) => Promise<HTMLDivElement>,
 ): HTMLDivElement => {
+  // The embed may be rendered in the main document and later adopted into a
+  // popout window. Use imgDiv's document only for the wrapper/icon (they must
+  // share imgDiv's document to be appended); the popup resolves the live
+  // document/window when it opens (see the icon click handler below).
+  const renderDoc = imgDiv.ownerDocument;
+  const renderWin = renderDoc.defaultView ?? window;
+
   const currentPadding =
     fnameParts.padding ?? plugin.settings.exportPaddingSVG;
 
-  const bareRef = src.replace(/,padding=\d+/, "");
+  const bareRef = src.replace(PADDING_PARAMETER_REGEX, "");
 
   const rememberSize = () => {
     setAreaPaddingSize(bareRef, {
@@ -52,14 +68,14 @@ export const wrapWithPaddingPopup = (
     });
   };
 
-  const wrapper = mainDocument.createElement("div");
+  const wrapper = deliberateCreateElement(renderDoc, "div") as HTMLDivElement;
   wrapper.className = "excalidraw-padding-wrapper";
   wrapper.setAttribute("data-bare-ref", bareRef);
   wrapper.setAttribute("data-area-id", fnameParts.blockref);
   wrapper.appendChild(imgDiv);
-  window.requestAnimationFrame(rememberSize);
+  renderWin.requestAnimationFrame(rememberSize);
 
-  const icon = mainDocument.createElement("span");
+  const icon = deliberateCreateElement(renderDoc, "span");
   icon.className = "excalidraw-padding-zoom-icon";
   icon.innerHTML =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>';
@@ -74,19 +90,25 @@ export const wrapWithPaddingPopup = (
   let hideTimer: number;
   wrapper.addEventListener("click", (e) => {
     if (e.target === icon || icon.contains(e.target as Node)) return;
-    window.clearTimeout(hideTimer);
+    renderWin.clearTimeout(hideTimer);
     icon.style.opacity = "0.8";
-    hideTimer = window.setTimeout(() => { icon.style.opacity = "0"; }, 3000);
+    hideTimer = renderWin.setTimeout(() => { icon.style.opacity = "0"; }, 3000);
   });
 
   icon.addEventListener("click", (e) => {
     e.stopPropagation();
     e.preventDefault();
 
+    // The wrapper may have been adopted into a popout window after the initial
+    // render, so re-resolve the live document/window at open time instead of
+    // relying on the render-time document captured above.
     const doc = wrapper.ownerDocument;
+    const win = doc.defaultView ?? window;
 
-    const existing = mainDocument.querySelector(".ex-pad-popup");
-    if (existing) existing.remove();
+    // Force-close any previously open popup before opening this one.
+    const prevClose = closeActivePopup;
+    closeActivePopup = null;
+    prevClose?.();
 
     let value = currentPadding;
     let committedValue = currentPadding;
@@ -94,14 +116,13 @@ export const wrapWithPaddingPopup = (
     // Match the embed prefix so a plain wikilink to the same block ref isn't targeted.
     let target = `![[${fnameParts.filepath}${fnameParts.linkpartReference}`;
 
-    // Order this embed among all embeds with the same area=ID in DOM.
-    // DOM order matches source markdown order (elements render sequentially).
-    const areaId = fnameParts.blockref;
+    // Order this embed among all embeds with the same bare ref (file path +
+    // reference, sans padding) in DOM. DOM order matches source markdown order.
     const rootNode = wrapper.getRootNode() as Document;
-    const queryDoc = rootNode.nodeType === 9 ? rootNode : mainDocument;
+    const queryDoc = rootNode.nodeType === 9 ? rootNode : doc;
     const allWrappers = Array.from(
-      queryDoc.querySelectorAll(`.excalidraw-padding-wrapper[data-area-id="${areaId}"]`),
-    );
+      queryDoc.querySelectorAll(".excalidraw-padding-wrapper"),
+    ).filter((el) => el.getAttribute("data-bare-ref") === bareRef);
     const occIdx = allWrappers.indexOf(wrapper);
     const hasOccurrence = occIdx !== -1;
 
@@ -115,14 +136,17 @@ export const wrapWithPaddingPopup = (
         // Update the target image in place during drag, so the note layout doesn't reflow.
         const newSrc =
           fnameParts.filepath +
-          fnameParts.linkpartReference.replace(/,padding=\d+$/, "") +
+          fnameParts.linkpartReference.replace(PADDING_PARAMETER_REGEX, "") +
           newSuffix +
           fnameParts.linkpartAlias;
         const newImgDiv = await reRender(newSrc);
         if (newImgDiv) {
+          if (newImgDiv.ownerDocument !== doc) {
+            doc.adoptNode(newImgDiv);
+          }
           wrapper.replaceChild(newImgDiv, imgDiv);
           imgDiv = newImgDiv;
-          window.requestAnimationFrame(rememberSize);
+          win.requestAnimationFrame(rememberSize);
         }
         return;
       }
@@ -131,11 +155,14 @@ export const wrapWithPaddingPopup = (
         return;
       }
 
-      const file = plugin.app.workspace.getActiveFile();
-      if (!file || !("extension" in file)) return;
+      // Mark the value as committed before the async write so a concurrent
+      // save (e.g. the force-close path racing a pointerup save) does not
+      // issue a second vault write for the same value.
+      committedValue = valueToWrite;
+
       // `![[` makes the base embed-specific, so a plain `[[...]]` link with the
       // same area ref (e.g. in a task item) is never matched as occurrence zero.
-      const base = `![[${fnameParts.filepath}${fnameParts.linkpartReference.replace(/,padding=\d+$/, "")}`;
+      const base = `![[${fnameParts.filepath}${fnameParts.linkpartReference.replace(PADDING_PARAMETER_REGEX, "")}`;
       const replacement = base + newSuffix;
       await plugin.app.vault.process(file, (data: string) => {
         let idx: number;
@@ -146,7 +173,9 @@ export const wrapWithPaddingPopup = (
           idx = nthIndexOf(data, base, occIdx);
           if (idx !== -1) {
             const afterBase = data.substring(idx + base.length);
-            const padMatch = afterBase.match(/^,padding=\d+/);
+            const padMatch = afterBase.match(
+              /^,padding=(?:\d+(?:\.\d+)?|\.\d+)/,
+            );
             oldLen = base.length + (padMatch ? padMatch[0].length : 0);
           }
         } else {
@@ -159,27 +188,26 @@ export const wrapWithPaddingPopup = (
           return data.substring(0, idx) + replacement + data.substring(idx + oldLen);
         }
         const esc = base.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        const re = new RegExp(esc + "(,padding=\\d+)?");
+        const re = new RegExp(esc + "(,padding=(?:\\d+(?:\\.\\d+)?|\\.\\d+))?");
         const result = data.replace(re, replacement);
         target = replacement;
         return result;
       });
-      committedValue = valueToWrite;
     };
 
-    const popup = doc.createElement("div");
+    const popup = deliberateCreateElement(doc, "div");
     popup.className = "ex-pad-popup";
     popup.style.touchAction = "none";
 
-    const label = doc.createElement("span");
+    const label = deliberateCreateElement(doc, "span");
     label.className = "ex-pad-popup-label";
     label.textContent = String(value);
 
-    const track = doc.createElement("div");
+    const track = deliberateCreateElement(doc, "div");
     track.className = "ex-pad-popup-track";
     track.style.touchAction = "none";
 
-    const knob = doc.createElement("div");
+    const knob = deliberateCreateElement(doc, "div");
     knob.className = "ex-pad-popup-knob";
 
     const STEPS = [0, 10];
@@ -210,8 +238,10 @@ export const wrapWithPaddingPopup = (
       value = valueToStep(v);
       label.textContent = String(value);
       updateKnob(value);
-      window.clearTimeout(debounceTimer);
-      debounceTimer = window.setTimeout(() => doSave(false), 400);
+      win.clearTimeout(debounceTimer);
+      debounceTimer = win.setTimeout(() => {
+        void doSave(false);
+      }, 400);
     };
 
     let dragging = false;
@@ -224,7 +254,7 @@ export const wrapWithPaddingPopup = (
 
     const onPointerDown = (ev: PointerEvent) => {
       dragging = true;
-      window.clearTimeout(debounceTimer);
+      win.clearTimeout(debounceTimer);
       onValueChange(posToValue(ev.clientY));
     };
     const onPointerMove = (ev: PointerEvent) => {
@@ -235,7 +265,7 @@ export const wrapWithPaddingPopup = (
       const wasDragging = dragging;
       dragging = false;
       if (wasDragging) {
-        doSave(true);
+        void doSave(true);
       }
     };
 
@@ -259,23 +289,49 @@ export const wrapWithPaddingPopup = (
 
     const rect = icon.getBoundingClientRect();
     const pr = popup.getBoundingClientRect();
-    const win = doc.defaultView ?? window;
     popup.style.left =
       Math.min(rect.left, win.innerWidth - pr.width - 8) + "px";
     popup.style.top =
       Math.min(rect.bottom + 4, win.innerHeight - pr.height - 8) + "px";
 
-    const close = (ev: MouseEvent) => {
-      if (!popup.contains(ev.target as Node)) {
-        popup.remove();
-        doc.removeEventListener("click", close);
-        doc.removeEventListener("pointermove", onPointerMove);
-        doc.removeEventListener("pointerup", onPointerUp);
-        window.clearTimeout(debounceTimer);
-        doSave(true);
+    let closeListenerTimer: number | undefined;
+    let closing = false;
+
+    function cleanup() {
+      popup.remove();
+      if (closeListenerTimer !== undefined) {
+        win.clearTimeout(closeListenerTimer);
+        closeListenerTimer = undefined;
       }
-    };
-    setTimeout(() => doc.addEventListener("click", close), 0);
+      doc.removeEventListener("click", close);
+      doc.removeEventListener("pointermove", onPointerMove);
+      doc.removeEventListener("pointerup", onPointerUp);
+      win.clearTimeout(debounceTimer);
+    }
+
+    // Shared by the document-click close path and the force-close path used
+    // when another embed opens. Idempotent so the two paths never double-fire.
+    function commitAndClose() {
+      if (closing) return;
+      closing = true;
+      closeActivePopup = null;
+      cleanup();
+      void doSave(true);
+    }
+
+    function close(ev: MouseEvent) {
+      if (!popup.contains(ev.target as Node)) {
+        commitAndClose();
+      }
+    }
+
+    // Register this popup so opening another one force-closes it cleanly.
+    closeActivePopup = commitAndClose;
+
+    closeListenerTimer = win.setTimeout(
+      () => doc.addEventListener("click", close),
+      0,
+    );
   });
 
   wrapper.appendChild(icon);
