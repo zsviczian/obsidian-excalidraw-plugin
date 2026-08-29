@@ -658,6 +658,17 @@ The \`references/\` directory contains supporting documentation necessary for wr
 - [api-usage-index.md](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/AITrainingData/excalidraw-automate/references/api-usage-index.md): A highly useful index mapping every API method (ea.*, api.*, ExcalidrawLib.*) to the specific example scripts that utilize them.
 - [scripts/](https://github.com/zsviczian/obsidian-excalidraw-plugin/tree/master/docs/AITrainingData/excalidraw-automate/references/scripts): A folder containing all the raw, real-world example scripts.
 
+## Publishing Workflow
+Use the normal repository contribution flow when publishing or updating scripts.
+
+- Add or update the script under [ea-scripts](https://github.com/zsviczian/obsidian-excalidraw-plugin/tree/master/ea-scripts).
+- Add or update the preview image under [images](https://github.com/zsviczian/obsidian-excalidraw-plugin/tree/master/images).
+- Keep [ea-scripts/index-new.md](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/index-new.md) manually curated; do not automate it.
+- Update [ea-scripts/directory-info.json](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/directory-info.json) in the same PR.
+- For script updates, refresh the matching entry's \`mtime\` in [ea-scripts/directory-info.json](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/directory-info.json) so the plugin can detect the newer local version.
+- Run \`npm run doc\` before opening the PR.
+- Keep the PR focused on the script and its generated references.
+
 ### How to use the Script Examples
 If you need to implement a specific function (e.g., \`ea.addElementsToView\`), do NOT guess its implementation context. Instead:
 1. Open \`references/api-usage-index.md\`.

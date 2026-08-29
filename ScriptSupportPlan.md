@@ -56,7 +56,7 @@ Target branch: `improved-scripting-skills`.
 | Unify generator implementation behind `npm run doc` | Complete | Added shared generator core at [scripts/excalidraw-docs-generator-core.mjs](scripts/excalidraw-docs-generator-core.mjs); both [scripts/generate-script-library.mjs](scripts/generate-script-library.mjs) and [scripts/skill-builder.mjs](scripts/skill-builder.mjs) are thin wrappers over one code path |
 | Ensure canonical pen type completeness in generated docs | Complete | Generated references now include canonical Obsidian pen stroke type definitions plus the full public `src/types` and `lib/types` declaration surface |
 | Curate legacy training entrypoint warning and routing | Complete | Legacy training entrypoint now warns about inaccessible references, names the master repository, and routes agents to the curated skill/reference set with absolute GitHub URLs |
-| Add PR publishing workflow guidance for scripting agents | Not started | Add maintainer-approved PR workflow instructions to skill/reference docs without automating `index-new.md` |
+| Add PR publishing workflow guidance for scripting agents | Complete | Generated skill guidance now directs script publishing through PRs, keeps `index-new.md` manual, and requires `directory-info.json` mtime updates |
 | Add strict image naming and validation | Not started | Define naming standard for script previews and add lint-style validation check |
 | Optional template-repo sync from `npm run doc` | In progress | `ea-script-template` is now present in workspace; sync design can proceed |
 
@@ -133,6 +133,10 @@ Planned changes:
 Acceptance:
 - Publishing workflow appears in generated skill material.
 - Guidance is PR-centric and does not suggest direct pushes.
+
+Status:
+- Complete.
+- The generated skill file now includes a dedicated publishing workflow section with absolute repository links, PR-only guidance, manual `index-new.md` curation, and `directory-info.json` update requirements.
 
 ### Checkpoint 5: Strict image naming convention and validator
 Objective:
