@@ -1,0 +1,990 @@
+/* eslint-disable no-console */
+import fs from 'fs';
+import path from 'path';
+
+const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+const EA_SCRIPTS_DIR = path.join(ROOT, 'ea-scripts');
+const INDEX_NEW = path.join(EA_SCRIPTS_DIR, 'index-new.md');
+const OUT_DIR = path.join(path.join(ROOT, 'docs'), 'AITrainingData');
+const SCRIPT_LIBRARY_OUT = path.join(OUT_DIR, 'Excalidraw Script Library.md');
+const TYPE_DEF_OUT = path.join(OUT_DIR, 'Excalidraw Automate library and related type definitions.md');
+const AI_TRAINING_OUT = path.join(OUT_DIR, 'ExcalidrawAutomate full library for LLM training.md');
+const IMAGE_DIR = path.join(ROOT, 'images');
+const TEMPLATE_REPO_ROOT = path.resolve(ROOT, '..', 'ea-script-template');
+const TEMPLATE_BOOTSTRAP_DIR = path.join(TEMPLATE_REPO_ROOT, '.ai', 'excalidraw-automate');
+const TEMPLATE_BOOTSTRAP_REFERENCES_DIR = path.join(TEMPLATE_BOOTSTRAP_DIR, 'references');
+
+const PREVIEW_IMAGE_NAME_RE = /^scripts-[a-z0-9]+(?:-[a-z0-9]+)*\.(png|jpe?g|gif|webp|svg)$/;
+
+const SKILL_NAME = 'excalidraw-automate';
+const SKILL_DIR = path.join(OUT_DIR, SKILL_NAME);
+const SKILL_REFERENCES_DIR = path.join(SKILL_DIR, 'references');
+const SKILL_SCRIPTS_DIR = path.join(SKILL_REFERENCES_DIR, 'scripts');
+
+const AI_TRAINING_INTRO = `**ExcalidrawAutomate full library for LLM training**
+
+Excalidraw-Obsidian is an Obsidian.md plugins that is built on the open source Excalidraw component. Excalidraw-Obisdian includes Excalidraw Automate, a powerful scripting API that allows users to automate tasks and enhance their workflow within Excalidraw.
+
+Read the information below and respond with I'm ready. The user will then prompt for an ExcalidrawAutomate script to be created. Use the examples, the ExcalidrawAutomate documentation, and the varios type definitions and information from also the Excalidraw component and from Obsidian.md to generate the script based on the user's requirements.
+
+**Routing note:** Prefer the curated skill package and reference set first. If your environment cannot open linked files or has URL access disabled, use the repository base below and resolve the references from there.
+
+- Master repository: https://github.com/zsviczian/obsidian-excalidraw-plugin
+- Start with: https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/AITrainingData/excalidraw-automate/SKILL.md
+- Type definitions: https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/AITrainingData/excalidraw-automate/references/type-definitions.md
+- API usage index: https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/AITrainingData/excalidraw-automate/references/api-usage-index.md
+- ExcalidrawLib signatures: https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/AITrainingData/excalidraw-automate/references/excalidraw-lib-functions.md
+- Startup examples: https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/AITrainingData/excalidraw-automate/references/startup-scripts.md
+
+In addition to ExcalidrawAutomate, you can also use two other sources of functions:
+- The Excalidraw API available via \`ea.getExcalidrawAPI()\`. Note: the API is only available if \`ea.targetView\` is set. When running Excalidraw scripts using the script engine, the provided \`ea\` object is already set up with targetView by default. Otherwise you need to first run \`ea.setView()\`.
+- \`window.ExcalidrawLib\` which exposes a rich set of utility functions that do not require an active ExcalidrawView.
+
+**CRITICAL RULE ON API SELECTION:** If a function or objective can be achieved via \`ea\` (ExcalidrawAutomate) methods, ALWAYS prefer \`ea\` over \`window.ExcalidrawLib\`. \`ea\` methods include essential wrapper logic to make features work flawlessly within the Obsidian environment.
+
+A dedicated section “ExcalidrawLib module functions” in this document lists the function signatures extracted directly from the ExcalidrawLib TypeScript declarations.
+
+- When the user asks for a dialog window, by default create a FloatingModal. Do not extend the FloatingModal class. Instead, define the modal's behavior by creating a new instance (e.g., \`const modal = new ea.FloatingModal(...)\`) and then assigning functions directly to the \`onOpen\` and \`onClose\` properties of that instance.
+For a reference, follow the implementation pattern used in the "Printable Layout Wizard.md" script.
+- Elements have a \`customData\` property that can be used to store arbitrary data. To ensure the data the script adds to elements use the \`ea.addAppendUpdateCustomData\` function. This function ensures that existing customData is preserved when adding new data.
+- Elements can be hidden by setting their opacity to 0. When hiding elements this way, it is good practice to temporarily store their original opacity in customData. This allows for easy restoration of the original opacity later.
+- Elements can be deleted from the scene by setting their isDeleted property to true.
+- The Obsidian.md module is available on \`ea.obsidian\`.
+
+**Sidepanels and multi-view tooling:**
+- Sidepanels are for scripts that must stay open while users hop between multiple Excalidraw views. They should implement the SidepanelTab hooks (\`onOpen\`, \`onFocus(view)\`, \`onClose\`, \`onExcalidrawViewClosed\`) and manage their own \`ea.targetView\` explicitly.
+- Persisted sidepanel scripts are launched during plugin startup (e.g., Obsidian restart, plugin update) with \`ea.targetView === null\`. Scripts must handle this by deferring view-bound work until \`onFocus\` delivers a view; call \`ea.setView(view)\` when you decide to bind.
+- Each \`ea\` instance may host a single \`sidepanelTab\`. This sidepanel tab is stored in \`ea.sidepanelTab\`. Create the tab with \`ea.createSidepanelTab(title, persist=false, reveal=true)\`; the returned \`ea.sidepanelTab\` exposes \`contentEl\`, \`setContent\`, \`setTitle\`, \`setDisabled\`, \`setCloseCallback\`, \`open/close\`, and focus lifecycle hooks. Note auto-reveal during tab creation via \`ea.createSidepanelTab()\` is disabled during plugin startup. You can reveal a tab with \`ea.sidepanelTab?.open()\`. You can persist with \`ea.persistSidepanelTab()\` (tabs are restored and scripts re-run on next startup). Close with \`ea.sidepanelTab?.close()\`.
+- Mobile UX: sidepanels slide in without disturbing canvas layout and are better for longer forms than floating modals. Prefer them for complex inputs, especially on phones.
+- Auto-closing patterns: For scripts that use sidepanels but perform operations that are single-\`ExcalidrawView\` relevant, they can call \`ea.closeSidepanelTab()\` after completing the operation, and/or inside \`ea.sidepanelTab.onFocus = (view) => { if (view !== ea.targetView) { ea.sidepanelTab?.close(); } }\` to shut down when the user leaves the originating view.
+- Scripts can detect view change in \`onFocus(view)\` by comparing \`ea.targetView\` to the provided \`view\` parameter.
+- Persistence UX: scripts may offer a “Persist tab” control inside \`contentEl\` that calls \`ea.persistSidepanelTab()\`. Once persisted, hide that control; users can later remove the tab via the sidepanel close button (scripts cannot unpersist themselves, but can close themselves via \`ea.sidepanelTab?.close()\`).
+- Use \`checkForActiveSidepanelTabForScript\` to avoid creating duplicate tabs for the same script name. This method returns the \`ExcalidrawSidepanelTab\` associated with the supplied \`scriptName\` (or \`ea.activeScript\` when omitted), or \`null\` if none exists. It is intended to let a script detect an existing tab that may be owned by another \`ExcalidrawAutomate\` instance (for example, a persisted tab restored at startup). Typical pattern:
+  - Before creating a new sidepanel, call \`ea.checkForActiveSidepanelTabForScript()\` to see if a tab already exists.
+  - If a tab exists and \`tab.getHostEA() === ea\`, reuse it (your script already hosts it).
+  - If a tab exists but is hosted by a different \`ea\` instance, decide whether to reuse or hand off control — e.g. open the existing tab and exit to avoid duplicates.
+  - Note: persisted tabs restored on startup may be created with \`ea.targetView === null\` and hosted by a different \`ea\` instance; handle that case by waiting for \`onFocus\` before binding view-specific work.
+  - Example usage:
+    \`const sp = ea.checkForActiveSidepanelTabForScript();
+    if (sp) {
+      if (sp.getHostEA() === ea) {
+        // we already own the tab — reuse it
+        sp.open();
+      } else {
+        // another EA instance hosts the tab — open it for the user and exit
+        sp.open();
+        return;
+      }
+    }
+    // no existing tab — safe to create a new one
+    // ea.createSidepanelTab("My Script", false, true);\`
+- A dedicated section "sidepanelTabTypes.d.ts" in this document lists the \`ExcalidrawSidepanelTab\` function signatures.
+
+#### **0. External Documentation & Resources**
+
+To keep this training file concise, large external type definitions are not included. If you need to look up Obsidian APIs or Excalidraw internals, refer to the following resources:
+- **Obsidian API Type Definitions:** https://github.com/obsidianmd/obsidian-api/blob/master/obsidian.d.ts
+- **Obsidian Developer Docs:** https://docs.obsidian.md/Home (Community site with API and CSS documentation/examples)
+- **Obsidian Developer Forum:** https://forum.obsidian.md/c/developers-api/14
+- **ExcalidrawAutomate Implementation:** If the provided API documentation is unclear, consult the source directly: https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/src/shared/ExcalidrawAutomate.ts
+- **Excalidraw Core Fork:** For doubts regarding core Excalidraw functionality, consult the fork used by the plugin: https://github.com/zsviczian/excalidraw
+
+#### **1. The Core Workflow: Handling Element Immutability**
+
+*   **Central Rule:** Elements in the Excalidraw scene are immutable and should never be modified directly. Always use the ExcalidrawAutomate (EA) "workbench" pattern for modifications.
+*   **The Workflow:**
+    1.  Get elements from the current view using \`ea.getViewElements()\` or \`ea.getViewSelectedElements()\`.
+    2.  Copy these elements into the EA workbench for editing using \`ea.copyViewElementsToEAforEditing(elements)\`.
+    3.  Modify the properties of the element copies that are now in the EA workbench (e.g., \`ea.getElement(id).locked = true;\`).
+    4.  Commit the changes back to the scene using \`await ea.addElementsToView()\`.
+*   **Deletion:** To delete an element, set its \`isDeleted\` property to \`true\` on the workbench copy (\`ea.getElement(id).isDeleted = true;\`) and then commit with \`await ea.addElementsToView()\`.
+*   **Cleanup:** Use \`ea.clear()\` at the beginning of a script if you are creating a completely new set of elements, to ensure the EA workbench is empty and doesn't contain artifacts from a previous run.
+
+#### **2. User Interaction: Prompts and Dialogs**
+
+*   **Simple Input:** For straightforward user input, use the \`utils\` object provided to the script.
+    *   \`await utils.inputPrompt()\`: To get a string or number from the user.
+    *   \`await utils.suggester()\`: To let the user select from a predefined list of options.
+*   **Complex Dialogs:** When a more complex UI with multiple controls is needed, create a floating dialog window.
+    *   **Use \`FloatingModal\`:** Always create a new instance: \`const modal = new ea.FloatingModal(ea.plugin.app);\`.
+    *   **Do Not Extend:** Do not use \`class MyModal extends ea.FloatingModal\`.
+    *   **Define Behavior:** Assign functions directly to the \`onOpen\` and \`onClose\` properties of the instance. Inside \`onOpen\`, use the \`modal.contentEl\` property to build your UI.
+    *   **Reference Implementation:** The script "Printable Layout Wizard.md" is the canonical example for this pattern. Use \`ea.obsidian.Setting\` to add controls like toggles and dropdowns within the modal.
+
+#### **3. Element Manipulation and Querying**
+
+*   **Finding Elements:** The most common starting point is to get the user's selection with \`ea.getViewSelectedElements()\`. Use standard JavaScript array methods like \`.filter()\` to narrow down the selection (e.g., \`elements.filter(el => el.type === "text")\`).
+*   **Geometric Calculations:**
+    *   Before performing layout or positioning tasks, use \`ea.getBoundingBox(elements)\` to get the collective dimensions and position of a group of elements.
+    *   Use \`ea.measureText(text)\` to determine the width and height of a string based on the current \`ea.style\` settings before creating a text element or a container for it.
+*   **Grouping:**
+    *   To create a group, use \`ea.addToGroup([elementId1, elementId2, ...])\`.
+    *   To operate on existing groups within a selection, use \`ea.getMaximumGroups(selectedElements)\` which correctly identifies the top-level groups. Use \`ea.getLargestElement(group)\` to find the primary container within a group (e.g., the box around a text element).
+
+#### **4. Styling: Creation vs. Modification**
+
+*   **For New Elements:** Set the properties on the global \`ea.style\` object *before* you call a creation function like \`ea.addText()\` or \`ea.addRect()\`. This acts like setting the active color/style on a paintbrush.
+*   **For Existing Elements:** To change the style of an existing element, modify the properties directly on the element's copy in the EA workbench (after \`copyViewElementsToEAforEditing\`). For example: \`const myElement = ea.getElement(id); myElement.strokeColor = '#FF0000';\`.
+
+#### **5. Data Persistence and Customization**
+
+*   **Storing Custom Data:** Elements have a \`customData\` property for arbitrary data.
+    *   **Always Use \`ea.addAppendUpdateCustomData(id, newData)\`:** This is crucial. It safely adds or updates your key-value pairs without overwriting data that might have been stored by other scripts or the Excalidraw plugin itself.
+*   **Creating Configurable Scripts:** To make your script's behavior customizable by the user:
+    *   Use \`ea.getScriptSettings()\` to retrieve saved settings.
+    *   scriptSettings are stored with Excalidraw settings in Obsidian data.json. Keep this light. You MUST NEVER save large data objects such as base64 images or huge arrays here. Keep this lean and efficient.
+    *   Check if settings exist, and if not, define the default structure.
+    *   Use \`await ea.setScriptSettings(settings)\` to save any changes. This allows users to configure your script in the Excalidraw plugin settings pane.
+
+#### **6. Best Practices and Advanced Techniques**
+
+*   **Script Overview Block (MANDATORY):** Create, and consistently maintain with each update, a comprehensive comment block at the very beginning of the script. This block must explain the purpose of the script, its key features, and the high-level solution logic or architecture.
+*   **Strictly Modular Architecture (NO LOOSE CODE):** Avoid creating large monolithic blocks of code or leaving logic loose at the root level of the script. Instead, organize *everything* into relatively small, atomic functions. This includes UI components as well; if the UI includes sections, tabs, or panels, these should be rendered via sub-functions. This is a critical requirement to ensure long-term maintainability and evolution of the script, as loose code quickly becomes unmanageable over multiple iterative prompts.
+*   **Evergreen JSDoc Headers and Comments:** Every function must have a proper JSDoc/Javadoc-style header containing parameter names, types, and a clear description of the function's purpose. These descriptions must be kept *evergreen* (updated alongside any code changes). Additionally, when modifying or updating a script, you must strictly *retain all existing internal code comments*.
+*   **Isolate Constants and User-Facing Strings:** *Do not embed hardcoded magic values, config parameters, or UI strings deep inside the logic.* You must separate all constants and language strings and collect them at the very top of the file. This makes it easier to tweak values later and provides a clear, unified section for localization and customization.
+*   **Icons:** Obsidian uses https://lucide.dev icons. These icons are available for scripts via \`ea.obsidian.getIcon("Icon Name")\`. For UI components prefer use of lucide.dev icons.
+*   **Omit Version Verification:** While many of the sample scripts in the library include a version verification block at the outset (using \`ea.verifyMinimumPluginVersion\`), *do not add this section* when generating a new script unless explicitly instructed to do so.
+*   **Embrace \`await\`:** Many EA functions are asynchronous and return a \`Promise\` (e.g., \`ea.addElementsToView()\`, \`ea.createSVG()\`, \`utils.inputPrompt()\`). **Always** use \`await\` when calling these functions to ensure your script executes in the correct order.
+*   **Accessing Obsidian API:** The full Obsidian API is available via \`ea.obsidian\`. For example, use \`new ea.obsidian.Notice("message")\` or \`ea.obsidian.normalizePath(filepath)\`.
+*   **Accessing Excalidraw API:** The full Excalidraw API is available on \`ea.getExcalidrawAPI()\`, these API functions are Scene dependent. Additional support functions are available on \`window.ExcalidrawLib\`.
+*   **Visibility vs. Deletion:**
+    *   To temporarily hide an element, set \`element.opacity = 0\`. It's good practice to store the original opacity in \`customData\` so it can be restored. It is also recommended to lock hidden elements so they do not get accidentally selected or moved around.
+    *   To permanently remove an element from the scene, set \`element.isDeleted = true\`.
+*   **Image Handling:** When dealing with image elements, use \`ea.getViewFileForImageElement(imageElement)\` to get the corresponding \`TFile\` from the Obsidian vault. This is necessary for any logic that needs to read or manipulate the source image file.
+
+#### **7. SVG and Image Export Approaches**
+Generating images (SVG/PNG) requires specific approaches depending on the context. Follow these three rules strictly to avoid performance issues and missing assets:
+1. **Exporting elements currently in the EA workbench:** Use \`await ea.createSVG(null, ...)\` or \`await ea.createPNG(null, ...)\` (passing \`null\` as the \`templatePath\`).
+2. **Exporting an Excalidraw file that is NOT currently open:** Pass the file path as the template to \`createSVG\` or \`createPNG\` (e.g., \`await ea.createSVG(file.path, ...)\`). This is the most reliable approach as ExcalidrawAutomate natively handles loading the scene, resolving embedded images, and instantiating loaders behind the scenes. **Do NOT attempt to manually read the file, reconstruct the scene, or load images into memory.**
+3. **Exporting the currently active \`ExcalidrawView\`:** Use \`await ea.createViewSVG(...)\`. This is specifically for the open view. You can use the \`elementsOverride\` parameter to inject temporary elements (like transparent sizing rectangles) into the exported image without modifying the actual scene.
+
+#### **8. Custom Pens and Perfect Freehand**
+
+Excalidraw's freehand tool is powered by the open-source Perfect Freehand library. The plugin exposes “custom pens” that bundle:
+- Canvas style for the next strokes (colors, width, fillStyle, roughness).
+- Perfect Freehand stroke geometry and behavior (pressure simulation, outline, tapering, easing, etc.).
+
+Key concepts:
+- AppState-driven drawing: When \`appState.currentStrokeOptions\` is set, the freedraw tool renders new strokes using those Perfect Freehand options.
+- Element-level persistence: If a freedraw element has \`element.customData.strokeOptions\`, it is rendered with those options regardless of the current tool state.
+- Types reference: See \`src/types/penTypes.ts\`. The \`PenOptions\` shape is:
+  \`\`\`ts
+  interface PenOptions {
+    highlighter: boolean; // if true the pen is drawn at the lowest layer, behind all other elements
+    constantPressure: boolean;
+    hasOutline: boolean;
+    outlineWidth: number;
+    options: {
+      thinning: number;
+      smoothing: number;
+      streamline: number;
+      easing: string; // see supported names below
+      start: { cap: boolean; taper: number | boolean; easing: string; };
+      end:   { cap: boolean; taper: number | boolean; easing: string; };
+    };
+  }
+  \`\`\`
+
+Using custom pens from scripts:
+- Activate a custom pen for drawing:
+  \`\`\`ts
+  // obtain the Excalidraw API
+  const api = ea.getExcalidrawAPI();
+
+  // define Perfect Freehand options (example similar to "finetip")
+  const penOptions = {
+    highlighter: false,
+    constantPressure: true,
+    hasOutline: false,
+    outlineWidth: 1,
+    options: {
+      thinning: -0.5,
+      smoothing: 0.4,
+      streamline: 0.4,
+      easing: "linear",
+      start: { taper: 5, cap: false, easing: "linear" },
+      end:   { taper: 5, cap: false, easing: "linear" },
+    },
+  };
+
+  // apply stroke options + canvas style, then switch to freedraw (strokeWidth, color, background, fillStyle are optional)
+  ea.viewUpdateScene({
+    appState: {
+      currentStrokeOptions: penOptions,
+      currentItemStrokeWidth: 0.5,
+      currentItemStrokeColor: "#3E6F8D",
+      currentItemBackgroundColor: "transparent",
+      currentItemFillStyle: "hachure",
+    },
+  });
+  api.setActiveTool({ type: "freedraw" });
+  \`\`\`
+
+- Clear custom pen (revert to default freedraw behavior):
+  \`\`\`ts
+  ea.viewUpdateScene({ appState: { currentStrokeOptions: null } });
+  \`\`\`
+
+- Persist custom strokeOptions onto existing freedraw elements:
+  \`\`\`ts
+  const selected = ea.getViewSelectedElements().filter(el => el.type === "freedraw");
+  ea.copyViewElementsToEAforEditing(selected);
+  for (const el of selected) {
+    ea.addAppendUpdateCustomData(el.id, { strokeOptions: penOptions });
+  }
+  await ea.addElementsToView();
+  \`\`\`
+
+Notes:
+- New strokes respect \`appState.currentStrokeOptions\` at draw time. Existing elements only change if you update their \`customData.strokeOptions\`.
+- For pens that should behave like real markers/highlighters, set \`highlighter: true\` and often \`constantPressure: true\` with an \`outlineWidth\` for the edge.
+
+Supported easing names (string values for \`options.easing\`, \`options.start.easing\`, \`options.end.easing\`):
+linear, easeInQuad, easeOutQuad, easeInOutQuad, easeInCubic, easeOutCubic, easeInOutCubic, easeInQuart, easeOutQuart, easeInOutQuart, easeInQuint, easeOutQuint, easeInOutQuint, easeInSine, easeOutSine, easeInOutSine, easeInExpo, easeOutExpo, easeInOutExpo, easeInCirc, easeOutCirc, easeInOutCirc, easeInBack, easeOutBack, easeInOutBack, easeInElastic, easeOutElastic, easeInOutElastic, easeInBounce, easeOutBounce, easeInOutBounce.
+
+Example freedraw element carrying \`customData.strokeOptions\`:
+\`\`\`json
+{"type":"excalidraw/clipboard","elements":[{"id":"...","type":"freedraw","strokeColor":"#3E6F8D","backgroundColor":"transparent","fillStyle":"hachure","strokeWidth":0.5,"roughness":0,"customData":{"strokeOptions":{"highlighter":false,"hasOutline":false,"outlineWidth":0,"constantPressure":true,"options":{"smoothing":0.4,"thinning":-0.5,"streamline":0.4,"easing":"linear","start":{"taper":5,"cap":false,"easing":"linear"},"end":{"taper":5,"cap":false,"easing":"linear"}}}}}],"files":{}}
+\`\`\`
+
+#### **9. Text Element**
+*   There are three text properties.
+    *   **textElement.text** holds the wrapped, rendered text. This is what is displayed in the view. Excalidraw adds '\\n' linebreaks during dynamic wrapping.
+    *   **textElement.originalText** holds the rendered, but unwrapped text. Any '\\n' character in originalText is an intentional linebreak by the user. Rendered means that for example [[wiki links]] are rendered without the square brackets.
+    *   **textElement.rawText** holds the original raw text including intentional new line characters and the full markdown markup (thought currently only links are rendered, so markdown support is limited to these)
+*   When modifying element text from script, typically all 3 of these properties must be updated, though in case textElement.autoresize === true, or when a text element is bound in a container, excalidraw will update textElement.text following the size of the text element or the container.
+
+`;
+
+const SCRIPT_INTRO = `# Excalidraw Script Library Examples
+
+This is an automatically generated knowledge base intended for Retrieval Augmented Generation (RAG) and other AI-assisted workflows (e.g. NotebookLM or local embeddings tools).  
+Its purpose:
+- Provide a single, query-friendly corpus of all Excalidraw Automate scripts.
+- Serve as a practical pattern and snippet library for developers learning Excalidraw Automate.
+- Preserve original source side by side with the higher-level index (index-new.md) to improve semantic recall.
+- Enable AI tools to answer questions about how to manipulate the Excalidraw canvas, elements, styling, or integration features by referencing real, working examples.
+
+Content structure:
+1. SCRIPT_INTRO (this section)
+2. The curated script overview (index-new.md)
+3. Raw source of every *.md script in /ea-scripts (each fenced code block is auto-closed to ensure well-formed aggregation)
+
+Generated on: ${new Date().toISOString()}
+
+---
+
+`;
+
+const EXCALIDRAW_STARTUP_MESSAGE = `# Excalidraw Startup Script
+
+ExcalidrawStartup Script can be configured in Plugin Settings under 'Excalidraw Automate'. When defined this script runs automatically when the Excalidraw plugin is loaded to Obsidian. The user can add automation tasks here that they want to run on every startup of Excalidraw in Obsidian such as defining Excalidraw event handlers (also known as hooks).
+
+Two files follow. First the template startup script with documenation comments, then an actual startup script example with implemented functionality.
+`;
+
+const EXCALIDRAW_STARTUP_TEMPLATE = 'src/constants/assets/startupScript.md';
+const EXCALIDRAW_STARTUP_EXAMPLE = 'docs/AITrainingData/ExcalidrawStartupExample.md';
+
+const TYPE_DEF_DIRS = [
+  'src/types',
+  'lib/types',
+];
+
+const TYPE_DEF_FIXED_FILES = [
+  'lib/shared/ExcalidrawAutomate.d.ts',
+  'node_modules/@zsviczian/excalidraw/types/element/src/types.d.ts',
+  'node_modules/@zsviczian/excalidraw/types/excalidraw/types.d.ts',
+  'node_modules/@zsviczian/excalidraw/types/element/src/bounds.d.ts',
+  'node_modules/@zsviczian/excalidraw/types/excalidraw/components/App.d.ts',
+  'node_modules/@zsviczian/excalidraw/types/excalidraw/obsidianTypes.d.ts',
+];
+
+const REQUIRED_TYPE_SYMBOLS = [
+  'export type ObsidianPenStrokeOptions',
+];
+
+function needsClosingFence(content) {
+  const fenceCount = (content.match(/^```/gm) || []).length;
+  return fenceCount > 0 && fenceCount % 2 === 1;
+}
+
+function normalizeEOL(str) {
+  return str.replace(/\r\n/g, '\n');
+}
+
+function stripBOM(str) {
+  return str.replace(/^\uFEFF/, '');
+}
+
+function stripTopImports(content) {
+  const lines = normalizeEOL(stripBOM(content)).split('\n');
+  const out = [];
+  let inTopRegion = true;
+
+  for (const line of lines) {
+    const isImport =
+      /^\s*import\s+type\s+/.test(line) ||
+      /^\s*import\s+/.test(line) ||
+      /^\s*import\(/.test(line);
+
+    const isTripleRef = /^\s*\/\/\/\s*<reference/.test(line);
+    const isBareExportModule = /^\s*export\s*\{\s*\};?\s*$/.test(line);
+
+    if (inTopRegion) {
+      if (isImport || isTripleRef) {
+        continue;
+      }
+      const isBlank = /^\s*$/.test(line);
+      const isLineComment = /^\s*\/\//.test(line);
+      const isBlockCommentStart = /^\s*\/\*/.test(line);
+
+      if (!isBlank && !isLineComment && !isBlockCommentStart) {
+        inTopRegion = false;
+      }
+      if (!isBareExportModule) out.push(line);
+      continue;
+    }
+
+    if (!isBareExportModule) out.push(line);
+  }
+
+  return out.join('\n').trim() + '\n';
+}
+
+function makeSectionHeader(relPath) {
+  const stars = '*'.repeat(Math.max(6, Math.min(38, relPath.length + 6)));
+  return [
+    `/* ${stars} */`,
+    `/* ${relPath} */`,
+    `/* ${stars} */`,
+  ].join('\n') + '\n';
+}
+
+function collectTypeDefFilesRecursively(absDir, relDir) {
+  const out = [];
+  const entries = fs.readdirSync(absDir, { withFileTypes: true });
+  for (const entry of entries) {
+    const absPath = path.join(absDir, entry.name);
+    const relPath = path.posix.join(relDir, entry.name);
+    if (entry.isDirectory()) {
+      out.push(...collectTypeDefFilesRecursively(absPath, relPath));
+      continue;
+    }
+    if (entry.isFile() && entry.name.endsWith('.d.ts')) {
+      out.push({ rel: relPath, abs: absPath });
+    }
+  }
+  return out;
+}
+
+function buildTypeDefMarkdown() {
+  const entries = [];
+
+  for (const rel of TYPE_DEF_FIXED_FILES) {
+    entries.push({
+      rel,
+      abs: path.join(ROOT, ...rel.split('/')),
+    });
+  }
+
+  for (const dir of TYPE_DEF_DIRS) {
+    const absDir = path.join(ROOT, ...dir.split('/'));
+    if (!fs.existsSync(absDir)) {
+      console.warn('[doc-generator] Type definition directory missing:', dir);
+      continue;
+    }
+
+    const dirEntries = collectTypeDefFilesRecursively(absDir, dir);
+
+    entries.push(...dirEntries);
+  }
+
+  entries.sort((a, b) => a.rel.localeCompare(b.rel, 'en', { sensitivity: 'base' }));
+
+  let body = '```js\n';
+  const includedSymbols = new Set();
+
+  for (const { rel, abs } of entries) {
+    if (!fs.existsSync(abs)) {
+      console.warn('[doc-generator] Whitelist file missing:', rel);
+      continue;
+    }
+    let content = fs.readFileSync(abs, 'utf8');
+    content = stripTopImports(content);
+
+    for (const symbol of REQUIRED_TYPE_SYMBOLS) {
+      if (content.includes(symbol)) {
+        includedSymbols.add(symbol);
+      }
+    }
+
+    body += makeSectionHeader(rel);
+    body += content.trimEnd() + '\n\n';
+  }
+
+  for (const symbol of REQUIRED_TYPE_SYMBOLS) {
+    if (!includedSymbols.has(symbol)) {
+      throw new Error(`[doc-generator] Missing required type symbol in generated references: ${symbol}`);
+    }
+  }
+
+  body += '```\n';
+  return body;
+}
+
+function validatePreviewImageNaming() {
+  if (!fs.existsSync(IMAGE_DIR)) {
+    console.warn('[doc-generator] Preview image directory missing:', IMAGE_DIR);
+    return;
+  }
+
+  const violations = fs
+    .readdirSync(IMAGE_DIR, { withFileTypes: true })
+    .filter((entry) => entry.isFile())
+    .map((entry) => entry.name)
+    .filter((name) => {
+      if (name === '.DS_Store') {
+        return false;
+      }
+      const ext = path.extname(name).toLowerCase();
+      if (!['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg'].includes(ext)) {
+        return false;
+      }
+      return !PREVIEW_IMAGE_NAME_RE.test(name);
+    });
+
+  if (!violations.length) {
+    return;
+  }
+
+  const sampleCount = Math.min(12, violations.length);
+  const samples = violations.slice(0, sampleCount).join(', ');
+  console.warn(
+    `[doc-generator] Preview image naming check found ${violations.length} non-conforming file(s). ` +
+    `Use scripts-{slug}.{ext} with lowercase slug characters only. Examples: ` +
+    `scripts-add-link-to-existing-file-and-open.jpg, scripts-boolean-operations-showcase.png. ` +
+    `Sample violations: ${samples}${violations.length > sampleCount ? ', ...' : ''}`,
+  );
+}
+
+function writeTemplateBootstrapFile(relativePath, content) {
+  const targetPath = path.join(TEMPLATE_BOOTSTRAP_DIR, relativePath);
+  fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+  fs.writeFileSync(targetPath, content, 'utf8');
+}
+
+function copyDirectoryRecursive(sourceDir, targetDir) {
+  fs.mkdirSync(targetDir, { recursive: true });
+  const entries = fs.readdirSync(sourceDir, { withFileTypes: true });
+  for (const entry of entries) {
+    const sourcePath = path.join(sourceDir, entry.name);
+    const targetPath = path.join(targetDir, entry.name);
+    if (entry.isDirectory()) {
+      copyDirectoryRecursive(sourcePath, targetPath);
+      continue;
+    }
+    fs.copyFileSync(sourcePath, targetPath);
+  }
+}
+
+/**
+ * Converts only the template snapshot's script examples to JavaScript
+ * filenames and updates local reference links. Canonical generated docs keep
+ * their Markdown filenames because they are rendered as documentation.
+ */
+function normalizeTemplateScriptReferences() {
+  const scriptsDir = path.join(TEMPLATE_BOOTSTRAP_REFERENCES_DIR, 'scripts');
+  if (!fs.existsSync(scriptsDir)) {
+    return;
+  }
+
+  const entries = fs.readdirSync(scriptsDir, { withFileTypes: true });
+  for (const entry of entries) {
+    if (
+      !entry.isFile() ||
+      !entry.name.endsWith('.md') ||
+      entry.name === 'README.md'
+    ) {
+      continue;
+    }
+
+    const baseName = entry.name.slice(0, -3);
+    const targetName = baseName.endsWith('.js') ? baseName : `${baseName}.js`;
+    const sourcePath = path.join(scriptsDir, entry.name);
+    const targetPath = path.join(scriptsDir, targetName);
+    if (fs.existsSync(targetPath)) {
+      fs.rmSync(targetPath, { force: true });
+    }
+    fs.renameSync(sourcePath, targetPath);
+  }
+
+  const markdownFiles = [];
+  const directories = [TEMPLATE_BOOTSTRAP_DIR];
+  while (directories.length) {
+    const currentDir = directories.pop();
+    for (const entry of fs.readdirSync(currentDir, { withFileTypes: true })) {
+      const entryPath = path.join(currentDir, entry.name);
+      if (entry.isDirectory()) {
+        directories.push(entryPath);
+      } else if (entry.isFile() && entry.name.endsWith('.md')) {
+        markdownFiles.push(entryPath);
+      }
+    }
+  }
+
+  for (const markdownFile of markdownFiles) {
+    const original = fs.readFileSync(markdownFile, 'utf8');
+    const rewritten = original.replace(
+      /\[([^\]\n]+)\]\(((?:\.\/)?scripts\/[^\n)]+)\.md\)/g,
+      (_match, label, target) => {
+        const labelBase = String(label).replace(/\.md$/, '');
+        const normalizedLabel = labelBase.endsWith('.js')
+          ? labelBase
+          : `${labelBase}.js`;
+        const normalizedTarget = String(target).endsWith('.js')
+          ? target
+          : `${target}.js`;
+        return `[${normalizedLabel}](${normalizedTarget})`;
+      },
+    );
+    if (rewritten !== original) {
+      fs.writeFileSync(markdownFile, rewritten, 'utf8');
+    }
+  }
+}
+
+function syncTemplateRepository(mode = 'full') {
+  if (!fs.existsSync(TEMPLATE_REPO_ROOT)) {
+    return;
+  }
+
+  fs.mkdirSync(TEMPLATE_BOOTSTRAP_REFERENCES_DIR, { recursive: true });
+  const legacyNestedBootstrapDir = path.join(TEMPLATE_BOOTSTRAP_DIR, '.ai');
+  if (fs.existsSync(legacyNestedBootstrapDir)) {
+    fs.rmSync(legacyNestedBootstrapDir, { recursive: true, force: true });
+  }
+
+  if (mode === 'full' && fs.existsSync(SKILL_DIR)) {
+    fs.rmSync(TEMPLATE_BOOTSTRAP_DIR, { recursive: true, force: true });
+    copyDirectoryRecursive(SKILL_DIR, TEMPLATE_BOOTSTRAP_DIR);
+    normalizeTemplateScriptReferences();
+    writeTemplateBootstrapFile('README.md', `# ExcalidrawAutomate skill snapshot
+
+This directory is synchronized from the plugin repository:
+https://github.com/zsviczian/obsidian-excalidraw-plugin/tree/master/docs/AITrainingData/excalidraw-automate
+
+Update source content by running npm run doc in the plugin repository.
+`);
+    return;
+  }
+
+  writeTemplateBootstrapFile('SKILL.md', `---
+name: excalidraw-automate
+description: Bootstrap guidance for ExcalidrawAutomate scripts. Prefer the canonical plugin repo skill and generated references.
+---
+
+# ExcalidrawAutomate Bootstrap
+
+Use the canonical skill and references from the plugin repository first:
+
+- Skill: https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/AITrainingData/excalidraw-automate/SKILL.md
+- Type definitions: https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/AITrainingData/excalidraw-automate/references/type-definitions.md
+- API usage index: https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/AITrainingData/excalidraw-automate/references/api-usage-index.md
+- ExcalidrawLib functions: https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/AITrainingData/excalidraw-automate/references/excalidraw-lib-functions.md
+- Startup scripts: https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/AITrainingData/excalidraw-automate/references/startup-scripts.md
+
+If URL access is unavailable, use the local bootstrap references in this directory.
+`);
+
+  writeTemplateBootstrapFile(path.join('references', 'type-definitions.md'), `# Type Definitions
+
+Canonical source:
+https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/AITrainingData/excalidraw-automate/references/type-definitions.md
+`);
+
+  writeTemplateBootstrapFile(path.join('references', 'api-usage-index.md'), `# API Usage Index
+
+Canonical source:
+https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/AITrainingData/excalidraw-automate/references/api-usage-index.md
+`);
+
+  writeTemplateBootstrapFile(path.join('references', 'excalidraw-lib-functions.md'), `# ExcalidrawLib Functions
+
+Canonical source:
+https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/AITrainingData/excalidraw-automate/references/excalidraw-lib-functions.md
+`);
+
+  writeTemplateBootstrapFile(path.join('references', 'startup-scripts.md'), `# Startup Scripts
+
+Canonical source:
+https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/AITrainingData/excalidraw-automate/references/startup-scripts.md
+`);
+
+  writeTemplateBootstrapFile('README.md', `# ea-script-template bootstrap
+
+This workspace is kept in sync by the Obsidian Excalidraw plugin docs generator.
+
+Use the canonical plugin-repo skill and reference set first:
+
+- https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/AITrainingData/excalidraw-automate/SKILL.md
+`);
+}
+
+function resolveExcalModulePath(spec, excalIndexAbs) {
+  const baseTypesRoot = path.join(ROOT, 'node_modules', '@zsviczian', 'excalidraw', 'types');
+  if (spec.startsWith('@excalidraw/')) {
+    const sub = spec.slice('@excalidraw/'.length);
+    const parts = sub.split('/');
+    const pkg = parts.shift();
+    const rest = parts;
+    if (!pkg) return null;
+    const base = path.join(baseTypesRoot, pkg);
+    if (rest.length === 0) {
+      return path.join(base, 'src', 'index.d.ts');
+    }
+    return path.join(base, 'src', ...rest) + '.d.ts';
+  }
+  if (spec.startsWith('.')) {
+    const dir = path.dirname(excalIndexAbs);
+    return path.resolve(dir, spec) + '.d.ts';
+  }
+  return null;
+}
+
+function extractFunctionSignaturesFromModule(absPath, names) {
+  const out = {};
+  if (!absPath || !fs.existsSync(absPath)) {
+    return out;
+  }
+  const content = fs.readFileSync(absPath, 'utf8');
+
+  for (const rawName of names) {
+    const name = rawName.trim();
+    if (!name) continue;
+
+    let m = content.match(new RegExp(`export\\s+declare\\s+function\\s+${name}[\\s\\S]*?;`, 'm'));
+    if (m) {
+      out[name] = m[0].trim();
+      continue;
+    }
+
+    m = content.match(new RegExp(`(^|\\n)declare\\s+function\\s+${name}[\\s\\S]*?;`, 'm'));
+    if (m) {
+      out[name] = m[0].replace(/^\s*declare\s+/, 'export declare ').trim();
+      continue;
+    }
+
+    m = content.match(new RegExp(`export\\s+declare\\s+const\\s+${name}\\s*:\\s*[\\s\\S]*?=>[\\s\\S]*?;`, 'm'));
+    if (m) {
+      out[name] = m[0].trim();
+      continue;
+    }
+
+    m = content.match(new RegExp(`export\\s+declare\\s+(?:var|let|const)\\s+${name}\\s*:\\s*[\\s\\S]*?;`, 'm'));
+    if (m && /=>/.test(m[0])) {
+      out[name] = m[0].trim();
+      continue;
+    }
+  }
+  return out;
+}
+
+function buildExcalidrawLibFunctionsSection() {
+  const excalIndexRel = 'node_modules/@zsviczian/excalidraw/types/excalidraw/index.d.ts';
+  const excalIndexAbs = path.join(ROOT, ...excalIndexRel.split('/'));
+  if (!fs.existsSync(excalIndexAbs)) {
+    console.warn('[doc-generator] Missing Excalidraw index.d.ts:', excalIndexRel);
+    return '';
+  }
+
+  const content = fs.readFileSync(excalIndexAbs, 'utf8');
+  const reExport = /export\s*\{\s*([\s\S]*?)\s*\}\s*from\s*["']([^"']+)["'];/g;
+
+  const moduleToNames = new Map();
+  for (const match of content.matchAll(reExport)) {
+    const namesChunk = match[1];
+    const spec = match[2];
+    const names = namesChunk
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (!names.length) continue;
+    const abs = resolveExcalModulePath(spec, excalIndexAbs);
+    if (!abs) continue;
+    const curr = moduleToNames.get(spec) || { abs, names: new Set() };
+    for (const n of names) curr.names.add(n);
+    moduleToNames.set(spec, curr);
+  }
+
+  const seen = new Set();
+  const sections = [];
+  let functionsFound = 0;
+
+  for (const [spec, { abs, names }] of moduleToNames) {
+    const sigs = extractFunctionSignaturesFromModule(abs, Array.from(names));
+    const sigEntries = Object.entries(sigs)
+      .filter(([name]) => {
+        if (seen.has(name)) return false;
+        seen.add(name);
+        return true;
+      })
+      .sort(([a], [b]) => a.localeCompare(b, 'en', { sensitivity: 'base' }));
+
+    if (!sigEntries.length) continue;
+
+    const rel = path.relative(ROOT, abs).replace(/\\/g, '/');
+    const header = makeSectionHeader(`${spec} -> ${rel}`);
+    sections.push(header + sigEntries.map(([, s]) => s).join('\n') + '\n');
+    functionsFound += sigEntries.length;
+  }
+
+  console.log(`[doc-generator] Collected ${functionsFound} ExcalidrawLib function signatures`);
+
+  return '# ExcalidrawLib module functions\n\n' +
+    'The following functions are exposed via window.ExcalidrawLib. Signatures are extracted from TypeScript declarations.\n\n' +
+    '```ts\n' +
+    sections.join('\n') +
+    '```\n';
+}
+
+function buildScriptContentFiles(exclusions) {
+  const files = fs
+    .readdirSync(EA_SCRIPTS_DIR, { withFileTypes: true })
+    .filter(
+      (d) =>
+        d.isFile() &&
+        (d.name.endsWith('.md') || d.name.toLowerCase() === 'mindmap builder.js') &&
+        !exclusions.has(d.name.toLowerCase()),
+    )
+    .map((d) => d.name)
+    .sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' }));
+
+  return files.map((file) => {
+    const full = path.join(EA_SCRIPTS_DIR, file);
+    let content = fs.readFileSync(full, 'utf8').replace(/\r\n/g, '\n');
+    const hadFenceFix = needsClosingFence(content);
+    if (hadFenceFix) {
+      content += '\n```\n';
+    }
+    return { file, content, hadFenceFix };
+  });
+}
+
+function buildApiUsageIndex(scriptFiles) {
+  const apiIndex = {
+    ExcalidrawAutomate: {},
+    ExcalidrawAPI: {},
+    ExcalidrawLib: {},
+  };
+
+  const ignoreList = new Set([
+    'length', 'push', 'map', 'filter', 'forEach', 'includes', 'join', 'toString', 'toLowerCase',
+  ]);
+
+  const addUsage = (category, method, scriptName) => {
+    if (ignoreList.has(method)) return;
+    if (method.length < 2) return;
+
+    if (!apiIndex[category][method]) {
+      apiIndex[category][method] = new Set();
+    }
+    apiIndex[category][method].add(scriptName);
+  };
+
+  for (const { file, content } of scriptFiles) {
+    const eaMatches = [...content.matchAll(/ea\.([a-zA-Z0-9_]+)/g)];
+    eaMatches.forEach((m) => addUsage('ExcalidrawAutomate', m[1], file));
+
+    const apiMatches = [...content.matchAll(/(?:getExcalidrawAPI\(\)|api)\.([a-zA-Z0-9_]+)/g)];
+    apiMatches.forEach((m) => addUsage('ExcalidrawAPI', m[1], file));
+
+    const libMatches = [...content.matchAll(/(?:window\.)?ExcalidrawLib\.([a-zA-Z0-9_]+)/g)];
+    libMatches.forEach((m) => addUsage('ExcalidrawLib', m[1], file));
+  }
+
+  let apiIndexContent = '# Excalidraw API Usage Index\n\n';
+  apiIndexContent += 'This index maps methods and properties from ExcalidrawAutomate (\`ea\`), ExcalidrawAPI, and ExcalidrawLib to the example scripts that use them. Use this to find real-world examples of how to implement specific features.\n\n';
+
+  for (const [category, methods] of Object.entries(apiIndex)) {
+    apiIndexContent += `## ${category}\n\n`;
+    const sortedMethods = Object.keys(methods).sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' }));
+
+    if (sortedMethods.length === 0) {
+      apiIndexContent += '*No usages found.*\n\n';
+      continue;
+    }
+
+    for (const method of sortedMethods) {
+      const scriptLinks = Array.from(methods[method])
+        .sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' }))
+        .map((script) => `[${script}](scripts/${script.replace(/ /g, '%20')})`)
+        .join(', ');
+
+      apiIndexContent += `- **${method}**: ${scriptLinks}\n`;
+    }
+    apiIndexContent += '\n';
+  }
+
+  return apiIndexContent;
+}
+
+function writeSkillOutputs(scriptFiles, typeDefs, excalidrawLibFunctionsSection, startupSection) {
+  fs.mkdirSync(SKILL_DIR, { recursive: true });
+  fs.mkdirSync(SKILL_REFERENCES_DIR, { recursive: true });
+  if (fs.existsSync(SKILL_SCRIPTS_DIR)) {
+    fs.rmSync(SKILL_SCRIPTS_DIR, { recursive: true, force: true });
+  }
+  fs.mkdirSync(SKILL_SCRIPTS_DIR, { recursive: true });
+
+  for (const { file, content } of scriptFiles) {
+    fs.writeFileSync(path.join(SKILL_SCRIPTS_DIR, file), content, 'utf8');
+  }
+
+  fs.writeFileSync(path.join(SKILL_REFERENCES_DIR, 'api-usage-index.md'), buildApiUsageIndex(scriptFiles), 'utf8');
+  fs.writeFileSync(path.join(SKILL_REFERENCES_DIR, 'type-definitions.md'), '# ExcalidrawAutomate library and related type definitions\n\n' + typeDefs, 'utf8');
+  fs.writeFileSync(path.join(SKILL_REFERENCES_DIR, 'excalidraw-lib-functions.md'), excalidrawLibFunctionsSection, 'utf8');
+
+  const startupTemplatePath = path.join(ROOT, ...EXCALIDRAW_STARTUP_TEMPLATE.split('/'));
+  const startupExamplePath = path.join(ROOT, ...EXCALIDRAW_STARTUP_EXAMPLE.split('/'));
+  const startupTemplate = fs.existsSync(startupTemplatePath)
+    ? fs.readFileSync(startupTemplatePath, 'utf8').replace(/\r\n/g, '\n').trim()
+    : '';
+  const startupExample = fs.existsSync(startupExamplePath)
+    ? fs.readFileSync(startupExamplePath, 'utf8').replace(/\r\n/g, '\n').trim()
+    : '';
+  const skillStartupSection = '# Excalidraw Startup Script\n\n' +
+    "ExcalidrawStartup Script can be configured in Plugin Settings under 'Excalidraw Automate'. When defined this script runs automatically when the Excalidraw plugin is loaded to Obsidian. The user can add automation tasks here that they want to run on every startup of Excalidraw in Obsidian such as defining Excalidraw event handlers (also known as hooks).\n\n" +
+    (startupTemplate ? `### Template\n\`\`\`js\n${startupTemplate}\n\`\`\`\n\n` : '') +
+    (startupExample ? `### Example\n\`\`\`js\n${startupExample}\n\`\`\`\n` : '');
+  fs.writeFileSync(path.join(SKILL_REFERENCES_DIR, 'startup-scripts.md'), skillStartupSection, 'utf8');
+
+  const skillFrontmatter = `---\nname: ${SKILL_NAME}\ndescription: Write and manipulate ExcalidrawAutomate scripts for Obsidian.md. Use when the user wants to create, modify, or understand an Excalidraw script.\n---\n\n`;
+  let skillIntro = AI_TRAINING_INTRO
+    .replaceAll('https://youtu.be/', 'YouTube: ')
+    .replaceAll('https://www.youtube.com/watch?v=', 'YouTube: ')
+    .replaceAll('https://www.youtube.com/', 'YouTube: ');
+  skillIntro += `
+## References
+The \`references/\` directory contains supporting documentation necessary for writing scripts:
+- [type-definitions.md](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/AITrainingData/excalidraw-automate/references/type-definitions.md): Core type definitions for ExcalidrawAutomate.
+- [excalidraw-lib-functions.md](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/AITrainingData/excalidraw-automate/references/excalidraw-lib-functions.md): Function signatures for \`window.ExcalidrawLib\`.
+- [startup-scripts.md](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/AITrainingData/excalidraw-automate/references/startup-scripts.md): ExcalidrawStartup script template and examples.
+- [api-usage-index.md](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/AITrainingData/excalidraw-automate/references/api-usage-index.md): A highly useful index mapping every API method (ea.*, api.*, ExcalidrawLib.*) to the specific example scripts that utilize them.
+- [scripts/](https://github.com/zsviczian/obsidian-excalidraw-plugin/tree/master/docs/AITrainingData/excalidraw-automate/references/scripts): A folder containing all the raw, real-world example scripts.
+
+## Publishing Workflow
+Use the normal repository contribution flow when publishing or updating scripts.
+The AI training material is maintained independently from publishing PRs; do not bundle regenerated training artifacts into the script PR.
+- Preview images must follow \`scripts-{slug}.{ext}\`, where \`slug\` uses lowercase \`a-z\`, \`0-9\`, and hyphens only.
+
+- Add or update the script under [ea-scripts](https://github.com/zsviczian/obsidian-excalidraw-plugin/tree/master/ea-scripts).
+- Add or update the preview image under [images](https://github.com/zsviczian/obsidian-excalidraw-plugin/tree/master/images).
+- Keep [ea-scripts/index-new.md](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/index-new.md) manually curated; do not automate it.
+- Update [ea-scripts/directory-info.json](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/directory-info.json) in the same PR.
+- For script updates, refresh the matching entry's \`mtime\` in [ea-scripts/directory-info.json](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/directory-info.json) so the plugin can detect the newer local version.
+- Keep the PR focused on the script and its generated references.
+
+### How to use the Script Examples
+If you need to implement a specific function (e.g., \`ea.addElementsToView\`), do NOT guess its implementation context. Instead:
+1. Open \`references/api-usage-index.md\`.
+2. Find the function name.
+3. Note the scripts listed next to it.
+4. Read the corresponding script inside the \`references/scripts/\` directory to see a complete, working example of how the function is used in context.
+`;
+  fs.writeFileSync(path.join(SKILL_DIR, 'SKILL.md'), skillFrontmatter + skillIntro, 'utf8');
+
+  if (startupSection) {
+    void startupSection;
+  }
+}
+
+export function runUnifiedGeneration(options = {}) {
+  const mode = options.mode ?? 'full';
+  const args = options.args ?? [];
+
+  if (!fs.existsSync(EA_SCRIPTS_DIR)) {
+    throw new Error(`ea-scripts directory not found: ${EA_SCRIPTS_DIR}`);
+  }
+  if (!fs.existsSync(INDEX_NEW)) {
+    throw new Error(`index-new.md not found: ${INDEX_NEW}`);
+  }
+  if (!fs.existsSync(OUT_DIR)) {
+    fs.mkdirSync(OUT_DIR, { recursive: true });
+  }
+
+  const cmdLineExcludes = args.map((arg) => arg.toLowerCase());
+  const defaultExcludes = ['index-new.md', 'mindmap builder.md', 'color scheme manager.md', 'comic strip director.md'];
+  const exclusions = new Set([...defaultExcludes, ...cmdLineExcludes]);
+
+  const scriptFiles = buildScriptContentFiles(exclusions);
+  const indexNewContent = fs.readFileSync(INDEX_NEW, 'utf8');
+  const typeDefs = buildTypeDefMarkdown();
+  const excalidrawLibFunctionsSection = buildExcalidrawLibFunctionsSection();
+  validatePreviewImageNaming();
+
+  let scriptLibraryOutput = SCRIPT_INTRO;
+  scriptLibraryOutput += `<!-- BEGIN index-new.md -->\n${indexNewContent.trim()}\n<!-- END index-new.md -->\n\n`;
+  scriptLibraryOutput += '---\n\n# Script Sources\n';
+
+  for (const { file, content, hadFenceFix } of scriptFiles) {
+    scriptLibraryOutput += `\n---\n\n## ${file}\n`;
+    scriptLibraryOutput += `<!-- Source: ea-scripts/${file} -->\n\n`;
+    scriptLibraryOutput += content.trimEnd() + '\n';
+    if (hadFenceFix) {
+      console.log(`[doc-generator] Added missing closing fence to ${file}`);
+    }
+  }
+
+  fs.writeFileSync(SCRIPT_LIBRARY_OUT, scriptLibraryOutput, 'utf8');
+  fs.writeFileSync(TYPE_DEF_OUT, '# ExcalidrawAutomate library and related type definitions\n\n' + typeDefs, 'utf8');
+
+  const startupTemplatePath = path.join(ROOT, ...EXCALIDRAW_STARTUP_TEMPLATE.split('/'));
+  const startupExamplePath = path.join(ROOT, ...EXCALIDRAW_STARTUP_EXAMPLE.split('/'));
+  const startupTemplate = fs.existsSync(startupTemplatePath)
+    ? fs.readFileSync(startupTemplatePath, 'utf8').replace(/\r\n/g, '\n').trim()
+    : (console.warn('[doc-generator] Missing startup template:', EXCALIDRAW_STARTUP_TEMPLATE), '');
+  const startupExample = fs.existsSync(startupExamplePath)
+    ? fs.readFileSync(startupExamplePath, 'utf8').replace(/\r\n/g, '\n').trim()
+    : (console.warn('[doc-generator] Missing startup example:', EXCALIDRAW_STARTUP_EXAMPLE), '');
+
+  const startupSection =
+    '\n---\n\n' +
+    EXCALIDRAW_STARTUP_MESSAGE +
+    '\n' +
+    (startupTemplate ? `<!-- ${EXCALIDRAW_STARTUP_TEMPLATE} -->\n${startupTemplate}\n\n` : '') +
+    (startupExample ? `<!-- ${EXCALIDRAW_STARTUP_EXAMPLE} -->\n${startupExample}\n` : '');
+
+  const combined =
+    (AI_TRAINING_INTRO +
+      '\n---\n\n' +
+      ('# ExcalidrawAutomate library and related type definitions\n\n' + typeDefs).trim() +
+      '\n\n---\n\n' +
+      excalidrawLibFunctionsSection +
+      '\n---\n\n' +
+      scriptLibraryOutput.trim() +
+      startupSection +
+      '\n')
+      .replaceAll('https://youtu.be/', 'YouTube: ')
+      .replaceAll('https://www.youtube.com/watch?v=', 'YouTube: ')
+      .replaceAll('https://www.youtube.com/', 'YouTube: ');
+
+  fs.writeFileSync(AI_TRAINING_OUT, combined, 'utf8');
+
+  if (mode === 'full') {
+    writeSkillOutputs(scriptFiles, typeDefs, excalidrawLibFunctionsSection, startupSection);
+    syncTemplateRepository('full');
+  } else {
+    syncTemplateRepository(mode);
+  }
+
+  return {
+    generated: {
+      scriptLibrary: SCRIPT_LIBRARY_OUT,
+      typeDefinitions: TYPE_DEF_OUT,
+      aiTraining: AI_TRAINING_OUT,
+      skillDir: SKILL_DIR,
+    },
+    scriptsProcessed: scriptFiles.length,
+  };
+}
