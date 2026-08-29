@@ -248,6 +248,7 @@ The `references/` directory contains supporting documentation necessary for writ
 ## Publishing Workflow
 Use the normal repository contribution flow when publishing or updating scripts.
 The AI training material is maintained independently from publishing PRs; do not bundle regenerated training artifacts into the script PR.
+- Preview images must follow `scripts-{slug}.{ext}`, where `slug` uses lowercase `a-z`, `0-9`, and hyphens only.
 
 - Add or update the script under [ea-scripts](https://github.com/zsviczian/obsidian-excalidraw-plugin/tree/master/ea-scripts).
 - Add or update the preview image under [images](https://github.com/zsviczian/obsidian-excalidraw-plugin/tree/master/images).

@@ -9,6 +9,9 @@ const OUT_DIR = path.join(path.join(ROOT, 'docs'), 'AITrainingData');
 const SCRIPT_LIBRARY_OUT = path.join(OUT_DIR, 'Excalidraw Script Library.md');
 const TYPE_DEF_OUT = path.join(OUT_DIR, 'Excalidraw Automate library and related type definitions.md');
 const AI_TRAINING_OUT = path.join(OUT_DIR, 'ExcalidrawAutomate full library for LLM training.md');
+const IMAGE_DIR = path.join(ROOT, 'images');
+
+const PREVIEW_IMAGE_NAME_RE = /^scripts-[a-z0-9]+(?:-[a-z0-9]+)*\.(png|jpe?g|gif|webp|svg)$/;
 
 const SKILL_NAME = 'excalidraw-automate';
 const SKILL_DIR = path.join(OUT_DIR, SKILL_NAME);
@@ -416,6 +419,41 @@ function buildTypeDefMarkdown() {
   return body;
 }
 
+function validatePreviewImageNaming() {
+  if (!fs.existsSync(IMAGE_DIR)) {
+    console.warn('[doc-generator] Preview image directory missing:', IMAGE_DIR);
+    return;
+  }
+
+  const violations = fs
+    .readdirSync(IMAGE_DIR, { withFileTypes: true })
+    .filter((entry) => entry.isFile())
+    .map((entry) => entry.name)
+    .filter((name) => {
+      if (name === '.DS_Store') {
+        return false;
+      }
+      const ext = path.extname(name).toLowerCase();
+      if (!['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg'].includes(ext)) {
+        return false;
+      }
+      return !PREVIEW_IMAGE_NAME_RE.test(name);
+    });
+
+  if (!violations.length) {
+    return;
+  }
+
+  const sampleCount = Math.min(12, violations.length);
+  const samples = violations.slice(0, sampleCount).join(', ');
+  console.warn(
+    `[doc-generator] Preview image naming check found ${violations.length} non-conforming file(s). ` +
+    `Use scripts-{slug}.{ext} with lowercase slug characters only. Examples: ` +
+    `scripts-add-link-to-existing-file-and-open.jpg, scripts-boolean-operations-showcase.png. ` +
+    `Sample violations: ${samples}${violations.length > sampleCount ? ', ...' : ''}`,
+  );
+}
+
 function resolveExcalModulePath(spec, excalIndexAbs) {
   const baseTypesRoot = path.join(ROOT, 'node_modules', '@zsviczian', 'excalidraw', 'types');
   if (spec.startsWith('@excalidraw/')) {
@@ -661,6 +699,7 @@ The \`references/\` directory contains supporting documentation necessary for wr
 ## Publishing Workflow
 Use the normal repository contribution flow when publishing or updating scripts.
 The AI training material is maintained independently from publishing PRs; do not bundle regenerated training artifacts into the script PR.
+- Preview images must follow \`scripts-{slug}.{ext}\`, where \`slug\` uses lowercase \`a-z\`, \`0-9\`, and hyphens only.
 
 - Add or update the script under [ea-scripts](https://github.com/zsviczian/obsidian-excalidraw-plugin/tree/master/ea-scripts).
 - Add or update the preview image under [images](https://github.com/zsviczian/obsidian-excalidraw-plugin/tree/master/images).
@@ -705,6 +744,7 @@ export function runUnifiedGeneration(options = {}) {
   const indexNewContent = fs.readFileSync(INDEX_NEW, 'utf8');
   const typeDefs = buildTypeDefMarkdown();
   const excalidrawLibFunctionsSection = buildExcalidrawLibFunctionsSection();
+  validatePreviewImageNaming();
 
   let scriptLibraryOutput = SCRIPT_INTRO;
   scriptLibraryOutput += `<!-- BEGIN index-new.md -->\n${indexNewContent.trim()}\n<!-- END index-new.md -->\n\n`;
