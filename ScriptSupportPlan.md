@@ -53,7 +53,7 @@ Target branch: `improved-scripting-skills`.
 | --- | --- | --- |
 | Baseline audit and constraints capture | Complete | Existing generators, outputs, and maintainer decisions captured in this plan |
 | Create planning artifact in repository | Complete | Added [ScriptSupportPlan.md](ScriptSupportPlan.md) with phases, decisions, and action log |
-| Unify generator implementation behind `npm run doc` | Not started | Pending merge of duplicated logic from [scripts/generate-script-library.mjs](scripts/generate-script-library.mjs) and [scripts/skill-builder.mjs](scripts/skill-builder.mjs) |
+| Unify generator implementation behind `npm run doc` | Complete | Added shared generator core at [scripts/excalidraw-docs-generator-core.mjs](scripts/excalidraw-docs-generator-core.mjs); both [scripts/generate-script-library.mjs](scripts/generate-script-library.mjs) and [scripts/skill-builder.mjs](scripts/skill-builder.mjs) are thin wrappers over one code path |
 | Ensure canonical pen type completeness in generated docs | Not started | Must include canonical Obsidian pen stroke type definitions (including `ObsidianPenStrokeOptions`) in training outputs |
 | Curate legacy training entrypoint warning and routing | Not started | Must add explicit URL-access warning and links to curated sources |
 | Add PR publishing workflow guidance for scripting agents | Not started | Add maintainer-approved PR workflow instructions to skill/reference docs without automating `index-new.md` |
@@ -204,3 +204,4 @@ Risk: template sync introduces hard dependency on external repo.
 | --- | --- | --- | --- |
 | 2026-08-29 | Captured maintainer decisions for scripting support modernization | Decisions documented for unified generator, manual index curation, PR workflow guidance, strict image naming, and optional template sync | Plan file created at [ScriptSupportPlan.md](ScriptSupportPlan.md) |
 | 2026-08-29 | Confirmed template repository workspace availability and expanded publishing requirements | Verified [../ea-script-template](../ea-script-template) is present and readable; added mandatory [ea-scripts/directory-info.json](ea-scripts/directory-info.json) update rules to publishing workflow and checkpoint details | Directory listing succeeded for [../ea-script-template](../ea-script-template); plan updated |
+| 2026-08-29 | Implemented checkpoint 1 unified generator | Consolidated duplicated generation logic into [scripts/excalidraw-docs-generator-core.mjs](scripts/excalidraw-docs-generator-core.mjs), with wrapper entrypoints preserved at [scripts/generate-script-library.mjs](scripts/generate-script-library.mjs) and [scripts/skill-builder.mjs](scripts/skill-builder.mjs) | `npm run doc` completed successfully and regenerated legacy + skill outputs from one code path |

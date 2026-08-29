@@ -1,6 +1,5 @@
 # ExcalidrawAutomate library and related type definitions
 
-
 ```js
 /* ************************************** */
 /* lib/shared/ExcalidrawAutomate.d.ts */

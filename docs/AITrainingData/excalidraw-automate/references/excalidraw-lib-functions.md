@@ -84,7 +84,7 @@ export declare const getCommonBoundingBox: (elements: readonly ExcalidrawElement
 /* ************************************** */
 /* @excalidraw/element/groups -> node_modules/@zsviczian/excalidraw/types/element/src/groups.d.ts */
 /* ************************************** */
-export declare const getMaximumGroups: (elements: ExcalidrawElement[], elementsMap: ElementsMap) => ExcalidrawElement[][];
+export declare const getMaximumGroups: <T extends NonDeletedExcalidrawElement | ExcalidrawElement>(elements: T[], elementsMap: ElementsMap) => T[][];
 
 /* ************************************** */
 /* @excalidraw/element/textMeasurements -> node_modules/@zsviczian/excalidraw/types/element/src/textMeasurements.d.ts */
@@ -101,7 +101,7 @@ export declare const wrapText: (text: string, font: FontString, maxWidth: number
 /* @excalidraw/element/textElement -> node_modules/@zsviczian/excalidraw/types/element/src/textElement.d.ts */
 /* ************************************** */
 export declare const getBoundTextMaxWidth: (container: ExcalidrawElement, boundTextElement: ExcalidrawTextElement | null) => number;
-export declare const getContainerElement: (element: ExcalidrawTextElement | null, elementsMap: ElementsMap) => ExcalidrawTextContainer | null;
+export declare const getContainerElement: <T extends ExcalidrawTextElement, R extends ExcalidrawTextContainer>(element: T | null, elementsMap: ElementsMap) => R | null;
 
 /* ************************************** */
 /* ./components/TTDDialog/MermaidToExcalidrawLib -> node_modules/@zsviczian/excalidraw/types/excalidraw/components/TTDDialog/MermaidToExcalidrawLib.d.ts */
@@ -223,21 +223,20 @@ export declare const TTDDialog: {
 /* ************************************** */
 /* ./components/TTDDialog/utils/TTDStreamFetch -> node_modules/@zsviczian/excalidraw/types/excalidraw/components/TTDDialog/utils/TTDStreamFetch.d.ts */
 /* ************************************** */
+export declare function parseSSEStream(reader: ReadableStreamDefaultReader<Uint8Array>): AsyncGenerator<string, void, unknown>;
 export declare function TTDStreamFetch(options: StreamingOptions): Promise<TTTDDialog.OnTextSubmitRetValue>;
 
 /* ************************************** */
-/* ./actions/actionCanvas -> node_modules/@zsviczian/excalidraw/types/excalidraw/actions/actionCanvas.d.ts */
+/* ./viewport -> node_modules/@zsviczian/excalidraw/types/excalidraw/viewport.d.ts */
 /* ************************************** */
-export declare const zoomToFitBounds: ({ bounds, appState, canvasOffsets, fitToViewport, viewportZoomFactor, minZoom, maxZoom, }: {
+export declare const zoomToFitBounds: ({ bounds, appState, canvasOffsets, fit, minZoom, maxZoom, steppedZoom, }: {
     bounds: SceneBounds;
     canvasOffsets?: Offsets;
     appState: Readonly<AppState>;
-    /** whether to fit content to viewport (beyond >100%) */
-    fitToViewport: boolean;
-    /** zoom content to cover X of the viewport, when fitToViewport=true */
-    viewportZoomFactor?: number;
+    fit?: SetViewportOptions["fit"];
     minZoom?: number;
     maxZoom?: number;
+    steppedZoom?: boolean;
 }) => {
     appState: {
         scrollX: number;
@@ -254,4 +253,36 @@ export declare const DiagramToCodePlugin: (props: {
 /* ************************************** */
 export declare const CommandPalette: ((props: CommandPaletteProps) => import("react/jsx-runtime").JSX.Element | null) & {
     defaultItems: typeof defaultItems;
+
+/* ************************************** */
+/* ./obsidianExcalidrawHost -> node_modules/@zsviczian/excalidraw/types/excalidraw/obsidianExcalidrawHost.d.ts */
+/* ************************************** */
+export declare const OBSIDIAN_EXCALIDRAW_HOST_PROTOCOL_VERSION: 2;
+/** Keyboard-blocking lifecycle returned by the host's inline suggester. */
+export interface ObsidianKeyBlocker {
+    isBlockingKeys(): boolean;
+    close(): void;
+}
+/** Plugin-wide capabilities consumed by the Excalidraw package. */
+export interface ObsidianExcalidrawHostAdapter {
+    readonly protocolVersion: typeof OBSIDIAN_EXCALIDRAW_HOST_PROTOCOL_VERSION;
+    isDoubleTapEraserEnabled(): boolean;
+    isRightClickPanEnabled(): boolean;
+    getZoomToFitMaxLevel(): number;
+    isPenModeCrosshairVisible(): boolean;
+    isSingleFingerPanningEnabled(): boolean;
+    isDoubleClickTextEditingDisabled(): boolean;
+    getZoomStep(): number;
+    getZoomMin(): number;
+    getZoomMax(): number;
+    isContextMenuDisabled(): boolean;
+    shouldSyncElementLinkWithText(): boolean;
+    loadFontFromFile(filename: string): Promise<ArrayBuffer | undefined>;
+    getMermaid(): Promise<MermaidToExcalidrawLibProps>;
+    runAction(action: "anyFile" | "LaTeX" | "card"): void;
+    getLabel(key: string): string;
+    attachInlineLinkSuggester(inputEl: HTMLInputElement | HTMLTextAreaElement, widthWrapper?: HTMLElement, container?: HTMLDivElement | null, suppressPlaceholder?: boolean): ObsidianKeyBlocker;
+}
+/** Idempotent cleanup returned when a package host is configured. */
+export type ObsidianExcalidrawHostDisposer = () => void;
 ```

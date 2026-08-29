@@ -227,7 +227,6 @@ Example freedraw element carrying `customData.strokeOptions`:
 
 # ExcalidrawAutomate library and related type definitions
 
-
 ```js
 /* ************************************** */
 /* lib/shared/ExcalidrawAutomate.d.ts */
@@ -5396,7 +5395,7 @@ Content structure:
 2. The curated script overview (index-new.md)
 3. Raw source of every *.md script in /ea-scripts (each fenced code block is auto-closed to ensure well-formed aggregation)
 
-Generated on: 2026-08-29T06:58:01.037Z
+Generated on: 2026-08-29T08:20:26.643Z
 
 ---
 
@@ -6200,6 +6199,7 @@ elements.forEach((el)=>{
   ea.addToGroup([el.id,ellipseId]);
 });
 await ea.addElementsToView(false,false,true);
+
 ```
 
 ---
@@ -6272,6 +6272,7 @@ if(openInCurrentPane) {
   return;
 }
 ea.openFileInNewOrAdjacentLeaf(file);
+
 ```
 
 ---
@@ -6369,6 +6370,7 @@ if(openInCurrentPane) {
   return;
 }
 ea.openFileInNewOrAdjacentLeaf(file);
+
 ```
 
 ---
@@ -7304,6 +7306,7 @@ function applyTranformationMatrix(vectors, transformationMatrix) {
 
   return result;
 }
+
 ```
 
 ---
@@ -7492,6 +7495,7 @@ function recalculateEndPointOfLine(line, el) {
     	line.points[line.points.length - 1] = [intersectA[0][0] - line.x, intersectA[0][1] - line.y];
 	}
 }
+
 ```
 
 ---
@@ -10564,6 +10568,7 @@ if (elements.length>0) {
 ea.copyViewElementsToEAforEditing(editedElements);
 
 ea.addElementsToView(false,false);
+
 ```
 
 ---
@@ -12738,6 +12743,7 @@ async function main() {
 
 // Execute Script
 main();
+
 ```
 
 ---
@@ -13228,6 +13234,7 @@ if(element.type === 'arrow') {
 	appState.currentItemStartArrowhead = element.startArrowhead;
 	appState.currentItemEndArrowhead = element.endArrowhead;
 }
+
 ```
 
 ---
@@ -13256,6 +13263,7 @@ const fname = await utils.inputPrompt("Filename for new file","Filename",folder)
 const file = await app.fileManager.createAndOpenMarkdownFile(fname,true);
 await ea.addImage(0,0,file);
 ea.addElementsToView(true,true);
+
 ```
 
 ---
@@ -13419,6 +13427,7 @@ for (const el of ea.getElements()) {
   }
 }
 await ea.addElementsToView(false, false);
+
 ```
 
 ---
@@ -13857,6 +13866,7 @@ for (const line of lines) {
 
 ea.copyViewElementsToEAforEditing(lines);
 await ea.addElementsToView(false,false);
+
 ```
 
 ---
@@ -13925,6 +13935,7 @@ id = ea.addEllipse(
 ea.copyViewElementsToEAforEditing(elements);
 ea.addToGroup([id].concat(elements.map((el)=>el.id)));
 ea.addElementsToView(false,false);
+
 ```
 
 ---
@@ -16877,6 +16888,8 @@ const openConfigModal = () => {
 };
 
 openConfigModal();
+
+
 ```
 
 ---
@@ -17212,6 +17225,7 @@ const outfile = await app.vault.create(outputPath,result);
 setTimeout(()=>{
   ea.openFileInNewOrAdjacentLeaf(outfile);
 }, 250);
+
 ```
 
 ---
@@ -18967,6 +18981,7 @@ function recalculateEndPointOfLine(line, el) {
     	line.points[line.points.length - 1] = [intersectA[0][0] - line.x, intersectA[0][1] - line.y];
 	}
 }
+
 ```
 
 ---
@@ -19048,6 +19063,7 @@ for(var i=0; i<groups.length; i++) {
 }
 ea.copyViewElementsToEAforEditing(elements);
 await ea.addElementsToView(false, false);
+
 ```
 
 ---
@@ -19182,6 +19198,7 @@ else if(fromBorder === 'right') {
 
 ea.copyViewElementsToEAforEditing(elements);
 await ea.addElementsToView(false, false);
+
 ```
 
 ---
@@ -19258,6 +19275,7 @@ for(var i=0; i<groups.length; i++) {
 }
 ea.copyViewElementsToEAforEditing(elements);
 await ea.addElementsToView(false, false);
+
 ```
 
 ---
@@ -19417,6 +19435,7 @@ for(var i=0; i<groups.length; i++) {
 }
 ea.copyViewElementsToEAforEditing(elements);
 await ea.addElementsToView(false, false);
+
 ```
 
 ---
@@ -19597,6 +19616,7 @@ do {
 
 
 await ea.addElementsToView(false, false, true);
+
 ```
 
 ---
@@ -20353,6 +20373,7 @@ try {
 } catch (err) {
   _ = new Notice(err.toString())
 }
+
 ```
 
 ---
@@ -23196,7 +23217,8 @@ try {
 } catch (error) {
   console.error("Error showing completion message:", error);
   new Notice("Operation completed with some errors");
-}
+} 
+
 ```
 
 ---
@@ -23325,6 +23347,7 @@ ea.viewUpdateScene({
   elements: ea.getElements(),
   storeAction: "capture" // Ensures the change is saved and added to the undo/redo history.
 });
+
 ```
 
 ---
@@ -23384,6 +23407,7 @@ for (const el of ea.getElements()) {
   }
 }
 await ea.addElementsToView(false, false);
+
 ```
 
 ---
@@ -23600,6 +23624,7 @@ const bottomHeaderY = START_Y + 160 + (12 * (CELL_HEIGHT + ROW_SPACING)) + 40;
 drawDayHeaders(bottomHeaderY);
 
 await ea.addElementsToView(false, false, true);
+
 ```
 
 ---
@@ -37765,6 +37790,7 @@ else {
 }
 
 await ea.addElementsToView(false,false,true);
+
 ```
 
 ---
@@ -38142,6 +38168,7 @@ generateTree(elements);
 
 ea.copyViewElementsToEAforEditing(elements);
 await ea.addElementsToView(false, false);
+
 ```
 
 ---
@@ -39177,6 +39204,7 @@ async function run() {
 }
 
 run();
+
 ```
 
 ---
@@ -40091,6 +40119,7 @@ async function run() {
 }
 
 run();
+
 ```
 
 ---
@@ -40266,6 +40295,7 @@ for(i of img) {
 	  await app.fileManager.renameFile(file,`${newPath}.${file.extension}`);
   }
 }
+
 ```
 
 ---
@@ -40389,6 +40419,7 @@ for(let i=0; i<repeatNum; i++) {
 }
 
 await ea.addElementsToView(false, false, true);
+
 ```
 
 ---
@@ -40491,6 +40522,8 @@ for(let i=0; i<repeatNum; i++) {
 }
 
 await ea.addElementsToView(false, false, true);
+
+
 ```
 
 ---
@@ -41586,6 +41619,7 @@ ea.copyViewElementsToEAforEditing(elements);
 ea.getElements().forEach((el)=>el.strokeWidth=width);
 await ea.addElementsToView(false,false);
 ea.viewUpdateScene({appState: {currentItemStrokeWidth: width}});
+
 ```
 
 ---
@@ -43372,6 +43406,7 @@ if(
   
   window.ExcalidrawSlideshowStartTimer = window.setTimeout(start,500);
 }
+
 ```
 
 ---
@@ -45854,6 +45889,7 @@ ea.getElements().forEach(el=>{
 const ids = ea.getElements().map(el=>el.id);
 await ea.addElementsToView(false,true);
 ea.getExcalidrawAPI().updateContainerSize(ea.getViewElements().filter(el=>ids.contains(el.id)));
+
 ```
 
 ---
@@ -46086,6 +46122,7 @@ await ea.addElementsToView(false, false);
 const view = app.workspace.activeLeaf.view; if (view && view.excalidrawAPI) { view.excalidrawAPI.updateScene({ appState: { selectedElementIds: {} } }); }
 
 new Notice("Voronoi diagram created!");
+
 ```
 
 ---
@@ -46108,6 +46145,7 @@ https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.h
 elements = ea.getViewSelectedElements();
 api = ea.getExcalidrawAPI();
 api.zoomToFit(elements,10);
+
 ```
 ---
 
