@@ -253,7 +253,7 @@ Use the normal repository contribution flow when publishing or updating scripts.
 - Keep [ea-scripts/index-new.md](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/index-new.md) manually curated; do not automate it.
 - Update [ea-scripts/directory-info.json](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/directory-info.json) in the same PR.
 - For script updates, refresh the matching entry's `mtime` in [ea-scripts/directory-info.json](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/directory-info.json) so the plugin can detect the newer local version.
-- Run `npm run doc` before opening the PR.
+- Run `npm run doc` before opening the PR so the generated skill and reference outputs stay in sync with the script changes.
 - Keep the PR focused on the script and its generated references.
 
 ### How to use the Script Examples
