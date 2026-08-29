@@ -57,8 +57,8 @@ Target branch: `improved-scripting-skills`.
 | Ensure canonical pen type completeness in generated docs | Complete | Generated references now include canonical Obsidian pen stroke type definitions plus the full public `src/types` and `lib/types` declaration surface |
 | Curate legacy training entrypoint warning and routing | Complete | Legacy training entrypoint now warns about inaccessible references, names the master repository, and routes agents to the curated skill/reference set with absolute GitHub URLs |
 | Add PR publishing workflow guidance for scripting agents | Complete | Generated skill guidance now directs script publishing through PRs, keeps `index-new.md` manual, and requires `directory-info.json` mtime updates |
-| Add strict image naming and validation | Not started | Define naming standard for script previews and add lint-style validation check |
-| Optional template-repo sync from `npm run doc` | In progress | `ea-script-template` is now present in workspace; sync design can proceed |
+| Add strict image naming and validation | Complete | Generator now warns on non-conforming preview filenames and documents the `scripts-{slug}.{ext}` rule in generated publishing guidance |
+| Optional template-repo sync from `npm run doc` | Complete | `npm run doc` now refreshes a co-located `ea-script-template` bootstrap under `.ai/excalidraw-automate/` when the sibling repo is present |
 
 ## Implementation checkpoints
 
@@ -160,6 +160,10 @@ Acceptance:
 - New/updated script previews follow the naming contract.
 - Validation output is actionable for contributors.
 
+Status:
+- Complete.
+- The generator now warns on non-conforming preview filenames and surfaces the naming rule in the generated publishing workflow guidance.
+
 ### Checkpoint 6: Optional template repository sync
 Objective:
 - Allow `npm run doc` to refresh a co-located script-template repo if present.
@@ -187,6 +191,10 @@ Acceptance:
 - `npm run doc` succeeds in both cases:
   - template repo present
   - template repo absent
+
+Status:
+- Complete.
+- `npm run doc` now refreshes a link-first bootstrap in the sibling `ea-script-template` workspace under `.ai/excalidraw-automate/` when the repo is available.
 
 ## Validation approach
 
@@ -217,3 +225,5 @@ Risk: template sync introduces hard dependency on external repo.
 | 2026-08-29 | Captured maintainer decisions for scripting support modernization | Decisions documented for unified generator, manual index curation, PR workflow guidance, strict image naming, and optional template sync | Plan file created at [ScriptSupportPlan.md](ScriptSupportPlan.md) |
 | 2026-08-29 | Confirmed template repository workspace availability and expanded publishing requirements | Verified [../ea-script-template](../ea-script-template) is present and readable; added mandatory [ea-scripts/directory-info.json](ea-scripts/directory-info.json) update rules to publishing workflow and checkpoint details | Directory listing succeeded for [../ea-script-template](../ea-script-template); plan updated |
 | 2026-08-29 | Implemented checkpoint 1 unified generator | Consolidated duplicated generation logic into [scripts/excalidraw-docs-generator-core.mjs](scripts/excalidraw-docs-generator-core.mjs), with wrapper entrypoints preserved at [scripts/generate-script-library.mjs](scripts/generate-script-library.mjs) and [scripts/skill-builder.mjs](scripts/skill-builder.mjs) | `npm run doc` completed successfully and regenerated legacy + skill outputs from one code path |
+| 2026-08-29 | Implemented checkpoint 5 image naming validator | Added warning-only preview filename validation and surfaced the `scripts-{slug}.{ext}` rule in generated publishing guidance | `npm run doc` completed successfully and emitted the expected warning for legacy preview names |
+| 2026-08-29 | Implemented checkpoint 6 template bootstrap sync | `npm run doc` now refreshes a link-first bootstrap in the sibling `ea-script-template` workspace under `.ai/excalidraw-automate/` | `npm run doc` completed successfully and refreshed the sibling template bootstrap files |

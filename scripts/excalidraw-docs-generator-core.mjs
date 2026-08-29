@@ -10,6 +10,9 @@ const SCRIPT_LIBRARY_OUT = path.join(OUT_DIR, 'Excalidraw Script Library.md');
 const TYPE_DEF_OUT = path.join(OUT_DIR, 'Excalidraw Automate library and related type definitions.md');
 const AI_TRAINING_OUT = path.join(OUT_DIR, 'ExcalidrawAutomate full library for LLM training.md');
 const IMAGE_DIR = path.join(ROOT, 'images');
+const TEMPLATE_REPO_ROOT = path.resolve(ROOT, '..', 'ea-script-template');
+const TEMPLATE_BOOTSTRAP_DIR = path.join(TEMPLATE_REPO_ROOT, '.ai', 'excalidraw-automate');
+const TEMPLATE_BOOTSTRAP_REFERENCES_DIR = path.join(TEMPLATE_BOOTSTRAP_DIR, 'references');
 
 const PREVIEW_IMAGE_NAME_RE = /^scripts-[a-z0-9]+(?:-[a-z0-9]+)*\.(png|jpe?g|gif|webp|svg)$/;
 
@@ -454,6 +457,75 @@ function validatePreviewImageNaming() {
   );
 }
 
+function writeTemplateBootstrapFile(relativePath, content) {
+  const targetPath = path.join(TEMPLATE_BOOTSTRAP_DIR, relativePath);
+  fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+  fs.writeFileSync(targetPath, content, 'utf8');
+}
+
+function syncTemplateRepository() {
+  if (!fs.existsSync(TEMPLATE_REPO_ROOT)) {
+    return;
+  }
+
+  fs.mkdirSync(TEMPLATE_BOOTSTRAP_REFERENCES_DIR, { recursive: true });
+  const legacyNestedBootstrapDir = path.join(TEMPLATE_BOOTSTRAP_DIR, '.ai');
+  if (fs.existsSync(legacyNestedBootstrapDir)) {
+    fs.rmSync(legacyNestedBootstrapDir, { recursive: true, force: true });
+  }
+
+  writeTemplateBootstrapFile('SKILL.md', `---
+name: excalidraw-automate
+description: Bootstrap guidance for ExcalidrawAutomate scripts. Prefer the canonical plugin repo skill and generated references.
+---
+
+# ExcalidrawAutomate Bootstrap
+
+Use the canonical skill and references from the plugin repository first:
+
+- Skill: https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/AITrainingData/excalidraw-automate/SKILL.md
+- Type definitions: https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/AITrainingData/excalidraw-automate/references/type-definitions.md
+- API usage index: https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/AITrainingData/excalidraw-automate/references/api-usage-index.md
+- ExcalidrawLib functions: https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/AITrainingData/excalidraw-automate/references/excalidraw-lib-functions.md
+- Startup scripts: https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/AITrainingData/excalidraw-automate/references/startup-scripts.md
+
+If URL access is unavailable, use the local bootstrap references in this directory.
+`);
+
+  writeTemplateBootstrapFile(path.join('references', 'type-definitions.md'), `# Type Definitions
+
+Canonical source:
+https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/AITrainingData/excalidraw-automate/references/type-definitions.md
+`);
+
+  writeTemplateBootstrapFile(path.join('references', 'api-usage-index.md'), `# API Usage Index
+
+Canonical source:
+https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/AITrainingData/excalidraw-automate/references/api-usage-index.md
+`);
+
+  writeTemplateBootstrapFile(path.join('references', 'excalidraw-lib-functions.md'), `# ExcalidrawLib Functions
+
+Canonical source:
+https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/AITrainingData/excalidraw-automate/references/excalidraw-lib-functions.md
+`);
+
+  writeTemplateBootstrapFile(path.join('references', 'startup-scripts.md'), `# Startup Scripts
+
+Canonical source:
+https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/AITrainingData/excalidraw-automate/references/startup-scripts.md
+`);
+
+  writeTemplateBootstrapFile('README.md', `# ea-script-template bootstrap
+
+This workspace is kept in sync by the Obsidian Excalidraw plugin docs generator.
+
+Use the canonical plugin-repo skill and reference set first:
+
+- https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/AITrainingData/excalidraw-automate/SKILL.md
+`);
+}
+
 function resolveExcalModulePath(spec, excalIndexAbs) {
   const baseTypesRoot = path.join(ROOT, 'node_modules', '@zsviczian', 'excalidraw', 'types');
   if (spec.startsWith('@excalidraw/')) {
@@ -793,6 +865,7 @@ export function runUnifiedGeneration(options = {}) {
       .replaceAll('https://www.youtube.com/', 'YouTube: ');
 
   fs.writeFileSync(AI_TRAINING_OUT, combined, 'utf8');
+  syncTemplateRepository();
 
   if (mode === 'full') {
     writeSkillOutputs(scriptFiles, typeDefs, excalidrawLibFunctionsSection, startupSection);
