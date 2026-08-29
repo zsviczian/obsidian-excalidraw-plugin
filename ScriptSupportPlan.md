@@ -54,7 +54,7 @@ Target branch: `improved-scripting-skills`.
 | Baseline audit and constraints capture | Complete | Existing generators, outputs, and maintainer decisions captured in this plan |
 | Create planning artifact in repository | Complete | Added [ScriptSupportPlan.md](ScriptSupportPlan.md) with phases, decisions, and action log |
 | Unify generator implementation behind `npm run doc` | Complete | Added shared generator core at [scripts/excalidraw-docs-generator-core.mjs](scripts/excalidraw-docs-generator-core.mjs); both [scripts/generate-script-library.mjs](scripts/generate-script-library.mjs) and [scripts/skill-builder.mjs](scripts/skill-builder.mjs) are thin wrappers over one code path |
-| Ensure canonical pen type completeness in generated docs | Not started | Must include canonical Obsidian pen stroke type definitions (including `ObsidianPenStrokeOptions`) in training outputs |
+| Ensure canonical pen type completeness in generated docs | Complete | Generated references now include canonical Obsidian pen stroke type definitions plus the full public `src/types` and `lib/types` declaration surface |
 | Curate legacy training entrypoint warning and routing | Not started | Must add explicit URL-access warning and links to curated sources |
 | Add PR publishing workflow guidance for scripting agents | Not started | Add maintainer-approved PR workflow instructions to skill/reference docs without automating `index-new.md` |
 | Add strict image naming and validation | Not started | Define naming standard for script previews and add lint-style validation check |
@@ -93,6 +93,10 @@ Acceptance:
   - [docs/AITrainingData/Excalidraw Automate library and related type definitions.md](docs/AITrainingData/Excalidraw%20Automate%20library%20and%20related%20type%20definitions.md)
   - [docs/AITrainingData/ExcalidrawAutomate full library for LLM training.md](docs/AITrainingData/ExcalidrawAutomate%20full%20library%20for%20LLM%20training.md)
   include concrete stroke option structure, not alias-only references.
+
+Status:
+- Complete.
+- The generator now includes all declaration files under [src/types](src/types) and [lib/types](lib/types), plus the canonical fork-owned `obsidianTypes.d.ts` source for `ObsidianPenStrokeOptions`.
 
 ### Checkpoint 3: Curated legacy entrypoint messaging
 Objective:

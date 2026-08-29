@@ -1920,6 +1920,232 @@ export declare class ExcalidrawAutomate {
     destroy(): void;
 }
 
+/* ******************************** */
+/* lib/types/AIUtilTypes.d.ts */
+/* ******************************** */
+export type AIProvider = "openai" | "anthropic" | "google" | "xai" | "openai-compatible";
+export type AIFileInput = string | {
+    url: string;
+    filename?: string;
+    mimeType?: string;
+} | {
+    dataURL: string;
+    filename?: string;
+    mimeType?: string;
+};
+export type AIImageInput = string | {
+    url: string;
+    detail?: "low" | "high" | "auto";
+    filename?: string;
+    mimeType?: string;
+} | {
+    dataURL: string;
+    detail?: "low" | "high" | "auto";
+    filename?: string;
+    mimeType?: string;
+};
+export type AIImageModelCapability = {
+    supportedSizes: string[];
+    supportsPromptImageTransforms: boolean;
+    supportsMaskImageEdits: boolean;
+};
+export type AIProviderProfile = {
+    provider: AIProvider;
+    apiKey: string;
+    baseURL: string;
+};
+export type AIModelConfig = {
+    providerId: string;
+    model: string;
+    endpoint?: string;
+    multimodalSupport?: boolean;
+};
+export type AIImageModelConfig = AIModelConfig & AIImageModelCapability;
+export type ExcalidrawAISettings = {
+    enabled: boolean;
+    providerProfiles: Record<string, {
+        provider: AIProvider;
+        baseURL: string;
+        hasApiKey: boolean;
+    }>;
+    textModels: Record<string, AIModelConfig>;
+    imageModels: Record<string, AIImageModelConfig>;
+    defaultTextModel: string;
+    defaultMultimodalTextModel: string;
+    defaultImageModel: string;
+    defaultMaxOutgoingTokens: number;
+    defaultMaxResponseTokens: number;
+};
+export type OpenAIImageURLPart = {
+    type: "image_url";
+    image_url: string | {
+        url: string;
+        detail?: "low" | "high" | "auto";
+    };
+};
+type MessageContent = string | ({
+    type: "text";
+    text: string;
+} | OpenAIImageURLPart)[];
+export type GPTCompletionRequest = {
+    model: string;
+    messages?: {
+        role?: "system" | "user" | "assistant" | "function";
+        content?: MessageContent;
+        name?: string | undefined;
+    }[];
+    functions?: {
+        name: string;
+        description?: string;
+        parameters?: Record<string, string | number | boolean | null | Record<string, string | number | boolean | null>>;
+    }[] | undefined;
+    function_call?: "none" | "auto" | {
+        name: string;
+    } | undefined;
+    stream?: boolean | undefined;
+    temperature?: number | undefined;
+    top_p?: number | undefined;
+    max_tokens?: number | undefined;
+    max_completion_tokens?: number | undefined;
+    n?: number | undefined;
+    best_of?: number | undefined;
+    frequency_penalty?: number | undefined;
+    presence_penalty?: number | undefined;
+    logit_bias?: {
+        [x: string]: number;
+    } | undefined;
+    stop?: (string[] | string) | undefined;
+    size?: string;
+    quality?: "standard" | "hd";
+    prompt?: string;
+    image?: string;
+    mask?: string;
+};
+export type AIRequestMessagePart = {
+    type: "text";
+    text: string;
+} | {
+    type: "image";
+    image: AIImageInput;
+} | {
+    type: "file";
+    file: AIFileInput;
+} | {
+    type: "audio";
+    audio: AIFileInput;
+};
+export type AIRequestMessage = {
+    role: "system" | "user" | "assistant";
+    content: string | AIRequestMessagePart[];
+};
+export type AITextUsageEntry = {
+    inputTokens: number;
+    outputTokens: number;
+};
+export type AIImageUsageEntry = {
+    generations: number;
+};
+export type AIUsageData = {
+    textModels: Record<string, AITextUsageEntry>;
+    imageModels: Record<string, AIImageUsageEntry>;
+    totalInputTokens: number;
+    totalOutputTokens: number;
+    totalImageGenerations: number;
+};
+export type AIRequest = {
+    provider?: AIProvider;
+    baseURL?: string;
+    apiKey?: string;
+    model?: string;
+    textModelId?: string;
+    imageModelId?: string;
+    image?: AIImageInput;
+    text?: string;
+    instruction?: string;
+    systemPrompt?: string;
+    messages?: AIRequestMessage[];
+    temperature?: number;
+    maxOutgoingTokens?: number;
+    maxTokens?: number;
+    imageGenerationProperties?: {
+        size?: string;
+        quality?: "standard" | "hd";
+        n?: number;
+        mask?: AIImageInput;
+    };
+};
+
+/* ************************************** */
+/* lib/types/elementActionTypes.d.ts */
+/* ************************************** */
+/**
+ * Types for the selected-element action menu provider mechanism
+ * (`view.selectedElementActionsMenu`), shared between the view-owned
+ * `SelectedElementActionsMenu` component and the public
+ * `ExcalidrawAutomate.registerElementActionProvider()` scripting API.
+ */
+import type { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/src/types";
+export type SelectedElementMenuAction = {
+    id: string;
+    title: string;
+    icon: string;
+    action: () => void;
+};
+export type SelectedElementMenuProvider = {
+    id: string;
+    getActions: (element: ExcalidrawElement) => readonly SelectedElementMenuAction[];
+};
+
+/* ************************************** */
+/* lib/types/embeddedFileLoaderTypes.d.ts */
+/* ************************************** */
+export declare const IMAGE_MIME_TYPES: {
+    readonly svg: "image/svg+xml";
+    readonly png: "image/png";
+    readonly jpg: "image/jpeg";
+    readonly jpeg: "image/jpeg";
+    readonly gif: "image/gif";
+    readonly webp: "image/webp";
+    readonly bmp: "image/bmp";
+    readonly ico: "image/x-icon";
+    readonly avif: "image/avif";
+    readonly jfif: "image/jfif";
+};
+export type ImgData = {
+    mimeType: MimeType;
+    fileId: FileId;
+    dataURL: DataURL;
+    created: number;
+    loadedFromCache?: boolean;
+    hasSVGwithBitmap: boolean;
+    size: Size;
+    pdfPageViewProps?: PDFPageViewProps;
+    renderScale?: number;
+};
+export declare type MimeType = ValueOf<typeof IMAGE_MIME_TYPES> | "application/octet-stream";
+export type FileData = BinaryFileData & {
+    size: Size;
+    loadedFromCache?: boolean;
+    hasSVGwithBitmap: boolean;
+    shouldScale: boolean;
+    pdfPageViewProps?: PDFPageViewProps;
+    renderScale?: number;
+};
+export type PDFPageViewProps = {
+    left: number;
+    bottom: number;
+    right: number;
+    top: number;
+    rotate?: number;
+};
+export type Size = {
+    height: number;
+    width: number;
+};
+export interface ColorMap {
+    [color: string]: string;
+}
+
 /* ************************************** */
 /* lib/types/excalidrawAutomateTypes.d.ts */
 /* ************************************** */
@@ -1968,148 +2194,101 @@ export interface AddImageOptions {
 }
 
 /* ************************************** */
-/* lib/types/sidepanelTabTypes.d.ts */
+/* lib/types/excalidrawElementTypes.d.ts */
 /* ************************************** */
-/**
- * SidepanelTab defines the public surface of a sidepanel tab as exposed to scripts.
- * Tabs are lightweight modal-like containers with their own DOM (title/content) that the host sidepanel activates, focuses, and closes.
- * Typical flow for scripts:
- * 1) Create the tab via ea.createSidepanelTab(title, persist=false, reveal=true). Note the sidepanelTab is immediately created even if not revealed.
- *    If the sidepanel tab is the first in the sidepanel, then onOpen will not be called becase the tab is already open/active.
- *    Reveal simply opens the obisidan sidepanel and the Excalidraw sidepanel view which already displays the active tab.
- * 2) Render UI into `contentEl` or use `setContent(...)` / `setTitle(...)`.
- * 3) Implement lifecycle hooks: `onOpen` (only runs when the user changes tabs in the Excalidraw sidepanel), `onFocus(view)` (runs on host focus changes), `onClose`/`setCloseCallback` (cleanup), `onExcalidrawViewClosed` (canvas closed).
- *    Use `onWindowMigrated(win)` to reattach any window-bound event handlers if the sidepanel moves between the main workspace and a popout window (the DOM is reparented during this migration). The `win` argument is the new Window hosting the sidepanel DOM.
- * 4) Use `setDisabled`, `focus`, `close`, `reset`, and persistence helpers (from host) as needed.
- * 5) Use ea.sidepanelTab.open() to show the sidepanel tab associated with the script.
- * 6) When the sidepanel is nolonger required the script should call ea.sidepanelTab.close() to close the tab and trigger cleanup.
- * The sidpanel associated with an ea script is available on ea.sidepanelTab. Persisted tabs are restored on Obsidian startup, such that scripts associated with the persisted tabs are
- * loaded and executed on Excalidraw startup, and the scripts are in turn responsible for recreating their sidepanel tabs via ea.createSidepanelTab as per their normal script initiation sequence.
- * This description is intentionally explicit so an LLM can generate sidepanel-aware script code without inspecting the implementation.
- */
-export interface SidepanelTab {
-    /** Unique tab identifier used by the host sidepanel. */
-    readonly id: string;
-    /** Optional script name backing this tab (used for persistence and lookup). */
-    readonly scriptName?: string;
-    /** Current title shown in the sidepanel selector. */
-    readonly title: string;
-    /** Root container element for the tab (same as modalEl). */
-    readonly containerEl: HTMLDivElement;
-    /** Wrapper element for the tab. */
-    readonly modalEl: HTMLDivElement;
-    /** Content element where scripts render their UI. */
-    readonly contentEl: HTMLDivElement;
-    /** Title element whose text mirrors `title`. */
-    readonly titleEl: HTMLDivElement;
-    /**
-     * Focus hook fired when the host marks this tab active; set by scripts.
-     * Because sidpanel tabs may outlive their associated Excalidraw views on focus is designed to notify scripts of the most recently active view.
-     * The script can verify if the view has changed by comparing against ea.targetView (ea.targetView === view means no change).
-     * The script is responsible for calling ea.setView(view) if it wishes to bind to the new view.
-     * The script may also wish to call ea.clear() or ea.reset() to discard state associated with the prior view.
-     * In case the script performs view specific actions it should update its UI in onFocus when the received view !== ea.targetView.
-     * @param view The most recently active ExcalidrawView, or null if no ExcalidrawViews are present in the workspace.
-     */
-    onFocus: (view: ExcalidrawView | null) => void;
-    /** Hook fired when the associated Excalidraw view closes; set by ScriptEngine. */
-    onExcalidrawViewClosed: () => void;
-    /** Hook fired when the sidepanel's DOM is migrated to another window (e.g., into or out of a popout) so scripts can rebind listeners. */
-    onWindowMigrated: (win: Window) => void;
-    /** Clears all children from the content element. */
-    clear(): void;
-    /** Sets the tab title and updates host UI; returns the tab for chaining. */
-    setTitle(title: string): this;
-    /** Replaces tab content with text or a fragment; returns the tab for chaining. */
-    setContent(content: string | DocumentFragment): this;
-    /** Activates this tab within the host sidepanel. */
-    focus(): void;
-    /** Marks the tab open, activates it, and triggers `onOpen`. reveal default is true */
-    open(reveal?: boolean): void;
-    /** Runs close handlers then asks the host to remove the tab. */
-    close(): void;
-    /** Lifecycle hook called when the tab is opened/activated. */
-    onOpen(): Promise<void> | void;
-    /** Lifecycle hook called once when the tab closes. */
-    onClose(): void;
-    /** Toggles pointer interactivity and opacity; returns the tab for chaining. */
-    setDisabled(disabled: boolean): this;
-    /** Returns the ExcalidrawAutomate instance associated with the sidepanel tab */
-    getHostEA(): ExcalidrawAutomate;
-    /** Returns whether the tab is currently visible in the UI */
-    isVisible(): boolean;
-    /** Returns whether the tab is the currently active tab in the sidepanel */
-    isActiveTab(): boolean;
-}
-
-/* ***************************** */
-/* lib/types/penTypes.d.ts */
-/* ***************************** */
-/**
- * Local names for the custom-pen types, aliased to the canonical
- * definitions owned by the Excalidraw fork
- * (packages/excalidraw/obsidianTypes.ts, referenced by
- * `AppState.customPens`/`currentStrokeOptions`). The fork cannot depend on
- * this plugin, so the shapes live there and are aliased here rather than
- * duplicated -- edit the fork's `Obsidian*` types, not these.
- */
-export type StrokeOptions = ObsidianPenStrokeOptions;
-export type PenOptions = ObsidianPenOptions;
-export type ExtendedFillStyle = ObsidianExtendedFillStyle;
-export type PenType = ObsidianPenType;
-export type PenStyle = ObsidianPenStyle;
-
-/* ****************************** */
-/* lib/types/utilTypes.d.ts */
-/* ****************************** */
-export type FILENAMEPARTS = {
-    filepath: string;
-    hasBlockref: boolean;
-    hasGroupref: boolean;
-    hasTaskbone: boolean;
-    hasArearef: boolean;
-    hasFrameref: boolean;
-    hasClippedFrameref: boolean;
-    hasSectionref: boolean;
-    blockref: string;
-    sectionref: string;
-    linkpartReference: string;
-    linkpartAlias: string;
-    /** Optional non-negative export padding parsed from an image-reference link. */
-    padding?: number;
+export type NamedExcalidrawFrameElement = ExcalidrawFrameElement & {
+    frameRole?: string;
+    name?: string;
 };
-export declare enum PreviewImageType {
-    PNG = "PNG",
-    SVGIMG = "SVGIMG",
-    SVG = "SVG"
+
+/* ************************************** */
+/* lib/types/excalidrawViewTypes.d.ts */
+/* ************************************** */
+export type Position = {
+    x: number;
+    y: number;
+};
+export interface SelectedElementWithLink {
+    id: string | null;
+    text: string | null;
 }
-export interface FrameRenderingOptions {
-    enabled: boolean;
-    name: boolean;
-    outline: boolean;
-    clip: boolean;
+export interface SelectedImage {
+    id: string | null;
+    fileId: FileId | null;
 }
-export type PaneTarget = "active-pane" | "new-pane" | "popout-window" | "new-tab" | "md-properties";
-export interface NestedFileNode {
-    file: TFile;
-    /**
-     * All distinct dependency paths from the root file down to this embedded file.
-     * Each path is an ordered array of TFile objects starting with the `rootFile` at index 0.
-     *
-     * @example
-     * If Root -> A -> B2.2 and Root -> B -> B2 -> B2.2
-     * The paths for B2.2 will be:
-     * [
-     *   [Root, A, B2.2],
-     *   [Root, B, B2, B2.2]
-     * ]
-     *
-     * Usage: To find which top-level embeds to reload if this file changes,
-     * you can map over `paths` and collect `path[1]`.
-     */
-    paths: TFile[][];
+export interface EmbeddableLeafRef {
+    leaf: WorkspaceLeaf;
+    node?: ObsidianCanvasNode;
+    editNode?: () => void;
 }
-export type NestedFileMap = Map<TFile, NestedFileNode>;
+export interface AutoexportConfig {
+    png: boolean;
+    svg: boolean;
+    excalidraw: boolean;
+    theme: "light" | "dark" | "both";
+}
+export type ExcalidrawViewScene = Omit<SceneData, "collaborators" | "captureUpdate"> & {
+    elements: NonNullable<SceneData["elements"]>;
+    appState: NonNullable<SceneData["appState"]>;
+    files: BinaryFiles;
+};
+export type ExcalidrawViewAppState = Omit<Partial<AppState>, "showHyperlinkPopup"> & {
+    pinnedScripts?: string[];
+    showHyperlinkPopup?: AppState["showHyperlinkPopup"] | {
+        newValue: string;
+        oldValue: string;
+    };
+};
+export type ExcalidrawViewUpdateScene = {
+    elements?: ExcalidrawElement[];
+    appState?: ExcalidrawViewAppState;
+    files?: BinaryFiles;
+    forceFlushSync?: boolean;
+    captureUpdate?: CaptureUpdateActionType;
+    storeAction?: "capture" | "none" | "update";
+};
+export type ExcalidrawLinkOpenEvent = Parameters<NonNullable<ExcalidrawProps["onLinkOpen"]>>[1];
+export type { StencilLibraryData } from "./stencilLibraryTypes";
+export interface ExcalidrawEphemeralState {
+    rename?: string;
+    subpath?: string;
+    line?: number;
+    match?: {
+        content?: string;
+        matches?: [number, number][];
+    };
+}
+export type MarkdownViewOpenState = ViewStateResult | {
+    focus: boolean;
+} | ExcalidrawEphemeralState;
+export type MarkdownBlockCacheEntry = {
+    display: string;
+    node: {
+        type: string;
+        id?: string;
+        [key: string]: unknown;
+    };
+};
+export interface ViewSemaphores {
+    warnAboutLinearElementLinkClick: boolean;
+    embeddableIsEditingSelf: boolean;
+    popoutUnload: boolean;
+    windowMigrating: boolean;
+    viewloaded: boolean;
+    viewunload: boolean;
+    scriptsReady: boolean;
+    justLoaded: boolean;
+    preventAutozoom: boolean;
+    autosaving: boolean;
+    forceSaving: boolean;
+    dirty: string | null;
+    preventReload: boolean;
+    isEditingText: boolean;
+    saving: boolean;
+    hoverSleep: boolean;
+    wheelTimeout: number | null;
+    shouldSaveImportedImage: boolean;
+}
 
 /* ************************************ */
 /* lib/types/exportUtilTypes.d.ts */
@@ -2268,210 +2447,487 @@ export interface ElectronAPI {
     webUtils: ElectronWebUtilsLike;
 }
 
-/* ************************************** */
-/* lib/types/embeddedFileLoaderTypes.d.ts */
-/* ************************************** */
-export declare const IMAGE_MIME_TYPES: {
-    readonly svg: "image/svg+xml";
-    readonly png: "image/png";
-    readonly jpg: "image/jpeg";
-    readonly jpeg: "image/jpeg";
-    readonly gif: "image/gif";
-    readonly webp: "image/webp";
-    readonly bmp: "image/bmp";
-    readonly ico: "image/x-icon";
-    readonly avif: "image/avif";
-    readonly jfif: "image/jfif";
-};
-export type ImgData = {
-    mimeType: MimeType;
-    fileId: FileId;
-    dataURL: DataURL;
-    created: number;
-    loadedFromCache?: boolean;
-    hasSVGwithBitmap: boolean;
-    size: Size;
-    pdfPageViewProps?: PDFPageViewProps;
-    renderScale?: number;
-};
-export declare type MimeType = ValueOf<typeof IMAGE_MIME_TYPES> | "application/octet-stream";
-export type FileData = BinaryFileData & {
-    size: Size;
-    loadedFromCache?: boolean;
-    hasSVGwithBitmap: boolean;
-    shouldScale: boolean;
-    pdfPageViewProps?: PDFPageViewProps;
-    renderScale?: number;
-};
-export type PDFPageViewProps = {
-    left: number;
-    bottom: number;
-    right: number;
-    top: number;
-    rotate?: number;
-};
-export type Size = {
-    height: number;
-    width: number;
-};
-export interface ColorMap {
-    [color: string]: string;
+/* ****************************** */
+/* lib/types/fontTypes.d.ts */
+/* ****************************** */
+/** A selectable font value and the optional vault file used for its preview. */
+export interface SelectableFontOption {
+    value: string;
+    label: string;
+    fontFile?: TFile;
 }
 
 /* ******************************** */
-/* lib/types/AIUtilTypes.d.ts */
+/* lib/types/githubTypes.d.ts */
 /* ******************************** */
-export type AIProvider = "openai" | "anthropic" | "google" | "xai" | "openai-compatible";
-export type AIFileInput = string | {
-    url: string;
-    filename?: string;
-    mimeType?: string;
-} | {
-    dataURL: string;
-    filename?: string;
-    mimeType?: string;
+/**
+ * Metadata entry describing a file in the remote EA scripts directory listing.
+ */
+export type RemoteDirectoryInfo = {
+    fname: string;
+    mtime: number;
 };
-export type AIImageInput = string | {
-    url: string;
-    detail?: "low" | "high" | "auto";
-    filename?: string;
-    mimeType?: string;
-} | {
-    dataURL: string;
-    detail?: "low" | "high" | "auto";
-    filename?: string;
-    mimeType?: string;
-};
-export type AIImageModelCapability = {
-    supportedSizes: string[];
-    supportsPromptImageTransforms: boolean;
-    supportsMaskImageEdits: boolean;
-};
-export type AIProviderProfile = {
-    provider: AIProvider;
-    apiKey: string;
-    baseURL: string;
-};
-export type AIModelConfig = {
-    providerId: string;
-    model: string;
-    endpoint?: string;
-    multimodalSupport?: boolean;
-};
-export type AIImageModelConfig = AIModelConfig & AIImageModelCapability;
-export type ExcalidrawAISettings = {
+
+/* ************************************** */
+/* lib/types/markdownImageTypes.d.ts */
+/* ************************************** */
+export declare const MARKDOWN_IMAGE_CUSTOM_DATA_KEY = "markdownImage";
+export declare const MARKDOWN_IMAGE_EMBEDDED_FILE_TOKEN = "markdown-image";
+export declare const MARKDOWN_IMAGE_SCHEMA_VERSION = 1;
+export type MarkdownImageSource = "local" | "external";
+export type MarkdownImageTransclusionRenderSettings = {
     enabled: boolean;
-    providerProfiles: Record<string, {
-        provider: AIProvider;
-        baseURL: string;
-        hasApiKey: boolean;
-    }>;
-    textModels: Record<string, AIModelConfig>;
-    imageModels: Record<string, AIImageModelConfig>;
-    defaultTextModel: string;
-    defaultMultimodalTextModel: string;
-    defaultImageModel: string;
-    defaultMaxOutgoingTokens: number;
-    defaultMaxResponseTokens: number;
+    fontFamily: string;
+    fontColor: string;
+    border: {
+        enabled: boolean;
+        color: string;
+    };
+    css: string;
 };
-export type OpenAIImageURLPart = {
-    type: "image_url";
-    image_url: string | {
+export type MarkdownImageRenderSettings = {
+    width: number;
+    paddingBottom: number;
+    fontFamily: string;
+    fontColor: string;
+    border: {
+        enabled: boolean;
+        color: string;
+    };
+    css: string;
+    transclusion: MarkdownImageTransclusionRenderSettings;
+};
+export type MarkdownImageCustomData = {
+    schemaVersion: typeof MARKDOWN_IMAGE_SCHEMA_VERSION;
+    /** Advisory revision for changes made through the Excalidraw UI. */
+    version: number;
+    source: MarkdownImageSource;
+    render: MarkdownImageRenderSettings;
+};
+export type MarkdownImageData = {
+    markdown: string;
+};
+export type MarkdownImageSettings = {
+    defaults: MarkdownImageRenderSettings;
+};
+
+/* ************************************** */
+/* lib/types/obsidianDeclarativeSettings.d.ts */
+/* ************************************** */
+/**
+ * Type-only compatibility boundary for Obsidian's declarative settings API.
+ *
+ * The project intentionally remains compiled against Obsidian 1.8.7. These
+ * structural types mirror only the Obsidian 1.13.0 surface used by the
+ * settings migration and must not be treated as evidence that the methods are
+ * available at runtime. Keep runtime calls behind
+ * {@link getDeclarativeSettingTabRuntime}.
+ *
+ * Features introduced after 1.13.0 are deliberately excluded. When the
+ * pinned Obsidian dependency eventually includes these declarations, replace
+ * this file with type-only imports from `obsidian`.
+ */
+import type { PluginSettingTab, Setting } from "obsidian";
+type SettingControlBase<V, K extends string> = {
+    key: K;
+    defaultValue?: V;
+    validate?: (value: V) => string | void | Promise<string | void>;
+    disabled?: boolean | (() => boolean);
+};
+type SettingToggleControl<K extends string> = SettingControlBase<boolean, K> & {
+    type: "toggle";
+};
+type SettingDropdownControl<K extends string> = SettingControlBase<string, K> & {
+    type: "dropdown";
+    options: Record<string, string>;
+};
+type SettingTextControl<K extends string> = SettingControlBase<string, K> & {
+    type: "text";
+    placeholder?: string;
+};
+type SettingSliderControl<K extends string> = SettingControlBase<number, K> & {
+    type: "slider";
+    min: number;
+    max: number;
+    step: number;
+};
+type SettingControl<K extends string> = SettingToggleControl<K> | SettingDropdownControl<K> | SettingTextControl<K> | SettingSliderControl<K>;
+type SettingDefinitionBase = {
+    name: string;
+    desc?: string | DocumentFragment;
+    aliases?: string[];
+    searchable?: boolean | (() => boolean);
+    visible?: boolean | (() => boolean);
+};
+type SettingDefinitionControl<K extends string> = SettingDefinitionBase & {
+    control: SettingControl<K>;
+    action?: never;
+    render?: never;
+};
+/** Minimal structural surface passed to a declarative `render` callback. */
+interface SettingGroupLike {
+    listEl: HTMLElement;
+}
+type SettingDefinitionRender = SettingDefinitionBase & {
+    render: (setting: Setting, group: SettingGroupLike) => void | (() => void);
+    action?: never;
+    control?: never;
+};
+export type SettingDefinition<K extends string = string> = SettingDefinitionControl<K> | SettingDefinitionRender;
+type SettingDefinitionPage<K extends string = string> = {
+    type: "page";
+    name: string;
+    desc?: string | DocumentFragment;
+    items?: SettingDefinitionItem<K>[];
+    visible?: boolean | (() => boolean);
+};
+/**
+ * Minimal Obsidian 1.13.0 definition union used by this migration.
+ *
+ * This is intentionally a local structural equivalent rather than an
+ * augmentation of the installed Obsidian 1.8.7 module.
+ */
+export type SettingDefinitionItem<K extends string = string> = SettingDefinition<K> | SettingDefinitionPage<K>;
+/**
+ * Obsidian 1.13.0 methods required by the declarative settings adapter.
+ * Their presence must be checked at runtime before use.
+ */
+export interface DeclarativeSettingTabRuntime<K extends string = string> {
+    getSettingDefinitions(): SettingDefinitionItem<K>[];
+    getControlValue(key: string): unknown;
+    setControlValue(key: string, value: unknown): void | Promise<void>;
+    update(): void;
+    refreshDomState(): void;
+}
+/**
+ * Returns the Obsidian 1.13.0 declarative settings facade when every required
+ * runtime method exists, otherwise returns `null` for the legacy path.
+ */
+export declare function getDeclarativeSettingTabRuntime<K extends string = string>(tab: PluginSettingTab): (PluginSettingTab & DeclarativeSettingTabRuntime<K>) | null;
+
+/* ******************************* */
+/* lib/types/pdfJsTypes.d.ts */
+/* ******************************* */
+export type PdfJsPageViewport = {
+    width: number;
+    height: number;
+};
+export type PdfJsPageProxy = {
+    getViewport(options: {
+        scale: number;
+    }): PdfJsPageViewport;
+    render(options: {
+        canvasContext: CanvasRenderingContext2D;
+        background: string;
+        viewport: PdfJsPageViewport;
+    }): {
+        promise: Promise<void>;
+    };
+    rotate?: number;
+    view: [number, number, number, number];
+};
+export type PdfJsDocumentProxy = {
+    destroy(): void;
+    getPage(pageNumber: number): Promise<PdfJsPageProxy>;
+    numPages: number;
+};
+export type PdfJsDocumentLoadResult = {
+    promise: Promise<PdfJsDocumentProxy>;
+};
+export type PdfJsLibrary = {
+    GlobalWorkerOptions: {
+        workerSrc: string;
+    };
+    getDocument(options: {
         url: string;
-        detail?: "low" | "high" | "auto";
-    };
+        wasmUrl?: string;
+        cMapUrl?: string;
+        cMapPacked?: boolean;
+        standardFontDataUrl?: string;
+        iccUrl?: string;
+    }): PdfJsDocumentLoadResult;
 };
-type MessageContent = string | ({
-    type: "text";
-    text: string;
-} | OpenAIImageURLPart)[];
-export type GPTCompletionRequest = {
-    model: string;
-    messages?: {
-        role?: "system" | "user" | "assistant" | "function";
-        content?: MessageContent;
-        name?: string | undefined;
-    }[];
-    functions?: {
-        name: string;
-        description?: string;
-        parameters?: Record<string, string | number | boolean | null | Record<string, string | number | boolean | null>>;
-    }[] | undefined;
-    function_call?: "none" | "auto" | {
-        name: string;
-    } | undefined;
-    stream?: boolean | undefined;
-    temperature?: number | undefined;
-    top_p?: number | undefined;
-    max_tokens?: number | undefined;
-    max_completion_tokens?: number | undefined;
-    n?: number | undefined;
-    best_of?: number | undefined;
-    frequency_penalty?: number | undefined;
-    presence_penalty?: number | undefined;
-    logit_bias?: {
-        [x: string]: number;
-    } | undefined;
-    stop?: (string[] | string) | undefined;
-    size?: string;
-    quality?: "standard" | "hd";
-    prompt?: string;
-    image?: string;
-    mask?: string;
+
+/* ***************************** */
+/* lib/types/penTypes.d.ts */
+/* ***************************** */
+/**
+ * Local names for the custom-pen types, aliased to the canonical
+ * definitions owned by the Excalidraw fork
+ * (packages/excalidraw/obsidianTypes.ts, referenced by
+ * `AppState.customPens`/`currentStrokeOptions`). The fork cannot depend on
+ * this plugin, so the shapes live there and are aliased here rather than
+ * duplicated -- edit the fork's `Obsidian*` types, not these.
+ */
+export type StrokeOptions = ObsidianPenStrokeOptions;
+export type PenOptions = ObsidianPenOptions;
+export type ExtendedFillStyle = ObsidianExtendedFillStyle;
+export type PenType = ObsidianPenType;
+export type PenStyle = ObsidianPenStyle;
+
+/* ******************************** */
+/* lib/types/promptTypes.d.ts */
+/* ******************************** */
+export type ButtonDefinition = {
+    caption: string;
+    tooltip?: string;
+    action: (input: string) => string | void | null;
+    iconId?: string;
 };
-export type AIRequestMessagePart = {
-    type: "text";
-    text: string;
-} | {
-    type: "image";
-    image: AIImageInput;
-} | {
-    type: "file";
-    file: AIFileInput;
-} | {
-    type: "audio";
-    audio: AIFileInput;
+export interface InputPromptOptions {
+    header: string;
+    placeholder?: string;
+    value?: string;
+    buttons?: ButtonDefinition[];
+    lines?: number;
+    displayEditorButtons?: boolean;
+    customComponents?: (container: HTMLElement) => void;
+    blockPointerInputOutsideModal?: boolean;
+    controlsOnTop?: boolean;
+    draggable?: boolean;
+}
+
+/* ************************************** */
+/* lib/types/sidepanelTabTypes.d.ts */
+/* ************************************** */
+/**
+ * SidepanelTab defines the public surface of a sidepanel tab as exposed to scripts.
+ * Tabs are lightweight modal-like containers with their own DOM (title/content) that the host sidepanel activates, focuses, and closes.
+ * Typical flow for scripts:
+ * 1) Create the tab via ea.createSidepanelTab(title, persist=false, reveal=true). Note the sidepanelTab is immediately created even if not revealed.
+ *    If the sidepanel tab is the first in the sidepanel, then onOpen will not be called becase the tab is already open/active.
+ *    Reveal simply opens the obisidan sidepanel and the Excalidraw sidepanel view which already displays the active tab.
+ * 2) Render UI into `contentEl` or use `setContent(...)` / `setTitle(...)`.
+ * 3) Implement lifecycle hooks: `onOpen` (only runs when the user changes tabs in the Excalidraw sidepanel), `onFocus(view)` (runs on host focus changes), `onClose`/`setCloseCallback` (cleanup), `onExcalidrawViewClosed` (canvas closed).
+ *    Use `onWindowMigrated(win)` to reattach any window-bound event handlers if the sidepanel moves between the main workspace and a popout window (the DOM is reparented during this migration). The `win` argument is the new Window hosting the sidepanel DOM.
+ * 4) Use `setDisabled`, `focus`, `close`, `reset`, and persistence helpers (from host) as needed.
+ * 5) Use ea.sidepanelTab.open() to show the sidepanel tab associated with the script.
+ * 6) When the sidepanel is nolonger required the script should call ea.sidepanelTab.close() to close the tab and trigger cleanup.
+ * The sidpanel associated with an ea script is available on ea.sidepanelTab. Persisted tabs are restored on Obsidian startup, such that scripts associated with the persisted tabs are
+ * loaded and executed on Excalidraw startup, and the scripts are in turn responsible for recreating their sidepanel tabs via ea.createSidepanelTab as per their normal script initiation sequence.
+ * This description is intentionally explicit so an LLM can generate sidepanel-aware script code without inspecting the implementation.
+ */
+export interface SidepanelTab {
+    /** Unique tab identifier used by the host sidepanel. */
+    readonly id: string;
+    /** Optional script name backing this tab (used for persistence and lookup). */
+    readonly scriptName?: string;
+    /** Current title shown in the sidepanel selector. */
+    readonly title: string;
+    /** Root container element for the tab (same as modalEl). */
+    readonly containerEl: HTMLDivElement;
+    /** Wrapper element for the tab. */
+    readonly modalEl: HTMLDivElement;
+    /** Content element where scripts render their UI. */
+    readonly contentEl: HTMLDivElement;
+    /** Title element whose text mirrors `title`. */
+    readonly titleEl: HTMLDivElement;
+    /**
+     * Focus hook fired when the host marks this tab active; set by scripts.
+     * Because sidpanel tabs may outlive their associated Excalidraw views on focus is designed to notify scripts of the most recently active view.
+     * The script can verify if the view has changed by comparing against ea.targetView (ea.targetView === view means no change).
+     * The script is responsible for calling ea.setView(view) if it wishes to bind to the new view.
+     * The script may also wish to call ea.clear() or ea.reset() to discard state associated with the prior view.
+     * In case the script performs view specific actions it should update its UI in onFocus when the received view !== ea.targetView.
+     * @param view The most recently active ExcalidrawView, or null if no ExcalidrawViews are present in the workspace.
+     */
+    onFocus: (view: ExcalidrawView | null) => void;
+    /** Hook fired when the associated Excalidraw view closes; set by ScriptEngine. */
+    onExcalidrawViewClosed: () => void;
+    /** Hook fired when the sidepanel's DOM is migrated to another window (e.g., into or out of a popout) so scripts can rebind listeners. */
+    onWindowMigrated: (win: Window) => void;
+    /** Clears all children from the content element. */
+    clear(): void;
+    /** Sets the tab title and updates host UI; returns the tab for chaining. */
+    setTitle(title: string): this;
+    /** Replaces tab content with text or a fragment; returns the tab for chaining. */
+    setContent(content: string | DocumentFragment): this;
+    /** Activates this tab within the host sidepanel. */
+    focus(): void;
+    /** Marks the tab open, activates it, and triggers `onOpen`. reveal default is true */
+    open(reveal?: boolean): void;
+    /** Runs close handlers then asks the host to remove the tab. */
+    close(): void;
+    /** Lifecycle hook called when the tab is opened/activated. */
+    onOpen(): Promise<void> | void;
+    /** Lifecycle hook called once when the tab closes. */
+    onClose(): void;
+    /** Toggles pointer interactivity and opacity; returns the tab for chaining. */
+    setDisabled(disabled: boolean): this;
+    /** Returns the ExcalidrawAutomate instance associated with the sidepanel tab */
+    getHostEA(): ExcalidrawAutomate;
+    /** Returns whether the tab is currently visible in the UI */
+    isVisible(): boolean;
+    /** Returns whether the tab is the currently active tab in the sidepanel */
+    isActiveTab(): boolean;
+}
+
+/* ************************************** */
+/* lib/types/stencilLibraryTypes.d.ts */
+/* ************************************** */
+export type StencilLibraryStorageMode = "data-json" | "vault";
+export type StencilLibraryMigrationStatus = "not-required" | "pending" | "later" | "completed" | "opted-out";
+export type StencilLibraryData = {
+    type?: "excalidrawlib";
+    version?: number;
+    source?: string;
+    library?: LibraryItems;
+    libraryItems?: LibraryItems;
 };
-export type AIRequestMessage = {
-    role: "system" | "user" | "assistant";
-    content: string | AIRequestMessagePart[];
+export type StencilLibraryFileData = Omit<StencilLibraryData, "library" | "libraryItems"> & {
+    libraryItems: LibraryItems;
 };
-export type AITextUsageEntry = {
-    inputTokens: number;
-    outputTokens: number;
+export type StencilLibraryMigrationChoice = "migrate" | "later" | "keep-data-json";
+export type MutableLibraryItem = LibraryItem & {
+    status: LibraryItem["status"];
 };
-export type AIImageUsageEntry = {
-    generations: number;
+
+/* ****************************** */
+/* lib/types/utilTypes.d.ts */
+/* ****************************** */
+export type FILENAMEPARTS = {
+    filepath: string;
+    hasBlockref: boolean;
+    hasGroupref: boolean;
+    hasTaskbone: boolean;
+    hasArearef: boolean;
+    hasFrameref: boolean;
+    hasClippedFrameref: boolean;
+    hasSectionref: boolean;
+    blockref: string;
+    sectionref: string;
+    linkpartReference: string;
+    linkpartAlias: string;
+    /** Optional non-negative export padding parsed from an image-reference link. */
+    padding?: number;
 };
-export type AIUsageData = {
-    textModels: Record<string, AITextUsageEntry>;
-    imageModels: Record<string, AIImageUsageEntry>;
-    totalInputTokens: number;
-    totalOutputTokens: number;
-    totalImageGenerations: number;
+export declare enum PreviewImageType {
+    PNG = "PNG",
+    SVGIMG = "SVGIMG",
+    SVG = "SVG"
+}
+export interface FrameRenderingOptions {
+    enabled: boolean;
+    name: boolean;
+    outline: boolean;
+    clip: boolean;
+}
+export type PaneTarget = "active-pane" | "new-pane" | "popout-window" | "new-tab" | "md-properties";
+export interface NestedFileNode {
+    file: TFile;
+    /**
+     * All distinct dependency paths from the root file down to this embedded file.
+     * Each path is an ordered array of TFile objects starting with the `rootFile` at index 0.
+     *
+     * @example
+     * If Root -> A -> B2.2 and Root -> B -> B2 -> B2.2
+     * The paths for B2.2 will be:
+     * [
+     *   [Root, A, B2.2],
+     *   [Root, B, B2, B2.2]
+     * ]
+     *
+     * Usage: To find which top-level embeds to reload if this file changes,
+     * you can map over `paths` and collect `path[1]`.
+     */
+    paths: TFile[][];
+}
+export type NestedFileMap = Map<TFile, NestedFileNode>;
+
+/* ************************************** */
+/* node_modules/@zsviczian/excalidraw/types/element/src/bounds.d.ts */
+/* ************************************** */
+export type RectangleBox = {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    angle: number;
 };
-export type AIRequest = {
-    provider?: AIProvider;
-    baseURL?: string;
-    apiKey?: string;
-    model?: string;
-    textModelId?: string;
-    imageModelId?: string;
-    image?: AIImageInput;
-    text?: string;
-    instruction?: string;
-    systemPrompt?: string;
-    messages?: AIRequestMessage[];
-    temperature?: number;
-    maxOutgoingTokens?: number;
-    maxTokens?: number;
-    imageGenerationProperties?: {
-        size?: string;
-        quality?: "standard" | "hd";
-        n?: number;
-        mask?: AIImageInput;
-    };
-};
+export type SceneBounds = readonly [
+    sceneX: number,
+    sceneY: number,
+    sceneX2: number,
+    sceneY2: number
+];
+export declare class ElementBounds {
+    private static boundsCache;
+    private static nonRotatedBoundsCache;
+    static getBounds(element: ExcalidrawElement, elementsMap: ElementsMap, nonRotated?: boolean): Bounds;
+    private static calculateBounds;
+}
+export declare const getElementAbsoluteCoords: (element: ExcalidrawElement, elementsMap: ElementsMap, includeBoundText?: boolean) => [number, number, number, number, number, number];
+/**
+ * Given an element, return the line segments that make up the element.
+ *
+ * Uses helpers from /math
+ */
+export declare const getElementLineSegments: (element: ExcalidrawElement, elementsMap: ElementsMap) => LineSegment<GlobalPoint>[];
+/**
+ * Scene -> Scene coords, but in x1,x2,y1,y2 format.
+ *
+ * Rectangle here means any rectangular frame, not an excalidraw element.
+ */
+export declare const getRectangleBoxAbsoluteCoords: (boxSceneCoords: RectangleBox) => number[];
+export declare const getDiamondPoints: (element: ExcalidrawElement) => number[];
+export declare const getCubicBezierCurveBound: (p0: GlobalPoint, p1: GlobalPoint, p2: GlobalPoint, p3: GlobalPoint) => Bounds;
+export declare const getMinMaxXYFromCurvePathOps: (ops: Op[], transformXY?: (p: GlobalPoint) => GlobalPoint) => Bounds;
+export declare const getBoundsFromPoints: <P extends GlobalPoint | LocalPoint>(points: readonly P[], padding?: number) => Bounds;
+/** @returns number in pixels */
+export declare const getArrowheadSize: (arrowhead: Arrowhead) => number;
+/** @returns number in degrees */
+export declare const getArrowheadAngle: (arrowhead: Arrowhead) => Degrees;
+export declare const getArrowheadPoints: (element: ExcalidrawLinearElement, shape: Drawable[], position: "start" | "end", arrowhead: Arrowhead, offsetMultiplier?: number) => number[] | null;
+export declare const getElementBounds: (element: ExcalidrawElement, elementsMap: ElementsMap, nonRotated?: boolean) => Bounds;
+export declare const getCommonBounds: (elements: ElementsMapOrArray, elementsMap?: ElementsMap) => Bounds;
+export declare const getDraggedElementsBounds: (elements: readonly NonDeletedExcalidrawElement[], dragOffset: {
+    x: number;
+    y: number;
+}) => number[];
+export declare const getResizedElementAbsoluteCoords: (element: ExcalidrawElement, nextWidth: number, nextHeight: number, normalizePoints: boolean) => Bounds;
+export declare const getElementPointsCoords: (element: ExcalidrawLinearElement, points: readonly (readonly [number, number])[]) => Bounds;
+export interface BoundingBox {
+    minX: number;
+    minY: number;
+    maxX: number;
+    maxY: number;
+    midX: number;
+    midY: number;
+    width: number;
+    height: number;
+}
+export declare const getCommonBoundingBox: (elements: readonly ExcalidrawElement[] | readonly NonDeleted<ExcalidrawElement>[]) => BoundingBox;
+/**
+ * returns scene coords of user's editor viewport (visible canvas area) bounds
+ */
+export declare const getVisibleSceneBounds: ({ scrollX, scrollY, width, height, zoom, }: AppState) => SceneBounds;
+export declare const getCenterForBounds: (bounds: Bounds) => GlobalPoint;
+/**
+ * Get the axis-aligned bounding box for a given element
+ */
+export declare const aabbForElement: (element: Readonly<ExcalidrawElement>, elementsMap: ElementsMap, offset?: [number, number, number, number]) => Bounds;
+export declare const pointInsideBounds: <P extends GlobalPoint | LocalPoint>(p: P, bounds: Bounds) => boolean;
+export declare const pointInsideBoundsInclusive: <P extends GlobalPoint | LocalPoint>(p: P, bounds: Bounds) => boolean;
+export declare const doBoundsIntersect: (bounds1: Bounds | null, bounds2: Bounds | null) => boolean;
+export declare const boundsContainBounds: (outerBounds: Bounds, innerBounds: Bounds) => boolean;
+/**
+ * High level helper to get elements overlapping a bounding box.
+ * It can be used to get elements overlapping a selection box, for example.
+ *
+ */
+export declare const elementsOverlappingBBox: <T extends ExcalidrawElement>({ elements, elementsMap, bounds, type, excludeElementsInFrames, shouldIgnoreElementFromSelection, }: {
+    elements: readonly T[];
+    elementsMap?: ElementsMap;
+    bounds: Bounds | ExcalidrawElement;
+    /**
+     * - overlap: elements overlapping or inside bounds
+     * - contain: elements inside bounds
+     **/
+    type: "contain" | "overlap";
+    excludeElementsInFrames?: boolean;
+    shouldIgnoreElementFromSelection?: (element: T) => boolean;
+}) => T[];
+export declare const elementCenterPoint: (element: ExcalidrawElement, elementsMap: ElementsMap, xOffset?: number, yOffset?: number) => GlobalPoint;
 
 /* ************************************** */
 /* node_modules/@zsviczian/excalidraw/types/element/src/types.d.ts */
@@ -2798,6 +3254,987 @@ export type ExcalidrawLinearElementSubType = "line" | "sharpArrow" | "curvedArro
 export type ConvertibleGenericTypes = "rectangle" | "diamond" | "ellipse";
 export type ConvertibleLinearTypes = ExcalidrawLinearElementSubType;
 export type ConvertibleTypes = ConvertibleGenericTypes | ConvertibleLinearTypes;
+
+/* ************************************** */
+/* node_modules/@zsviczian/excalidraw/types/excalidraw/components/App.d.ts */
+/* ************************************** */
+declare const editorLifecycleEventBehavior: {
+    readonly "editor:mount": {
+        readonly cardinality: "once";
+        readonly replay: "last";
+    };
+    readonly "editor:initialize": {
+        readonly cardinality: "once";
+        readonly replay: "last";
+    };
+    readonly "editor:unmount": {
+        readonly cardinality: "once";
+        readonly replay: "last";
+    };
+};
+export declare const ExcalidrawContainerContext: React.Context<{
+    container: HTMLDivElement | null;
+    id: string | null;
+}>;
+export declare const ExcalidrawAPIContext: React.Context<ExcalidrawImperativeAPI | null>;
+export declare const ExcalidrawAPISetContext: React.Context<((api: ExcalidrawImperativeAPI | null) => void) | null>;
+export declare const useApp: () => AppClassProperties;
+export declare const useAppProps: () => AppProps;
+export declare const useEditorInterface: () => Readonly<{
+    formFactor: "phone" | "tablet" | "desktop";
+    desktopUIMode: StylesPanelMode;
+    userAgent: Readonly<{
+        isMobileDevice: boolean;
+        platform: "ios" | "android" | "other" | "unknown";
+    }>;
+    isTouchScreen: boolean;
+    canFitSidebar: boolean;
+    isLandscape: boolean;
+}>;
+export declare const useStylesPanelMode: () => StylesPanelMode;
+export declare const useExcalidrawContainer: () => {
+    container: HTMLDivElement | null;
+    id: string | null;
+};
+export declare const useExcalidrawElements: () => readonly NonDeletedExcalidrawElement[];
+export declare const useExcalidrawAppState: () => AppState;
+export declare const useExcalidrawSetAppState: () => <K extends keyof AppState>(state: AppState | ((prevState: Readonly<AppState>, props: Readonly<any>) => AppState | Pick<AppState, K> | null) | Pick<AppState, K> | null, callback?: (() => void) | undefined) => void;
+export declare const useExcalidrawActionManager: () => ActionManager;
+/**
+ * Requires wrapping your component in <ExcalidrawAPIContext.Provider>
+ */
+export declare const useExcalidrawAPI: () => ExcalidrawImperativeAPI | null;
+declare class App extends React.Component<AppProps, AppState> {
+    canvas: AppClassProperties["canvas"];
+    interactiveCanvas: AppClassProperties["interactiveCanvas"];
+    sessionExportThemeOverride: AppState["theme"] | undefined;
+    rc: RoughCanvas;
+    unmounted: boolean;
+    actionManager: ActionManager;
+    editorInterface: EditorInterface;
+    private stylesPanelMode;
+    private excalidrawContainerRef;
+    get ownerDocument(): Document;
+    get ownerWindow(): Window & typeof globalThis;
+    scene: Scene;
+    fonts: Fonts;
+    renderer: Renderer;
+    visibleElements: readonly NonDeletedExcalidrawElement[];
+    /** whether the last render had any renderable elements (excludes e.g. the
+     * in-progress `newElement` and the edited text element) */
+    private hasRenderableElements;
+    private resizeObserver;
+    library: AppClassProperties["library"];
+    libraryItemsFromStorage: LibraryItems | undefined;
+    id: string;
+    private store;
+    private history;
+    private shouldRenderAllEmbeddables;
+    excalidrawContainerValue: {
+        container: HTMLDivElement | null;
+        id: string;
+    };
+    files: BinaryFiles;
+    imageCache: AppClassProperties["imageCache"];
+    private iFrameRefs;
+    /**
+     * Indicates whether the embeddable's url has been validated for rendering.
+     * If value not set, indicates that the validation is pending.
+     * Initially or on url change the flag is not reset so that we can guarantee
+     * the validation came from a trusted source (the editor).
+     **/
+    private embedsValidationStatus;
+    /** embeds that have been inserted to DOM (as a perf optim, we don't want to
+     * insert to DOM before user initially scrolls to them) */
+    private initializedEmbeds;
+    private elementsPendingErasure;
+    private _initialized;
+    private readonly editorLifecycleEvents;
+    onEvent: AppEventBus<ExcalidrawImperativeAPIEventMap, typeof editorLifecycleEventBehavior>["on"];
+    private appStateObserver;
+    onStateChange: OnStateChange;
+    bucketFill: AppBucketFill;
+    flowchart: AppFlowchart;
+    cursor: AppCursor;
+    arrowText: AppArrowText;
+    viewport: AppViewport;
+    bindModeHandler: ReturnType<typeof setTimeout> | null;
+    private textWysiwygSubmitHandler;
+    hitLinkElement?: NonDeletedExcalidrawElement;
+    lastPointerDownEvent: React.PointerEvent<HTMLElement> | null;
+    lastPointerUpEvent: React.PointerEvent<HTMLElement> | PointerEvent | null;
+    lastPointerUpIsDoubleClick: boolean;
+    lastPointerMoveEvent: PointerEvent | null;
+    /** current frame pointer cords */
+    lastPointerMoveCoords: {
+        x: number;
+        y: number;
+    } | null;
+    private lastCompletedCanvasClicks;
+    /** previous frame pointer coords */
+    previousPointerMoveCoords: {
+        x: number;
+        y: number;
+    } | null;
+    allowMobileMode: boolean;
+    drawShape: AppDrawShape;
+    laserTrails: LaserTrails;
+    eraserTrail: EraserTrail;
+    lassoTrail: LassoTrail;
+    cursorHints: CursorHints;
+    onChangeEmitter: Emitter<[elements: readonly ExcalidrawElement[], appState: AppState, files: BinaryFiles]>;
+    onPointerDownEmitter: Emitter<[activeTool: {
+        lastActiveTool: import("../types").ActiveTool | null;
+        locked: boolean;
+        fromSelection: boolean;
+    } & import("../types").ActiveTool, pointerDownState: Readonly<{
+        origin: Readonly<{
+            x: number;
+            y: number;
+        }>;
+        originInGrid: Readonly<{
+            x: number;
+            y: number;
+        }>;
+        scrollbars: ReturnType<typeof isOverScrollBars>;
+        lastCoords: {
+            x: number;
+            y: number;
+        };
+        originalElements: Map<string, NonDeleted<ExcalidrawElement>>;
+        resize: {
+            handleType: import("@excalidraw/element").MaybeTransformHandleType;
+            isResizing: boolean;
+            offset: {
+                x: number;
+                y: number;
+            };
+            arrowDirection: "origin" | "end";
+            center: {
+                x: number;
+                y: number;
+            };
+        };
+        hit: {
+            element: NonDeleted<ExcalidrawElement> | null;
+            allHitElements: NonDeleted<ExcalidrawElement>[];
+            wasAddedToSelection: boolean;
+            hasBeenDuplicated: boolean;
+            hasHitCommonBoundingBoxOfSelectedElements: boolean;
+        };
+        withCmdOrCtrl: boolean;
+        drag: {
+            hasOccurred: boolean;
+            offset: {
+                x: number;
+                y: number;
+            } | null;
+            origin: {
+                x: number;
+                y: number;
+            };
+            blockDragging: boolean;
+        };
+        eventListeners: {
+            onMove: null | ReturnType<typeof import("@excalidraw/common").throttleRAF>;
+            onUp: null | ((event: PointerEvent) => void);
+            onKeyDown: null | ((event: KeyboardEvent) => void);
+            onKeyUp: null | ((event: KeyboardEvent) => void);
+        };
+        boxSelection: {
+            hasOccurred: boolean;
+        };
+    }>, event: React.PointerEvent<HTMLElement>]>;
+    onPointerUpEmitter: Emitter<[activeTool: {
+        lastActiveTool: import("../types").ActiveTool | null;
+        locked: boolean;
+        fromSelection: boolean;
+    } & import("../types").ActiveTool, pointerDownState: Readonly<{
+        origin: Readonly<{
+            x: number;
+            y: number;
+        }>;
+        originInGrid: Readonly<{
+            x: number;
+            y: number;
+        }>;
+        scrollbars: ReturnType<typeof isOverScrollBars>;
+        lastCoords: {
+            x: number;
+            y: number;
+        };
+        originalElements: Map<string, NonDeleted<ExcalidrawElement>>;
+        resize: {
+            handleType: import("@excalidraw/element").MaybeTransformHandleType;
+            isResizing: boolean;
+            offset: {
+                x: number;
+                y: number;
+            };
+            arrowDirection: "origin" | "end";
+            center: {
+                x: number;
+                y: number;
+            };
+        };
+        hit: {
+            element: NonDeleted<ExcalidrawElement> | null;
+            allHitElements: NonDeleted<ExcalidrawElement>[];
+            wasAddedToSelection: boolean;
+            hasBeenDuplicated: boolean;
+            hasHitCommonBoundingBoxOfSelectedElements: boolean;
+        };
+        withCmdOrCtrl: boolean;
+        drag: {
+            hasOccurred: boolean;
+            offset: {
+                x: number;
+                y: number;
+            } | null;
+            origin: {
+                x: number;
+                y: number;
+            };
+            blockDragging: boolean;
+        };
+        eventListeners: {
+            onMove: null | ReturnType<typeof import("@excalidraw/common").throttleRAF>;
+            onUp: null | ((event: PointerEvent) => void);
+            onKeyDown: null | ((event: KeyboardEvent) => void);
+            onKeyUp: null | ((event: KeyboardEvent) => void);
+        };
+        boxSelection: {
+            hasOccurred: boolean;
+        };
+    }>, event: PointerEvent]>;
+    onUserFollowEmitter: Emitter<[payload: OnUserFollowedPayload]>;
+    onScrollChangeEmitter: Emitter<[scrollX: number, scrollY: number, zoom: Readonly<{
+        value: import("../types").NormalizedZoomValue;
+    }>]>;
+    missingPointerEventCleanupEmitter: Emitter<[event: PointerEvent | null]>;
+    onRemoveEventListenersEmitter: Emitter<[]>;
+    api: ExcalidrawImperativeAPI;
+    private createExcalidrawAPI;
+    constructor(props: AppProps);
+    /**
+     * Whether the editor accepts user input (pointer, keyboard, wheel, touch,
+     * clipboard, drag&drop). When `false`, the editor is fully inert for the
+     * user, but remains controllable through the imperative API.
+     *
+     * All user-input entry points must consult this getter (directly or by
+     * not being attached/rendered at all).
+     */
+    isInteractionEnabled(props?: Pick<AppProps, "interaction">): boolean;
+    /**
+     * Whether element links render their link icon and are clickable.
+     * True when fully interactive, or when `interaction: { enabled: { links:
+     * true } }`
+     * (in which case clicking anywhere on a linked element opens the link,
+     * same as in view mode).
+     */
+    isLinksEnabled(props?: Pick<AppProps, "interaction">): boolean;
+    /**
+     * Whether canvas navigation — panning & zooming, view-mode style — is
+     * enabled. True when fully interactive, or when `interaction: { enabled:
+     * { navigation: true } }`. Respects `appState.scrollConstraints`.
+     */
+    isNavigationEnabled(props?: Pick<AppProps, "interaction">): boolean;
+    /**
+     * Whether embeddable & iframe elements are interactive (hover & click to
+     * activate, view-mode style). True when fully interactive, or when
+     * allowed via `interaction.enabled.embeds` / `.interactiveContent`.
+     */
+    isEmbedsEnabled(props?: Pick<AppProps, "interaction">): boolean;
+    /**
+     * Whether the browser's own zoom (ctrl/cmd + wheel, pinch, keyboard
+     * shortcuts) stays available over the non-interactive editor.
+     * Prevented by default.
+     */
+    isBrowserZoomEnabled(props?: Pick<AppProps, "interaction">): boolean;
+    /**
+     * Whether the tool can be activated & driven by user input. False when
+     * disabled via `UIOptions.tools`, or when the editor is non-interactive
+     * and the tool isn't kept user-driven via `interaction.enabled.tools`.
+     *
+     * (Once UI tool availability is split from input availability — e.g.
+     * `props.ui.tools` vs `interaction.disabled.tools` — the UI axis moves
+     * out into its own predicate.)
+     *
+     * We purposely widen the `tool` type so this helper can be called with
+     * any tool without having to type check it.
+     */
+    isToolSupported: <T extends ToolType | "custom">(tool: T, props?: Pick<AppProps, "interaction" | "UIOptions">) => boolean;
+    /**
+     * Whether the active tool is locked in place — via the tool lock
+     * (padlock / Q) or by being host-forced (`props.activeTool`). A locked
+     * tool doesn't revert to the selection tool after use, and elements drawn
+     * with it aren't selected. Forcing deliberately does not mutate
+     * `activeTool.locked`, which is the user's persisted padlock preference.
+     */
+    isToolLocked(): boolean;
+    /**
+     * Whether the active tool captures the primary pointer instead of the
+     * view-mode drag-to-pan — the laser and host-implemented custom tools do;
+     * while non-interactive, any tool allowed via
+     * `interaction.enabled.tools` does. (Editing tools capture the pointer
+     * trivially since view mode implies they're not active; this predicate only
+     * matters where view-mode gates apply.)
+     */
+    isActiveToolPointerCapturing(): boolean;
+    /** Whether Excalidraw's full default UI is rendered. */
+    isDefaultUIEnabled(props?: Pick<AppProps, "ui">): boolean;
+    /** Whether an individual default UI control is rendered. */
+    isUIControlEnabled(control: keyof UIConfig["enabled"], props?: Pick<AppProps, "ui">): boolean;
+    updateEditorAtom: <Value, Args extends unknown[], Result>(atom: WritableAtom<Value, Args, Result>, ...args: Args) => Result;
+    private onWindowMessage;
+    private handleSkipBindMode;
+    private resetDelayedBindMode;
+    private previousHoveredBindableElement;
+    private handleDelayedBindModeChange;
+    private cacheEmbeddableRef;
+    /**
+     * Returns gridSize taking into account `gridModeEnabled`.
+     * If disabled, returns null.
+     */
+    getEffectiveGridSize: () => NullableGridSize;
+    private getTextCreationGridPoint;
+    private getHTMLIFrameElement;
+    /**
+     * AI-generated iframe elements aren't interactive while their generation
+     * is still in progress (the partial content is render-only).
+     */
+    private isIframeLikeInteractive;
+    private handleIframeLikeElementHover;
+    /** @returns true if iframe-like element click handled */
+    private handleIframeLikeCenterClick;
+    private isDoubleClick;
+    private isIframeLikeElementCenter;
+    private updateEmbedValidationStatus;
+    private updateEmbeddables;
+    private renderEmbeddables;
+    private getFrameNameDOMId;
+    frameNameBoundsCache: FrameNameBoundsCache;
+    private resetEditingFrame;
+    private renderFrameNames;
+    private toggleOverscrollBehavior;
+    render(): import("react/jsx-runtime").JSX.Element;
+    focusContainer: AppClassProperties["focusContainer"];
+    getSceneElementsIncludingDeleted: () => readonly import("@excalidraw/element/types").OrderedExcalidrawElement[];
+    getSceneElementsMapIncludingDeleted: () => SceneElementsMap;
+    getSceneElements: () => readonly Ordered<NonDeletedExcalidrawElement>[];
+    onInsertElements: (elements: readonly ExcalidrawElement[]) => void;
+    onExportImage: (type: keyof typeof EXPORT_IMAGE_TYPES, elements: ExportedElements, opts: {
+        exportingFrame: NonDeleted<ExcalidrawFrameLikeElement> | null;
+    }) => Promise<void>;
+    private magicGenerations;
+    private updateMagicGeneration;
+    plugins: {
+        diagramToCode?: {
+            generate: GenerateDiagramToCode;
+        };
+    };
+    setPlugins(plugins: Partial<App["plugins"]>): void;
+    private onMagicFrameGenerate;
+    private onIframeSrcCopy;
+    onMagicframeToolSelect: () => void;
+    private openEyeDropper;
+    dismissLinearEditor: () => void;
+    syncActionResult: (actionResult: ActionResult) => void;
+    scheduleCapture: () => void;
+    private onBlur;
+    private onUnload;
+    private disableEvent;
+    private preventBrowserZoomWheel;
+    private handleNavigationModeKeyDown;
+    /**
+     * PageUp/PageDown scroll the canvas by a page — vertically, or
+     * horizontally with shift. Respects `appState.scrollConstraints`
+     * (via `viewport.translate`).
+     */
+    private maybeHandlePageScrollKeyDown;
+    private preventBrowserZoomKeyDown;
+    /** Ends active input sessions before switching to a view-mode/non-interactive
+     *  mode. */
+    private terminateActiveInteraction;
+    private handleInteractionStateChange;
+    /** whether the two values reference the same tool (incl. custom subtype) */
+    private isSameForcedTool;
+    /**
+     * Keeps `state.activeTool` synced to the host-controlled
+     * `props.activeTool`. `setActiveTool` refuses non-matching activations
+     * while forced (user input, API); this backstop covers the writers that
+     * bypass the funnel (`actionFinalize`/`actionDeselect`, `restore()` on
+     * scene load, ...) and re-applies the tool once it becomes activatable
+     * (e.g. `interaction` config changes).
+     */
+    private handleForcedToolChange;
+    private resetHistory;
+    private undo;
+    private redo;
+    private resetStore;
+    /**
+     * Resets scene & history.
+     * ! Do not use to clear scene user action !
+     */
+    private resetScene;
+    private initializeScene;
+    private getFormFactor;
+    refreshEditorInterface: () => void;
+    private reconcileStylesPanelMode;
+    /** TO BE USED LATER */
+    private setDesktopUIMode;
+    private isTouchScreen;
+    isTrayModeEnabled: () => boolean;
+    private clearImageShapeCache;
+    componentDidMount(): Promise<void>;
+    componentWillUnmount(): void;
+    private onResize;
+    /** generally invoked only if fullscreen was invoked programmatically */
+    private onFullscreenChange;
+    private removeEventListeners;
+    private addEventListeners;
+    componentDidUpdate(prevProps: AppProps, prevState: AppState): void;
+    private renderInteractiveSceneCallback;
+    private onScroll;
+    private onCut;
+    private onCopy;
+    private static resetTapTwice;
+    private onTouchStart;
+    private onTouchEnd;
+    private insertClipboardContent;
+    pasteFromClipboard: (event: ClipboardEvent) => Promise<void>;
+    addElementsFromPasteOrLibrary: (opts: {
+        elements: readonly ExcalidrawElement[];
+        files: BinaryFiles | null;
+        position: {
+            clientX: number;
+            clientY: number;
+        } | "cursor" | "center";
+        retainSeed?: boolean;
+        fit?: SetViewportOptions["fit"];
+        preserveFrameChildrenOrder?: boolean;
+    }) => void;
+    private addElementsFromMixedContentPaste;
+    private addTextFromPaste;
+    setAppState: React.Component<any, AppState>["setState"];
+    removePointer: (event: React.PointerEvent<HTMLElement> | PointerEvent) => void;
+    toggleLock: (source?: "keyboard" | "ui") => void;
+    updateFrameRendering: (opts: Partial<AppState["frameRendering"]> | ((prevState: AppState["frameRendering"]) => Partial<AppState["frameRendering"]>)) => void;
+    togglePenMode: (force: boolean | null) => void;
+    revealIfHidden: (elements: NonDeletedExcalidrawElement[]) => void;
+    /** emits a follow/unfollow intent to the host (which owns the
+     *  `userToFollow` state) via both the `onUserFollow` prop and the
+     *  imperative API emitter */
+    emitUserFollowIntent: (payload: OnUserFollowedPayload) => void;
+    /** emits an UNFOLLOW intent if currently following someone — use on
+     *  user-initiated viewport changes which should break follow mode */
+    requestUnfollow: () => void;
+    setForceRenderAllEmbeddables: (force: boolean) => void;
+    zoomToFit: (target?: readonly ExcalidrawElement[], maxZoom?: number, //null will zoom to max based on viewport
+    margin?: number) => void;
+    getColorAtScenePoint: ({ sceneX, sceneY, }: {
+        sceneX: number;
+        sceneY: number;
+    }) => string | null;
+    startLineEditor: (el: ExcalidrawLinearElement, selectedPointsIndices?: number[] | null) => void;
+    refreshAllArrows: () => void;
+    updateContainerSize: (containers: NonDeletedExcalidrawElement[]) => void;
+    setToast: (toast: AppState["toast"]) => void;
+    restoreFileFromShare: () => Promise<void>;
+    /**
+     * adds supplied files to existing files in the appState.
+     * NOTE if file already exists in editor state, the file data is not updated
+     * */
+    addFiles: ExcalidrawImperativeAPI["addFiles"];
+    /**
+     * Waits for image-cache work already started by `addFiles()` for the given
+     * file IDs. Obsidian recreates the editor across popout documents and uses
+     * this completion boundary to publish transferred `BinaryFiles` in bounded
+     * batches while retaining the component's ordinary decoding path.
+     *
+     * Author: zsviczian
+     * Reference: obsidian-excalidraw-plugin performance refactor Phase 1C.2c.
+     */
+    awaitImageFiles: (fileIds: readonly FileId[]) => Promise<void>;
+    setMobileModeAllowed: (allow: boolean) => void;
+    private debounceClearHighlightSearchResults;
+    selectElements: ExcalidrawImperativeAPI["selectElements"];
+    bringToFront: ExcalidrawImperativeAPI["bringToFront"];
+    bringForward: ExcalidrawImperativeAPI["bringForward"];
+    sendToBack: ExcalidrawImperativeAPI["sendToBack"];
+    sendBackward: ExcalidrawImperativeAPI["sendBackward"];
+    private addMissingFiles;
+    updateScene: <K extends keyof AppState>(sceneData: {
+        elements?: SceneData["elements"];
+        appState?: Pick<AppState, K> | null;
+        collaborators?: SceneData["collaborators"];
+        /**
+         *  Controls which updates should be captured by the `Store`. Captured updates are emmitted and listened to by other components, such as `History` for undo / redo purposes.
+         *
+         *  - `CaptureUpdateAction.IMMEDIATELY`: Updates are immediately undoable. Use for most local updates.
+         *  - `CaptureUpdateAction.NEVER`: Updates never make it to undo/redo stack. Use for remote updates or scene initialization.
+         *  - `CaptureUpdateAction.EVENTUALLY`: Updates will be eventually be captured as part of a future increment.
+         *
+         * Check [API docs](https://docs.excalidraw.com/docs/@excalidraw/excalidraw/api/props/excalidraw-api#captureUpdate) for more details.
+         *
+         * @default CaptureUpdateAction.EVENTUALLY
+         */
+        captureUpdate?: SceneData["captureUpdate"];
+        forceFlushSync?: boolean;
+    }) => void;
+    applyDeltas: (deltas: StoreDelta[], options?: ApplyToOptions) => [SceneElementsMap, AppState, boolean];
+    mutateElement: <TElement extends Mutable<ExcalidrawElement>>(element: TElement, updates: ElementUpdate<TElement>, informMutation?: boolean) => TElement;
+    triggerRender: (
+    /** force always re-renders canvas even if no change */
+    force?: boolean) => void;
+    /**
+     * @returns whether the menu was toggled on or off
+     */
+    toggleSidebar: ({ name, tab, force, }: {
+        name: SidebarName | null;
+        tab?: SidebarTabName;
+        force?: boolean;
+    }) => boolean;
+    private updateCurrentCursorPosition;
+    private onKeyDown;
+    private onKeyUp;
+    setActiveTool: (tool: ({
+        type: ToolType;
+    } | {
+        type: "custom";
+        customType: string;
+    }) & {
+        locked?: boolean;
+        fromSelection?: boolean;
+    }, opts?: {
+        keepSelection?: boolean;
+        /**
+         * When `true`, re-activating an already-active toggle tool (see
+         * `TOGGLE_TOOLS`) switches back to the previously active tool.
+         * Activation is idempotent by default; toggle tools always record the
+         * previously active tool regardless (so ESC and the next `toggle`
+         * activation can switch back to it).
+         */
+        toggle?: boolean;
+    }) => void;
+    setOpenDialog: (dialogType: AppState["openDialog"]) => void;
+    /**
+     * returns whether user is making a gesture with >= 2 fingers (points)
+     * on o touch screen (not on a trackpad). Currently only relates to Darwin
+     * (iOS/iPadOS,MacOS), but may work on other devices in the future if
+     * GestureEvent is standardized.
+     */
+    private isTouchScreenMultiTouchGesture;
+    getName: () => string;
+    private onGestureStart;
+    private onGestureChange;
+    private onGestureEnd;
+    private handleTextWysiwyg;
+    private deselectElements;
+    private getSelectedTextElement;
+    private getSelectedTextEditingContainerAtPosition;
+    getTextElementAtPosition(x: number, y: number): NonDeleted<ExcalidrawTextElement> | null;
+    private isHittingTextAutoResizeHandle;
+    private handleTextAutoResizeHandlePointerDown;
+    getElementAtPosition(x: number, y: number, opts?: ({
+        includeBoundTextElement?: boolean;
+        includeLockedElements?: boolean;
+    } | {
+        allHitElements: NonDeleted<ExcalidrawElement>[];
+    }) & {
+        preferSelected?: boolean;
+    }): NonDeleted<ExcalidrawElement> | null;
+    private getElementsAtPosition;
+    getElementHitThreshold(element: ExcalidrawElement): number;
+    private hitElement;
+    getTextBindableContainerAtPosition(x: number, y: number): (Readonly<{
+        id: string;
+        x: number;
+        y: number;
+        strokeColor: string;
+        backgroundColor: string;
+        fillStyle: import("@excalidraw/element/types").FillStyle;
+        strokeWidth: number;
+        strokeStyle: import("@excalidraw/element/types").StrokeStyle;
+        roundness: null | {
+            type: import("@excalidraw/element/types").RoundnessType;
+            value?: number;
+        };
+        roughness: number;
+        opacity: number;
+        width: number;
+        height: number;
+        angle: Radians;
+        seed: number;
+        version: number;
+        versionNonce: number;
+        index: import("@excalidraw/element/types").FractionalIndex | null;
+        isDeleted: boolean;
+        groupIds: readonly import("@excalidraw/element/types").GroupId[];
+        frameId: string | null;
+        boundElements: readonly import("@excalidraw/element/types").BoundElement[] | null;
+        updated: number;
+        link: string | null;
+        hasTextLink?: boolean;
+        locked: boolean;
+        customData?: Record<string, any>;
+    }> & {
+        type: "rectangle";
+    } & {
+        isDeleted: false;
+    }) | (Readonly<{
+        id: string;
+        x: number;
+        y: number;
+        strokeColor: string;
+        backgroundColor: string;
+        fillStyle: import("@excalidraw/element/types").FillStyle;
+        strokeWidth: number;
+        strokeStyle: import("@excalidraw/element/types").StrokeStyle;
+        roundness: null | {
+            type: import("@excalidraw/element/types").RoundnessType;
+            value?: number;
+        };
+        roughness: number;
+        opacity: number;
+        width: number;
+        height: number;
+        angle: Radians;
+        seed: number;
+        version: number;
+        versionNonce: number;
+        index: import("@excalidraw/element/types").FractionalIndex | null;
+        isDeleted: boolean;
+        groupIds: readonly import("@excalidraw/element/types").GroupId[];
+        frameId: string | null;
+        boundElements: readonly import("@excalidraw/element/types").BoundElement[] | null;
+        updated: number;
+        link: string | null;
+        hasTextLink?: boolean;
+        locked: boolean;
+        customData?: Record<string, any>;
+    }> & {
+        type: "diamond";
+    } & {
+        isDeleted: false;
+    }) | (Readonly<{
+        id: string;
+        x: number;
+        y: number;
+        strokeColor: string;
+        backgroundColor: string;
+        fillStyle: import("@excalidraw/element/types").FillStyle;
+        strokeWidth: number;
+        strokeStyle: import("@excalidraw/element/types").StrokeStyle;
+        roundness: null | {
+            type: import("@excalidraw/element/types").RoundnessType;
+            value?: number;
+        };
+        roughness: number;
+        opacity: number;
+        width: number;
+        height: number;
+        angle: Radians;
+        seed: number;
+        version: number;
+        versionNonce: number;
+        index: import("@excalidraw/element/types").FractionalIndex | null;
+        isDeleted: boolean;
+        groupIds: readonly import("@excalidraw/element/types").GroupId[];
+        frameId: string | null;
+        boundElements: readonly import("@excalidraw/element/types").BoundElement[] | null;
+        updated: number;
+        link: string | null;
+        hasTextLink?: boolean;
+        locked: boolean;
+        customData?: Record<string, any>;
+    }> & {
+        type: "ellipse";
+    } & {
+        isDeleted: false;
+    }) | (Readonly<{
+        id: string;
+        x: number;
+        y: number;
+        strokeColor: string;
+        backgroundColor: string;
+        fillStyle: import("@excalidraw/element/types").FillStyle;
+        strokeWidth: number;
+        strokeStyle: import("@excalidraw/element/types").StrokeStyle;
+        roundness: null | {
+            type: import("@excalidraw/element/types").RoundnessType;
+            value?: number;
+        };
+        roughness: number;
+        opacity: number;
+        width: number;
+        height: number;
+        angle: Radians;
+        seed: number;
+        version: number;
+        versionNonce: number;
+        index: import("@excalidraw/element/types").FractionalIndex | null;
+        isDeleted: boolean;
+        groupIds: readonly import("@excalidraw/element/types").GroupId[];
+        frameId: string | null;
+        boundElements: readonly import("@excalidraw/element/types").BoundElement[] | null;
+        updated: number;
+        link: string | null;
+        hasTextLink?: boolean;
+        locked: boolean;
+        customData?: Record<string, any>;
+    }> & Readonly<{
+        type: "line" | "arrow";
+        points: readonly LocalPoint[];
+        startBinding: import("@excalidraw/element/types").FixedPointBinding | null;
+        endBinding: import("@excalidraw/element/types").FixedPointBinding | null;
+        startArrowhead: import("@excalidraw/element/types").Arrowhead | null;
+        endArrowhead: import("@excalidraw/element/types").Arrowhead | null;
+    }> & Readonly<{
+        type: "arrow";
+        elbowed: boolean;
+    }> & {
+        isDeleted: false;
+    }) | null;
+    /**
+     * Whether a text element's content is still being authored.
+     *
+     * Creating a text reverts the tool to selection during pointerdown, so the
+     * pointerup that follows looks like an ordinary canvas click and would
+     * capture the still-empty element as a history entry of its own. Undo would
+     * then rewind only the typing, restoring an invisible, zero-content element
+     * (and, for an endpoint label, leaving the arrow bound to it) rather than
+     * removing it. The editor's own submit captures the finished text instead,
+     * so the whole create-and-type lands in a single entry.
+     */
+    private isEditingTextContent;
+    private startTextEditing;
+    private debounceDoubleClickTimestamp;
+    private startImageCropping;
+    private finishImageCropping;
+    private shouldHandleBrowserCanvasDoubleClick;
+    private handleCanvasDoubleClick;
+    private handleCanvasClick;
+    private getElementLinkAtPosition;
+    private handleElementLinkClick;
+    /**
+     * Applies (or clears) the element-link hover affordances — pointer cursor
+     * and tooltip — based on the current `hitLinkElement`. Returns whether a
+     * link is being hovered.
+     */
+    private applyElementLinkHoverAffordance;
+    /**
+     * On touchscreens (where no hover precedes the tap) re-derives
+     * `hitLinkElement`, then opens the hit element link, if any.
+     * Returns whether a link click was handled.
+     */
+    private maybeHandleElementLinkClick;
+    /**
+     * Restricted pointer handling for the non-interactive editor with links
+     * and/or embeds allowed (`interaction.enabled.links` / `.embeds` /
+     * `.interactiveContent`) — runs only the element-link & embed concerns
+     * (shared with the full pointer handlers above) so they behave like in
+     * view mode without the rest of the canvas pointer machinery.
+     */
+    private handleInteractiveContentPointerMove;
+    private handleInteractiveContentPointerUp;
+    /**
+     * finds candidate frame under cursor (when dragging frame children/elements
+     * inside frames)
+     */
+    getTopLayerFrameAtSceneCoords: (
+    /**
+     * should be already grid aligned (basically should be what the call site
+     * sets the element's coords to, if applicable)
+     */
+    sceneCoords: {
+        x: number;
+        y: number;
+    }, opts?: {
+        /** to exclude selected elements when dragging, etc. */
+        excludeElementIds?: AppState["selectedElementIds"];
+        currentFrameId?: ExcalidrawElement["frameId"];
+    }) => NonDeleted<ExcalidrawFrameLikeElement> | null;
+    private updateFrameToHighlight;
+    private maybeUpdateFrameToHighlightOnPointerMove;
+    insertNewElements: (elements: readonly ExcalidrawElement[], idx?: number) => void;
+    insertNewElement: (element: ExcalidrawElement, idx?: number) => void;
+    private handleCanvasPointerMove;
+    private handleEraser;
+    private handleTouchMove;
+    handleHoverSelectedLinearElement(linearElementEditor: LinearElementEditor, scenePointerX: number, scenePointerY: number): void;
+    private handleCanvasPointerDown;
+    private handleCanvasPointerUp;
+    private maybeOpenContextMenuAfterPointerDownOnTouchDevices;
+    private resetContextMenuTimer;
+    /**
+     * pointerup may not fire in certian cases (user tabs away...), so in order
+     * to properly cleanup pointerdown state, we need to fire any hanging
+     * pointerup handlers manually
+     */
+    private maybeCleanupAfterMissingPointerUp;
+    handleCanvasPanUsingWheelOrSpaceDrag: (event: React.PointerEvent<HTMLElement> | MouseEvent) => boolean;
+    private startRightClickPanning;
+    private updateGestureOnPointerDown;
+    /**
+     * Tracks the pointer within the ongoing multi-touch gesture and applies
+     * the two-finger pinch zoom/pan, if any.
+     */
+    private updateMultiTouchGesture;
+    private initialPointerDownState;
+    private handleDraggingScrollBar;
+    private clearSelectionIfNotUsingSelection;
+    /**
+     * @returns whether the pointer event has been completely handled
+     */
+    private handleSelectionOnPointerDown;
+    private isASelectedElement;
+    private isHittingCommonBoundingBoxOfSelectedElements;
+    private handleTextOnPointerDown;
+    private handleFreeDrawElementOnPointerDown;
+    insertIframeElement: ({ sceneX, sceneY, width, height, }: {
+        sceneX: number;
+        sceneY: number;
+        width: number;
+        height: number;
+    }) => NonDeleted<ExcalidrawIframeElement>;
+    insertEmbeddableElement: ({ sceneX, sceneY, link, }: {
+        sceneX: number;
+        sceneY: number;
+        link: string;
+    }) => NonDeleted<ExcalidrawEmbeddableElement> | undefined;
+    private newImagePlaceholder;
+    private handleLinearElementOnPointerDown;
+    private getCurrentItemRoundness;
+    private getCurrentItemStrokeWidth;
+    private createGenericElementOnPointerDown;
+    private createFrameElementOnPointerDown;
+    private maybeCacheReferenceSnapPoints;
+    private maybeCacheVisibleGaps;
+    private onKeyDownFromPointerDownHandler;
+    private onKeyUpFromPointerDownHandler;
+    private onPointerMoveFromPointerDownHandler;
+    private handlePointerMoveOverScrollbars;
+    private onPointerUpFromPointerDownHandler;
+    private restoreReadyToEraseElements;
+    private eraseElements;
+    private initializeImage;
+    /**
+     * use during async image initialization,
+     * when the placeholder image could have been modified in the meantime,
+     * and when you don't want to loose those modifications
+     */
+    private getLatestInitializedImageElement;
+    private onImageToolbarButtonClick;
+    private getImageNaturalDimensions;
+    /** updates image cache, refreshing updated elements and/or setting status
+        to error for images that fail during <img> element creation */
+    private updateImageCache;
+    /** adds new images to imageCache and re-renders if needed */
+    private addNewImagesToImageCache;
+    /** generally you should use `addNewImagesToImageCache()` directly if you need
+     *  to render new images. This is just a failsafe  */
+    private scheduleImageRefresh;
+    setSelection(elements: readonly NonDeletedExcalidrawElement[]): void;
+    private clearSelection;
+    private handleInteractiveCanvasRef;
+    private insertImages;
+    private handleAppOnDrop;
+    loadFileToCanvas: (file: File, fileHandle: FileSystemFileHandle | null) => Promise<void>;
+    private handleCanvasContextMenu;
+    private maybeDragNewGenericElement;
+    private maybeHandleCrop;
+    private maybeHandleResize;
+    private getContextMenuItems;
+    private handleWheel;
+    getTextWysiwygSnappedToCenterPosition(x: number, y: number, appState: AppState, container?: ExcalidrawTextContainer | null): {
+        viewportX: number;
+        viewportY: number;
+        elementCenterX: number;
+        elementCenterY: number;
+    } | undefined;
+    private savePointer;
+    private resetShouldCacheIgnoreZoomDebounced;
+    private updateDOMRect;
+    refresh: () => void;
+    private getCanvasOffsets;
+    watchState: () => void;
+    private updateLanguage;
+}
+export default App;
+
+/* ************************************** */
+/* node_modules/@zsviczian/excalidraw/types/excalidraw/obsidianTypes.d.ts */
+/* ************************************** */
+/**
+ * Purpose:
+ *   Type shapes for Obsidian-host-defined data stored opaquely on
+ *   `AppState` (`customPens`, `currentStrokeOptions`, `resetCustomPen`).
+ *   These are Obsidian Excalidraw plugin concepts, not general-purpose
+ *   Excalidraw ones, so they live in this ringfenced file rather than
+ *   `types.ts` -- kept next to the other Obsidian-only surfaces
+ *   (`obsidianUtils.ts`, `obsidianEntry.ts`).
+ *
+ * Author:
+ *   zsviczian
+ *
+ * References:
+ *   https://github.com/zsviczian/obsidian-excalidraw-plugin
+ *
+ * Notes:
+ *   The fork cannot depend on its own consumer plugin, so these are the
+ *   canonical definitions. The plugin's `src/types/penTypes.ts` and
+ *   `ObsidianMenu.tsx`'s `ResetCustomPenState` alias these types instead of
+ *   keeping independent copies, so the two repositories cannot drift apart.
+ *   Edit here, not there.
+ */
+export type ObsidianPenStrokeOptions = {
+    thinning: number;
+    smoothing: number;
+    streamline: number;
+    easing: string;
+    simulatePressure?: boolean;
+    start: {
+        cap: boolean;
+        taper: number | boolean;
+        easing: string;
+    };
+    end: {
+        cap: boolean;
+        taper: number | boolean;
+        easing: string;
+    };
+};
+export type ObsidianPenOptions = {
+    highlighter: boolean;
+    constantPressure: boolean;
+    hasOutline: boolean;
+    outlineWidth: number;
+    options: ObsidianPenStrokeOptions;
+};
+export type ObsidianExtendedFillStyle = "dots" | "zigzag" | "zigzag-line" | "dashed" | "hachure" | "cross-hatch" | "solid" | "";
+export type ObsidianPenType = "default" | "highlighter" | "finetip" | "fountain" | "marker" | "thick-thin" | "thin-thick-thin";
+export type ObsidianPenStyle = {
+    type: ObsidianPenType;
+    freedrawOnly: boolean;
+    strokeColor?: string;
+    backgroundColor?: string;
+    fillStyle: ObsidianExtendedFillStyle;
+    strokeWidth: number;
+    roughness: number;
+    penOptions: ObsidianPenOptions;
+};
+/** Snapshot of current-item stroke properties captured before a custom pen
+ * overrides them, restored when the pen is deselected. */
+export type ObsidianResetCustomPenState = {
+    currentItemStrokeWidthKey?: string | null;
+    currentItemStrokeWidth?: number | null;
+    currentItemStrokeVariability?: string | null;
+    currentItemBackgroundColor?: string | null;
+    currentItemStrokeColor?: string | null;
+    currentItemFillStyle?: string | null;
+    currentItemRoughness?: number | null;
+};
 
 /* ************************************** */
 /* node_modules/@zsviczian/excalidraw/types/excalidraw/types.d.ts */
@@ -4083,1008 +5520,792 @@ export type ViewportOffsets = Offsets & {
  */
 export type ViewportUIName = "sidebar" | "stylesPanel";
 
-/* ************************************** */
-/* node_modules/@zsviczian/excalidraw/types/element/src/bounds.d.ts */
-/* ************************************** */
-export type RectangleBox = {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    angle: number;
-};
-export type SceneBounds = readonly [
-    sceneX: number,
-    sceneY: number,
-    sceneX2: number,
-    sceneY2: number
-];
-export declare class ElementBounds {
-    private static boundsCache;
-    private static nonRotatedBoundsCache;
-    static getBounds(element: ExcalidrawElement, elementsMap: ElementsMap, nonRotated?: boolean): Bounds;
-    private static calculateBounds;
-}
-export declare const getElementAbsoluteCoords: (element: ExcalidrawElement, elementsMap: ElementsMap, includeBoundText?: boolean) => [number, number, number, number, number, number];
-/**
- * Given an element, return the line segments that make up the element.
- *
- * Uses helpers from /math
- */
-export declare const getElementLineSegments: (element: ExcalidrawElement, elementsMap: ElementsMap) => LineSegment<GlobalPoint>[];
-/**
- * Scene -> Scene coords, but in x1,x2,y1,y2 format.
- *
- * Rectangle here means any rectangular frame, not an excalidraw element.
- */
-export declare const getRectangleBoxAbsoluteCoords: (boxSceneCoords: RectangleBox) => number[];
-export declare const getDiamondPoints: (element: ExcalidrawElement) => number[];
-export declare const getCubicBezierCurveBound: (p0: GlobalPoint, p1: GlobalPoint, p2: GlobalPoint, p3: GlobalPoint) => Bounds;
-export declare const getMinMaxXYFromCurvePathOps: (ops: Op[], transformXY?: (p: GlobalPoint) => GlobalPoint) => Bounds;
-export declare const getBoundsFromPoints: <P extends GlobalPoint | LocalPoint>(points: readonly P[], padding?: number) => Bounds;
-/** @returns number in pixels */
-export declare const getArrowheadSize: (arrowhead: Arrowhead) => number;
-/** @returns number in degrees */
-export declare const getArrowheadAngle: (arrowhead: Arrowhead) => Degrees;
-export declare const getArrowheadPoints: (element: ExcalidrawLinearElement, shape: Drawable[], position: "start" | "end", arrowhead: Arrowhead, offsetMultiplier?: number) => number[] | null;
-export declare const getElementBounds: (element: ExcalidrawElement, elementsMap: ElementsMap, nonRotated?: boolean) => Bounds;
-export declare const getCommonBounds: (elements: ElementsMapOrArray, elementsMap?: ElementsMap) => Bounds;
-export declare const getDraggedElementsBounds: (elements: readonly NonDeletedExcalidrawElement[], dragOffset: {
-    x: number;
-    y: number;
-}) => number[];
-export declare const getResizedElementAbsoluteCoords: (element: ExcalidrawElement, nextWidth: number, nextHeight: number, normalizePoints: boolean) => Bounds;
-export declare const getElementPointsCoords: (element: ExcalidrawLinearElement, points: readonly (readonly [number, number])[]) => Bounds;
-export interface BoundingBox {
-    minX: number;
-    minY: number;
-    maxX: number;
-    maxY: number;
-    midX: number;
-    midY: number;
-    width: number;
-    height: number;
-}
-export declare const getCommonBoundingBox: (elements: readonly ExcalidrawElement[] | readonly NonDeleted<ExcalidrawElement>[]) => BoundingBox;
-/**
- * returns scene coords of user's editor viewport (visible canvas area) bounds
- */
-export declare const getVisibleSceneBounds: ({ scrollX, scrollY, width, height, zoom, }: AppState) => SceneBounds;
-export declare const getCenterForBounds: (bounds: Bounds) => GlobalPoint;
-/**
- * Get the axis-aligned bounding box for a given element
- */
-export declare const aabbForElement: (element: Readonly<ExcalidrawElement>, elementsMap: ElementsMap, offset?: [number, number, number, number]) => Bounds;
-export declare const pointInsideBounds: <P extends GlobalPoint | LocalPoint>(p: P, bounds: Bounds) => boolean;
-export declare const pointInsideBoundsInclusive: <P extends GlobalPoint | LocalPoint>(p: P, bounds: Bounds) => boolean;
-export declare const doBoundsIntersect: (bounds1: Bounds | null, bounds2: Bounds | null) => boolean;
-export declare const boundsContainBounds: (outerBounds: Bounds, innerBounds: Bounds) => boolean;
-/**
- * High level helper to get elements overlapping a bounding box.
- * It can be used to get elements overlapping a selection box, for example.
- *
- */
-export declare const elementsOverlappingBBox: <T extends ExcalidrawElement>({ elements, elementsMap, bounds, type, excludeElementsInFrames, shouldIgnoreElementFromSelection, }: {
-    elements: readonly T[];
-    elementsMap?: ElementsMap;
-    bounds: Bounds | ExcalidrawElement;
-    /**
-     * - overlap: elements overlapping or inside bounds
-     * - contain: elements inside bounds
-     **/
-    type: "contain" | "overlap";
-    excludeElementsInFrames?: boolean;
-    shouldIgnoreElementFromSelection?: (element: T) => boolean;
-}) => T[];
-export declare const elementCenterPoint: (element: ExcalidrawElement, elementsMap: ElementsMap, xOffset?: number, yOffset?: number) => GlobalPoint;
+/* ********************************** */
+/* src/types/excalidrawLib.d.ts */
+/* ********************************** */
+ElementsMap,
+  ElementsMapOrArray,
+  ExcalidrawBindableElement,
+  ExcalidrawElement,
+  ExcalidrawFrameElement,
+  ExcalidrawFrameLikeElement,
+  ExcalidrawTextContainer,
+  ExcalidrawTextElement,
+  FontFamilyValues,
+  FontString,
+  NonDeleted,
+  NonDeletedExcalidrawElement,
+  OrderedExcalidrawElement,
+  Theme,
+} from "@zsviczian/excalidraw/types/element/src/types";
+import {
+  CombineBrandsIfNeeded,
+  FontMetadata,
+} from "@zsviczian/excalidraw/types/common/src";
+import {
+  AppState,
+  BinaryFiles,
+  DataURL,
+  LibraryItem,
+  LibraryItems_anyVersion,
+  Zoom,
+} from "@zsviczian/excalidraw/types/excalidraw/types";
+import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
+import { GlobalPoint } from "@zsviczian/excalidraw/types/math/src/types";
 
-/* ************************************** */
-/* node_modules/@zsviczian/excalidraw/types/excalidraw/components/App.d.ts */
-/* ************************************** */
-declare const editorLifecycleEventBehavior: {
-    readonly "editor:mount": {
-        readonly cardinality: "once";
-        readonly replay: "last";
-    };
-    readonly "editor:initialize": {
-        readonly cardinality: "once";
-        readonly replay: "last";
-    };
-    readonly "editor:unmount": {
-        readonly cardinality: "once";
-        readonly replay: "last";
-    };
+type JsonValue = string | number | boolean | null | JsonObject | JsonValue[];
+
+type JsonObject = {
+  [key: string]: JsonValue;
 };
-export declare const ExcalidrawContainerContext: React.Context<{
-    container: HTMLDivElement | null;
-    id: string | null;
-}>;
-export declare const ExcalidrawAPIContext: React.Context<ExcalidrawImperativeAPI | null>;
-export declare const ExcalidrawAPISetContext: React.Context<((api: ExcalidrawImperativeAPI | null) => void) | null>;
-export declare const useApp: () => AppClassProperties;
-export declare const useAppProps: () => AppProps;
-export declare const useEditorInterface: () => Readonly<{
-    formFactor: "phone" | "tablet" | "desktop";
-    desktopUIMode: StylesPanelMode;
-    userAgent: Readonly<{
-        isMobileDevice: boolean;
-        platform: "ios" | "android" | "other" | "unknown";
-    }>;
-    isTouchScreen: boolean;
-    canFitSidebar: boolean;
-    isLandscape: boolean;
-}>;
-export declare const useStylesPanelMode: () => StylesPanelMode;
-export declare const useExcalidrawContainer: () => {
-    container: HTMLDivElement | null;
-    id: string | null;
-};
-export declare const useExcalidrawElements: () => readonly NonDeletedExcalidrawElement[];
-export declare const useExcalidrawAppState: () => AppState;
-export declare const useExcalidrawSetAppState: () => <K extends keyof AppState>(state: AppState | ((prevState: Readonly<AppState>, props: Readonly<any>) => AppState | Pick<AppState, K> | null) | Pick<AppState, K> | null, callback?: (() => void) | undefined) => void;
-export declare const useExcalidrawActionManager: () => ActionManager;
-/**
- * Requires wrapping your component in <ExcalidrawAPIContext.Provider>
- */
-export declare const useExcalidrawAPI: () => ExcalidrawImperativeAPI | null;
-declare class App extends React.Component<AppProps, AppState> {
-    canvas: AppClassProperties["canvas"];
-    interactiveCanvas: AppClassProperties["interactiveCanvas"];
-    sessionExportThemeOverride: AppState["theme"] | undefined;
-    rc: RoughCanvas;
-    unmounted: boolean;
-    actionManager: ActionManager;
-    editorInterface: EditorInterface;
-    private stylesPanelMode;
-    private excalidrawContainerRef;
-    get ownerDocument(): Document;
-    get ownerWindow(): Window & typeof globalThis;
-    scene: Scene;
-    fonts: Fonts;
-    renderer: Renderer;
-    visibleElements: readonly NonDeletedExcalidrawElement[];
-    /** whether the last render had any renderable elements (excludes e.g. the
-     * in-progress `newElement` and the edited text element) */
-    private hasRenderableElements;
-    private resizeObserver;
-    library: AppClassProperties["library"];
-    libraryItemsFromStorage: LibraryItems | undefined;
-    id: string;
-    private store;
-    private history;
-    private shouldRenderAllEmbeddables;
-    excalidrawContainerValue: {
-        container: HTMLDivElement | null;
-        id: string;
-    };
-    files: BinaryFiles;
-    imageCache: AppClassProperties["imageCache"];
-    private iFrameRefs;
-    /**
-     * Indicates whether the embeddable's url has been validated for rendering.
-     * If value not set, indicates that the validation is pending.
-     * Initially or on url change the flag is not reset so that we can guarantee
-     * the validation came from a trusted source (the editor).
-     **/
-    private embedsValidationStatus;
-    /** embeds that have been inserted to DOM (as a perf optim, we don't want to
-     * insert to DOM before user initially scrolls to them) */
-    private initializedEmbeds;
-    private elementsPendingErasure;
-    private _initialized;
-    private readonly editorLifecycleEvents;
-    onEvent: AppEventBus<ExcalidrawImperativeAPIEventMap, typeof editorLifecycleEventBehavior>["on"];
-    private appStateObserver;
-    onStateChange: OnStateChange;
-    bucketFill: AppBucketFill;
-    flowchart: AppFlowchart;
-    cursor: AppCursor;
-    arrowText: AppArrowText;
-    viewport: AppViewport;
-    bindModeHandler: ReturnType<typeof setTimeout> | null;
-    private textWysiwygSubmitHandler;
-    hitLinkElement?: NonDeletedExcalidrawElement;
-    lastPointerDownEvent: React.PointerEvent<HTMLElement> | null;
-    lastPointerUpEvent: React.PointerEvent<HTMLElement> | PointerEvent | null;
-    lastPointerUpIsDoubleClick: boolean;
-    lastPointerMoveEvent: PointerEvent | null;
-    /** current frame pointer cords */
-    lastPointerMoveCoords: {
-        x: number;
-        y: number;
-    } | null;
-    private lastCompletedCanvasClicks;
-    /** previous frame pointer coords */
-    previousPointerMoveCoords: {
-        x: number;
-        y: number;
-    } | null;
-    allowMobileMode: boolean;
-    drawShape: AppDrawShape;
-    laserTrails: LaserTrails;
-    eraserTrail: EraserTrail;
-    lassoTrail: LassoTrail;
-    cursorHints: CursorHints;
-    onChangeEmitter: Emitter<[elements: readonly ExcalidrawElement[], appState: AppState, files: BinaryFiles]>;
-    onPointerDownEmitter: Emitter<[activeTool: {
-        lastActiveTool: import("../types").ActiveTool | null;
-        locked: boolean;
-        fromSelection: boolean;
-    } & import("../types").ActiveTool, pointerDownState: Readonly<{
-        origin: Readonly<{
-            x: number;
-            y: number;
-        }>;
-        originInGrid: Readonly<{
-            x: number;
-            y: number;
-        }>;
-        scrollbars: ReturnType<typeof isOverScrollBars>;
-        lastCoords: {
-            x: number;
-            y: number;
-        };
-        originalElements: Map<string, NonDeleted<ExcalidrawElement>>;
-        resize: {
-            handleType: import("@excalidraw/element").MaybeTransformHandleType;
-            isResizing: boolean;
-            offset: {
-                x: number;
-                y: number;
-            };
-            arrowDirection: "origin" | "end";
-            center: {
-                x: number;
-                y: number;
-            };
-        };
-        hit: {
-            element: NonDeleted<ExcalidrawElement> | null;
-            allHitElements: NonDeleted<ExcalidrawElement>[];
-            wasAddedToSelection: boolean;
-            hasBeenDuplicated: boolean;
-            hasHitCommonBoundingBoxOfSelectedElements: boolean;
-        };
-        withCmdOrCtrl: boolean;
-        drag: {
-            hasOccurred: boolean;
-            offset: {
-                x: number;
-                y: number;
-            } | null;
-            origin: {
-                x: number;
-                y: number;
-            };
-            blockDragging: boolean;
-        };
-        eventListeners: {
-            onMove: null | ReturnType<typeof import("@excalidraw/common").throttleRAF>;
-            onUp: null | ((event: PointerEvent) => void);
-            onKeyDown: null | ((event: KeyboardEvent) => void);
-            onKeyUp: null | ((event: KeyboardEvent) => void);
-        };
-        boxSelection: {
-            hasOccurred: boolean;
-        };
-    }>, event: React.PointerEvent<HTMLElement>]>;
-    onPointerUpEmitter: Emitter<[activeTool: {
-        lastActiveTool: import("../types").ActiveTool | null;
-        locked: boolean;
-        fromSelection: boolean;
-    } & import("../types").ActiveTool, pointerDownState: Readonly<{
-        origin: Readonly<{
-            x: number;
-            y: number;
-        }>;
-        originInGrid: Readonly<{
-            x: number;
-            y: number;
-        }>;
-        scrollbars: ReturnType<typeof isOverScrollBars>;
-        lastCoords: {
-            x: number;
-            y: number;
-        };
-        originalElements: Map<string, NonDeleted<ExcalidrawElement>>;
-        resize: {
-            handleType: import("@excalidraw/element").MaybeTransformHandleType;
-            isResizing: boolean;
-            offset: {
-                x: number;
-                y: number;
-            };
-            arrowDirection: "origin" | "end";
-            center: {
-                x: number;
-                y: number;
-            };
-        };
-        hit: {
-            element: NonDeleted<ExcalidrawElement> | null;
-            allHitElements: NonDeleted<ExcalidrawElement>[];
-            wasAddedToSelection: boolean;
-            hasBeenDuplicated: boolean;
-            hasHitCommonBoundingBoxOfSelectedElements: boolean;
-        };
-        withCmdOrCtrl: boolean;
-        drag: {
-            hasOccurred: boolean;
-            offset: {
-                x: number;
-                y: number;
-            } | null;
-            origin: {
-                x: number;
-                y: number;
-            };
-            blockDragging: boolean;
-        };
-        eventListeners: {
-            onMove: null | ReturnType<typeof import("@excalidraw/common").throttleRAF>;
-            onUp: null | ((event: PointerEvent) => void);
-            onKeyDown: null | ((event: KeyboardEvent) => void);
-            onKeyUp: null | ((event: KeyboardEvent) => void);
-        };
-        boxSelection: {
-            hasOccurred: boolean;
-        };
-    }>, event: PointerEvent]>;
-    onUserFollowEmitter: Emitter<[payload: OnUserFollowedPayload]>;
-    onScrollChangeEmitter: Emitter<[scrollX: number, scrollY: number, zoom: Readonly<{
-        value: import("../types").NormalizedZoomValue;
-    }>]>;
-    missingPointerEventCleanupEmitter: Emitter<[event: PointerEvent | null]>;
-    onRemoveEventListenersEmitter: Emitter<[]>;
-    api: ExcalidrawImperativeAPI;
-    private createExcalidrawAPI;
-    constructor(props: AppProps);
-    /**
-     * Whether the editor accepts user input (pointer, keyboard, wheel, touch,
-     * clipboard, drag&drop). When `false`, the editor is fully inert for the
-     * user, but remains controllable through the imperative API.
-     *
-     * All user-input entry points must consult this getter (directly or by
-     * not being attached/rendered at all).
-     */
-    isInteractionEnabled(props?: Pick<AppProps, "interaction">): boolean;
-    /**
-     * Whether element links render their link icon and are clickable.
-     * True when fully interactive, or when `interaction: { enabled: { links:
-     * true } }`
-     * (in which case clicking anywhere on a linked element opens the link,
-     * same as in view mode).
-     */
-    isLinksEnabled(props?: Pick<AppProps, "interaction">): boolean;
-    /**
-     * Whether canvas navigation — panning & zooming, view-mode style — is
-     * enabled. True when fully interactive, or when `interaction: { enabled:
-     * { navigation: true } }`. Respects `appState.scrollConstraints`.
-     */
-    isNavigationEnabled(props?: Pick<AppProps, "interaction">): boolean;
-    /**
-     * Whether embeddable & iframe elements are interactive (hover & click to
-     * activate, view-mode style). True when fully interactive, or when
-     * allowed via `interaction.enabled.embeds` / `.interactiveContent`.
-     */
-    isEmbedsEnabled(props?: Pick<AppProps, "interaction">): boolean;
-    /**
-     * Whether the browser's own zoom (ctrl/cmd + wheel, pinch, keyboard
-     * shortcuts) stays available over the non-interactive editor.
-     * Prevented by default.
-     */
-    isBrowserZoomEnabled(props?: Pick<AppProps, "interaction">): boolean;
-    /**
-     * Whether the tool can be activated & driven by user input. False when
-     * disabled via `UIOptions.tools`, or when the editor is non-interactive
-     * and the tool isn't kept user-driven via `interaction.enabled.tools`.
-     *
-     * (Once UI tool availability is split from input availability — e.g.
-     * `props.ui.tools` vs `interaction.disabled.tools` — the UI axis moves
-     * out into its own predicate.)
-     *
-     * We purposely widen the `tool` type so this helper can be called with
-     * any tool without having to type check it.
-     */
-    isToolSupported: <T extends ToolType | "custom">(tool: T, props?: Pick<AppProps, "interaction" | "UIOptions">) => boolean;
-    /**
-     * Whether the active tool is locked in place — via the tool lock
-     * (padlock / Q) or by being host-forced (`props.activeTool`). A locked
-     * tool doesn't revert to the selection tool after use, and elements drawn
-     * with it aren't selected. Forcing deliberately does not mutate
-     * `activeTool.locked`, which is the user's persisted padlock preference.
-     */
-    isToolLocked(): boolean;
-    /**
-     * Whether the active tool captures the primary pointer instead of the
-     * view-mode drag-to-pan — the laser and host-implemented custom tools do;
-     * while non-interactive, any tool allowed via
-     * `interaction.enabled.tools` does. (Editing tools capture the pointer
-     * trivially since view mode implies they're not active; this predicate only
-     * matters where view-mode gates apply.)
-     */
-    isActiveToolPointerCapturing(): boolean;
-    /** Whether Excalidraw's full default UI is rendered. */
-    isDefaultUIEnabled(props?: Pick<AppProps, "ui">): boolean;
-    /** Whether an individual default UI control is rendered. */
-    isUIControlEnabled(control: keyof UIConfig["enabled"], props?: Pick<AppProps, "ui">): boolean;
-    updateEditorAtom: <Value, Args extends unknown[], Result>(atom: WritableAtom<Value, Args, Result>, ...args: Args) => Result;
-    private onWindowMessage;
-    private handleSkipBindMode;
-    private resetDelayedBindMode;
-    private previousHoveredBindableElement;
-    private handleDelayedBindModeChange;
-    private cacheEmbeddableRef;
-    /**
-     * Returns gridSize taking into account `gridModeEnabled`.
-     * If disabled, returns null.
-     */
-    getEffectiveGridSize: () => NullableGridSize;
-    private getTextCreationGridPoint;
-    private getHTMLIFrameElement;
-    /**
-     * AI-generated iframe elements aren't interactive while their generation
-     * is still in progress (the partial content is render-only).
-     */
-    private isIframeLikeInteractive;
-    private handleIframeLikeElementHover;
-    /** @returns true if iframe-like element click handled */
-    private handleIframeLikeCenterClick;
-    private isDoubleClick;
-    private isIframeLikeElementCenter;
-    private updateEmbedValidationStatus;
-    private updateEmbeddables;
-    private renderEmbeddables;
-    private getFrameNameDOMId;
-    frameNameBoundsCache: FrameNameBoundsCache;
-    private resetEditingFrame;
-    private renderFrameNames;
-    private toggleOverscrollBehavior;
-    render(): import("react/jsx-runtime").JSX.Element;
-    focusContainer: AppClassProperties["focusContainer"];
-    getSceneElementsIncludingDeleted: () => readonly import("@excalidraw/element/types").OrderedExcalidrawElement[];
-    getSceneElementsMapIncludingDeleted: () => SceneElementsMap;
-    getSceneElements: () => readonly Ordered<NonDeletedExcalidrawElement>[];
-    onInsertElements: (elements: readonly ExcalidrawElement[]) => void;
-    onExportImage: (type: keyof typeof EXPORT_IMAGE_TYPES, elements: ExportedElements, opts: {
-        exportingFrame: NonDeleted<ExcalidrawFrameLikeElement> | null;
-    }) => Promise<void>;
-    private magicGenerations;
-    private updateMagicGeneration;
-    plugins: {
-        diagramToCode?: {
-            generate: GenerateDiagramToCode;
-        };
-    };
-    setPlugins(plugins: Partial<App["plugins"]>): void;
-    private onMagicFrameGenerate;
-    private onIframeSrcCopy;
-    onMagicframeToolSelect: () => void;
-    private openEyeDropper;
-    dismissLinearEditor: () => void;
-    syncActionResult: (actionResult: ActionResult) => void;
-    scheduleCapture: () => void;
-    private onBlur;
-    private onUnload;
-    private disableEvent;
-    private preventBrowserZoomWheel;
-    private handleNavigationModeKeyDown;
-    /**
-     * PageUp/PageDown scroll the canvas by a page — vertically, or
-     * horizontally with shift. Respects `appState.scrollConstraints`
-     * (via `viewport.translate`).
-     */
-    private maybeHandlePageScrollKeyDown;
-    private preventBrowserZoomKeyDown;
-    /** Ends active input sessions before switching to a view-mode/non-interactive
-     *  mode. */
-    private terminateActiveInteraction;
-    private handleInteractionStateChange;
-    /** whether the two values reference the same tool (incl. custom subtype) */
-    private isSameForcedTool;
-    /**
-     * Keeps `state.activeTool` synced to the host-controlled
-     * `props.activeTool`. `setActiveTool` refuses non-matching activations
-     * while forced (user input, API); this backstop covers the writers that
-     * bypass the funnel (`actionFinalize`/`actionDeselect`, `restore()` on
-     * scene load, ...) and re-applies the tool once it becomes activatable
-     * (e.g. `interaction` config changes).
-     */
-    private handleForcedToolChange;
-    private resetHistory;
-    private undo;
-    private redo;
-    private resetStore;
-    /**
-     * Resets scene & history.
-     * ! Do not use to clear scene user action !
-     */
-    private resetScene;
-    private initializeScene;
-    private getFormFactor;
-    refreshEditorInterface: () => void;
-    private reconcileStylesPanelMode;
-    /** TO BE USED LATER */
-    private setDesktopUIMode;
-    private isTouchScreen;
-    isTrayModeEnabled: () => boolean;
-    private clearImageShapeCache;
-    componentDidMount(): Promise<void>;
-    componentWillUnmount(): void;
-    private onResize;
-    /** generally invoked only if fullscreen was invoked programmatically */
-    private onFullscreenChange;
-    private removeEventListeners;
-    private addEventListeners;
-    componentDidUpdate(prevProps: AppProps, prevState: AppState): void;
-    private renderInteractiveSceneCallback;
-    private onScroll;
-    private onCut;
-    private onCopy;
-    private static resetTapTwice;
-    private onTouchStart;
-    private onTouchEnd;
-    private insertClipboardContent;
-    pasteFromClipboard: (event: ClipboardEvent) => Promise<void>;
-    addElementsFromPasteOrLibrary: (opts: {
-        elements: readonly ExcalidrawElement[];
-        files: BinaryFiles | null;
-        position: {
-            clientX: number;
-            clientY: number;
-        } | "cursor" | "center";
-        retainSeed?: boolean;
-        fit?: SetViewportOptions["fit"];
-        preserveFrameChildrenOrder?: boolean;
-    }) => void;
-    private addElementsFromMixedContentPaste;
-    private addTextFromPaste;
-    setAppState: React.Component<any, AppState>["setState"];
-    removePointer: (event: React.PointerEvent<HTMLElement> | PointerEvent) => void;
-    toggleLock: (source?: "keyboard" | "ui") => void;
-    updateFrameRendering: (opts: Partial<AppState["frameRendering"]> | ((prevState: AppState["frameRendering"]) => Partial<AppState["frameRendering"]>)) => void;
-    togglePenMode: (force: boolean | null) => void;
-    revealIfHidden: (elements: NonDeletedExcalidrawElement[]) => void;
-    /** emits a follow/unfollow intent to the host (which owns the
-     *  `userToFollow` state) via both the `onUserFollow` prop and the
-     *  imperative API emitter */
-    emitUserFollowIntent: (payload: OnUserFollowedPayload) => void;
-    /** emits an UNFOLLOW intent if currently following someone — use on
-     *  user-initiated viewport changes which should break follow mode */
-    requestUnfollow: () => void;
-    setForceRenderAllEmbeddables: (force: boolean) => void;
-    zoomToFit: (target?: readonly ExcalidrawElement[], maxZoom?: number, //null will zoom to max based on viewport
-    margin?: number) => void;
-    getColorAtScenePoint: ({ sceneX, sceneY, }: {
-        sceneX: number;
-        sceneY: number;
-    }) => string | null;
-    startLineEditor: (el: ExcalidrawLinearElement, selectedPointsIndices?: number[] | null) => void;
-    refreshAllArrows: () => void;
-    updateContainerSize: (containers: NonDeletedExcalidrawElement[]) => void;
-    setToast: (toast: AppState["toast"]) => void;
-    restoreFileFromShare: () => Promise<void>;
-    /**
-     * adds supplied files to existing files in the appState.
-     * NOTE if file already exists in editor state, the file data is not updated
-     * */
-    addFiles: ExcalidrawImperativeAPI["addFiles"];
-    /**
-     * Waits for image-cache work already started by `addFiles()` for the given
-     * file IDs. Obsidian recreates the editor across popout documents and uses
-     * this completion boundary to publish transferred `BinaryFiles` in bounded
-     * batches while retaining the component's ordinary decoding path.
-     *
-     * Author: zsviczian
-     * Reference: obsidian-excalidraw-plugin performance refactor Phase 1C.2c.
-     */
-    awaitImageFiles: (fileIds: readonly FileId[]) => Promise<void>;
-    setMobileModeAllowed: (allow: boolean) => void;
-    private debounceClearHighlightSearchResults;
-    selectElements: ExcalidrawImperativeAPI["selectElements"];
-    bringToFront: ExcalidrawImperativeAPI["bringToFront"];
-    bringForward: ExcalidrawImperativeAPI["bringForward"];
-    sendToBack: ExcalidrawImperativeAPI["sendToBack"];
-    sendBackward: ExcalidrawImperativeAPI["sendBackward"];
-    private addMissingFiles;
-    updateScene: <K extends keyof AppState>(sceneData: {
-        elements?: SceneData["elements"];
-        appState?: Pick<AppState, K> | null;
-        collaborators?: SceneData["collaborators"];
-        /**
-         *  Controls which updates should be captured by the `Store`. Captured updates are emmitted and listened to by other components, such as `History` for undo / redo purposes.
-         *
-         *  - `CaptureUpdateAction.IMMEDIATELY`: Updates are immediately undoable. Use for most local updates.
-         *  - `CaptureUpdateAction.NEVER`: Updates never make it to undo/redo stack. Use for remote updates or scene initialization.
-         *  - `CaptureUpdateAction.EVENTUALLY`: Updates will be eventually be captured as part of a future increment.
-         *
-         * Check [API docs](https://docs.excalidraw.com/docs/@excalidraw/excalidraw/api/props/excalidraw-api#captureUpdate) for more details.
-         *
-         * @default CaptureUpdateAction.EVENTUALLY
-         */
-        captureUpdate?: SceneData["captureUpdate"];
-        forceFlushSync?: boolean;
-    }) => void;
-    applyDeltas: (deltas: StoreDelta[], options?: ApplyToOptions) => [SceneElementsMap, AppState, boolean];
-    mutateElement: <TElement extends Mutable<ExcalidrawElement>>(element: TElement, updates: ElementUpdate<TElement>, informMutation?: boolean) => TElement;
-    triggerRender: (
-    /** force always re-renders canvas even if no change */
-    force?: boolean) => void;
-    /**
-     * @returns whether the menu was toggled on or off
-     */
-    toggleSidebar: ({ name, tab, force, }: {
-        name: SidebarName | null;
-        tab?: SidebarTabName;
-        force?: boolean;
-    }) => boolean;
-    private updateCurrentCursorPosition;
-    private onKeyDown;
-    private onKeyUp;
-    setActiveTool: (tool: ({
-        type: ToolType;
-    } | {
-        type: "custom";
-        customType: string;
-    }) & {
-        locked?: boolean;
-        fromSelection?: boolean;
-    }, opts?: {
-        keepSelection?: boolean;
-        /**
-         * When `true`, re-activating an already-active toggle tool (see
-         * `TOGGLE_TOOLS`) switches back to the previously active tool.
-         * Activation is idempotent by default; toggle tools always record the
-         * previously active tool regardless (so ESC and the next `toggle`
-         * activation can switch back to it).
-         */
-        toggle?: boolean;
-    }) => void;
-    setOpenDialog: (dialogType: AppState["openDialog"]) => void;
-    /**
-     * returns whether user is making a gesture with >= 2 fingers (points)
-     * on o touch screen (not on a trackpad). Currently only relates to Darwin
-     * (iOS/iPadOS,MacOS), but may work on other devices in the future if
-     * GestureEvent is standardized.
-     */
-    private isTouchScreenMultiTouchGesture;
-    getName: () => string;
-    private onGestureStart;
-    private onGestureChange;
-    private onGestureEnd;
-    private handleTextWysiwyg;
-    private deselectElements;
-    private getSelectedTextElement;
-    private getSelectedTextEditingContainerAtPosition;
-    getTextElementAtPosition(x: number, y: number): NonDeleted<ExcalidrawTextElement> | null;
-    private isHittingTextAutoResizeHandle;
-    private handleTextAutoResizeHandlePointerDown;
-    getElementAtPosition(x: number, y: number, opts?: ({
-        includeBoundTextElement?: boolean;
-        includeLockedElements?: boolean;
-    } | {
-        allHitElements: NonDeleted<ExcalidrawElement>[];
-    }) & {
-        preferSelected?: boolean;
-    }): NonDeleted<ExcalidrawElement> | null;
-    private getElementsAtPosition;
-    getElementHitThreshold(element: ExcalidrawElement): number;
-    private hitElement;
-    getTextBindableContainerAtPosition(x: number, y: number): (Readonly<{
-        id: string;
-        x: number;
-        y: number;
-        strokeColor: string;
-        backgroundColor: string;
-        fillStyle: import("@excalidraw/element/types").FillStyle;
-        strokeWidth: number;
-        strokeStyle: import("@excalidraw/element/types").StrokeStyle;
-        roundness: null | {
-            type: import("@excalidraw/element/types").RoundnessType;
-            value?: number;
-        };
-        roughness: number;
-        opacity: number;
-        width: number;
-        height: number;
-        angle: Radians;
-        seed: number;
-        version: number;
-        versionNonce: number;
-        index: import("@excalidraw/element/types").FractionalIndex | null;
-        isDeleted: boolean;
-        groupIds: readonly import("@excalidraw/element/types").GroupId[];
-        frameId: string | null;
-        boundElements: readonly import("@excalidraw/element/types").BoundElement[] | null;
-        updated: number;
-        link: string | null;
-        hasTextLink?: boolean;
-        locked: boolean;
-        customData?: Record<string, any>;
-    }> & {
-        type: "rectangle";
-    } & {
-        isDeleted: false;
-    }) | (Readonly<{
-        id: string;
-        x: number;
-        y: number;
-        strokeColor: string;
-        backgroundColor: string;
-        fillStyle: import("@excalidraw/element/types").FillStyle;
-        strokeWidth: number;
-        strokeStyle: import("@excalidraw/element/types").StrokeStyle;
-        roundness: null | {
-            type: import("@excalidraw/element/types").RoundnessType;
-            value?: number;
-        };
-        roughness: number;
-        opacity: number;
-        width: number;
-        height: number;
-        angle: Radians;
-        seed: number;
-        version: number;
-        versionNonce: number;
-        index: import("@excalidraw/element/types").FractionalIndex | null;
-        isDeleted: boolean;
-        groupIds: readonly import("@excalidraw/element/types").GroupId[];
-        frameId: string | null;
-        boundElements: readonly import("@excalidraw/element/types").BoundElement[] | null;
-        updated: number;
-        link: string | null;
-        hasTextLink?: boolean;
-        locked: boolean;
-        customData?: Record<string, any>;
-    }> & {
-        type: "diamond";
-    } & {
-        isDeleted: false;
-    }) | (Readonly<{
-        id: string;
-        x: number;
-        y: number;
-        strokeColor: string;
-        backgroundColor: string;
-        fillStyle: import("@excalidraw/element/types").FillStyle;
-        strokeWidth: number;
-        strokeStyle: import("@excalidraw/element/types").StrokeStyle;
-        roundness: null | {
-            type: import("@excalidraw/element/types").RoundnessType;
-            value?: number;
-        };
-        roughness: number;
-        opacity: number;
-        width: number;
-        height: number;
-        angle: Radians;
-        seed: number;
-        version: number;
-        versionNonce: number;
-        index: import("@excalidraw/element/types").FractionalIndex | null;
-        isDeleted: boolean;
-        groupIds: readonly import("@excalidraw/element/types").GroupId[];
-        frameId: string | null;
-        boundElements: readonly import("@excalidraw/element/types").BoundElement[] | null;
-        updated: number;
-        link: string | null;
-        hasTextLink?: boolean;
-        locked: boolean;
-        customData?: Record<string, any>;
-    }> & {
-        type: "ellipse";
-    } & {
-        isDeleted: false;
-    }) | (Readonly<{
-        id: string;
-        x: number;
-        y: number;
-        strokeColor: string;
-        backgroundColor: string;
-        fillStyle: import("@excalidraw/element/types").FillStyle;
-        strokeWidth: number;
-        strokeStyle: import("@excalidraw/element/types").StrokeStyle;
-        roundness: null | {
-            type: import("@excalidraw/element/types").RoundnessType;
-            value?: number;
-        };
-        roughness: number;
-        opacity: number;
-        width: number;
-        height: number;
-        angle: Radians;
-        seed: number;
-        version: number;
-        versionNonce: number;
-        index: import("@excalidraw/element/types").FractionalIndex | null;
-        isDeleted: boolean;
-        groupIds: readonly import("@excalidraw/element/types").GroupId[];
-        frameId: string | null;
-        boundElements: readonly import("@excalidraw/element/types").BoundElement[] | null;
-        updated: number;
-        link: string | null;
-        hasTextLink?: boolean;
-        locked: boolean;
-        customData?: Record<string, any>;
-    }> & Readonly<{
-        type: "line" | "arrow";
-        points: readonly LocalPoint[];
-        startBinding: import("@excalidraw/element/types").FixedPointBinding | null;
-        endBinding: import("@excalidraw/element/types").FixedPointBinding | null;
-        startArrowhead: import("@excalidraw/element/types").Arrowhead | null;
-        endArrowhead: import("@excalidraw/element/types").Arrowhead | null;
-    }> & Readonly<{
-        type: "arrow";
-        elbowed: boolean;
-    }> & {
-        isDeleted: false;
-    }) | null;
-    /**
-     * Whether a text element's content is still being authored.
-     *
-     * Creating a text reverts the tool to selection during pointerdown, so the
-     * pointerup that follows looks like an ordinary canvas click and would
-     * capture the still-empty element as a history entry of its own. Undo would
-     * then rewind only the typing, restoring an invisible, zero-content element
-     * (and, for an endpoint label, leaving the arrow bound to it) rather than
-     * removing it. The editor's own submit captures the finished text instead,
-     * so the whole create-and-type lands in a single entry.
-     */
-    private isEditingTextContent;
-    private startTextEditing;
-    private debounceDoubleClickTimestamp;
-    private startImageCropping;
-    private finishImageCropping;
-    private shouldHandleBrowserCanvasDoubleClick;
-    private handleCanvasDoubleClick;
-    private handleCanvasClick;
-    private getElementLinkAtPosition;
-    private handleElementLinkClick;
-    /**
-     * Applies (or clears) the element-link hover affordances — pointer cursor
-     * and tooltip — based on the current `hitLinkElement`. Returns whether a
-     * link is being hovered.
-     */
-    private applyElementLinkHoverAffordance;
-    /**
-     * On touchscreens (where no hover precedes the tap) re-derives
-     * `hitLinkElement`, then opens the hit element link, if any.
-     * Returns whether a link click was handled.
-     */
-    private maybeHandleElementLinkClick;
-    /**
-     * Restricted pointer handling for the non-interactive editor with links
-     * and/or embeds allowed (`interaction.enabled.links` / `.embeds` /
-     * `.interactiveContent`) — runs only the element-link & embed concerns
-     * (shared with the full pointer handlers above) so they behave like in
-     * view mode without the rest of the canvas pointer machinery.
-     */
-    private handleInteractiveContentPointerMove;
-    private handleInteractiveContentPointerUp;
-    /**
-     * finds candidate frame under cursor (when dragging frame children/elements
-     * inside frames)
-     */
-    getTopLayerFrameAtSceneCoords: (
-    /**
-     * should be already grid aligned (basically should be what the call site
-     * sets the element's coords to, if applicable)
-     */
-    sceneCoords: {
-        x: number;
-        y: number;
-    }, opts?: {
-        /** to exclude selected elements when dragging, etc. */
-        excludeElementIds?: AppState["selectedElementIds"];
-        currentFrameId?: ExcalidrawElement["frameId"];
-    }) => NonDeleted<ExcalidrawFrameLikeElement> | null;
-    private updateFrameToHighlight;
-    private maybeUpdateFrameToHighlightOnPointerMove;
-    insertNewElements: (elements: readonly ExcalidrawElement[], idx?: number) => void;
-    insertNewElement: (element: ExcalidrawElement, idx?: number) => void;
-    private handleCanvasPointerMove;
-    private handleEraser;
-    private handleTouchMove;
-    handleHoverSelectedLinearElement(linearElementEditor: LinearElementEditor, scenePointerX: number, scenePointerY: number): void;
-    private handleCanvasPointerDown;
-    private handleCanvasPointerUp;
-    private maybeOpenContextMenuAfterPointerDownOnTouchDevices;
-    private resetContextMenuTimer;
-    /**
-     * pointerup may not fire in certian cases (user tabs away...), so in order
-     * to properly cleanup pointerdown state, we need to fire any hanging
-     * pointerup handlers manually
-     */
-    private maybeCleanupAfterMissingPointerUp;
-    handleCanvasPanUsingWheelOrSpaceDrag: (event: React.PointerEvent<HTMLElement> | MouseEvent) => boolean;
-    private startRightClickPanning;
-    private updateGestureOnPointerDown;
-    /**
-     * Tracks the pointer within the ongoing multi-touch gesture and applies
-     * the two-finger pinch zoom/pan, if any.
-     */
-    private updateMultiTouchGesture;
-    private initialPointerDownState;
-    private handleDraggingScrollBar;
-    private clearSelectionIfNotUsingSelection;
-    /**
-     * @returns whether the pointer event has been completely handled
-     */
-    private handleSelectionOnPointerDown;
-    private isASelectedElement;
-    private isHittingCommonBoundingBoxOfSelectedElements;
-    private handleTextOnPointerDown;
-    private handleFreeDrawElementOnPointerDown;
-    insertIframeElement: ({ sceneX, sceneY, width, height, }: {
-        sceneX: number;
-        sceneY: number;
-        width: number;
-        height: number;
-    }) => NonDeleted<ExcalidrawIframeElement>;
-    insertEmbeddableElement: ({ sceneX, sceneY, link, }: {
-        sceneX: number;
-        sceneY: number;
-        link: string;
-    }) => NonDeleted<ExcalidrawEmbeddableElement> | undefined;
-    private newImagePlaceholder;
-    private handleLinearElementOnPointerDown;
-    private getCurrentItemRoundness;
-    private getCurrentItemStrokeWidth;
-    private createGenericElementOnPointerDown;
-    private createFrameElementOnPointerDown;
-    private maybeCacheReferenceSnapPoints;
-    private maybeCacheVisibleGaps;
-    private onKeyDownFromPointerDownHandler;
-    private onKeyUpFromPointerDownHandler;
-    private onPointerMoveFromPointerDownHandler;
-    private handlePointerMoveOverScrollbars;
-    private onPointerUpFromPointerDownHandler;
-    private restoreReadyToEraseElements;
-    private eraseElements;
-    private initializeImage;
-    /**
-     * use during async image initialization,
-     * when the placeholder image could have been modified in the meantime,
-     * and when you don't want to loose those modifications
-     */
-    private getLatestInitializedImageElement;
-    private onImageToolbarButtonClick;
-    private getImageNaturalDimensions;
-    /** updates image cache, refreshing updated elements and/or setting status
-        to error for images that fail during <img> element creation */
-    private updateImageCache;
-    /** adds new images to imageCache and re-renders if needed */
-    private addNewImagesToImageCache;
-    /** generally you should use `addNewImagesToImageCache()` directly if you need
-     *  to render new images. This is just a failsafe  */
-    private scheduleImageRefresh;
-    setSelection(elements: readonly NonDeletedExcalidrawElement[]): void;
-    private clearSelection;
-    private handleInteractiveCanvasRef;
-    private insertImages;
-    private handleAppOnDrop;
-    loadFileToCanvas: (file: File, fileHandle: FileSystemFileHandle | null) => Promise<void>;
-    private handleCanvasContextMenu;
-    private maybeDragNewGenericElement;
-    private maybeHandleCrop;
-    private maybeHandleResize;
-    private getContextMenuItems;
-    private handleWheel;
-    getTextWysiwygSnappedToCenterPosition(x: number, y: number, appState: AppState, container?: ExcalidrawTextContainer | null): {
-        viewportX: number;
-        viewportY: number;
-        elementCenterX: number;
-        elementCenterY: number;
-    } | undefined;
-    private savePointer;
-    private resetShouldCacheIgnoreZoomDebounced;
-    private updateDOMRect;
-    refresh: () => void;
-    private getCanvasOffsets;
-    watchState: () => void;
-    private updateLanguage;
+
+type MermaidToExcalidrawLibProps =
+  import("@zsviczian/excalidraw/types/excalidraw/components/TTDDialog/types").MermaidToExcalidrawLibProps;
+
+interface MermaidConfig {
+  /**
+   * Whether to start the diagram automatically when the page loads.
+   * @default false
+   */
+  startOnLoad?: boolean;
+  /**
+   * The flowchart curve style.
+   * @default "linear"
+   */
+  flowchart?: {
+    curve?: "linear" | "basis";
+  };
+  /**
+   * Theme variables
+   * @default { fontSize: "25px" }
+   */
+  themeVariables?: {
+    fontSize?: string;
+  };
+  /**
+   * Maximum number of edges to be rendered.
+   * @default 1000
+   */
+  maxEdges?: number;
+  /**
+   * Maximum number of characters to be rendered.
+   * @default 1000
+   */
+  maxTextSize?: number;
 }
-export default App;
+
+type EmbeddedLink =
+  | ({
+      aspectRatio: { w: number; h: number };
+      warning?: string;
+    } & (
+      | { type: "video" | "generic"; link: string }
+      | { type: "document"; srcdoc: (theme: Theme) => string }
+    ))
+  | null;
+
+declare namespace ExcalidrawLib {
+  type ObsidianCommonHostUIMode = "full" | "compact" | "tray" | "mobile";
+
+  type ObsidianCommonHostAdapter = Readonly<{
+    protocolVersion: 1;
+    getDeviceInfo: () => Readonly<{
+      isDesktop: boolean;
+      isPhone: boolean;
+      isTablet: boolean;
+      isMobile: boolean;
+      isLinux: boolean;
+      isMacOS: boolean;
+      isWindows: boolean;
+      isIOS: boolean;
+      isAndroid: boolean;
+    }> | null;
+    getDesktopUIMode: () => ObsidianCommonHostUIMode;
+    getPreferredUIMode: (
+      formFactor: "phone" | "tablet" | "desktop",
+    ) => ObsidianCommonHostUIMode;
+    getCanvasLimits: () => Readonly<{
+      areaLimit: number;
+      widthHeightLimit: number;
+    }>;
+    getHighlightColor: (
+      sceneBackgroundColor: string,
+      opacity: number,
+    ) => string;
+  }>;
+
+  type ObsidianExcalidrawHostAdapter = Readonly<{
+    protocolVersion: 2;
+    isDoubleTapEraserEnabled: () => boolean;
+    isRightClickPanEnabled: () => boolean;
+    getZoomToFitMaxLevel: () => number;
+    isPenModeCrosshairVisible: () => boolean;
+    isSingleFingerPanningEnabled: () => boolean;
+    isDoubleClickTextEditingDisabled: () => boolean;
+    getZoomStep: () => number;
+    getZoomMin: () => number;
+    getZoomMax: () => number;
+    isContextMenuDisabled: () => boolean;
+    shouldSyncElementLinkWithText: () => boolean;
+    loadFontFromFile: (filename: string) => Promise<ArrayBuffer | undefined>;
+    getMermaid: () => Promise<MermaidToExcalidrawLibProps>;
+    runAction: (action: "anyFile" | "LaTeX" | "card") => void;
+    getLabel: (key: string) => string;
+    attachInlineLinkSuggester: (
+      inputEl: HTMLInputElement | HTMLTextAreaElement,
+      widthWrapper?: HTMLElement,
+      container?: HTMLDivElement | null,
+      suppressPlaceholder?: boolean,
+    ) => Readonly<{
+      isBlockingKeys: () => boolean;
+      close: () => void;
+    }>;
+  }>;
+
+  type ElementUpdate<TElement extends ExcalidrawElement> = Omit<
+    Partial<TElement>,
+    "id" | "updated"
+  >;
+
+  type ExportOpts = {
+    elements: readonly NonDeleted<ExcalidrawElement>[];
+    appState?: Partial<Omit<AppState, "offsetTop" | "offsetLeft">>;
+    files: BinaryFiles | null;
+    maxWidthOrHeight?: number;
+    exportingFrame?: ExcalidrawFrameLikeElement | null;
+    getDimensions?: (
+      width: number,
+      height: number,
+    ) => { width: number; height: number; scale?: number };
+  };
+
+  function restoreElements<T extends ExcalidrawElement>(
+    targetElements: readonly T[] | undefined | null,
+    /** used for additional context (e.g. repairing arrow bindings) */
+    existingElements: Readonly<ElementsMapOrArray> | null | undefined,
+    opts?: {
+      refreshDimensions?: boolean;
+      repairBindings?: boolean;
+      deleteInvisibleElements?: boolean;
+    },
+  ): CombineBrandsIfNeeded<T, OrderedExcalidrawElement>;
+
+  function restoreLibraryItems(
+    libraryItems: LibraryItems_anyVersion | undefined,
+    defaultStatus: LibraryItem["status"],
+  ): LibraryItem[];
+
+  function exportToSvg(
+    opts: Omit<ExportOpts, "getDimensions"> & {
+      elements: ExcalidrawElement[];
+      appState?: AppState;
+      files?: BinaryFiles | null;
+      exportPadding?: number;
+      exportingFrame: ExcalidrawFrameElement | null | undefined;
+      renderEmbeddables?: boolean;
+      skipInliningFonts?: boolean;
+    },
+  ): Promise<SVGSVGElement>;
+
+  function sceneCoordsToViewportCoords(
+    sceneCoords: { sceneX: number; sceneY: number },
+    viewParams: {
+      zoom: Zoom;
+      offsetLeft: number;
+      offsetTop: number;
+      scrollX: number;
+      scrollY: number;
+    },
+  ): { x: number; y: number };
+
+  function viewportCoordsToSceneCoords(
+    viewportCoords: { clientX: number; clientY: number },
+    viewParams: {
+      zoom: Zoom;
+      offsetLeft: number;
+      offsetTop: number;
+      scrollX: number;
+      scrollY: number;
+    },
+  ): { x: number; y: number };
+
+  function intersectElementWithLine(
+    element: ExcalidrawBindableElement,
+    a: GlobalPoint,
+    b: GlobalPoint,
+    gap?: number,
+  ): GlobalPoint[];
+
+  function getCommonBoundingBox(
+    elements:
+      | readonly ExcalidrawElement[]
+      | readonly NonDeleted<ExcalidrawElement>[],
+  ): BoundingBox;
+
+  function getContainerElement(
+    element: ExcalidrawTextElement | null,
+    elementsMap: ElementsMap,
+  ): ExcalidrawTextContainer | null;
+
+  function refreshTextDimensions(
+    textElement: ExcalidrawTextElement,
+    container: ExcalidrawTextContainer | null,
+    elementsMap: ElementsMap,
+    text: string,
+  ): {
+    text: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+
+  function getMaximumGroups(
+    elements: ExcalidrawElement[],
+    elementsMap: ElementsMap,
+  ): ExcalidrawElement[][];
+
+  function getFontMetrics(
+    fontFamily: ExcalidrawTextElement["fontFamily"],
+    fontSize?: number,
+  ): {
+    unitsPerEm: number;
+    ascender: number;
+    descender: number;
+    lineHeight: number;
+    baseline: number;
+    fontString: string;
+  };
+
+  function measureText(
+    text: string,
+    font: FontString,
+    lineHeight: number,
+  ): { width: number; height: number };
+
+  function getLineHeight(fontFamily: FontFamilyValues): number;
+  function wrapText(text: string, font: FontString, maxWidth: number): string;
+
+  function getFontString({
+    fontSize,
+    fontFamily,
+  }: {
+    fontSize: number;
+    fontFamily: FontFamilyValues;
+  }): FontString;
+
+  function getFontFamilyString({ fontFamily }: { fontFamily: number }): string;
+
+  function getBoundTextMaxWidth(container: ExcalidrawElement): number;
+
+  function exportToBlob(
+    opts: ExportOpts & {
+      mimeType?: string;
+      quality?: number;
+      exportPadding?: number;
+    },
+  ): Promise<Blob>;
+
+  function mutateElement<TElement extends Mutable<ExcalidrawElement>>(
+    element: TElement,
+    updates: ElementUpdate<TElement>,
+    informMutation?: boolean,
+  ): TElement;
+
+  function getEmbedLink(link: string | null | undefined): EmbeddedLink;
+
+  const mermaidToExcalidraw: typeof import("@zsviczian/excalidraw/types/excalidraw/components/TTDDialog/MermaidToExcalidrawLib").mermaidToExcalidraw;
+
+  /*function mermaidToExcalidraw(
+    mermaidDefinition: string,
+    opts: MermaidConfig,
+  ): Promise<{
+    elements?: ExcalidrawElement[];
+    files?: any;
+    error?: string;
+  } | undefined>;*/
+
+  let hashElementsVersion: typeof import("@zsviczian/excalidraw/types/excalidraw").hashElementsVersion;
+  let Excalidraw: typeof import("@zsviczian/excalidraw").Excalidraw;
+  let MainMenu: typeof import("@zsviczian/excalidraw").MainMenu;
+  let WelcomeScreen: typeof import("@zsviczian/excalidraw").WelcomeScreen;
+  let TTDDialogTrigger: typeof import("@zsviczian/excalidraw").TTDDialogTrigger;
+  let TTDDialog: typeof import("@zsviczian/excalidraw").TTDDialog;
+  let DiagramToCodePlugin: typeof import("@zsviczian/excalidraw").DiagramToCodePlugin;
+
+  function getDataURL(file: Blob | File): Promise<DataURL>;
+  const OBSIDIAN_COMMON_HOST_PROTOCOL_VERSION: 1;
+  function configureObsidianCommonHost(
+    adapter: ObsidianCommonHostAdapter,
+  ): () => void;
+  const OBSIDIAN_EXCALIDRAW_HOST_PROTOCOL_VERSION: 2;
+  function configureObsidianExcalidrawHost(
+    adapter: ObsidianExcalidrawHostAdapter,
+  ): () => void;
+  function registerLocalFont(fontMetrics: FontMetadata, uri: string): void;
+  function getFontFamilies(): string[];
+  function registerFontsInCSS(): Promise<void>;
+  function getCSSFontDefinition(fontFamily: number): Promise<string>;
+  function getTextFromElements(
+    elements: readonly ExcalidrawElement[],
+    separator?: string,
+  ): string;
+  function safelyParseJSON(json: string): JsonObject | null;
+  function loadSceneFonts(
+    elements: NonDeletedExcalidrawElement[],
+  ): Promise<void>;
+  function loadMermaid(): Promise<MermaidToExcalidrawLibProps>;
+  function syncInvalidIndices(
+    elements: readonly ExcalidrawElement[],
+  ): OrderedExcalidrawElement[];
+  function syncMovedIndices(
+    elements: readonly ExcalidrawElement[],
+    movedElements: ElementsMap,
+  ): OrderedExcalidrawElement[];
+  function getDefaultColorPalette(): [string, string, string, string, string][];
+}
+
+/* ******************************* */
+/* src/types/polybooljs.d.ts */
+/* ******************************* */
+declare module "polybooljs" {
+  interface PolyBoolStatic {
+    epsilon(value: number): void;
+    buildLog(value: boolean): void;
+  }
+
+  const PolyBool: PolyBoolStatic;
+  export default PolyBool;
+}
+
+/* ************************** */
+/* src/types/types.d.ts */
+/* ************************** */
+TFile,
+  View,
+  WorkspaceLeaf,
+  PluginManifest,
+  Hotkey,
+  TAbstractFile,
+  MenuItem,
+  Component,
+  EventRef,
+  WorkspaceContainer,
+  PluginSettingTab,
+} from "obsidian";
+import { ExcalidrawAutomate } from "../shared/ExcalidrawAutomate";
+import { ExcalidrawLib } from "./excalidrawLib";
+import type { PdfJsLibrary } from "./pdfJsTypes";
+
+type PolyBoolLibrary = {
+  epsilon(value: number): void;
+};
+
+type ObsidianInternalPluginInstance = {
+  openGlobalSearch?(query: string): void;
+  apiList?(): Promise<{
+    files?: Array<{
+      path: string;
+    }>;
+  }>;
+};
+
+type ObsidianInternalPlugin = {
+  _loaded?: boolean;
+  load?(): Promise<void>;
+  views?: {
+    canvas(leaf: WorkspaceLeaf): {
+      canvas: unknown;
+    };
+  };
+  instance?: ObsidianInternalPluginInstance;
+};
+
+type ObsidianInternalPluginsManager = {
+  plugins: Record<string, ObsidianInternalPlugin | undefined>;
+  getPluginById(id: string): ObsidianInternalPlugin | undefined;
+};
+
+type ObsidianSettingsManager = {
+  open(): void;
+  findTabById?(tabId: string): PluginSettingTab | null;
+  openTabById(tabId: string): void;
+  /**
+   * Resolves a settings-tab identifier and opens its declarative page path.
+   * This is an unpublished Obsidian 1.13+ API and may be absent or change
+   * without notice; callers must guard it at runtime.
+   */
+  openPagePath?(
+    tabId: string,
+    pagePath: string[],
+  ): PluginSettingTab | null;
+  /**
+   * Opens a declarative settings page for a resolved tab object and localized
+   * page-name path. This is an unpublished Obsidian 1.13+ API and may be
+   * absent or change without notice; callers must guard it at runtime.
+   */
+  navigateToPage?(tab: PluginSettingTab, pagePath: string[]): void;
+};
+
+type ObsidianViewRegistry = {
+  getViewTypeForFile?(file: TFile): string | null | undefined;
+  getViewTypeByFile?(file: TFile): string | null | undefined;
+  getTypeByFile?(file: TFile): string | null | undefined;
+  getViewTypeByExtension?(ext: string): string | null | undefined;
+  getTypeByExtension?(ext: string): string | null | undefined;
+};
+
+type MarkdownBlockNode = {
+  type: string;
+  id?: string;
+  depth?: number;
+  level?: number;
+  value?: string;
+  title?: string;
+  data?: {
+    hProperties?: {
+      dataHeading?: string;
+    };
+  };
+  children?: MarkdownBlockNode[];
+  position: {
+    start: {
+      offset: number;
+      line: number;
+    };
+    end: {
+      offset: number;
+    };
+  };
+};
+
+type ObsidianDragManager = {
+  draggable?: {
+    file?: TFile;
+    files?: TFile[];
+    title?: string;
+    type?: string;
+  };
+};
+
+type MarkdownBlockCacheEntry = {
+  display: string;
+  node: MarkdownBlockNode;
+};
+
+type MarkdownBlockCacheResult = {
+  blocks: MarkdownBlockCacheEntry[];
+};
+
+type BacklinksForFileResult = {
+  data: Record<string, import("obsidian").LinkCache[]>;
+};
+
+export type ObsidianCommand = {
+  id: string;
+  name: string;
+  icon?: string;
+  mobileOnly?: boolean;
+  repeatable?: boolean;
+};
+
+export type ObsidianCommandManager = {
+  listCommands(): ObsidianCommand[];
+  executeCommandById(commandId: string): boolean;
+  commands: Record<string, ObsidianCommand>;
+};
+
+export type ObsidianDraggable = {
+  type?: "file" | "files" | "link" | "text" | "unknown";
+  file?: TFile;
+  files?: TFile[];
+  title?: string;
+  [key: string]: unknown;
+};
+
+export type ConnectionPoint = "top" | "bottom" | "left" | "right" | null;
+
+export type Packages = {
+  react: typeof import("react");
+  reactDOM: typeof import("react-dom") & typeof import("react-dom/client");
+  excalidrawLib: typeof ExcalidrawLib | null;
+};
+
+/**
+ * An idempotent handle for the shared runtime acquired by one view.
+ *
+ * @remarks
+ * The captured window remains the view's acquisition window even if Obsidian
+ * reparents its DOM before teardown completes. All leases share the one package
+ * evaluated in the main application realm, so lifecycle code must use `window`
+ * for migration ownership and never infer package evaluation ownership from it.
+ */
+export type PackageLease = {
+  readonly window: Window;
+  readonly packages: Packages;
+  release(): void;
+};
+
+export type ValueOf<T> = T[keyof T];
+
+export type DynamicStyle = "none" | "gray" | "colorful";
+
+export type GridSettings = {
+  DYNAMIC_COLOR: boolean; // Whether the grid color is dynamic
+  COLOR: string; // The grid color (in hex format)
+  OPACITY: number; // The grid opacity (hex value between "00" and "FF")
+  GRID_DIRECTION: { horizontal: boolean; vertical: boolean }; // Whether the grid is horizontal or vertical
+};
+
+export type DeviceType = {
+  isDesktop: boolean;
+  isPhone: boolean;
+  isTablet: boolean;
+  isMobile: boolean;
+  isLinux: boolean;
+  isMacOS: boolean;
+  isWindows: boolean;
+  isIOS: boolean;
+  isAndroid: boolean;
+};
+
+export type Point = [number, number];
+
+export type LinkSuggestion = {
+  file: TFile;
+  path: string;
+  alias?: string;
+};
+
+export type LocalGraphView = View & {
+  file?: TFile;
+  loadFile?: (file: TFile) => void;
+};
+
+declare global {
+  interface Window {
+    ExcalidrawAutomate: ExcalidrawAutomate;
+    ExcalidrawLib: typeof ExcalidrawLib;
+    pdfjsLib: PdfJsLibrary;
+    unpackBase64Deflate?: (value: string) => string;
+    PolyBool?: PolyBoolLibrary;
+    electronWindow?: {
+      isAlwaysOnTop(): boolean;
+      setAlwaysOnTop(flag: boolean): void;
+    };
+    eval: (x: string) => unknown;
+    MathJax?: {
+      typesetPromise(elements: HTMLElement[]): Promise<void>;
+    };
+  }
+  interface File {
+    path?: string;
+  }
+}
+
+declare module "obsidian" {
+  interface App {
+    appId: string;
+    dragManager: ObsidianDragManager;
+    viewRegistry?: ObsidianViewRegistry;
+    internalPlugins: ObsidianInternalPluginsManager;
+    setting: ObsidianSettingsManager;
+    commands: ObsidianCommandManager;
+    isMobile(): boolean;
+    getAccentColor(): string;
+    getObsidianUrl(file: TFile): string;
+    metadataTypeManager: {
+      setType(name: string, type: string): void;
+    };
+    plugins: {
+      manifests: Record<string, PluginManifest>;
+      plugins: Record<string, (Plugin & { api?: unknown }) | undefined>;
+      enablePlugin(id: string): Promise<void>;
+      disablePlugin(id: string): Promise<void>;
+    };
+    hotkeyManager: {
+      addDefaultHotkeys(commandId: string, hotkeys: Hotkey[]): void;
+      
+    };
+  }
+  interface FileManager {
+    promptForFileRename(file: TFile): Promise<void>;
+  }
+  interface Vault {
+    getAbstractFileByPathInsensitive(path: string): TAbstractFile | null;
+    getConfig(name: string): unknown;
+  }
+  interface FileView {
+    _loaded: boolean;
+    headerEl: HTMLElement;
+  }
+  interface View {
+    file?: TFile;
+    canvas?: {
+      setReadonly(readonly: boolean): void;
+    };
+    modes?: Record<string, unknown>;
+    setMode?(mode: unknown): void;
+    viewer?: {
+      child?: {
+        pdfViewer?: {
+          page?: number;
+          setBackground?(color: string | null, isInverted: boolean): void;
+        };
+      };
+    };
+  }
+  interface TextFileView {
+    lastSavedData: string;
+  }
+  interface Menu {
+    items: MenuItem[];
+  }
+  interface Setting {
+    setVisibility(visible: boolean): Setting;
+  }
+  interface Modal {
+    containerEl: HTMLElement;
+    modalEl: HTMLElement;
+    bgEl: HTMLElement;
+    titleEl: HTMLElement;
+    headerEl: HTMLElement;
+    /**
+     * Whether to *dim* the background behind the modal. If {@link dimmed} is `true`, the
+     * opacity-value from [setBackgroundOpacity]{@link Modal#setBackgroundOpacity} or
+     * the default of `0.85` is used.
+     * @note The hidden backdrop will still catch focus.
+     */
+    setDimBackground(dimmed: boolean): Modal;
+    /** Sets the opacity of the Modal backdrop. */
+    setBackgroundOpacity(opacity: number): Modal;
+  }
+  interface Keymap {
+    getRootScope(): Scope;
+  }
+  interface Scope {
+    keys: Array<{
+      key?: string;
+      modifiers?: Array<"Mod" | "Ctrl" | "Meta" | "Shift" | "Alt">;
+    }>;
+  }
+  interface WorkspaceLeaf {
+    id: string;
+    containerEl: HTMLDivElement;
+    tabHeaderInnerTitleEl: HTMLDivElement;
+    tabHeaderInnerIconEl: HTMLDivElement;
+    isVisible?(): boolean;
+  }
+  interface WorkspaceWindowInitData {
+    x?: number;
+    y?: number;
+  }
+  interface WorkspaceTabs {
+    type?: string;
+    children?: unknown[];
+  }
+  interface WorkspaceMobileDrawer {
+    type?: string;
+    children?: unknown[];
+  }
+  interface Workspace {
+    floatingSplit?: WorkspaceSplit;
+    getAdjacentLeafInDirection(
+      leaf: WorkspaceLeaf,
+      direction: string,
+    ): WorkspaceLeaf;
+    on(
+      name: "hover-link",
+      callback: (e: MouseEvent) => boolean | void,
+      ctx?: Component,
+    ): EventRef;
+  }
+  interface WorkspaceSplit {
+    containerEl: HTMLDivElement;
+    children?: WorkspaceContainer[];
+  }
+  interface DataAdapter {
+    url: {
+      pathToFileURL(path: string): URL;
+    };
+    basePath: string;
+    fs: {
+      readFile(
+        path: string,
+        encoding: BufferEncoding,
+        callback: (err: NodeJS.ErrnoException | null, data: string) => void,
+      ): void;
+      readFile(
+        path: string,
+        callback: (err: NodeJS.ErrnoException | null, data: Buffer) => void,
+      ): void;
+    };
+  }
+  interface FoldPosition {
+    from: number;
+    to: number;
+  }
+
+  interface FoldInfo {
+    folds: FoldPosition[];
+    lines: number;
+  }
+
+  interface MarkdownSubView {
+    applyFoldInfo(foldInfo: FoldInfo): void;
+    getFoldInfo(): FoldInfo | null;
+  }
+  interface MarkdownPostProcessorContext {
+    remainingNestLevel: number;
+    containerEl: HTMLElement;
+  }
+  /*interface Editor {
+    insertText(data: string): void;
+  }*/
+  interface MetadataCache {
+    getLinkSuggestions?(): Array<{
+      alias?: string;
+      path: string;
+      file: TFile;
+    }>;
+    getBacklinksForFile(file: TFile): BacklinksForFileResult | null;
+    getLinks(): Record<string, import("obsidian").LinkCache[]>;
+    getCachedFiles(): string[];
+    blockCache: {
+      getForFile(
+        x: { isCancelled(): boolean },
+        f: TAbstractFile,
+      ): Promise<MarkdownBlockCacheResult>;
+    };
+  }
+
+  interface FuzzySuggestModal<T> {
+    chooser: {
+      values: Array<{ item: T }>;
+      selectedItem: number;
+    };
+  }
+
+  interface HoverPopover {
+    containerEl: HTMLElement;
+    embed?: {
+      editor?: unknown;
+    };
+    hide(): void;
+  }
+
+  interface Plugin {
+    _loaded: boolean;
+  }
+}
+
+/* *************************** */
+/* src/types/worker.d.ts */
+/* *************************** */
+declare module "web-worker:*" {
+  const WorkerFactory: new (options?: WorkerOptions) => Worker;
+  export default WorkerFactory;
+}
 
 ```
 
@@ -5395,7 +6616,7 @@ Content structure:
 2. The curated script overview (index-new.md)
 3. Raw source of every *.md script in /ea-scripts (each fenced code block is auto-closed to ensure well-formed aggregation)
 
-Generated on: 2026-08-29T08:20:26.643Z
+Generated on: 2026-08-29T08:37:25.728Z
 
 ---
 

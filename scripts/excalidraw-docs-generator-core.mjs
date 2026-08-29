@@ -271,19 +271,22 @@ Two files follow. First the template startup script with documenation comments, 
 const EXCALIDRAW_STARTUP_TEMPLATE = 'src/constants/assets/startupScript.md';
 const EXCALIDRAW_STARTUP_EXAMPLE = 'docs/AITrainingData/ExcalidrawStartupExample.md';
 
-const TYPE_DEF_WHITELIST = [
+const TYPE_DEF_DIRS = [
+  'src/types',
+  'lib/types',
+];
+
+const TYPE_DEF_FIXED_FILES = [
   'lib/shared/ExcalidrawAutomate.d.ts',
-  'lib/types/excalidrawAutomateTypes.d.ts',
-  'lib/types/sidepanelTabTypes.d.ts',
-  'lib/types/penTypes.d.ts',
-  'lib/types/utilTypes.d.ts',
-  'lib/types/exportUtilTypes.d.ts',
-  'lib/types/embeddedFileLoaderTypes.d.ts',
-  'lib/types/AIUtilTypes.d.ts',
   'node_modules/@zsviczian/excalidraw/types/element/src/types.d.ts',
   'node_modules/@zsviczian/excalidraw/types/excalidraw/types.d.ts',
   'node_modules/@zsviczian/excalidraw/types/element/src/bounds.d.ts',
   'node_modules/@zsviczian/excalidraw/types/excalidraw/components/App.d.ts',
+  'node_modules/@zsviczian/excalidraw/types/excalidraw/obsidianTypes.d.ts',
+];
+
+const REQUIRED_TYPE_SYMBOLS = [
+  'export type ObsidianPenStrokeOptions',
 ];
 
 function needsClosingFence(content) {
@@ -344,12 +347,38 @@ function makeSectionHeader(relPath) {
 }
 
 function buildTypeDefMarkdown() {
-  const entries = TYPE_DEF_WHITELIST.map((rel) => ({
-    rel,
-    abs: path.join(ROOT, ...rel.split('/')),
-  }));
+  const entries = [];
+
+  for (const rel of TYPE_DEF_FIXED_FILES) {
+    entries.push({
+      rel,
+      abs: path.join(ROOT, ...rel.split('/')),
+    });
+  }
+
+  for (const dir of TYPE_DEF_DIRS) {
+    const absDir = path.join(ROOT, ...dir.split('/'));
+    if (!fs.existsSync(absDir)) {
+      console.warn('[doc-generator] Type definition directory missing:', dir);
+      continue;
+    }
+
+    const dirEntries = fs
+      .readdirSync(absDir, { withFileTypes: true })
+      .filter((entry) => entry.isFile() && entry.name.endsWith('.d.ts'))
+      .map((entry) => ({
+        rel: path.posix.join(dir, entry.name),
+        abs: path.join(absDir, entry.name),
+      }));
+
+    entries.push(...dirEntries);
+  }
+
+  entries.sort((a, b) => a.rel.localeCompare(b.rel, 'en', { sensitivity: 'base' }));
 
   let body = '```js\n';
+  const includedSymbols = new Set();
+
   for (const { rel, abs } of entries) {
     if (!fs.existsSync(abs)) {
       console.warn('[doc-generator] Whitelist file missing:', rel);
@@ -358,9 +387,22 @@ function buildTypeDefMarkdown() {
     let content = fs.readFileSync(abs, 'utf8');
     content = stripTopImports(content);
 
+    for (const symbol of REQUIRED_TYPE_SYMBOLS) {
+      if (content.includes(symbol)) {
+        includedSymbols.add(symbol);
+      }
+    }
+
     body += makeSectionHeader(rel);
     body += content.trimEnd() + '\n\n';
   }
+
+  for (const symbol of REQUIRED_TYPE_SYMBOLS) {
+    if (!includedSymbols.has(symbol)) {
+      throw new Error(`[doc-generator] Missing required type symbol in generated references: ${symbol}`);
+    }
+  }
+
   body += '```\n';
   return body;
 }
