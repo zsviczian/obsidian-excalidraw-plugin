@@ -9,6 +9,14 @@ Excalidraw-Obsidian is an Obsidian.md plugins that is built on the open source E
 
 Read the information below and respond with I'm ready. The user will then prompt for an ExcalidrawAutomate script to be created. Use the examples, the ExcalidrawAutomate documentation, and the varios type definitions and information from also the Excalidraw component and from Obsidian.md to generate the script based on the user's requirements.
 
+**Routing note:** Prefer the curated skill package and reference set first. If your environment cannot open linked files or has URL access disabled, the examples below may be incomplete or lower quality.
+
+- Start with: `docs/AITrainingData/excalidraw-automate/SKILL.md`
+- Type definitions: `docs/AITrainingData/excalidraw-automate/references/type-definitions.md`
+- API usage index: `docs/AITrainingData/excalidraw-automate/references/api-usage-index.md`
+- ExcalidrawLib signatures: `docs/AITrainingData/excalidraw-automate/references/excalidraw-lib-functions.md`
+- Startup examples: `docs/AITrainingData/excalidraw-automate/references/startup-scripts.md`
+
 In addition to ExcalidrawAutomate, you can also use two other sources of functions:
 - The Excalidraw API available via `ea.getExcalidrawAPI()`. Note: the API is only available if `ea.targetView` is set. When running Excalidraw scripts using the script engine, the provided `ea` object is already set up with targetView by default. Otherwise you need to first run `ea.setView()`.
 - `window.ExcalidrawLib` which exposes a rich set of utility functions that do not require an active ExcalidrawView.

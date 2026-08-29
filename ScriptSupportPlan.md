@@ -55,7 +55,7 @@ Target branch: `improved-scripting-skills`.
 | Create planning artifact in repository | Complete | Added [ScriptSupportPlan.md](ScriptSupportPlan.md) with phases, decisions, and action log |
 | Unify generator implementation behind `npm run doc` | Complete | Added shared generator core at [scripts/excalidraw-docs-generator-core.mjs](scripts/excalidraw-docs-generator-core.mjs); both [scripts/generate-script-library.mjs](scripts/generate-script-library.mjs) and [scripts/skill-builder.mjs](scripts/skill-builder.mjs) are thin wrappers over one code path |
 | Ensure canonical pen type completeness in generated docs | Complete | Generated references now include canonical Obsidian pen stroke type definitions plus the full public `src/types` and `lib/types` declaration surface |
-| Curate legacy training entrypoint warning and routing | Not started | Must add explicit URL-access warning and links to curated sources |
+| Curate legacy training entrypoint warning and routing | Complete | Legacy training entrypoint now warns about inaccessible references and routes agents to the curated skill/reference set |
 | Add PR publishing workflow guidance for scripting agents | Not started | Add maintainer-approved PR workflow instructions to skill/reference docs without automating `index-new.md` |
 | Add strict image naming and validation | Not started | Define naming standard for script previews and add lint-style validation check |
 | Optional template-repo sync from `npm run doc` | In progress | `ea-script-template` is now present in workspace; sync design can proceed |
@@ -110,6 +110,10 @@ Planned changes:
 Acceptance:
 - Legacy file remains backward compatible as an entrypoint.
 - Warning is clear and placed before the main usage workflow.
+
+Status:
+- Complete.
+- The generated legacy entrypoint now includes a top-level routing warning plus direct links to the curated skill and reference files.
 
 ### Checkpoint 4: Script publishing workflow guidance for agents
 Objective:
