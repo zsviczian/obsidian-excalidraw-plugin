@@ -660,13 +660,13 @@ The \`references/\` directory contains supporting documentation necessary for wr
 
 ## Publishing Workflow
 Use the normal repository contribution flow when publishing or updating scripts.
+The AI training material is maintained independently from publishing PRs; do not bundle regenerated training artifacts into the script PR.
 
 - Add or update the script under [ea-scripts](https://github.com/zsviczian/obsidian-excalidraw-plugin/tree/master/ea-scripts).
 - Add or update the preview image under [images](https://github.com/zsviczian/obsidian-excalidraw-plugin/tree/master/images).
 - Keep [ea-scripts/index-new.md](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/index-new.md) manually curated; do not automate it.
 - Update [ea-scripts/directory-info.json](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/directory-info.json) in the same PR.
 - For script updates, refresh the matching entry's \`mtime\` in [ea-scripts/directory-info.json](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/directory-info.json) so the plugin can detect the newer local version.
-- Run \`npm run doc\` before opening the PR so the generated skill and reference outputs stay in sync with the script changes.
 - Keep the PR focused on the script and its generated references.
 
 ### How to use the Script Examples
