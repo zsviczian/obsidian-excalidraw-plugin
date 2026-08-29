@@ -488,6 +488,72 @@ function copyDirectoryRecursive(sourceDir, targetDir) {
   }
 }
 
+/**
+ * Converts only the template snapshot's script examples to JavaScript
+ * filenames and updates local reference links. Canonical generated docs keep
+ * their Markdown filenames because they are rendered as documentation.
+ */
+function normalizeTemplateScriptReferences() {
+  const scriptsDir = path.join(TEMPLATE_BOOTSTRAP_REFERENCES_DIR, 'scripts');
+  if (!fs.existsSync(scriptsDir)) {
+    return;
+  }
+
+  const entries = fs.readdirSync(scriptsDir, { withFileTypes: true });
+  for (const entry of entries) {
+    if (
+      !entry.isFile() ||
+      !entry.name.endsWith('.md') ||
+      entry.name === 'README.md'
+    ) {
+      continue;
+    }
+
+    const baseName = entry.name.slice(0, -3);
+    const targetName = baseName.endsWith('.js') ? baseName : `${baseName}.js`;
+    const sourcePath = path.join(scriptsDir, entry.name);
+    const targetPath = path.join(scriptsDir, targetName);
+    if (fs.existsSync(targetPath)) {
+      fs.rmSync(targetPath, { force: true });
+    }
+    fs.renameSync(sourcePath, targetPath);
+  }
+
+  const markdownFiles = [];
+  const directories = [TEMPLATE_BOOTSTRAP_DIR];
+  while (directories.length) {
+    const currentDir = directories.pop();
+    for (const entry of fs.readdirSync(currentDir, { withFileTypes: true })) {
+      const entryPath = path.join(currentDir, entry.name);
+      if (entry.isDirectory()) {
+        directories.push(entryPath);
+      } else if (entry.isFile() && entry.name.endsWith('.md')) {
+        markdownFiles.push(entryPath);
+      }
+    }
+  }
+
+  for (const markdownFile of markdownFiles) {
+    const original = fs.readFileSync(markdownFile, 'utf8');
+    const rewritten = original.replace(
+      /\[([^\]\n]+)\]\(((?:\.\/)?scripts\/[^\n)]+)\.md\)/g,
+      (_match, label, target) => {
+        const labelBase = String(label).replace(/\.md$/, '');
+        const normalizedLabel = labelBase.endsWith('.js')
+          ? labelBase
+          : `${labelBase}.js`;
+        const normalizedTarget = String(target).endsWith('.js')
+          ? target
+          : `${target}.js`;
+        return `[${normalizedLabel}](${normalizedTarget})`;
+      },
+    );
+    if (rewritten !== original) {
+      fs.writeFileSync(markdownFile, rewritten, 'utf8');
+    }
+  }
+}
+
 function syncTemplateRepository(mode = 'full') {
   if (!fs.existsSync(TEMPLATE_REPO_ROOT)) {
     return;
@@ -502,6 +568,7 @@ function syncTemplateRepository(mode = 'full') {
   if (mode === 'full' && fs.existsSync(SKILL_DIR)) {
     fs.rmSync(TEMPLATE_BOOTSTRAP_DIR, { recursive: true, force: true });
     copyDirectoryRecursive(SKILL_DIR, TEMPLATE_BOOTSTRAP_DIR);
+    normalizeTemplateScriptReferences();
     writeTemplateBootstrapFile('README.md', `# ExcalidrawAutomate skill snapshot
 
 This directory is synchronized from the plugin repository:
