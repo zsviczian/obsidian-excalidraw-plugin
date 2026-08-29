@@ -9,13 +9,14 @@ Excalidraw-Obsidian is an Obsidian.md plugins that is built on the open source E
 
 Read the information below and respond with I'm ready. The user will then prompt for an ExcalidrawAutomate script to be created. Use the examples, the ExcalidrawAutomate documentation, and the varios type definitions and information from also the Excalidraw component and from Obsidian.md to generate the script based on the user's requirements.
 
-**Routing note:** Prefer the curated skill package and reference set first. If your environment cannot open linked files or has URL access disabled, the examples below may be incomplete or lower quality.
+**Routing note:** Prefer the curated skill package and reference set first. If your environment cannot open linked files or has URL access disabled, use the repository base below and resolve the references from there.
 
-- Start with: `docs/AITrainingData/excalidraw-automate/SKILL.md`
-- Type definitions: `docs/AITrainingData/excalidraw-automate/references/type-definitions.md`
-- API usage index: `docs/AITrainingData/excalidraw-automate/references/api-usage-index.md`
-- ExcalidrawLib signatures: `docs/AITrainingData/excalidraw-automate/references/excalidraw-lib-functions.md`
-- Startup examples: `docs/AITrainingData/excalidraw-automate/references/startup-scripts.md`
+- Master repository: https://github.com/zsviczian/obsidian-excalidraw-plugin
+- Start with: https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/AITrainingData/excalidraw-automate/SKILL.md
+- Type definitions: https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/AITrainingData/excalidraw-automate/references/type-definitions.md
+- API usage index: https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/AITrainingData/excalidraw-automate/references/api-usage-index.md
+- ExcalidrawLib signatures: https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/AITrainingData/excalidraw-automate/references/excalidraw-lib-functions.md
+- Startup examples: https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/AITrainingData/excalidraw-automate/references/startup-scripts.md
 
 In addition to ExcalidrawAutomate, you can also use two other sources of functions:
 - The Excalidraw API available via `ea.getExcalidrawAPI()`. Note: the API is only available if `ea.targetView` is set. When running Excalidraw scripts using the script engine, the provided `ea` object is already set up with targetView by default. Otherwise you need to first run `ea.setView()`.
@@ -238,11 +239,11 @@ Example freedraw element carrying `customData.strokeOptions`:
 
 ## References
 The `references/` directory contains supporting documentation necessary for writing scripts:
-- `references/type-definitions.md`: Core type definitions for ExcalidrawAutomate.
-- `references/excalidraw-lib-functions.md`: Function signatures for `window.ExcalidrawLib`.
-- `references/startup-scripts.md`: ExcalidrawStartup script template and examples.
-- `references/api-usage-index.md`: A highly useful index mapping every API method (ea.*, api.*, ExcalidrawLib.*) to the specific example scripts that utilize them.
-- `references/scripts/`: A folder containing all the raw, real-world example scripts.
+- [type-definitions.md](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/AITrainingData/excalidraw-automate/references/type-definitions.md): Core type definitions for ExcalidrawAutomate.
+- [excalidraw-lib-functions.md](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/AITrainingData/excalidraw-automate/references/excalidraw-lib-functions.md): Function signatures for `window.ExcalidrawLib`.
+- [startup-scripts.md](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/AITrainingData/excalidraw-automate/references/startup-scripts.md): ExcalidrawStartup script template and examples.
+- [api-usage-index.md](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/AITrainingData/excalidraw-automate/references/api-usage-index.md): A highly useful index mapping every API method (ea.*, api.*, ExcalidrawLib.*) to the specific example scripts that utilize them.
+- [scripts/](https://github.com/zsviczian/obsidian-excalidraw-plugin/tree/master/docs/AITrainingData/excalidraw-automate/references/scripts): A folder containing all the raw, real-world example scripts.
 
 ### How to use the Script Examples
 If you need to implement a specific function (e.g., `ea.addElementsToView`), do NOT guess its implementation context. Instead:
