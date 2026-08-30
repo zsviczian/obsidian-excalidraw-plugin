@@ -74,14 +74,32 @@ To keep this training file concise, large external type definitions are not incl
 
 #### **1. The Core Workflow: Handling Element Immutability**
 
-*   **Central Rule:** Elements in the Excalidraw scene are immutable and should never be modified directly. Always use the ExcalidrawAutomate (EA) "workbench" pattern for modifications.
+*   **Central Rule:** Elements returned from the Excalidraw scene are immutable and should never be modified directly. EA owns a stateful, in-memory "workbench" (`elementsDict` and `imagesDict`) where a script stages one coherent persistent or temporary operation independently of the scene.
 *   **The Workflow:**
-    1.  Get elements from the current view using `ea.getViewElements()` or `ea.getViewSelectedElements()`.
-    2.  Copy these elements into the EA workbench for editing using `ea.copyViewElementsToEAforEditing(elements)`.
-    3.  Modify the properties of the element copies that are now in the EA workbench (e.g., `ea.getElement(id).locked = true;`).
-    4.  Commit the changes back to the scene using `await ea.addElementsToView()`.
+    1.  Start an independent transaction with `ea.clear()`. This clears only the workbench; it does not delete scene elements or reset style.
+    2.  Read existing scene elements using `ea.getViewElements()` or `ea.getViewSelectedElements()`.
+    3.  To work with mutable copies of those same scene elements, copy them into the workbench with `ea.copyViewElementsToEAforEditing(elements)`. Their IDs are preserved.
+    4.  Modify the workbench copies retrieved by their original IDs (e.g., `ea.getElement(id).locked = true;`).
+    5.  For a persistent scene edit, commit once with `await ea.addElementsToView()`; saving is enabled by default. For temporary transformations such as export or preview preparation, pass the workbench elements to the relevant EA operation without committing them to the scene.
+    6.  Call `ea.clear()` after the operation to discard the workbench copies, preferably in a `finally` block when an awaited operation can fail.
+*   **Temporary workbench example:**
+    ```javascript
+    ea.clear();
+    try {
+      const sceneElements = ea.getViewElements();
+      ea.copyViewElementsToEAforEditing(sceneElements);
+      ea.getElement(pathId).opacity = 0;
+      // elementsOverride replaces the export scene, so pass the complete workbench.
+      const svg = await ea.createViewSVG({ elementsOverride: ea.getElements() });
+      // Use svg. The live scene was never changed.
+    } finally {
+      ea.clear();
+    }
+    ```
+*   **`elementsOverride` is a complete replacement:** In `createViewSVG()`, this option replaces the view's element array; it is not merged with the scene and is not a patch by element ID. The array must contain every element that should appear in the SVG. When temporarily modifying an existing scene for export, the simplest safe workflow is to copy the complete desired export set into EA, modify the workbench copy, and pass `ea.getElements()` as the override.
+*   **Identity is the boundary:** `copyViewElementsToEAforEditing()` is the standard way to obtain mutable, identity-preserving copies of existing scene elements for both persistent edits and temporary EA operations. By contrast, `ea.cloneElement()` and `ea.cloneElements()` deliberately generate new IDs and are only for creating genuine duplicate scene elements. Never use them to obtain editable workbench copies of existing elements.
+*   **One workbench transaction at a time:** The workbench is shared mutable state on an EA instance. Do not interleave asynchronous preview/export preparation and scene mutation through the same workbench. Await the operation, then clear the workbench before starting another transaction.
 *   **Deletion:** To delete an element, set its `isDeleted` property to `true` on the workbench copy (`ea.getElement(id).isDeleted = true;`) and then commit with `await ea.addElementsToView()`.
-*   **Cleanup:** Use `ea.clear()` at the beginning of a script if you are creating a completely new set of elements, to ensure the EA workbench is empty and doesn't contain artifacts from a previous run.
 
 #### **2. User Interaction: Prompts and Dialogs**
 
@@ -155,7 +173,7 @@ To keep this training file concise, large external type definitions are not incl
 Generating images (SVG/PNG) requires specific approaches depending on the context. Follow these three rules strictly to avoid performance issues and missing assets:
 1. **Exporting elements currently in the EA workbench:** Use `await ea.createSVG(null, ...)` or `await ea.createPNG(null, ...)` (passing `null` as the `templatePath`).
 2. **Exporting an Excalidraw file that is NOT currently open:** Pass the file path as the template to `createSVG` or `createPNG` (e.g., `await ea.createSVG(file.path, ...)`). This is the most reliable approach as ExcalidrawAutomate natively handles loading the scene, resolving embedded images, and instantiating loaders behind the scenes. **Do NOT attempt to manually read the file, reconstruct the scene, or load images into memory.**
-3. **Exporting the currently active `ExcalidrawView`:** Use `await ea.createViewSVG(...)`. This is specifically for the open view. You can use the `elementsOverride` parameter to inject temporary elements (like transparent sizing rectangles) into the exported image without modifying the actual scene.
+3. **Exporting the currently active `ExcalidrawView`:** Use `await ea.createViewSVG(...)`. This is specifically for the open view. Its `elementsOverride` parameter is a complete replacement for the exported element array, not an additive injection or a patch by ID. If supplied, include every existing or temporary element that should appear in the SVG. For temporary changes to existing elements, copy the complete desired export set into the EA workbench, modify it there, and pass `ea.getElements()`.
 
 #### **8. Custom Pens and Perfect Freehand**
 
@@ -276,10 +294,12 @@ type ExcalidrawAutomateHelpTarget = ((...args: unknown[]) => unknown) | string;
 /**
  * ExcalidrawAutomate is a utility class that provides a simplified API to interact with Excalidraw elements and the Excalidraw canvas.
  * Elements in the Excalidraw Scene are immutable. You should never directly change element properties in the scene object.
- * ExcalidrawAutomate provides a "workbench" where you can create, modify, and delete elements before committing them to the Excalidraw Scene.
- * The basic workflow is to create elements in ExcalidrawAutomate and once ready commit them to the Excalidraw Scene using addElementsToView().
- * To modify elements in the scene, you should first copy them over to EA using copyViewElementsToEAforEditing, make the necessary modifications,
- * then commit them back to the scene using addElementsToView().
+ * ExcalidrawAutomate provides a stateful, in-memory "workbench" where you can create, modify, and delete elements independently of the Excalidraw Scene.
+ * Begin each independent transaction with clear(). To modify existing scene elements while preserving their identity, copy them to the workbench with
+ * copyViewElementsToEAforEditing() and modify the copies returned by getElement(originalId). Commit persistent edits with addElementsToView(),
+ * or use the modified workbench elements for a temporary EA operation such as export and then discard them with clear() without committing.
+ * cloneElement() and cloneElements() deliberately generate new IDs and are only for creating genuine duplicates, never for editing an existing scene element.
+ * Do not interleave asynchronous operations that mutate the same EA workbench; await the operation, then clear before starting another transaction.
  * To delete an element from the view set element.isDeleted = true and commit the changes to the scene using addElementsToView().
  *
  * At a very high level, EA has 3 type of functions:
@@ -868,7 +888,7 @@ export declare class ExcalidrawAutomate {
      * @param {boolean} [options.selectedOnly=false] - Whether to include only the selected elements in the SVG.
      * @param {boolean} [options.skipInliningFonts=false] - Whether to skip inlining fonts in the SVG.
      * @param {boolean} [options.embedScene=false] - Whether to embed the scene in the SVG.
-     * @param {ExcalidrawElement[]} [options.elementsOverride] - Optional override for the elements to include in the SVG. Primary to support the Printable Layout Wizard script
+     * @param {readonly ExcalidrawElement[]} [options.elementsOverride] - Optional complete replacement for the view's exported elements. This array is not merged with the current scene or treated as a patch by ID: when supplied, only its non-deleted elements are exported. Include every element that should appear in the SVG.
      * @returns {Promise<SVGSVGElement>} A promise that resolves to the SVG element.
      */
     createViewSVG({ withBackground, theme, frameRendering, padding, selectedOnly, skipInliningFonts, embedScene, elementsOverride, }: {
@@ -879,7 +899,7 @@ export declare class ExcalidrawAutomate {
         selectedOnly?: boolean;
         skipInliningFonts?: boolean;
         embedScene?: boolean;
-        elementsOverride?: ExcalidrawElement[];
+        elementsOverride?: readonly ExcalidrawElement[];
     }): Promise<SVGSVGElement>;
     /**
      * Creates an SVG image from the ExcalidrawAutomate elements and the template provided.
@@ -1194,7 +1214,9 @@ export declare class ExcalidrawAutomate {
      */
     addLabelToLine(lineId: string, label: string): string;
     /**
-     * Clears elementsDict and imagesDict only.
+     * Clears the EA workbench (`elementsDict` and `imagesDict`) without changing
+     * the scene, target view, or current style. Call this before each independent
+     * workbench transaction and before repurposing an EA instance.
      */
     clear(): void;
     /**
@@ -1328,11 +1350,14 @@ export declare class ExcalidrawAutomate {
      */
     getColorsFromSVGString(svgString: string): SVGColorInfo;
     /**
-     * Copies elements from the view to elementsDict for editing.
+     * Copies existing scene elements to the workbench as mutable, identity-preserving copies.
+     * The copies can be committed with `addElementsToView()` to update the original
+     * scene elements, or used temporarily by another EA operation and discarded with
+     * `clear()` without modifying the scene.
      * @param {ExcalidrawElement[]} elements - Array of elements to copy.
      * @param {boolean} [copyImages=false] - Whether to copy images as well.
      */
-    copyViewElementsToEAforEditing(elements: ExcalidrawElement[], copyImages?: boolean): void;
+    copyViewElementsToEAforEditing(elements: readonly ExcalidrawElement[], copyImages?: boolean): void;
     /**
      * Toggles full screen mode for the target view.
      * @param {boolean} [forceViewMode=false] - Whether to force view mode.
@@ -1834,7 +1859,10 @@ export declare class ExcalidrawAutomate {
      */
     generateElementId(): string;
     /**
-     * Clones the specified element with a new ID.
+     * Clones the specified element with a new ID for insertion as a genuine duplicate.
+     * Do not use this to edit an existing scene element; use
+     * `copyViewElementsToEAforEditing()` and retrieve the workbench copy by its
+     * original ID instead.
      * @param {ExcalidrawElement} element - The element to clone.
      * @returns {ExcalidrawElement} The cloned element with a new ID.
      */
@@ -6651,7 +6679,7 @@ Content structure:
 2. The curated script overview (index-new.md)
 3. Raw source of every *.md script in /ea-scripts (each fenced code block is auto-closed to ensure well-formed aggregation)
 
-Generated on: 2026-08-30T09:25:26.146Z
+Generated on: 2026-08-30T12:07:47.389Z
 
 ---
 

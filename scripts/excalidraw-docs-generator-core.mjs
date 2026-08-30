@@ -97,14 +97,32 @@ To keep this training file concise, large external type definitions are not incl
 
 #### **1. The Core Workflow: Handling Element Immutability**
 
-*   **Central Rule:** Elements in the Excalidraw scene are immutable and should never be modified directly. Always use the ExcalidrawAutomate (EA) "workbench" pattern for modifications.
+*   **Central Rule:** Elements returned from the Excalidraw scene are immutable and should never be modified directly. EA owns a stateful, in-memory "workbench" (\`elementsDict\` and \`imagesDict\`) where a script stages one coherent persistent or temporary operation independently of the scene.
 *   **The Workflow:**
-    1.  Get elements from the current view using \`ea.getViewElements()\` or \`ea.getViewSelectedElements()\`.
-    2.  Copy these elements into the EA workbench for editing using \`ea.copyViewElementsToEAforEditing(elements)\`.
-    3.  Modify the properties of the element copies that are now in the EA workbench (e.g., \`ea.getElement(id).locked = true;\`).
-    4.  Commit the changes back to the scene using \`await ea.addElementsToView()\`.
+    1.  Start an independent transaction with \`ea.clear()\`. This clears only the workbench; it does not delete scene elements or reset style.
+    2.  Read existing scene elements using \`ea.getViewElements()\` or \`ea.getViewSelectedElements()\`.
+    3.  To work with mutable copies of those same scene elements, copy them into the workbench with \`ea.copyViewElementsToEAforEditing(elements)\`. Their IDs are preserved.
+    4.  Modify the workbench copies retrieved by their original IDs (e.g., \`ea.getElement(id).locked = true;\`).
+    5.  For a persistent scene edit, commit once with \`await ea.addElementsToView()\`; saving is enabled by default. For temporary transformations such as export or preview preparation, pass the workbench elements to the relevant EA operation without committing them to the scene.
+    6.  Call \`ea.clear()\` after the operation to discard the workbench copies, preferably in a \`finally\` block when an awaited operation can fail.
+*   **Temporary workbench example:**
+    \`\`\`javascript
+    ea.clear();
+    try {
+      const sceneElements = ea.getViewElements();
+      ea.copyViewElementsToEAforEditing(sceneElements);
+      ea.getElement(pathId).opacity = 0;
+      // elementsOverride replaces the export scene, so pass the complete workbench.
+      const svg = await ea.createViewSVG({ elementsOverride: ea.getElements() });
+      // Use svg. The live scene was never changed.
+    } finally {
+      ea.clear();
+    }
+    \`\`\`
+*   **\`elementsOverride\` is a complete replacement:** In \`createViewSVG()\`, this option replaces the view's element array; it is not merged with the scene and is not a patch by element ID. The array must contain every element that should appear in the SVG. When temporarily modifying an existing scene for export, the simplest safe workflow is to copy the complete desired export set into EA, modify the workbench copy, and pass \`ea.getElements()\` as the override.
+*   **Identity is the boundary:** \`copyViewElementsToEAforEditing()\` is the standard way to obtain mutable, identity-preserving copies of existing scene elements for both persistent edits and temporary EA operations. By contrast, \`ea.cloneElement()\` and \`ea.cloneElements()\` deliberately generate new IDs and are only for creating genuine duplicate scene elements. Never use them to obtain editable workbench copies of existing elements.
+*   **One workbench transaction at a time:** The workbench is shared mutable state on an EA instance. Do not interleave asynchronous preview/export preparation and scene mutation through the same workbench. Await the operation, then clear the workbench before starting another transaction.
 *   **Deletion:** To delete an element, set its \`isDeleted\` property to \`true\` on the workbench copy (\`ea.getElement(id).isDeleted = true;\`) and then commit with \`await ea.addElementsToView()\`.
-*   **Cleanup:** Use \`ea.clear()\` at the beginning of a script if you are creating a completely new set of elements, to ensure the EA workbench is empty and doesn't contain artifacts from a previous run.
 
 #### **2. User Interaction: Prompts and Dialogs**
 
@@ -178,7 +196,7 @@ To keep this training file concise, large external type definitions are not incl
 Generating images (SVG/PNG) requires specific approaches depending on the context. Follow these three rules strictly to avoid performance issues and missing assets:
 1. **Exporting elements currently in the EA workbench:** Use \`await ea.createSVG(null, ...)\` or \`await ea.createPNG(null, ...)\` (passing \`null\` as the \`templatePath\`).
 2. **Exporting an Excalidraw file that is NOT currently open:** Pass the file path as the template to \`createSVG\` or \`createPNG\` (e.g., \`await ea.createSVG(file.path, ...)\`). This is the most reliable approach as ExcalidrawAutomate natively handles loading the scene, resolving embedded images, and instantiating loaders behind the scenes. **Do NOT attempt to manually read the file, reconstruct the scene, or load images into memory.**
-3. **Exporting the currently active \`ExcalidrawView\`:** Use \`await ea.createViewSVG(...)\`. This is specifically for the open view. You can use the \`elementsOverride\` parameter to inject temporary elements (like transparent sizing rectangles) into the exported image without modifying the actual scene.
+3. **Exporting the currently active \`ExcalidrawView\`:** Use \`await ea.createViewSVG(...)\`. This is specifically for the open view. Its \`elementsOverride\` parameter is a complete replacement for the exported element array, not an additive injection or a patch by ID. If supplied, include every existing or temporary element that should appear in the SVG. For temporary changes to existing elements, copy the complete desired export set into the EA workbench, modify it there, and pass \`ea.getElements()\`.
 
 #### **8. Custom Pens and Perfect Freehand**
 

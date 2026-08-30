@@ -287,7 +287,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "createViewSVG",
-    code: "async createViewSVG({withBackground?: boolean, theme?: 'light' | 'dark', frameRendering?: FrameRenderingOptions, padding?: number, selectedOnly?: boolean, skipInliningFonts?: boolean, embedScene?: boolean}): Promise<SVGSVGElement>",
+    code: "async createViewSVG({withBackground?: boolean, theme?: 'light' | 'dark', frameRendering?: FrameRenderingOptions, padding?: number, selectedOnly?: boolean, skipInliningFonts?: boolean, embedScene?: boolean, elementsOverride?: readonly ExcalidrawElement[]}): Promise<SVGSVGElement>",
     desc:
       "Creates an SVG representation of the current view with specified options.\n" +
       "\n" +
@@ -299,6 +299,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
       "@param {boolean} [options.selectedOnly=false] - Whether to include only the selected elements in the SVG.\n" +
       "@param {boolean} [options.skipInliningFonts=false] - Whether to skip inlining fonts in the SVG.\n" +
       "@param {boolean} [options.embedScene=false] - Whether to embed the scene in the SVG.\n" +
+      "@param {readonly ExcalidrawElement[]} [options.elementsOverride] - Complete replacement for the exported elements. It is not merged with the current scene or treated as a patch by ID. Include every element that should appear in the SVG.\n" +
       "@returns {Promise<SVGSVGElement>} A promise that resolves to the SVG element.\n" +
       "\n" +
       "@typedef {Object} FrameRenderingOptions\n" +
@@ -315,6 +316,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
       "  selectedOnly: false,\n" +
       "  skipInliningFonts: false,\n" +
       "  embedScene: false,\n" +
+      "  // elementsOverride: ea.getElements(), // Must contain the complete export set.\n" +
       "});",
   },
   {
