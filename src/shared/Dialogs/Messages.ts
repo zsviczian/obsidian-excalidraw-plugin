@@ -81,7 +81,7 @@ ${getYouTubeDiv("p9MBFxUoOXQ")}
 - Added the Voronoi diagram script. 🙏[@FreeCutter](${URLs.GITHUB_COM}/FreeCutter) [#2845](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2845)
 - Dragging a single external GIF with the **Import external file** action now lets you import it as either an image or an embeddable. [#2848](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2848)
 - Folder and file path settings now provide vault suggestions, warn about missing paths, and can create missing folders after confirmation.
-- \`area=\` embed previews in reading mode now show a zoom icon on hover. Clicking it opens an interactive slider to adjust the padding value visually, updating the markdown link in real time. Drag the knob or use the mouse wheel (0/10, then step 50 up to 2000).
+- \`area=\` embed previews in reading mode now show a zoom icon on hover. Clicking it opens an interactive slider to adjust the padding value visually, with a live preview while dragging or scrolling the wheel. The markdown link is updated when you close the popup. Drag the knob or use the mouse wheel (0/10, then step 50 up to 2000).
 
 ## New and fixed from Excalidraw.com
 - New: Flowchart (CTRL/CMD+Arrow) now intelligently routes new shapes to avoid overlapping child nodes. [#11532](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/11532)

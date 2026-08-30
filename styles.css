@@ -1747,7 +1747,9 @@ button.excalidraw-font-picker {
   opacity: 0;
   transition: opacity 0.15s;
   background: var(--background-secondary);
+  border: none;
   border-radius: 4px;
+  color: inherit;
   padding: 2px;
   width: 22px;
   height: 22px;
@@ -1755,6 +1757,10 @@ button.excalidraw-font-picker {
   align-items: center;
   justify-content: center;
   z-index: 10;
+}
+
+.excalidraw-padding-zoom-icon.is-visible {
+  opacity: 0.8;
 }
 
 .excalidraw-padding-zoom-icon svg {
@@ -1774,6 +1780,7 @@ button.excalidraw-font-picker {
   align-items: center;
   gap: 4px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  touch-action: none;
 }
 
 .ex-pad-popup-label {
@@ -1791,6 +1798,7 @@ button.excalidraw-font-picker {
   position: relative;
   cursor: pointer;
   flex-shrink: 0;
+  touch-action: none;
 }
 
 .ex-pad-popup-knob {

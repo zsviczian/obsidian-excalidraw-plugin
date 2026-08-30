@@ -73,6 +73,7 @@ import {
   linkClickModifierType,
 } from "../utils/modifierkeyHelper";
 import { getImageCache } from "../shared/ImageCache";
+import { cleanupPaddingUI } from "../shared/PaddingUI";
 import { StylesManager } from "./managers/StylesManager";
 import { CustomMutationObserver, log } from "../utils/debugHelper";
 import { ExcalidrawConfig } from "../shared/ExcalidrawConfig";
@@ -911,6 +912,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
   onunload() {
     ExcalidrawSidepanelView.onPluginUnload(this);
+    cleanupPaddingUI();
     const excalidrawViews = getExcalidrawViews(this.app);
     excalidrawViews.forEach(({ leaf }) => {
       void this.setMarkdownView(leaf);
