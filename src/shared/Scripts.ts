@@ -32,6 +32,13 @@ export type ScriptIconMap = {
   [key: string]: { name: string; group: string; svgString: string };
 };
 
+/** Identifies why the script engine invoked a script. */
+export type ScriptExecutionSource =
+  | "manual"
+  | "autostart"
+  | "sidepanel-restore"
+  | "drawing-onload";
+
 export interface ScriptFileRenamePlan {
   renames: Array<{
     file: TFile;
@@ -609,7 +616,7 @@ export class ScriptEngine {
     try {
       const script = stripYamlFrontmatter(await this.app.vault.read(file));
       if (script) {
-        await this.executeScript(view, script, scriptName, file);
+        await this.executeScript(view, script, scriptName, file, "autostart");
       }
       await this.recordAutostartResult(scriptName, false);
     } catch (error: unknown) {
@@ -693,11 +700,16 @@ export class ScriptEngine {
     delete this.app.commands.commands[commandId];
   }
 
+  /**
+   * Executes a script with a fresh EA instance and exposes its invocation source through
+   * `utils.executionSource` so scripts can separate registration from user actions.
+   */
   async executeScript(
     view: ExcalidrawView = undefined,
     script: string,
     title: string,
     file: TFile,
+    executionSource: ScriptExecutionSource = "manual",
   ) {
     if (!script || !title) {
       return;
@@ -781,6 +793,7 @@ export class ScriptEngine {
           instructions,
         ),
       scriptFile: file,
+      executionSource,
     });
     /*} catch (e) {
       new Notice(t("SCRIPT_EXECUTION_ERROR"), 4000);

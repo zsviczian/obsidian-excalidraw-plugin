@@ -37,7 +37,7 @@ Read the information below and respond with I'm ready. The user will then prompt
 - Startup examples: https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/AITrainingData/excalidraw-automate/references/startup-scripts.md
 
 In addition to ExcalidrawAutomate, you can also use two other sources of functions:
-- The Excalidraw API available via \`ea.getExcalidrawAPI()\`. Note: the API is only available if \`ea.targetView\` is set. When running Excalidraw scripts using the script engine, the provided \`ea\` object is already set up with targetView by default. Otherwise you need to first run \`ea.setView()\`.
+- The Excalidraw API available via \`ea.getExcalidrawAPI()\`. Note: the API is only available if \`ea.targetView\` is set. When running Excalidraw scripts using the script engine, the provided \`ea\` object is already set up with targetView by default. Otherwise call \`ea.setView()\` to select a sensible default or \`ea.setView(view)\` to bind explicitly. Calling \`ea.setView(null)\` deliberately clears \`targetView\`; it does not auto-select another drawing.
 - \`window.ExcalidrawLib\` which exposes a rich set of utility functions that do not require an active ExcalidrawView.
 
 **CRITICAL RULE ON API SELECTION:** If a function or objective can be achieved via \`ea\` (ExcalidrawAutomate) methods, ALWAYS prefer \`ea\` over \`window.ExcalidrawLib\`. \`ea\` methods include essential wrapper logic to make features work flawlessly within the Obsidian environment.
@@ -50,10 +50,16 @@ For a reference, follow the implementation pattern used in the "Printable Layout
 - Elements can be hidden by setting their opacity to 0. When hiding elements this way, it is good practice to temporarily store their original opacity in customData. This allows for easy restoration of the original opacity later.
 - Elements can be deleted from the scene by setting their isDeleted property to true.
 - The Obsidian.md module is available on \`ea.obsidian\`.
+- Version checks are distinct: use \`ea.verifyMinimumPluginVersion()\` for the Excalidraw plugin and \`ea.verifyMinAppVersion()\` only for the Obsidian application version.
+- Use \`utils.executionSource\` to distinguish \`"manual"\` toolbar/command/hotkey runs from \`"autostart"\`, \`"sidepanel-restore"\`, and \`"drawing-onload"\` runs. Autostart-capable scripts should register their view-local providers on every applicable run, then return after registration when the source is \`"autostart"\`.
+- \`ea.registerAutostart(message?)\` accepts a concise script-specific explanation of what autostart registers or performs. The explanation appears as the second paragraph of the permission prompt; do not imply that the script's main interactive action starts automatically when only its tools/providers do.
+- \`ea.registerElementActionProvider()\` action descriptors take an Obsidian/Lucide icon name such as \`"presentation"\`, not serialized SVG markup. For buttons a script renders itself, obtain the SVG with \`ea.obsidian.getIcon()\` and recreate it in the button's owning document when popout support matters.
+- When an Excalidraw API method requires an element, pass the known typed scene element. For example, call \`api.startLineEditor(line, pointIndices)\`; do not re-read selection state when the intended line is already known.
+- For persistent workbench mutations, await \`ea.addElementsToView()\` with saving enabled (the default). Prefer this public EA save path over unpublished methods on \`ea.targetView\`.
 
 **Sidepanels and multi-view tooling:**
 - Sidepanels are for scripts that must stay open while users hop between multiple Excalidraw views. They should implement the SidepanelTab hooks (\`onOpen\`, \`onFocus(view)\`, \`onClose\`, \`onExcalidrawViewClosed\`) and manage their own \`ea.targetView\` explicitly.
-- Persisted sidepanel scripts are launched during plugin startup (e.g., Obsidian restart, plugin update) with \`ea.targetView === null\`. Scripts must handle this by deferring view-bound work until \`onFocus\` delivers a view; call \`ea.setView(view)\` when you decide to bind.
+- Persisted sidepanel scripts are launched during plugin startup (e.g., Obsidian restart, plugin update) with \`ea.targetView === null\`. Scripts must handle this by deferring view-bound work until \`onFocus\` delivers a view; call \`ea.setView(view)\` when you decide to bind. When \`onFocus\` supplies \`null\` or focus moves to a non-Excalidraw view, call \`ea.setView(null)\` to make the unbound state explicit and prevent later view operations from targeting a stale drawing.
 - Each \`ea\` instance may host a single \`sidepanelTab\`. This sidepanel tab is stored in \`ea.sidepanelTab\`. Create the tab with \`ea.createSidepanelTab(title, persist=false, reveal=true)\`; the returned \`ea.sidepanelTab\` exposes \`contentEl\`, \`setContent\`, \`setTitle\`, \`setDisabled\`, \`setCloseCallback\`, \`open/close\`, and focus lifecycle hooks. Note auto-reveal during tab creation via \`ea.createSidepanelTab()\` is disabled during plugin startup. You can reveal a tab with \`ea.sidepanelTab?.open()\`. You can persist with \`ea.persistSidepanelTab()\` (tabs are restored and scripts re-run on next startup). Close with \`ea.sidepanelTab?.close()\`.
 - Mobile UX: sidepanels slide in without disturbing canvas layout and are better for longer forms than floating modals. Prefer them for complex inputs, especially on phones.
 - Auto-closing patterns: For scripts that use sidepanels but perform operations that are single-\`ExcalidrawView\` relevant, they can call \`ea.closeSidepanelTab()\` after completing the operation, and/or inside \`ea.sidepanelTab.onFocus = (view) => { if (view !== ea.targetView) { ea.sidepanelTab?.close(); } }\` to shut down when the user leaves the originating view.
@@ -151,6 +157,22 @@ To keep this training file concise, large external type definitions are not incl
     *   To temporarily hide an element, set \`element.opacity = 0\`. It's good practice to store the original opacity in \`customData\` so it can be restored. It is also recommended to lock hidden elements so they do not get accidentally selected or moved around.
     *   To permanently remove an element from the scene, set \`element.isDeleted = true\`.
 *   **Image Handling:** When dealing with image elements, use \`ea.getViewFileForImageElement(imageElement)\` to get the corresponding \`TFile\` from the Obsidian vault. This is necessary for any logic that needs to read or manipulate the source image file.
+
+#### **6.1. Tests in a Multi-Script Workspace**
+
+*   **Tests are part of implementation:** Add or update focused automated tests for behavior changes. When fixing a regression, reproduce it with a failing test first when practical.
+*   **Co-locate by ownership:** Put script tests in \`src/scripts/{slug}/__tests__/*.test.ts\` and shared utility tests in \`src/sharedUtils/__tests__/*.test.ts\`. Do not maintain a separate root test tree that mirrors dozens of scripts.
+*   **Never import executable entrypoints:** \`main.ts\` runs immediately against the globals injected by Obsidian. Keep it as a thin bootstrap and move testable orchestration to \`run.ts\` or another import-safe module.
+*   **Use the universal runner:** Use Vitest. Run a focused suite while iterating, then run \`npm run check\`; the repository gate includes TypeScript, ESLint, and all test suites. Use \`npm run test:watch\` for continuous feedback.
+*   **Test behavior, not bundler details:** Prefer pure domain functions and narrow fakes for \`ea\`, the Excalidraw API, Obsidian globals, timers, and DOM boundaries. Build and perform an Obsidian smoke test for integration behavior automation cannot prove.
+
+#### **6.2. Per-Script Localization**
+
+*   **Catalogs belong to the script:** Store strings in \`src/scripts/{slug}/lang/\`, with one file per locale. Never create one language catalog shared across unrelated scripts.
+*   **English defines the contract:** \`lang/en.ts\` is the typed source of truth. Maintain \`de.ts\`, \`es.ts\`, \`fr.ts\`, \`ru.ts\`, and \`zh-cn.ts\`; incomplete reviewed catalogs may rely on English fallback.
+*   **Use the shared helper:** Register catalogs in \`lang/index.ts\` with \`createTranslator\`. Resolve the locale with \`ea.obsidian.moment.locale()\` and pass the translator into import-safe script logic.
+*   **Interpolate by name:** Use placeholders such as \`{count}\` instead of string concatenation. Do not use dynamically constructed regular expressions for interpolation.
+*   **Keep UI copy out of logic:** Add user-visible strings to the script catalog rather than embedding them in controllers, runners, or helpers.
 
 #### **7. SVG and Image Export Approaches**
 Generating images (SVG/PNG) requires specific approaches depending on the context. Follow these three rules strictly to avoid performance issues and missing assets:
@@ -967,7 +989,8 @@ export function runUnifiedGeneration(options = {}) {
       '\n')
       .replaceAll('https://youtu.be/', 'YouTube: ')
       .replaceAll('https://www.youtube.com/watch?v=', 'YouTube: ')
-      .replaceAll('https://www.youtube.com/', 'YouTube: ');
+      .replaceAll('https://www.youtube.com/', 'YouTube: ')
+      .trimEnd() + '\n';
 
   fs.writeFileSync(AI_TRAINING_OUT, combined, 'utf8');
 

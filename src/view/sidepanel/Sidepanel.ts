@@ -549,7 +549,13 @@ export class ExcalidrawSidepanelView extends ItemView {
     }
     try {
       const script = await this.plugin.app.vault.read(file);
-      await scriptEngine.executeScript(undefined, script, scriptName, file);
+      await scriptEngine.executeScript(
+        undefined,
+        script,
+        scriptName,
+        file,
+        "sidepanel-restore",
+      );
       const restoredTab = this.scriptTabs.get(scriptName);
       if (restoredTab) {
         restoredTab.setTitle(title);

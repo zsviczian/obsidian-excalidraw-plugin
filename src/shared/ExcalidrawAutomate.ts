@@ -3131,7 +3131,7 @@ export class ExcalidrawAutomate {
     return this.plugin.isExcalidrawFile(f);
   }
 
-  targetView: ExcalidrawView = null; //the view currently edited
+  targetView: ExcalidrawView | null = null; //the view currently edited
   /**
    * Sets the target view for EA. All view operations and all access to the Excalidraw API
    * will be performed on this view.
@@ -3139,12 +3139,15 @@ export class ExcalidrawAutomate {
    * Typical usage:
    * - `setView()` to pick a sensible default automatically
    * - `setView(excalidrawView)` to explicitly target a specific view
+   * - `setView(null)` to explicitly clear `targetView`
    *
    * Selectors:
-   * - If `view` is `null` or `undefined` (or `"auto"`), EA will pick a sensible default:
+   * - If `view` is `undefined` (or `"auto"`), EA will pick a sensible default:
    *   1) the currently active Excalidraw view (if any),
    *   2) otherwise the last active Excalidraw view (if it is still available),
    *   3) otherwise the `"first"` Excalidraw view in the workspace.
+   * - If `view` is explicitly `null`, EA clears `targetView`. This is useful for
+   *   sidepanels when focus moves to a Markdown view or no drawing is eligible.
    * - If `show` is `true`, the view will be revealed (brought to front) and focused.
    *
    * Deprecated selectors (kept for backward compatibility):
@@ -3156,18 +3159,22 @@ export class ExcalidrawAutomate {
    *   necessarily match what a user would consider the “first”/“leftmost”/“topmost” view;
    *   from a user's perspective it may appear effectively random.**
    *
-   * @param {ExcalidrawView | "auto" | "first" | "active" | null | undefined} [view] - The view (or selector) to set as target.
+   * @param {ExcalidrawView | "auto" | "first" | "active" | null | undefined} [view] - The view or selector to set as target. Pass `null` to clear the target.
    * @param {boolean} [show=false] - Whether to reveal/focus the target view.
-   * @returns {ExcalidrawView} The ExcalidrawView that was set as `targetView` (or `null` if none found).
+   * @returns {ExcalidrawView | null} The ExcalidrawView that was set as `targetView`, or `null` when cleared or none was found.
    */
   setView(
     view?: ExcalidrawView | "auto" | "first" | "active" | null,
     show: boolean = false,
-  ): ExcalidrawView {
+  ): ExcalidrawView | null {
     const app = this.plugin.app;
     const workspace = app.workspace;
     const setView = () => {
-      if (!view || view === "auto") {
+      if (view === null) {
+        this.targetView = null;
+        return;
+      }
+      if (view === undefined || view === "auto") {
         view = workspace.getActiveViewOfType(ExcalidrawView);
         if (view instanceof ExcalidrawView) {
           this.targetView = view;
@@ -3929,11 +3936,14 @@ export class ExcalidrawAutomate {
    * A fresh "allow" also immediately re-runs the script in every other
    * currently-open Excalidraw view, so it attaches everywhere right away
    * instead of only the next time each view is opened.
+   * @param {string} [message] - Optional script-provided explanation displayed as the second paragraph of the permission prompt.
    * @returns "allow" if the script is permitted to autostart, "deny" if
    * the user has denied it, or "pending" if there is no active script or
    * the user has not yet made a decision.
    */
-  public async registerAutostart(): Promise<"allow" | "deny" | "pending"> {
+  public async registerAutostart(
+    message?: string,
+  ): Promise<"allow" | "deny" | "pending"> {
     const scriptName = this.activeScript;
     if (!scriptName) {
       errorMessage("no active script", "registerAutostart()");
@@ -3949,13 +3959,15 @@ export class ExcalidrawAutomate {
     if (state === "allow" || state === "deny") {
       return state;
     }
+    const explanation = message?.trim();
     const prompt = new MultiOptionConfirmationPrompt<
       "allow" | "deny" | "pending" | null
     >(
       this.plugin,
-      `<b>${scriptName}</b> ${t("AUTOSTART_SCRIPT_PROMPT")}<br><br>` +
-        `<span style="color: var(--text-muted); font-size: var(--font-smaller);">` +
-        `${t("AUTOSTART_SCRIPT_PROMPT_MANAGE_HINT")}</span>`,
+      `<p><b>${scriptName}</b> ${t("AUTOSTART_SCRIPT_PROMPT")}</p>` +
+        (explanation ? `<p>${explanation}</p>` : "") +
+        `<p><span style="color: var(--text-muted); font-size: var(--font-smaller);">` +
+        `${t("AUTOSTART_SCRIPT_PROMPT_MANAGE_HINT")}</span></p>`,
       new Map([
         [t("AUTOSTART_SCRIPT_ALLOW"), "allow"],
         [t("AUTOSTART_SCRIPT_DENY"), "deny"],

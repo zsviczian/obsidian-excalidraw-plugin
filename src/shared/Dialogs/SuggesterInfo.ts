@@ -506,24 +506,25 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "targetView",
-    code: "targetView: ExcalidrawView;",
-    desc: "The Obsidian view currently edited",
+    code: "targetView: ExcalidrawView | null;",
+    desc: "The targeted Obsidian Excalidraw view, or null when EA is unbound",
     after: "",
   },
   {
     field: "setView",
-    code: 'setView(view?: ExcalidrawView | "auto" | "first" | "active" | null, show: boolean = false): ExcalidrawView;',
+    code: 'setView(view?: ExcalidrawView | "auto" | "first" | "active" | null, show: boolean = false): ExcalidrawView | null;',
     desc:
       "Sets the target view for EA. All the view operations and the access to Excalidraw API will be performed on this view. " +
-      "Typically you will use setView() (to pick a sensible default) or setView(excalidrawView) (to explicitly target a specific view).\n" +
+      "Typically you will use setView() (to pick a sensible default), setView(excalidrawView) (to explicitly target a specific view), or setView(null) (to explicitly clear targetView).\n" +
       '"auto" is equivalent to calling setView() and can read nicer when you want to show the view (e.g. setView("auto", true)).\n' +
       '"active" and "first" are deprecated and are kept for backward compatibility.\n' +
-      'If view is null or undefined (or "auto"), EA will pick a sensible default: first the currently active Excalidraw view (if any), otherwise the last active Excalidraw view (if it is still available), otherwise the "first" Excalidraw view in the workspace.\n' +
+      'If view is undefined (or "auto"), EA will pick a sensible default: first the currently active Excalidraw view (if any), otherwise the last active Excalidraw view (if it is still available), otherwise the "first" Excalidraw view in the workspace.\n' +
+      "If view is explicitly null, EA clears targetView. This is useful when a sidepanel becomes unbound because focus moved to a Markdown view or no drawing is eligible.\n" +
       "If show is true, the view will be brought to front and focused.\n" +
       'If "first" is provided, the target will be the first Excalidraw view returned by Obsidian\'s workspace leaf collection (i.e., the first item in getExcalidrawViews()). ' +
       "This ordering is managed by Obsidian and does not necessarily match what a user would consider the “first” view; from a user's perspective it may appear random.\n" +
       'If "active" is provided, the currently active Excalidraw view in the workspace will be used. If that is not available, then the last active Excalidraw view will be used.\n' +
-      "The function returns the ExcalidrawView that was set as targetView.",
+      "The function returns the ExcalidrawView that was set as targetView, or null when cleared or no view was found.",
     after: '("auto",true);',
   },
   {
@@ -1010,13 +1011,14 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "registerAutostart",
-    code: 'registerAutostart(): Promise<"allow" | "deny" | "pending">;',
+    code: 'registerAutostart(message?: string): Promise<"allow" | "deny" | "pending">;',
     desc:
       "Requests permission for this script to be automatically re-run every time a new Excalidraw view is opened. " +
+      "The optional message is shown as a separate second paragraph after the permission question and before the hint explaining where the permission can be changed. Use it to clarify what the script registers or performs during autostart. " +
       "The first time a given script calls this, the user is prompted to Allow, Deny, or decide later; the decision persists and is not asked again unless the user changes it (via the \"Autostart scripts\" command or settings section) or previously picked \"Ask me later\". " +
       "A fresh Allow also immediately re-runs the script in every other currently-open Excalidraw view, so it attaches everywhere right away instead of only the next time each view is opened. " +
-      'Returns "allow", "deny", or "pending" (no active script, or the user has not yet decided). Typically called near the top of a script, guarding whatever the script wants to re-register on autostart, e.g. registerElementActionProvider().',
-    after: "();",
+      'Returns "allow", "deny", or "pending" (no active script, or the user has not yet decided). Typically called near the top of a script, guarding whatever the script wants to re-register on autostart, e.g. registerElementActionProvider(). Use utils.executionSource === "autostart" when only the autostart execution should stop after registration.',
+    after: '("Autostart registers this script’s drawing tools; it does not run its main action.");',
   },
   {
     field: "getSidepanelLeaf",
@@ -1411,6 +1413,14 @@ export const EXCALIDRAW_SCRIPTENGINE_INFO: SuggesterInfo[] = [
     field: "scriptFile",
     code: "scriptFile: TFile",
     desc: "The TFile of the currently running script",
+    after: "",
+  },
+  {
+    field: "executionSource",
+    code: 'executionSource: "manual" | "autostart" | "sidepanel-restore" | "drawing-onload"',
+    desc:
+      "Identifies why the script engine invoked the current script. " +
+      'Use "autostart" for registration-only setup, while "manual" covers the script button, command palette, and hotkey.',
     after: "",
   },
 ];

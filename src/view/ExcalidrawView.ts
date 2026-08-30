@@ -3022,6 +3022,7 @@ export default class ExcalidrawView
               script,
               scriptname,
               this.file,
+              "drawing-onload",
             );
           };
           let allowOnloadScript: boolean | null =

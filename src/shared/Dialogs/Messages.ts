@@ -49,14 +49,17 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 - Removed unused code and the obsolete Draw.io/Diagram integration, and retired the non-functional Create DrawIO file script.
 
 ## New in Excalidraw Automate
+- \`setView(null)\` now explicitly clears \`ea.targetView\`. Use \`setView()\` or \`setView("auto")\` when you want EA to select a sensible default drawing.
 - Scripts can register custom buttons in the selected-element context menu:
 \`\`\`ts
 registerElementActionProvider(getActions: (element: ExcalidrawElement) => readonly {id: string, title: string, icon: string, action: () => void}[]): (() => void) | null;
 \`\`\`
 - Scripts can request permission to run automatically whenever an Excalidraw view opens. Manage permissions with the **Autostart scripts** command or under Excalidraw Automate settings:
 \`\`\`ts
-registerAutostart(): Promise<"allow" | "deny" | "pending">;
+registerAutostart(message?: string): Promise<"allow" | "deny" | "pending">;
 \`\`\`
+- Pass an optional message to explain what the script does during autostart. It appears between the permission question and the settings hint.
+- Scripts can distinguish manual, autostart, sidepanel-restore, and drawing-onload execution through \`utils.executionSource\`.
 `,
   "2.26.4": `
 ## Fixed

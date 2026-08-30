@@ -949,7 +949,7 @@ export declare class ExcalidrawAutomate {
      * @returns {boolean} True if the file is an Excalidraw file, false otherwise.
      */
     isExcalidrawFile(f: TFile): boolean;
-    targetView: ExcalidrawView;
+    targetView: ExcalidrawView | null;
     /**
      * Sets the target view for EA. All view operations and all access to the Excalidraw API
      * will be performed on this view.
@@ -957,12 +957,15 @@ export declare class ExcalidrawAutomate {
      * Typical usage:
      * - `setView()` to pick a sensible default automatically
      * - `setView(excalidrawView)` to explicitly target a specific view
+     * - `setView(null)` to explicitly clear `targetView`
      *
      * Selectors:
-     * - If `view` is `null` or `undefined` (or `"auto"`), EA will pick a sensible default:
+     * - If `view` is `undefined` (or `"auto"`), EA will pick a sensible default:
      *   1) the currently active Excalidraw view (if any),
      *   2) otherwise the last active Excalidraw view (if it is still available),
      *   3) otherwise the `"first"` Excalidraw view in the workspace.
+     * - If `view` is explicitly `null`, EA clears `targetView`. This is useful for
+     *   sidepanels when focus moves to a Markdown view or no drawing is eligible.
      * - If `show` is `true`, the view will be revealed (brought to front) and focused.
      *
      * Deprecated selectors (kept for backward compatibility):
@@ -974,11 +977,11 @@ export declare class ExcalidrawAutomate {
      *   necessarily match what a user would consider the “first”/“leftmost”/“topmost” view;
      *   from a user's perspective it may appear effectively random.**
      *
-     * @param {ExcalidrawView | "auto" | "first" | "active" | null | undefined} [view] - The view (or selector) to set as target.
+     * @param {ExcalidrawView | "auto" | "first" | "active" | null | undefined} [view] - The view or selector to set as target. Pass `null` to clear the target.
      * @param {boolean} [show=false] - Whether to reveal/focus the target view.
-     * @returns {ExcalidrawView} The ExcalidrawView that was set as `targetView` (or `null` if none found).
+     * @returns {ExcalidrawView | null} The ExcalidrawView that was set as `targetView`, or `null` when cleared or none was found.
      */
-    setView(view?: ExcalidrawView | "auto" | "first" | "active" | null, show?: boolean): ExcalidrawView;
+    setView(view?: ExcalidrawView | "auto" | "first" | "active" | null, show?: boolean): ExcalidrawView | null;
     /**
      * Returns the Excalidraw API for the current view.
      * @returns {ExcalidrawImperativeAPI} The Excalidraw API.
@@ -1177,11 +1180,12 @@ export declare class ExcalidrawAutomate {
      * A fresh "allow" also immediately re-runs the script in every other
      * currently-open Excalidraw view, so it attaches everywhere right away
      * instead of only the next time each view is opened.
+     * @param {string} [message] - Optional script-provided explanation displayed as the second paragraph of the permission prompt.
      * @returns "allow" if the script is permitted to autostart, "deny" if
      * the user has denied it, or "pending" if there is no active script or
      * the user has not yet made a decision.
      */
-    registerAutostart(): Promise<"allow" | "deny" | "pending">;
+    registerAutostart(message?: string): Promise<"allow" | "deny" | "pending">;
     /**
      * If set, this callback is triggered when the user closes an Excalidraw view.
      */
