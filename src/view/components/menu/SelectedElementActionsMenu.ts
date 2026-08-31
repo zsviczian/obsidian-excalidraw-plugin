@@ -74,6 +74,13 @@ export class SelectedElementActionsMenu {
       this.hide();
       return;
     }
+    // Frame-title editing uses the same space above the frame as the selected-element
+    // action menu. Clear the cached selection so actions are recomputed as soon as
+    // editing ends, even when the frame itself remains selected throughout.
+    if (appState.editingFrame === selectedId) {
+      this.hide();
+      return;
+    }
 
     const selectionChanged = selectedId !== this.selectedElementId;
     if (selectionChanged) {

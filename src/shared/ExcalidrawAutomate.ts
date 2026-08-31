@@ -3873,7 +3873,9 @@ export class ExcalidrawAutomate {
    * `getActions` is called with the currently selected element whenever the
    * selection, element type, fileId, or customData changes, and should
    * return the buttons to show for that element (an empty array shows
-   * nothing). Registration is tied to the current view: it is automatically
+   * nothing). The menu is temporarily hidden while the selected frame's
+   * title is being edited, so custom actions do not obstruct the title editor.
+   * Registration is tied to the current view: it is automatically
    * cleared when the view closes, and cleared for this script specifically
    * if the script's file is deleted while the view is still open. Calling
    * this a second time for the same script in the same view (e.g. running
