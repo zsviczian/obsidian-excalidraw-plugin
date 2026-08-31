@@ -565,6 +565,7 @@ export class ViewLinkNavigationManager {
           keys,
           view: this.view,
           sourceElement: el,
+          followObsidianNewNoteLocation: true,
         }).open();
         return;
       }
