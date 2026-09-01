@@ -28,15 +28,16 @@ For a reference, follow the implementation pattern used in the "Printable Layout
 - Elements can be deleted from the scene by setting their isDeleted property to true.
 - The Obsidian.md module is available on `ea.obsidian`.
 - Version checks are distinct: use `ea.verifyMinimumPluginVersion()` for the Excalidraw plugin and `ea.verifyMinAppVersion()` only for the Obsidian application version.
-- Use `utils.executionSource` to distinguish `"manual"` toolbar/command/hotkey runs from `"autostart"`, `"sidepanel-restore"`, and `"drawing-onload"` runs. Autostart-capable scripts should register their view-local providers on every applicable run, then return after registration when the source is `"autostart"`.
-- `ea.registerAutostart(message?)` accepts a concise script-specific explanation of what autostart registers or performs. The explanation appears as the second paragraph of the permission prompt; do not imply that the script's main interactive action starts automatically when only its tools/providers do.
+- `utils.executionSource` describes why the current top-level invocation happened. Supported values are `"manual"`, `"plugin-startup"`, `"view-autostart"`, `"sidepanel-restore"`, `"sidepanel-reload"`, and `"drawing-onload"`. It does not indicate whether code came from the compilation cache or whether the script has run before.
+- `ea.registerAutostart(message?)` requests view-autostart permission. The script is automatically attached once to each ExcalidrawView, while manual toolbar/command/hotkey invocation remains independently repeatable. The optional explanation appears as the second paragraph of the permission prompt; do not imply that the script's main interactive action starts automatically when only its tools/providers do.
+- `ea.registerCleanup(cleanup)` registers synchronous cleanup owned by the current EA instance. Use it for external listeners, timers, observers, and subscriptions; the cleanup runs when that EA is destroyed.
 - `ea.registerElementActionProvider()` action descriptors take an Obsidian/Lucide icon name such as `"presentation"`, not serialized SVG markup. For buttons a script renders itself, obtain the SVG with `ea.obsidian.getIcon()` and recreate it in the button's owning document when popout support matters.
 - When an Excalidraw API method requires an element, pass the known typed scene element. For example, call `api.startLineEditor(line, pointIndices)`; do not re-read selection state when the intended line is already known.
 - For persistent workbench mutations, await `ea.addElementsToView()` with saving enabled (the default). Prefer this public EA save path over unpublished methods on `ea.targetView`.
 
 **Sidepanels and multi-view tooling:**
 - Sidepanels are for scripts that must stay open while users hop between multiple Excalidraw views. They should implement the SidepanelTab hooks (`onOpen`, `onFocus(view)`, `onClose`, `onExcalidrawViewClosed`) and manage their own `ea.targetView` explicitly.
-- Persisted sidepanel scripts are launched during plugin startup (e.g., Obsidian restart, plugin update) with `ea.targetView === null`. Scripts must handle this by deferring view-bound work until `onFocus` delivers a view; call `ea.setView(view)` when you decide to bind. When `onFocus` supplies `null` or focus moves to a non-Excalidraw view, call `ea.setView(null)` to make the unbound state explicit and prevent later view operations from targeting a stale drawing.
+- Persisted sidepanel scripts are restored lazily when the Excalidraw sidepanel initializes (often during startup, but not necessarily) with `ea.targetView === null`. Scripts must handle this by deferring view-bound work until `onFocus` delivers a view; call `ea.setView(view)` when you decide to bind. When `onFocus` supplies `null` or focus moves to a non-Excalidraw view, call `ea.setView(null)` to make the unbound state explicit and prevent later view operations from targeting a stale drawing.
 - Each `ea` instance may host a single `sidepanelTab`. This sidepanel tab is stored in `ea.sidepanelTab`. Create the tab with `ea.createSidepanelTab(title, persist=false, reveal=true)`; the returned `ea.sidepanelTab` exposes `contentEl`, `setContent`, `setTitle`, `setDisabled`, `setCloseCallback`, `open/close`, and focus lifecycle hooks. Note auto-reveal during tab creation via `ea.createSidepanelTab()` is disabled during plugin startup. You can reveal a tab with `ea.sidepanelTab?.open()`. You can persist with `ea.persistSidepanelTab()` (tabs are restored and scripts re-run on next startup). Close with `ea.sidepanelTab?.close()`.
 - Mobile UX: sidepanels slide in without disturbing canvas layout and are better for longer forms than floating modals. Prefer them for complex inputs, especially on phones.
 - Auto-closing patterns: For scripts that use sidepanels but perform operations that are single-`ExcalidrawView` relevant, they can call `ea.closeSidepanelTab()` after completing the operation, and/or inside `ea.sidepanelTab.onFocus = (view) => { if (view !== ea.targetView) { ea.sidepanelTab?.close(); } }` to shut down when the user leaves the originating view.
@@ -617,7 +618,17 @@ export declare class ExcalidrawAutomate {
     };
     colorPalette: object;
     sidepanelTab: ExcalidrawSidepanelTab | null;
+    private cleanupCallbacks;
+    private destroyed;
     constructor(plugin: ExcalidrawPlugin, view?: ExcalidrawView);
+    /**
+     * Registers synchronous cleanup owned by this EA instance. Use this for
+     * external listeners, observers, timers, and subscriptions that EA cannot
+     * release itself. Cleanup runs when this EA is destroyed.
+     * @param cleanup - Synchronous cleanup callback.
+     * @returns A function that unregisters this callback without running it.
+     */
+    registerCleanup(cleanup: () => void): () => void;
     /**
      * Return the active sidepanel tab for a script, if one exists.
      * If scriptName is omitted the function checks ea.activeScript.
@@ -1439,7 +1450,9 @@ export declare class ExcalidrawAutomate {
      * `getActions` is called with the currently selected element whenever the
      * selection, element type, fileId, or customData changes, and should
      * return the buttons to show for that element (an empty array shows
-     * nothing). Registration is tied to the current view: it is automatically
+     * nothing). The menu is temporarily hidden while the selected frame's
+     * title is being edited, so custom actions do not obstruct the title editor.
+     * Registration is tied to the current view: it is automatically
      * cleared when the view closes, and cleared for this script specifically
      * if the script's file is deleted while the view is still open. Calling
      * this a second time for the same script in the same view (e.g. running
@@ -1978,7 +1991,8 @@ export declare class ExcalidrawAutomate {
      */
     getMathEditorExtensions(): (LRLanguage | Extension)[];
     /**
-     * Destroys the ExcalidrawAutomate instance, clearing all references and data.
+     * Destroys this EA once, first releasing registered external resources and
+     * then clearing the ordinary EA state and references.
      */
     destroy(): void;
 }
@@ -47435,7 +47449,7 @@ api.zoomToFit(elements,10);
 
 # Excalidraw Startup Script
 
-ExcalidrawStartup Script can be configured in Plugin Settings under 'Excalidraw Automate'. When defined this script runs automatically when the Excalidraw plugin is loaded to Obsidian. The user can add automation tasks here that they want to run on every startup of Excalidraw in Obsidian such as defining Excalidraw event handlers (also known as hooks).
+ExcalidrawStartup Script can be configured in Plugin Settings under 'Excalidraw Automate'. When defined this script runs once per Excalidraw plugin load using the plugin-global EA and `utils.executionSource === "plugin-startup"`. Use `ea.registerCleanup()` for external listeners, timers, observers, or subscriptions that must be released when Excalidraw unloads. The user can add automation tasks here that they want to run on every startup of Excalidraw in Obsidian such as defining Excalidraw event handlers (also known as hooks).
 
 Two files follow. First the template startup script with documenation comments, then an actual startup script example with implemented functionality.
 
@@ -47443,6 +47457,17 @@ Two files follow. First the template startup script with documenation comments, 
 /*
 #exclude
 ```js*/
+/**
+ * Startup scripts receive the plugin-global EA for the plugin lifetime and
+ * utils.executionSource === "plugin-startup". Register cleanup for resources
+ * outside EA so plugin reload/unload cannot accumulate them.
+ */
+// const ref = app.workspace.on("file-open", (file) => {});
+// ea.registerCleanup(() => app.workspace.offref(ref));
+//
+// const interval = window.setInterval(() => {}, 1000);
+// ea.registerCleanup(() => window.clearInterval(interval));
+
 /**
  * If set, this callback is triggered when the user closes an Excalidraw view.
  *   onViewUnloadHook: (view: ExcalidrawView) => void = null;

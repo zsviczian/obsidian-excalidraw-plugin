@@ -219,11 +219,10 @@ export class ObsidianMenu {
       void (async () => {
         const f = this.view.app.vault.getAbstractFileByPath(key);
         if (f && f instanceof TFile) {
-          await this.plugin.scriptEngine.executeScript(
+          await this.plugin.scriptEngine.executeScriptFile(
             this.view,
-            await this.view.app.vault.read(f),
-            this.plugin.scriptEngine.getScriptName(f),
             f,
+            this.plugin.scriptEngine.getScriptName(f),
           );
         }
       })();

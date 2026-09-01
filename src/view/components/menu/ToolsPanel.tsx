@@ -465,11 +465,10 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
     }
     const f = plugin.app.vault.getAbstractFileByPath(key);
     if (f && f instanceof TFile) {
-      void plugin.scriptEngine.executeScript(
+      void plugin.scriptEngine.executeScriptFile(
         view,
-        await plugin.app.vault.read(f),
-        plugin.scriptEngine.getScriptName(f),
         f,
+        plugin.scriptEngine.getScriptName(f),
       );
     }
   }

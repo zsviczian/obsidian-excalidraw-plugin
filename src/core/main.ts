@@ -839,10 +839,8 @@ export default class ExcalidrawPlugin extends Plugin {
       new Notice(`Startup script not found: ${path}`);
       return;
     }
-    const script = await this.app.vault.read(f);
-    const AsyncFunction = Object.getPrototypeOf(async () => {}).constructor;
     try {
-      await new AsyncFunction("ea", script)(this.ea);
+      await this.scriptEngine.executeStartupScript(f, this.ea);
     } catch (e) {
       new Notice(`Error running startup script: ${e}`);
     }
