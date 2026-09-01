@@ -6,7 +6,7 @@
 /* ************************************** */
 type MutableElementMapEntry = Mutable<ExcalidrawElement> & Record<string, unknown>;
 import { PageDimensions, PageOrientation, PageSize, PDFExportScale, PDFPageProperties, ExportSettings } from "src/types/exportUtilTypes";
-import { FrameRenderingOptions, PaneTarget } from "src/types/utilTypes";
+import { PaneTarget } from "src/types/utilTypes";
 import { AutoexportConfig } from "src/types/excalidrawViewTypes";
 import { FloatingModal } from "./Dialogs/FloatingModal";
 import { ExcalidrawSidepanelTab } from "src/view/sidepanel/SidepanelTab";
@@ -611,30 +611,28 @@ export declare class ExcalidrawAutomate {
         pageProps?: PDFPageProperties;
         filename: string;
     }): Promise<void>;
+    private prepareViewImageExport;
     /**
      * Creates an SVG representation of the current view.
      *
-     * @param {Object} options - The options for creating the SVG.
-     * @param {boolean} [options.withBackground=true] - Whether to include the background in the SVG.
-     * @param {"light" | "dark"} [options.theme] - The theme to use for the SVG.
-     * @param {FrameRenderingOptions} [options.frameRendering={enabled: true, name: true, outline: true, clip: true}] - The frame rendering options.
-     * @param {number} [options.padding] - The padding to apply around the SVG.
-     * @param {boolean} [options.selectedOnly=false] - Whether to include only the selected elements in the SVG.
-     * @param {boolean} [options.skipInliningFonts=false] - Whether to skip inlining fonts in the SVG.
-     * @param {boolean} [options.embedScene=false] - Whether to embed the scene in the SVG.
-     * @param {readonly ExcalidrawElement[]} [options.elementsOverride] - Optional complete replacement for the view's exported elements. This array is not merged with the current scene or treated as a patch by ID: when supplied, only its non-deleted elements are exported. Include every element that should appear in the SVG.
-     * @returns {Promise<SVGSVGElement>} A promise that resolves to the SVG element.
+     * @param options - View export options. `elementsOverride`, when supplied, is
+     * a complete replacement rather than a patch. `exportArea` filters that
+     * candidate set and anchors the result to an exact scene rectangle.
+     * @returns A promise resolving to the exported SVG, or `undefined` when no
+     * loaded target view is available.
      */
-    createViewSVG({ withBackground, theme, frameRendering, padding, selectedOnly, skipInliningFonts, embedScene, elementsOverride, }: {
-        withBackground?: boolean;
-        theme?: "light" | "dark";
-        frameRendering?: FrameRenderingOptions;
-        padding?: number;
-        selectedOnly?: boolean;
-        skipInliningFonts?: boolean;
-        embedScene?: boolean;
-        elementsOverride?: readonly ExcalidrawElement[];
-    }): Promise<SVGSVGElement>;
+    createViewSVG(options?: ViewSVGExportOptions): Promise<SVGSVGElement>;
+    /**
+     * Creates a PNG representation of the current view without using or mutating
+     * the EA workbench.
+     *
+     * @param options - View export options. `elementsOverride`, when supplied, is
+     * a complete replacement rather than a patch. `exportArea` filters that
+     * candidate set and anchors the result to an exact scene rectangle.
+     * @returns A promise resolving to a PNG blob, or `undefined` when no loaded
+     * target view is available.
+     */
+    createViewPNG(options?: ViewPNGExportOptions): Promise<Blob>;
     /**
      * Creates an SVG image from the ExcalidrawAutomate elements and the template provided.
      * @param {string} [templatePath] - The template path to use for the SVG.
@@ -1454,12 +1452,27 @@ export declare class ExcalidrawAutomate {
      */
     getExportSettings(withBackground: boolean, withTheme: boolean, isMask?: boolean): ExportSettings;
     /**
-     * Gets the elements within a specific area.
-     * @param elements - The elements to check.
-     * @param param1 - The area to check against.
-     * @returns The elements within the area.
+     * Gets elements whose rendered bounds intersect a scene area.
+     *
+     * @param elements - Elements to test, in scene stacking order.
+     * @param area - Rectangle or element defining the scene area.
+     * @param options - Optional margin, marker-frame, and binding expansion rules.
+     * @returns Intersecting elements in their original stacking order.
      */
-    getElementsInArea(elements: readonly ExcalidrawElement[], element: ExcalidrawElement): ExcalidrawElement[];
+    getElementsInArea(elements: readonly ExcalidrawElement[], area: SceneArea, options?: ElementsInAreaOptions): ExcalidrawElement[];
+    /**
+     * Gets elements whose rendered bounds intersect a scene area.
+     *
+     * @remarks
+     * This explicit name is preferred for new code. `getElementsInArea()` remains
+     * available as a backward-compatible alias and uses the same implementation.
+     *
+     * @param elements - Elements to test, in scene stacking order.
+     * @param area - Rectangle or element defining the scene area.
+     * @param options - Optional margin, marker-frame, and binding expansion rules.
+     * @returns Intersecting elements in their original stacking order.
+     */
+    getElementsIntersectionArea(elements: readonly ExcalidrawElement[], area: SceneArea, options?: ElementsInAreaOptions): ExcalidrawElement[];
     /**
      * Gets the bounding box of the specified elements.
      * The bounding box is the box encapsulating all of the elements completely.
@@ -1991,6 +2004,58 @@ export interface AddImageOptions {
     scale?: boolean;
     anchor?: boolean;
     colorMap?: ColorMap;
+}
+/** A rectangular region in Excalidraw scene coordinates. */
+export interface SceneArea {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    /** Optional ID of an element representing the area. */
+    id?: string;
+}
+/** Controls how {@link ExcalidrawAutomate.getElementsInArea} selects elements. */
+export interface ElementsInAreaOptions {
+    /** Expands the area by this many scene units on every side. */
+    margin?: number;
+    /** Includes marker frames. Existing behavior excludes them by default. */
+    includeMarkerFrames?: boolean;
+    /** Includes containers, bound elements, and arrow binding targets needed by the result. */
+    includeBoundElements?: boolean;
+}
+/** Restricts a view image export to a rectangular scene region. */
+export interface ViewExportArea extends SceneArea {
+    /** Expands both the selected content and exported viewport on every side. */
+    margin?: number;
+    /** Includes marker frames in the export candidate set. */
+    includeMarkerFrames?: boolean;
+    /**
+     * Includes containers, bound elements, and arrow binding targets needed to
+     * render intersecting elements. Defaults to `true` for area exports.
+     */
+    includeBoundElements?: boolean;
+}
+/** Options shared by view-based SVG and PNG exports. */
+export interface ViewImageExportOptions {
+    withBackground?: boolean;
+    theme?: AppState["theme"];
+    frameRendering?: FrameRenderingOptions;
+    padding?: number;
+    selectedOnly?: boolean;
+    embedScene?: boolean;
+    /** Complete replacement for the view elements used by the export. */
+    elementsOverride?: readonly ExcalidrawElement[];
+    /** Filters and anchors the export to an exact scene rectangle. */
+    exportArea?: ViewExportArea;
+}
+/** Options for {@link ExcalidrawAutomate.createViewSVG}. */
+export interface ViewSVGExportOptions extends ViewImageExportOptions {
+    skipInliningFonts?: boolean;
+}
+/** Options for {@link ExcalidrawAutomate.createViewPNG}. */
+export interface ViewPNGExportOptions extends ViewImageExportOptions {
+    /** Raster scale applied to the exported viewport. */
+    scale?: number;
 }
 
 /* ************************************** */

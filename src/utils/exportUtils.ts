@@ -1,8 +1,7 @@
 import { Notice } from "obsidian";
 import { DEVICE, EXCALIDRAW_PLUGIN } from "src/constants/constants";
 import { t } from "src/lang/helpers";
-import { download } from "./fileUtils";
-import { svgToBase64 } from "./embeddedAssetUtils";
+import { downloadBlob } from "./fileUtils";
 import {
   PageDimensions,
   PageOrientation,
@@ -618,14 +617,12 @@ export async function exportPNGToClipboard(png: Blob) {
 }
 
 export function exportPNG(png: Blob, filename: string) {
-  const reader = new FileReader();
-  reader.readAsDataURL(png);
-  reader.onloadend = () => {
-    const base64data = reader.result;
-    download(null, base64data, `${filename}.png`);
-  };
+  downloadBlob(png, `${filename}.png`);
 }
 
 export function exportSVG(svg: SVGSVGElement, filename: string) {
-  download(null, svgToBase64(svg.outerHTML), `${filename}.svg`);
+  downloadBlob(
+    new Blob([svg.outerHTML], { type: "image/svg+xml;charset=utf-8" }),
+    `${filename}.svg`,
+  );
 }

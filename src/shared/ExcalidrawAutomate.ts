@@ -62,6 +62,7 @@ import {
 import {
   //debug,
   getImageSize,
+  getPNG,
   isMaskFile,
   wrapTextAtCharLength,
   arrayToMap,
@@ -154,10 +155,15 @@ import { log } from "../utils/debugHelper";
 import { GlobalPoint } from "@zsviczian/excalidraw/types/math/src/types";
 import {
   AddImageOptions,
+  ElementsInAreaOptions,
   ImageInfo,
   KeyBlocker,
+  SceneArea,
   ScriptSettingValue,
   SVGColorInfo,
+  ViewImageExportOptions,
+  ViewPNGExportOptions,
+  ViewSVGExportOptions,
 } from "src/types/excalidrawAutomateTypes";
 import {
   _measureText,
@@ -205,9 +211,12 @@ import {
   PDFPageProperties,
   ExportSettings,
 } from "src/types/exportUtilTypes";
-import { FrameRenderingOptions, PaneTarget } from "src/types/utilTypes";
+import { PaneTarget } from "src/types/utilTypes";
 import { CaptureUpdateAction } from "src/constants/constants";
-import { AutoexportConfig } from "src/types/excalidrawViewTypes";
+import {
+  AutoexportConfig,
+  ExcalidrawViewScene,
+} from "src/types/excalidrawViewTypes";
 import { FloatingModal } from "./Dialogs/FloatingModal";
 import { ExcalidrawSidepanelView } from "src/view/sidepanel/Sidepanel";
 import { ExcalidrawSidepanelTab } from "src/view/sidepanel/SidepanelTab";
@@ -219,6 +228,12 @@ import { getPDFCropRect } from "src/utils/PDFUtils";
 import type { SelectedElementMenuAction } from "src/types/elementActionTypes";
 import { CaptureUpdateActionType } from "@zsviczian/excalidraw/types/element/src";
 import { URL_REGISTRY, URLs } from "src/constants/safeUrls";
+import {
+  createExportAreaAnchor,
+  getElementsIntersectionArea as selectElementsIntersectionArea,
+  normalizeSceneArea,
+} from "src/utils/excalidrawElementUtils";
+import { cropPNGBlob } from "src/utils/imageExportUtils";
 
 type ExcalidrawAutomateHelpTarget = ((...args: unknown[]) => unknown) | string;
 
@@ -1707,78 +1722,165 @@ export class ExcalidrawAutomate {
     await exportToPDF({ SVG, scale, pageProps, filename });
   }
 
-  /**
-   * Creates an SVG representation of the current view.
-   *
-   * @param {Object} options - The options for creating the SVG.
-   * @param {boolean} [options.withBackground=true] - Whether to include the background in the SVG.
-   * @param {"light" | "dark"} [options.theme] - The theme to use for the SVG.
-   * @param {FrameRenderingOptions} [options.frameRendering={enabled: true, name: true, outline: true, clip: true}] - The frame rendering options.
-   * @param {number} [options.padding] - The padding to apply around the SVG.
-   * @param {boolean} [options.selectedOnly=false] - Whether to include only the selected elements in the SVG.
-   * @param {boolean} [options.skipInliningFonts=false] - Whether to skip inlining fonts in the SVG.
-   * @param {boolean} [options.embedScene=false] - Whether to embed the scene in the SVG.
-   * @param {readonly ExcalidrawElement[]} [options.elementsOverride] - Optional complete replacement for the view's exported elements. This array is not merged with the current scene or treated as a patch by ID: when supplied, only its non-deleted elements are exported. Include every element that should appear in the SVG.
-   * @returns {Promise<SVGSVGElement>} A promise that resolves to the SVG element.
-   */
-  async createViewSVG({
-    withBackground = true,
-    theme,
-    frameRendering = { enabled: true, name: true, outline: true, clip: true },
-    padding,
-    selectedOnly = false,
-    skipInliningFonts = false,
-    embedScene = false,
-    elementsOverride,
-  }: {
-    withBackground?: boolean;
-    theme?: "light" | "dark";
-    frameRendering?: FrameRenderingOptions;
-    padding?: number;
-    selectedOnly?: boolean;
-    skipInliningFonts?: boolean;
-    embedScene?: boolean;
-    elementsOverride?: readonly ExcalidrawElement[];
-  }): Promise<SVGSVGElement> {
+  private prepareViewImageExport(
+    options: ViewImageExportOptions,
+  ): {
+    scene: ExcalidrawViewScene;
+    exportSettings: ExportSettings;
+    padding: number;
+    sourceFile: TFile;
+    ownerDocument: Document;
+    exportArea?: SceneArea;
+    exportBounds?: ReturnType<typeof getCommonBoundingBox>;
+  } | null {
     if (!this.targetView || !this.targetView.file || !this.targetView._loaded) {
       log("No view loaded");
-      return;
+      return null;
     }
     const view = this.targetView;
-    const scene = this.targetView.getScene(selectedOnly);
+    const scene = this.targetView.getScene(options.selectedOnly ?? false);
+    let elements: readonly ExcalidrawElement[] = scene.elements;
+    let files = scene.files;
+    let exportArea: SceneArea | undefined;
+    let exportBounds: ReturnType<typeof getCommonBoundingBox> | undefined;
 
-    if (elementsOverride) {
-      scene.elements = elementsOverride.filter(
-        (el): el is NonDeletedExcalidrawElement => !el.isDeleted,
+    if (options.elementsOverride) {
+      elements = options.elementsOverride;
+    }
+    elements = elements.filter(
+      (el): el is NonDeletedExcalidrawElement => !el.isDeleted,
+    );
+
+    if (options.exportArea) {
+      exportArea = normalizeSceneArea(
+        options.exportArea,
+        options.exportArea.margin,
       );
+      elements = selectElementsIntersectionArea(elements, exportArea, {
+        includeMarkerFrames: options.exportArea.includeMarkerFrames,
+        includeBoundElements:
+          options.exportArea.includeBoundElements ?? true,
+      });
+      const referencedFileIds = new Set(
+        elements
+          .filter(
+            (element): element is ExcalidrawImageElement =>
+              element.type === "image" && Boolean(element.fileId),
+          )
+          .map((element) => element.fileId),
+      );
+      files = Object.fromEntries(
+        Object.entries(scene.files).filter(([fileId]) =>
+          referencedFileIds.has(fileId as FileId),
+        ),
+      );
+      elements = [...elements, createExportAreaAnchor(exportArea)];
+      exportBounds = getCommonBoundingBox(elements);
     }
 
     if (!view.getViewExportIncludeInternalLinks()) {
-      scene.elements = sceneRemoveInternalLinks(scene);
+      elements = sceneRemoveInternalLinks({ elements });
     }
 
-    const exportSettings: ExportSettings = {
-      withBackground: view.getViewExportWithBackground(withBackground),
-      withTheme: true,
-      isMask: isMaskFile(this.plugin, view.file),
-      skipInliningFonts,
-      frameRendering,
-    };
-
-    return await getSVG(
-      {
+    const theme = view.getViewExportTheme(options.theme) as "dark" | "light";
+    return {
+      scene: {
         ...scene,
-        ...{
-          appState: {
-            ...scene.appState,
-            theme: view.getViewExportTheme(theme) as "dark" | "light",
-            exportEmbedScene: view.getViewExportEmbedScene(embedScene),
-          },
+        elements,
+        files,
+        appState: {
+          ...scene.appState,
+          theme,
+          exportEmbedScene: view.getViewExportEmbedScene(options.embedScene),
         },
       },
-      exportSettings,
-      view.getViewExportPadding(padding),
-      view.file,
+      exportSettings: {
+        withBackground: view.getViewExportWithBackground(
+          options.withBackground ?? true,
+        ),
+        withTheme: true,
+        isMask: isMaskFile(this.plugin, view.file),
+        frameRendering:
+          options.frameRendering ??
+          ({ enabled: true, name: true, outline: true, clip: true } as const),
+      },
+      padding: view.getViewExportPadding(options.padding),
+      sourceFile: view.file,
+      ownerDocument: view.ownerDocument,
+      exportArea,
+      exportBounds,
+    };
+  }
+
+  /**
+   * Creates an SVG representation of the current view.
+   *
+   * @param options - View export options. `elementsOverride`, when supplied, is
+   * a complete replacement rather than a patch. `exportArea` filters that
+   * candidate set and anchors the result to an exact scene rectangle.
+   * @returns A promise resolving to the exported SVG, or `undefined` when no
+   * loaded target view is available.
+   */
+  async createViewSVG(
+    options: ViewSVGExportOptions = {},
+  ): Promise<SVGSVGElement> {
+    const prepared = this.prepareViewImageExport(options);
+    if (!prepared) return;
+    prepared.exportSettings.skipInliningFonts =
+      options.skipInliningFonts ?? false;
+    const svg = await getSVG(
+      prepared.scene,
+      prepared.exportSettings,
+      prepared.padding,
+      prepared.sourceFile,
+    );
+    if (svg && prepared.exportArea && prepared.exportBounds) {
+      const originalViewBox = svg.viewBox.baseVal;
+      const exportScale = originalViewBox.width
+        ? Number(svg.getAttribute("width")) / originalViewBox.width
+        : 1;
+      const width = prepared.exportArea.width + prepared.padding * 2;
+      const height = prepared.exportArea.height + prepared.padding * 2;
+      svg.setAttribute(
+        "viewBox",
+        `${prepared.exportArea.x - prepared.exportBounds.minX} ${prepared.exportArea.y - prepared.exportBounds.minY} ${width} ${height}`,
+      );
+      svg.setAttribute("width", `${width * exportScale}`);
+      svg.setAttribute("height", `${height * exportScale}`);
+    }
+    return svg;
+  }
+
+  /**
+   * Creates a PNG representation of the current view without using or mutating
+   * the EA workbench.
+   *
+   * @param options - View export options. `elementsOverride`, when supplied, is
+   * a complete replacement rather than a patch. `exportArea` filters that
+   * candidate set and anchors the result to an exact scene rectangle.
+   * @returns A promise resolving to a PNG blob, or `undefined` when no loaded
+   * target view is available.
+   */
+  async createViewPNG(options: ViewPNGExportOptions = {}): Promise<Blob> {
+    const prepared = this.prepareViewImageExport(options);
+    if (!prepared) return;
+    const png = await getPNG(
+      prepared.scene,
+      prepared.exportSettings,
+      prepared.padding,
+      options.scale ?? 1,
+    );
+    if (!png || !prepared.exportArea || !prepared.exportBounds) return png;
+    const scale = options.scale ?? 1;
+    return await cropPNGBlob(
+      png,
+      {
+        x: (prepared.exportArea.x - prepared.exportBounds.minX) * scale,
+        y: (prepared.exportArea.y - prepared.exportBounds.minY) * scale,
+        width: (prepared.exportArea.width + prepared.padding * 2) * scale,
+        height: (prepared.exportArea.height + prepared.padding * 2) * scale,
+      },
+      prepared.ownerDocument,
     );
   }
 
@@ -4339,36 +4441,39 @@ export class ExcalidrawAutomate {
   }
 
   /**
-   * Gets the elements within a specific area.
-   * @param elements - The elements to check.
-   * @param param1 - The area to check against.
-   * @returns The elements within the area.
+   * Gets elements whose rendered bounds intersect a scene area.
+   *
+   * @param elements - Elements to test, in scene stacking order.
+   * @param area - Rectangle or element defining the scene area.
+   * @param options - Optional margin, marker-frame, and binding expansion rules.
+   * @returns Intersecting elements in their original stacking order.
    */
   getElementsInArea(
     elements: readonly ExcalidrawElement[],
-    element: ExcalidrawElement,
+    area: SceneArea,
+    options: ElementsInAreaOptions = {},
   ): ExcalidrawElement[] {
-    const { x, y, width, height, id } = element;
-    return elements.filter((el) => {
-      if (el.type === "frame" && el.frameRole === "marker") {
-        return false;
-      }
-      if (el.id === id) {
-        return true;
-      }
-      const { topX, topY, width: w, height: h } = this.getBoundingBox([el]);
-      const elLeft = topX;
-      const elTop = topY;
-      const elRight = topX + w;
-      const elBottom = topY + h;
-      // overlap exists if rectangles intersect
-      return !(
-        elLeft >= x + width ||
-        elRight <= x ||
-        elTop >= y + height ||
-        elBottom <= y
-      );
-    });
+    return this.getElementsIntersectionArea(elements, area, options);
+  }
+
+  /**
+   * Gets elements whose rendered bounds intersect a scene area.
+   *
+   * @remarks
+   * This explicit name is preferred for new code. `getElementsInArea()` remains
+   * available as a backward-compatible alias and uses the same implementation.
+   *
+   * @param elements - Elements to test, in scene stacking order.
+   * @param area - Rectangle or element defining the scene area.
+   * @param options - Optional margin, marker-frame, and binding expansion rules.
+   * @returns Intersecting elements in their original stacking order.
+   */
+  getElementsIntersectionArea(
+    elements: readonly ExcalidrawElement[],
+    area: SceneArea,
+    options: ElementsInAreaOptions = {},
+  ): ExcalidrawElement[] {
+    return selectElementsIntersectionArea(elements, area, options);
   }
 
   /**

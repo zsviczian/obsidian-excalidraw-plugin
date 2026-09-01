@@ -1,6 +1,14 @@
 import type { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import type { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/src/types";
-import { getCommonBoundingBox, restoreElements } from "src/constants/constants";
+import {
+  getCommonBoundingBox,
+  nanoid,
+  restoreElements,
+} from "src/constants/constants";
+import type {
+  ElementsInAreaOptions,
+  SceneArea,
+} from "src/types/excalidrawAutomateTypes";
 
 /**
  * Calculates the axis-aligned bounds shared by a collection of elements.
@@ -13,6 +21,159 @@ export function estimateBounds(
 ): [number, number, number, number] {
   const bb = getCommonBoundingBox(elements);
   return [bb.minX, bb.minY, bb.maxX, bb.maxY];
+}
+
+/**
+ * Returns a normalized copy of a scene area, optionally inflated on every side.
+ *
+ * @param area - Scene rectangle to normalize.
+ * @param margin - Scene-unit margin added around the rectangle.
+ */
+export function normalizeSceneArea(
+  area: SceneArea,
+  margin: number = 0,
+): SceneArea {
+  const left = Math.min(area.x, area.x + area.width) - margin;
+  const top = Math.min(area.y, area.y + area.height) - margin;
+  const right = Math.max(area.x, area.x + area.width) + margin;
+  const bottom = Math.max(area.y, area.y + area.height) + margin;
+  return {
+    x: left,
+    y: top,
+    width: right - left,
+    height: bottom - top,
+    ...(area.id ? { id: area.id } : {}),
+  };
+}
+
+function expandBoundElementIds(
+  selectedIds: Set<string>,
+  elements: readonly ExcalidrawElement[],
+): void {
+  const elementsById = new Map(elements.map((element) => [element.id, element]));
+  const queue = [...selectedIds];
+  while (queue.length > 0) {
+    const id = queue.shift();
+    if (!id) continue;
+    const element = elementsById.get(id);
+    if (!element) continue;
+    const relatedIds: string[] = [];
+    if (element.type === "text" && element.containerId) {
+      relatedIds.push(element.containerId);
+    }
+    for (const boundElement of element.boundElements ?? []) {
+      relatedIds.push(boundElement.id);
+    }
+    if (element.type === "arrow") {
+      if (element.startBinding?.elementId) {
+        relatedIds.push(element.startBinding.elementId);
+      }
+      if (element.endBinding?.elementId) {
+        relatedIds.push(element.endBinding.elementId);
+      }
+    }
+    for (const id of relatedIds) {
+      if (!selectedIds.has(id) && elementsById.has(id)) {
+        selectedIds.add(id);
+        queue.push(id);
+      }
+    }
+  }
+}
+
+/**
+ * Returns elements whose axis-aligned rendered bounds intersect a scene area.
+ *
+ * @remarks
+ * Results preserve the source array's stacking order. Marker frames are
+ * excluded by default to preserve the historical ExcalidrawAutomate behavior.
+ */
+export function getElementsIntersectionArea(
+  elements: readonly ExcalidrawElement[],
+  area: SceneArea,
+  options: ElementsInAreaOptions = {},
+): ExcalidrawElement[] {
+  const normalizedArea = normalizeSceneArea(area, options.margin);
+  const areaRight = normalizedArea.x + normalizedArea.width;
+  const areaBottom = normalizedArea.y + normalizedArea.height;
+  const selectedIds = new Set<string>();
+
+  for (const element of elements) {
+    if (
+      !options.includeMarkerFrames &&
+      element.type === "frame" &&
+      element.frameRole === "marker"
+    ) {
+      continue;
+    }
+    if (normalizedArea.id && element.id === normalizedArea.id) {
+      selectedIds.add(element.id);
+      continue;
+    }
+    const bounds = getCommonBoundingBox([element]);
+    if (
+      bounds.minX < areaRight &&
+      bounds.maxX > normalizedArea.x &&
+      bounds.minY < areaBottom &&
+      bounds.maxY > normalizedArea.y
+    ) {
+      selectedIds.add(element.id);
+    }
+  }
+
+  if (options.includeBoundElements) {
+    expandBoundElementIds(selectedIds, elements);
+  }
+  return elements.filter((element) => selectedIds.has(element.id));
+}
+
+/**
+ * Backward-compatible name for {@link getElementsIntersectionArea}.
+ */
+export function getElementsInArea(
+  elements: readonly ExcalidrawElement[],
+  area: SceneArea,
+  options: ElementsInAreaOptions = {},
+): ExcalidrawElement[] {
+  return getElementsIntersectionArea(elements, area, options);
+}
+
+/**
+ * Creates an invisible rectangle that pins an export to an exact scene area.
+ *
+ * @remarks The returned element is detached data and never enters the EA workbench.
+ */
+export function createExportAreaAnchor(area: SceneArea): ExcalidrawElement {
+  const normalizedArea = normalizeSceneArea(area);
+  return {
+    id: nanoid(),
+    type: "rectangle",
+    x: normalizedArea.x,
+    y: normalizedArea.y,
+    width: normalizedArea.width,
+    height: normalizedArea.height,
+    angle: 0,
+    strokeColor: "#000000",
+    backgroundColor: "transparent",
+    fillStyle: "solid",
+    strokeWidth: 0.01,
+    strokeStyle: "solid",
+    roughness: 0,
+    opacity: 0,
+    groupIds: [],
+    frameId: null,
+    index: "a0",
+    roundness: null,
+    seed: 1,
+    version: 1,
+    versionNonce: 1,
+    isDeleted: false,
+    boundElements: [],
+    updated: Date.now(),
+    link: null,
+    locked: false,
+    hasTextLink: false,
+  } as unknown as ExcalidrawElement;
 }
 
 /**

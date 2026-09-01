@@ -31,6 +31,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 - Customize color-picker top picks by dragging colors onto the strip; right-click the strip to reset it. [#11872](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/11872)
 
 ## Fixed
+- Downloading very large SVG or PNG exports now avoids base64 conversion, substantially reducing peak memory use and preventing Electron renderer crashes on image-heavy drawings.
 - Moving a dirty drawing out of a popout window now safely transfers and persists its latest edits from the replacement main-window view.
 - Opening the command palette or another Obsidian modal reliably saves dirty drawings, while inline link suggestions no longer trigger a save that can end text editing.
 - Converting a legacy ".excalidraw" drawing now persists its embedded images as vault attachments during conversion, before the source file can be removed. [#2898](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2898)
@@ -50,6 +51,8 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 - Removed unused code and the obsolete Draw.io/Diagram integration, and retired the non-functional Create DrawIO file script.
 
 ## New in Excalidraw Automate
+- Added area-bounded view exports for image-heavy scenes. \`createViewSVG()\` and the new \`createViewPNG()\` accept \`exportArea: {x, y, width, height}\`, filter out off-area elements and unused image payloads, retain required bound elements, and crop to the requested viewport. Both methods also support a complete \`elementsOverride\` export set.
+- Added \`getElementsIntersectionArea()\` for explicitly selecting elements whose rendered bounds intersect an area. The existing \`getElementsInArea()\` method remains available as a backward-compatible alias.
 - \`setView(null)\` now explicitly clears \`ea.targetView\`. Use \`setView()\` or \`setView("auto")\` when you want EA to select a sensible default drawing.
 - Scripts can register custom buttons in the selected-element context menu:
 \`\`\`ts
