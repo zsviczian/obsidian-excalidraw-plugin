@@ -954,13 +954,14 @@ export class ScriptEngine {
   ): Promise<unknown> {
     //addresses the situation when after paste text element IDs are not updated to 8 characters
     //linked to onPaste save issue with the false parameter
+    //The Excalidraw API can briefly be null while React replaces the canvas
+    //during a view transition. This legacy save preflight is optional; script
+    //execution itself must continue so view-autostart can attach to the new view.
+    const scene = view?.getScene();
     if (
-      view &&
-      view
-        .getScene()
-        .elements.some(
-          (el) => !el.isDeleted && el.type === "text" && el.id.length > 8,
-        )
+      scene?.elements.some(
+        (el) => !el.isDeleted && el.type === "text" && el.id.length > 8,
+      )
     ) {
       await view.save(false, true);
     }
