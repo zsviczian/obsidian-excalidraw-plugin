@@ -59,7 +59,10 @@ import { ColorMap, FileData } from "src/types/embeddedFileLoaderTypes";
 import { ExportSettings } from "src/types/exportUtilTypes";
 import type { StrokeWidthKey } from "@zsviczian/excalidraw/types/common/src/constants";
 import { URLs } from "src/constants/safeUrls";
-import { cloneElement } from "./excalidrawElementUtils";
+import {
+  cloneElement,
+  getElementsInArea,
+} from "./excalidrawElementUtils";
 
 export {
   cloneElement,
@@ -382,9 +385,7 @@ export async function getTemplate(
         rect.strokeWidth = 0.1;
         rect.fillStyle = "solid";
         scene.elements.push(rect);
-        groupElements = plugin.ea
-          .getElementsInArea(scene.elements, rect)
-          .concat(el);
+        groupElements = getElementsInArea(scene.elements, rect).concat(el);
       } else {
         groupElements = plugin.ea.getElementsInFrame(
           el,
@@ -409,7 +410,7 @@ export async function getTemplate(
                 width: el.width + 2 * padding,
                 height: el.height + 2 * padding,
               };
-        groupElements = plugin.ea.getElementsInArea(scene.elements, areaElement);
+        groupElements = getElementsInArea(scene.elements, areaElement);
       }
     }
 

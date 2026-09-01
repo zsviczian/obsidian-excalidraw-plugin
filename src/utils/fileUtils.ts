@@ -58,6 +58,26 @@ export const download = (
 };
 
 /**
+ * Downloads a blob without converting it to a base64 data URL.
+ *
+ * @remarks
+ * Object URLs avoid the large temporary strings and 33% base64 expansion that
+ * can otherwise exhaust Electron's renderer process for large SVG or PNG files.
+ */
+export const downloadBlob = (blob: Blob, filename: string): void => {
+  const ownerWindow = mainDocument.defaultView;
+  const urlApi = ownerWindow?.URL ?? URL;
+  const objectUrl = urlApi.createObjectURL(blob);
+  const element = mainDocument.body.createEl("a");
+  setElementDisplay(element, "none");
+  element.setAttribute("href", objectUrl);
+  element.setAttribute("download", filename);
+  element.click();
+  mainDocument.body.removeChild(element);
+  (ownerWindow ?? window).setTimeout(() => urlApi.revokeObjectURL(objectUrl), 1000);
+};
+
+/**
  * Generates the image filename based on the excalidraw filename
  * @param excalidrawPath - Full filepath of ExclidrawFile
  * @param newExtension - extension of IMG file in ".extension" format

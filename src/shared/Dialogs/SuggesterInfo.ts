@@ -287,7 +287,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "createViewSVG",
-    code: "async createViewSVG({withBackground?: boolean, theme?: 'light' | 'dark', frameRendering?: FrameRenderingOptions, padding?: number, selectedOnly?: boolean, skipInliningFonts?: boolean, embedScene?: boolean, elementsOverride?: readonly ExcalidrawElement[]}): Promise<SVGSVGElement>",
+    code: "async createViewSVG({withBackground?: boolean, theme?: 'light' | 'dark', frameRendering?: FrameRenderingOptions, padding?: number, selectedOnly?: boolean, skipInliningFonts?: boolean, embedScene?: boolean, elementsOverride?: readonly ExcalidrawElement[], exportArea?: ViewExportArea}): Promise<SVGSVGElement>",
     desc:
       "Creates an SVG representation of the current view with specified options.\n" +
       "\n" +
@@ -300,6 +300,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
       "@param {boolean} [options.skipInliningFonts=false] - Whether to skip inlining fonts in the SVG.\n" +
       "@param {boolean} [options.embedScene=false] - Whether to embed the scene in the SVG.\n" +
       "@param {readonly ExcalidrawElement[]} [options.elementsOverride] - Complete replacement for the exported elements. It is not merged with the current scene or treated as a patch by ID. Include every element that should appear in the SVG.\n" +
+      "@param {ViewExportArea} [options.exportArea] - Filters elements to an exact scene rectangle and anchors the SVG to that viewport.\n" +
       "@returns {Promise<SVGSVGElement>} A promise that resolves to the SVG element.\n" +
       "\n" +
       "@typedef {Object} FrameRenderingOptions\n" +
@@ -317,6 +318,20 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
       "  skipInliningFonts: false,\n" +
       "  embedScene: false,\n" +
       "  // elementsOverride: ea.getElements(), // Must contain the complete export set.\n" +
+      "  // exportArea: { x: 0, y: 0, width: 1920, height: 1080 },\n" +
+      "});",
+  },
+  {
+    field: "createViewPNG",
+    code: "async createViewPNG({withBackground?: boolean, theme?: 'light' | 'dark', frameRendering?: FrameRenderingOptions, padding?: number, selectedOnly?: boolean, embedScene?: boolean, elementsOverride?: readonly ExcalidrawElement[], exportArea?: ViewExportArea, scale?: number}): Promise<Blob>",
+    desc:
+      "Creates a PNG from the currently active Excalidraw view without using or modifying the EA workbench.\n" +
+      "elementsOverride is a complete replacement for the view elements. exportArea filters that candidate set and anchors the image to an exact scene rectangle. The optional scale controls raster resolution.",
+    after:
+      "({\n" +
+      "  withBackground: true,\n" +
+      "  exportArea: { x: 0, y: 0, width: 1920, height: 1080 },\n" +
+      "  scale: 0.5,\n" +
       "});",
   },
   {
@@ -690,8 +705,14 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "getElementsInArea",
-    code: "getElementsInArea(elements: ExcalidrawElement[], area: {x: number, y: number, width: number, height: number}): ExcalidrawElement[];",
-    desc: "Filter the elements and returns only those within the specific area.",
+    code: "getElementsInArea(elements: readonly ExcalidrawElement[], area: {x: number, y: number, width: number, height: number, id?: string}, options?: {margin?: number, includeMarkerFrames?: boolean, includeBoundElements?: boolean}): ExcalidrawElement[];",
+    desc: "Returns elements whose rendered bounds intersect the area, preserving source stacking order. Marker frames remain excluded by default for backward compatibility. Optional binding expansion includes containers, bound elements, and arrow binding targets.",
+    after: "",
+  },
+  {
+    field: "getElementsIntersectionArea",
+    code: "getElementsIntersectionArea(elements: readonly ExcalidrawElement[], area: {x: number, y: number, width: number, height: number, id?: string}, options?: {margin?: number, includeMarkerFrames?: boolean, includeBoundElements?: boolean}): ExcalidrawElement[];",
+    desc: "Preferred explicit name for selecting elements whose rendered bounds intersect an area. It shares the implementation and behavior of the backward-compatible getElementsInArea() API.",
     after: "",
   },
   {
