@@ -108,6 +108,12 @@ if (!isLib) {
 
 const manifestStr = isLib ? "" : fs.readFileSync("manifest-beta.json", "utf-8");
 const manifest = isLib ? {} : JSON.parse(manifestStr);
+const startupScriptBase64 = isLib
+  ? ""
+  : Buffer.from(
+    fs.readFileSync("src/constants/assets/startupScript.md", "utf-8"),
+    "utf-8",
+  ).toString("base64");
 if (!isLib) {
   console.log(manifest.version);
 }
@@ -149,6 +155,7 @@ const packageString = isLib
   //https://github.com/obsidianmd/eslint-plugin/issues/176
   `const deliberateFetch = async (payload, init) => await fetch(payload, init);\n` +
   `const PLUGIN_VERSION="${manifest.version}";\n` +
+  `const STARTUP_SCRIPT_BASE64="${startupScriptBase64}";\n` +
   //Moved here since the Obsidian code scanner warning to avoid unnecessary logging appears
   //to users, creating the impression that there is unnecessary logging. There isn't.
   //Errors and debug information is logged. Nothing else.

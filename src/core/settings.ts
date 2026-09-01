@@ -35,7 +35,7 @@ import { getImageCache } from "src/shared/ImageCache";
 import { MultiOptionConfirmationPrompt } from "src/shared/Dialogs/Prompt";
 import { EmbeddalbeMDFileCustomDataSettingsComponent } from "src/shared/Dialogs/EmbeddableMDFileCustomDataSettingsComponent";
 import { AutostartScriptsSettingsComponent } from "src/shared/Dialogs/AutostartScriptsSettingsComponent";
-import { startupScript } from "src/constants/starutpscript";
+import { startupScript } from "src/constants/startupScript";
 import {
   getModifierKeyCategoryName,
   MODIFIER_KEY_CATEGORIES,
