@@ -63,7 +63,8 @@ validated, and what remains uncertain.
 | Adopt drawing-owned state during window migration (Phase 1C.2a, batch 2) | Complete | `onWindowMigrated()` now takes one synchronous pre-unmount scene/app/files snapshot, retains the established dirty-save snapshot and popout-safe serialized persistence handoff, and registers drawing state only after the save is settled and the old view has closed. The replacement view receives a one-shot token through its transient view state, consumes the handoff before a popout→main persistence write can intentionally change file mtime, and adopts scene/app state, current `BinaryFiles`, explicit `ExcalidrawData` metadata, text/compatibility mode, and the settled save revision. The new owner-document-bound React/Excalidraw tree is still recreated. This checkpoint deliberately retains the complete ordinary scene-file loader after initialization as a correctness fallback; skipping or narrowing work for already-transferred files is a separate measured checkpoint. Runtime validation covered dirty migration and durable reopen in both directions, destination interaction/undo, partial and complete MOC EA file transfer, and mid-load cancellation without a freeze, lost edit, fallback, or console error |
 | Measure post-handoff migration stages (Phase 1C.2b, batch 2) | Complete; diagnostics removed after Phase 1C.2c | Both measured directions showed that source teardown, handoff adoption, library access, destination readiness, and the ordinary scene-file loader complete in milliseconds. Passing all 46 transferred `BinaryFiles` through `initialData.files` instead blocked Excalidraw initialization for approximately 13–15 seconds and starved the zero-delay post-initialize callback for another approximately 4.45 seconds. The ordinary loader then emitted no files and completed in 3.5–24.6 ms. This selected destination image decoding/publication—not handoff validation, disk loading, or hashing—for Phase 1C.2c; the temporary trace was removed after that checkpoint's runtime acceptance |
 | Publish transferred migration files progressively (Phase 1C.2c, batch 2) | Complete; published dependency installed and runtime-validated | A migrated destination now initializes its owner-document-bound Excalidraw tree with the transferred scene but no initial files, then publishes the exact in-memory `BinaryFiles` in visible-first batches of four through Excalidraw's ordinary `addFiles()` path. A narrow fork API waits only for decoding already started by each batch; the plugin yields two destination frames before the next batch and invokes the disk-backed loader only for image IDs still absent afterward. Trusted transferred SVGs retain the existing normalization bypass. No decoded image, DOM node, `Window`, React object, data-URL cache, or unbounded new cache crosses the handoff. MOC EA now becomes interactive immediately, shows its first image within approximately two seconds, and completes in approximately four seconds main→popout and eight seconds popout→main. Dirty and mid-load transfers retained edits without slowing or destabilizing the load. The final plugin consumes the registry-published `@zsviczian/excalidraw@0.18.128`; temporary local artifact replacement is no longer involved, and all migration timing diagnostics are removed |
-| Complete upstream cross-document runtime ownership | Fork checkpoint committed; upstream PR #11997 open | The remaining generic gaps after upstream PR #11974 are one cohesive follow-up: empty scenes explicitly load the Welcome UI's Excalifont in the editor document; ordinary and hyperlink tooltips create, position, schedule, and clean up against the trigger/editor document and window; and image decoding constructs `HTMLImageElement`s through the mounted editor window. The existing modal portal already targets `excalidrawContainer.ownerDocument.body` and therefore requires no follow-up change. Fork-only highlighter, context-menu, panning, Obsidian WYSIWYG, and host-adapter paths remain locally fingerprinted rather than being proposed upstream |
+| Complete upstream cross-document runtime ownership | Upstream PR #11997 open; final code review confirms the Obsidian paths | PR #11997 now includes the original owner-document font, tooltip, image, and animation fixes plus Márk's follow-up work: the current item font is prewarmed in the editor document, tooltip/hyperlink ownership no longer becomes stale across concurrent editors, hyperlink timers/listeners follow the owning window, and animation slots are instance-owned. Stacked PR #12018 retains those fixes while replacing the narrow image factory with the broader render-host contract. The current fork still carries the accepted local checkpoints until the upstream work is merged and adopted through a published fork dependency |
+| Track upstream render-host abstraction (#12018) | Final head `ab6f203e9` satisfies the Obsidian shared-runtime/multi-window contract in code review; integration smoke test remains | `RenderEnvironment` supplies canvas, image, and path factories. A process-wide default serves detached/headless callers, while each mounted `App` derives a stable environment from its own `ownerDocument`/`ownerWindow`; explicit environments take precedence and host-object caches are keyed weakly by environment identity. The public prop is forwarded to `App`, and `App.updateImageCache()` uses the App environment. Text metrics, freedraw paths, rendering, exports, image decoding, and window-bound throttles now follow the appropriate scoped environment. This is compatible with one evaluated Excalidraw runtime hosting concurrent main-window and popout Apps, so the plugin must not call `setRenderEnvironment()` to follow focus. Final acceptance still requires merging into the fork, publishing/installing the exact package, and running the focused plugin tests below |
 | Coalesce restored-view stencil-library initialization (batch 2 checkpoint 2) | Complete | Simultaneously restored main and popout views now share one in-flight vault-library load. The loader constructs an isolated item/source snapshot and publishes it atomically only if no vault invalidation occurred while files were being read; an invalidated load is discarded and retried. This preserves the existing plugin-global library cache and persistence behavior while preventing concurrent startup callers from clearing/populating the same map and reporting every item as a duplicate. The maintainer validated restored main/popout startup and library mutation with no new issue |
 | Make shared-runtime editor instances owner-document-aware (batch 2 spike checkpoint 2) | Accepted upstream and merged into the fork; focused popout behavior validated | Excalidraw now exposes the optional stable `ownerDocument` host prop upstream and derives the owning window from it for editor DOM, listeners, realm constructors, fonts, WYSIWYG, portals, and related browser APIs. The plugin continues to pass each view's actual document through its root. The fuller fork-only spike was preserved in recovery stashes and then removed before merging upstream PR #11974, avoiding permanent fingerprint and merge churn. Conflict resolution retained only existing Obsidian-fork behavior plus five owner-realm conversions on fork-only `App.tsx` lines that upstream could not modify. The maintainer confirmed the shared runtime works well in a popout; the tray-menu tooltip ordering remains a separate pre-existing z-index issue. PackageManager simplification, migration state handoff, MOC EA, and memory work remain separate follow-up checkpoints |
 | Explicit package/window runtime ownership (Phase 1A.1) | Ownership behavior validated; retained-heap investigation pending | `ExcalidrawView` now acquires an idempotent package lease that captures the package's owning window before any DOM migration. `PackageManager` reference-counts view leases per window, deletes a popout runtime after its final lease is released, and keeps the main startup/fallback runtime pinned. Five measured main↔popout round trips kept `packageWindows` bounded at 1–2 and produced five matching popout package creations/deletions. A two-view popout test then confirmed that the first close retains one lease and a usable sibling while only the final close deletes the runtime. Forced-GC heap nevertheless remained at the Phase 0 failure level, so deleting the map entry is necessary but not sufficient to release the retained runtime graph |
@@ -87,10 +88,119 @@ validated, and what remains uncertain.
 | Defer vault-wide inline link suggestions until invocation | Implemented; awaiting focused runtime validation | `InlineLinkSuggester` now starts with no file-link candidates and takes its existing one-per-editor snapshot only when the caret first enters an active file wikilink after `[[`. Merely entering or editing ordinary text no longer calls Obsidian's synchronous full-vault `metadataCache.getLinkSuggestions()` filter/sort path. Heading, block, frame, clipped-frame, tag, alias, insertion, and popout behavior retain their existing paths; explicit refreshes remain no-ops until the lazy snapshot exists. Fixes [#2907](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2907) |
 | Remaining view phases | Parked | `MarkdownImageController` and `ViewSceneFileManager` are both closed (user-confirmed manual testing, no issues). The Phase 7 React-root extraction (`ExcalidrawRoot.ts`) was never explicitly re-confirmed after its own checkpoint note was written and should be the first thing re-validated if this plan resumes. `ViewInteractionController` (hover preview + pointer/key handling) was explicitly declined by the user for now and remains the last Phase 6 controller candidate if resumed. Phase 8 (converting the extracted React root to TSX) should follow only after the React-root checkpoint is confirmed closed. See "Parked: next steps if resumed" |
 
+### Upstream cross-document host contract: PRs #11997 and #12018
+
+This dependency may remain unresolved across several upstream release cycles.
+The integration must therefore preserve the following context independently of
+the current conversation and of either PR's temporary implementation details.
+
+#### Required Obsidian architecture
+
+- The plugin bundles one private React runtime and evaluates one Excalidraw
+  runtime. Multiple independent `App` instances may be mounted concurrently in
+  the main document and in one or more popout documents.
+- Every mounted editor receives its stable `ownerDocument`; its `ownerWindow`
+  is derived from that document. A view migration synchronously destroys the
+  source React root and creates a new destination-owned root. The existing
+  `App` is never moved between documents.
+- DOM nodes, events, observers, timers, fonts, portals, `Image` instances, and
+  canvases retained by an editor must belong to that editor's document/window.
+  A mutable process-global "current window" cannot represent concurrent Apps
+  and must not be changed as views gain focus.
+- The process-wide render environment is appropriate only for detached calls
+  that have no mounted App (including headless/server callers). App-owned work
+  must use an instance- or call-scoped environment derived from the requesting
+  editor.
+- Destroy/recreate what belongs to the Window; transfer what belongs to the
+  drawing. Do not retain a React tree, decoded DOM image cache, in-flight image
+  promise, DOM node, or Window across migration.
+
+#### Upstream state audited on 2026-09-01
+
+- [PR #11997](https://github.com/excalidraw/excalidraw/pull/11997) is open
+  against upstream `master`. Its current branch includes generic
+  cross-document handling for fonts, ordinary and hyperlink tooltips, scene
+  images, owner-window animation scheduling, and per-instance animation keys.
+  Márk's additions prewarm the actual current-item font rather than always
+  Excalifont and replace process-global tooltip/hyperlink ownership with
+  editor-owned lifecycle state. These changes directly benefit simultaneous
+  main/popout editors and popout teardown.
+- [PR #12018](https://github.com/excalidraw/excalidraw/pull/12018) is stacked
+  on #11997 rather than directly on `master`. At audited head
+  `ab6f203e9d5473a6b5717ee6580ccfbecbe5b897`, it introduces
+  `RenderEnvironment` with `createCanvas()`, `createImage()`, and optional
+  `createPath()`, a global default for unscoped/headless operations, explicit
+  per-render overrides, and an App environment derived from
+  `ownerDocument`/`ownerWindow`. Canvas, image, text-measurement, freedraw,
+  export, placeholder/link-image, and render-cache paths are routed through
+  this contract. Environment identity and backing-store scale are part of the
+  cache isolation strategy.
+- The narrow `createImage` argument in #11997 is an internal bridge used by
+  `App.updateImageCache()`; the plugin does not call it. It may disappear once
+  the broader contract replaces it, but the behavior it provides—creating the
+  retained scene-cache image in the requesting App's window—must remain.
+- `blob.ts` currently uses the global/default environment for the transient
+  dimension probe during image insertion. The retained App image is decoded
+  again through the App-owned path. This has not caused an observed Obsidian
+  failure, but popout image insertion remains a required integration test.
+  App-triggered canvas export now passes its per-instance environment;
+  standalone `exportToSvg()`/`exportToBlob()` calls remain detached operations
+  and can use their explicit/default environment.
+
+#### Final code-review conclusion at the audited head
+
+The two functional gaps found at the earlier `b3e4cf963` head are resolved:
+`ExcalidrawBase` forwards the public `renderEnvironment` prop to `App`, and
+`App.updateImageCache()` creates retained scene images through
+`this.renderEnvironment.createImage`. A focused public-prop test exercises the
+supplied canvas and image factories. Further changes isolate text measurement
+with environment-keyed weak caches, create freedraw paths through the
+environment, and make static-scene throttles track the canvas's current owning
+window so teardown or adoption does not leave callbacks in the source realm.
+Upstream CI is green at this head.
+
+The generic test describing inference when `ownerDocument` is omitted remains
+less decisive than its name because the wrapper still has a module-document
+default. This is not an Obsidian blocker: the plugin always supplies each
+view's stable `ownerDocument`, and the explicit-document and explicit-
+environment paths needed by the plugin are covered. Confirm this scoped code
+review separately from runtime acceptance; the latter occurs only after the
+final upstream work is merged into the fork and installed in the plugin.
+
+#### Adoption and acceptance when upstream settles
+
+1. Merge the final upstream commits into `@zsviczian/excalidraw`; remove only
+   fork deltas that are genuinely superseded. Preserve and line-fingerprint
+   fork-only highlighter, Obsidian WYSIWYG, host-adapter, and other
+   Obsidian-only ownership paths.
+2. Prefer continuing to pass only the stable `ownerDocument` from the plugin
+   and let upstream derive the App environment. Pass an explicit
+   `renderEnvironment` only if the final API requires it; never configure the
+   process-global environment per active view.
+3. Rebuild/publish the fork, install the exact published version in the
+   plugin, and rebuild before treating the integration as complete. Do not
+   commit a plugin dependency on unpublished local artifacts.
+4. Run one focused concurrent-editor test with an image and linked element in
+   both main and popout windows; verify image decoding, link icons, ordinary
+   tooltips, hyperlink tooltips, click/Escape behavior, and closing one editor
+   without hiding, retaining, or breaking the other editor's UI.
+5. Run one blank/new popout test using the selected current-item font, one
+   popout image-insertion test (the `blob.ts` probe), and SVG plus blob export
+   from both main and popout editors.
+6. Run one dirty main→popout→main migration, including migration during
+   progressive image loading, and recheck the maximized-popout hand and laser
+   tools. The source root must still unmount before the first await, no edit may
+   be lost, and no source-window callback may survive teardown.
+7. Re-run the bounded package/runtime and forced-GC check. Environment-keyed
+   weak caches and tooltip/timer ownership must not retain a destroyed popout
+   after its last view closes.
+
 ### Action log
 
 | Date | Action | Outcome | Validation |
 | --- | --- | --- | --- |
+| 2026-09-01 | Re-audited #11997 and final #12018 head `ab6f203e9` after Márk's fixes | Confirmed that the previously reported public-prop and retained-image-cache wiring gaps are resolved. The final abstraction also adds environment-scoped paths, weak cache isolation, and owner-window-aware throttling needed by concurrent main/popout Apps. Code review now supports confirming the Obsidian multi-window contract, while explicitly reserving runtime acceptance for the published-fork plugin smoke test | Verified the current GitHub heads and green checks, reviewed the final wiring and focused render-environment tests, and retained the existing risk-based adoption gate below. No plugin or fork runtime source changed; documentation-only validation uses `git diff --check` |
+| 2026-09-01 | Audited upstream cross-document PR #11997 and stacked host-abstraction draft #12018 | Updated the durable architecture record from the obsolete per-window-package model to the shipped single React/Excalidraw runtime with concurrent document-owned Apps. Recorded Márk's font, tooltip/hyperlink, animation, per-instance render-environment, cache-isolation, and export work; the distinction between global detached/headless defaults and App-scoped host factories; the current fork/adoption strategy; and the risk-based acceptance gate. At #12018 head `b3e4cf963`, identified two concrete override-wiring gaps (`renderEnvironment` is not forwarded from `ExcalidrawBase`, and `App.updateImageCache()` bypasses it) plus a non-blocking fallback-test weakness. No plugin or fork runtime source changed | Reviewed both PR commit histories, changed-file lists, issue comments, line reviews, and the relevant current source/tests through GitHub. Cross-checked the local plugin/fork status and current fork commits. Documentation-only validation uses `git diff --check`; upstream remains draft and must be re-audited at its final head before any fork merge, package publish, or plugin dependency change |
 | 2026-08-27 | Deferred issue #2907's full-vault link scan until `[[` is invoked | Removed `getLinkSuggestionsFiltered()` from `InlineLinkSuggester` construction and changed `getItems()` to expose only the current lazy snapshot. The first active file-wikilink context loads that snapshot once; subsequent characters and links in the same editor reuse it. Explicit refresh updates an existing snapshot but does not accidentally prime one during ordinary text editing. Specialized tag, heading, block, frame, and clipped-frame suggestions remain independent | Production build passes with the established 33 circular warnings; scoped lint and unused-symbol lint pass; bundle syntax and diff checks pass. Full source lint retains exactly the established 138-error/0-warning backlog with no finding in either changed source file. Source inspection confirms construction/focus contains no candidate scan and the only `InlineLinkSuggester` scan sites are the guarded lazy load and explicit post-load refresh. Focused runtime validation should first confirm that entering and editing ordinary text does not pause, then type `[[`, choose a file, and confirm insertion. Repeat `[[` in the same text element and test one heading or block target plus one tag. Run the ordinary-text and file-link checks once in a popout because the attached input and suggestion portal are document-owned. The highest-risk regression is an empty file-link menu caused by failing to populate the lazy snapshot; broad migration, MOC EA, save, export, and mobile testing are not required |
 | 2026-08-27 | Replaced the obsolete compressed React bootstrap with normal Rollup bundling | Removed the nested `buildReactRuntime` build, its entry module, compressed/evaluated `REACT_PACKAGES` string, fragile regex insertion, and `@zsviczian/rollup-plugin-postprocess`. `PackageManager` imports the official React, ReactDOM legacy/client, and JSX runtime modules directly, preserving the production `jsxDEV` fallback and supplying the same instances to the separately evaluated Excalidraw artifact. React stays external only for the library build and the fork's own Obsidian artifact. Also removed the obsolete local `any`-dominated `ownerDocument` compatibility cast now that `@zsviczian/excalidraw` types the prop | Production, development, and library builds pass under Node 22.22.2; production retains only the established 33 circular warnings, and development retains its established sourcemap-option warning. The production bundle is 4,952,291 bytes: 114,871 bytes above the compressed-bootstrap baseline but still 290,589 bytes below 5 MiB. Bundle syntax, scoped ESLint, unused-symbol lint, dependency deduplication on React/ReactDOM 19.2.8, and temporary Madge 8 validation pass. Full source lint retains exactly the established 138-error/0-warning backlog with no finding in a changed source file. No emitted or source reference to `REACT_PACKAGES`, the deleted builder, React window globals, or external production `require("react")` remains. Focused runtime validation must prioritize one cold plugin restart and one dirty main↔popout round trip; the highest risks are bootstrap ordering/duplicate React and cross-document event ownership, not save serialization or scene-file policy |
 | 2026-08-27 | Finalized the published Phase 1C.2c plugin checkpoint | Installed exact dependency `@zsviczian/excalidraw@0.18.128` after the accepted fork branch was merged to the fork's master. The package declarations expose `awaitImageFiles()`, so the plugin's bounded migration publication now rests on its committed internal protocol rather than a locally copied artifact. The dependency and lockfile contain only the expected `0.18.127`→`0.18.128` update | The maintainer ran `npm install`, a production build, and a plugin smoke test successfully. Independent final validation passed the production and library builds, bundle syntax, unused-symbol check, diagnostic-prefix absence, and Madge with no cycle. Scoped ESLint remains exactly at the established 18 `ExcalidrawView` unsafe-type findings and reports no finding in `ViewSceneFileManager` or the new migration code. The lockfile/manifest retain their intentional CRLF format |
@@ -541,24 +651,30 @@ re-exports must not be misclassified as accidental duplication.
 
 ### React and popout windows
 
-The current root renderer is already a React function component in substance:
-`excalidrawRootElement()` calls hooks and is mounted with `createRoot()`. It is
-embedded as a class method and written with `React.createElement()` rather than
-living in a component module.
+The root renderer now lives in `src/view/components/ExcalidrawRoot.ts` and is
+mounted by `ExcalidrawView` with `createRoot()`. It remains written with
+`React.createElement()` rather than TSX.
 
 The unusual runtime binding is essential:
 
-- Rollup embeds React, ReactDOM, and compressed Excalidraw payloads.
-- `PackageManager` evaluates a fresh package set in each Obsidian window.
-- `ExcalidrawView.onload()` resolves packages for `ownerWindow`.
-- The root, hooks, refs, and elements use `this.packages.react` and
-  `this.packages.reactDOM`.
-- The package is removed when the last relevant leaf in a window closes.
+- Rollup normally bundles one private React/ReactDOM runtime. The separately
+  built compressed Excalidraw artifact externalizes React and is evaluated
+  once against exactly that runtime.
+- `PackageManager` owns one shared `Packages` instance and typed host-adapter
+  registrations. View leases retain the actual acquisition window only for
+  lifecycle/persistence decisions and the temporary popout `ExcalidrawLib`
+  compatibility alias.
+- Every root passes its view's stable `ownerDocument` into Excalidraw. The
+  shared runtime may therefore host concurrent, independent Apps in several
+  documents without a mutable current-window singleton.
+- Window migration destroys the source React root synchronously before its
+  window can be torn down, then creates a destination-document root while
+  transferring drawing-owned state.
 
-An extracted component must preserve that binding. A normal module-level
-`import React from "react"` followed by global `ReactDOM.createRoot()` is not a
-safe replacement. JSX is possible, but only after proving that every emitted
-element and hook call is bound to the view's package-managed React instance.
+Module-level React imports are now the intended binding because there is one
+private bundled runtime. Do not assign React/ReactDOM to `window`, evaluate a
+second copy for popouts, or confuse the shared JavaScript runtime with shared
+DOM ownership. JSX remains possible only as a separate mechanical checkpoint.
 
 ## Architectural target
 
@@ -572,17 +688,18 @@ ExcalidrawPlugin (entry point and stable facade)
   |
   +--> explicitly ordered plugin managers/services
   |
-  +--> PackageManager -- one Packages instance per Window
+  +--> PackageManager -- one shared Packages instance and host registrations
+                         + per-window compatibility-alias leases
                          |
                          v
 ExcalidrawView (Obsidian TextFileView and stable facade)
   |
   +--> view-scoped controllers
   |
-  +--> package-aware React root adapter
+  +--> shared-runtime React root with stable ownerDocument
            |
            v
-      Excalidraw and plugin React UI
+      document-owned Excalidraw App and plugin React UI
 ```
 
 The target is not a strict line-count goal. It is successful when ownership is
@@ -819,7 +936,8 @@ Recommended order:
 4. Implemented: `ViewExcalidrawExtensionRenderer` owns the plugin-specific
    Excalidraw render slots for TTD, diagram-to-code, the welcome screen, custom
    actions, and embeddables. The view retains its render delegates and supplies
-   all elements through its window-scoped React and Excalidraw packages.
+   all elements through the shared React/Excalidraw runtime while passing the
+   view's stable owner document.
 5. `ViewSceneFileManager`: active/next/deferred embedded-file loaders and
    deferred validation scheduling.
 6. `MarkdownImageController`: deletion queue, edit handoff, conversion, and
@@ -834,23 +952,9 @@ that merely duplicates the monolith as an interface.
 
 ### Phase 7: extract the React root without changing rendering syntax
 
-The first renderer extraction should be a mechanical move, not a state rewrite
-or JSX conversion.
-
-1. Define a narrow render-host contract containing runtime packages, refs,
-   callbacks, and render slots required by the root.
-2. Move the body of `excalidrawRootElement()` to a component module.
-3. Pass the `Packages` instance resolved for `view.ownerWindow` into that
-   component.
-4. Inside the component, call hooks and `createElement()` from that package's
-   `react` object.
-5. Continue creating the root with that package's `reactDOM.createRoot()`.
-6. Keep API assignment, initialization callbacks, cleanup, and ref handoff
-   behavior identical.
-7. Test main window, existing popout, moving a leaf to a popout, restored
-   workspace popout, and closing the last popout leaf.
-
-A safe conceptual shape is:
+The mechanical extraction is implemented. The runtime architecture changed
+after the original plan: React/ReactDOM and Excalidraw are now shared rather
+than evaluated per window. The resulting conceptual shape is:
 
 ```ts
 const runtime = view.packages;
@@ -859,16 +963,20 @@ view.excalidrawRoot = runtime.reactDOM.createRoot(view.contentEl);
 view.excalidrawRoot.render(runtime.react.createElement(Root));
 ```
 
-The exact API can differ, but it must not fall back to a module-global React or
-ReactDOM instance.
+`runtime.react` and `runtime.reactDOM` are the plugin bundle's one private
+module runtime, not window globals. Each invocation must still pass the view's
+stable `ownerDocument`, and migration must unmount the source root before the
+first await. If this parked phase is resumed, revalidate main, existing and
+restored popouts, both migration directions, and closing the last popout leaf
+before changing syntax or state ownership.
 
 ### Phase 8: convert the extracted root to TSX
 
 Only after Phase 7 is stable should syntax change:
 
 1. Rename the renderer to `.tsx` and convert a small render fragment at a time.
-2. Ensure the configured classic JSX transform resolves `React.createElement`
-   to a lexically scoped, package-managed React object.
+2. Ensure the configured JSX transform resolves to the plugin bundle's private
+   React runtime and does not introduce a second copy or a window global.
 3. Use module-level React imports for types only where possible.
 4. Do not combine JSX conversion with callback, prop, state, or menu changes.
 5. Compare behavior and bundle size after each fragment conversion.
@@ -886,7 +994,7 @@ Introduce React state only where it eliminates imperative UI synchronization.
    selected UI mode.
 2. If multiple components need the snapshot, implement a tiny plain
    TypeScript observable store owned by the view.
-3. Subscribe with the package-managed React instance, potentially through
+3. Subscribe with the shared private React instance, potentially through
    `useSyncExternalStore()` after verifying availability in every loaded
    runtime.
 4. Migrate one existing imperative `ToolsPanel.setState()` pathway at a time.
