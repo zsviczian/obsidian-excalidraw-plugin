@@ -843,11 +843,44 @@ export class ExcalidrawAutomate {
   };
   colorPalette: object;
   sidepanelTab: ExcalidrawSidepanelTab | null = null;
+  private cleanupCallbacks: Array<{ callback: () => void }> = [];
+  private destroyed = false;
 
   constructor(plugin: ExcalidrawPlugin, view?: ExcalidrawView) {
     this.plugin = plugin;
     this.reset();
     this.targetView = view;
+  }
+
+  /**
+   * Registers synchronous cleanup owned by this EA instance. Use this for
+   * external listeners, observers, timers, and subscriptions that EA cannot
+   * release itself. Cleanup runs when this EA is destroyed.
+   * @param cleanup - Synchronous cleanup callback.
+   * @returns A function that unregisters this callback without running it.
+   */
+  public registerCleanup(cleanup: () => void): () => void {
+    if (typeof cleanup !== "function") {
+      errorMessage("cleanup must be a function", "registerCleanup()");
+      return () => undefined;
+    }
+    if (this.destroyed) {
+      try {
+        cleanup();
+      } catch (error: unknown) {
+        log("ExcalidrawAutomate cleanup failed", error);
+      }
+      return () => undefined;
+    }
+
+    const registration = { callback: cleanup };
+    this.cleanupCallbacks.push(registration);
+    return () => {
+      const index = this.cleanupCallbacks.indexOf(registration);
+      if (index !== -1) {
+        this.cleanupCallbacks.splice(index, 1);
+      }
+    };
   }
 
   /**
@@ -889,6 +922,18 @@ export class ExcalidrawAutomate {
     persist: boolean = false,
     reveal: boolean = true,
   ): Promise<ExcalidrawSidepanelTab | null> {
+    const existingSidepanel = ExcalidrawSidepanelView.getExisting(false);
+    if (
+      persist &&
+      this.activeScript &&
+      this.plugin?.scriptEngine?.isViewAutostartExecution(this) &&
+      existingSidepanel?.hasPersistentScript(this.activeScript) &&
+      existingSidepanel.getTabByScript(this.activeScript)
+    ) {
+      log(
+        `Warning: script "${this.activeScript}" attempted to create an already-active persistent sidepanel during view autostart. Consider branching on utils.executionSource === "view-autostart".`,
+      );
+    }
     if (this.sidepanelTab) {
       this.sidepanelTab.close();
     }
@@ -5134,9 +5179,23 @@ export class ExcalidrawAutomate {
   }
 
   /**
-   * Destroys the ExcalidrawAutomate instance, clearing all references and data.
+   * Destroys this EA once, first releasing registered external resources and
+   * then clearing the ordinary EA state and references.
    */
   destroy(): void {
+    if (this.destroyed) {
+      return;
+    }
+    this.destroyed = true;
+    const cleanups = this.cleanupCallbacks.reverse();
+    this.cleanupCallbacks = [];
+    cleanups.forEach(({ callback }) => {
+      try {
+        callback();
+      } catch (error: unknown) {
+        log("ExcalidrawAutomate cleanup failed", error);
+      }
+    });
     this.sidepanelTab?.close();
     this.targetView = null;
     this.plugin = null;

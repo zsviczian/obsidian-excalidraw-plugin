@@ -520,7 +520,7 @@ export class ExcalidrawSidepanelView extends ItemView {
     const previousSilent = ExcalidrawSidepanelView.restoreSilent;
     ExcalidrawSidepanelView.restoreSilent = true;
     try {
-      await this.runScriptByName(scriptName, title);
+      await this.runScriptByName(scriptName, title, "sidepanel-reload");
       const restarted = this.getTabByScript(scriptName);
       if (wasPersisted && restarted) {
         this.markTabPersistent(restarted);
@@ -533,7 +533,12 @@ export class ExcalidrawSidepanelView extends ItemView {
   /**
    * Executes a script by name to reconstruct its sidepanel tab, updating title if needed.
    */
-  private async runScriptByName(scriptName: string, title: string) {
+  private async runScriptByName(
+    scriptName: string,
+    title: string,
+    executionSource: "sidepanel-restore" | "sidepanel-reload" =
+      "sidepanel-restore",
+  ) {
     const scriptEngine = this.plugin.scriptEngine;
     if (!scriptEngine) {
       return;
@@ -548,13 +553,11 @@ export class ExcalidrawSidepanelView extends ItemView {
       return;
     }
     try {
-      const script = await this.plugin.app.vault.read(file);
-      await scriptEngine.executeScript(
+      await scriptEngine.executeScriptFile(
         undefined,
-        script,
-        scriptName,
         file,
-        "sidepanel-restore",
+        scriptName,
+        executionSource,
       );
       const restoredTab = this.scriptTabs.get(scriptName);
       if (restoredTab) {

@@ -341,7 +341,17 @@ export declare class ExcalidrawAutomate {
     };
     colorPalette: object;
     sidepanelTab: ExcalidrawSidepanelTab | null;
+    private cleanupCallbacks;
+    private destroyed;
     constructor(plugin: ExcalidrawPlugin, view?: ExcalidrawView);
+    /**
+     * Registers synchronous cleanup owned by this EA instance. Use this for
+     * external listeners, observers, timers, and subscriptions that EA cannot
+     * release itself. Cleanup runs when this EA is destroyed.
+     * @param cleanup - Synchronous cleanup callback.
+     * @returns A function that unregisters this callback without running it.
+     */
+    registerCleanup(cleanup: () => void): () => void;
     /**
      * Return the active sidepanel tab for a script, if one exists.
      * If scriptName is omitted the function checks ea.activeScript.
@@ -1163,7 +1173,9 @@ export declare class ExcalidrawAutomate {
      * `getActions` is called with the currently selected element whenever the
      * selection, element type, fileId, or customData changes, and should
      * return the buttons to show for that element (an empty array shows
-     * nothing). Registration is tied to the current view: it is automatically
+     * nothing). The menu is temporarily hidden while the selected frame's
+     * title is being edited, so custom actions do not obstruct the title editor.
+     * Registration is tied to the current view: it is automatically
      * cleared when the view closes, and cleared for this script specifically
      * if the script's file is deleted while the view is still open. Calling
      * this a second time for the same script in the same view (e.g. running
@@ -1702,7 +1714,8 @@ export declare class ExcalidrawAutomate {
      */
     getMathEditorExtensions(): (LRLanguage | Extension)[];
     /**
-     * Destroys the ExcalidrawAutomate instance, clearing all references and data.
+     * Destroys this EA once, first releasing registered external resources and
+     * then clearing the ordinary EA state and references.
      */
     destroy(): void;
 }

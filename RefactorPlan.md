@@ -86,6 +86,7 @@ validated, and what remains uncertain.
 | Distinguish real modal opens from inline suggestion portals | Complete | `ObserverManager` now saves dirty drawings for real Obsidian modals in both the main workspace and popouts while excluding inline suggestion portals. Popout traces proved the observer was correctly bound to the destination document but the shared `instanceof`-based element guard rejected its mutation nodes. Modal classification now uses a local realm-independent node check, scans every direct body addition and its subtree for `.modal-container`, and retains the observed destination view rather than looking it up again during the callback. Same-leaf replacement initialization rebinds the observer because window migration may not emit `active-leaf-change`. Production observation remains limited to direct body child additions; the temporary subtree/attribute observer and all modal diagnostics were removed after validation |
 | Stabilize known Excalidraw-file classification across metadata-cache refresh | Complete | Same-tab back navigation can begin loading a parent drawing immediately after its embedded child drawing finishes saving. During that interval Obsidian's metadata cache can temporarily lack the child's frontmatter. `PluginFileManager.isExcalidrawFile()` now treats parsed frontmatter as authoritative when present and otherwise falls back to the manager's existing set of previously confirmed Excalidraw files. Runtime validation reproduced the cache gap, exercised the fallback during both parent parsing and embedded-file loading, and immediately rendered the updated two-circle child correctly. The metadata `changed` event removed the remembered classification after deliberate frontmatter removal; the file then rendered as ordinary Markdown and no further fallback occurred. No vault reread, delay, retry, or navigation behavior was added |
 | Defer vault-wide inline link suggestions until invocation | Implemented; awaiting focused runtime validation | `InlineLinkSuggester` now starts with no file-link candidates and takes its existing one-per-editor snapshot only when the caret first enters an active file wikilink after `[[`. Merely entering or editing ordinary text no longer calls Obsidian's synchronous full-vault `metadataCache.getLinkSuggestions()` filter/sort path. Heading, block, frame, clipped-frame, tag, alias, insertion, and popout behavior retain their existing paths; explicit refreshes remain no-ops until the lazy snapshot exists. Fixes [#2907](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2907) |
+| Consolidate EA script compilation and lifecycle ownership for 2.27 | Implemented; automated validation complete, focused runtime validation pending | `ScriptEngine` now shares only compiled code for unchanged script files, with vault-event/stat invalidation and in-flight compilation coalescing. Manual, plugin-startup, view-autostart, sidepanel-restore, sidepanel-reload, and drawing-onload triggers retain distinct EA ownership. Automatic attachment is deduplicated per script path/view without restricting manual re-entry. The plugin startup script now uses ScriptEngine with the plugin-global EA, and every EA exposes synchronous `registerCleanup()`. Slideshow and Mindmap Builder remain compatibility canaries rather than migration targets |
 | Remaining view phases | Parked | `MarkdownImageController` and `ViewSceneFileManager` are both closed (user-confirmed manual testing, no issues). The Phase 7 React-root extraction (`ExcalidrawRoot.ts`) was never explicitly re-confirmed after its own checkpoint note was written and should be the first thing re-validated if this plan resumes. `ViewInteractionController` (hover preview + pointer/key handling) was explicitly declined by the user for now and remains the last Phase 6 controller candidate if resumed. Phase 8 (converting the extracted React root to TSX) should follow only after the React-root checkpoint is confirmed closed. See "Parked: next steps if resumed" |
 
 ### Upstream cross-document host contract: PRs #11997 and #12018
@@ -199,6 +200,8 @@ final upstream work is merged into the fork and installed in the plugin.
 
 | Date | Action | Outcome | Validation |
 | --- | --- | --- | --- |
+| 2026-09-01 | Synchronized the 2.27 EA lifecycle contract into `ea-script-template` and `ea-scripts` | Updated both repositories' ambient execution-source typings, added `registerCleanup()`, documented lifecycle ownership and manual-repeatability semantics, and refreshed their complete `.ai/excalidraw-automate` snapshots from the plugin's generated source. The only Slideshow source-adjacent change is its test fixture rename from the unreleased `autostart` value to `view-autostart`; the Slideshow runner and Mindmap Builder remain unchanged | Both repositories typecheck. Under Node 22, all `ea-script-template` tests pass (4/4) and all `ea-scripts` tests pass (91/91). Changed source files pass Prettier and `git diff --check`, and no stale literal `"autostart"` execution-source value remains outside excluded build/dependency artifacts. `ea-script-template` full lint passes; `ea-scripts` retains its pre-existing Slideshow lint backlog (105 findings, including seven errors) with no finding on the changed lifecycle fixture line |
+| 2026-09-01 | Implemented the 2.27 EA script lifecycle and autostart execution refactor | Added compiled-file caching and concurrent compilation sharing without caching EAs or script runtime state; six explicit execution sources; per-view/path automatic-attachment deduplication with failure retry and unrestricted manual bypass; startup execution through ScriptEngine with the global EA; sidepanel restore/reload distinction; EA-owned synchronous cleanup; and a diagnostic for duplicate persistent-sidepanel creation from view autostart. Updated source API help, release notes, scripting documentation/template, and the documentation generator. Slideshow and Mindmap Builder source were inspected but intentionally not modified | `npm run build`, `npm run lib`, bundle syntax, touched-file ESLint, unused-symbol lint, `git diff --check`, and `npm run madge` pass. The established production build retains 33 circular-dependency warnings; full source lint reports 123 existing errors/0 warnings in 19 untouched files, and TypeScript reports 28 existing errors with none in touched files. `dist/main.js` is 4,975,687 bytes, 4,343 bytes above clean HEAD and 267,193 bytes below 5 MiB. Local generated documentation was refreshed and the two external script-authoring repositories were subsequently synchronized through their own `sync-refs` commands. Focused Obsidian runtime acceptance remains pending: cleanup across plugin reload/view close, `.md` and `.js` cache invalidation, the permission/view-initialization race, Slideshow mixed automatic/manual behavior, Mindmap Builder persistent-sidepanel re-entry, sidepanel restore/reload, drawing on-load, main/popout views, and failure retry |
 | 2026-09-01 | Re-audited #11997 and final #12018 head `ab6f203e9` after Márk's fixes | Confirmed that the previously reported public-prop and retained-image-cache wiring gaps are resolved. The final abstraction also adds environment-scoped paths, weak cache isolation, and owner-window-aware throttling needed by concurrent main/popout Apps. Code review now supports confirming the Obsidian multi-window contract, while explicitly reserving runtime acceptance for the published-fork plugin smoke test | Verified the current GitHub heads and green checks, reviewed the final wiring and focused render-environment tests, and retained the existing risk-based adoption gate below. No plugin or fork runtime source changed; documentation-only validation uses `git diff --check` |
 | 2026-09-01 | Audited upstream cross-document PR #11997 and stacked host-abstraction draft #12018 | Updated the durable architecture record from the obsolete per-window-package model to the shipped single React/Excalidraw runtime with concurrent document-owned Apps. Recorded Márk's font, tooltip/hyperlink, animation, per-instance render-environment, cache-isolation, and export work; the distinction between global detached/headless defaults and App-scoped host factories; the current fork/adoption strategy; and the risk-based acceptance gate. At #12018 head `b3e4cf963`, identified two concrete override-wiring gaps (`renderEnvironment` is not forwarded from `ExcalidrawBase`, and `App.updateImageCache()` bypasses it) plus a non-blocking fallback-test weakness. No plugin or fork runtime source changed | Reviewed both PR commit histories, changed-file lists, issue comments, line reviews, and the relevant current source/tests through GitHub. Cross-checked the local plugin/fork status and current fork commits. Documentation-only validation uses `git diff --check`; upstream remains draft and must be re-audited at its final head before any fork merge, package publish, or plugin dependency change |
 | 2026-08-27 | Deferred issue #2907's full-vault link scan until `[[` is invoked | Removed `getLinkSuggestionsFiltered()` from `InlineLinkSuggester` construction and changed `getItems()` to expose only the current lazy snapshot. The first active file-wikilink context loads that snapshot once; subsequent characters and links in the same editor reuse it. Explicit refresh updates an existing snapshot but does not accidentally prime one during ordinary text editing. Specialized tag, heading, block, frame, and clipped-frame suggestions remain independent | Production build passes with the established 33 circular warnings; scoped lint and unused-symbol lint pass; bundle syntax and diff checks pass. Full source lint retains exactly the established 138-error/0-warning backlog with no finding in either changed source file. Source inspection confirms construction/focus contains no candidate scan and the only `InlineLinkSuggester` scan sites are the guarded lazy load and explicit post-load refresh. Focused runtime validation should first confirm that entering and editing ordinary text does not pause, then type `[[`, choose a file, and confirm insertion. Repeat `[[` in the same text element and test one heading or block target plus one tag. Run the ordinary-text and file-link checks once in a popout because the attached input and suggestion portal are document-owned. The highest-risk regression is an empty file-link menu caused by failing to populate the lazy snapshot; broad migration, MOC EA, save, export, and mobile testing are not required |
@@ -1126,6 +1129,96 @@ window modes, and distinguish automated validation from untested manual risk.
   `instanceof ExcalidrawView` behavior remain unchanged.
 - Script engine startup, pinned scripts, and install-codeblock flow.
 - ExcaliBrain or another companion integration if available.
+
+## EA script lifecycle and autostart execution refactor — 2.27.0
+
+The central invariant is: **compiled JavaScript may be shared; EA ownership
+and script runtime semantics are not shared.** Low-level source loading and
+compilation are consolidated without merging the four existing ownership
+models.
+
+| Trigger | `utils.executionSource` | EA ownership | Lifetime and behavior |
+| --- | --- | --- | --- |
+| Toolbar, command, hotkey, or other ordinary invocation | `manual` | fresh view EA | repeatable without limit; may re-enter and redirect existing script-owned UI |
+| Configured plugin Startup Script | `plugin-startup` | plugin-global EA | once per plugin load; external resources can be released at plugin teardown |
+| `ea.registerAutostart()` attachment | `view-autostart` | fresh view-local EA | one successful automatic attachment per script path and view; manual runs bypass attachment deduplication |
+| Persisted sidepanel reconstruction | `sidepanel-restore` | sidepanel host EA | restored lazily with the sidepanel; host lives with its tab |
+| Explicit backing-script reload | `sidepanel-reload` | replacement sidepanel host EA | previous tab/host is destroyed before re-execution |
+| `excalidraw-onload-script` | `drawing-onload` | view-local EA | drawing-specific source and established view-load timing |
+
+`ScriptEngine` caches a promise for the compiled `AsyncFunction` of each
+unchanged script file, keyed by full vault path. It checks `mtime` and size,
+invalidates on modify, rename, delete, script-folder changes and ScriptEngine
+teardown, and removes rejected promises so a corrected script can compile on
+the next request. Concurrent requests share compilation, then execute the
+result independently with their own EA and utilities. Raw drawing-onload code
+remains uncached because it is embedded source rather than the contents of its
+associated drawing `TFile`.
+
+The view-open and fresh-permission paths share one automatic-attachment
+coordinator. It stores its promise before awaiting execution, keeps successful
+entries for that `ExcalidrawView`, and removes failed entries for retry. It is
+never consulted by `manual` execution. Existing autostart permissions,
+failure-state reporting, per-view element-action providers, and duplicate
+provider-ID protection remain unchanged.
+
+Every `ExcalidrawAutomate` instance now provides
+`registerCleanup(cleanup: () => void): () => void`. Remaining callbacks run
+synchronously in reverse registration order with error isolation when that EA
+is destroyed; the returned function only unregisters its callback. EA destroy
+is idempotent. The cleanup lifetime follows the owning EA: plugin-global,
+view-local/drawing-local, or sidepanel-host.
+
+No `runOnce` or scope parameter was added to `registerAutostart()`. No global
+mutable EA is reused across view attachments, no script runtime/closure is
+cached, and persistent-sidepanel policy remains separate from view autostart.
+A managed `EAScript` abstraction is explicitly deferred: scripts such as
+Mindmap Builder demonstrate a possible future need, but `onLoad`, `onInvoke`,
+`onViewOpen`, `onViewClose`, `onUnload`, and their EA ownership must be designed
+as one complete contract before introducing such a class.
+
+### Multi-repository script-contract synchronization
+
+The coordinated working trees now expose the same lifecycle contract:
+
+- **`ea-script-template`:** its ambient `ScriptExecutionSource` union uses the
+  six values above, `ExcalidrawAutomate` exposes `registerCleanup()`, and the
+  README, authoring guide, agent guidance, and generated `.ai` snapshot explain
+  lifecycle ownership and unrestricted manual invocation.
+- **`ea-scripts`:** its ambient utilities and EA surface match the same
+  contract, its guidance and generated snapshot are synchronized, and the
+  Slideshow test fixture uses `view-autostart`. Slideshow behavior remains
+  unchanged because its runner intentionally branches only on
+  `executionSource !== "manual"`; Mindmap Builder was not modified.
+- **Cross-check:** repository searches found no stale literal `"autostart"`
+  execution-source value in maintained source/reference files. Continue using
+  each repository's `sync-refs` command after future generated API changes, and
+  do not introduce a managed script runtime without designing its complete
+  ownership contract.
+
+### Risk-based acceptance gate
+
+1. Confirm `registerCleanup()` releases a startup-script listener/timer across
+   repeated plugin disable/re-enable and releases a view-autostart resource
+   when its drawing closes and reopens.
+2. Restore several views with several allowed scripts, then edit both a `.md`
+   and enabled `.js` script and invoke/open again. Each view must execute with
+   an independent EA, unchanged source should compile once, and edits must be
+   visible without restarting Obsidian.
+3. Grant permission while a view is initializing; the same script must attach
+   automatically only once to that view. A failing attachment must not block
+   other scripts and must be retryable after correction.
+4. Use Slideshow as the mixed-lifecycle canary: view autostart registers
+   **Edit slideshow** without starting a presentation, repeated manual runs
+   still start/advance it, and its non-persistent sidepanel follows the right
+   main/popout view.
+5. Use Mindmap Builder unchanged: repeated manual invocation must execute its
+   discovery branch, reuse the persistent tab/host EA, redirect it to the new
+   view, preserve event rebinding, and survive sidepanel/view migration.
+6. Confirm persisted sidepanel reconstruction reports `sidepanel-restore`,
+   explicit backing-script reload reports `sidepanel-reload`, drawing
+   frontmatter receives `drawing-onload`, and ordinary invocations receive
+   `manual`.
 
 ## Per-change review checklist
 

@@ -2,6 +2,17 @@
 #exclude
 ```js*/
 /**
+ * Startup scripts receive the plugin-global EA for the plugin lifetime and
+ * utils.executionSource === "plugin-startup". Register cleanup for resources
+ * outside EA so plugin reload/unload cannot accumulate them.
+ */
+// const ref = app.workspace.on("file-open", (file) => {});
+// ea.registerCleanup(() => app.workspace.offref(ref));
+//
+// const interval = window.setInterval(() => {}, 1000);
+// ea.registerCleanup(() => window.clearInterval(interval));
+
+/**
  * If set, this callback is triggered when the user closes an Excalidraw view.
  *   onViewUnloadHook: (view: ExcalidrawView) => void = null;
  */

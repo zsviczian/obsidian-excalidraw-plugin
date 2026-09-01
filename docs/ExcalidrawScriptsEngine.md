@@ -17,9 +17,47 @@ You will be able to access your scripts from Excalidraw via the Obsidian Command
 
 ![image](https://user-images.githubusercontent.com/14358394/145673652-6b1713e2-edc8-4bc8-8246-3f8df8a4b273.png)
 
-This will allow you to assign hotkeys to your favorite scripts just like to any other Obsidian command. 
+This will allow you to assign hotkeys to your favorite scripts just like to any other Obsidian command.
 
 ![image](https://user-images.githubusercontent.com/14358394/145673633-83b6c969-cead-429b-9721-fd047f980279.png)
+
+## EA script execution lifecycles
+
+`utils.executionSource` describes why the current top-level script invocation
+happened. It does not indicate whether the source was compiled previously,
+whether the script has run before, or whether runtime state was retained.
+
+| Trigger | `utils.executionSource` | EA received | Approximate lifetime |
+| --- | --- | --- | --- |
+| Script button, command, or hotkey | `manual` | fresh view EA | existing ordinary script/view lifecycle |
+| Plugin startup script | `plugin-startup` | global plugin EA | plugin lifetime |
+| `registerAutostart()` attachment | `view-autostart` | fresh view-local EA | view lifetime |
+| Persisted sidepanel reconstruction | `sidepanel-restore` | sidepanel host EA | sidepanel tab lifetime |
+| Sidepanel script reload | `sidepanel-reload` | reloaded sidepanel host EA | sidepanel tab lifetime |
+| `excalidraw-onload-script` | `drawing-onload` | view-local EA | drawing/view lifetime |
+
+Compilation caching is transparent: compiled JavaScript may be shared while
+unchanged, but each invocation retains its existing EA ownership and execution
+semantics. Manual execution remains repeatable even for a script that also uses
+view autostart.
+
+Use `ea.registerCleanup()` for resources that EA does not own directly:
+
+```js
+const ref = app.workspace.on("file-open", handler);
+ea.registerCleanup(() => app.workspace.offref(ref));
+
+window.addEventListener("resize", handler);
+ea.registerCleanup(() => window.removeEventListener("resize", handler));
+
+const interval = window.setInterval(callback, 1000);
+ea.registerCleanup(() => window.clearInterval(interval));
+```
+
+Cleanup runs when that particular EA instance is destroyed, so its exact
+lifetime depends on whether it is the plugin-startup EA, a view-local EA, or a
+sidepanel host EA. The function returned by `registerCleanup()` unregisters the
+callback without executing it.
 
 ## Script development
 An Excalidraw script will automatically receive two objects:

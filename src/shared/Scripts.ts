@@ -35,9 +35,23 @@ export type ScriptIconMap = {
 /** Identifies why the script engine invoked a script. */
 export type ScriptExecutionSource =
   | "manual"
-  | "autostart"
+  | "plugin-startup"
+  | "view-autostart"
   | "sidepanel-restore"
+  | "sidepanel-reload"
   | "drawing-onload";
+
+type ScriptExecutable = (
+  ea: ExcalidrawAutomate,
+  utils: Record<string, unknown>,
+) => Promise<unknown>;
+
+type CompiledScript = {
+  path: string;
+  mtime: number;
+  size: number;
+  executable: ScriptExecutable | null;
+};
 
 export interface ScriptFileRenamePlan {
   renames: Array<{
@@ -66,6 +80,15 @@ export class ScriptEngine {
   private scriptFileEventsSuspended = false;
   private scriptRegistryGeneration = 0;
   private loadedScriptPaths = new Set<string>();
+  /** Compiled code keyed by vault path. EA instances and script state are never cached. */
+  private compiledScripts = new Map<string, Promise<CompiledScript>>();
+  /** Successful or in-flight automatic attachments, scoped to a view and script path. */
+  private autostartAttachments = new WeakMap<
+    ExcalidrawView,
+    Map<string, Promise<void>>
+  >();
+  /** EAs whose top-level script invocation currently has a view-autostart trigger. */
+  private viewAutostartEAs = new WeakSet<ExcalidrawAutomate>();
 
   constructor(plugin: ExcalidrawPlugin) {
     this.plugin = plugin;
@@ -97,6 +120,9 @@ export class ScriptEngine {
     this.eaInstances = null;
     this.elementActionProviders.clear();
     this.loadedScriptPaths.clear();
+    this.compiledScripts.clear();
+    this.autostartAttachments = new WeakMap();
+    this.viewAutostartEAs = new WeakSet();
     this.scriptIconMap = null;
     this.plugin = null;
     this.scriptPath = null;
@@ -136,6 +162,113 @@ export class ScriptEngine {
     return path;
   }
 
+  /** Returns whether an EA is currently running because of view autostart. */
+  public isViewAutostartExecution(ea: ExcalidrawAutomate): boolean {
+    return this.viewAutostartEAs.has(ea);
+  }
+
+  private invalidateCompiledScript(path: string): void {
+    this.compiledScripts.delete(path);
+  }
+
+  private clearCompiledScripts(): void {
+    this.compiledScripts.clear();
+  }
+
+  private clearAutostartAttachment(path: string): void {
+    getExcalidrawViews(this.app, true).forEach((view) => {
+      this.autostartAttachments.get(view)?.delete(path);
+    });
+  }
+
+  private compileScript(source: string): ScriptExecutable | null {
+    const script = stripYamlFrontmatter(source);
+    if (!script) {
+      return null;
+    }
+    const AsyncFunction = (async () => {}).constructor as unknown as {
+      new (...args: string[]): ScriptExecutable;
+    };
+    return new AsyncFunction("ea", "utils", script);
+  }
+
+  /**
+   * Returns compiled code for the current file version. In-flight requests for
+   * the same path share one promise, while event and stat checks prevent stale
+   * code from surviving edits or renames.
+   */
+  private async getCompiledScript(
+    file: TFile,
+  ): Promise<ScriptExecutable | null> {
+    while (true) {
+      const path = file.path;
+      const mtime = file.stat.mtime;
+      const size = file.stat.size;
+      const cachedPromise = this.compiledScripts.get(path);
+
+      if (cachedPromise !== undefined) {
+        try {
+          const cached = await cachedPromise;
+          if (this.compiledScripts.get(path) !== cachedPromise) {
+            continue;
+          }
+          if (
+            file.path === cached.path &&
+            file.stat.mtime === cached.mtime &&
+            file.stat.size === cached.size
+          ) {
+            return cached.executable;
+          }
+          this.compiledScripts.delete(path);
+        } catch (error: unknown) {
+          if (this.compiledScripts.get(path) === cachedPromise) {
+            this.compiledScripts.delete(path);
+          }
+          throw error;
+        }
+        continue;
+      }
+
+      const compilePromise = (async (): Promise<CompiledScript> => {
+        const source = await this.app.vault.read(file);
+        return {
+          path,
+          mtime,
+          size,
+          executable: this.compileScript(source),
+        };
+      })();
+      this.compiledScripts.set(path, compilePromise);
+
+      try {
+        const compiled = await compilePromise;
+        if (this.compiledScripts.get(path) !== compilePromise) {
+          continue;
+        }
+        if (
+          file.path !== path ||
+          file.stat.mtime !== mtime ||
+          file.stat.size !== size
+        ) {
+          this.compiledScripts.delete(path);
+          continue;
+        }
+        return compiled.executable;
+      } catch (error: unknown) {
+        if (this.compiledScripts.get(path) === compilePromise) {
+          this.compiledScripts.delete(path);
+        }
+        throw error;
+      }
+    }
+  }
+
+  private modifyEventHandler(file: TAbstractFile): void {
+    if (file instanceof TFile && this.compiledScripts.has(file.path)) {
+      this.invalidateCompiledScript(file.path);
+    }
+  }
+
   private async deleteEventHandler(file: TFile) {
     if (this.scriptFileEventsSuspended) {
       return;
@@ -143,6 +276,8 @@ export class ScriptEngine {
     if (!(file instanceof TFile)) {
       return;
     }
+    this.invalidateCompiledScript(file.path);
+    this.clearAutostartAttachment(file.path);
     if (!this.isInScriptFolder(file.path)) {
       return;
     }
@@ -169,6 +304,7 @@ export class ScriptEngine {
     if (!(file instanceof TFile)) {
       return;
     }
+    this.invalidateCompiledScript(file.path);
     if (!this.isInScriptFolder(file.path)) {
       return;
     }
@@ -187,6 +323,9 @@ export class ScriptEngine {
     if (!(file instanceof TFile)) {
       return;
     }
+    this.invalidateCompiledScript(oldPath);
+    this.invalidateCompiledScript(file.path);
+    this.clearAutostartAttachment(oldPath);
     const oldPathWasLoaded = Boolean(this.scriptIconMap[oldPath]);
     const oldFileWasScript =
       this.isInScriptFolder(oldPath) && isScriptFilePath(oldPath);
@@ -223,12 +362,19 @@ export class ScriptEngine {
         this.renameEventHandler(file, oldPath),
       ),
     );
+    this.plugin.registerEvent(
+      this.app.vault.on("modify", (file: TAbstractFile) =>
+        this.modifyEventHandler(file),
+      ),
+    );
   }
 
   updateScriptPath() {
     if (this.scriptPath === this.plugin.settings.scriptFolderPath) {
       return;
     }
+    this.clearCompiledScripts();
+    this.autostartAttachments = new WeakMap();
     void this.reloadScripts();
   }
 
@@ -419,6 +565,8 @@ export class ScriptEngine {
       throw error;
     } finally {
       this.scriptFileEventsSuspended = false;
+      this.clearCompiledScripts();
+      this.autostartAttachments = new WeakMap();
       await this.reloadScripts();
     }
   }
@@ -517,12 +665,7 @@ export class ScriptEngine {
         }
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
         if (view) {
-          void (async () => {
-            const script = stripYamlFrontmatter(await this.app.vault.read(f));
-            if (script) {
-              await this.executeScript(view, script, scriptName, f);
-            }
-          })();
+          void this.executeScriptFile(view, f, scriptName);
           return true;
         }
         return false;
@@ -602,26 +745,51 @@ export class ScriptEngine {
   }
 
   /**
-   * Reads and executes a single autostart-permitted script against a single
-   * view, catching and logging its own error so one bad script never
-   * affects the caller's other scripts/views. Shared by
-   * `attachAutostartScriptToOpenViews()` and `runAutostartScripts()`.
+   * Ensures one automatic attachment per script path and view. A successful
+   * attachment remains recorded for that view; a failed one is removed so a
+   * later automatic request can retry. Manual execution bypasses this method.
    */
-  private async runAutostartScriptInView(
+  private async ensureViewAutostartAttachment(
     scriptName: string,
     file: TFile,
     view: ExcalidrawView,
     where: string,
   ): Promise<void> {
-    try {
-      const script = stripYamlFrontmatter(await this.app.vault.read(file));
-      if (script) {
-        await this.executeScript(view, script, scriptName, file, "autostart");
+    let attachments = this.autostartAttachments.get(view);
+    if (!attachments) {
+      attachments = new Map();
+      this.autostartAttachments.set(view, attachments);
+    }
+    const scriptPath = file.path;
+    const existing = attachments.get(scriptPath);
+    if (existing !== undefined) {
+      await existing;
+      return;
+    }
+
+    let succeeded = false;
+    const run = (async (): Promise<void> => {
+      try {
+        await this.executeScriptFile(
+          view,
+          file,
+          scriptName,
+          "view-autostart",
+        );
+        succeeded = true;
+      } catch (error: unknown) {
+        errorlog({ where, scriptName, error });
       }
-      await this.recordAutostartResult(scriptName, false);
-    } catch (error: unknown) {
-      errorlog({ where, scriptName, error });
-      await this.recordAutostartResult(scriptName, true);
+      try {
+        await this.recordAutostartResult(scriptName, !succeeded);
+      } catch (error: unknown) {
+        errorlog({ where: `${where}.recordAutostartResult`, scriptName, error });
+      }
+    })();
+    attachments.set(scriptPath, run);
+    await run;
+    if (!succeeded && attachments.get(scriptPath) === run) {
+      attachments.delete(scriptPath);
     }
   }
 
@@ -629,8 +797,8 @@ export class ScriptEngine {
    * Called by `ExcalidrawAutomate.registerAutostart()` right after a script
    * is freshly granted autostart permission, so the script attaches to
    * every other currently-open Excalidraw view immediately instead of only
-   * the next time each view is opened. Reuses the same `executeScript()`
-   * path `runAutostartScripts()` uses for newly-opened views; one script
+   * the next time each view is opened. Reuses the same compiled-file path
+   * `runAutostartScripts()` uses for newly-opened views; one script
    * failing does not affect the others.
    */
   public attachAutostartScriptToOpenViews(
@@ -645,7 +813,7 @@ export class ScriptEngine {
       (view) => view !== excludeView,
     );
     views.forEach((view) => {
-      void this.runAutostartScriptInView(
+      void this.ensureViewAutostartAttachment(
         scriptName,
         file,
         view,
@@ -672,7 +840,7 @@ export class ScriptEngine {
         if (!file) {
           return;
         }
-        void this.runAutostartScriptInView(
+        void this.ensureViewAutostartAttachment(
           scriptName,
           file,
           view,
@@ -700,20 +868,90 @@ export class ScriptEngine {
     delete this.app.commands.commands[commandId];
   }
 
+  /** Executes a script file through the transparent compiled-code cache. */
+  public async executeScriptFile(
+    view: ExcalidrawView = undefined,
+    file: TFile,
+    title: string,
+    executionSource: ScriptExecutionSource = "manual",
+  ): Promise<unknown> {
+    if (!file || !title) {
+      return;
+    }
+    const executable = await this.getCompiledScript(file);
+    if (!executable) {
+      return;
+    }
+    return this.executeExecutable(
+      view,
+      executable,
+      title,
+      file,
+      executionSource,
+    );
+  }
+
   /**
-   * Executes a script with a fresh EA instance and exposes its invocation source through
-   * `utils.executionSource` so scripts can separate registration from user actions.
+   * Executes the configured startup file using the plugin-global EA while
+   * sharing ScriptEngine's loading, compilation, utilities, and error path.
    */
-  async executeScript(
+  public async executeStartupScript(
+    file: TFile,
+    ea: ExcalidrawAutomate,
+  ): Promise<unknown> {
+    const executable = await this.getCompiledScript(file);
+    if (!executable) {
+      return;
+    }
+    return this.executeExecutable(
+      undefined,
+      executable,
+      file.basename,
+      file,
+      "plugin-startup",
+      ea,
+      false,
+      false,
+    );
+  }
+
+  /**
+   * Executes supplied source with a fresh EA. Raw source remains uncached
+   * because drawing-onload callers pass code embedded inside another file.
+   */
+  public async executeScript(
     view: ExcalidrawView = undefined,
     script: string,
     title: string,
     file: TFile,
     executionSource: ScriptExecutionSource = "manual",
-  ) {
+  ): Promise<unknown> {
     if (!script || !title) {
       return;
     }
+    const executable = this.compileScript(script);
+    if (!executable) {
+      return;
+    }
+    return this.executeExecutable(
+      view,
+      executable,
+      title,
+      file,
+      executionSource,
+    );
+  }
+
+  private async executeExecutable(
+    view: ExcalidrawView | undefined,
+    executable: ScriptExecutable,
+    title: string,
+    file: TFile,
+    executionSource: ScriptExecutionSource,
+    eaOverride?: ExcalidrawAutomate,
+    trackEA: boolean = true,
+    setActiveScript: boolean = true,
+  ): Promise<unknown> {
     //addresses the situation when after paste text element IDs are not updated to 8 characters
     //linked to onPaste save issue with the false parameter
     if (
@@ -727,79 +965,83 @@ export class ScriptEngine {
       await view.save(false, true);
     }
 
-    script = stripYamlFrontmatter(script);
-    const ea = getEA(view);
-    this.eaInstances.push(ea);
-    ea.activeScript = title;
+    const ea = eaOverride ?? getEA(view);
+    if (trackEA) {
+      this.eaInstances.push(ea);
+    }
+    if (setActiveScript) {
+      ea.activeScript = title;
+    }
 
-    //https://stackoverflow.com/questions/45381204/get-asyncfunction-constructor-in-typescript changed tsconfig to es2017
-    //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/AsyncFunction
-    const AsyncFunction = Object.getPrototypeOf(async () => {}).constructor;
-    let result = null;
-    //try {
-    result = await new AsyncFunction("ea", "utils", script)(ea, {
-      inputPrompt: (
-        header: string | InputPromptOptions,
-        placeholder?: string,
-        value?: string,
-        buttons?: ButtonDefinition[],
-        lines?: number,
-        displayEditorButtons?: boolean,
-        customComponents?: (container: HTMLElement) => void,
-        blockPointerInputOutsideModal?: boolean,
-        controlsOnTop?: boolean,
-        draggable?: boolean,
-      ) => {
-        if (typeof header === "object") {
-          const options = header;
-          header = options.header;
-          placeholder = options.placeholder;
-          value = options.value;
-          buttons = options.buttons;
-          lines = options.lines;
-          displayEditorButtons = options.displayEditorButtons;
-          customComponents = options.customComponents;
-          blockPointerInputOutsideModal = options.blockPointerInputOutsideModal;
-          controlsOnTop = options.controlsOnTop;
-          draggable = options.draggable;
-        }
-        return ScriptEngine.inputPrompt(
-          view,
-          this.plugin,
-          this.app,
-          header,
-          placeholder,
-          value,
-          buttons,
-          lines,
-          displayEditorButtons,
-          customComponents,
-          blockPointerInputOutsideModal,
-          controlsOnTop,
-          draggable,
-        );
-      },
-      suggester: (
-        displayItems: string[],
-        items: unknown[],
-        hint?: string,
-        instructions?: Instruction[],
-      ) =>
-        ScriptEngine.suggester(
-          this.app,
-          displayItems,
-          items,
-          hint,
-          instructions,
-        ),
-      scriptFile: file,
-      executionSource,
-    });
-    /*} catch (e) {
-      new Notice(t("SCRIPT_EXECUTION_ERROR"), 4000);
-      errorlog({ script: this.plugin.ea.activeScript, error: e });
-  }*/
-    return result;
+    const isViewAutostart = executionSource === "view-autostart";
+    if (isViewAutostart) {
+      this.viewAutostartEAs.add(ea);
+    }
+    try {
+      return await executable(ea, {
+        inputPrompt: (
+          header: string | InputPromptOptions,
+          placeholder?: string,
+          value?: string,
+          buttons?: ButtonDefinition[],
+          lines?: number,
+          displayEditorButtons?: boolean,
+          customComponents?: (container: HTMLElement) => void,
+          blockPointerInputOutsideModal?: boolean,
+          controlsOnTop?: boolean,
+          draggable?: boolean,
+        ) => {
+          if (typeof header === "object") {
+            const options = header;
+            header = options.header;
+            placeholder = options.placeholder;
+            value = options.value;
+            buttons = options.buttons;
+            lines = options.lines;
+            displayEditorButtons = options.displayEditorButtons;
+            customComponents = options.customComponents;
+            blockPointerInputOutsideModal =
+              options.blockPointerInputOutsideModal;
+            controlsOnTop = options.controlsOnTop;
+            draggable = options.draggable;
+          }
+          return ScriptEngine.inputPrompt(
+            view,
+            this.plugin,
+            this.app,
+            header,
+            placeholder,
+            value,
+            buttons,
+            lines,
+            displayEditorButtons,
+            customComponents,
+            blockPointerInputOutsideModal,
+            controlsOnTop,
+            draggable,
+          );
+        },
+        suggester: (
+          displayItems: string[],
+          items: unknown[],
+          hint?: string,
+          instructions?: Instruction[],
+        ) =>
+          ScriptEngine.suggester(
+            this.app,
+            displayItems,
+            items,
+            hint,
+            instructions,
+          ),
+        scriptFile: file,
+        executionSource,
+      });
+    } finally {
+      if (isViewAutostart) {
+        this.viewAutostartEAs.delete(ea);
+      }
+    }
   }
 
   private updateToolPannels() {

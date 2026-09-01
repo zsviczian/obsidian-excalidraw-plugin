@@ -1000,6 +1000,16 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field: "registerCleanup",
+    code: "registerCleanup(cleanup: () => void): () => void;",
+    desc:
+      "Registers synchronous cleanup owned by this ExcalidrawAutomate instance. " +
+      "Use it for external Obsidian or DOM listeners, observers, timers, and subscriptions. " +
+      "The callback runs when this EA is destroyed; the returned function unregisters it without running it. " +
+      "The exact lifetime depends on the lifecycle that created the EA.",
+    after: "(() => releaseExternalResource());",
+  },
+  {
     field: "registerElementActionProvider",
     code:
       "registerElementActionProvider(getActions: (element: ExcalidrawElement) => readonly {id: string, title: string, icon: string, action: () => void}[]): (() => void) | null;",
@@ -1020,7 +1030,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
       "The optional message is shown as a separate second paragraph after the permission question and before the hint explaining where the permission can be changed. Use it to clarify what the script registers or performs during autostart. " +
       "The first time a given script calls this, the user is prompted to Allow, Deny, or decide later; the decision persists and is not asked again unless the user changes it (via the \"Autostart scripts\" command or settings section) or previously picked \"Ask me later\". " +
       "A fresh Allow also immediately re-runs the script in every other currently-open Excalidraw view, so it attaches everywhere right away instead of only the next time each view is opened. " +
-      'Returns "allow", "deny", or "pending" (no active script, or the user has not yet decided). Typically called near the top of a script, guarding whatever the script wants to re-register on autostart, e.g. registerElementActionProvider(). Use utils.executionSource === "autostart" when only the autostart execution should stop after registration.',
+      'Returns "allow", "deny", or "pending" (no active script, or the user has not yet decided). Typically called near the top of a script, guarding whatever the script wants to re-register on autostart, e.g. registerElementActionProvider(). Use utils.executionSource === "view-autostart" when only the view-autostart execution should stop after registration.',
     after: '("Autostart registers this script’s drawing tools; it does not run its main action.");',
   },
   {
@@ -1420,10 +1430,11 @@ export const EXCALIDRAW_SCRIPTENGINE_INFO: SuggesterInfo[] = [
   },
   {
     field: "executionSource",
-    code: 'executionSource: "manual" | "autostart" | "sidepanel-restore" | "drawing-onload"',
+    code: 'executionSource: "manual" | "plugin-startup" | "view-autostart" | "sidepanel-restore" | "sidepanel-reload" | "drawing-onload"',
     desc:
       "Identifies why the script engine invoked the current script. " +
-      'Use "autostart" for registration-only setup, while "manual" covers the script button, command palette, and hotkey.',
+      'Use "view-autostart" for registration-only setup, while "manual" covers the script button, command palette, and hotkey. ' +
+      "This value describes the trigger, not compilation-cache reuse or retained runtime state.",
     after: "",
   },
 ];

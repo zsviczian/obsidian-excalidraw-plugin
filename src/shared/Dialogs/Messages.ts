@@ -60,7 +60,11 @@ registerElementActionProvider(getActions: (element: ExcalidrawElement) => readon
 registerAutostart(message?: string): Promise<"allow" | "deny" | "pending">;
 \`\`\`
 - Pass an optional message to explain what the script does during autostart. It appears between the permission question and the settings hint.
-- Scripts can distinguish manual, autostart, sidepanel-restore, and drawing-onload execution through \`utils.executionSource\`.
+- Scripts can release listeners, timers, observers, and other external resources with EA-owned cleanup:
+\`\`\`ts
+registerCleanup(cleanup: () => void): () => void;
+\`\`\`
+- Scripts can distinguish \`manual\`, \`plugin-startup\`, \`view-autostart\`, \`sidepanel-restore\`, \`sidepanel-reload\`, and \`drawing-onload\` execution through \`utils.executionSource\`. Compilation caching is transparent and does not retain script runtime state.
 `,
   "2.26.4": `
 ## Fixed
