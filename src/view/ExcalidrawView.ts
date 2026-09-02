@@ -3073,11 +3073,25 @@ export default class ExcalidrawView
     const opacity = this.plugin.settings.gridSettings.OPACITY / 100;
 
     if (this.plugin.settings.gridSettings.DYNAMIC_COLOR) {
+      // A small lightness shift is lost when the configured opacity composites
+      // it back onto a white or black canvas. Increase only the contrast at
+      // those extremes so minor grid lines remain visible without changing
+      // dynamic colors on other canvas backgrounds.
+      const extremeCanvas = cm.lightness === 0 || cm.lightness === 100;
+      const regularStep = extremeCanvas ? 20 : 10;
+      // ColorMaster mutates `cm`, so this step is cumulative.
+      const additionalBoldStep = extremeCanvas ? 10 : 5;
       // Dynamic color: concatenate opacity to the RGB string  !!! Excalidraw expects an RGBA string !!!
-      Regular = (isDark ? cm.lighterBy(10) : cm.darkerBy(10))
+      Regular = (isDark
+        ? cm.lighterBy(regularStep)
+        : cm.darkerBy(regularStep)
+      )
         .alphaTo(opacity)
         .stringRGB({ alpha: true });
-      Bold = (isDark ? cm.lighterBy(5) : cm.darkerBy(5))
+      Bold = (isDark
+        ? cm.lighterBy(additionalBoldStep)
+        : cm.darkerBy(additionalBoldStep)
+      )
         .alphaTo(opacity)
         .stringRGB({ alpha: true });
     } else {
