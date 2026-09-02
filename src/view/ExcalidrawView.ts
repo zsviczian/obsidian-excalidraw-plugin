@@ -282,6 +282,11 @@ import { getYouTubeUrl, URLs } from "src/constants/safeUrls";
 import { setStyle } from "src/utils/styleUtils";
 import { isInstanceOfHTMLElement } from "src/utils/typechecks";
 import { setElementDisplay } from "src/utils/htmlUtils";
+import {
+  captureTrackedAppState,
+  didTrackedAppStateChange,
+  type TrackedAppStateSnapshot,
+} from "./trackedAppState";
 
 const EMBEDDABLE_SEMAPHORE_TIMEOUT = 2000;
 const PREVENT_RELOAD_TIMEOUT = 2000;
@@ -519,6 +524,7 @@ export default class ExcalidrawView
   private editingSelfResetTimer: number | null = null;
   private colorChangeTimer: number | null = null;
   private previousSceneVersion = 0;
+  private previousTrackedAppState: TrackedAppStateSnapshot | null = null;
   public previousBackgroundColor = "";
   public previousTheme = "";
   private pendingUIMode: UIMode | null = null;
@@ -2674,6 +2680,7 @@ export default class ExcalidrawView
     this.lastSceneLoadTime = 0;
     (api.resetScene as () => void)();
     this.previousSceneVersion = 0;
+    this.previousTrackedAppState = null;
   }
 
   public isLoaded: boolean = false;
@@ -3697,6 +3704,7 @@ export default class ExcalidrawView
     if (el) {
       this.previousSceneVersion = this.getSceneVersion(el);
     }
+    this.setTrackedAppStateBaseline(api.getAppState());
     this.actionButtons?.save
       ?.querySelector("svg")
       .removeClass("excalidraw-dirty");
@@ -4670,7 +4678,6 @@ export default class ExcalidrawView
         activeTool,
         disableContextMenu: st.disableContextMenu,
         bindingPreference: st.bindingPreference,
-        isBindingEnabled: st.isBindingEnabled,
         isMidpointSnappingEnabled: st.isMidpointSnappingEnabled,
         boxSelectionMode: st.boxSelectionMode,
       },
@@ -5201,6 +5208,12 @@ export default class ExcalidrawView
     }
   }
 
+  private setTrackedAppStateBaseline(appState: AppState): void {
+    this.previousTrackedAppState = captureTrackedAppState(appState);
+    this.previousBackgroundColor = appState.viewBackgroundColor;
+    this.previousTheme = appState.theme;
+  }
+
   /**
    * Detects local Markdown-image elements that were just soft-deleted (isDeleted flipped to
    * true) in a durable Excalidraw history increment and queues them for the keep-or-delete-file
@@ -5215,11 +5228,14 @@ export default class ExcalidrawView
     if (event.type !== "durable") {
       return;
     }
-    // Durable increments are the precise edit boundary needed by the save
-    // coordinator. Unlike the legacy dirty boolean, they continue to arrive
-    // while compression or disk persistence is in flight.
-    this.setDirty();
-    Object.values(event.change.elements).forEach((element) => {
+    const changedElements = Object.values(event.change.elements);
+    // Durable increments also contain undoable selection/app-state changes.
+    // Only element changes advance the persistence revision here; tracked
+    // drawing app state is handled explicitly in onChange().
+    if (changedElements.length > 0) {
+      this.setDirty();
+    }
+    changedElements.forEach((element) => {
       if (element.type !== "image" || !element.isDeleted) {
         return;
       }
@@ -5289,31 +5305,36 @@ export default class ExcalidrawView
         }
       }
       this.previousSceneVersion = this.getSceneVersion(et);
-      this.previousBackgroundColor = st.viewBackgroundColor;
-      this.previousTheme = st.theme;
+      this.setTrackedAppStateBaseline(st);
       this.canvasColorChangeHook(st);
       return;
     }
-    if (
-      st.theme !== this.previousTheme &&
-      this.file === this.excalidrawData.file
-    ) {
-      this.previousTheme = st.theme;
-      this.setDirty();
-    }
-    if (
-      st.viewBackgroundColor !== this.previousBackgroundColor &&
-      this.file === this.excalidrawData.file
-    ) {
-      this.previousBackgroundColor = st.viewBackgroundColor;
-      this.setDirty();
-      if (this.colorChangeTimer) {
-        window.clearTimeout(this.colorChangeTimer);
+    if (this.file === this.excalidrawData.file) {
+      const nextTrackedAppState = captureTrackedAppState(st);
+      const backgroundChanged =
+        st.viewBackgroundColor !== this.previousBackgroundColor;
+      if (
+        this.previousTrackedAppState !== null &&
+        didTrackedAppStateChange(
+          this.previousTrackedAppState,
+          nextTrackedAppState,
+          !this.plugin.settings.zoomToFitOnOpen,
+        )
+      ) {
+        this.setDirty();
       }
-      this.colorChangeTimer = window.setTimeout(() => {
-        this.canvasColorChangeHook(st);
-        this.colorChangeTimer = null;
-      }, 50); //just enough time if the user is playing with color picker, the change is not too frequent.
+      this.previousTrackedAppState = nextTrackedAppState;
+      this.previousTheme = st.theme;
+      this.previousBackgroundColor = st.viewBackgroundColor;
+      if (backgroundChanged) {
+        if (this.colorChangeTimer) {
+          window.clearTimeout(this.colorChangeTimer);
+        }
+        this.colorChangeTimer = window.setTimeout(() => {
+          this.canvasColorChangeHook(st);
+          this.colorChangeTimer = null;
+        }, 50); //just enough time if the user is playing with color picker, the change is not too frequent.
+      }
     }
     if (
       !this.semaphores.dirty &&
