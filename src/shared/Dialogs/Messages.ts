@@ -18,9 +18,11 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
   "2.27.1": `
-${getYouTubeDiv("am2HOlbYsxI")}
+This emergency release fixes a high-impact false positive code-scanner error where the Obsidian scanner incorrectly caused version 2.27.0 to fail review. This failure triggered a "friendly" warning stating that, “In the future, releases that fail review will be removed from the directory automatically.” While I understand the intent behind code scanning, the truth is that ever since it was implemented, releasing updates has unfortunately become a highly stressful process rather than a joyful celebration.
 
-This is a quick follow-up to 2.27.0 to fix a high-impact false positive error by the Obsidian code scanner. However, this unfortunate hickup has made it possible to squeeze in one more new feature: Movable arrow labels in Excalidraw!
+However, this unfortunate hiccup has made it possible to squeeze in one more new feature: Movable arrow labels in Excalidraw!
+
+${getYouTubeDiv("am2HOlbYsxI")}
 
 ## New
 - On Obsidian 1.13 and newer, Excalidraw now uses Obsidian's searchable, multi-page settings organized into clearer sections with breadcrumbs and clickable links between related options.
