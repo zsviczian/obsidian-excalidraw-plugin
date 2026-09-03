@@ -149,7 +149,9 @@ const packageString = isLib
   'window.unpackBase64Deflate = unpackBase64Deflate;\n' +
   'let REACT_PACKAGES = unpackBase64Deflate("' + reactPackagesCompressed + '");\n' +
   'const unpackExcalidraw = () => unpackBase64Deflate("' + compressDeflateBase64(excalidraw_pkg) + '");\n' +
-  'let {React, ReactDOM, ReactJSXRuntime, ReactJSXDevRuntime} = new Function(`${REACT_PACKAGES}; return {React, ReactDOM, ReactJSXRuntime, ReactJSXDevRuntime};`)();\n' +
+  'const evaluateRuntimeInstructions = (win, instruction) => win.eval.call(win, instruction);\n' +
+  'const reactRuntimeInstructions = `(function() {${REACT_PACKAGES}; return {React, ReactDOM, ReactJSXRuntime, ReactJSXDevRuntime};})()`;\n' +
+  'let {React, ReactDOM, ReactJSXRuntime, ReactJSXDevRuntime} = evaluateRuntimeInstructions(window, reactRuntimeInstructions);\n' +
   'REACT_PACKAGES = "";\n' +
   'let react = React;\n' +
   'let reactDOM = ReactDOM;\n' +

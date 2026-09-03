@@ -72,7 +72,7 @@ This project consists of multiple sub-components and non-standard integrations t
 ### 1. React & Package Manager
 The plugin inflates one private React/ReactDOM runtime and combines it with one evaluated Excalidraw runtime. Every main-window and popout view leases that shared package while supplying its own stable `ownerDocument`.
 - References to React and ReactDOM are handled via `PackageManager.ts` (`src/core/managers/PackageManager.ts`).
-- React and its JSX runtimes are built from official npm entry points, compressed into the plugin, and inflated once during bootstrap. They remain external to the separately built Excalidraw artifact and to the plugin's library build so neither path creates a second React copy.
+- React and its JSX runtimes are built from official npm entry points, compressed into the plugin, and inflated once during bundle bootstrap. The bootstrap uses a local window alias with the same indirect evaluation mechanism that underlies Excalidraw's error-handled evaluator. They remain external to the separately built Excalidraw artifact and to the plugin's library build so neither path creates a second React copy.
 - Do not introduce direct `ReactDOM.createRoot()` calls outside this package-manager model.
 - Do not publish React or ReactDOM on `window`. The documented `window.ExcalidrawLib` scripting surface is the deliberate exception.
 

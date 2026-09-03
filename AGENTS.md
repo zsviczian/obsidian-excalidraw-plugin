@@ -252,10 +252,10 @@ The host adapters are an internal protocol between this plugin and its exact `@z
 
 ### Popout Window Support
 
-- `src/core/managers/PackageManager.ts` evaluates one compressed private React/ReactDOM payload and one Excalidraw artifact in the main application realm, then leases that shared package to every view.
+- The bundle bootstrap inflates and indirectly evaluates one compressed private React/ReactDOM payload in the main application realm before module-level React consumers run. `src/core/managers/PackageManager.ts` then evaluates one Excalidraw artifact and leases the combined shared package to every view.
 - A lease retains the view's actual acquisition window for migration and persistence decisions; package evaluation ownership must never substitute for that identity.
 - Popouts receive only a temporary `window.ExcalidrawLib` compatibility alias. Remove it after the final lease for that window while keeping the shared runtime alive until plugin unload.
-- The React runtime is built from official npm entry points, inflated once, and kept in plugin/package lexical scope. Do not assign React or ReactDOM to `window`; only the documented `window.ExcalidrawLib` compatibility surface remains global.
+- The React runtime is built from official npm entry points, inflated once during bundle bootstrap, and kept in plugin/package lexical scope. Do not assign React or ReactDOM to `window`; only the documented `window.ExcalidrawLib` compatibility surface remains global.
 - Every Excalidraw root must receive its stable owning document. Rendering, DOM ownership, events, observers, portals, realm constructors, fonts, timers, and React roots must derive from the owning view document/window where appropriate; do not turn the shared runtime into a mutable "current window" singleton.
 - Treat `HTMLElement.onWindowMigrated()` as a destructive runtime boundary. Its callback runs after Obsidian has moved the view container to another document, while the existing React root and Excalidraw API still belong to the source window runtime.
 - For a dirty migration, synchronously capture every API-owned value needed for persistence and unmount the source React root **before the first `await`**. Do not move synchronization, compression, Vault/native file access, `closeLeafView()`, or another asynchronous step ahead of that unmount. On macOS/Electron, doing so reproducibly allowed the source popout window to be destroyed before `root.unmount()`, freezing Obsidian and disconnecting DevTools.
