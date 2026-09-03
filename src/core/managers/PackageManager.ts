@@ -5,22 +5,16 @@ import { Notice } from "obsidian";
 import type ExcalidrawPlugin from "src/core/main";
 import { errorHandler } from "../../utils/ErrorHandler";
 import React from "react";
-import * as ReactDOMLegacy from "react-dom";
-import * as ReactDOMClient from "react-dom/client";
-import * as ReactJSXRuntime from "react/jsx-runtime";
-import * as ReactJSXDevRuntime from "react/jsx-dev-runtime";
+import ReactDOM from "react-dom/client";
 import { createObsidianCommonHostAdapter } from "./obsidianCommonHostAdapter";
 import { createObsidianExcalidrawHostAdapter } from "./obsidianExcalidrawHostAdapter";
 
+declare let react: typeof React;
+declare let reactDOM: typeof ReactDOM & typeof import("react-dom");
 declare let excalidrawLib: typeof ExcalidrawLib;
+declare let ReactJSXRuntime: unknown;
+declare let ReactJSXDevRuntime: unknown;
 declare const unpackExcalidraw: () => string;
-
-const reactDOM = Object.assign({}, ReactDOMLegacy, ReactDOMClient);
-const reactJSXDevRuntime = Object.assign({}, ReactJSXDevRuntime, {
-  // React's production jsx-dev-runtime deliberately leaves jsxDEV undefined,
-  // while the Excalidraw artifact accepts either external runtime entrypoint.
-  jsxDEV: ReactJSXDevRuntime.jsxDEV ?? ReactJSXRuntime.jsx,
-});
 
 const normalizeError = (error: unknown): Error =>
   error instanceof Error
@@ -67,10 +61,10 @@ export class PackageManager {
         window,
       );
       excalidrawLib = loadExcalidraw(
-        React,
+        react,
         reactDOM,
         ReactJSXRuntime,
-        reactJSXDevRuntime,
+        ReactJSXDevRuntime,
       );
 
       if (!excalidrawLib) {
@@ -81,7 +75,7 @@ export class PackageManager {
       updateExcalidrawLib();
 
       // Create a package with the loaded libraries
-      const initialPackage = { react: React, reactDOM, excalidrawLib };
+      const initialPackage = { react, reactDOM, excalidrawLib };
 
       // Validate the package before storing
       if (this.validatePackage(initialPackage)) {
@@ -100,10 +94,12 @@ export class PackageManager {
       );
       console.error("Error loading the Excalidraw package", e);
     } finally {
-      // Per-window evaluation has been removed. Release the decompressed
-      // Excalidraw source after the one runtime is initialized instead of
-      // retaining it for hypothetical future popouts.
+      // Per-window evaluation has been removed. Release the decompressed source
+      // Excalidraw source after the one shared runtime is initialized. The
+      // bootstrap releases its inflated React source immediately after eval.
       excalidrawPackage = "";
+      ReactJSXRuntime = null;
+      ReactJSXDevRuntime = null;
     }
 
     plugin.logStartupEvent("Excalidraw package unpacked");
@@ -315,6 +311,8 @@ export class PackageManager {
       this.disposeObsidianHosts();
       this.runtimePackage = null;
 
+      react = null;
+      reactDOM = null;
       excalidrawLib = null;
     } catch (error: unknown) {
       errorHandler.handleError(

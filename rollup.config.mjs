@@ -8,10 +8,12 @@ import copy from "rollup-plugin-copy";
 import typescript from "@rollup/plugin-typescript";
 import fs from 'fs';
 import path from 'path';
+import postprocess from '@zsviczian/rollup-plugin-postprocess';
 import cssnano from 'cssnano';
 import { minify } from 'uglify-js';
 import json from '@rollup/plugin-json';
 import { parseEnv } from 'node:util';
+import { buildReactRuntime } from './scripts/buildReactRuntime.mjs';
 
 function compressDeflateBase64(code) {
   // Compress using Node's native zlib at maximum compression
@@ -83,6 +85,15 @@ const excalidraw_pkg = isLib
   : isProd
     ? minifyCode(excalidrawSource)
     : `${excalidrawSource}\n//# sourceURL=obsidian-excalidraw-runtime.development.js\n`;
+const reactRuntimeSource = isLib
+  ? ""
+  : await buildReactRuntime({ isProduction: isProd });
+const reactRuntime = isLib || !isProd
+  ? reactRuntimeSource
+  : minifyCode(reactRuntimeSource);
+const reactPackagesCompressed = isLib
+  ? ""
+  : compressDeflateBase64(reactRuntime);
 // Runtime payloads are only decompressed; including Pako's deflate implementation
 // would add unused code to the size-constrained Obsidian plugin bundle.
 const pako_pkg = isLib ? "" : fs.readFileSync("./node_modules/pako/dist/pako_inflate.min.js", "utf8");
@@ -136,7 +147,12 @@ const packageString = isLib
   '  return new TextDecoder().decode(pako.inflate(bytes));\n' +
   '};\n' +
   'window.unpackBase64Deflate = unpackBase64Deflate;\n' +
+  'let REACT_PACKAGES = unpackBase64Deflate("' + reactPackagesCompressed + '");\n' +
   'const unpackExcalidraw = () => unpackBase64Deflate("' + compressDeflateBase64(excalidraw_pkg) + '");\n' +
+  'let {React, ReactDOM, ReactJSXRuntime, ReactJSXDevRuntime} = new Function(`${REACT_PACKAGES}; return {React, ReactDOM, ReactJSXRuntime, ReactJSXDevRuntime};`)();\n' +
+  'REACT_PACKAGES = "";\n' +
+  'let react = React;\n' +
+  'let reactDOM = ReactDOM;\n' +
   'let excalidrawLib = {};\n' +
   `const PLUGIN_LANGUAGES = {${LANGUAGES.map(lang => `"${lang}": "${compressLanguageFile(lang)}"`).join(",")}};\n` +
   //These declarations were moved here because Obsidian code scanner incorrectly flags them with a warning,
@@ -186,13 +202,8 @@ const BASE_CONFIG = {
     '@lezer/lr',
     'obsidian',
     '@zsviczian/excalidraw',
-    ...(isLib ? [
-      'react',
-      'react-dom',
-      'react-dom/client',
-      'react/jsx-runtime',
-      'react/jsx-dev-runtime',
-    ] : []),
+    'react',
+    'react-dom',
   ],
 };
 
@@ -223,7 +234,6 @@ const BUILD_CONFIG = {
     format: 'cjs',
     exports: 'default',
     inlineDynamicImports: true, // Add this line only
-    banner: packageString,
   },
   plugins: getRollupPlugins(
     {
@@ -238,13 +248,21 @@ const BUILD_CONFIG = {
           comments: false, // Remove all comments
         },
       }),
+      postprocess([
+        [
+          /(var[^;]*?),\s*React\s*=\s*require\(["']react["']\)([^;]*;)/,
+          (_, g1, g2) => `${g1}${g2}${packageString}`
+        ],
+      ]),
       /*visualizer({
         filename: 'bundle-analysis.html',
         open: true, // Automatically opens in your browser when the build finishes
         gzipSize: true,
         brotliSize: true,
       }),*/
-    ] : []),
+    ] : [
+      postprocess([[/var React = require\('react'\);/, packageString]]),
+    ]),
     copy({
       targets: [{ src: 'manifest.json', dest: DIST_FOLDER }],
       verbose: true,
