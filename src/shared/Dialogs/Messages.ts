@@ -18,11 +18,13 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
   "2.27.0": `
+${getYouTubeDiv("am2HOlbYsxI")}
+
 ## New
-- On Obsidian 1.13 and newer, Excalidraw now uses Obsidian's searchable, multi-page settings. Settings are organized into clearer sections with breadcrumbs, compact help links, and clickable links between related options.
-  - Prefer the previous experience? Turn off **Use searchable settings** at the top of Excalidraw settings and restart Obsidian. Older Obsidian versions continue using the legacy single-page layout automatically.
-  - Settings exposed by installed Excalidraw Automate scripts have moved to **Excalidraw Automate → Settings for installed scripts** and update when a script adds or changes its settings.
-- Excalidraw Automate can optionally load and monitor JavaScript (\`.js\`) files in the Scripts folder, use an explicit \`.js\` startup script, and store Script Library downloads as either Markdown or JavaScript. Existing scripts can be moved between the two formats while updating startup and pinned-script paths. [#2901](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2901)
+- On Obsidian 1.13 and newer, Excalidraw now uses Obsidian's searchable, multi-page settings organized into clearer sections with breadcrumbs and clickable links between related options.
+  - If you prefer the previous experience you can turn off **Use searchable settings** at the top of Excalidraw settings and restart Obsidian. Older Obsidian versions continue using the legacy single-page layout automatically.
+  - Settings exposed by installed Excalidraw Automate scripts have moved to **Excalidraw Automate → Settings for installed scripts**.
+- Excalidraw Automate can optionally load and monitor JavaScript (\`.js\`) files in the Scripts folder, use an explicit \`.js\` ExcalidrawStartup script, and store Script Library downloads as either Markdown or JavaScript. Existing scripts can be moved between the two formats while updating startup and pinned-script paths. [#2901](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2901)
 - Markdown notes created from unresolved links in a drawing now follow Obsidian's **Default location for new notes** setting. [#2916](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2916)
 
 ## New from Excalidraw.com
@@ -33,20 +35,15 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 ## Fixed
 - Downloading very large SVG or PNG exports now avoids base64 conversion, substantially reducing peak memory use and preventing Electron renderer crashes on image-heavy drawings.
 - Moving a dirty drawing out of a popout window now safely transfers and persists its latest edits from the replacement main-window view.
-- Opening the command palette or another Obsidian modal reliably saves dirty drawings, while inline link suggestions no longer trigger a save that can end text editing.
 - Converting a legacy ".excalidraw" drawing now persists its embedded images as vault attachments during conversion, before the source file can be removed. [#2898](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2898)
 - Entering text editing no longer scans and sorts the entire vault for link suggestions; file-link candidates are loaded only after typing \`[[\`. [#2907](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2907)
 - Settings changes are saved promptly without collapsing sections or interrupting fast typing. Writes are serialized, and Excalidraw keeps a device-local recovery copy so an empty or corrupted synchronized **data.json** cannot silently erase a large settings configuration.
-- Interdependent settings now initialize and refresh consistently, including TODO icons, auto-export formats, Taskbone credentials, filename previews, and custom grid colors. Built-in font previews also use the correct typeface in secondary Obsidian windows.
-- Applying a rendering-related setting no longer resets the live zoom and scroll position of an open drawing. New configurations use ☑ as the completed-TODO marker.
-- Interactive Markdown embed defaults now save filename, properties, locked-reading-mode, and background-source changes reliably.
-- The color palette uses the available height, keeps its native picker aligned, remembers customized top picks after reload, and updates popover theming immediately after a canvas background change.
 - Text-to-diagram chat history is visible again, so saved chats can be restored or deleted.
 - Stencil-library JSON is now tab-indented for cleaner Git diffs. [#2883](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2883)
 
 ## Maintenance
-- This is one of the Plugin's largest internal maintenance releases. The settings system, persistence pipeline, plugin lifecycle, runtime packaging, and several major managers were reorganized into clearer, independently maintained components. The visible workflow remains familiar, but the foundation is substantially safer for future features and fixes.
-- The embedded Excalidraw runtime now uses a modern ESM-source build and React 19 instead of the retired UMD pipeline. Offline use and popout windows remain supported; the Assistant UI font is bundled locally and Mermaid still loads on demand through Excalidraw Extras.
+- This is one of the Plugin's largest internal maintenance releases ever. The settings system, persistence pipeline, plugin lifecycle, runtime packaging, and several major managers were reorganized into clearer, independently maintained components. On the surface the plugin works as before, but the foundation is substantially safer for future features and fixes.
+- The embedded Excalidraw runtime now uses a modern ESM-source build and React 19 instead of the retired UMD pipeline.
 - Drawings with many cached embedded files load more efficiently by avoiding redundant cache rewrites, SVG reconstruction, image measurement, hashing, and normalization. Cached and direct images can appear before slower generated drawings, while drawing backups remain protected.
 - Removed unused code and the obsolete Draw.io/Diagram integration, and retired the non-functional Create DrawIO file script.
 

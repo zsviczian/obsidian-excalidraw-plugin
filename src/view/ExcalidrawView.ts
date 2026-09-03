@@ -961,23 +961,20 @@ export default class ExcalidrawView
     //this.reload will not be called
     //triggerReload is used to flag if there were no changes but file should be reloaded anyway
     let triggerReload: boolean = false;
-
-    const windowMigrationSaveSnapshot = this.windowMigrationSaveSnapshot;
-    if (
-      (!this.excalidrawAPI && !windowMigrationSaveSnapshot) ||
-      !this.isLoaded ||
-      !this.file ||
-      !this.app.vault.getAbstractFileByPath(this.file.path) //file was recently deleted
-    ) {
-      this.semaphores.saving = false;
-      return { status: "skipped" };
-    }
-
-    const allowSave = this.isDirty() || forcesave; //removed this.semaphores.autosaving
-    let executionStatus: SaveExecutionResult["status"] = allowSave
-      ? "persisted"
-      : "unchanged";
+    let executionStatus: SaveExecutionResult["status"] = "unchanged";
     try {
+      const windowMigrationSaveSnapshot = this.windowMigrationSaveSnapshot;
+      if (
+        (!this.excalidrawAPI && !windowMigrationSaveSnapshot) ||
+        !this.isLoaded ||
+        !this.file ||
+        !this.app.vault.getAbstractFileByPath(this.file.path) //file was recently deleted
+      ) {
+        return { status: "skipped" };
+      }
+
+      const allowSave = this.isDirty() || forcesave; //removed this.semaphores.autosaving
+      executionStatus = allowSave ? "persisted" : "unchanged";
       if (allowSave) {
         const appStateSnapshot = windowMigrationSaveSnapshot
           ? null
@@ -1035,7 +1032,6 @@ export default class ExcalidrawView
               data: d,
             });
             this.data = d;
-            this.semaphores.saving = false;
             return { status: "window-migration-handed-off" };
           }
           await new Promise<void>((resolve, reject) => {
@@ -1053,7 +1049,6 @@ export default class ExcalidrawView
           this.data = d;
           this.lastSavedData = d;
           this.lastSaveTimestamp = file.stat.mtime;
-          this.semaphores.saving = false;
           return { status: "window-migration-persisted" };
         }
 
@@ -1075,7 +1070,6 @@ export default class ExcalidrawView
               // await getImageCache().addBAKToCache(file.path, d);
             })();
           }, 200);
-          this.semaphores.saving = false;
           return { status: "view-unload-scheduled" };
         }
 
@@ -1166,8 +1160,9 @@ export default class ExcalidrawView
         error: e,
       });
       warningUnknowSeriousError();
+    } finally {
+      this.semaphores.saving = false;
     }
-    this.semaphores.saving = false;
     if (triggerReload) {
       await this.reload(true, this.file);
     }
@@ -3143,27 +3138,48 @@ export default class ExcalidrawView
   }
 
   public async synchronizeWithData(inData: ExcalidrawData) {
+    const synchronizedFilePath = this.file?.path;
     if (
+      !synchronizedFilePath ||
+      this.semaphores.viewunload ||
       this.semaphores.windowMigrating ||
       !this.excalidrawAPI ||
       this.semaphores.embeddableIsEditingSelf
     ) {
       return;
     }
-    //check if saving, wait until not
+    // A save sets preventReload so its first modify event is consumed by
+    // FileManager. If another same-file event reaches this method while the
+    // save (or an earlier synchronization) is still active, retain the
+    // historical three-second bound and drop the event rather than applying a
+    // likely self-bounce after the active operation. This deliberately accepts
+    // the low-probability risk of dropping a genuine external sync collision.
     let counter = 0;
     while (this.semaphores.saving && counter++ < 30) {
       await sleep(100);
+      if (
+        this.semaphores.viewunload ||
+        this.semaphores.windowMigrating ||
+        !this.excalidrawAPI ||
+        this.file?.path !== synchronizedFilePath
+      ) {
+        return;
+      }
     }
-    if (counter >= 30) {
+    if (this.semaphores.saving) {
       errorlog({
         where: "ExcalidrawView.synchronizeWithData",
-        message: `Aborting sync with received file (${this.file.path}) because semaphores.saving remained true for ower 3 seconds`,
+        message: `Aborting sync with received file (${synchronizedFilePath}) because semaphores.saving remained true for over 3 seconds`,
         fn: "synchronizeWithData",
       });
       return;
     }
-    if (this.semaphores.windowMigrating || !this.excalidrawAPI) {
+    if (
+      this.semaphores.viewunload ||
+      this.semaphores.windowMigrating ||
+      !this.excalidrawAPI ||
+      this.file?.path !== synchronizedFilePath
+    ) {
       return;
     }
     if (!inData.scene) {
@@ -3377,12 +3393,13 @@ export default class ExcalidrawView
     } catch (e) {
       errorlog({
         where: "ExcalidrawView.synchronizeWithData",
-        message: `Error during sync with received file (${this.file.path})`,
+        message: `Error during sync with received file (${synchronizedFilePath})`,
         fn: "synchronizeWithData",
         error: e,
       });
+    } finally {
+      this.semaphores.saving = false;
     }
-    this.semaphores.saving = false;
   }
 
   /**
@@ -3899,13 +3916,47 @@ export default class ExcalidrawView
     //there was a race condition when clicking a link with a section or block reference to the back-of-the-note
     //that resulted in a call to save after the view has been destroyed
     //The sleep is required for metadata cache to be updated with the location of the block or section
-    await this.forceSaveIfRequired();
-    await sleep(200); //dirty hack to wait for Obsidian metadata to be updated, note that save may have been triggered elsewhere already
-    this.plugin.excalidrawFileModes[this.id || this.file.path] = "markdown";
-    void this.plugin.setMarkdownView(
-      this.leaf,
-      eState as ViewStateResult | undefined,
-    );
+    const plugin = this._plugin;
+    const file = this.file;
+    const leaf = this.leaf;
+    if (
+      !plugin ||
+      !file ||
+      leaf.view !== this ||
+      this.semaphores.viewunload
+    ) {
+      return;
+    }
+
+    try {
+      await this.forceSaveIfRequired();
+      await sleep(200); //dirty hack to wait for Obsidian metadata to be updated, note that save may have been triggered elsewhere already
+
+      // The save and metadata delay give Obsidian enough time to close or
+      // replace this view. Do not let that stale continuation act on the new
+      // leaf view or dereference the plugin after onClose() cleared it.
+      if (
+        this._plugin !== plugin ||
+        this.file !== file ||
+        this.leaf !== leaf ||
+        leaf.view !== this ||
+        this.semaphores.viewunload
+      ) {
+        return;
+      }
+
+      plugin.excalidrawFileModes[this.id || file.path] = "markdown";
+      await plugin.setMarkdownView(
+        leaf,
+        eState as ViewStateResult | undefined,
+      );
+    } catch (e: unknown) {
+      errorlog({
+        where: "ExcalidrawView.setMarkdownView",
+        fn: "setMarkdownView",
+        error: e,
+      });
+    }
   }
 
   public async openAsMarkdown(eState?: MarkdownViewOpenState) {
