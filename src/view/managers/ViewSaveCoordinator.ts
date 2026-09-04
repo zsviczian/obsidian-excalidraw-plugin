@@ -2,6 +2,7 @@ import { Notice } from "obsidian";
 import type { AppState } from "@zsviczian/excalidraw/types/excalidraw/types";
 
 import { t } from "../../lang/helpers";
+import { errorlog } from "../../utils/coreUtils";
 import type ExcalidrawView from "../ExcalidrawView";
 
 /** Side effects selected for one save request. */
@@ -97,7 +98,7 @@ export class ViewSaveCoordinator {
   private savedRevision = 0;
   private activeSaveRevision: number | null = null;
   private pendingSaveRequest: SaveRequest | null = null;
-  private saveLoopPromise: Promise<void> | null = null;
+  private saveLoopPromise: Promise<SaveExecutionResult> | null = null;
 
   public constructor(
     private readonly view: ExcalidrawView,
@@ -119,7 +120,7 @@ export class ViewSaveCoordinator {
     });
   }
 
-  private enqueueSave(request: SaveRequest): Promise<void> {
+  private enqueueSave(request: SaveRequest): Promise<SaveExecutionResult> {
     if (this.pendingSaveRequest) {
       this.pendingSaveRequest = this.mergeSaveRequests(
         this.pendingSaveRequest,
@@ -164,8 +165,9 @@ export class ViewSaveCoordinator {
     };
   }
 
-  private async drainSaveQueue(): Promise<void> {
+  private async drainSaveQueue(): Promise<SaveExecutionResult> {
     let completedRequest = false;
+    let latestResult: SaveExecutionResult = { status: "skipped" };
     while (this.pendingSaveRequest) {
       const request = this.pendingSaveRequest;
       this.pendingSaveRequest = null;
@@ -185,11 +187,13 @@ export class ViewSaveCoordinator {
           request.sideEffectPolicy,
         );
         this.completeSaveRevision(request, result);
+        latestResult = result;
       } finally {
         this.activeSaveRevision = null;
       }
       completedRequest = true;
     }
+    return latestResult;
   }
 
   private completeSaveRevision(
@@ -276,26 +280,39 @@ export class ViewSaveCoordinator {
     this.view.clearPreventReloadTimer();
     this.view.semaphores.preventReload = false;
     this.view.semaphores.forceSaving = true;
-    await this.enqueueSave({
-      preventReload: false,
-      forcesave: true,
-      overrideEmbeddableIsEditingSelfDebounce: true,
-      sideEffectPolicy: {
-        triggerAutoexport: policy.triggerAutoexport,
-      },
-      revision: this.currentRevision,
-    });
-    if (this.view.semaphores.windowMigrating) {
+    try {
+      const result = await this.enqueueSave({
+        preventReload: false,
+        forcesave: true,
+        overrideEmbeddableIsEditingSelfDebounce: true,
+        sideEffectPolicy: {
+          triggerAutoexport: policy.triggerAutoexport,
+        },
+        revision: this.currentRevision,
+      });
+      if (
+        this.view.semaphores.windowMigrating ||
+        result.status === "failed" ||
+        result.status === "skipped"
+      ) {
+        return;
+      }
+      this.view.plugin.triggerEmbedUpdates();
+      if (policy.refreshSceneFiles) {
+        await this.view.loadSceneFiles();
+      }
+      if (!silent) {
+        new Notice("Save successful", 1000);
+      }
+    } catch (error: unknown) {
+      errorlog({
+        where: "ViewSaveCoordinator.forceSaveWithPolicy",
+        fn: "forceSaveWithPolicy",
+        error,
+      });
+      new Notice(t("WARNING_SERIOUS_ERROR"), 60000);
+    } finally {
       this.view.semaphores.forceSaving = false;
-      return;
-    }
-    this.view.plugin.triggerEmbedUpdates();
-    if (policy.refreshSceneFiles) {
-      await this.view.loadSceneFiles();
-    }
-    this.view.semaphores.forceSaving = false;
-    if (!silent) {
-      new Notice("Save successful", 1000);
     }
   }
 

@@ -19,8 +19,8 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 `,
 "2.27.2": `
 ## Fixed
-- Canvas properties panel and the element properties panel (Tray-mode only) were moved to the top left corner of the Obsidian workspace when changing tabs.
-- Back of the note cards did not display if the filename includes "?" character on MacOS.
+- Canvas properties (tray and desktop UI modes) and the element properties (tray-mode only) were moved to the top left corner of the Obsidian workspace when changing tabs.
+- Back of the note cards did not display if the filename included "?" character on MacOS.
 
 `,
   "2.27.1": `

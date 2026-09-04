@@ -728,10 +728,22 @@ export class PluginFileManager {
               return;
             }
             const inData = new ExcalidrawData(this.plugin);
-            const data = await this.app.vault.read(file);
-            await inData.loadData(data, file, getTextMode(data));
-            await excalidrawView.synchronizeWithData(inData);
-            inData.destroy();
+            try {
+              const data = await this.app.vault.read(file);
+              await inData.loadData(data, file, getTextMode(data));
+              await excalidrawView.synchronizeWithData(inData);
+            } catch (error: unknown) {
+              errorlog({
+                where: "FileManager.modifyEventHandler",
+                fn: "load synchronized drawing data",
+                message: `Rejected incoming drawing data for ${file.path}`,
+                error,
+              });
+              new Notice(t("DRAWING_RELOAD_FAILED"), 60000);
+              return;
+            } finally {
+              inData.destroy();
+            }
             if (excalidrawView?.isDirty()) {
               if (
                 excalidrawView.autosaveTimer &&

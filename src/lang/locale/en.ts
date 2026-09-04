@@ -298,6 +298,8 @@ export default {
     "Error, can't read file path. Importing file instead",
   NO_SEARCH_RESULT: "Didn't find a matching element in the drawing",
   FORCE_SAVE_ABORTED: "Force Save aborted because saving is in progress",
+  DRAWING_RELOAD_FAILED:
+    "Excalidraw rejected invalid incoming Drawing data. The drawing currently open on the canvas was preserved. Save or export it before closing this view, and review the synchronized file or its version history.",
   LINKLIST_SECOND_ORDER_LINK: "Second Order Link",
   MARKDOWN_EMBED_CUSTOMIZE_LINK_PROMPT_TITLE:
     "Customize the Embedded File link",

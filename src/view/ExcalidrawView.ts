@@ -1163,11 +1163,11 @@ export default class ExcalidrawView
     } finally {
       this.semaphores.saving = false;
     }
-    if (triggerReload) {
-      await this.reload(true, this.file);
-    }
+    const reloadSucceeded = triggerReload
+      ? await this.reload(true, this.file)
+      : true;
     this.saveCoordinator.resetAutosaveTimer(); //next autosave period starts after save
-    return { status: executionStatus };
+    return { status: reloadSucceeded ? executionStatus : "failed" };
   }
 
   // get the new file content
@@ -2380,12 +2380,13 @@ export default class ExcalidrawView
    * @param fullreload - Whether to parse the complete drawing data again.
    * @param file - Modified file when the reload originated from a file event.
    * @param preserveViewport - Whether to retain live scroll and zoom values.
+   * @returns Whether the requested reload completed without rejecting the incoming data.
    */
   public async reload(
     fullreload: boolean = false,
     file?: TFile,
     preserveViewport: boolean = false,
-  ) {
+  ): Promise<boolean> {
     const loadOnModifyTrigger = file && file === this.file;
 
     //once you've finished editing the embeddable, the first time the file
@@ -2401,38 +2402,59 @@ export default class ExcalidrawView
       if (loadOnModifyTrigger) {
         this.data = await this.app.vault.read(this.file);
       }
-      return;
+      return true;
     }
 
     if (this.semaphores.preventReload) {
       this.semaphores.preventReload = false;
-      return;
+      return true;
     }
     if (this.semaphores.saving) {
-      return;
+      return true;
     }
-    this.lastLoadedFile = null;
-    this.actionButtons?.save
-      ?.querySelector("svg")
-      .removeClass("excalidraw-dirty");
     if (this.compatibilityMode) {
+      this.lastLoadedFile = null;
       this.clearDirty();
-      return;
+      return true;
     }
     const api = this.excalidrawAPI;
     if (!this.file || !api) {
-      return;
+      return true;
     }
 
+    let incomingData = this.data;
     if (loadOnModifyTrigger) {
-      this.data = await this.app.vault.read(file);
+      incomingData = await this.app.vault.read(file);
+    }
+    try {
+      if (fullreload) {
+        await this.excalidrawData.loadData(
+          incomingData,
+          this.file,
+          this.textMode,
+        );
+      } else {
+        await this.excalidrawData.setTextMode(this.textMode);
+      }
+    } catch (error: unknown) {
+      errorlog({
+        where: "ExcalidrawView.reload",
+        fn: fullreload ? "excalidrawData.loadData" : "setTextMode",
+        message: `Rejected incoming drawing data for ${this.file.path}`,
+        error,
+      });
+      new Notice(t("DRAWING_RELOAD_FAILED"), 60000);
+      return false;
+    }
+
+    this.data = incomingData;
+    this.lastLoadedFile = null;
+    if (loadOnModifyTrigger) {
       this.preventAutozoom();
     }
-    if (fullreload) {
-      await this.excalidrawData.loadData(this.data, this.file, this.textMode);
-    } else {
-      await this.excalidrawData.setTextMode(this.textMode);
-    }
+    this.actionButtons?.save
+      ?.querySelector("svg")
+      .removeClass("excalidraw-dirty");
     this.excalidrawData.scene.appState.theme = api.getAppState().theme;
     await this.loadDrawing(
       loadOnModifyTrigger,
@@ -2441,6 +2463,7 @@ export default class ExcalidrawView
       preserveViewport,
     );
     this.clearDirty();
+    return true;
   }
 
   async zoomToElementId(id: string, hasGroupref: boolean) {

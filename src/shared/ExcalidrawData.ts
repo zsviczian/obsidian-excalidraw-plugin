@@ -679,6 +679,42 @@ export class ExcalidrawData {
     if (!file) {
       return false;
     }
+
+    // Parse the complete incoming scene before changing the currently loaded
+    // model. A malformed synchronized Drawing section must not leave a valid
+    // open canvas backed by an unloaded or partially cleared ExcalidrawData.
+    // Keep this as the single scene parse so safe reloads do not add CPU work.
+    const sceneJSONandPOS = getJSON(data);
+    if (sceneJSONandPOS.pos === -1) {
+      throw new Error("Excalidraw JSON not found in the file");
+    }
+    let parsedScene: ExcalidrawDataScene | null = null;
+
+    // In compatibility mode if the .excalidraw file was more recently updated than the .md file, then the .excalidraw file
+    // should be loaded as the scene.
+    // This feature is mostly likely only relevant to people who use Obsidian and Logseq on the same vault and edit .excalidraw
+    // drawings in Logseq.
+    if (this.plugin.settings.syncExcalidraw) {
+      const excalfile = `${file.path.substring(
+        0,
+        file.path.lastIndexOf(".md"),
+      )}.excalidraw`;
+      const f = this.app.vault.getAbstractFileByPath(excalfile);
+      if (f && f instanceof TFile && f.stat.mtime > file.stat.mtime) {
+        //the .excalidraw file is newer then the .md file
+        const d = await this.app.vault.read(f);
+        parsedScene = JSON.parse(d) as ExcalidrawDataScene;
+      }
+    }
+    if (!parsedScene) {
+      // Workaround for files merged by sync where one version is still an old
+      // markdown drawing without the fenced code block.
+      parsedScene = JSON_parse(sceneJSONandPOS.scene);
+    }
+    if (!Array.isArray(parsedScene?.elements)) {
+      throw new Error("Invalid Excalidraw scene: elements array is missing");
+    }
+
     this.loaded = false;
     this.selectedElementIds = {};
     this.textElements = new Map<
@@ -704,39 +740,9 @@ export class ExcalidrawData {
     this.setAutoexportPreferences();
     this.setembeddableThemePreference();
 
-    this.scene = null;
-
-    //In compatibility mode if the .excalidraw file was more recently updated than the .md file, then the .excalidraw file
-    //should be loaded as the scene.
-    //This feature is mostly likely only relevant to people who use Obsidian and Logseq on the same vault and edit .excalidraw
-    //drawings in Logseq.
-    if (this.plugin.settings.syncExcalidraw) {
-      const excalfile = `${file.path.substring(
-        0,
-        file.path.lastIndexOf(".md"),
-      )}.excalidraw`;
-      const f = this.app.vault.getAbstractFileByPath(excalfile);
-      if (f && f instanceof TFile && f.stat.mtime > file.stat.mtime) {
-        //the .excalidraw file is newer then the .md file
-        const d = await this.app.vault.read(f);
-        this.scene = JSON.parse(d) as ExcalidrawDataScene;
-      }
-    }
+    this.scene = parsedScene;
 
     // https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/396
-    let sceneJSONandPOS = null;
-    const loadJSON = (): { scene: string; pos: number } => {
-      //Load scene: Read the JSON string after "# Drawing"
-      const sceneJSONandPOS = getJSON(data);
-      if (sceneJSONandPOS.pos === -1) {
-        throw new Error("Excalidraw JSON not found in the file");
-      }
-      if (!this.scene) {
-        this.scene = JSON_parse(sceneJSONandPOS.scene); //this is a workaround to address when files are mereged by sync and one version is still an old markdown without the codeblock ```
-      }
-      return sceneJSONandPOS;
-    };
-    sceneJSONandPOS = loadJSON();
     const parsedMarkdownImages = parseMarkdownImages(data);
     this.scene.elements.forEach((element: ExcalidrawElement) => {
       const markdownImageData = element.customData?.[
