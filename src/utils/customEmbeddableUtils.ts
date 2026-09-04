@@ -2,7 +2,6 @@ import { ExcalidrawEmbeddableElement } from "@zsviczian/excalidraw/types/element
 import {
   AUDIO_TYPES,
   DEVICE,
-  REG_LINKINDEX_INVALIDCHARS,
   VIDEO_TYPES,
 } from "src/constants/constants";
 import {
@@ -122,10 +121,9 @@ export const processLinkText = (
     linkText = linkParts.path;
   }
 
-  if (linkText.match(REG_LINKINDEX_INVALIDCHARS)) {
-    return { subpath, file: null };
-  }
-
+  // Resolve existing vault files through Obsidian instead of applying a
+  // cross-platform filename blacklist. Characters such as "?" are valid on
+  // some supported operating systems and may legitimately occur in TFile paths.
   const file = view.app.metadataCache.getFirstLinkpathDest(
     linkText,
     view.file.path,
