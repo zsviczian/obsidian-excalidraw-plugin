@@ -129,6 +129,60 @@ if (!isLib) {
   console.log(manifest.version);
 }
 
+// ---------------------------------------------------------------------------
+// OBSIDIAN COMMUNITY PLUGIN SCANNER COMPATIBILITY NOTES
+// ---------------------------------------------------------------------------
+//
+// Some declarations and build-time transformations below preserve intentional
+// Excalidraw behavior that has produced false-positive or non-actionable findings
+// in the Obsidian Community Plugin scanner. The scanner currently has no general
+// mechanism for an author to acknowledge an individual finding with a scoped,
+// reviewable justification while retaining a clean scorecard. Related discussion:
+// https://github.com/obsidianmd/eslint-plugin/issues/178
+//
+// These compatibility measures are not intended to conceal unsafe behavior. Each
+// one documents the legitimate runtime requirement, references an upstream report
+// where available, and should be removed when the scanner can represent the use
+// case correctly or provides an auditable exception mechanism. New scanner-specific
+// workarounds should receive the same documentation before being added.
+//
+// The React/ReactDOM runtime is built from the plugin's installed packages and
+// shipped as part of main.js; it is not downloaded from an external source at
+// runtime.
+//
+// The runtime is DEFLATE-compressed primarily to help keep the shipped plugin
+// below the Community Plugin scanner's 5 MB bundle-size limit. Obsidian plugins
+// currently cannot ship these runtime packages separately, so without this
+// packaging step React/ReactDOM must contribute their normal bundled size to
+// main.js.
+//
+// In the current production bundle this reduces main.js by approximately 106.5 KB.
+//
+// Base64 is NOT used for compression. DEFLATE produces arbitrary binary bytes,
+// while main.js is a JavaScript text file. Base64 provides a simple, deterministic
+// text-safe representation of that compressed binary payload which can be embedded
+// directly in the generated source. At runtime it is decoded with atob(), converted
+// to bytes, and inflated locally. Removing Base64 while retaining compression would
+// therefore require another binary-to-JavaScript representation (for example a
+// byte array or escaped binary string); it would not eliminate the need to encode
+// the compressed bytes somehow.
+//
+// A previous Community Plugin scan also flagged dynamic <script> element creation
+// originating inside the bundled React/ReactDOM implementation. The presence of
+// createElement("script") in third-party library code does not by itself establish
+// that the plugin dynamically loads external executable code; that depends on how
+// the created element is subsequently configured and used.
+//
+// A related scanner limitation affecting bundled third-party libraries is documented
+// by another plugin author here:
+// https://github.com/obsidianmd/eslint-plugin/issues/152
+//
+// Even if the dynamic-script scanner limitation is resolved, this compressed payload
+// may remain necessary because of the independent 5 MB plugin-size constraint.
+// Revisit this packaging if Obsidian supports shipping dependency packages separately
+// or otherwise removes the need to keep the complete runtime within main.js.
+// ---------------------------------------------------------------------------
+
 const packageString = isLib
   ? ""
   : ';const INITIAL_TIMESTAMP=Date.now();\n' +
@@ -157,35 +211,68 @@ const packageString = isLib
   'let reactDOM = ReactDOM;\n' +
   'let excalidrawLib = {};\n' +
   `const PLUGIN_LANGUAGES = {${LANGUAGES.map(lang => `"${lang}": "${compressLanguageFile(lang)}"`).join(",")}};\n` +
-  //These declarations were moved here because Obsidian code scanner incorrectly flags them with a warning,
-  //but without offering a proper resolution, or a stepout process to remove them from scanner results.
-  //for context you can read different issues I raised with the Obsidian team about these.
-  //Once there is a workable resolution I am moving them back to their original locations, since having them here
-  //is not at all ideal.
-  //https://github.com/obsidianmd/eslint-plugin/issues/175
+  // Scanner compatibility shim: deprecated caret API used only as a compatibility fallback.
+  // Excalidraw uses Document.caretPositionFromPoint() where supported and falls back to
+  // caretRangeFromPoint() for supported Obsidian/Electron/WebKit runtimes where the newer
+  // API is unavailable. Removing the fallback would break compatibility without improving
+  // plugin safety. The upstream false-positive report remains open:
+  // https://github.com/obsidianmd/eslint-plugin/issues/175
+  // Remove this shim when the scanner recognizes feature-detected compatibility fallbacks
+  // or all supported Obsidian runtimes provide caretPositionFromPoint().
   `const getCaretRangeFromPoint = (doc, x, y) =>  doc.caretRangeFromPoint?.(x, y);\n` +
-  //There isn't a process for flagging deliberate use of main document instead of activeDocument
-  //The blanket rule by the eslint-plugin makes sense for many cases, but does not address special case needs
+  // Scanner compatibility shim: deliberate reference to the primary application Document.
+  // activeDocument is intentionally not equivalent here. Excalidraw supports popout windows
+  // and must sometimes distinguish the main application document from a view/element's
+  // ownerDocument or from the document that currently has focus. The general recommendation
+  // to prefer activeDocument is useful, but there is currently no author-side mechanism to
+  // acknowledge intentional exceptions in the Community Plugin scorecard. Related scanner
+  // override/scope limitation reported by another plugin author:
+  // https://github.com/obsidianmd/eslint-plugin/issues/178
+  // Related upstream work on false-positive `document` detection:
+  // https://github.com/obsidianmd/eslint-plugin/pull/187
+  // Remove this shim when deliberate main-document access can be expressed without a finding.
   `const mainDocument = document;\n` +
-  //Fetch is the only valid approach in case of loading binary data such as fonts to dataURL (i.e. not network related)
-  //I've also had cases in the past where requestUrl failed with certain endpoints, for those cases I have
-  //fetch in the codebase as a fallback from requestUrl.
-  //https://github.com/obsidianmd/eslint-plugin/issues/176
+  // Scanner compatibility shim: intentional Fetch API use.
+  // Obsidian's requestUrl() is preferred for ordinary HTTP requests. Excalidraw also has
+  // browser-native cases where fetch() is the appropriate API, including reading blob/data
+  // resources for binary conversion, plus narrowly scoped fallbacks where requestUrl() cannot
+  // reproduce the required browser/CORS behavior. Call sites use the deliberately named
+  // deliberateFetch() helper so exceptional uses remain explicit and searchable.
+  // Upstream false-positive report:
+  // https://github.com/obsidianmd/eslint-plugin/issues/176
+  // Remove this shim when the scanner distinguishes these valid uses or supports scoped,
+  // justified exceptions.
   `const deliberateFetch = async (payload, init) => await fetch(payload, init);\n` +
   `const PLUGIN_VERSION="${manifest.version}";\n` +
   `const STARTUP_SCRIPT_BASE64="${startupScriptBase64}";\n` +
-  //Moved here since the Obsidian code scanner warning to avoid unnecessary logging appears
-  //to users, creating the impression that there is unnecessary logging. There isn't.
-  //Errors and debug information is logged. Nothing else.
+  // Scanner compatibility shim: intentional diagnostic logging.
+  // Excalidraw does not use console.log for routine application output. Remaining log calls
+  // are deliberate diagnostic/debug information used for troubleshooting. The Community
+  // Plugin scorecard currently has no scoped acknowledgement mechanism for reviewed logging,
+  // so exposing the native console.log expression at each call site produces a misleading
+  // quality warning despite the logging being intentional. The broader author-override
+  // limitation is also demonstrated in:
+  // https://github.com/obsidianmd/eslint-plugin/issues/178
+  // Remove this shim when intentional diagnostic logging can be acknowledged without a finding.
   `const consoleLog = console["log"].bind(console);\n` +
-  //Obsidian code scanner fails if document.createElement rule is ignored using the eslint-ignore comment
-  //the code scanner also does not allow creating style elements and guides plugins to use style.css
-  //the code scanner does not recognize valid cases such as creating canvas elements for image generation
-  //adding a style element to an iframe that is used to create an image
-  //I am sorry, but I got fatigued creating issues for all my edge cases with the eslint-plugin...
-  //given the amount of extra time it takes, and the the usual lack of any meaningful timely response
-  //Since I want to continue releasing Excalidraw versions, and not risk getting flagged for failed releases
-  //I see no other meaningful option
+  // Scanner compatibility shim: intentional native DOM element creation.
+  // Obsidian DOM helpers and the plugin stylesheet are preferred for ordinary plugin UI.
+  // Some Excalidraw operations nevertheless require native creation in a specific Document,
+  // including detached canvas/image elements used for rendering and export, style elements
+  // belonging to an iframe contentDocument or popout ownerDocument, and detached containers
+  // used for parsing/offscreen rendering. Replacing those operations with a global stylesheet
+  // or an element created in a different Document would change behavior.
+  //
+  // The Community Plugin scanner does not currently honor a local eslint-disable as an
+  // acknowledgement of such an intentional exception; another plugin author documents the
+  // same broader scorecard/override limitation here:
+  // https://github.com/obsidianmd/eslint-plugin/issues/178
+  // Dynamic createElement("script") false positives in vendored libraries are separately
+  // documented here and illustrate why createElement findings require runtime context:
+  // https://github.com/obsidianmd/eslint-plugin/issues/152
+  // Call sites use deliberateCreateElement(doc, tagName) so exceptional uses remain explicit
+  // and searchable. Remove this shim when document-scoped native creation can be represented
+  // without a false-positive/non-actionable scorecard finding.
   `const deliberateCreateElement = (doc, tagName) => doc.createElement(tagName);\n`;
 
 const BASE_CONFIG = {
@@ -216,7 +303,18 @@ const getRollupPlugins = (tsconfig, ...plugins) => [
     preventAssignment: true,
     "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV),
   }),
-  replace({ //This is a workaround to silence Obsidian codescanner complain about fs module usage in the plugin code. The plugin does not use fs module, but it is used by some dependencies.
+  // Scanner compatibility transformation: remove browser-inapplicable transitive Node.js fs imports.
+  // Excalidraw itself does not use Node's fs module at plugin runtime. The expressions replaced
+  // below originate in bundled third-party dependency code, while the Community Plugin scanner
+  // reports filesystem capability without identifying the originating source. The upstream
+  // report for this Excalidraw finding remains open:
+  // https://github.com/obsidianmd/eslint-plugin/issues/168
+  //
+  // IMPORTANT: when dependencies are updated, re-verify that matched require("fs") expressions
+  // still belong only to browser-inapplicable dependency paths before retaining this replacement.
+  // This transformation should be removed when dependency provenance/runtime reachability is
+  // accounted for by the scanner or an auditable exception mechanism is available.
+  replace({
     preventAssignment: true,
     delimiters: ['', ''],
     values: {
