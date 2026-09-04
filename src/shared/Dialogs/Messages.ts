@@ -38,6 +38,7 @@ ${getYouTubeDiv("am2HOlbYsxI")}
 - Movable arrow labels in Excalidraw! [#10947](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/10947)
 
 ## Fixed
+- Floating menus and property popovers now close when their Excalidraw tab is hidden instead of remaining visible at the top-left of another tab.
 - Downloading very large SVG or PNG exports now avoids base64 conversion, substantially reducing peak memory use and preventing Electron renderer crashes on image-heavy drawings.
 - Moving a dirty drawing out of a popout window now safely transfers and persists its latest edits from the replacement main-window view.
 - Converting a legacy ".excalidraw" drawing now persists its embedded images as vault attachments during conversion, before the source file can be removed. [#2898](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2898)
