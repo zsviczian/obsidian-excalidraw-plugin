@@ -86,15 +86,17 @@ export const cleanupPaddingUI = () => {
  * Wraps an `area=` embed preview with the zoom icon and the padding popup.
  *
  * `sourceFile` is the markdown file that owns the `![[...]]` embed markup
- * (from the render context) and `targetFile` is the embedded Excalidraw
- * drawing whose area the embed points at. The padding parameter lives in the
- * note that renders the embed; the final save resolves and updates that note.
+ * when it is known from the render context, or `null` in live preview where
+ * the context only exposes the drawing. `targetFile` is the embedded
+ * Excalidraw drawing whose area the embed points at. When `sourceFile` is
+ * unknown, the owning note is resolved from the DOM (or metadata backlinks)
+ * at save time.
  */
 export const wrapWithPaddingPopup = (
   imgDiv: HTMLDivElement,
   src: string,
   fnameParts: FILENAMEPARTS,
-  sourceFile: TFile,
+  sourceFile: TFile | null,
   targetFile: TFile,
   reRender: (newSrc: string) => Promise<HTMLDivElement>,
   ctx: MarkdownPostProcessorContext,

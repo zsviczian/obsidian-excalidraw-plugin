@@ -964,7 +964,7 @@ const processInternalEmbed = async (
     return null;
   }
 
-  if (fnameParts.hasArearef && paddingSourceFile) {
+  if (fnameParts.hasArearef) {
     const reRender = async (newSrc: string): Promise<HTMLDivElement> => {
       const newParts = getEmbeddedFilenameParts(newSrc);
       const newAttr = { ...attr };
