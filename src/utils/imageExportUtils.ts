@@ -1,8 +1,3 @@
-declare const deliberateCreateElement: (
-  document: Document,
-  tagName: string,
-) => HTMLElement;
-
 export interface RasterCropRegion {
   x: number;
   y: number;
@@ -14,24 +9,14 @@ export interface RasterCropRegion {
 export async function cropPNGBlob(
   blob: Blob,
   crop: RasterCropRegion,
-  // could theoretically be replaced with activeDocument, however that would not resolve the
-  // deliberateCreateElement issue to create a canvas element for image operations.
-  ownerDocument: Document,
 ): Promise<Blob> {
-  const ownerWindow = ownerDocument.defaultView ?? window;
-  const urlApi = ownerWindow.URL;
-  const objectUrl = urlApi.createObjectURL(blob);
-  const image = deliberateCreateElement(
-    ownerDocument,
-    "img",
-  ) as HTMLImageElement;
+  const objectUrl = URL.createObjectURL(blob);
+  const fragment = createFragment();
+  const image = fragment.createEl("img");
   try {
     image.src = objectUrl;
     await image.decode();
-    const canvas = deliberateCreateElement(
-      ownerDocument,
-      "canvas",
-    ) as HTMLCanvasElement;
+    const canvas = fragment.createEl("canvas");
     canvas.width = Math.max(1, Math.round(crop.width));
     canvas.height = Math.max(1, Math.round(crop.height));
     const context = canvas.getContext("2d");
@@ -54,6 +39,6 @@ export async function cropPNGBlob(
       }, "image/png");
     });
   } finally {
-    urlApi.revokeObjectURL(objectUrl);
+    URL.revokeObjectURL(objectUrl);
   }
 }

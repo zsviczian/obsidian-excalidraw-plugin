@@ -335,7 +335,7 @@ const ISOLATED_MARKDOWN_RENDER_CSS = `
 const snapshotRenderedCanvases = (container: HTMLElement): void => {
   container.querySelectorAll("canvas").forEach((canvas) => {
     try {
-      const image = deliberateCreateElement(canvas.ownerDocument, "img") as HTMLImageElement;
+      const image = createFragment().createEl("img");
       image.src = canvas.toDataURL("image/png");
       image.width = canvas.width;
       image.height = canvas.height;

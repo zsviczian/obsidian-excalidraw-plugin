@@ -6,27 +6,33 @@ import {
   FONTS_STYLE_ID,
 } from "src/constants/constants";
 import { t } from "src/lang/helpers";
-import { getCJKDataURLs } from "src/utils/CJKLoader";
+import { getCJKFontFaceData } from "src/utils/CJKLoader";
 import { getFontDataURL } from "src/utils/utils";
 import { getFontMetrics } from "src/utils/fontMetrics";
 import type ExcalidrawPlugin from "src/core/main";
 
 declare const mainDocument: Document;
-declare const deliberateCreateElement: (
-  document: Document,
-  tagName: string,
-) => HTMLStyleElement;
 
 type RuntimePackageProvider = () => Packages;
 
+interface RuntimeFontFaceDefinition {
+  family: string;
+  source: string | ArrayBuffer;
+  descriptors?: FontFaceDescriptors;
+}
+
 /**
- * Owns CJK and custom-font discovery, registration, document stylesheets, and
+ * Owns CJK and custom-font discovery, document registration, and
  * readiness state while preserving the plugin's existing public font facade.
  */
 export class FontManager {
   private isLocalCJKFontAvailabe: boolean = undefined;
   // Intentionally true to preserve the existing startup race behavior.
   private fontsReady = true;
+  private readonly registeredFontFaces = new WeakMap<
+    Document,
+    Map<string, FontFace[]>
+  >();
 
   public constructor(
     private readonly plugin: ExcalidrawPlugin,
@@ -79,21 +85,32 @@ export class FontManager {
    * and registers custom font metrics with the shared Excalidraw runtime.
    */
   public async initializeFonts(): Promise<void> {
-    const cjkFontDataURLs = await getCJKDataURLs(this.plugin);
-    if (typeof cjkFontDataURLs === "boolean" && !cjkFontDataURLs) {
+    const cjkFontFaceData = await getCJKFontFaceData(this.plugin);
+    if (cjkFontFaceData === false) {
       new Notice(
         t("FONTS_LOAD_ERROR") + this.plugin.settings.fontAssetsPath,
         6000,
       );
     }
 
-    if (typeof cjkFontDataURLs === "object") {
-      const fontDeclarations = cjkFontDataURLs.map(
-        (dataURL) =>
-          `@font-face { font-family: 'Xiaolai'; src: url("${dataURL}"); font-display: swap; font-weight: 400; }`,
+    if (cjkFontFaceData) {
+      const fontDefinitions: RuntimeFontFaceDefinition[] = cjkFontFaceData.map(
+        ({ dataURL, descriptors }) => ({
+          family: "Xiaolai",
+          source: `url(${JSON.stringify(dataURL)})`,
+          descriptors: {
+            ...descriptors,
+            display: "swap",
+            weight: "400",
+          },
+        }),
       );
       for (const ownerDocument of this.getOpenObsidianDocuments()) {
-        await this.addFonts(fontDeclarations, ownerDocument, CJK_STYLE_ID);
+        await this.registerFontFaces(
+          fontDefinitions,
+          ownerDocument,
+          CJK_STYLE_ID,
+        );
       }
       new Notice(t("FONTS_LOADED"));
     }
@@ -136,11 +153,20 @@ export class FontManager {
       );
     }
     for (const ownerDocument of this.getOpenObsidianDocuments()) {
-      await this.addFonts(
+      await this.registerFontFaces(
         [
-          `@font-face{font-family:'Local Font';src:url("${fourthFontDataURL}");font-display: swap;font-weight: 400;`,
+          {
+            family: "Local Font",
+            source: `url(${JSON.stringify(fourthFontDataURL)})`,
+            descriptors: {
+              display: "swap",
+              weight: "400",
+            },
+          },
         ],
         ownerDocument,
+        FONTS_STYLE_ID,
+        true,
       );
     }
     if (!this.plugin.fourthFontLoaded) {
@@ -151,26 +177,50 @@ export class FontManager {
     this.fontsReady = true;
   }
 
-  /** Replaces a plugin-owned font stylesheet and waits for the font to load. */
-  public async addFonts(
-    declarations: string[],
-    ownerDocument: Document = mainDocument,
-    styleId: string = FONTS_STYLE_ID,
+  private async registerFontFaces(
+    definitions: RuntimeFontFaceDefinition[],
+    ownerDocument: Document,
+    registrationId: string,
+    preload = false,
   ): Promise<void> {
-    const newStylesheet = deliberateCreateElement(ownerDocument, "style");
-    newStylesheet.id = styleId;
-    newStylesheet.textContent = declarations.join("");
-    const oldStylesheet = ownerDocument.getElementById(styleId);
-    ownerDocument.head.appendChild(newStylesheet);
-    if (oldStylesheet) {
-      ownerDocument.head.removeChild(oldStylesheet);
+    const ownerWindow = ownerDocument.defaultView;
+    const FontFaceConstructor: typeof FontFace | undefined = ownerWindow
+      ? Reflect.get(ownerWindow, "FontFace")
+      : undefined;
+    if (!FontFaceConstructor) {
+      throw new Error("FontFace is unavailable in the target document.");
     }
-    await ownerDocument.fonts.load("20px Local Font");
+
+    const newFaces = definitions.map(
+      ({ family, source, descriptors }) =>
+        new FontFaceConstructor(family, source, descriptors),
+    );
+    if (preload) {
+      await Promise.all(newFaces.map((face) => face.load()));
+    }
+
+    let registrations = this.registeredFontFaces.get(ownerDocument);
+    if (!registrations) {
+      registrations = new Map<string, FontFace[]>();
+      this.registeredFontFaces.set(ownerDocument, registrations);
+    }
+    const oldFaces = registrations.get(registrationId) ?? [];
+    newFaces.forEach((face) => ownerDocument.fonts.add(face));
+    oldFaces.forEach((face) => ownerDocument.fonts.delete(face));
+    registrations.set(registrationId, newFaces);
+
+    // Remove a stylesheet left by an earlier in-session implementation.
+    ownerDocument.getElementById(registrationId)?.remove();
   }
 
-  /** Removes custom and CJK font stylesheets from all open documents. */
+  /** Removes custom and CJK font registrations from all open documents. */
   public removeFonts(): void {
     this.getOpenObsidianDocuments().forEach((ownerDocument) => {
+      const registrations = this.registeredFontFaces.get(ownerDocument);
+      registrations?.forEach((faces) => {
+        faces.forEach((face) => ownerDocument.fonts.delete(face));
+      });
+      this.registeredFontFaces.delete(ownerDocument);
       const oldCustomFontStylesheet =
         ownerDocument.getElementById(FONTS_STYLE_ID);
       if (oldCustomFontStylesheet) {

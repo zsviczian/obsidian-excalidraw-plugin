@@ -8,7 +8,6 @@ import type { Theme } from "@zsviczian/excalidraw/types/element/src/types";
 import { hideElement, setStyle, showElement } from "./styleUtils";
 
 declare const mainDocument: Document;
-declare const deliberateCreateElement: (document: Document, tagName: string) => HTMLCanvasElement;
 export interface ScreenshotOptions {
   zoom: number;
   margin: number;
@@ -249,7 +248,7 @@ export async function captureScreenshot(
     setStyle(container, originalStyle);
 
     // Stitch tiles together using a browser canvas
-    const canvas = deliberateCreateElement(mainDocument, "canvas");
+    const canvas = createFragment().createEl("canvas");
     canvas.width = adjustedTotalWidth * devicePixelRatio;
     canvas.height = adjustedTotalHeight * devicePixelRatio;
     setStyle(canvas, {

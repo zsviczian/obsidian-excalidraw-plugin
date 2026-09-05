@@ -8,8 +8,6 @@ import { svgToBase64 } from "../utils/utils";
 import { ExportSettings } from "src/types/exportUtilTypes";
 import { nanoid } from "src/constants/constants";
 
-declare const deliberateCreateElement: (document: Document, tagName: string) => HTMLElement;
-declare const mainDocument: Document;
 /**
  * Creates a masked image from an Excalidraw scene.
  *
@@ -206,7 +204,7 @@ export class CropImage {
       const svgData = svg.outerHTML;
       //const svgData = new XMLSerializer().serializeToString(svg);
       // canvas should never be attached to the DOM
-      const canvas = deliberateCreateElement(mainDocument, "canvas") as HTMLCanvasElement;
+      const canvas = createFragment().createEl("canvas");
       const context = canvas.getContext("2d");
 
       if (!context) {

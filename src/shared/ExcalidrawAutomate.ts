@@ -1872,16 +1872,12 @@ export class ExcalidrawAutomate {
     );
     if (!png || !prepared.exportArea || !prepared.exportBounds) return png;
     const scale = options.scale ?? 1;
-    return await cropPNGBlob(
-      png,
-      {
-        x: (prepared.exportArea.x - prepared.exportBounds.minX) * scale,
-        y: (prepared.exportArea.y - prepared.exportBounds.minY) * scale,
-        width: (prepared.exportArea.width + prepared.padding * 2) * scale,
-        height: (prepared.exportArea.height + prepared.padding * 2) * scale,
-      },
-      prepared.ownerDocument,
-    );
+    return await cropPNGBlob(png, {
+      x: (prepared.exportArea.x - prepared.exportBounds.minX) * scale,
+      y: (prepared.exportArea.y - prepared.exportBounds.minY) * scale,
+      width: (prepared.exportArea.width + prepared.padding * 2) * scale,
+      height: (prepared.exportArea.height + prepared.padding * 2) * scale,
+    });
   }
 
   /**

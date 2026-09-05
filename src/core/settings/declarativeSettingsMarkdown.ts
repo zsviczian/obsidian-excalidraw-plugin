@@ -12,12 +12,6 @@ import type {
   SettingDefinitionItem,
 } from "src/types/obsidianDeclarativeSettings";
 
-declare const mainDocument: Document;
-declare const deliberateCreateElement: (
-  document: Document,
-  tagName: string,
-) => HTMLElement;
-
 interface MarkdownDefinitionMetadata {
   controlType?: string;
   omit?: boolean;
@@ -42,9 +36,7 @@ function toMarkdown(value: string | DocumentFragment | undefined): string {
     return htmlToMarkdown(value).trim();
   }
 
-  const container = deliberateCreateElement(mainDocument, "div");
-  container.appendChild(value.cloneNode(true));
-  return htmlToMarkdown(container.innerHTML).trim();
+  return htmlToMarkdown(value.cloneNode(true) as DocumentFragment).trim();
 }
 
 function normalizeControlType(controlType: string): string {
