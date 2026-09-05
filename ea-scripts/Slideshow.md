@@ -127,7 +127,7 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
   when two views show the same file. It can be combined with Alt/Option.
 - **Open the Slideshow sidepanel:** Hold Cmd on macOS or Ctrl on Windows/Linux while invoking the script.
 
-Build version: 2026-09-05T14:16:51.659Z
+Build version: 2026-09-05T16:40:26.928Z
 
 ```javascript
 */
@@ -6898,6 +6898,27 @@ Build version: 2026-09-05T14:16:51.659Z
   };
 
   // src/scripts/slideshow/slideshowLauncher.ts
+  async function ensureManualSlideshowDeclaration(context) {
+    const { ea: ea2, view } = context;
+    ea2.setView(view);
+    const selected = ea2.getViewSelectedElement();
+    if (isLinearPathElement(selected)) {
+      const existingSourceKey = getLinePresentationSourceKey(selected);
+      if (existingSourceKey) return existingSourceKey;
+      if (Math.floor(selected.points.length / 2) > 0) {
+        await createLinePresentation(ea2, selected.id);
+        return `line:${selected.id}`;
+      }
+    }
+    const frames = ea2.getViewElements().filter(isFrameElement);
+    if (frames.length === 0) return void 0;
+    const alreadyDeclared = frames.some((frame) => hasFrameSlideshowDeclaration(frame.customData));
+    if (!alreadyDeclared) {
+      const declarationFrame = isFrameElement(selected) ? selected : frames[0];
+      if (declarationFrame) await declareFrameSlideshow(ea2, declarationFrame.id);
+    }
+    return "frame";
+  }
   function resolveManualInvocationIntent(modifiers) {
     return {
       openSidepanel: modifiers.ctrlKey || modifiers.metaKey,
@@ -7073,12 +7094,13 @@ Build version: 2026-09-05T14:16:51.659Z
     await handle.activate(context.view, preferredSource, preferredSlideId);
   }
   async function runManualSlideshowInvocation(context) {
+    const active = getSlideshowRuntime().presentations.get(context.view);
+    const preferredSourceKey = active ? void 0 : await ensureManualSlideshowDeclaration(context);
     const intent = resolveManualInvocationIntent(context.view.modifierKeyDown);
     if (intent.openSidepanel) {
-      await openSlideshowSidepanel(context);
+      await openSlideshowSidepanel(context, preferredSourceKey);
       return;
     }
-    const active = getSlideshowRuntime().presentations.get(context.view);
     if (active) {
       active.advance();
       return;
@@ -7091,7 +7113,8 @@ Build version: 2026-09-05T14:16:51.659Z
     const launch = {
       resume: intent.resume,
       startFullscreen: intent.startFullscreen,
-      openPresenterView
+      openPresenterView,
+      ...preferredSourceKey === void 0 ? {} : { presentationSourceKey: preferredSourceKey }
     };
     if (openPresenterView) {
       const deviceKey = getSlideshowDeviceKey(ownerWindow);
