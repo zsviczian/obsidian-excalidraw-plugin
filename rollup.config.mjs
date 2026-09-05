@@ -260,22 +260,18 @@ const packageString = isLib
   // Scanner compatibility shim: intentional native DOM element creation.
   // Obsidian DOM helpers and the plugin stylesheet are preferred for ordinary plugin UI.
   //
-  // Some Excalidraw operations nevertheless require or deliberately preserve creation in
-  // a specific Document. The strongest case is iframe content: an element intended to live
-  // in an iframe must belong to that iframe's contentDocument. Other rendering/export paths
-  // intentionally preserve the ownerDocument of the view that initiated the operation,
-  // keeping DOM objects and their associated Window APIs in the same realm.
-  //
-  // Detached canvas/image elements also require the actual HTMLCanvasElement /
-  // HTMLImageElement APIs (`getContext()`, `toBlob()`, `decode()`, etc.); a
-  // DocumentFragment does not replace those specialized objects.
+  // Every remaining call site creates a <style> element. Non-iframe cases inject complete
+  // runtime stylesheet rules (selectors, pseudo-elements, at-rules, or arbitrary CSS) that
+  // cannot be represented by per-element style helpers. Iframe cases must additionally create
+  // the element in the iframe's contentDocument, whose realm does not receive Obsidian's DOM
+  // helpers. Detached canvas/image and serialization-only elements use createFragment().
   //
   // Upstream discussion:
   // https://github.com/obsidianmd/eslint-plugin/issues/196
   //
-  // Call sites use deliberateCreateElement(doc, tagName) so exceptional uses remain explicit
-  // and searchable. Remove this shim when document-scoped native creation can be represented
-  // without a false-positive/non-actionable finding.
+  // Call sites use deliberateCreateElement(doc, tagName) so these unresolved stylesheet
+  // exceptions remain explicit and searchable. Do not broaden the shim beyond reviewed style
+  // creation; remove it when upstream provides an accepted document-scoped pattern.
   `const deliberateCreateElement = (doc, tagName) => doc.createElement(tagName);\n`;
 
 const BASE_CONFIG = {

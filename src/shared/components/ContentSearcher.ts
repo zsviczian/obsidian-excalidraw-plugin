@@ -5,10 +5,6 @@ import { setStyle } from "src/utils/styleUtils";
 import { isInstanceOfHTMLElement } from "src/utils/typechecks";
 
 declare const mainDocument: Document;
-declare const deliberateCreateElement: (
-  document: Document,
-  tagName: string,
-) => HTMLElement;
 
 export class ContentSearcher {
   private contentDiv: HTMLElement;
@@ -159,33 +155,35 @@ export class ContentSearcher {
     );
     const nodesToExport =
       startIndex > -1 ? childNodes.slice(startIndex) : childNodes;
-    const htmlContainer = deliberateCreateElement(mainDocument, "div");
+    const fragment = createFragment();
 
     nodesToExport.forEach((node) => {
-      htmlContainer.appendChild(node.cloneNode(true));
+      fragment.appendChild(node.cloneNode(true));
     });
 
-    const replaceHeading = (html: string, level: number): string => {
-      const expression = new RegExp(
-        `<summary class="excalidraw-setting-h${level}">([^<]+)</summary>`,
-        "g",
-      );
-      return html.replaceAll(
-        expression,
-        `<summary class="excalidraw-setting-h${level}"><h${level}>$1</h${level}></summary>`,
-      );
-    };
+    const headingTags = ["h1", "h2", "h3", "h4"] as const;
+    headingTags.forEach((headingTag, index) => {
+      fragment
+        .querySelectorAll(`summary.excalidraw-setting-h${index + 1}`)
+        .forEach((summary) => {
+          if (summary.children.length > 0 || !summary.textContent) {
+            return;
+          }
+          const heading = summary.createEl(headingTag, {
+            text: summary.textContent,
+          });
+          summary.replaceChildren(heading);
+        });
+    });
+    fragment.querySelectorAll("div.setting-item-name").forEach((name) => {
+      if (name.children.length > 0 || !name.textContent) {
+        return;
+      }
+      const heading = fragment.createEl("h5", { text: name.textContent });
+      name.replaceWith(heading);
+    });
 
-    let html = htmlContainer.innerHTML;
-    for (let level = 1; level <= 4; level++) {
-      html = replaceHeading(html, level);
-    }
-    html = html.replaceAll(
-      /<div class="setting-item-name">([^<]+)<\/div>/g,
-      "<h5>$1</h5>",
-    );
-
-    const markdown = htmlToMarkdown(html);
+    const markdown = htmlToMarkdown(fragment);
     void window.navigator.clipboard.writeText(markdown);
     new Notice(t("SEARCH_COPIED_TO_CLIPBOARD"));
   }

@@ -7,6 +7,12 @@ interface ExcalidrawFontFaceDescriptor {
   descriptors?: FontFaceDescriptors;
 }
 
+/** A locally loaded CJK subset with the descriptors required for font matching. */
+export interface CJKFontFaceData {
+  dataURL: string;
+  descriptors?: FontFaceDescriptors;
+}
+
 const _0 = "Xiaolai-Regular-09850c4077f3fffe707905872e0e2460.woff2";
 const _1 = "Xiaolai-Regular-7eb9fffd1aa890d07d0f88cc82e6cfe4.woff2";
 const _2 = "Xiaolai-Regular-60a3089806700d379f11827ee9843b6b.woff2";
@@ -1360,51 +1366,59 @@ export function matchesCJKRange(
 }
 
 /**
+ * Loads the locally configured CJK font subsets selected by plugin settings.
  *
- * @param plugin
- * @returns
- *   - undefined if no CJK ranges are specified
- *   - false if no CJK fonts are found
- *   - array of Data URLs for CJK fonts
+ * @param plugin - Plugin instance used to resolve settings and read font files.
+ * @returns Loaded subsets with their original descriptors, `undefined` when no
+ * CJK range is enabled, or `false` when no matching local font could be loaded.
  */
-export async function getCJKDataURLs(
+export async function getCJKFontFaceData(
   plugin: ExcalidrawPlugin,
-): Promise<string[] | undefined | boolean> {
+): Promise<CJKFontFaceData[] | undefined | false> {
   const rangesToLoad = plugin.getCJKFontSettings();
   if (!(rangesToLoad.c || rangesToLoad.j || rangesToLoad.k)) {
     return;
   }
 
-  const fontURIs = XiaolaiFontFaces.filter((ff) =>
+  const fontFaces = XiaolaiFontFaces.filter((ff) =>
     matchesCJKRange(ff, rangesToLoad),
-  ).map((ff) => ff.uri);
+  );
 
-  const buffers: ArrayBuffer[] = [];
+  const loadedFaces: Array<{
+    buffer: ArrayBuffer;
+    descriptors?: FontFaceDescriptors;
+  }> = [];
 
   // Generator to load fonts
   function* symbolIterator(): Generator<Promise<void>> {
-    for (const uri of fontURIs) {
+    for (const fontFace of fontFaces) {
       yield promiseTry(async () => {
-        const ab = await plugin.loadFontFromFile(uri);
+        const ab = await plugin.loadFontFromFile(fontFace.uri);
         if (ab) {
-          buffers.push(ab);
+          loadedFaces.push({
+            buffer: ab,
+            descriptors: fontFace.descriptors,
+          });
         }
       });
     }
   }
 
   const concurrency = 5;
-  const iterator = symbolIterator.bind(this)();
+  const iterator = symbolIterator();
   await new PromisePool(iterator, concurrency).all();
 
   // Create an array to hold the Data URLs
-  const dataUrls: string[] = [];
+  const result: CJKFontFaceData[] = [];
 
-  for (const buffer of buffers) {
+  for (const { buffer, descriptors } of loadedFaces) {
     const blob = new Blob([buffer], { type: "font/woff2" });
     const dataUrl = await blobToBase64(blob);
-    dataUrls.push(`data:font/woff2;base64,${dataUrl}`);
+    result.push({
+      dataURL: `data:font/woff2;base64,${dataUrl}`,
+      descriptors,
+    });
   }
 
-  return dataUrls.length > 0 ? dataUrls : false; // Return the array of Data URLs
+  return result.length > 0 ? result : false;
 }

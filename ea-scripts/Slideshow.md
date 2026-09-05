@@ -1,12 +1,10 @@
 /*
 # Slideshow
 
-**Build version:** 2026-09-01T18:23:06.028Z
-
 Converts the active Excalidraw drawing into a slideshow presentation. The built
 script is emitted to `build/slideshow/slideshow.md`.
 
-[Watch the Slideshow 3.0 walkthrough](https://www.youtube.com/watch?v=JwgtCrIVeEU), and the [Excalidraw 2.27.0 update video](https://youtu.be/am2HOlbYsxI?si=4UPdmFMJcpM6j9oR&t=272)
+[Watch the Slideshow 3.0 walkthrough](https://www.youtube.com/watch?v=JwgtCrIVeEU) and the [Excalidraw 2.27.0 update video](https://youtu.be/am2HOlbYsxI?si=4UPdmFMJcpM6j9oR&t=272)
 
 ![Slideshow example](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-slideshow-2.jpg)
 
@@ -128,6 +126,8 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
   temporary runtime memory and is tracked independently for each concrete Excalidraw view, even
   when two views show the same file. It can be combined with Alt/Option.
 - **Open the Slideshow sidepanel:** Hold Cmd on macOS or Ctrl on Windows/Linux while invoking the script.
+
+Build version: 2026-09-05T14:16:51.659Z
 
 ```javascript
 */
@@ -252,8 +252,8 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
     moveSlideDown: "Move slide down",
     includeSlide: "Include slide in presentation",
     excludeSlide: "Exclude slide from presentation",
-    notesPresent: "Presenter notes available",
-    animationCount: "{count} animation steps",
+    notesPresent: "Notes",
+    animationCount: "{count} anims",
     editAnimations: "Edit animations",
     animationCheckpoint3: "Animation editing is available for frame slides.",
     animationEditorTitle: "Animations \u2014 {title}",
@@ -520,6 +520,26 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
       const nav = win.navigator;
       return `fallback-${nav.platform || "desktop"}-${nav.userAgent.length}`;
     }
+  }
+  function getSlideshowDisplayIdentity(display) {
+    const label = display.label.trim().toLowerCase();
+    return JSON.stringify([
+      label,
+      display.bounds.width,
+      display.bounds.height,
+      display.primary
+    ]);
+  }
+  function getSlideshowDisplayConfigurationKey(displays) {
+    if (displays.length === 0) return "none";
+    return JSON.stringify(displays.map(getSlideshowDisplayIdentity).sort());
+  }
+  function resolveSlideshowDisplayTarget(displays, preferredId, preferredIdentity) {
+    if (preferredId !== null && displays.some((display) => display.id === preferredId)) {
+      return preferredId;
+    }
+    if (!preferredIdentity) return null;
+    return displays.find((display) => getSlideshowDisplayIdentity(display) === preferredIdentity)?.id ?? null;
   }
   function getAvailableDisplays(win) {
     try {
@@ -856,6 +876,14 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
   }
   function getRawSlideshowMetadata(customData) {
     return isRecord(customData) ? customData.slideshow : void 0;
+  }
+  function hasFrameSlideshowDeclaration(customData) {
+    const value = getRawSlideshowMetadata(customData);
+    if (!isRecord(value) || value.schemaVersion !== FRAME_SCHEMA_VERSION || value.kind !== "frame") {
+      return false;
+    }
+    if (value.order !== void 0) return readFrameSlideshowData(customData) !== null;
+    return Object.keys(value).every((key) => key === "schemaVersion" || key === "kind");
   }
   function readFrameSlideshowData(customData) {
     const value = getRawSlideshowMetadata(customData);
@@ -2509,6 +2537,332 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
     }
   };
 
+  // src/scripts/slideshow/slideshowSettings.ts
+  var DEFAULT_SLIDESHOW_CONFIG = {
+    transitionStepCount: 100,
+    transitionDelay: 1e3,
+    frameSleep: 1,
+    editZoomOut: 0.7,
+    fadeLevel: 0.1,
+    printSlideWidth: 1920,
+    printSlideHeight: 1080,
+    maxZoom: 30
+  };
+  var CONFIG_KEYS = Object.keys(DEFAULT_SLIDESHOW_CONFIG);
+  var START_MODE_SETTING = "slideshowStartMode";
+  var WINDOW_MODE_SETTING = "slideshowWindowMode";
+  var NOTES_MODE_SETTING = "slideshowNotesMode";
+  var PRESENTATION_TYPE_SETTING = "slideshowPresentationType";
+  var DISPLAY_TARGETS_SETTING = "slideshowDisplayTargetsByDevice";
+  var DISPLAY_TARGETS_BY_CONFIGURATION_SETTING = "slideshowDisplayTargetsByDeviceConfiguration";
+  var PRESENTER_NOTES_FONT_SIZE_SETTING = "slideshowPresenterNotesFontSize";
+  var SORTER_THUMBNAIL_MAX_WIDTH_SETTING = "slideshowSorterThumbnailMaxWidth";
+  var LEGACY_LAUNCH_MODE_SETTING = "slideshowLaunchMode";
+  var LEGACY_START_FULLSCREEN_SETTING = "slideshowStartFullscreen";
+  var DEFAULT_PRESENTER_NOTES_FONT_SIZE = 18;
+  var DEFAULT_SORTER_THUMBNAIL_MAX_WIDTH = 280;
+  function readSettings(ea2) {
+    const getSettings = ea2.getScriptSettings;
+    return typeof getSettings === "function" ? getSettings.call(ea2) : {};
+  }
+  function loadSlideshowLaunchPreferences(ea2) {
+    const settings = readSettings(ea2);
+    const legacyMode = settings[LEGACY_LAUNCH_MODE_SETTING];
+    const rawStartMode = settings[START_MODE_SETTING];
+    const startMode = rawStartMode === "resume" || rawStartMode === "current" ? rawStartMode : rawStartMode === "beginning" ? "beginning" : legacyMode === "resume" || legacyMode === "current" ? legacyMode : "beginning";
+    const rawWindowMode = settings[WINDOW_MODE_SETTING];
+    const windowMode = rawWindowMode === "window" || rawWindowMode === "fullscreen" ? rawWindowMode : settings[LEGACY_START_FULLSCREEN_SETTING] === false ? "window" : "fullscreen";
+    const rawNotesMode = settings[NOTES_MODE_SETTING];
+    const notesMode = rawNotesMode === "presenter" || rawNotesMode === "slides" ? rawNotesMode : legacyMode === "presenter" ? "presenter" : "slides";
+    const rawPresentationType = settings[PRESENTATION_TYPE_SETTING];
+    const presentationType = rawPresentationType === "frame" || rawPresentationType === "line" ? rawPresentationType : void 0;
+    return {
+      startMode,
+      windowMode,
+      notesMode,
+      ...presentationType ? { presentationType } : {}
+    };
+  }
+  async function saveSlideshowLaunchPreferences(ea2, preferences) {
+    const settings = ea2.getScriptSettings();
+    await ea2.setScriptSettings({
+      ...settings,
+      [START_MODE_SETTING]: preferences.startMode,
+      [WINDOW_MODE_SETTING]: preferences.windowMode,
+      [NOTES_MODE_SETTING]: preferences.notesMode,
+      ...preferences.presentationType ? { [PRESENTATION_TYPE_SETTING]: preferences.presentationType } : {}
+    });
+  }
+  function asDisplayPreferences(value) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+    const record = value;
+    const normalizeId = (id) => {
+      if (id === null) return null;
+      return typeof id === "number" && Number.isFinite(id) ? id : void 0;
+    };
+    const normalizeIdentity = (identity) => {
+      if (identity === null) return null;
+      return typeof identity === "string" && identity.length > 0 ? identity : void 0;
+    };
+    const presentationDisplayId = normalizeId(record.presentationDisplayId);
+    const presenterDisplayId = normalizeId(record.presenterDisplayId);
+    if (presentationDisplayId === void 0 || presenterDisplayId === void 0) return null;
+    const presentationDisplayIdentity = normalizeIdentity(record.presentationDisplayIdentity);
+    const presenterDisplayIdentity = normalizeIdentity(record.presenterDisplayIdentity);
+    return {
+      presentationDisplayId,
+      presenterDisplayId,
+      ...presentationDisplayIdentity !== void 0 ? { presentationDisplayIdentity } : {},
+      ...presenterDisplayIdentity !== void 0 ? { presenterDisplayIdentity } : {}
+    };
+  }
+  function loadSlideshowDisplayPreferences(ea2, deviceKey, configurationKey) {
+    const settings = readSettings(ea2);
+    if (configurationKey) {
+      const configuredRaw = settings[DISPLAY_TARGETS_BY_CONFIGURATION_SETTING];
+      if (configuredRaw && typeof configuredRaw === "object" && !Array.isArray(configuredRaw)) {
+        const byDevice = configuredRaw[deviceKey];
+        if (byDevice && typeof byDevice === "object" && !Array.isArray(byDevice)) {
+          const configured = asDisplayPreferences(
+            byDevice[configurationKey]
+          );
+          if (configured) return configured;
+        }
+      }
+    }
+    const legacyRaw = settings[DISPLAY_TARGETS_SETTING];
+    if (!legacyRaw || typeof legacyRaw !== "object" || Array.isArray(legacyRaw)) return null;
+    return asDisplayPreferences(legacyRaw[deviceKey]);
+  }
+  async function saveSlideshowDisplayPreferences(ea2, deviceKey, preferences, configurationKey) {
+    const settings = ea2.getScriptSettings();
+    if (!configurationKey) {
+      const existingRaw2 = settings[DISPLAY_TARGETS_SETTING];
+      const existing2 = existingRaw2 && typeof existingRaw2 === "object" && !Array.isArray(existingRaw2) ? existingRaw2 : {};
+      await ea2.setScriptSettings({
+        ...settings,
+        [DISPLAY_TARGETS_SETTING]: {
+          ...existing2,
+          [deviceKey]: { ...preferences }
+        }
+      });
+      return;
+    }
+    const existingRaw = settings[DISPLAY_TARGETS_BY_CONFIGURATION_SETTING];
+    const existing = existingRaw && typeof existingRaw === "object" && !Array.isArray(existingRaw) ? existingRaw : {};
+    const existingDeviceRaw = existing[deviceKey];
+    const existingDevice = existingDeviceRaw && typeof existingDeviceRaw === "object" && !Array.isArray(existingDeviceRaw) ? existingDeviceRaw : {};
+    await ea2.setScriptSettings({
+      ...settings,
+      [DISPLAY_TARGETS_BY_CONFIGURATION_SETTING]: {
+        ...existing,
+        [deviceKey]: {
+          ...existingDevice,
+          [configurationKey]: { ...preferences }
+        }
+      }
+    });
+  }
+  function loadPresenterNotesFontSize(ea2) {
+    const raw = readSettings(ea2)[PRESENTER_NOTES_FONT_SIZE_SETTING];
+    const value = typeof raw === "number" && Number.isFinite(raw) ? raw : DEFAULT_PRESENTER_NOTES_FONT_SIZE;
+    return Math.min(48, Math.max(12, Math.round(value)));
+  }
+  async function savePresenterNotesFontSize(ea2, fontSize) {
+    const value = Math.min(48, Math.max(12, Math.round(fontSize)));
+    await ea2.setScriptSettings({
+      ...ea2.getScriptSettings(),
+      [PRESENTER_NOTES_FONT_SIZE_SETTING]: value
+    });
+  }
+  function loadSorterThumbnailMaxWidth(ea2) {
+    const raw = readSettings(ea2)[SORTER_THUMBNAIL_MAX_WIDTH_SETTING];
+    const value = typeof raw === "number" && Number.isFinite(raw) ? raw : DEFAULT_SORTER_THUMBNAIL_MAX_WIDTH;
+    return Math.min(520, Math.max(140, Math.round(value)));
+  }
+  async function saveSorterThumbnailMaxWidth(ea2, width) {
+    const value = Math.min(520, Math.max(140, Math.round(width)));
+    await ea2.setScriptSettings({
+      ...ea2.getScriptSettings(),
+      [SORTER_THUMBNAIL_MAX_WIDTH_SETTING]: value
+    });
+  }
+  function finiteNumber(value, fallback) {
+    return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+  }
+  function normalizeSlideshowConfig(settings) {
+    return {
+      transitionStepCount: Math.max(
+        1,
+        Math.round(finiteNumber(settings.transitionStepCount, DEFAULT_SLIDESHOW_CONFIG.transitionStepCount))
+      ),
+      transitionDelay: Math.max(
+        1,
+        finiteNumber(settings.transitionDelay, DEFAULT_SLIDESHOW_CONFIG.transitionDelay)
+      ),
+      frameSleep: Math.max(0, finiteNumber(settings.frameSleep, DEFAULT_SLIDESHOW_CONFIG.frameSleep)),
+      editZoomOut: Math.max(
+        0.05,
+        finiteNumber(settings.editZoomOut, DEFAULT_SLIDESHOW_CONFIG.editZoomOut)
+      ),
+      fadeLevel: Math.min(
+        1,
+        Math.max(0, finiteNumber(settings.fadeLevel, DEFAULT_SLIDESHOW_CONFIG.fadeLevel))
+      ),
+      printSlideWidth: Math.max(
+        1,
+        Math.round(finiteNumber(settings.printSlideWidth, DEFAULT_SLIDESHOW_CONFIG.printSlideWidth))
+      ),
+      printSlideHeight: Math.max(
+        1,
+        Math.round(finiteNumber(settings.printSlideHeight, DEFAULT_SLIDESHOW_CONFIG.printSlideHeight))
+      ),
+      maxZoom: Math.max(0.1, finiteNumber(settings.maxZoom, DEFAULT_SLIDESHOW_CONFIG.maxZoom))
+    };
+  }
+  function loadSlideshowConfig(ea2) {
+    return normalizeSlideshowConfig(ea2.getScriptSettings());
+  }
+  async function saveSlideshowConfig(ea2, config) {
+    const existing = ea2.getScriptSettings();
+    const next = { ...existing };
+    for (const key of CONFIG_KEYS) next[key] = config[key];
+    await ea2.setScriptSettings(next);
+  }
+  function resetSlideshowConfigToDefaults(config) {
+    Object.assign(config, DEFAULT_SLIDESHOW_CONFIG);
+  }
+  function addNumberSetting(ea2, container, name, description, value, onChange) {
+    new ea2.obsidian.Setting(container).setName(name).setDesc(description).addText((text) => {
+      text.inputEl.type = "number";
+      text.inputEl.step = "any";
+      text.setValue(String(value)).onChange((raw) => {
+        const parsed = Number(raw);
+        if (Number.isFinite(parsed)) onChange(parsed);
+      });
+    });
+  }
+  function openSlideshowSettingsModal(ea2, config, t, onSaved) {
+    const modal = new ea2.obsidian.Modal(app);
+    modal.titleEl.setText(t("settingsTitle"));
+    const draft = { ...config };
+    const renderContent = () => {
+      const { contentEl } = modal;
+      contentEl.empty();
+      addNumberSetting(
+        ea2,
+        contentEl,
+        t("settingsTransitionStepCount"),
+        t("settingsTransitionStepCountDesc"),
+        draft.transitionStepCount,
+        (value) => {
+          draft.transitionStepCount = value;
+        }
+      );
+      addNumberSetting(
+        ea2,
+        contentEl,
+        t("settingsTransitionDelay"),
+        t("settingsTransitionDelayDesc"),
+        draft.transitionDelay,
+        (value) => {
+          draft.transitionDelay = value;
+        }
+      );
+      addNumberSetting(
+        ea2,
+        contentEl,
+        t("settingsFrameSleep"),
+        t("settingsFrameSleepDesc"),
+        draft.frameSleep,
+        (value) => {
+          draft.frameSleep = value;
+        }
+      );
+      addNumberSetting(
+        ea2,
+        contentEl,
+        t("settingsEditZoomOut"),
+        t("settingsEditZoomOutDesc"),
+        draft.editZoomOut,
+        (value) => {
+          draft.editZoomOut = value;
+        }
+      );
+      addNumberSetting(
+        ea2,
+        contentEl,
+        t("settingsFadeLevel"),
+        t("settingsFadeLevelDesc"),
+        draft.fadeLevel,
+        (value) => {
+          draft.fadeLevel = value;
+        }
+      );
+      addNumberSetting(
+        ea2,
+        contentEl,
+        t("settingsPrintSlideWidth"),
+        t("settingsPrintSlideWidthDesc"),
+        draft.printSlideWidth,
+        (value) => {
+          draft.printSlideWidth = value;
+        }
+      );
+      addNumberSetting(
+        ea2,
+        contentEl,
+        t("settingsPrintSlideHeight"),
+        t("settingsPrintSlideHeightDesc"),
+        draft.printSlideHeight,
+        (value) => {
+          draft.printSlideHeight = value;
+        }
+      );
+      addNumberSetting(
+        ea2,
+        contentEl,
+        t("settingsMaxZoom"),
+        t("settingsMaxZoomDesc"),
+        draft.maxZoom,
+        (value) => {
+          draft.maxZoom = value;
+        }
+      );
+      const actions = contentEl.createDiv({ cls: "modal-button-container" });
+      const resetButton = actions.createEl("button", { text: t("settingsResetDefaults") });
+      resetButton.addEventListener("click", () => {
+        resetSlideshowConfigToDefaults(draft);
+        renderContent();
+      });
+      const cancelButton = actions.createEl("button", { text: t("settingsCancel") });
+      cancelButton.addEventListener("click", () => modal.close());
+      const saveButton = actions.createEl("button", {
+        text: t("settingsSave"),
+        cls: "mod-cta"
+      });
+      saveButton.addEventListener("click", () => {
+        void (async () => {
+          try {
+            const normalized = normalizeSlideshowConfig(
+              draft
+            );
+            await saveSlideshowConfig(ea2, normalized);
+            Object.assign(config, normalized);
+            onSaved();
+            modal.close();
+            new Notice(t("settingsSaved"));
+          } catch (error) {
+            console.error("Slideshow settings save failed", error);
+            new Notice(t("settingsSaveFailed"));
+          }
+        })();
+      });
+    };
+    modal.onOpen = renderContent;
+    modal.open();
+  }
+
   // src/scripts/slideshow/styles.ts
   var SLIDESHOW_SIDEPANEL_STYLES = `
 .slideshow-sidepanel { display:flex; flex-direction:column; gap:12px; padding:10px; height:100%; box-sizing:border-box; container-type:inline-size; container-name:slideshow-panel; }
@@ -2529,11 +2883,13 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
 .slideshow-sidepanel__display-controls select { min-width:0; width:100%; }
 .slideshow-sidepanel__summary-row { display:flex; align-items:center; gap:6px; min-width:0; }
 .slideshow-sidepanel__summary { flex:1 1 auto; min-width:0; color:var(--text-muted); font-size:var(--font-ui-smaller); }
+.slideshow-sidepanel__thumbnail-size-control { flex:0 1 180px; min-width:100px; max-width:240px; display:flex; align-items:center; }
+.slideshow-sidepanel__thumbnail-size-control input { width:100%; min-width:0; margin:0; }
 .slideshow-sidepanel__presentation-settings { flex:0 0 auto; width:28px; height:28px; min-width:28px; padding:5px; }
 .slideshow-sidepanel__path-actions { display:flex; flex-wrap:wrap; gap:8px; }
 .slideshow-sidepanel__path-actions button { display:inline-flex; align-items:center; gap:6px; }
-.slideshow-sorter { display:flex; flex-direction:column; gap:8px; min-height:0; overflow:auto; padding-right:2px; }
-.slideshow-sorter__row { position:relative; display:flex; flex-direction:column; gap:7px; border:1px solid var(--background-modifier-border); border-radius:8px; padding:8px; background:var(--background-primary); outline:none; transition:margin .1s ease; }
+.slideshow-sorter { display:flex; flex-direction:column; gap:8px; min-height:0; overflow:auto; padding-right:2px; align-items:flex-start; }
+.slideshow-sorter__row { position:relative; display:flex; flex-direction:column; gap:7px; width:100%; box-sizing:border-box; border:1px solid var(--background-modifier-border); border-radius:8px; padding:8px; background:var(--background-primary); outline:none; transition:margin .1s ease; }
 .slideshow-sorter__row:focus, .slideshow-sorter__row.is-selected { border-color:var(--interactive-accent); box-shadow:0 0 0 1px var(--interactive-accent); }
 .slideshow-sorter__row.is-excluded { opacity:.5; }
 .slideshow-sorter__row.is-dragging { opacity:.35; }
@@ -2542,17 +2898,21 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
 .slideshow-sorter__row.is-drop-before::before, .slideshow-sorter__row.is-drop-after::after { content:""; position:absolute; left:8px; right:8px; border-top:2px dashed var(--interactive-accent); pointer-events:none; }
 .slideshow-sorter__row.is-drop-before::before { top:-13px; }
 .slideshow-sorter__row.is-drop-after::after { bottom:-13px; }
-.slideshow-sorter__top { display:flex; flex-wrap:wrap; gap:5px 8px; align-items:flex-start; padding:6px 8px; border-radius:6px; background:var(--background-secondary); }
+.slideshow-sorter__top { display:flex; flex-direction:column; gap:5px; align-items:stretch; padding:6px 8px; border-radius:6px; background:var(--background-secondary); }
 .slideshow-sorter__top.is-draggable { cursor:grab; user-select:none; background-color:var(--background-secondary); background-image:radial-gradient(circle, var(--background-modifier-border-hover) .8px, transparent .9px); background-size:5px 5px; }
 .slideshow-sorter__top.is-draggable:active { cursor:grabbing; }
-.slideshow-sorter__title { flex:1 1 220px; min-width:0; font-weight:600; white-space:normal; overflow-wrap:break-word; word-break:normal; line-height:1.35; }
-.slideshow-sorter__badges { flex:0 1 auto; min-width:0; display:flex; gap:5px; flex-wrap:wrap; justify-content:flex-end; color:var(--text-muted); font-size:var(--font-ui-smaller); }
+.slideshow-sorter__title-row { display:flex; align-items:center; gap:5px; width:100%; min-width:0; }
+.slideshow-sorter__title { flex:1 1 auto; min-width:0; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; line-height:1.35; }
+.slideshow-sorter__title-edit { flex:0 0 auto; width:22px; height:22px; min-width:22px; padding:3px; display:flex; align-items:center; justify-content:center; }
+.slideshow-sidepanel .slideshow-sorter__title-edit svg { width:14px; height:14px; }
+.slideshow-sorter__badges { width:100%; min-width:0; display:flex; gap:5px; flex-wrap:wrap; justify-content:flex-end; color:var(--text-muted); font-size:var(--font-ui-smaller); }
 .slideshow-sorter__badge { display:inline-flex; align-items:center; gap:3px; white-space:nowrap; }
 .slideshow-sorter__badge svg { width:14px; height:14px; }
-.slideshow-sorter__content { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; align-items:center; min-width:0; }
-.slideshow-sorter__preview { width:100%; aspect-ratio:16/9; overflow:hidden; border-radius:5px; background:var(--background-secondary); display:flex; align-items:center; justify-content:center; }
+.slideshow-sorter__badge-compact-count { display:none; }
+.slideshow-sorter__content { display:flex; flex-direction:column; gap:6px; align-items:flex-start; min-width:0; }
+.slideshow-sorter__preview { width:min(100%, var(--slideshow-sorter-thumbnail-max-width, 280px)); aspect-ratio:16/9; overflow:hidden; border-radius:5px; background:var(--background-secondary); display:flex; align-items:center; justify-content:center; }
 .slideshow-sorter__preview svg { width:100%; height:100%; display:block; }
-.slideshow-sorter__actions { display:grid; grid-template-columns:repeat(2,30px); gap:3px; align-content:start; }
+.slideshow-sorter__actions { display:flex; flex-wrap:wrap; gap:3px; align-items:center; }
 .slideshow-sorter__actions button { width:30px; height:30px; padding:5px; display:flex; align-items:center; justify-content:center; }
 .slideshow-sorter__actions button.is-active { color:var(--interactive-accent); background:var(--background-modifier-hover); }
 .slideshow-sorter__actions svg { width:16px; height:16px; }
@@ -2585,24 +2945,41 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
   .slideshow-animation-editor__form { grid-template-columns:1fr; }
   .slideshow-animation-editor__step { grid-template-columns:1fr; }
   .slideshow-animation-editor__step-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; }
-  .slideshow-sorter__content {
-    grid-template-columns:1fr;
-    grid-template-areas:
-      "preview"
-      "actions";
-    align-items:center;
-  }
-  .slideshow-sorter__preview { grid-area:preview; }
-  .slideshow-sorter__actions {
-    grid-area:actions;
-    display:flex;
-    flex-wrap:wrap;
-    justify-content:flex-end;
-    align-items:center;
-  }
+  .slideshow-sorter__actions { justify-content:flex-end; }
 }
 
+.slideshow-sorter:not(.has-expanded-editor) {
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(160px,max(160px,var(--slideshow-sorter-thumbnail-max-width,280px))));
+  align-content:start;
+  align-items:stretch;
+}
+.slideshow-sorter:not(.has-expanded-editor) .slideshow-sorter__row { width:100%; height:100%; box-sizing:border-box; }
+.slideshow-sorter:not(.has-expanded-editor) .slideshow-sorter__top { min-height:0; box-sizing:border-box; }
+.slideshow-sorter:not(.has-expanded-editor) .slideshow-sorter__badges { min-height:18px; flex-wrap:nowrap; overflow:hidden; align-items:center; }
+.slideshow-sorter:not(.has-expanded-editor) .slideshow-sorter__badge { flex:0 0 auto; }
+.slideshow-sorter:not(.has-expanded-editor) .slideshow-sorter__badge-text { display:none; }
+.slideshow-sorter:not(.has-expanded-editor) .slideshow-sorter__badge-compact-count { display:inline; }
+.slideshow-sorter:not(.has-expanded-editor) .slideshow-sorter__content { flex:1 1 auto; justify-content:space-between; align-items:center; }
+.slideshow-sorter:not(.has-expanded-editor) .slideshow-sorter__preview { width:min(100%,var(--slideshow-sorter-thumbnail-max-width,280px)); margin-inline:auto; }
+.slideshow-sorter:not(.has-expanded-editor) .slideshow-sorter__actions { width:100%; justify-content:center; }
+.slideshow-sorter:not(.has-expanded-editor) .slideshow-sorter__actions button { width:26px; height:26px; padding:4px; }
+.slideshow-sorter:not(.has-expanded-editor) .slideshow-sorter__actions svg { width:15px; height:15px; }
+.slideshow-sorter:not(.has-expanded-editor) .slideshow-sorter__row.is-drop-before,
+.slideshow-sorter:not(.has-expanded-editor) .slideshow-sorter__row.is-drop-after { margin:0; }
+.slideshow-sorter:not(.has-expanded-editor) .slideshow-sorter__row.is-drop-before::before,
+.slideshow-sorter:not(.has-expanded-editor) .slideshow-sorter__row.is-drop-after::after { top:8px; bottom:8px; width:0; border-top:0; border-left:2px dashed var(--interactive-accent); }
+.slideshow-sorter:not(.has-expanded-editor) .slideshow-sorter__row.is-drop-before::before { left:-6px; right:auto; }
+.slideshow-sorter:not(.has-expanded-editor) .slideshow-sorter__row.is-drop-after::after { right:-6px; left:auto; }
+.slideshow-sorter.has-expanded-editor .slideshow-sorter__row { width:min(100%,820px); box-sizing:border-box; }
+
 @container slideshow-panel (max-width: 300px) {
+  .slideshow-sorter:not(.has-expanded-editor) { display:flex; }
+  .slideshow-sorter:not(.has-expanded-editor) .slideshow-sorter__row { width:100%; height:auto; }
+  .slideshow-sorter:not(.has-expanded-editor) .slideshow-sorter__top { min-height:0; }
+  .slideshow-sorter:not(.has-expanded-editor) .slideshow-sorter__badges { min-height:0; flex-wrap:wrap; overflow:visible; }
+  .slideshow-sorter:not(.has-expanded-editor) .slideshow-sorter__badge-text { display:inline; }
+  .slideshow-sorter:not(.has-expanded-editor) .slideshow-sorter__badge-compact-count { display:none; }
   .slideshow-sorter__actions { justify-content:flex-start; }
 }
 
@@ -2615,20 +2992,22 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
 .slideshow-presenter__title { font-size:var(--font-ui-large); font-weight:700; line-height:1.25; overflow-wrap:anywhere; }
 .slideshow-presenter__counter { color:var(--text-muted); font-size:var(--font-ui-small); }
 .slideshow-presenter__header-actions { display:flex; gap:6px; flex:0 0 auto; }
+.slideshow-presenter__font-size-control { display:none; align-items:center; gap:6px; color:var(--text-muted); font-size:var(--font-ui-smaller); white-space:nowrap; }
+.slideshow-presenter__font-size-control input { width:120px; }
 .slideshow-presenter__close, .slideshow-presenter__layout-toggle { flex:0 0 auto; width:38px; height:38px; display:flex; align-items:center; justify-content:center; }
 .slideshow-presenter__layout-toggle.is-active { color:var(--interactive-accent); background:var(--background-modifier-hover); }
-.slideshow-presenter__grid { display:grid; grid-template-columns:minmax(220px,.8fr) minmax(300px,1.2fr); grid-template-areas:"current next" "notes next"; gap:16px; align-items:start; min-height:0; }
+.slideshow-presenter__grid { display:grid; flex:1 1 auto; grid-template-columns:minmax(220px,.8fr) minmax(300px,1.2fr); grid-template-rows:auto minmax(160px,1fr); grid-template-areas:"current next" "notes next"; gap:16px; align-items:stretch; min-height:0; }
 .slideshow-presenter__column { min-width:0; display:flex; flex-direction:column; gap:9px; }
 .slideshow-presenter__column:nth-child(1) { grid-area:current; }
 .slideshow-presenter__column:nth-child(2) { grid-area:next; }
-.slideshow-presenter__notes-column { grid-area:notes; min-height:0; }
+.slideshow-presenter__notes-column { grid-area:notes; min-height:0; height:100%; }
 .slideshow-presenter__section-title { color:var(--text-muted); font-size:var(--font-ui-smaller); font-weight:600; text-transform:uppercase; letter-spacing:.04em; }
 .slideshow-presenter__preview { width:100%; overflow:hidden; border-radius:8px; background:var(--background-secondary); border:1px solid var(--background-modifier-border); display:flex; align-items:center; justify-content:center; }
 .slideshow-presenter__preview svg { width:100%; height:100%; display:block; }
 .slideshow-presenter__current-preview { max-width:520px; }
 .slideshow-presenter__next-preview { width:100%; }
 .slideshow-presenter__end { display:flex; align-items:center; justify-content:center; min-height:180px; color:var(--text-muted); font-size:var(--font-ui-medium); border:1px dashed var(--background-modifier-border); border-radius:8px; }
-.slideshow-presenter__notes { min-height:120px; padding:12px; border-radius:8px; background:var(--background-secondary); border:1px solid var(--background-modifier-border); overflow-wrap:anywhere; overflow:auto; }
+.slideshow-presenter__notes { flex:1 1 auto; min-height:120px; padding:12px; border-radius:8px; background:var(--background-secondary); border:1px solid var(--background-modifier-border); overflow-wrap:anywhere; overflow:auto; }
 .slideshow-presenter__notes.is-empty { color:var(--text-muted); font-style:italic; }
 .slideshow-presenter__progress { display:flex; align-items:center; gap:8px; color:var(--text-muted); font-size:var(--font-ui-small); }
 .slideshow-presenter__controls { display:flex; flex-wrap:wrap; gap:8px; margin-top:auto; padding-top:4px; }
@@ -2637,11 +3016,12 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
 .slideshow-presenter.is-notes-focused { overflow:hidden; }
 .slideshow-presenter.is-notes-focused .slideshow-presenter__grid { flex:1; grid-template-columns:minmax(0,17fr) minmax(150px,3fr); grid-template-rows:minmax(0,1fr) minmax(0,1fr); grid-template-areas:"notes current" "notes next"; align-items:stretch; }
 .slideshow-presenter.is-notes-focused .slideshow-presenter__notes-column { min-height:0; }
-.slideshow-presenter.is-notes-focused .slideshow-presenter__notes { flex:1; min-height:0; font-size:var(--font-ui-medium); }
+.slideshow-presenter.is-notes-focused .slideshow-presenter__font-size-control { display:flex; }
+.slideshow-presenter.is-notes-focused .slideshow-presenter__notes { flex:1; min-height:0; font-size:var(--slideshow-presenter-notes-font-size, 18px); }
 .slideshow-presenter.is-notes-focused .slideshow-presenter__current-preview { max-width:none; }
 .slideshow-presenter.is-notes-focused .slideshow-presenter__column:nth-child(1), .slideshow-presenter.is-notes-focused .slideshow-presenter__column:nth-child(2) { min-height:0; overflow:hidden; }
 @media (max-width: 700px) {
-  .slideshow-presenter__grid, .slideshow-presenter.is-notes-focused .slideshow-presenter__grid { grid-template-columns:1fr; grid-template-rows:auto; grid-template-areas:"current" "next" "notes"; }
+  .slideshow-presenter__grid, .slideshow-presenter.is-notes-focused .slideshow-presenter__grid { flex:none; grid-template-columns:1fr; grid-template-rows:auto; grid-template-areas:"current" "next" "notes"; }
   .slideshow-presenter__current-preview { max-width:none; }
   .slideshow-presenter.is-notes-focused { overflow:auto; }
 }
@@ -2683,6 +3063,7 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
     constructor(options) {
       this.options = options;
       this.previewService = new SlidePreviewService(options.ea, options.api, options.config);
+      this.notesFontSize = loadPresenterNotesFontSize(options.ea);
     }
     leaf = null;
     ownerWindow = null;
@@ -2695,6 +3076,7 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
     progressEl = null;
     layoutButton = null;
     notesFocusedLayout = false;
+    notesFontSize;
     nextSectionTitleEl = null;
     markdownComponent = null;
     lastNotesSlideId = null;
@@ -2826,6 +3208,7 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
       content.appendChild(style);
       const root = doc.createElement("div");
       root.className = "slideshow-presenter";
+      root.style.setProperty("--slideshow-presenter-notes-font-size", `${this.notesFontSize}px`);
       content.appendChild(root);
       this.root = root;
       const header = doc.createElement("div");
@@ -2850,6 +3233,29 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
       this.layoutButton.addEventListener("click", () => this.toggleNotesFocusedLayout());
       headerActions.appendChild(this.layoutButton);
       this.updateLayoutButton();
+      const fontSizeControl = doc.createElement("label");
+      fontSizeControl.className = "slideshow-presenter__font-size-control";
+      fontSizeControl.setAttribute("aria-label", this.options.t("presenterNotesFontSize"));
+      const fontSizeLabel = doc.createElement("span");
+      fontSizeLabel.textContent = this.options.t("presenterNotesFontSize");
+      fontSizeControl.appendChild(fontSizeLabel);
+      const fontSizeSlider = doc.createElement("input");
+      fontSizeSlider.type = "range";
+      fontSizeSlider.min = "12";
+      fontSizeSlider.max = "48";
+      fontSizeSlider.step = "1";
+      fontSizeSlider.value = String(this.notesFontSize);
+      fontSizeSlider.addEventListener("input", () => {
+        this.notesFontSize = Number(fontSizeSlider.value);
+        root.style.setProperty("--slideshow-presenter-notes-font-size", `${this.notesFontSize}px`);
+      });
+      fontSizeSlider.addEventListener("change", () => {
+        void savePresenterNotesFontSize(this.options.ea, this.notesFontSize).catch((error) => {
+          console.error("Slideshow presenter notes font-size save failed", error);
+        });
+      });
+      fontSizeControl.appendChild(fontSizeSlider);
+      headerActions.appendChild(fontSizeControl);
       const close = doc.createElement("button");
       close.type = "button";
       close.className = "slideshow-presenter__close";
@@ -3794,6 +4200,27 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
     });
     await commitWorkbench(ea2);
   }
+  async function declareFrameSlideshow(ea2, selectedFrameId) {
+    const frame = getFrameElements(ea2).find((candidate) => candidate.id === selectedFrameId);
+    if (!frame) throw new Error("The selected frame no longer exists.");
+    ea2.clear();
+    ea2.copyViewElementsToEAforEditing([frame]);
+    const updated = ea2.addAppendUpdateCustomData(selectedFrameId, {
+      slideshow: { schemaVersion: 2, kind: "frame" }
+    });
+    if (!updated) throw new Error("The selected frame could not be edited.");
+    await commitWorkbench(ea2);
+  }
+  async function renameFrameSlide(ea2, frameId, name) {
+    const source = ea2.getViewElements().find((element) => element.id === frameId);
+    if (!isFrameElement(source)) throw new Error("The selected frame no longer exists.");
+    ea2.clear();
+    ea2.copyViewElementsToEAforEditing([source]);
+    const frame = ea2.getElement(frameId);
+    if (!frame) throw new Error("The selected frame could not be edited.");
+    frame.name = name.trim().length === 0 ? null : name;
+    await commitWorkbench(ea2);
+  }
   async function reorderFrameSlides(ea2, fromIndex, toIndex) {
     const frames = getFrameElements(ea2);
     const orderedIds = buildFrameSlideDeck(frames).slides.map((slide) => slide.id);
@@ -4515,9 +4942,26 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
   };
 
   // src/scripts/slideshow/SlideSorter.ts
-  function getDropInsertionIndex(rowMidpoints, pointerY) {
-    const index = rowMidpoints.findIndex((midpoint) => pointerY < midpoint);
-    return index === -1 ? rowMidpoints.length : index;
+  function getDropInsertionIndexFromRects(rowRects, pointerX, pointerY) {
+    if (rowRects.length === 0) return 0;
+    const groups = [];
+    rowRects.forEach((rect, index) => {
+      const group = groups.find((candidate) => {
+        const first = candidate[0]?.rect;
+        return Boolean(first && Math.abs(first.top - rect.top) <= 8);
+      });
+      if (group) group.push({ rect, index });
+      else groups.push([{ rect, index }]);
+    });
+    const targetGroup = groups.find((group) => {
+      const top = Math.min(...group.map((entry) => entry.rect.top));
+      const bottom = Math.max(...group.map((entry) => entry.rect.bottom));
+      return pointerY < (top + bottom) / 2;
+    });
+    if (!targetGroup) return rowRects.length;
+    const ordered = [...targetGroup].sort((a, b) => a.rect.left - b.rect.left);
+    const target = ordered.find((entry) => pointerX < (entry.rect.left + entry.rect.right) / 2);
+    return target?.index ?? (ordered[ordered.length - 1]?.index ?? -1) + 1;
   }
   function getDropMoveTarget(fromIndex, insertionIndex, slideCount) {
     if (fromIndex < 0 || fromIndex >= slideCount || insertionIndex < 0 || insertionIndex > slideCount) {
@@ -4557,6 +5001,7 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
     renderGeneration = 0;
     draggedIndex = null;
     dropTargetIndex = null;
+    dragPointerX = null;
     dragPointerY = null;
     autoScrollVelocity = 0;
     autoScrollFrame = 0;
@@ -4592,15 +5037,15 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
       this.options.container.scrollTop = scrollTop;
     }
     /** Scrolls the requested slide row into the visible sorter viewport. */
-    scrollToSlide(slideId, focus = true) {
+    scrollToSlide(slideId, focus = true, block = "center") {
       const row = Array.from(
         this.options.container.querySelectorAll(".slideshow-sorter__row")
       ).find((candidate) => candidate.dataset.slideId === slideId);
       if (!row) return;
       if (focus) row.focus({ preventScroll: true });
-      row.scrollIntoView({ block: "center" });
+      row.scrollIntoView({ block });
       this.ownerWindow.setTimeout(() => {
-        if (row.isConnected) row.scrollIntoView({ block: "center" });
+        if (row.isConnected) row.scrollIntoView({ block });
       }, 50);
     }
     /** Returns whether notes currently have keyboard focus. */
@@ -4632,6 +5077,10 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
       if (deck.slides.length === 0) return;
       this.selectedSlideId = preferredSlideId && deck.slides.some((slide) => slide.id === preferredSlideId) ? preferredSlideId : deck.slides[0]?.id ?? null;
       this.expandedNotesSlideId = preferredNotesSlideId && preferredNotesSlideId === this.selectedSlideId && deck.slides.some((slide) => slide.id === preferredNotesSlideId) ? preferredNotesSlideId : null;
+      container.classList.toggle(
+        "has-expanded-editor",
+        Boolean(this.expandedNotesSlideId || this.options.animationEditingSlideId)
+      );
       deck.slides.forEach((slide, index) => {
         const row = this.createRow(slide, index);
         container.appendChild(row);
@@ -4695,24 +5144,47 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
       row.addEventListener("keydown", (event) => this.handleRowKeydown(event, slide, index));
       const top = doc.createElement("div");
       top.className = "slideshow-sorter__top";
+      const titleRow = doc.createElement("div");
+      titleRow.className = "slideshow-sorter__title-row";
       const title = doc.createElement("div");
       title.className = "slideshow-sorter__title";
       const titleText = t("slideNumberAndTitle", { number: index + 1, title: slide.title });
       title.textContent = titleText;
       title.title = titleText;
-      top.appendChild(title);
+      titleRow.appendChild(title);
+      if (slide.kind === "frame") {
+        const editTitleButton = this.createIconButton(
+          doc,
+          icons.edit,
+          t("editFrameSlideName"),
+          false,
+          () => this.options.callbacks.editFrameSlideName?.(slide)
+        );
+        editTitleButton.className = "slideshow-sorter__title-edit";
+        editTitleButton.draggable = false;
+        editTitleButton.addEventListener("dragstart", (event) => event.preventDefault());
+        titleRow.appendChild(editTitleButton);
+      }
+      top.appendChild(titleRow);
       const badges = doc.createElement("div");
       badges.className = "slideshow-sorter__badges";
       if (slide.notes) {
         const badge = doc.createElement("span");
-        badge.className = "slideshow-sorter__badge";
-        badge.innerHTML = `${icons.notebookPen}<span>${t("notesPresent")}</span>`;
+        const label = t("notesPresent");
+        badge.className = "slideshow-sorter__badge slideshow-sorter__badge--notes";
+        badge.title = label;
+        badge.setAttribute("aria-label", label);
+        badge.innerHTML = `${icons.notebookPen}<span class="slideshow-sorter__badge-text">${label}</span>`;
         badges.appendChild(badge);
       }
       if (slide.kind === "frame" && slide.animationSteps.length > 0) {
         const badge = doc.createElement("span");
-        badge.className = "slideshow-sorter__badge";
-        badge.innerHTML = `${icons.sparkles}<span>${t("animationCount", { count: slide.animationSteps.length })}</span>`;
+        const count = slide.animationSteps.length;
+        const label = t("animationCount", { count });
+        badge.className = "slideshow-sorter__badge slideshow-sorter__badge--animation";
+        badge.title = label;
+        badge.setAttribute("aria-label", label);
+        badge.innerHTML = `${icons.sparkles}<span class="slideshow-sorter__badge-compact-count" aria-hidden="true">${count}</span><span class="slideshow-sorter__badge-text">${label}</span>`;
         badges.appendChild(badge);
       }
       top.appendChild(badges);
@@ -4878,6 +5350,7 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
       this.selectedSlideId = slideId;
       this.expandedNotesSlideId = slideId;
       this.render(slideId, slideId);
+      this.scrollToSlide(slideId, false, "start");
       if (focusNotes) this.notesTextarea?.focus();
     }
     renderNotesEditor(slide, row) {
@@ -4921,8 +5394,9 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
       if (this.draggedIndex === null) return;
       event.preventDefault();
       if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
+      this.dragPointerX = event.clientX;
       this.dragPointerY = event.clientY;
-      this.updateDropTarget(event.clientY);
+      this.updateDropTarget(event.clientX, event.clientY);
       this.updateAutoScroll(event.clientY);
     };
     handleContainerDragLeave = (event) => {
@@ -4941,15 +5415,13 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
       const target = getDropMoveTarget(fromIndex, insertionIndex, this.options.deck.slides.length);
       if (target !== null) void this.options.callbacks.move(fromIndex, target);
     };
-    updateDropTarget(pointerY) {
+    updateDropTarget(pointerX, pointerY) {
       const rows = Array.from(
         this.options.container.querySelectorAll(".slideshow-sorter__row")
       );
-      const insertionIndex = getDropInsertionIndex(
-        rows.map((row) => {
-          const rect = row.getBoundingClientRect();
-          return rect.top + rect.height / 2;
-        }),
+      const insertionIndex = getDropInsertionIndexFromRects(
+        rows.map((row) => row.getBoundingClientRect()),
+        pointerX,
         pointerY
       );
       if (insertionIndex === this.dropTargetIndex) return;
@@ -4983,7 +5455,9 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
         this.autoScrollVelocity = 0;
         return;
       }
-      if (this.dragPointerY !== null) this.updateDropTarget(this.dragPointerY);
+      if (this.dragPointerX !== null && this.dragPointerY !== null) {
+        this.updateDropTarget(this.dragPointerX, this.dragPointerY);
+      }
       this.autoScrollFrame = this.ownerWindow.requestAnimationFrame(this.runAutoScroll);
     };
     stopAutoScroll() {
@@ -4999,6 +5473,7 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
       ) ?? [];
       rows.forEach((row) => row.classList.remove("is-dragging"));
       this.draggedIndex = null;
+      this.dragPointerX = null;
       this.dragPointerY = null;
     }
     scheduleNotesSave() {
@@ -5048,262 +5523,6 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
       this.options.container.removeEventListener?.("drop", this.handleContainerDrop);
     }
   };
-
-  // src/scripts/slideshow/slideshowSettings.ts
-  var DEFAULT_SLIDESHOW_CONFIG = {
-    transitionStepCount: 100,
-    transitionDelay: 1e3,
-    frameSleep: 1,
-    editZoomOut: 0.7,
-    fadeLevel: 0.1,
-    printSlideWidth: 1920,
-    printSlideHeight: 1080,
-    maxZoom: 30
-  };
-  var CONFIG_KEYS = Object.keys(DEFAULT_SLIDESHOW_CONFIG);
-  var START_MODE_SETTING = "slideshowStartMode";
-  var WINDOW_MODE_SETTING = "slideshowWindowMode";
-  var NOTES_MODE_SETTING = "slideshowNotesMode";
-  var PRESENTATION_TYPE_SETTING = "slideshowPresentationType";
-  var DISPLAY_TARGETS_SETTING = "slideshowDisplayTargetsByDevice";
-  var LEGACY_LAUNCH_MODE_SETTING = "slideshowLaunchMode";
-  var LEGACY_START_FULLSCREEN_SETTING = "slideshowStartFullscreen";
-  function readSettings(ea2) {
-    const getSettings = ea2.getScriptSettings;
-    return typeof getSettings === "function" ? getSettings.call(ea2) : {};
-  }
-  function loadSlideshowLaunchPreferences(ea2) {
-    const settings = readSettings(ea2);
-    const legacyMode = settings[LEGACY_LAUNCH_MODE_SETTING];
-    const rawStartMode = settings[START_MODE_SETTING];
-    const startMode = rawStartMode === "resume" || rawStartMode === "current" ? rawStartMode : rawStartMode === "beginning" ? "beginning" : legacyMode === "resume" || legacyMode === "current" ? legacyMode : "beginning";
-    const rawWindowMode = settings[WINDOW_MODE_SETTING];
-    const windowMode = rawWindowMode === "window" || rawWindowMode === "fullscreen" ? rawWindowMode : settings[LEGACY_START_FULLSCREEN_SETTING] === false ? "window" : "fullscreen";
-    const rawNotesMode = settings[NOTES_MODE_SETTING];
-    const notesMode = rawNotesMode === "presenter" || rawNotesMode === "slides" ? rawNotesMode : legacyMode === "presenter" ? "presenter" : "slides";
-    const rawPresentationType = settings[PRESENTATION_TYPE_SETTING];
-    const presentationType = rawPresentationType === "frame" || rawPresentationType === "line" ? rawPresentationType : void 0;
-    return {
-      startMode,
-      windowMode,
-      notesMode,
-      ...presentationType ? { presentationType } : {}
-    };
-  }
-  async function saveSlideshowLaunchPreferences(ea2, preferences) {
-    const settings = ea2.getScriptSettings();
-    await ea2.setScriptSettings({
-      ...settings,
-      [START_MODE_SETTING]: preferences.startMode,
-      [WINDOW_MODE_SETTING]: preferences.windowMode,
-      [NOTES_MODE_SETTING]: preferences.notesMode,
-      ...preferences.presentationType ? { [PRESENTATION_TYPE_SETTING]: preferences.presentationType } : {}
-    });
-  }
-  function asDisplayPreferences(value) {
-    if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-    const record = value;
-    const normalizeId = (id) => {
-      if (id === null) return null;
-      return typeof id === "number" && Number.isFinite(id) ? id : void 0;
-    };
-    const presentationDisplayId = normalizeId(record.presentationDisplayId);
-    const presenterDisplayId = normalizeId(record.presenterDisplayId);
-    if (presentationDisplayId === void 0 || presenterDisplayId === void 0) return null;
-    return { presentationDisplayId, presenterDisplayId };
-  }
-  function loadSlideshowDisplayPreferences(ea2, deviceKey) {
-    const raw = readSettings(ea2)[DISPLAY_TARGETS_SETTING];
-    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
-    return asDisplayPreferences(raw[deviceKey]);
-  }
-  async function saveSlideshowDisplayPreferences(ea2, deviceKey, preferences) {
-    const settings = ea2.getScriptSettings();
-    const existingRaw = settings[DISPLAY_TARGETS_SETTING];
-    const existing = existingRaw && typeof existingRaw === "object" && !Array.isArray(existingRaw) ? existingRaw : {};
-    await ea2.setScriptSettings({
-      ...settings,
-      [DISPLAY_TARGETS_SETTING]: {
-        ...existing,
-        [deviceKey]: { ...preferences }
-      }
-    });
-  }
-  function finiteNumber(value, fallback) {
-    return typeof value === "number" && Number.isFinite(value) ? value : fallback;
-  }
-  function normalizeSlideshowConfig(settings) {
-    return {
-      transitionStepCount: Math.max(
-        1,
-        Math.round(finiteNumber(settings.transitionStepCount, DEFAULT_SLIDESHOW_CONFIG.transitionStepCount))
-      ),
-      transitionDelay: Math.max(
-        1,
-        finiteNumber(settings.transitionDelay, DEFAULT_SLIDESHOW_CONFIG.transitionDelay)
-      ),
-      frameSleep: Math.max(0, finiteNumber(settings.frameSleep, DEFAULT_SLIDESHOW_CONFIG.frameSleep)),
-      editZoomOut: Math.max(
-        0.05,
-        finiteNumber(settings.editZoomOut, DEFAULT_SLIDESHOW_CONFIG.editZoomOut)
-      ),
-      fadeLevel: Math.min(
-        1,
-        Math.max(0, finiteNumber(settings.fadeLevel, DEFAULT_SLIDESHOW_CONFIG.fadeLevel))
-      ),
-      printSlideWidth: Math.max(
-        1,
-        Math.round(finiteNumber(settings.printSlideWidth, DEFAULT_SLIDESHOW_CONFIG.printSlideWidth))
-      ),
-      printSlideHeight: Math.max(
-        1,
-        Math.round(finiteNumber(settings.printSlideHeight, DEFAULT_SLIDESHOW_CONFIG.printSlideHeight))
-      ),
-      maxZoom: Math.max(0.1, finiteNumber(settings.maxZoom, DEFAULT_SLIDESHOW_CONFIG.maxZoom))
-    };
-  }
-  function loadSlideshowConfig(ea2) {
-    return normalizeSlideshowConfig(ea2.getScriptSettings());
-  }
-  async function saveSlideshowConfig(ea2, config) {
-    const existing = ea2.getScriptSettings();
-    const next = { ...existing };
-    for (const key of CONFIG_KEYS) next[key] = config[key];
-    await ea2.setScriptSettings(next);
-  }
-  function resetSlideshowConfigToDefaults(config) {
-    Object.assign(config, DEFAULT_SLIDESHOW_CONFIG);
-  }
-  function addNumberSetting(ea2, container, name, description, value, onChange) {
-    new ea2.obsidian.Setting(container).setName(name).setDesc(description).addText((text) => {
-      text.inputEl.type = "number";
-      text.inputEl.step = "any";
-      text.setValue(String(value)).onChange((raw) => {
-        const parsed = Number(raw);
-        if (Number.isFinite(parsed)) onChange(parsed);
-      });
-    });
-  }
-  function openSlideshowSettingsModal(ea2, config, t, onSaved) {
-    const modal = new ea2.obsidian.Modal(app);
-    modal.titleEl.setText(t("settingsTitle"));
-    const draft = { ...config };
-    const renderContent = () => {
-      const { contentEl } = modal;
-      contentEl.empty();
-      addNumberSetting(
-        ea2,
-        contentEl,
-        t("settingsTransitionStepCount"),
-        t("settingsTransitionStepCountDesc"),
-        draft.transitionStepCount,
-        (value) => {
-          draft.transitionStepCount = value;
-        }
-      );
-      addNumberSetting(
-        ea2,
-        contentEl,
-        t("settingsTransitionDelay"),
-        t("settingsTransitionDelayDesc"),
-        draft.transitionDelay,
-        (value) => {
-          draft.transitionDelay = value;
-        }
-      );
-      addNumberSetting(
-        ea2,
-        contentEl,
-        t("settingsFrameSleep"),
-        t("settingsFrameSleepDesc"),
-        draft.frameSleep,
-        (value) => {
-          draft.frameSleep = value;
-        }
-      );
-      addNumberSetting(
-        ea2,
-        contentEl,
-        t("settingsEditZoomOut"),
-        t("settingsEditZoomOutDesc"),
-        draft.editZoomOut,
-        (value) => {
-          draft.editZoomOut = value;
-        }
-      );
-      addNumberSetting(
-        ea2,
-        contentEl,
-        t("settingsFadeLevel"),
-        t("settingsFadeLevelDesc"),
-        draft.fadeLevel,
-        (value) => {
-          draft.fadeLevel = value;
-        }
-      );
-      addNumberSetting(
-        ea2,
-        contentEl,
-        t("settingsPrintSlideWidth"),
-        t("settingsPrintSlideWidthDesc"),
-        draft.printSlideWidth,
-        (value) => {
-          draft.printSlideWidth = value;
-        }
-      );
-      addNumberSetting(
-        ea2,
-        contentEl,
-        t("settingsPrintSlideHeight"),
-        t("settingsPrintSlideHeightDesc"),
-        draft.printSlideHeight,
-        (value) => {
-          draft.printSlideHeight = value;
-        }
-      );
-      addNumberSetting(
-        ea2,
-        contentEl,
-        t("settingsMaxZoom"),
-        t("settingsMaxZoomDesc"),
-        draft.maxZoom,
-        (value) => {
-          draft.maxZoom = value;
-        }
-      );
-      const actions = contentEl.createDiv({ cls: "modal-button-container" });
-      const resetButton = actions.createEl("button", { text: t("settingsResetDefaults") });
-      resetButton.addEventListener("click", () => {
-        resetSlideshowConfigToDefaults(draft);
-        renderContent();
-      });
-      const cancelButton = actions.createEl("button", { text: t("settingsCancel") });
-      cancelButton.addEventListener("click", () => modal.close());
-      const saveButton = actions.createEl("button", {
-        text: t("settingsSave"),
-        cls: "mod-cta"
-      });
-      saveButton.addEventListener("click", () => {
-        void (async () => {
-          try {
-            const normalized = normalizeSlideshowConfig(
-              draft
-            );
-            await saveSlideshowConfig(ea2, normalized);
-            Object.assign(config, normalized);
-            onSaved();
-            modal.close();
-            new Notice(t("settingsSaved"));
-          } catch (error) {
-            console.error("Slideshow settings save failed", error);
-            new Notice(t("settingsSaveFailed"));
-          }
-        })();
-      });
-    };
-    modal.onOpen = renderContent;
-    modal.open();
-  }
 
   // src/scripts/slideshow/slideshowQuickGuide.ts
   function openSlideshowQuickGuideModal(ea2, t) {
@@ -5415,6 +5634,12 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
     if (!isLinearPathElement(selected) || Math.floor(selected.points.length / 2) <= 0) return null;
     return getLinePresentationSourceKey(selected) ? null : selected;
   }
+  function getDeclarableSelectedFrame(ea2) {
+    const selected = ea2.getViewSelectedElement();
+    if (!isFrameElement(selected)) return null;
+    const alreadyDeclared = ea2.getViewElements().some((element) => isFrameElement(element) && hasFrameSlideshowDeclaration(element.customData));
+    return alreadyDeclared ? null : selected;
+  }
   function getPresentationSourceLabels(choices, frameLabel, defaultLineLabel) {
     const result = [];
     if (choices.frame) result.push({ key: "frame", label: frameLabel });
@@ -5488,12 +5713,8 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
       this.windowMode = launchPreferences.windowMode;
       this.notesMode = launchPreferences.notesMode;
       this.preferredPresentationType = launchPreferences.presentationType;
+      this.sorterThumbnailMaxWidth = loadSorterThumbnailMaxWidth(options.ea);
       this.deviceKey = getSlideshowDeviceKey(this.ownerWindow);
-      const displayPreferences = loadSlideshowDisplayPreferences(options.ea, this.deviceKey);
-      if (displayPreferences) {
-        this.presentationDisplayId = displayPreferences.presentationDisplayId;
-        this.presenterDisplayId = displayPreferences.presenterDisplayId;
-      }
     }
     sorter = null;
     previewService = null;
@@ -5528,10 +5749,12 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
     displays = [];
     presentationDisplayId = null;
     presenterDisplayId = null;
+    displayConfigurationKey = null;
     deviceKey;
     settingsWriteQueue = Promise.resolve();
     removeDisplayChangeListener = null;
     displayRefreshTimer = 0;
+    sorterThumbnailMaxWidth;
     /** Returns the drawing currently edited by this sidepanel. */
     getBoundView() {
       return this.boundView;
@@ -5815,7 +6038,8 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
       const appState = api.getAppState();
       const lineFingerprint = choices.lines.map((line) => `${line.key}:${line.name ?? ""}:${getDeckFingerprint(line.resolved)}`).join("|");
       const convertibleId = getConvertibleSelectedLine(ea2)?.id ?? "none";
-      const compositeFingerprint = `${presentationSourceKey ?? "none"}|${getDeckFingerprint(choices.frame)}|${lineFingerprint}|candidate=${convertibleId}|${appState.theme}|${appState.viewBackgroundColor}|${getSceneVisualFingerprint(ea2.getViewElements())}`;
+      const declarableFrameId = getDeclarableSelectedFrame(ea2)?.id ?? "none";
+      const compositeFingerprint = `${presentationSourceKey ?? "none"}|${getDeckFingerprint(choices.frame)}|${lineFingerprint}|candidate=${convertibleId}|frameCandidate=${declarableFrameId}|${appState.theme}|${appState.viewBackgroundColor}|${getSceneVisualFingerprint(ea2.getViewElements())}`;
       if (!force && compositeFingerprint === this.lastFingerprint) return;
       const requestedSlideId = this.requestedSlideId;
       if (this.sceneSelectionSignature === null) {
@@ -5851,6 +6075,10 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
       const doc = tab.contentEl.ownerDocument;
       const root = doc.createElement("div");
       root.className = "slideshow-sidepanel";
+      root.style.setProperty(
+        "--slideshow-sorter-thumbnail-max-width",
+        `${this.sorterThumbnailMaxWidth}px`
+      );
       tab.contentEl.appendChild(root);
       this.appendSupportLine(root, doc);
       const header = doc.createElement("div");
@@ -5890,8 +6118,17 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
       printButton.addEventListener("click", (event) => {
         void this.printPresentation(event);
       });
+      const declarableFrame = getDeclarableSelectedFrame(ea2);
       const convertibleLine = getConvertibleSelectedLine(ea2);
-      if (convertibleLine) {
+      if (declarableFrame) {
+        const createFrameButton = doc.createElement("button");
+        createFrameButton.type = "button";
+        createFrameButton.className = "slideshow-sidepanel__icon-button";
+        createFrameButton.setAttribute("aria-label", t("declareFrameSlideshow"));
+        createFrameButton.innerHTML = icons.plus;
+        createFrameButton.addEventListener("click", () => void this.declareSelectedFrameSlideshow());
+        header.appendChild(createFrameButton);
+      } else if (convertibleLine) {
         const createPathButton = doc.createElement("button");
         createPathButton.type = "button";
         createPathButton.className = "slideshow-sidepanel__icon-button";
@@ -6060,6 +6297,29 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
       summaryRow.appendChild(summary);
       const activeSourceLabel = sourceOptions.find((option) => option.key === this.presentationSourceKey)?.label ?? (deck.kind === "frame" ? t("frameDeck") : t("linePresentationDefaultName"));
       summary.textContent = `${activeSourceLabel} \xB7 ${t("visibleSlideCount", { visible: deck.visibleSlides.length, total: deck.slides.length })}`;
+      const thumbnailSizeControl = doc.createElement("label");
+      thumbnailSizeControl.className = "slideshow-sidepanel__thumbnail-size-control";
+      thumbnailSizeControl.setAttribute("aria-label", t("sorterThumbnailSize"));
+      thumbnailSizeControl.title = t("sorterThumbnailSize");
+      const thumbnailSizeSlider = doc.createElement("input");
+      thumbnailSizeSlider.type = "range";
+      thumbnailSizeSlider.min = "140";
+      thumbnailSizeSlider.max = "520";
+      thumbnailSizeSlider.step = "20";
+      thumbnailSizeSlider.value = String(this.sorterThumbnailMaxWidth);
+      thumbnailSizeSlider.setAttribute("aria-label", t("sorterThumbnailSize"));
+      thumbnailSizeSlider.addEventListener("input", () => {
+        this.sorterThumbnailMaxWidth = Number(thumbnailSizeSlider.value);
+        root.style.setProperty(
+          "--slideshow-sorter-thumbnail-max-width",
+          `${this.sorterThumbnailMaxWidth}px`
+        );
+      });
+      thumbnailSizeSlider.addEventListener("change", () => {
+        void this.persistSorterThumbnailMaxWidth();
+      });
+      thumbnailSizeControl.appendChild(thumbnailSizeSlider);
+      summaryRow.appendChild(thumbnailSizeControl);
       if (deck.kind === "path") {
         const presentationSettingsButton = doc.createElement("button");
         presentationSettingsButton.type = "button";
@@ -6105,6 +6365,7 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
           saveNotes: (slide, notes) => this.saveNotes(slide, notes),
           requestAnimationEditor: (slide) => this.requestAnimationEditor(slide),
           mountAnimationEditor: (slide, container) => this.mountAnimationEditor(slide, container),
+          editFrameSlideName: (slide) => this.openFrameSlideNameEditor(slide),
           editLineSlide: (slide, index) => this.editLineSlide(slide, index),
           notesBlurred: () => {
             if (this.pendingRefresh) this.scheduleRefresh();
@@ -6116,20 +6377,47 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
     }
     refreshDisplayTargets() {
       const hostWindow = this.boundView?.ownerWindow ?? this.ownerWindow;
-      this.displays = getAvailableDisplays(hostWindow);
-      if (this.displays.length === 0) {
+      const displays = getAvailableDisplays(hostWindow);
+      const configurationKey = getSlideshowDisplayConfigurationKey(displays);
+      const configurationChanged = configurationKey !== this.displayConfigurationKey;
+      this.displays = displays;
+      this.displayConfigurationKey = configurationKey;
+      if (displays.length === 0) {
         this.presentationDisplayId = null;
         this.presenterDisplayId = null;
         return;
       }
-      const presentationValid = this.displays.some(
+      const defaults = chooseDefaultDisplayTargets(displays, getCurrentDisplayId(hostWindow));
+      const saved = loadSlideshowDisplayPreferences(
+        this.options.ea,
+        this.deviceKey,
+        configurationKey
+      );
+      const savedPresentationId = saved ? resolveSlideshowDisplayTarget(
+        displays,
+        saved.presentationDisplayId,
+        saved.presentationDisplayIdentity
+      ) : null;
+      const savedPresenterId = saved ? resolveSlideshowDisplayTarget(
+        displays,
+        saved.presenterDisplayId,
+        saved.presenterDisplayIdentity
+      ) : null;
+      if (configurationChanged) {
+        this.presentationDisplayId = savedPresentationId ?? defaults.presentationDisplayId;
+        this.presenterDisplayId = savedPresenterId ?? defaults.presenterDisplayId;
+        return;
+      }
+      const presentationValid = displays.some(
         (display) => display.id === this.presentationDisplayId
       );
-      const presenterValid = this.displays.some((display) => display.id === this.presenterDisplayId);
-      if (presentationValid && presenterValid) return;
-      const defaults = chooseDefaultDisplayTargets(this.displays, getCurrentDisplayId(hostWindow));
-      if (!presentationValid) this.presentationDisplayId = defaults.presentationDisplayId;
-      if (!presenterValid) this.presenterDisplayId = defaults.presenterDisplayId;
+      const presenterValid = displays.some((display) => display.id === this.presenterDisplayId);
+      if (!presentationValid) {
+        this.presentationDisplayId = savedPresentationId ?? defaults.presentationDisplayId;
+      }
+      if (!presenterValid) {
+        this.presenterDisplayId = savedPresenterId ?? defaults.presenterDisplayId;
+      }
     }
     getDisplayLabel(display) {
       const resolution = `${display.bounds.width}\xD7${display.bounds.height}`;
@@ -6148,11 +6436,33 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
       return this.settingsWriteQueue;
     }
     persistDisplayPreferences() {
+      const presentationDisplay = this.displays.find(
+        (display) => display.id === this.presentationDisplayId
+      );
+      const presenterDisplay = this.displays.find(
+        (display) => display.id === this.presenterDisplayId
+      );
       const preferences = {
         presentationDisplayId: this.presentationDisplayId,
-        presenterDisplayId: this.presenterDisplayId
+        presenterDisplayId: this.presenterDisplayId,
+        presentationDisplayIdentity: presentationDisplay ? getSlideshowDisplayIdentity(presentationDisplay) : null,
+        presenterDisplayIdentity: presenterDisplay ? getSlideshowDisplayIdentity(presenterDisplay) : null
       };
-      this.settingsWriteQueue = this.settingsWriteQueue.then(() => saveSlideshowDisplayPreferences(this.options.ea, this.deviceKey, preferences)).catch((error) => console.error("Slideshow display preference save failed", error));
+      const configurationKey = this.displayConfigurationKey ?? getSlideshowDisplayConfigurationKey(this.displays);
+      this.settingsWriteQueue = this.settingsWriteQueue.then(
+        () => saveSlideshowDisplayPreferences(
+          this.options.ea,
+          this.deviceKey,
+          preferences,
+          configurationKey
+        )
+      ).catch((error) => console.error("Slideshow display preference save failed", error));
+      return this.settingsWriteQueue;
+    }
+    /** Persists the sorter thumbnail cap through the sidepanel's serialized settings queue. */
+    persistSorterThumbnailMaxWidth() {
+      const width = this.sorterThumbnailMaxWidth;
+      this.settingsWriteQueue = this.settingsWriteQueue.then(() => saveSorterThumbnailMaxWidth(this.options.ea, width)).catch((error) => console.error("Slideshow thumbnail-size save failed", error));
       return this.settingsWriteQueue;
     }
     hideSidepanelForWindowedPresentation() {
@@ -6171,7 +6481,6 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
         return;
       const presentationType = getPresentationSourceType(presentationSourceKey);
       await this.persistLaunchPreferences();
-      await this.persistDisplayPreferences();
       const resume = getResumeSlideForPresentation(
         getSlideshowProgress(view),
         getSlideshowProgressType(view),
@@ -6200,6 +6509,7 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
       this.animationEditor = null;
       this.animationEditingSlideId = null;
       this.refreshDisplayTargets();
+      await this.persistDisplayPreferences();
       const { startFullscreen, openPresenterView } = resolveDeviceLaunchModes(
         this.options.ea.DEVICE.isMobile,
         this.windowMode,
@@ -6268,6 +6578,64 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
         console.error("Slideshow line presentation creation failed", error);
         new Notice(this.options.t("metadataSaveFailed"));
       }
+    }
+    async declareSelectedFrameSlideshow() {
+      const view = this.boundView;
+      const frame = getDeclarableSelectedFrame(this.options.ea);
+      if (!view || !frame) return;
+      try {
+        await this.sorter?.flushNotes();
+        await declareFrameSlideshow(this.options.ea, frame.id);
+        await view.forceSave(true);
+        this.presentationSourceByDrawing.set(view.file.path, "frame");
+        this.presentationSourceKey = "frame";
+        this.preferredPresentationType = "frame";
+        await this.persistLaunchPreferences();
+        this.lastFingerprint = "";
+        await this.refresh(true);
+      } catch (error) {
+        console.error("Slideshow frame presentation declaration failed", error);
+        new Notice(this.options.t("metadataSaveFailed"));
+      }
+    }
+    openFrameSlideNameEditor(slide) {
+      const view = this.boundView;
+      if (!view) return;
+      const frame = this.options.ea.getViewElements().find(
+        (element) => element.id === slide.frameId && isFrameElement(element)
+      );
+      if (!frame) return;
+      const { ea: ea2, t } = this.options;
+      const modal = new ea2.obsidian.Modal(app);
+      modal.titleEl.setText(t("editFrameSlideName"));
+      const input = modal.contentEl.createEl("input", {
+        type: "text",
+        value: frame.name ?? "",
+        attr: { "aria-label": t("frameSlideName") }
+      });
+      input.style.width = "100%";
+      input.style.marginBottom = "1rem";
+      const actions = modal.contentEl.createDiv({ cls: "modal-button-container" });
+      const cancel = actions.createEl("button", { text: t("settingsCancel") });
+      cancel.addEventListener("click", () => modal.close());
+      const save = actions.createEl("button", { text: t("settingsSave"), cls: "mod-cta" });
+      save.addEventListener("click", () => {
+        void (async () => {
+          try {
+            await renameFrameSlide(ea2, slide.frameId, input.value);
+            await view.forceSave(true);
+            modal.close();
+            this.lastFingerprint = "";
+            await this.refresh(true);
+          } catch (error) {
+            console.error("Slideshow frame rename failed", error);
+            new Notice(t("metadataSaveFailed"));
+          }
+        })();
+      });
+      modal.open();
+      input.focus();
+      input.select();
     }
     openLinePresentationSettings() {
       const source = getLineSourceByKey(this.choices, this.presentationSourceKey);
@@ -6484,7 +6852,7 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
         this.sorter = null;
         const sorter = this.render(slide.id, expandedNotesId);
         this.selectAndZoomAnimationFrame(slide);
-        sorter?.scrollToSlide(slide.id, false);
+        sorter?.scrollToSlide(slide.id, false, "start");
       })();
     }
     mountAnimationEditor(slide, container) {
@@ -6541,7 +6909,7 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
     return { startFullscreen: !view.modifierKeyDown.altKey };
   }
   function getElementPresentationSourceKey(element) {
-    if (isFrameElement(element) && readFrameSlideshowData(element.customData)) return "frame";
+    if (isFrameElement(element) && hasFrameSlideshowDeclaration(element.customData)) return "frame";
     if (isLinearPathElement(element)) return getLinePresentationSourceKey(element);
     return null;
   }
@@ -6549,7 +6917,7 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
     return context.ea.registerElementActionProvider((element) => {
       const latestContext = getSlideshowViewContext(context.view) ?? context;
       const presentationSourceKey = getElementPresentationSourceKey(element) ?? (isFrameElement(element) && latestContext.ea.getViewElements().some(
-        (candidate) => isFrameElement(candidate) && readFrameSlideshowData(candidate.customData)
+        (candidate) => isFrameElement(candidate) && hasFrameSlideshowDeclaration(candidate.customData)
       ) ? "frame" : null);
       if (!presentationSourceKey) return [];
       return [
@@ -6727,11 +7095,23 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
     };
     if (openPresenterView) {
       const deviceKey = getSlideshowDeviceKey(ownerWindow);
-      const savedDisplays = loadSlideshowDisplayPreferences(context.ea, deviceKey);
+      const configurationKey = getSlideshowDisplayConfigurationKey(displays);
+      const savedDisplays = loadSlideshowDisplayPreferences(
+        context.ea,
+        deviceKey,
+        configurationKey
+      );
       const defaults = chooseDefaultDisplayTargets(displays, getCurrentDisplayId(ownerWindow));
-      const validDisplayIds = new Set(displays.map((display) => display.id));
-      const presentationDisplayId = savedDisplays?.presentationDisplayId !== null && savedDisplays?.presentationDisplayId !== void 0 && validDisplayIds.has(savedDisplays.presentationDisplayId) ? savedDisplays.presentationDisplayId : defaults.presentationDisplayId;
-      const presenterDisplayId = savedDisplays?.presenterDisplayId !== null && savedDisplays?.presenterDisplayId !== void 0 && validDisplayIds.has(savedDisplays.presenterDisplayId) ? savedDisplays.presenterDisplayId : defaults.presenterDisplayId;
+      const presentationDisplayId = savedDisplays ? resolveSlideshowDisplayTarget(
+        displays,
+        savedDisplays.presentationDisplayId,
+        savedDisplays.presentationDisplayIdentity
+      ) ?? defaults.presentationDisplayId : defaults.presentationDisplayId;
+      const presenterDisplayId = savedDisplays ? resolveSlideshowDisplayTarget(
+        displays,
+        savedDisplays.presenterDisplayId,
+        savedDisplays.presenterDisplayIdentity
+      ) ?? defaults.presenterDisplayId : defaults.presenterDisplayId;
       if (presentationDisplayId !== null) launch.presentationDisplayId = presentationDisplayId;
       if (presenterDisplayId !== null) launch.presenterDisplayId = presenterDisplayId;
     }

@@ -620,16 +620,7 @@ export default class ExcalidrawPlugin extends Plugin {
     await this.fontManager.initializeFonts();
   }
 
-  /** Adds or replaces a plugin-owned font stylesheet. */
-  public async addFonts(
-    declarations: string[],
-    ownerDocument?: Document,
-    styleId?: string,
-  ): Promise<void> {
-    await this.fontManager.addFonts(declarations, ownerDocument, styleId);
-  }
-
-  /** Removes plugin-owned font stylesheets from all open documents. */
+  /** Removes plugin-owned runtime fonts from all open documents. */
   public removeFonts(): void {
     this.fontManager.removeFonts();
   }
