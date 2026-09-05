@@ -303,25 +303,6 @@ const getRollupPlugins = (tsconfig, ...plugins) => [
     preventAssignment: true,
     "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV),
   }),
-  // Scanner compatibility transformation: remove browser-inapplicable transitive Node.js fs imports.
-  // Excalidraw itself does not use Node's fs module at plugin runtime. The expressions replaced
-  // below originate in bundled third-party dependency code, while the Community Plugin scanner
-  // reports filesystem capability without identifying the originating source. The upstream
-  // report for this Excalidraw finding remains open:
-  // https://github.com/obsidianmd/eslint-plugin/issues/168
-  //
-  // IMPORTANT: when dependencies are updated, re-verify that matched require("fs") expressions
-  // still belong only to browser-inapplicable dependency paths before retaining this replacement.
-  // This transformation should be removed when dependency provenance/runtime reachability is
-  // accounted for by the scanner or an auditable exception mechanism is available.
-  replace({
-    preventAssignment: true,
-    delimiters: ['', ''],
-    values: {
-      "require('fs')": "null",
-      'require("fs")': "null"
-    }
-  }),
   commonjs(),
   nodeResolve({ browser: true, preferBuiltins: false }),
 ].concat(plugins);
