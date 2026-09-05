@@ -118,6 +118,7 @@ export default {
   INSERT_LINK_TO_ELEMENT_NORMAL: "複製所選元素的 [[file#^id]] 連結",
   INSERT_LINK_TO_ELEMENT_ERROR: "選擇場景中的單個元素",
   INSERT_LINK_TO_ELEMENT_READY: "連結已生成並複製到剪貼簿",
+  PADDING_ZOOM_ARIA: "調整此 area= 嵌入的邊距",
   INSERT_LINK: "以連結形式插入檔案",
   INSERT_COMMAND: "插入 Obsidian 命令到當前繪圖中",
   INSERT_IMAGE: "以影像形式嵌入圖片或 Excalidraw 繪圖到當前繪圖中",

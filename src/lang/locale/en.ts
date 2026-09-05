@@ -137,6 +137,7 @@ export default {
     "Copy [[link]] for selected element to clipboard.",
   INSERT_LINK_TO_ELEMENT_ERROR: "Select a single element in the scene",
   INSERT_LINK_TO_ELEMENT_READY: "Link is READY and available on the clipboard",
+  PADDING_ZOOM_ARIA: "Adjust the padding of this area= embed",
   INSERT_LINK: "Insert link to file",
   INSERT_COMMAND: "Insert Obsidian Command as a link",
   INSERT_IMAGE: "Insert image or Excalidraw drawing from your vault",
