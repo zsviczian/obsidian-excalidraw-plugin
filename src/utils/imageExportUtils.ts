@@ -14,6 +14,8 @@ export interface RasterCropRegion {
 export async function cropPNGBlob(
   blob: Blob,
   crop: RasterCropRegion,
+  // could theoretically be replaced with activeDocument, however that would not resolve the
+  // deliberateCreateElement issue to create a canvas element for image operations.
   ownerDocument: Document,
 ): Promise<Blob> {
   const ownerWindow = ownerDocument.defaultView ?? window;

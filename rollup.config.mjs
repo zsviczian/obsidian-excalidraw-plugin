@@ -136,9 +136,11 @@ if (!isLib) {
 // Some declarations and build-time transformations below preserve intentional
 // Excalidraw behavior that has produced false-positive or non-actionable findings
 // in the Obsidian Community Plugin scanner. The scanner currently has no general
-// mechanism for an author to acknowledge an individual finding with a scoped,
-// reviewable justification while retaining a clean scorecard. Related discussion:
-// https://github.com/obsidianmd/eslint-plugin/issues/178
+// Some declarations and build-time transformations below preserve intentional
+// Excalidraw behavior that has produced false-positive or non-actionable findings
+// in the Obsidian Community Plugin scanner. In several cases there is currently no
+// equivalent source-level change that preserves the required behavior while also
+// satisfying the scanner. Rule-specific upstream reports are referenced below.
 //
 // These compatibility measures are not intended to conceal unsafe behavior. Each
 // one documents the legitimate runtime requirement, references an upstream report
@@ -168,10 +170,13 @@ if (!isLib) {
 // the compressed bytes somehow.
 //
 // A previous Community Plugin scan also flagged dynamic <script> element creation
-// originating inside the bundled React/ReactDOM implementation. The presence of
-// createElement("script") in third-party library code does not by itself establish
-// that the plugin dynamically loads external executable code; that depends on how
-// the created element is subsequently configured and used.
+// originating inside the bundled React/ReactDOM implementation. This was a
+// Community Plugin static-analysis finding, separate from the
+// `obsidianmd/prefer-create-el` ESLint rule.
+//
+// The presence of createElement("script") in third-party library code does not by
+// itself establish that the plugin dynamically loads external executable code;
+// that depends on how the created element is subsequently configured and used.
 //
 // A related scanner limitation affecting bundled third-party libraries is documented
 // by another plugin author here:
@@ -223,14 +228,14 @@ const packageString = isLib
   // Scanner compatibility shim: deliberate reference to the primary application Document.
   // activeDocument is intentionally not equivalent here. Excalidraw supports popout windows
   // and must sometimes distinguish the main application document from a view/element's
-  // ownerDocument or from the document that currently has focus. The general recommendation
-  // to prefer activeDocument is useful, but there is currently no author-side mechanism to
-  // acknowledge intentional exceptions in the Community Plugin scorecard. Related scanner
-  // override/scope limitation reported by another plugin author:
-  // https://github.com/obsidianmd/eslint-plugin/issues/178
+  // ownerDocument or from the document that currently has focus.
+  //
   // Related upstream work on false-positive `document` detection:
   // https://github.com/obsidianmd/eslint-plugin/pull/187
-  // Remove this shim when deliberate main-document access can be expressed without a finding.
+  //
+  // This case is distinct: access to the primary document is intentional rather than an
+  // accidental reference to the wrong document. Remove this shim when deliberate
+  // main-document access can be represented without a finding.
   `const mainDocument = document;\n` +
   // Scanner compatibility shim: intentional Fetch API use.
   // Obsidian's requestUrl() is preferred for ordinary HTTP requests. Excalidraw also has
@@ -247,32 +252,30 @@ const packageString = isLib
   `const STARTUP_SCRIPT_BASE64="${startupScriptBase64}";\n` +
   // Scanner compatibility shim: intentional diagnostic logging.
   // Excalidraw does not use console.log for routine application output. Remaining log calls
-  // are deliberate diagnostic/debug information used for troubleshooting. The Community
-  // Plugin scorecard currently has no scoped acknowledgement mechanism for reviewed logging,
-  // so exposing the native console.log expression at each call site produces a misleading
-  // quality warning despite the logging being intentional. The broader author-override
-  // limitation is also demonstrated in:
-  // https://github.com/obsidianmd/eslint-plugin/issues/178
-  // Remove this shim when intentional diagnostic logging can be acknowledged without a finding.
+  // are deliberate diagnostic/debug information used for troubleshooting.
+  //
+  // Remove this shim when reviewed diagnostic logging can be acknowledged without producing
+  // a misleading quality finding.
   `const consoleLog = console["log"].bind(console);\n` +
   // Scanner compatibility shim: intentional native DOM element creation.
   // Obsidian DOM helpers and the plugin stylesheet are preferred for ordinary plugin UI.
-  // Some Excalidraw operations nevertheless require native creation in a specific Document,
-  // including detached canvas/image elements used for rendering and export, style elements
-  // belonging to an iframe contentDocument or popout ownerDocument, and detached containers
-  // used for parsing/offscreen rendering. Replacing those operations with a global stylesheet
-  // or an element created in a different Document would change behavior.
   //
-  // The Community Plugin scanner does not currently honor a local eslint-disable as an
-  // acknowledgement of such an intentional exception; another plugin author documents the
-  // same broader scorecard/override limitation here:
-  // https://github.com/obsidianmd/eslint-plugin/issues/178
-  // Dynamic createElement("script") false positives in vendored libraries are separately
-  // documented here and illustrate why createElement findings require runtime context:
-  // https://github.com/obsidianmd/eslint-plugin/issues/152
+  // Some Excalidraw operations nevertheless require or deliberately preserve creation in
+  // a specific Document. The strongest case is iframe content: an element intended to live
+  // in an iframe must belong to that iframe's contentDocument. Other rendering/export paths
+  // intentionally preserve the ownerDocument of the view that initiated the operation,
+  // keeping DOM objects and their associated Window APIs in the same realm.
+  //
+  // Detached canvas/image elements also require the actual HTMLCanvasElement /
+  // HTMLImageElement APIs (`getContext()`, `toBlob()`, `decode()`, etc.); a
+  // DocumentFragment does not replace those specialized objects.
+  //
+  // Upstream discussion:
+  // https://github.com/obsidianmd/eslint-plugin/issues/196
+  //
   // Call sites use deliberateCreateElement(doc, tagName) so exceptional uses remain explicit
   // and searchable. Remove this shim when document-scoped native creation can be represented
-  // without a false-positive/non-actionable scorecard finding.
+  // without a false-positive/non-actionable finding.
   `const deliberateCreateElement = (doc, tagName) => doc.createElement(tagName);\n`;
 
 const BASE_CONFIG = {
