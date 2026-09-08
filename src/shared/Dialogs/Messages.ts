@@ -20,6 +20,9 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 "2.27.4": `
 ## New
 - Copied Markdown image SVGs now replace embedded base64 images and fonts with short placeholders, making them smaller and easier to share with AI agents when developing custom CSS.
+
+## Fixed
+- Rapidly changing Markdown image appearance, selection, or image/embeddable conversion no longer leaves a rejected image-render promise in the console or lets a superseded render overwrite the newer element state.
 `,
 "2.27.3": `
 ## Fixed and updated

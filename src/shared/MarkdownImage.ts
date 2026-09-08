@@ -589,6 +589,7 @@ export async function updateMarkdownImage(
   markdown: string,
   render: MarkdownImageRenderSettings,
   source: MarkdownImageSource,
+  shouldApply: () => boolean = () => true,
 ): Promise<boolean> {
   if (containsReservedMarkdownImageMarker(markdown)) {
     return false;
@@ -599,7 +600,20 @@ export async function updateMarkdownImage(
       ? (view.excalidrawData.getFile(element.fileId)?.file ?? view.file)
       : view.file;
   const rendered = await renderMarkdown(view, markdown, render, sourceFile);
-  if (!rendered.dataURL || rendered.size.height <= 0) {
+  if (
+    !rendered.dataURL ||
+    rendered.size.height <= 0 ||
+    !shouldApply()
+  ) {
+    return false;
+  }
+  const currentElement = view
+    .getViewElements()
+    .find((candidate) => candidate.id === element.id);
+  if (
+    currentElement?.type !== "image" ||
+    currentElement.fileId !== element.fileId
+  ) {
     return false;
   }
   const ea = getEA(view);

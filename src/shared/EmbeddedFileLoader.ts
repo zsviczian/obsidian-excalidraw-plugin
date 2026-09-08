@@ -373,6 +373,14 @@ export type MarkdownSVGRenderResult = {
   size: Size;
 };
 
+const emptyMarkdownSVGRenderResult = (
+  width: number,
+): MarkdownSVGRenderResult => ({
+  dataURL: "" as DataURL,
+  hasSVGwithBitmap: false,
+  size: { width, height: 0 },
+});
+
 const getPDFCacheId = (linkParts: LinkParts, pageNum: number): string => {
   // Different crops of the same PDF page must not overwrite each other in cache,
   // so the cache key uses the full PDF page/reference fragment when present.
@@ -749,12 +757,7 @@ export class EmbeddedFilesLoader {
         linkParts,
         { markdown, render, fullHeight: true },
       );
-      return {
-        ...result,
-        size: result.dataURL
-          ? await getImageSize(result.dataURL)
-          : { width: render.width, height: 0 },
-      };
+      return result;
     } finally {
       this.emptyPDFDocsMap();
     }
@@ -1180,6 +1183,7 @@ export class EmbeddedFilesLoader {
             : file?.extension === "md"
               ? null
               : await getDataURL(ab, mimeType)));
+      let renderedMarkdownSize: Size | null = null;
       if (this.terminate) {
         return null;
       }
@@ -1209,6 +1213,7 @@ export class EmbeddedFilesLoader {
           );
           dataURL = result.dataURL;
           hasSVGwithBitmap = result.hasSVGwithBitmap;
+          renderedMarkdownSize = result.size;
         } finally {
           markdownRendererRecursionWatcthdog.delete(file);
         }
@@ -1216,7 +1221,9 @@ export class EmbeddedFilesLoader {
 
       const size = isPDF
         ? pdfSize
-        : (excalidrawSize ?? (await getImageSize(dataURL)));
+        : (excalidrawSize ??
+          renderedMarkdownSize ??
+          (await getImageSize(dataURL)));
 
       if (this.terminate) {
         return null;
@@ -2228,9 +2235,9 @@ export class EmbeddedFilesLoader {
     file: TFile,
     linkParts: LinkParts,
     overrides?: MarkdownRenderOverrides,
-  ): Promise<{ dataURL: DataURL; hasSVGwithBitmap: boolean }> {
+  ): Promise<MarkdownSVGRenderResult> {
     if (this.terminate) {
-      return { dataURL: "" as DataURL, hasSVGwithBitmap: false };
+      return emptyMarkdownSVGRenderResult(linkParts.width);
     }
     //1.
     //get the markdown text
@@ -2239,7 +2246,7 @@ export class EmbeddedFilesLoader {
       ? null
       : await getTransclusion(linkParts, plugin.app, file);
     if (this.terminate) {
-      return { dataURL: "" as DataURL, hasSVGwithBitmap: false };
+      return emptyMarkdownSVGRenderResult(linkParts.width);
     }
     let text = overrides
       ? overrides.markdown
@@ -2459,7 +2466,7 @@ export class EmbeddedFilesLoader {
     }
     appendMarkdownBottomSpacer(mdDIV, markdownImagePaddingBottom);
     if (this.terminate) {
-      return { dataURL: "" as DataURL, hasSVGwithBitmap: false };
+      return emptyMarkdownSVGRenderResult(linkParts.width);
     }
 
     // MathJax typesetting may complete asynchronously after MarkdownRenderer.render() resolves.
@@ -2497,14 +2504,14 @@ export class EmbeddedFilesLoader {
 
     await replaceBlobWithBase64(mdDIV); //because image cache returns a blob
     if (this.terminate) {
-      return { dataURL: "" as DataURL, hasSVGwithBitmap: false };
+      return emptyMarkdownSVGRenderResult(linkParts.width);
     }
     const internalEmbeds = Array.from(
       mdDIV.querySelectorAll<HTMLElement>("span.internal-embed[src]"),
     );
     for (let i = 0; i < internalEmbeds.length; i++) {
       if (this.terminate) {
-        return { dataURL: "" as DataURL, hasSVGwithBitmap: false };
+        return emptyMarkdownSVGRenderResult(linkParts.width);
       }
       const el = internalEmbeds[i];
       const src = el.getAttribute("src");
@@ -2546,7 +2553,7 @@ export class EmbeddedFilesLoader {
           : undefined,
       );
       if (this.terminate) {
-        return { dataURL: "" as DataURL, hasSVGwithBitmap: false };
+        return emptyMarkdownSVGRenderResult(linkParts.width);
       }
       if (!embeddedFile?.dataURL) {
         continue;
@@ -2597,7 +2604,7 @@ export class EmbeddedFilesLoader {
     }
     await replaceBlobWithBase64(mdDIV);
     if (this.terminate) {
-      return { dataURL: "" as DataURL, hasSVGwithBitmap: false };
+      return emptyMarkdownSVGRenderResult(linkParts.width);
     }
 
     //5.1
@@ -2785,6 +2792,7 @@ export class EmbeddedFilesLoader {
     return {
       dataURL: svgToBase64(finalSVG) as DataURL,
       hasSVGwithBitmap,
+      size: { width: linkParts.width, height: svgHeight },
     };
   }
 }

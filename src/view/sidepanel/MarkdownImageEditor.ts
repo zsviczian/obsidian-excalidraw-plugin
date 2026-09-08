@@ -2203,47 +2203,67 @@ class MarkdownImageEditorController {
     ) {
       return;
     }
-    this.setRenderStatus(true);
-    try {
-      const source = await getMarkdownImageSource(this.view, this.element);
+    const element = this.element;
+    const renderSettings = this.renderSettings;
+    const editorView = this.editorView;
+    const isCurrentRender = (): boolean => {
       if (
-        !source ||
         generation !== this.renderGeneration ||
         this.closed ||
-        !this.ensureOwnerValid()
+        !this.isOwnerViewValid() ||
+        this.element?.id !== element.id
       ) {
+        return false;
+      }
+      const current = this.view
+        .getViewElements()
+        .find((candidate) => candidate.id === element.id);
+      return current?.type === "image" && current.fileId === element.fileId;
+    };
+    this.setRenderStatus(true);
+    try {
+      const source = await getMarkdownImageSource(this.view, element);
+      if (!source || !isCurrentRender()) {
         return;
       }
       const liveMarkdown =
         markdown ??
-        (source.source === "local" && this.editorView
-          ? this.editorView.getViewData()
+        (source.source === "local" && this.editorView === editorView
+          ? editorView?.getViewData() ?? source.markdown
           : source.markdown);
       const updated = await updateMarkdownImage(
         this.view,
-        this.element,
+        element,
         liveMarkdown,
-        this.renderSettings,
+        renderSettings,
         source.source,
+        isCurrentRender,
       );
-      if (
-        !this.ensureOwnerValid() ||
-        !updated ||
-        generation !== this.renderGeneration
-      ) {
+      if (!updated || !isCurrentRender()) {
         return;
       }
       const nextElement = this.view
         .getViewElements()
-        .find((candidate) => candidate.id === this.element?.id);
+        .find((candidate) => candidate.id === element.id);
       if (nextElement?.type === "image") {
         this.element = nextElement;
       }
       if (
-        !this.editorView ||
-        liveMarkdown === this.editorView.getViewData()
+        !editorView ||
+        (this.editorView === editorView &&
+          liveMarkdown === editorView.getViewData())
       ) {
         this.editorContentDirty = false;
+      }
+    } catch (error: unknown) {
+      // A superseded render is expected during rapid selection changes and
+      // image/embeddable conversion. Preserve the last successful image and
+      // only report a failure if this render still owns the selected image.
+      if (isCurrentRender()) {
+        errorlog({
+          where: "MarkdownImageEditorController.applyRender",
+          error,
+        });
       }
     } finally {
       if (generation === this.renderGeneration) {
