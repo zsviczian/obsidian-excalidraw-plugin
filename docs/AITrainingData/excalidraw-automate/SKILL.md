@@ -26,6 +26,7 @@ In addition to ExcalidrawAutomate, you can also use two other sources of functio
 
 A dedicated section “ExcalidrawLib module functions” in this document lists the function signatures extracted directly from the ExcalidrawLib TypeScript declarations.
 
+- **Never use native browser dialogs in scripts:** Do not use `window.confirm`, `window.alert`, `window.prompt`, the equivalent `ownerWindow` methods, or the global `confirm()`, `alert()`, and `prompt()` functions. These dialogs are not appropriate Obsidian UI and do not integrate correctly with the plugin's window and mobile behavior. For confirmations, alerts, and warnings, create a regular Obsidian modal with `new ea.obsidian.Modal(ea.plugin.app)` (not `FloatingModal`), render the message and buttons in `contentEl`, and resolve the result from the modal's button callbacks or `onClose` handler. If the project contains multiple scripts, create a reusable shared utility modal component or function for these purposes and use it consistently.
 - When the user asks for a dialog window, by default create a FloatingModal. Do not extend the FloatingModal class. Instead, define the modal's behavior by creating a new instance (e.g., `const modal = new ea.FloatingModal(...)`) and then assigning functions directly to the `onOpen` and `onClose` properties of that instance.
 For a reference, follow the implementation pattern used in the "Printable Layout Wizard.md" script.
 - Elements have a `customData` property that can be used to store arbitrary data. To ensure the data the script adds to elements use the `ea.addAppendUpdateCustomData` function. This function ensures that existing customData is preserved when adding new data.
@@ -113,6 +114,7 @@ To keep this training file concise, large external type definitions are not incl
 *   **Simple Input:** For straightforward user input, use the `utils` object provided to the script.
     *   `await utils.inputPrompt()`: To get a string or number from the user.
     *   `await utils.suggester()`: To let the user select from a predefined list of options.
+*   **Confirmations, Alerts, and Warnings:** Never use native browser dialogs such as `window.confirm()`, `window.alert()`, `window.prompt()`, `ownerWindow.confirm()`, or their global equivalents. Use a regular Obsidian modal instead: `const modal = new ea.obsidian.Modal(ea.plugin.app)`. Render the message and explicit action buttons in `modal.contentEl`, then resolve the user's choice from the button callbacks or `onClose`. Do not use `FloatingModal` for these simple confirmation or alert/warning dialogs. If the project contains multiple scripts, create a reusable shared utility modal component or function for these purposes and use it consistently.
 *   **Complex Dialogs:** When a more complex UI with multiple controls is needed, create a floating dialog window.
     *   **Use `FloatingModal`:** Always create a new instance: `const modal = new ea.FloatingModal(ea.plugin.app);`.
     *   **Do Not Extend:** Do not use `class MyModal extends ea.FloatingModal`.
