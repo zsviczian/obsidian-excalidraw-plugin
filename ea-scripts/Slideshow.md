@@ -127,7 +127,7 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
   when two views show the same file. It can be combined with Alt/Option.
 - **Open the Slideshow sidepanel:** Hold Cmd on macOS or Ctrl on Windows/Linux while invoking the script.
 
-Build version: 2026-09-05T16:40:26.928Z
+Build version: 2026-09-08T17:53:22.744Z
 
 ```javascript
 */
@@ -205,7 +205,7 @@ Build version: 2026-09-05T16:40:26.928Z
     quickGuideFrameSlides: "Frame slides use the drawing's frames. Reorder slides, exclude frames, and edit slide content from the sorter.",
     quickGuideLineSlides: "Line slides follow consecutive point pairs on a configured presentation line, which is useful for free-form camera paths.",
     quickGuideMarkerFrames: "Marker frames are ideal slideshow markers: they define a slide without changing the visual grouping of the drawing.",
-    quickGuideAnimations: "Frame slides can reveal elements or groups in a sequence using appear, fade, slide-in, zoom-in, and timed animation steps.",
+    quickGuideAnimations: "Slides can reveal elements or groups in a sequence using appear, fade, slide-in, zoom-in, and timed animation steps.",
     quickGuideNotes: "Add presenter notes per slide. With a second display, presenter mode shows notes and the next slide separately from the audience view.",
     startPresentation: "Start presentation",
     startFromBeginning: "From beginning",
@@ -236,6 +236,26 @@ Build version: 2026-09-05T16:40:26.928Z
     noActiveDrawing: "Focus an Excalidraw drawing to edit its slideshow.",
     noEligibleSlides: "No eligible slides selected.",
     frameDeck: "Frame slideshow",
+    framePresentationSettings: "Frame presentation settings",
+    framePresentationName: "Presentation name",
+    convertFrameToLine: "Create line slideshow",
+    convertFrameToLinePrompt: "Create a line slideshow from this frame presentation.",
+    convertLineToFrame: "Create frame slideshow",
+    convertLineToFramePrompt: "Create a frame slideshow from this line presentation.",
+    conversionDeleteFrames: "Delete source frames",
+    conversionVisibleSlidesOnly: "Create slideshow only from visible slides",
+    conversionDeleteLine: "Delete source line",
+    conversionCreate: "Create slideshow",
+    convertLineToFrameKind: "Frame type",
+    convertLineToFrameMarker: "Marker frames",
+    convertLineToFrameNormal: "Normal frames",
+    convertLineToFrameGeometryTitle: "Frame geometry",
+    convertLineToFrameGeometryPrompt: "Should the frames match the line slide rectangles exactly, or expand to the presentation aspect ratio?",
+    convertLineToFrameExact: "Match line points",
+    convertLineToFrameAspect: "Correct aspect ratio",
+    conversionFailed: "Could not convert the slideshow.",
+    fitFrameToPresentationAspect: "Fit frame to presentation aspect ratio",
+    resizeFrameFailed: "Could not resize the presentation frame.",
     lineDeck: "Line slideshow",
     linePresentationDefaultName: "Line presentation",
     createLinePresentation: "Create a presentation from the selected line",
@@ -260,8 +280,9 @@ Build version: 2026-09-05T16:40:26.928Z
     closeAnimationEditor: "Close animation editor",
     animationSelectionHint: "Select elements or groups in the drawing, then configure and add them as a build step.",
     animationOutsideFrameIgnored: "Ignored {count} selected item(s) outside this frame.",
+    animationOutsideSlideIgnored: "Ignored {count} selected item(s) outside this slide.",
     animationTargets: "Targets",
-    animationNoTargets: "Select elements or groups in this frame.",
+    animationNoTargets: "Select elements or groups in this slide.",
     animationGroupTarget: "Group {id}",
     animationElementTarget: "{type} {id}",
     removeAnimationTarget: "Remove target",
@@ -324,6 +345,11 @@ Build version: 2026-09-05T16:40:26.928Z
     keepPresentationPathVisible: "Keep presentation path visible after presentation",
     keepPresentationPathHidden: "Keep presentation path hidden after presentation",
     editSlide: "Edit slide",
+    editSlideName: "Edit slide name",
+    slideName: "Slide name",
+    presenterNotesFontSize: "Notes size",
+    sorterThumbnailSize: "Thumbnail size",
+    declareFrameSlideshow: "Create frame slideshow",
     printPdf: "Print to PDF\nClick to print slides at {width}x{height}\nHold SHIFT to print the presentation as displayed",
     endPresentation: "End presentation",
     pathWillRemainHidden: "The presentation path will remain hidden after the presentation. Next time, start the slideshow without selecting the line.",
@@ -762,6 +788,26 @@ Build version: 2026-09-05T16:40:26.928Z
   }
 
   // src/sharedUtils/presentationGeometry.ts
+  function expandSlideRectToAspectRatio(slide, dimensions) {
+    const left = Math.min(slide.x1, slide.x2);
+    const right = Math.max(slide.x1, slide.x2);
+    const top = Math.min(slide.y1, slide.y2);
+    const bottom = Math.max(slide.y1, slide.y2);
+    const width = Math.max(right - left, Number.EPSILON);
+    const height = Math.max(bottom - top, Number.EPSILON);
+    const targetRatio = dimensions.width / dimensions.height;
+    const currentRatio = width / height;
+    const expandedWidth = currentRatio < targetRatio ? height * targetRatio : width;
+    const expandedHeight = currentRatio > targetRatio ? width / targetRatio : height;
+    const centerX = (left + right) / 2;
+    const centerY = (top + bottom) / 2;
+    return {
+      x1: centerX - expandedWidth / 2,
+      y1: centerY - expandedHeight / 2,
+      x2: centerX + expandedWidth / 2,
+      y2: centerY + expandedHeight / 2
+    };
+  }
   function getPresentationFrameName(name, index) {
     return name ?? `Frame ${(index + 1).toString().padStart(2, "0")}`;
   }
@@ -874,6 +920,17 @@ Build version: 2026-09-05T16:40:26.928Z
     }
     return { steps };
   }
+  function readLineSlidePair(value) {
+    if (value === void 0) return void 0;
+    if (!Array.isArray(value) || value.length !== 2) return null;
+    const points = value.map((point) => {
+      if (!Array.isArray(point) || point.length !== 2 || typeof point[0] !== "number" || !Number.isFinite(point[0]) || typeof point[1] !== "number" || !Number.isFinite(point[1])) {
+        return null;
+      }
+      return [point[0], point[1]];
+    });
+    return points.some((point) => point === null) ? null : points;
+  }
   function getRawSlideshowMetadata(customData) {
     return isRecord(customData) ? customData.slideshow : void 0;
   }
@@ -899,6 +956,9 @@ Build version: 2026-09-05T16:40:26.928Z
     if (value.notes !== void 0 && typeof value.notes !== "string") {
       return null;
     }
+    if (value.deckName !== void 0 && typeof value.deckName !== "string") {
+      return null;
+    }
     const animation = readAnimation(value.animation);
     if (animation === null) {
       return null;
@@ -908,6 +968,8 @@ Build version: 2026-09-05T16:40:26.928Z
       kind: "frame",
       order: value.order
     };
+    const deckName = normalizeNotes(value.deckName);
+    if (deckName !== void 0) result.deckName = deckName;
     if (value.excluded !== void 0) result.excluded = value.excluded;
     const notes = normalizeNotes(value.notes);
     if (notes !== void 0) result.notes = notes;
@@ -935,10 +997,21 @@ Build version: 2026-09-05T16:40:26.928Z
     if (value.excluded !== void 0 && typeof value.excluded !== "boolean") {
       return null;
     }
+    if (value.title !== void 0 && typeof value.title !== "string") {
+      return null;
+    }
+    const pair = readLineSlidePair(value.pair);
+    if (pair === null) return null;
+    const animation = readAnimation(value.animation);
+    if (animation === null) return null;
     const result = { id: value.id };
+    const title = normalizeNotes(value.title);
+    if (title !== void 0) result.title = title;
     const notes = normalizeNotes(value.notes);
     if (notes !== void 0) result.notes = notes;
     if (value.excluded !== void 0) result.excluded = value.excluded;
+    if (pair !== void 0) result.pair = pair;
+    if (animation !== void 0) result.animation = animation;
     return result;
   }
   function readLineSlideshowDataV2(customData) {
@@ -975,24 +1048,77 @@ Build version: 2026-09-05T16:40:26.928Z
     }
     return candidate;
   }
-  function reconcileLineSlideRecords(records, pairCount, pathId) {
+  function getAbsoluteLinePoints(x, y, points) {
+    return points.map((point) => [x + point[0], y + point[1]]);
+  }
+  function samePoint(left, right) {
+    return Math.abs(left[0] - right[0]) < 1e-3 && Math.abs(left[1] - right[1]) < 1e-3;
+  }
+  function samePair(left, right) {
+    return samePoint(left[0], right[0]) && samePoint(left[1], right[1]);
+  }
+  function getCurrentLinePairs(points, pairCount) {
+    return Array.from({ length: pairCount }, (_, index) => {
+      const first = points?.[index * 2];
+      const second = points?.[index * 2 + 1];
+      return first && second ? [
+        [first[0], first[1]],
+        [second[0], second[1]]
+      ] : void 0;
+    });
+  }
+  function copyLineSlideRecord(existing, id, pair) {
+    const record = { id };
+    const title = normalizeNotes(existing?.title);
+    if (title !== void 0) record.title = title;
+    const notes = normalizeNotes(existing?.notes);
+    if (notes !== void 0) record.notes = notes;
+    if (existing?.excluded === true) record.excluded = true;
+    if (existing?.animation !== void 0) {
+      record.animation = { steps: existing.animation.steps.map((step) => structuredClone(step)) };
+    }
+    if (pair) record.pair = pair;
+    else if (existing?.pair) record.pair = structuredClone(existing.pair);
+    return record;
+  }
+  function reconcileLineSlideRecords(records, pairCount, pathId, points) {
     const count = Math.max(0, Math.floor(pairCount));
     const result = [];
     const usedIds = /* @__PURE__ */ new Set();
+    const usedRecordIndices = /* @__PURE__ */ new Set();
+    const currentPairs = getCurrentLinePairs(points, count);
+    const matchedRecordByPairIndex = /* @__PURE__ */ new Map();
+    if (points) {
+      currentPairs.forEach((pair, pairIndex) => {
+        if (!pair) return;
+        const recordIndex = records.findIndex(
+          (record, index) => !usedRecordIndices.has(index) && Boolean(record.pair && samePair(record.pair, pair))
+        );
+        if (recordIndex >= 0) {
+          matchedRecordByPairIndex.set(pairIndex, recordIndex);
+          usedRecordIndices.add(recordIndex);
+        }
+      });
+    }
     for (let index = 0; index < count; index += 1) {
-      const existing = records[index];
+      let recordIndex = matchedRecordByPairIndex.get(index);
+      if (recordIndex === void 0) {
+        const indexed = records[index];
+        const canFallbackByIndex = Boolean(indexed) && !usedRecordIndices.has(index) && (!points || records.length === count || indexed?.pair === void 0);
+        if (canFallbackByIndex) {
+          recordIndex = index;
+          usedRecordIndices.add(index);
+        }
+      }
+      const existing = recordIndex === void 0 ? void 0 : records[recordIndex];
       const id = existing && isNonEmptyString(existing.id) && !usedIds.has(existing.id) ? existing.id : makeGeneratedLineSlideId(pathId, index, usedIds);
       usedIds.add(id);
-      const record = { id };
-      const notes = normalizeNotes(existing?.notes);
-      if (notes !== void 0) record.notes = notes;
-      if (existing?.excluded === true) record.excluded = true;
-      result.push(record);
+      result.push(copyLineSlideRecord(existing, id, currentPairs[index]));
     }
     return result;
   }
-  function reorderLineSlideRecords(records, pairCount, pathId, fromPairIndex, toPairIndex) {
-    const reconciled = reconcileLineSlideRecords(records, pairCount, pathId);
+  function reorderLineSlideRecords(records, pairCount, pathId, fromPairIndex, toPairIndex, points) {
+    const reconciled = reconcileLineSlideRecords(records, pairCount, pathId, points);
     if (!Number.isInteger(fromPairIndex) || !Number.isInteger(toPairIndex) || fromPairIndex < 0 || toPairIndex < 0 || fromPairIndex >= reconciled.length || toPairIndex >= reconciled.length) {
       throw new RangeError("Line-slide metadata index is outside the presentation path.");
     }
@@ -1003,12 +1129,12 @@ Build version: 2026-09-05T16:40:26.928Z
     reconciled.splice(toPairIndex, 0, record);
     return reconciled;
   }
-  function readLineSlideshowData(customData, pathId, pairCount) {
+  function readLineSlideshowData(customData, pathId, pairCount, points) {
     const v2 = readLineSlideshowDataV2(customData);
     if (v2) {
       return {
         source: "v2",
-        data: { ...v2, slides: reconcileLineSlideRecords(v2.slides, pairCount, pathId) }
+        data: { ...v2, slides: reconcileLineSlideRecords(v2.slides, pairCount, pathId, points) }
       };
     }
     const legacy = readLegacyLineSlideshowData(customData);
@@ -1022,12 +1148,12 @@ Build version: 2026-09-05T16:40:26.928Z
         kind: "path",
         hidden: legacy.hidden,
         originalProps: legacy.originalProps,
-        slides: reconcileLineSlideRecords([], pairCount, pathId)
+        slides: reconcileLineSlideRecords([], pairCount, pathId, points)
       }
     };
   }
-  function upgradeLineSlideshowData(customData, pathId, pairCount, fallbackOriginalProps) {
-    const existing = readLineSlideshowData(customData, pathId, pairCount);
+  function upgradeLineSlideshowData(customData, pathId, pairCount, fallbackOriginalProps, points) {
+    const existing = readLineSlideshowData(customData, pathId, pairCount, points);
     if (existing) {
       return existing.data;
     }
@@ -1036,7 +1162,7 @@ Build version: 2026-09-05T16:40:26.928Z
       kind: "path",
       hidden: false,
       originalProps: fallbackOriginalProps,
-      slides: reconcileLineSlideRecords([], pairCount, pathId)
+      slides: reconcileLineSlideRecords([], pairCount, pathId, points)
     };
   }
   function withNormalizedFrameOrder(customData, order) {
@@ -1047,6 +1173,7 @@ Build version: 2026-09-05T16:40:26.928Z
       order
     };
     if (existing?.excluded !== void 0) result.excluded = existing.excluded;
+    if (existing?.deckName !== void 0) result.deckName = existing.deckName;
     if (existing?.notes !== void 0) result.notes = existing.notes;
     if (existing?.animation !== void 0) result.animation = existing.animation;
     return result;
@@ -1090,6 +1217,7 @@ Build version: 2026-09-05T16:40:26.928Z
   }
   function buildFrameSlideDeck(frames) {
     const { ordered, explicit } = orderFrames(toIndexedFrames(frames));
+    const name = ordered.find((frame) => frame.metadata?.deckName)?.metadata?.deckName ?? null;
     const slides = ordered.map((frame, index) => {
       const { source, metadata } = frame;
       const slide = {
@@ -1107,6 +1235,7 @@ Build version: 2026-09-05T16:40:26.928Z
     });
     return {
       kind: "frame",
+      name,
       slides,
       visibleSlides: slides.filter((slide) => !slide.excluded),
       hasExplicitFrameOrder: explicit
@@ -1114,7 +1243,12 @@ Build version: 2026-09-05T16:40:26.928Z
   }
   function buildLineSlideDeck(path) {
     const pairCount = Math.floor(path.points.length / 2);
-    const metadata = readLineSlideshowData(path.customData, path.id, pairCount);
+    const metadata = readLineSlideshowData(
+      path.customData,
+      path.id,
+      pairCount,
+      getAbsoluteLinePoints(path.x, path.y, path.points)
+    );
     const records = metadata?.data.slides ?? [];
     const slides = [];
     for (let pairIndex = 0; pairIndex < pairCount; pairIndex += 1) {
@@ -1127,20 +1261,22 @@ Build version: 2026-09-05T16:40:26.928Z
         kind: "path",
         pathId: path.id,
         pairIndex,
-        title: `Slide ${pairIndex + 1}`,
+        title: record?.title ?? `Slide ${pairIndex + 1}`,
         rect: {
           x1: path.x + pointA[0],
           y1: path.y + pointA[1],
           x2: path.x + pointB[0],
           y2: path.y + pointB[1]
         },
-        excluded: record?.excluded ?? false
+        excluded: record?.excluded ?? false,
+        animationSteps: record?.animation?.steps ?? []
       };
       if (record?.notes !== void 0) slide.notes = record.notes;
       slides.push(slide);
     }
     return {
       kind: "path",
+      name: metadata?.data.name?.trim() || null,
       slides,
       visibleSlides: slides.filter((slide) => !slide.excluded),
       hasExplicitFrameOrder: false
@@ -1199,7 +1335,8 @@ Build version: 2026-09-05T16:40:26.928Z
     const metadata = readLineSlideshowData(
       pathElement.customData,
       pathElement.id,
-      Math.floor(pathElement.points.length / 2)
+      Math.floor(pathElement.points.length / 2),
+      getAbsoluteLinePoints(pathElement.x, pathElement.y, pathElement.points)
     );
     if (!metadata) return null;
     return {
@@ -1223,7 +1360,12 @@ Build version: 2026-09-05T16:40:26.928Z
     return result;
   }
   function isPresentationPathHidden(path) {
-    return readLineSlideshowData(path.customData, path.id, Math.floor(path.points.length / 2))?.data.hidden ?? false;
+    return readLineSlideshowData(
+      path.customData,
+      path.id,
+      Math.floor(path.points.length / 2),
+      getAbsoluteLinePoints(path.x, path.y, path.points)
+    )?.data.hidden ?? false;
   }
   function hasPresentationSource(choices, sourceKey) {
     if (!sourceKey) return false;
@@ -1243,7 +1385,8 @@ Build version: 2026-09-05T16:40:26.928Z
     const metadata = readLineSlideshowData(
       element.customData,
       element.id,
-      Math.floor(element.points.length / 2)
+      Math.floor(element.points.length / 2),
+      getAbsoluteLinePoints(element.x, element.y, element.points)
     );
     return metadata ? `line:${element.id}` : null;
   }
@@ -1310,7 +1453,8 @@ Build version: 2026-09-05T16:40:26.928Z
     const metadata = readLineSlideshowData(
       pathElement.customData,
       pathElement.id,
-      Math.floor(pathElement.points.length / 2)
+      Math.floor(pathElement.points.length / 2),
+      getAbsoluteLinePoints(pathElement.x, pathElement.y, pathElement.points)
     );
     if (!metadata) return null;
     const originalPathProperties = metadata.data.hidden ? metadata.data.originalProps : {
@@ -1385,8 +1529,31 @@ Build version: 2026-09-05T16:40:26.928Z
   function rectsOverlap2(left, right) {
     return left.left <= right.right && left.right >= right.left && left.top <= right.bottom && left.bottom >= right.top;
   }
-  function elementOverlapsFrame(element, frame) {
-    return element.id !== frame.id && rectsOverlap2(getElementRect(element), getElementRect(frame));
+  function rectFromSlideRect(rect) {
+    return {
+      left: Math.min(rect.x1, rect.x2),
+      top: Math.min(rect.y1, rect.y2),
+      right: Math.max(rect.x1, rect.x2),
+      bottom: Math.max(rect.y1, rect.y2)
+    };
+  }
+  function getAnimationSlideScope(slide) {
+    return {
+      rect: slide.rect,
+      ownerElementId: slide.kind === "frame" ? slide.frameId : slide.pathId
+    };
+  }
+  function resolveAnimationScope(scope, elements) {
+    if (typeof scope !== "string") return scope;
+    const frame = getElementById(elements, scope);
+    if (!frame) return null;
+    return {
+      rect: { x1: frame.x, y1: frame.y, x2: frame.x + frame.width, y2: frame.y + frame.height },
+      ownerElementId: frame.id
+    };
+  }
+  function elementOverlapsScope(element, scope) {
+    return element.id !== scope.ownerElementId && rectsOverlap2(getElementRect(element), rectFromSlideRect(scope.rect));
   }
   function getElementById(elements, id) {
     return elements.find((element) => element.id === id);
@@ -1417,27 +1584,27 @@ Build version: 2026-09-05T16:40:26.928Z
     }
     return [...result];
   }
-  function visualUnitOverlapsFrame(element, frame, elements) {
+  function visualUnitOverlapsScope(element, scope, elements) {
     return expandBoundVisualUnit([element.id], elements).some((id) => {
       const candidate = getElementById(elements, id);
-      return candidate ? elementOverlapsFrame(candidate, frame) : false;
+      return candidate ? elementOverlapsScope(candidate, scope) : false;
     });
   }
-  function resolveAnimationTargetElementIds(frameId, targets, elements) {
-    const frame = getElementById(elements, frameId);
-    if (!frame) return [];
+  function resolveAnimationTargetElementIds(slideScope, targets, elements) {
+    const scope = resolveAnimationScope(slideScope, elements);
+    if (!scope) return [];
     const baseIds = /* @__PURE__ */ new Set();
     for (const target of targets) {
       if (target.type === "element") {
         const element = getElementById(elements, target.id);
-        if (element && visualUnitOverlapsFrame(element, frame, elements)) {
+        if (element && visualUnitOverlapsScope(element, scope, elements)) {
           baseIds.add(canonicalElementTargetId(element, elements));
         }
         continue;
       }
       for (const element of elements) {
         const shape = asAnimationShape(element);
-        if (shape.groupIds?.includes(target.id) && elementOverlapsFrame(element, frame)) {
+        if (shape.groupIds?.includes(target.id) && elementOverlapsScope(element, scope)) {
           baseIds.add(element.id);
         }
       }
@@ -1456,18 +1623,18 @@ Build version: 2026-09-05T16:40:26.928Z
       return targets.length === 0 ? [] : [{ ...structuredClone(step), targets }];
     });
   }
-  function captureAnimationTargets(frameId, elements, selectedElementIds, selectedGroupIds) {
-    const frame = getElementById(elements, frameId);
-    if (!frame) return { targets: [], ignoredSelectionCount: Object.keys(selectedElementIds).length };
+  function captureAnimationTargets(slideScope, elements, selectedElementIds, selectedGroupIds) {
+    const scope = resolveAnimationScope(slideScope, elements);
+    if (!scope) return { targets: [], ignoredSelectionCount: Object.keys(selectedElementIds).length };
     const targets = [];
     const seen = /* @__PURE__ */ new Set();
     let ignoredSelectionCount = 0;
     const selectedGroups = Object.entries(selectedGroupIds).filter(([, selected]) => selected).map(([groupId]) => groupId);
     for (const groupId of selectedGroups) {
       const members = elements.filter((element) => asAnimationShape(element).groupIds?.includes(groupId));
-      const inFrame = members.filter((element) => elementOverlapsFrame(element, frame));
+      const inFrame = members.filter((element) => elementOverlapsScope(element, scope));
       const selectedOutside = members.some(
-        (element) => selectedElementIds[element.id] && !elementOverlapsFrame(element, frame)
+        (element) => selectedElementIds[element.id] && !elementOverlapsScope(element, scope)
       );
       if (inFrame.length > 0) {
         const key = `group:${groupId}`;
@@ -1479,10 +1646,10 @@ Build version: 2026-09-05T16:40:26.928Z
       if (selectedOutside) ignoredSelectionCount += 1;
     }
     for (const element of elements) {
-      if (!selectedElementIds[element.id] || element.id === frameId) continue;
+      if (!selectedElementIds[element.id] || element.id === scope.ownerElementId) continue;
       const shape = asAnimationShape(element);
       if (selectedGroups.some((groupId) => shape.groupIds?.includes(groupId))) continue;
-      if (!visualUnitOverlapsFrame(element, frame, elements)) {
+      if (!visualUnitOverlapsScope(element, scope, elements)) {
         ignoredSelectionCount += 1;
         continue;
       }
@@ -1495,15 +1662,15 @@ Build version: 2026-09-05T16:40:26.928Z
     }
     return { targets, ignoredSelectionCount };
   }
-  function targetsOverlap(frameId, left, right, elements) {
-    const leftIds = new Set(resolveAnimationTargetElementIds(frameId, [left], elements));
-    return resolveAnimationTargetElementIds(frameId, [right], elements).some((id) => leftIds.has(id));
+  function targetsOverlap(slideScope, left, right, elements) {
+    const leftIds = new Set(resolveAnimationTargetElementIds(slideScope, [left], elements));
+    return resolveAnimationTargetElementIds(slideScope, [right], elements).some((id) => leftIds.has(id));
   }
-  function removeAnimationTargetConflicts(frameId, steps, incomingTargets, elements, editedStepId) {
+  function removeAnimationTargetConflicts(slideScope, steps, incomingTargets, elements, editedStepId) {
     return steps.flatMap((step) => {
       if (step.id === editedStepId) return [structuredClone(step)];
       const targets = step.targets.filter(
-        (target) => !incomingTargets.some((incoming) => targetsOverlap(frameId, target, incoming, elements))
+        (target) => !incomingTargets.some((incoming) => targetsOverlap(slideScope, target, incoming, elements))
       );
       return targets.length === 0 ? [] : [{ ...structuredClone(step), targets }];
     });
@@ -1511,10 +1678,10 @@ Build version: 2026-09-05T16:40:26.928Z
   function getOpacity(element) {
     return asAnimationShape(element).opacity;
   }
-  function resolveRuntimeSteps(frameId, steps, elements) {
+  function resolveRuntimeSteps(slideScope, steps, elements) {
     const resolved = steps.map((step) => ({
       step: structuredClone(step),
-      elementIds: resolveAnimationTargetElementIds(frameId, step.targets, elements)
+      elementIds: resolveAnimationTargetElementIds(slideScope, step.targets, elements)
     }));
     const claimedByLaterStep = /* @__PURE__ */ new Set();
     for (let index = resolved.length - 1; index >= 0; index -= 1) {
@@ -1560,14 +1727,15 @@ Build version: 2026-09-05T16:40:26.928Z
     async enterSlide(slide, fullyBuilt, startTimedSteps = true) {
       await this.leaveSlide();
       const elements = this.api.getSceneElements();
-      const steps = resolveRuntimeSteps(slide.frameId, slide.animationSteps, elements);
+      const scope = getAnimationSlideScope(slide);
+      const steps = resolveRuntimeSteps(scope, slide.animationSteps, elements);
       const allIds = new Set(steps.flatMap((step) => step.elementIds));
       const originals = /* @__PURE__ */ new Map();
       for (const element of elements) {
         if (allIds.has(element.id)) originals.set(element.id, element);
       }
       this.active = {
-        frameId: slide.frameId,
+        scope,
         steps,
         originals,
         completedSteps: fullyBuilt ? steps.length : 0
@@ -1664,16 +1832,18 @@ Build version: 2026-09-05T16:40:26.928Z
       await this.finishActiveSlide();
     }
     /** Runs one animation from the sidepanel and restores the drawing when the preview completes. */
-    async previewStep(frameId, step) {
+    async previewStep(slideScope, step) {
       await this.leaveSlide();
       const elements = this.api.getSceneElements();
-      const elementIds = resolveAnimationTargetElementIds(frameId, step.targets, elements);
+      const scope = resolveAnimationScope(slideScope, elements);
+      if (!scope) return;
+      const elementIds = resolveAnimationTargetElementIds(scope, step.targets, elements);
       const originals = /* @__PURE__ */ new Map();
       for (const element of elements) {
         if (elementIds.includes(element.id)) originals.set(element.id, element);
       }
       this.active = {
-        frameId,
+        scope,
         steps: elementIds.length > 0 ? [{ step: structuredClone(step), elementIds }] : [],
         originals,
         completedSteps: 0
@@ -2372,7 +2542,7 @@ Build version: 2026-09-05T16:40:26.928Z
     );
     const ids = /* @__PURE__ */ new Set();
     for (const step of slide.animationSteps.slice(completed)) {
-      for (const id of resolveAnimationTargetElementIds(slide.frameId, step.targets, elements)) {
+      for (const id of resolveAnimationTargetElementIds(getAnimationSlideScope(slide), step.targets, elements)) {
         ids.add(id);
       }
     }
@@ -2497,7 +2667,11 @@ Build version: 2026-09-05T16:40:26.928Z
     async createPreview(slide, ownerDocument, state = {}) {
       const elements = this.ea.getViewElements();
       if (elements.length === 0) return null;
-      const hiddenElementIds = slide.kind === "frame" ? getHiddenBuildElementIds(slide, state.completedAnimationSteps, elements) : [];
+      const hiddenElementIds = getHiddenBuildElementIds(
+        slide,
+        state.completedAnimationSteps,
+        elements
+      );
       const appState = this.api.getAppState();
       const targetWidth = Math.max(Math.trunc(state.targetWidth ?? DEFAULT_PREVIEW_WIDTH), 1);
       const opacityKey = state.originalOpacities ? [...state.originalOpacities.entries()].sort(([left], [right]) => left.localeCompare(right)).map(([id, opacity]) => `${id}:${opacity}`).join(",") : "none";
@@ -2556,6 +2730,7 @@ Build version: 2026-09-05T16:40:26.928Z
   var DISPLAY_TARGETS_SETTING = "slideshowDisplayTargetsByDevice";
   var DISPLAY_TARGETS_BY_CONFIGURATION_SETTING = "slideshowDisplayTargetsByDeviceConfiguration";
   var PRESENTER_NOTES_FONT_SIZE_SETTING = "slideshowPresenterNotesFontSize";
+  var PRESENTER_NOTES_FONT_SIZE_BY_DISPLAY_SETTING = "slideshowPresenterNotesFontSizeByDeviceConfigurationDisplay";
   var SORTER_THUMBNAIL_MAX_WIDTH_SETTING = "slideshowSorterThumbnailMaxWidth";
   var LEGACY_LAUNCH_MODE_SETTING = "slideshowLaunchMode";
   var LEGACY_START_FULLSCREEN_SETTING = "slideshowStartFullscreen";
@@ -2663,16 +2838,47 @@ Build version: 2026-09-05T16:40:26.928Z
       }
     });
   }
-  function loadPresenterNotesFontSize(ea2) {
-    const raw = readSettings(ea2)[PRESENTER_NOTES_FONT_SIZE_SETTING];
+  function loadPresenterNotesFontSize(ea2, deviceKey, configurationKey, displayIdentity) {
+    const settings = readSettings(ea2);
+    let raw;
+    if (deviceKey && configurationKey && displayIdentity) {
+      const byDevice = settings[PRESENTER_NOTES_FONT_SIZE_BY_DISPLAY_SETTING];
+      if (byDevice && typeof byDevice === "object" && !Array.isArray(byDevice)) {
+        const device = byDevice[deviceKey];
+        if (device && typeof device === "object" && !Array.isArray(device)) {
+          const configuration = device[configurationKey];
+          if (configuration && typeof configuration === "object" && !Array.isArray(configuration)) {
+            raw = configuration[displayIdentity];
+          }
+        }
+      }
+    }
+    if (raw === void 0) raw = settings[PRESENTER_NOTES_FONT_SIZE_SETTING];
     const value = typeof raw === "number" && Number.isFinite(raw) ? raw : DEFAULT_PRESENTER_NOTES_FONT_SIZE;
     return Math.min(48, Math.max(12, Math.round(value)));
   }
-  async function savePresenterNotesFontSize(ea2, fontSize) {
+  async function savePresenterNotesFontSize(ea2, fontSize, deviceKey, configurationKey, displayIdentity) {
     const value = Math.min(48, Math.max(12, Math.round(fontSize)));
+    const settings = ea2.getScriptSettings();
+    if (!deviceKey || !configurationKey || !displayIdentity) {
+      await ea2.setScriptSettings({ ...settings, [PRESENTER_NOTES_FONT_SIZE_SETTING]: value });
+      return;
+    }
+    const raw = settings[PRESENTER_NOTES_FONT_SIZE_BY_DISPLAY_SETTING];
+    const byDevice = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+    const rawDevice = byDevice[deviceKey];
+    const device = rawDevice && typeof rawDevice === "object" && !Array.isArray(rawDevice) ? rawDevice : {};
+    const rawConfiguration = device[configurationKey];
+    const configuration = rawConfiguration && typeof rawConfiguration === "object" && !Array.isArray(rawConfiguration) ? rawConfiguration : {};
     await ea2.setScriptSettings({
-      ...ea2.getScriptSettings(),
-      [PRESENTER_NOTES_FONT_SIZE_SETTING]: value
+      ...settings,
+      [PRESENTER_NOTES_FONT_SIZE_BY_DISPLAY_SETTING]: {
+        ...byDevice,
+        [deviceKey]: {
+          ...device,
+          [configurationKey]: { ...configuration, [displayIdentity]: value }
+        }
+      }
     });
   }
   function loadSorterThumbnailMaxWidth(ea2) {
@@ -2830,6 +3036,7 @@ Build version: 2026-09-05T16:40:26.928Z
         }
       );
       const actions = contentEl.createDiv({ cls: "modal-button-container" });
+      actions.style.justifyContent = "flex-end";
       const resetButton = actions.createEl("button", { text: t("settingsResetDefaults") });
       resetButton.addEventListener("click", () => {
         resetSlideshowConfigToDefaults(draft);
@@ -2899,7 +3106,7 @@ Build version: 2026-09-05T16:40:26.928Z
 .slideshow-sorter__row.is-drop-before::before { top:-13px; }
 .slideshow-sorter__row.is-drop-after::after { bottom:-13px; }
 .slideshow-sorter__top { display:flex; flex-direction:column; gap:5px; align-items:stretch; padding:6px 8px; border-radius:6px; background:var(--background-secondary); }
-.slideshow-sorter__top.is-draggable { cursor:grab; user-select:none; background-color:var(--background-secondary); background-image:radial-gradient(circle, var(--background-modifier-border-hover) .8px, transparent .9px); background-size:5px 5px; }
+.slideshow-sorter__top.is-draggable { cursor:grab; user-select:none; background-color:var(--background-secondary); background-image:radial-gradient(circle, var(--color-base-30) .8px, transparent .9px); background-size:5px 5px; }
 .slideshow-sorter__top.is-draggable:active { cursor:grabbing; }
 .slideshow-sorter__title-row { display:flex; align-items:center; gap:5px; width:100%; min-width:0; }
 .slideshow-sorter__title { flex:1 1 auto; min-width:0; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; line-height:1.35; }
@@ -2992,7 +3199,7 @@ Build version: 2026-09-05T16:40:26.928Z
 .slideshow-presenter__title { font-size:var(--font-ui-large); font-weight:700; line-height:1.25; overflow-wrap:anywhere; }
 .slideshow-presenter__counter { color:var(--text-muted); font-size:var(--font-ui-small); }
 .slideshow-presenter__header-actions { display:flex; gap:6px; flex:0 0 auto; }
-.slideshow-presenter__font-size-control { display:none; align-items:center; gap:6px; color:var(--text-muted); font-size:var(--font-ui-smaller); white-space:nowrap; }
+.slideshow-presenter__font-size-control { display:flex; align-items:center; gap:6px; color:var(--text-muted); font-size:var(--font-ui-smaller); white-space:nowrap; }
 .slideshow-presenter__font-size-control input { width:120px; }
 .slideshow-presenter__close, .slideshow-presenter__layout-toggle { flex:0 0 auto; width:38px; height:38px; display:flex; align-items:center; justify-content:center; }
 .slideshow-presenter__layout-toggle.is-active { color:var(--interactive-accent); background:var(--background-modifier-hover); }
@@ -3007,7 +3214,7 @@ Build version: 2026-09-05T16:40:26.928Z
 .slideshow-presenter__current-preview { max-width:520px; }
 .slideshow-presenter__next-preview { width:100%; }
 .slideshow-presenter__end { display:flex; align-items:center; justify-content:center; min-height:180px; color:var(--text-muted); font-size:var(--font-ui-medium); border:1px dashed var(--background-modifier-border); border-radius:8px; }
-.slideshow-presenter__notes { flex:1 1 auto; min-height:120px; padding:12px; border-radius:8px; background:var(--background-secondary); border:1px solid var(--background-modifier-border); overflow-wrap:anywhere; overflow:auto; }
+.slideshow-presenter__notes { flex:1 1 auto; min-height:120px; font-size:var(--slideshow-presenter-notes-font-size, 18px); padding:12px; border-radius:8px; background:var(--background-secondary); border:1px solid var(--background-modifier-border); overflow-wrap:anywhere; overflow:auto; }
 .slideshow-presenter__notes.is-empty { color:var(--text-muted); font-style:italic; }
 .slideshow-presenter__progress { display:flex; align-items:center; gap:8px; color:var(--text-muted); font-size:var(--font-ui-small); }
 .slideshow-presenter__controls { display:flex; flex-wrap:wrap; gap:8px; margin-top:auto; padding-top:4px; }
@@ -3016,7 +3223,6 @@ Build version: 2026-09-05T16:40:26.928Z
 .slideshow-presenter.is-notes-focused { overflow:hidden; }
 .slideshow-presenter.is-notes-focused .slideshow-presenter__grid { flex:1; grid-template-columns:minmax(0,17fr) minmax(150px,3fr); grid-template-rows:minmax(0,1fr) minmax(0,1fr); grid-template-areas:"notes current" "notes next"; align-items:stretch; }
 .slideshow-presenter.is-notes-focused .slideshow-presenter__notes-column { min-height:0; }
-.slideshow-presenter.is-notes-focused .slideshow-presenter__font-size-control { display:flex; }
 .slideshow-presenter.is-notes-focused .slideshow-presenter__notes { flex:1; min-height:0; font-size:var(--slideshow-presenter-notes-font-size, 18px); }
 .slideshow-presenter.is-notes-focused .slideshow-presenter__current-preview { max-width:none; }
 .slideshow-presenter.is-notes-focused .slideshow-presenter__column:nth-child(1), .slideshow-presenter.is-notes-focused .slideshow-presenter__column:nth-child(2) { min-height:0; overflow:hidden; }
@@ -3063,7 +3269,24 @@ Build version: 2026-09-05T16:40:26.928Z
     constructor(options) {
       this.options = options;
       this.previewService = new SlidePreviewService(options.ea, options.api, options.config);
-      this.notesFontSize = loadPresenterNotesFontSize(options.ea);
+      const displays = getAvailableDisplays(options.hostView.ownerWindow);
+      const targetDisplayId = options.targetDisplayId ?? getCurrentDisplayId(options.hostView.ownerWindow);
+      const targetDisplay = displays.find((display) => display.id === targetDisplayId);
+      this.notesPreference = targetDisplay ? {
+        deviceKey: getSlideshowDeviceKey(options.hostView.ownerWindow),
+        configurationKey: getSlideshowDisplayConfigurationKey(displays),
+        displayIdentity: JSON.stringify([
+          getSlideshowDisplayIdentity(targetDisplay),
+          targetDisplay.bounds.x,
+          targetDisplay.bounds.y
+        ])
+      } : null;
+      this.notesFontSize = this.notesPreference ? loadPresenterNotesFontSize(
+        options.ea,
+        this.notesPreference.deviceKey,
+        this.notesPreference.configurationKey,
+        this.notesPreference.displayIdentity
+      ) : loadPresenterNotesFontSize(options.ea);
     }
     leaf = null;
     ownerWindow = null;
@@ -3085,6 +3308,7 @@ Build version: 2026-09-05T16:40:26.928Z
     closed = false;
     destroying = false;
     previewService;
+    notesPreference;
     /** Opens the popout, waits for real window migration, and renders its initial state. */
     async open(initialState) {
       if (this.leaf) {
@@ -3250,7 +3474,14 @@ Build version: 2026-09-05T16:40:26.928Z
         root.style.setProperty("--slideshow-presenter-notes-font-size", `${this.notesFontSize}px`);
       });
       fontSizeSlider.addEventListener("change", () => {
-        void savePresenterNotesFontSize(this.options.ea, this.notesFontSize).catch((error) => {
+        const preference = this.notesPreference;
+        void savePresenterNotesFontSize(
+          this.options.ea,
+          this.notesFontSize,
+          preference?.deviceKey,
+          preference?.configurationKey,
+          preference?.displayIdentity
+        ).catch((error) => {
           console.error("Slideshow presenter notes font-size save failed", error);
         });
       });
@@ -3371,20 +3602,20 @@ Build version: 2026-09-05T16:40:26.928Z
       const currentPreview = currentSlide ? await this.previewService.createPreview(
         currentSlide,
         doc,
-        currentSlide.kind === "frame" ? {
+        {
           completedAnimationSteps: state.completedAnimationSteps,
           ...originalOpacities ? { originalOpacities } : {},
           targetWidth: 1280
-        } : { targetWidth: 1280 }
+        }
       ) : null;
       const nextPreview = nextSlide ? await this.previewService.createPreview(
         nextSlide,
         doc,
-        nextSlide.kind === "frame" ? {
+        {
           completedAnimationSteps: state.nextCompletedAnimationSteps ?? 0,
           ...originalOpacities ? { originalOpacities } : {},
           targetWidth: 1280
-        } : { targetWidth: 1280 }
+        }
       ) : null;
       if (generation !== this.updateGeneration || this.closed) return;
       currentHost.replaceChildren();
@@ -3590,12 +3821,12 @@ Build version: 2026-09-05T16:40:26.928Z
       this.onSlideChange = options.onSlideChange;
       this.onExit = options.onExit;
       this.openSidepanel = options.openSidepanel;
-      this.animationRuntime = options.setup.pathType === "frame" ? new AnimationRuntime({
+      this.animationRuntime = new AnimationRuntime({
         ea: options.ea,
         api: options.api,
         hostView: options.hostView,
         onStateChange: () => this.emitPresentationState()
-      }) : null;
+      });
     }
     /** Starts the presentation and installs all temporary UI and handlers. */
     async start() {
@@ -3689,9 +3920,9 @@ Build version: 2026-09-05T16:40:26.928Z
     /** Returns the authoritative state shared by floating controls and presenter view. */
     getPresentationState() {
       let animationState = this.animationRuntime?.getState() ?? { completedSteps: 0, stepCount: 0 };
-      if (this.setup.pathType === "frame" && animationState.stepCount === 0 && this.setup.deck.visibleSlides[this.slide]?.kind === "frame") {
+      if (animationState.stepCount === 0) {
         const current = this.setup.deck.visibleSlides[this.slide];
-        animationState = { completedSteps: 0, stepCount: current.animationSteps.length };
+        if (current) animationState = { completedSteps: 0, stepCount: current.animationSteps.length };
       }
       return buildPresentationState(this.setup.deck, this.slide, animationState);
     }
@@ -3847,7 +4078,8 @@ Build version: 2026-09-05T16:40:26.928Z
           element.customData,
           element.id,
           Math.floor(element.points.length / 2),
-          originalProps
+          originalProps,
+          getAbsoluteLinePoints(element.x, element.y, element.points)
         );
         metadata.hidden = shouldRemainHidden;
         writeSlideshowMetadata(this.ea, element.id, metadata);
@@ -3876,7 +4108,7 @@ Build version: 2026-09-05T16:40:26.928Z
     }
     async enterSlide(index, fullyBuilt) {
       const deckSlide = this.setup.deck.visibleSlides[index];
-      if (deckSlide?.kind === "frame" && this.animationRuntime) {
+      if (deckSlide && this.animationRuntime) {
         await this.animationRuntime.enterSlide(deckSlide, fullyBuilt, false);
       } else {
         await this.animationRuntime?.leaveSlide();
@@ -4164,6 +4396,37 @@ Build version: 2026-09-05T16:40:26.928Z
     }
   };
 
+  // src/sharedUtils/confirmationModal.ts
+  function openConfirmationModal(ea2, app2, options) {
+    return new Promise((resolve) => {
+      const modal = new ea2.obsidian.Modal(app2);
+      let settled = false;
+      const finish = (confirmed) => {
+        if (settled) return;
+        settled = true;
+        resolve(confirmed);
+        modal.close();
+      };
+      if (options.title) modal.titleEl.setText(options.title);
+      modal.contentEl.createEl("p", { text: options.message });
+      const actions = modal.contentEl.createDiv({ cls: "modal-button-container" });
+      actions.style.display = "flex";
+      actions.style.justifyContent = "flex-end";
+      actions.style.gap = "var(--size-4-2)";
+      new ea2.obsidian.ButtonComponent(actions).setButtonText(options.cancelText).onClick(() => finish(false));
+      const confirmButton = new ea2.obsidian.ButtonComponent(actions).setButtonText(options.confirmText).setCta().onClick(() => finish(true));
+      modal.onClose = () => {
+        if (!settled) {
+          settled = true;
+          resolve(false);
+        }
+        modal.contentEl.empty();
+      };
+      modal.open();
+      confirmButton.buttonEl.focus();
+    });
+  }
+
   // src/scripts/slideshow/slideDeckMutations.ts
   function normalizeNotes2(notes) {
     return notes.trim().length === 0 ? void 0 : notes;
@@ -4189,12 +4452,14 @@ Build version: 2026-09-05T16:40:26.928Z
     if (orderedIds.length !== frames.length || orderedIds.some((id) => !byId.has(id))) {
       throw new Error("The frame deck changed before the slideshow metadata could be saved.");
     }
+    const deckName = frames.map((frame) => readFrameSlideshowData(frame.customData)?.deckName).find((name) => typeof name === "string" && name.trim().length > 0);
     ea2.clear();
     ea2.copyViewElementsToEAforEditing(frames);
     orderedIds.forEach((frameId, order) => {
       const source = byId.get(frameId);
       if (!source) return;
       const data = withNormalizedFrameOrder(source.customData, order);
+      if (deckName && !data.deckName) data.deckName = deckName;
       if (frameId === targetId) mutateTarget?.(data);
       writeSlideshowMetadata(ea2, frameId, data);
     });
@@ -4283,7 +4548,8 @@ Build version: 2026-09-05T16:40:26.928Z
       element.customData,
       element.id,
       Math.floor(element.points.length / 2),
-      fallbackPathProperties(source)
+      fallbackPathProperties(source),
+      getAbsoluteLinePoints(element.x, element.y, element.points)
     );
     const normalizedName = normalizeNotes2(name ?? "");
     if (normalizedName === void 0) delete metadata.name;
@@ -4302,7 +4568,8 @@ Build version: 2026-09-05T16:40:26.928Z
       element.customData,
       element.id,
       Math.floor(element.points.length / 2),
-      fallbackPathProperties(source)
+      fallbackPathProperties(source),
+      getAbsoluteLinePoints(element.x, element.y, element.points)
     );
     const normalizedName = normalizeNotes2(name);
     if (normalizedName === void 0) delete metadata.name;
@@ -4321,7 +4588,8 @@ Build version: 2026-09-05T16:40:26.928Z
       element.customData,
       element.id,
       Math.floor(element.points.length / 2),
-      fallbackPathProperties(source)
+      fallbackPathProperties(source),
+      getAbsoluteLinePoints(element.x, element.y, element.points)
     );
     if (existing.hidden) {
       element.strokeColor = existing.originalProps.strokeColor;
@@ -4353,15 +4621,27 @@ Build version: 2026-09-05T16:40:26.928Z
       element.customData,
       element.id,
       pairCount,
-      fallbackPathProperties(source)
+      fallbackPathProperties(source),
+      getAbsoluteLinePoints(element.x, element.y, element.points)
     );
     metadata.slides = reorderLineSlideRecords(
       metadata.slides,
       pairCount,
       element.id,
       fromPairIndex,
-      toPairIndex
+      toPairIndex,
+      getAbsoluteLinePoints(element.x, element.y, element.points)
     );
+    metadata.slides.forEach((record, index) => {
+      const first = reordered.points[index * 2];
+      const second = reordered.points[index * 2 + 1];
+      if (first && second) {
+        record.pair = [
+          [reordered.x + first[0], reordered.y + first[1]],
+          [reordered.x + second[0], reordered.y + second[1]]
+        ];
+      }
+    });
     element.x = reordered.x;
     element.y = reordered.y;
     element.points = reordered.points;
@@ -4379,7 +4659,8 @@ Build version: 2026-09-05T16:40:26.928Z
       element.customData,
       element.id,
       Math.floor(element.points.length / 2),
-      fallbackPathProperties(source)
+      fallbackPathProperties(source),
+      getAbsoluteLinePoints(element.x, element.y, element.points)
     );
     const record = metadata.slides.find((candidate) => candidate.id === slideId);
     if (!record) throw new Error("The selected line slide no longer exists.");
@@ -4400,7 +4681,8 @@ Build version: 2026-09-05T16:40:26.928Z
       element.customData,
       element.id,
       Math.floor(element.points.length / 2),
-      fallbackPathProperties(source)
+      fallbackPathProperties(source),
+      getAbsoluteLinePoints(element.x, element.y, element.points)
     );
     const record = metadata.slides.find((candidate) => candidate.id === slideId);
     if (!record) throw new Error("The selected line slide no longer exists.");
@@ -4420,7 +4702,8 @@ Build version: 2026-09-05T16:40:26.928Z
       element.customData,
       element.id,
       Math.floor(element.points.length / 2),
-      fallbackPathProperties(source)
+      fallbackPathProperties(source),
+      getAbsoluteLinePoints(element.x, element.y, element.points)
     );
     metadata.hidden = hidden;
     if (hidden) {
@@ -4434,6 +4717,222 @@ Build version: 2026-09-05T16:40:26.928Z
     }
     writeSlideshowMetadata(ea2, element.id, metadata);
     await commitWorkbench(ea2);
+  }
+  async function renameLineSlide(ea2, pathId, slideId, name) {
+    const source = ea2.getViewElements().find((element2) => element2.id === pathId);
+    if (!isLinearPathElement(source)) throw new Error("The presentation path no longer exists.");
+    ea2.clear();
+    ea2.copyViewElementsToEAforEditing([source]);
+    const element = ea2.getElement(pathId);
+    if (!element) throw new Error("The presentation path could not be edited.");
+    const metadata = upgradeLineSlideshowData(
+      element.customData,
+      element.id,
+      Math.floor(element.points.length / 2),
+      fallbackPathProperties(source),
+      getAbsoluteLinePoints(element.x, element.y, element.points)
+    );
+    const record = metadata.slides.find((candidate) => candidate.id === slideId);
+    if (!record) throw new Error("The selected line slide no longer exists.");
+    const normalized = normalizeNotes2(name);
+    if (normalized === void 0) delete record.title;
+    else record.title = normalized;
+    writeSlideshowMetadata(ea2, element.id, metadata);
+    await commitWorkbench(ea2);
+  }
+  async function saveLineAnimationSteps(ea2, pathId, slideId, steps) {
+    const source = ea2.getViewElements().find((element2) => element2.id === pathId);
+    if (!isLinearPathElement(source)) throw new Error("The presentation path no longer exists.");
+    ea2.clear();
+    ea2.copyViewElementsToEAforEditing([source]);
+    const element = ea2.getElement(pathId);
+    if (!element) throw new Error("The presentation path could not be edited.");
+    const metadata = upgradeLineSlideshowData(
+      element.customData,
+      element.id,
+      Math.floor(element.points.length / 2),
+      fallbackPathProperties(source),
+      getAbsoluteLinePoints(element.x, element.y, element.points)
+    );
+    const record = metadata.slides.find((candidate) => candidate.id === slideId);
+    if (!record) throw new Error("The selected line slide no longer exists.");
+    if (steps.length === 0) delete record.animation;
+    else record.animation = { steps: steps.map((step) => structuredClone(step)) };
+    writeSlideshowMetadata(ea2, element.id, metadata);
+    await commitWorkbench(ea2);
+  }
+  async function renameFramePresentation(ea2, name) {
+    const frames = getFrameElements(ea2);
+    const orderedIds = buildFrameSlideDeck(frames).slides.map((slide) => slide.id);
+    const normalized = normalizeNotes2(name);
+    ea2.clear();
+    ea2.copyViewElementsToEAforEditing(frames);
+    orderedIds.forEach((frameId, order) => {
+      const source = frames.find((frame) => frame.id === frameId);
+      if (!source) return;
+      const data = withNormalizedFrameOrder(source.customData, order);
+      if (normalized === void 0) delete data.deckName;
+      else data.deckName = normalized;
+      writeSlideshowMetadata(ea2, frameId, data);
+    });
+    await commitWorkbench(ea2);
+  }
+  async function resizeFrameToPresentationAspect(ea2, frameId, config) {
+    const source = ea2.getViewElements().find((element) => element.id === frameId);
+    if (!isFrameElement(source)) throw new Error("The selected frame no longer exists.");
+    const rect = expandSlideRectToAspectRatio(
+      { x1: source.x, y1: source.y, x2: source.x + source.width, y2: source.y + source.height },
+      { width: config.printSlideWidth, height: config.printSlideHeight }
+    );
+    ea2.clear();
+    ea2.copyViewElementsToEAforEditing([source]);
+    const frame = ea2.getElement(frameId);
+    if (!frame) throw new Error("The selected frame could not be edited.");
+    frame.x = Math.min(rect.x1, rect.x2);
+    frame.y = Math.min(rect.y1, rect.y2);
+    frame.width = Math.abs(rect.x2 - rect.x1);
+    frame.height = Math.abs(rect.y2 - rect.y1);
+    await commitWorkbench(ea2);
+  }
+  function convertedDeckName(name, sourceRetained, suffix) {
+    if (!name) return null;
+    return sourceRetained ? `${name} (${suffix})` : name;
+  }
+  async function convertLinePresentationToFrames(ea2, pathId, config, options) {
+    if (getFrameElements(ea2).length > 0) throw new Error("FRAME_SLIDESHOW_EXISTS");
+    const source = ea2.getViewElements().find((element) => element.id === pathId);
+    if (!isLinearPathElement(source)) throw new Error("The presentation path no longer exists.");
+    const deck = buildLineSlideDeck(source);
+    if (deck.slides.length === 0) throw new Error("The line slideshow has no slides.");
+    const normalizedOptions = typeof options === "boolean" ? { correctAspectRatio: options, deleteLine: false, frameKind: "marker" } : {
+      correctAspectRatio: options.correctAspectRatio,
+      deleteLine: options.deleteLine ?? false,
+      frameKind: options.frameKind ?? "marker"
+    };
+    const sceneElements = ea2.getViewElements();
+    const frameSpecs = deck.slides.map((slide) => {
+      const rect = normalizedOptions.correctAspectRatio ? expandSlideRectToAspectRatio(slide.rect, {
+        width: config.printSlideWidth,
+        height: config.printSlideHeight
+      }) : slide.rect;
+      return {
+        slide,
+        left: Math.min(rect.x1, rect.x2),
+        top: Math.min(rect.y1, rect.y2),
+        width: Math.abs(rect.x2 - rect.x1),
+        height: Math.abs(rect.y2 - rect.y1)
+      };
+    });
+    const memberIdsByFrame = normalizedOptions.frameKind === "normal" ? frameSpecs.map(
+      (spec) => ea2.getElementsInArea(
+        sceneElements,
+        { x: spec.left, y: spec.top, width: spec.width, height: spec.height },
+        { includeMarkerFrames: false, includeBoundElements: true }
+      ).filter(
+        (element) => element.id !== source.id && !isFrameElement(element) && !element.isDeleted && element.frameId === null
+      ).map((element) => element.id)
+    ) : frameSpecs.map(() => []);
+    const memberIds = new Set(memberIdsByFrame.flat());
+    const members = sceneElements.filter((element) => memberIds.has(element.id));
+    ea2.clear();
+    if (members.length > 0 || normalizedOptions.deleteLine) {
+      ea2.copyViewElementsToEAforEditing(
+        normalizedOptions.deleteLine ? [source, ...members] : members
+      );
+    }
+    const assignedIds = /* @__PURE__ */ new Set();
+    const deckName = convertedDeckName(deck.name, !normalizedOptions.deleteLine, "frames");
+    frameSpecs.forEach((spec, order) => {
+      const id = ea2.addFrame(spec.left, spec.top, spec.width, spec.height, spec.slide.title);
+      const frame = ea2.getElement(id);
+      if (!frame) throw new Error("The converted frame could not be created.");
+      if (normalizedOptions.frameKind === "marker") frame.frameRole = "marker";
+      else delete frame.frameRole;
+      const data = withNormalizedFrameOrder(void 0, order);
+      if (deckName) data.deckName = deckName;
+      if (spec.slide.notes) data.notes = spec.slide.notes;
+      if (spec.slide.excluded) data.excluded = true;
+      if (spec.slide.animationSteps.length > 0) {
+        data.animation = {
+          steps: spec.slide.animationSteps.map((step) => structuredClone(step))
+        };
+      }
+      writeSlideshowMetadata(ea2, id, data);
+      if (normalizedOptions.frameKind === "normal") {
+        for (const memberId of memberIdsByFrame[order] ?? []) {
+          if (assignedIds.has(memberId)) continue;
+          const member = ea2.getElement(memberId);
+          if (!member || member.frameId !== null) continue;
+          member.frameId = id;
+          assignedIds.add(memberId);
+        }
+      }
+    });
+    if (normalizedOptions.deleteLine) {
+      const path = ea2.getElement(source.id);
+      if (path) path.isDeleted = true;
+    }
+    await commitWorkbench(ea2);
+  }
+  async function convertFramePresentationToLine(ea2, options = {}) {
+    const frames = getFrameElements(ea2);
+    const deck = buildFrameSlideDeck(frames);
+    if (deck.slides.length === 0) throw new Error("The frame slideshow has no slides.");
+    const slides = options.visibleSlidesOnly ? deck.visibleSlides : deck.slides;
+    if (slides.length === 0) throw new Error("The frame slideshow has no visible slides.");
+    const frameIds = new Set(deck.slides.map((slide) => slide.id));
+    const framedElements = ea2.getViewElements().filter((element) => element.frameId !== null && frameIds.has(element.frameId));
+    const points = [];
+    for (const slide of slides) {
+      points.push(
+        [Math.min(slide.rect.x1, slide.rect.x2), Math.min(slide.rect.y1, slide.rect.y2)],
+        [Math.max(slide.rect.x1, slide.rect.x2), Math.max(slide.rect.y1, slide.rect.y2)]
+      );
+    }
+    ea2.clear();
+    const editableSources = options.deleteFrames ? [...framedElements, ...frames] : framedElements;
+    if (editableSources.length > 0) ea2.copyViewElementsToEAforEditing(editableSources);
+    for (const source of framedElements) {
+      const element = ea2.getElement(source.id);
+      if (element) element.frameId = null;
+    }
+    if (options.deleteFrames) {
+      for (const frame of frames) {
+        const element = ea2.getElement(frame.id);
+        if (element) element.isDeleted = true;
+      }
+    }
+    const lineId = ea2.addLine(points);
+    const line = ea2.getElement(lineId);
+    if (!line) throw new Error("The line slideshow could not be created.");
+    const metadata = {
+      schemaVersion: 2,
+      kind: "path",
+      hidden: false,
+      originalProps: fallbackPathProperties(line),
+      slides: slides.map((slide, index) => {
+        const first = line.points[index * 2];
+        const second = line.points[index * 2 + 1];
+        return {
+          id: `slideshow-${lineId}-${index + 1}`,
+          title: slide.title,
+          ...slide.notes ? { notes: slide.notes } : {},
+          ...!options.visibleSlidesOnly && slide.excluded ? { excluded: true } : {},
+          ...slide.animationSteps.length > 0 ? { animation: { steps: slide.animationSteps.map((step) => structuredClone(step)) } } : {},
+          ...first && second ? {
+            pair: [
+              [line.x + first[0], line.y + first[1]],
+              [line.x + second[0], line.y + second[1]]
+            ]
+          } : {}
+        };
+      })
+    };
+    const name = convertedDeckName(deck.name, !options.deleteFrames, "line");
+    if (name) metadata.name = name;
+    writeSlideshowMetadata(ea2, lineId, metadata);
+    await commitWorkbench(ea2);
+    return lineId;
   }
 
   // src/scripts/slideshow/AnimationEditor.ts
@@ -4499,7 +4998,7 @@ Build version: 2026-09-05T16:40:26.928Z
       if (this.ignoredSelectionCount > 0) {
         const warning = doc.createElement("div");
         warning.className = "slideshow-warning";
-        warning.textContent = t("animationOutsideFrameIgnored", { count: this.ignoredSelectionCount });
+        warning.textContent = t("animationOutsideSlideIgnored", { count: this.ignoredSelectionCount });
         container.appendChild(warning);
       }
       const targetSection = doc.createElement("div");
@@ -4631,7 +5130,7 @@ Build version: 2026-09-05T16:40:26.928Z
     captureSelection(elements, appState) {
       if (this.destroyed || Date.now() < this.ignoreSelectionUntil) return;
       const captured = captureAnimationTargets(
-        this.options.slide.frameId,
+        getAnimationSlideScope(this.options.slide),
         elements,
         appState.selectedElementIds,
         appState.selectedGroupIds
@@ -4674,7 +5173,7 @@ Build version: 2026-09-05T16:40:26.928Z
       if (JSON.stringify(steps) === JSON.stringify(this.steps)) return;
       this.saving = true;
       try {
-        await saveFrameAnimationSteps(this.options.ea, this.options.slide.frameId, steps);
+        await this.saveAnimationSteps(steps);
         this.steps = steps;
         if (this.selectedStepId) {
           const selectedStep = steps.find((step) => step.id === this.selectedStepId);
@@ -4730,7 +5229,7 @@ Build version: 2026-09-05T16:40:26.928Z
       );
       actions.appendChild(
         this.iconButton(doc, icons.play, t("previewAnimationStep"), false, () => {
-          void this.previewRuntime.previewStep(this.options.slide.frameId, step);
+          void this.previewRuntime.previewStep(getAnimationSlideScope(this.options.slide), step);
         })
       );
       actions.appendChild(
@@ -4772,7 +5271,7 @@ Build version: 2026-09-05T16:40:26.928Z
       this.direction = step.direction ?? "left";
       this.ignoredSelectionCount = 0;
       const ids = resolveAnimationTargetElementIds(
-        this.options.slide.frameId,
+        getAnimationSlideScope(this.options.slide),
         step.targets,
         this.options.ea.getViewElements()
       );
@@ -4789,7 +5288,7 @@ Build version: 2026-09-05T16:40:26.928Z
         const elements = this.options.ea.getViewElements();
         const selectedId = this.selectedStepId;
         let steps = removeAnimationTargetConflicts(
-          this.options.slide.frameId,
+          getAnimationSlideScope(this.options.slide),
           this.steps,
           this.targets,
           elements,
@@ -4803,7 +5302,7 @@ Build version: 2026-09-05T16:40:26.928Z
         } else {
           steps.push(step);
         }
-        await saveFrameAnimationSteps(this.options.ea, this.options.slide.frameId, steps);
+        await this.saveAnimationSteps(steps);
         this.steps = steps;
         this.selectedStepId = step.id;
         this.targets = step.targets.map((target) => structuredClone(target));
@@ -4836,7 +5335,7 @@ Build version: 2026-09-05T16:40:26.928Z
     async persistSteps(steps) {
       this.saving = true;
       try {
-        await saveFrameAnimationSteps(this.options.ea, this.options.slide.frameId, steps);
+        await this.saveAnimationSteps(steps);
         this.steps = steps;
         this.options.onSaved();
       } catch (error) {
@@ -4850,9 +5349,13 @@ Build version: 2026-09-05T16:40:26.928Z
     async previewCurrentStep() {
       if (this.targets.length === 0) return;
       await this.previewRuntime.previewStep(
-        this.options.slide.frameId,
+        getAnimationSlideScope(this.options.slide),
         this.buildFormStep(this.selectedStepId ?? "preview")
       );
+    }
+    saveAnimationSteps(steps) {
+      const { slide, ea: ea2 } = this.options;
+      return slide.kind === "frame" ? saveFrameAnimationSteps(ea2, slide.frameId, steps) : saveLineAnimationSteps(ea2, slide.pathId, slide.id, steps);
     }
     buildFormStep(id) {
       const step = {
@@ -5152,19 +5655,17 @@ Build version: 2026-09-05T16:40:26.928Z
       title.textContent = titleText;
       title.title = titleText;
       titleRow.appendChild(title);
-      if (slide.kind === "frame") {
-        const editTitleButton = this.createIconButton(
-          doc,
-          icons.edit,
-          t("editFrameSlideName"),
-          false,
-          () => this.options.callbacks.editFrameSlideName?.(slide)
-        );
-        editTitleButton.className = "slideshow-sorter__title-edit";
-        editTitleButton.draggable = false;
-        editTitleButton.addEventListener("dragstart", (event) => event.preventDefault());
-        titleRow.appendChild(editTitleButton);
-      }
+      const editTitleButton = this.createIconButton(
+        doc,
+        icons.edit,
+        t("editSlideName"),
+        false,
+        () => this.options.callbacks.editSlideName?.(slide)
+      );
+      editTitleButton.className = "slideshow-sorter__title-edit";
+      editTitleButton.draggable = false;
+      editTitleButton.addEventListener("dragstart", (event) => event.preventDefault());
+      titleRow.appendChild(editTitleButton);
       top.appendChild(titleRow);
       const badges = doc.createElement("div");
       badges.className = "slideshow-sorter__badges";
@@ -5177,7 +5678,7 @@ Build version: 2026-09-05T16:40:26.928Z
         badge.innerHTML = `${icons.notebookPen}<span class="slideshow-sorter__badge-text">${label}</span>`;
         badges.appendChild(badge);
       }
-      if (slide.kind === "frame" && slide.animationSteps.length > 0) {
+      if (slide.animationSteps.length > 0) {
         const badge = doc.createElement("span");
         const count = slide.animationSteps.length;
         const label = t("animationCount", { count });
@@ -5247,19 +5748,18 @@ Build version: 2026-09-05T16:40:26.928Z
           () => void this.options.callbacks.toggleInclusion(slide, !slide.excluded)
         )
       );
-      if (slide.kind === "frame") {
-        const animationExpanded = this.options.animationEditingSlideId === slide.id;
-        const animationButton = this.createIconButton(
-          doc,
-          icons.sparkles,
-          t("editAnimations"),
-          false,
-          () => this.options.callbacks.requestAnimationEditor(slide)
-        );
-        animationButton.classList.toggle("is-active", animationExpanded);
-        animationButton.setAttribute("aria-expanded", String(animationExpanded));
-        actions.appendChild(animationButton);
-      } else {
+      const animationExpanded = this.options.animationEditingSlideId === slide.id;
+      const animationButton = this.createIconButton(
+        doc,
+        icons.sparkles,
+        t("editAnimations"),
+        false,
+        () => this.options.callbacks.requestAnimationEditor(slide)
+      );
+      animationButton.classList.toggle("is-active", animationExpanded);
+      animationButton.setAttribute("aria-expanded", String(animationExpanded));
+      actions.appendChild(animationButton);
+      if (slide.kind === "path") {
         actions.appendChild(
           this.createIconButton(doc, icons.edit, t("editLineSlide"), false, () => {
             void this.options.callbacks.editLineSlide(slide, index);
@@ -5279,7 +5779,7 @@ Build version: 2026-09-05T16:40:26.928Z
       actions.appendChild(notesButton);
       content.appendChild(actions);
       if (notesExpanded) this.renderNotesEditor(slide, row);
-      if (slide.kind === "frame" && this.options.animationEditingSlideId === slide.id) {
+      if (this.options.animationEditingSlideId === slide.id) {
         const animationHost = doc.createElement("div");
         animationHost.className = "slideshow-sorter__animation";
         row.appendChild(animationHost);
@@ -5612,6 +6112,7 @@ Build version: 2026-09-05T16:40:26.928Z
     if (!resolved) return "none";
     return JSON.stringify({
       kind: resolved.deck.kind,
+      name: resolved.deck.name,
       pathId: resolved.pathElement?.id ?? null,
       slides: resolved.deck.slides.map((slide) => ({
         id: slide.id,
@@ -5619,7 +6120,7 @@ Build version: 2026-09-05T16:40:26.928Z
         rect: slide.rect,
         notes: slide.notes ?? null,
         excluded: slide.excluded,
-        animationCount: slide.kind === "frame" ? slide.animationSteps.length : 0
+        animationCount: slide.animationSteps.length
       }))
     });
   }
@@ -5642,7 +6143,7 @@ Build version: 2026-09-05T16:40:26.928Z
   }
   function getPresentationSourceLabels(choices, frameLabel, defaultLineLabel) {
     const result = [];
-    if (choices.frame) result.push({ key: "frame", label: frameLabel });
+    if (choices.frame) result.push({ key: "frame", label: choices.frame.deck.name?.trim() || frameLabel });
     const bases = choices.lines.map((line) => line.name?.trim() || defaultLineLabel);
     const totals = /* @__PURE__ */ new Map();
     for (const base of bases) totals.set(base, (totals.get(base) ?? 0) + 1);
@@ -5702,6 +6203,55 @@ Build version: 2026-09-05T16:40:26.928Z
       startFullscreen: isMobile || windowMode === "fullscreen",
       openPresenterView: !isMobile && notesMode === "presenter" && hasSecondaryDisplay
     };
+  }
+  function styleModalActions(actions) {
+    actions.style.display = "flex";
+    actions.style.justifyContent = "flex-end";
+    actions.style.gap = "0.5rem";
+    actions.style.flexWrap = "wrap";
+  }
+  function bindEnterToSave(input, saveButton) {
+    input.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" || event.isComposing) return;
+      event.preventDefault();
+      saveButton.click();
+    });
+  }
+  function addCheckboxOption(container, label) {
+    const doc = container.ownerDocument;
+    const row = doc.createElement("label");
+    row.style.display = "flex";
+    row.style.alignItems = "center";
+    row.style.gap = "0.5rem";
+    row.style.marginBottom = "0.5rem";
+    const input = doc.createElement("input");
+    input.type = "checkbox";
+    const text = doc.createElement("span");
+    text.textContent = label;
+    row.append(input, text);
+    container.appendChild(row);
+    return input;
+  }
+  function addSelectOption(container, label, options) {
+    const doc = container.ownerDocument;
+    const row = doc.createElement("label");
+    row.style.display = "flex";
+    row.style.alignItems = "center";
+    row.style.justifyContent = "space-between";
+    row.style.gap = "1rem";
+    row.style.marginBottom = "0.5rem";
+    const text = doc.createElement("span");
+    text.textContent = label;
+    const select = doc.createElement("select");
+    for (const [value, optionText] of options) {
+      const option = doc.createElement("option");
+      option.value = value;
+      option.textContent = optionText;
+      select.appendChild(option);
+    }
+    row.append(text, select);
+    container.appendChild(row);
+    return select;
   }
   var SlideshowSidepanel = class {
     constructor(options) {
@@ -6320,29 +6870,24 @@ Build version: 2026-09-05T16:40:26.928Z
       });
       thumbnailSizeControl.appendChild(thumbnailSizeSlider);
       summaryRow.appendChild(thumbnailSizeControl);
-      if (deck.kind === "path") {
-        const presentationSettingsButton = doc.createElement("button");
-        presentationSettingsButton.type = "button";
-        presentationSettingsButton.className = "slideshow-sidepanel__icon-button slideshow-sidepanel__presentation-settings";
-        presentationSettingsButton.setAttribute("aria-label", t("linePresentationSettings"));
-        presentationSettingsButton.innerHTML = icons.moreHorizontal;
-        presentationSettingsButton.addEventListener(
-          "click",
-          () => this.openLinePresentationSettings()
-        );
-        summaryRow.appendChild(presentationSettingsButton);
-      }
+      const presentationSettingsButton = doc.createElement("button");
+      presentationSettingsButton.type = "button";
+      presentationSettingsButton.className = "slideshow-sidepanel__icon-button slideshow-sidepanel__presentation-settings";
+      presentationSettingsButton.setAttribute(
+        "aria-label",
+        t(deck.kind === "frame" ? "framePresentationSettings" : "linePresentationSettings")
+      );
+      presentationSettingsButton.innerHTML = icons.moreHorizontal;
+      presentationSettingsButton.addEventListener(
+        "click",
+        () => deck.kind === "frame" ? this.openFramePresentationSettings() : this.openLinePresentationSettings()
+      );
+      summaryRow.appendChild(presentationSettingsButton);
       const reorderEnabled = !this.resolved.pathElement || !hasBoundLineEndpoint(this.resolved.pathElement);
       if (!reorderEnabled) {
         const warning = doc.createElement("div");
         warning.className = "slideshow-warning";
         warning.textContent = t("lineReorderBound");
-        root.appendChild(warning);
-      }
-      if (deck.kind === "path") {
-        const warning = doc.createElement("div");
-        warning.className = "slideshow-warning";
-        warning.textContent = t("lineAnimationUnsupported");
         root.appendChild(warning);
       }
       const sorterContainer = doc.createElement("div");
@@ -6365,7 +6910,7 @@ Build version: 2026-09-05T16:40:26.928Z
           saveNotes: (slide, notes) => this.saveNotes(slide, notes),
           requestAnimationEditor: (slide) => this.requestAnimationEditor(slide),
           mountAnimationEditor: (slide, container) => this.mountAnimationEditor(slide, container),
-          editFrameSlideName: (slide) => this.openFrameSlideNameEditor(slide),
+          editSlideName: (slide) => this.openSlideNameEditor(slide),
           editLineSlide: (slide, index) => this.editLineSlide(slide, index),
           notesBlurred: () => {
             if (this.pendingRefresh) this.scheduleRefresh();
@@ -6598,41 +7143,188 @@ Build version: 2026-09-05T16:40:26.928Z
         new Notice(this.options.t("metadataSaveFailed"));
       }
     }
-    openFrameSlideNameEditor(slide) {
+    openSlideNameEditor(slide) {
       const view = this.boundView;
       if (!view) return;
-      const frame = this.options.ea.getViewElements().find(
-        (element) => element.id === slide.frameId && isFrameElement(element)
-      );
-      if (!frame) return;
       const { ea: ea2, t } = this.options;
       const modal = new ea2.obsidian.Modal(app);
-      modal.titleEl.setText(t("editFrameSlideName"));
+      modal.titleEl.setText(t("editSlideName"));
       const input = modal.contentEl.createEl("input", {
         type: "text",
-        value: frame.name ?? "",
-        attr: { "aria-label": t("frameSlideName") }
+        value: slide.title,
+        attr: { "aria-label": t("slideName") }
       });
       input.style.width = "100%";
       input.style.marginBottom = "1rem";
       const actions = modal.contentEl.createDiv({ cls: "modal-button-container" });
+      styleModalActions(actions);
       const cancel = actions.createEl("button", { text: t("settingsCancel") });
       cancel.addEventListener("click", () => modal.close());
       const save = actions.createEl("button", { text: t("settingsSave"), cls: "mod-cta" });
       save.addEventListener("click", () => {
         void (async () => {
           try {
-            await renameFrameSlide(ea2, slide.frameId, input.value);
+            if (slide.kind === "frame") await renameFrameSlide(ea2, slide.frameId, input.value);
+            else await renameLineSlide(ea2, slide.pathId, slide.id, input.value);
             await view.forceSave(true);
             modal.close();
             this.lastFingerprint = "";
             await this.refresh(true);
           } catch (error) {
-            console.error("Slideshow frame rename failed", error);
+            console.error("Slideshow slide rename failed", error);
             new Notice(t("metadataSaveFailed"));
           }
         })();
       });
+      bindEnterToSave(input, save);
+      modal.open();
+      input.focus();
+      input.select();
+    }
+    chooseFrameToLineOptions() {
+      const { ea: ea2, t } = this.options;
+      return new Promise((resolve) => {
+        const modal = new ea2.obsidian.Modal(app);
+        let settled = false;
+        const finish = (choice) => {
+          if (settled) return;
+          settled = true;
+          resolve(choice);
+          modal.close();
+        };
+        modal.titleEl.setText(t("convertFrameToLine"));
+        modal.contentEl.createEl("p", { text: t("convertFrameToLinePrompt") });
+        const deleteFrames = addCheckboxOption(modal.contentEl, t("conversionDeleteFrames"));
+        const visibleSlidesOnly = addCheckboxOption(
+          modal.contentEl,
+          t("conversionVisibleSlidesOnly")
+        );
+        const actions = modal.contentEl.createDiv({ cls: "modal-button-container" });
+        styleModalActions(actions);
+        const cancel = actions.createEl("button", { text: t("settingsCancel") });
+        cancel.addEventListener("click", () => finish(null));
+        const create = actions.createEl("button", {
+          text: t("conversionCreate"),
+          cls: "mod-cta"
+        });
+        create.addEventListener(
+          "click",
+          () => finish({
+            deleteFrames: deleteFrames.checked,
+            visibleSlidesOnly: visibleSlidesOnly.checked
+          })
+        );
+        modal.onClose = () => {
+          if (!settled) {
+            settled = true;
+            resolve(null);
+          }
+        };
+        modal.open();
+      });
+    }
+    chooseLineToFrameOptions() {
+      const { ea: ea2, t } = this.options;
+      return new Promise((resolve) => {
+        const modal = new ea2.obsidian.Modal(app);
+        let settled = false;
+        const finish = (choice) => {
+          if (settled) return;
+          settled = true;
+          resolve(choice);
+          modal.close();
+        };
+        modal.titleEl.setText(t("convertLineToFrame"));
+        modal.contentEl.createEl("p", { text: t("convertLineToFramePrompt") });
+        const deleteLine = addCheckboxOption(modal.contentEl, t("conversionDeleteLine"));
+        const frameKind = addSelectOption(modal.contentEl, t("convertLineToFrameKind"), [
+          ["marker", t("convertLineToFrameMarker")],
+          ["normal", t("convertLineToFrameNormal")]
+        ]);
+        const geometry = addSelectOption(modal.contentEl, t("convertLineToFrameGeometryTitle"), [
+          ["aspect", t("convertLineToFrameAspect")],
+          ["exact", t("convertLineToFrameExact")]
+        ]);
+        const actions = modal.contentEl.createDiv({ cls: "modal-button-container" });
+        styleModalActions(actions);
+        const cancel = actions.createEl("button", { text: t("settingsCancel") });
+        cancel.addEventListener("click", () => finish(null));
+        const create = actions.createEl("button", {
+          text: t("conversionCreate"),
+          cls: "mod-cta"
+        });
+        create.addEventListener(
+          "click",
+          () => finish({
+            deleteLine: deleteLine.checked,
+            frameKind: frameKind.value === "normal" ? "normal" : "marker",
+            correctAspectRatio: geometry.value === "aspect"
+          })
+        );
+        modal.onClose = () => {
+          if (!settled) {
+            settled = true;
+            resolve(null);
+          }
+        };
+        modal.open();
+      });
+    }
+    openFramePresentationSettings() {
+      const view = this.boundView;
+      const deck = this.choices.frame?.deck;
+      if (!view || !deck) return;
+      const { ea: ea2, t } = this.options;
+      const modal = new ea2.obsidian.Modal(app);
+      modal.titleEl.setText(t("framePresentationSettings"));
+      const input = modal.contentEl.createEl("input", {
+        type: "text",
+        value: deck.name ?? "",
+        attr: { "aria-label": t("framePresentationName") }
+      });
+      input.style.width = "100%";
+      input.style.marginBottom = "1rem";
+      const actions = modal.contentEl.createDiv({ cls: "modal-button-container" });
+      styleModalActions(actions);
+      const save = actions.createEl("button", { text: t("settingsSave"), cls: "mod-cta" });
+      save.addEventListener("click", () => {
+        void (async () => {
+          try {
+            await renameFramePresentation(ea2, input.value);
+            await view.forceSave(true);
+            modal.close();
+            this.lastFingerprint = "";
+            await this.refresh(true);
+          } catch (error) {
+            console.error("Slideshow frame presentation rename failed", error);
+            new Notice(t("metadataSaveFailed"));
+          }
+        })();
+      });
+      const convert = actions.createEl("button", { text: t("convertFrameToLine") });
+      convert.addEventListener("click", () => {
+        void (async () => {
+          const conversionOptions = await this.chooseFrameToLineOptions();
+          if (!conversionOptions) return;
+          try {
+            await this.sorter?.flushNotes();
+            const pathId = await convertFramePresentationToLine(ea2, conversionOptions);
+            await view.forceSave(true);
+            modal.close();
+            const sourceKey = `line:${pathId}`;
+            this.presentationSourceKey = sourceKey;
+            this.presentationSourceByDrawing.set(view.file.path, sourceKey);
+            this.preferredPresentationType = "line";
+            await this.persistLaunchPreferences();
+            this.lastFingerprint = "";
+            await this.refresh(true);
+          } catch (error) {
+            console.error("Slideshow frame-to-line conversion failed", error);
+            new Notice(t("conversionFailed"));
+          }
+        })();
+      });
+      bindEnterToSave(input, save);
       modal.open();
       input.focus();
       input.select();
@@ -6652,12 +7344,10 @@ Build version: 2026-09-05T16:40:26.928Z
       input.style.width = "100%";
       input.style.marginBottom = "1rem";
       const actions = modal.contentEl.createDiv({
-        cls: "slideshow-line-presentation-settings__actions"
+        cls: "modal-button-container slideshow-line-presentation-settings__actions"
       });
-      actions.style.display = "flex";
-      actions.style.gap = "0.5rem";
-      actions.style.flexWrap = "wrap";
-      const save = actions.createEl("button", { text: t("settingsSave") });
+      styleModalActions(actions);
+      const save = actions.createEl("button", { text: t("settingsSave"), cls: "mod-cta" });
       save.addEventListener("click", () => {
         void (async () => {
           try {
@@ -6675,9 +7365,14 @@ Build version: 2026-09-05T16:40:26.928Z
       const remove = actions.createEl("button", { text: t("removeLinePresentation") });
       remove.style.color = "var(--text-error)";
       remove.addEventListener("click", () => {
-        const confirmed = this.ownerWindow.confirm(t("removeLinePresentationConfirm"));
-        if (!confirmed) return;
         void (async () => {
+          const confirmed = await openConfirmationModal(ea2, app, {
+            title: t("removeLinePresentation"),
+            message: t("removeLinePresentationConfirm"),
+            confirmText: t("removeLinePresentation"),
+            cancelText: t("settingsCancel")
+          });
+          if (!confirmed) return;
           try {
             await removeLinePresentation(ea2, source.pathId);
             await view.forceSave(true);
@@ -6692,6 +7387,36 @@ Build version: 2026-09-05T16:40:26.928Z
           }
         })();
       });
+      if (!this.choices.frame) {
+        const convert = actions.createEl("button", { text: t("convertLineToFrame") });
+        convert.addEventListener("click", () => {
+          void (async () => {
+            const conversionOptions = await this.chooseLineToFrameOptions();
+            if (!conversionOptions) return;
+            try {
+              await this.sorter?.flushNotes();
+              await convertLinePresentationToFrames(
+                ea2,
+                source.pathId,
+                this.options.config,
+                conversionOptions
+              );
+              await view.forceSave(true);
+              modal.close();
+              this.presentationSourceKey = "frame";
+              this.presentationSourceByDrawing.set(view.file.path, "frame");
+              this.preferredPresentationType = "frame";
+              await this.persistLaunchPreferences();
+              this.lastFingerprint = "";
+              await this.refresh(true);
+            } catch (error) {
+              console.error("Slideshow line-to-frame conversion failed", error);
+              new Notice(t("conversionFailed"));
+            }
+          })();
+        });
+      }
+      bindEnterToSave(input, save);
       modal.open();
       input.focus();
       input.select();
@@ -6834,10 +7559,6 @@ Build version: 2026-09-05T16:40:26.928Z
       }
     }
     requestAnimationEditor(slide) {
-      if (slide.kind !== "frame") {
-        new Notice(this.options.t("lineAnimationUnsupported"));
-        return;
-      }
       void (async () => {
         await this.sorter?.flushNotes();
         if (this.animationEditingSlideId === slide.id) {
@@ -6851,7 +7572,7 @@ Build version: 2026-09-05T16:40:26.928Z
         this.sorter?.destroy();
         this.sorter = null;
         const sorter = this.render(slide.id, expandedNotesId);
-        this.selectAndZoomAnimationFrame(slide);
+        this.selectAndZoomAnimationSlide(slide);
         sorter?.scrollToSlide(slide.id, false, "start");
       })();
     }
@@ -6877,12 +7598,16 @@ Build version: 2026-09-05T16:40:26.928Z
       this.animationEditor.render();
       this.animationEditor.handleSceneChange(this.options.ea.getViewElements(), api.getAppState());
     }
-    selectAndZoomAnimationFrame(slide) {
+    selectAndZoomAnimationSlide(slide) {
       const view = this.boundView;
       if (!view) return;
-      const frame = this.options.ea.getViewElements().find((element) => element.id === slide.frameId);
-      if (!frame) return;
-      this.options.ea.selectElementsInView([frame]);
+      if (slide.kind === "frame") {
+        const frame = this.options.ea.getViewElements().find((element) => element.id === slide.frameId);
+        if (frame) this.options.ea.selectElementsInView([frame]);
+      } else {
+        const path = this.options.ea.getViewElements().find((element) => element.id === slide.pathId);
+        if (path) this.options.ea.selectElementsInView([path]);
+      }
       this.zoomToSlide(slide);
       app.workspace.setActiveLeaf(view.leaf, { focus: true });
     }
@@ -6941,21 +7666,41 @@ Build version: 2026-09-05T16:40:26.928Z
         (candidate) => isFrameElement(candidate) && hasFrameSlideshowDeclaration(candidate.customData)
       ) ? "frame" : null);
       if (!presentationSourceKey) return [];
-      return [
+      const actions = [
         {
           id: "edit-slideshow",
           title: latestContext.t("editSlideshow"),
-          icon: "presentation",
+          icon: "pencil",
           action: () => {
             latestContext.ea.setView(latestContext.view);
             void openSlideshowSidepanel(
               latestContext,
               presentationSourceKey,
-              presentationSourceKey === "frame" ? element.id : void 0
+              presentationSourceKey === "frame" ? element.id : void 0,
+              true
             );
           }
         }
       ];
+      if (presentationSourceKey === "frame" && isFrameElement(element)) {
+        actions.push({
+          id: "fit-frame-to-slideshow-aspect",
+          title: latestContext.t("fitFrameToPresentationAspect"),
+          icon: "ratio",
+          action: () => {
+            latestContext.ea.setView(latestContext.view);
+            void resizeFrameToPresentationAspect(
+              latestContext.ea,
+              element.id,
+              latestContext.config
+            ).catch((error) => {
+              console.error("Slideshow frame aspect-ratio resize failed", error);
+              new Notice(latestContext.t("resizeFrameFailed"));
+            });
+          }
+        });
+      }
+      return actions;
     });
   }
   async function startSlideshowPresentation(context, launch = {}) {
@@ -7039,11 +7784,16 @@ Build version: 2026-09-05T16:40:26.928Z
       t
     });
   }
-  async function openSlideshowSidepanel(context, preferredSource, preferredSlideId) {
+  async function openSlideshowSidepanel(context, preferredSource, preferredSlideId, reassertActiveTab = false) {
     const runtime = getSlideshowRuntime();
     await runtime.presentations.get(context.view)?.exit();
     if (runtime.sidepanel) {
-      await runtime.sidepanel.activate(context.view, preferredSource, preferredSlideId);
+      await runtime.sidepanel.activate(
+        context.view,
+        preferredSource,
+        preferredSlideId,
+        reassertActiveTab
+      );
       return;
     }
     const existing = context.ea.checkForActiveSidepanelTabForScript();
@@ -7083,15 +7833,25 @@ Build version: 2026-09-05T16:40:26.928Z
       }
     });
     const handle = {
-      activate: async (view, source, slideId) => {
+      activate: async (view, source, slideId, shouldReassertActiveTab = false) => {
         await sidepanel.activate(view, source, slideId);
         tab.open();
+        sidepanel.revealRequestedSlide();
+        if (!shouldReassertActiveTab) return;
+        await sleepInWindow(view.ownerWindow, 250);
+        if (runtime.sidepanel?.activate !== handle.activate || tab.isActiveTab()) return;
+        tab.focus();
         sidepanel.revealRequestedSlide();
       }
     };
     runtime.sidepanel = handle;
     sidepanel.initialize();
-    await handle.activate(context.view, preferredSource, preferredSlideId);
+    await handle.activate(
+      context.view,
+      preferredSource,
+      preferredSlideId,
+      reassertActiveTab
+    );
   }
   async function runManualSlideshowInvocation(context) {
     const active = getSlideshowRuntime().presentations.get(context.view);

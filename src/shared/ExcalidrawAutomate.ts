@@ -2122,6 +2122,7 @@ export class ExcalidrawAutomate {
       locked: false,
       frameId: null as string | null,
       hasTextLink: !!(eltype === "text" && link),
+      created: Date.now(),
       ...(scale ? { scale } : {}),
     } as unknown as Mutable<ExcalidrawElement>;
   }
