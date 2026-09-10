@@ -127,7 +127,7 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
   when two views show the same file. It can be combined with Alt/Option.
 - **Open the Slideshow sidepanel:** Hold Cmd on macOS or Ctrl on Windows/Linux while invoking the script.
 
-Build version: 2026-09-08T17:53:22.744Z
+Build version: 2026-09-10T16:55:07.251Z
 
 ```javascript
 */
@@ -2526,10 +2526,16 @@ Build version: 2026-09-08T17:53:22.744Z
     delete copy.version;
     delete copy.versionNonce;
     delete copy.updated;
+    if (copy.type === "frame") delete copy.name;
     return copy;
   }
   function getSceneVisualFingerprint(elements) {
     return JSON.stringify(elements.map(cloneWithoutMetadata));
+  }
+  function getSlideVisualFingerprint(elements, slide) {
+    return getSceneVisualFingerprint(
+      slide.kind === "path" ? elements.filter((element) => element.id !== slide.pathId) : elements
+    );
   }
   function readBackgroundColor(appState) {
     return typeof appState.viewBackgroundColor === "string" ? appState.viewBackgroundColor : FALLBACK_BACKGROUND;
@@ -2560,8 +2566,6 @@ Build version: 2026-09-08T17:53:22.744Z
       (preview) => URL.revokeObjectURL(preview.objectUrl)
     );
     generation = 0;
-    lastElements = null;
-    lastFingerprint = "";
     /** Returns the drawing background used behind previews. */
     getBackgroundColor() {
       return readBackgroundColor(this.api.getAppState());
@@ -2575,14 +2579,6 @@ Build version: 2026-09-08T17:53:22.744Z
       this.generation += 1;
       this.queue.clear();
       this.cached.clear();
-      this.lastElements = null;
-      this.lastFingerprint = "";
-    }
-    getFingerprint(elements) {
-      if (elements === this.lastElements) return this.lastFingerprint;
-      this.lastElements = elements;
-      this.lastFingerprint = getSceneVisualFingerprint(elements);
-      return this.lastFingerprint;
     }
     createPreviewElement(cached, ownerDocument) {
       const image = ownerDocument.createElement("img");
@@ -2597,7 +2593,7 @@ Build version: 2026-09-08T17:53:22.744Z
       image.style.backgroundColor = cached.backgroundColor;
       return image;
     }
-    async exportPreview(elements, slide, hiddenElementIds, originalOpacities, targetWidth, generation, cacheKey) {
+    async exportPreview(localElements, slide, hiddenElementIds, originalOpacities, targetWidth, generation, cacheKey) {
       const appState = this.api.getAppState();
       const rect = getPreviewNavigationRect(
         slide,
@@ -2611,9 +2607,6 @@ Build version: 2026-09-08T17:53:22.744Z
         width: Math.abs(rect.right - rect.left),
         height: Math.abs(rect.bottom - rect.top)
       };
-      const localElements = this.ea.getElementsIntersectionArea(elements, exportArea, {
-        includeBoundElements: true
-      });
       return await withEaExportLock(this.ea, async () => {
         if (generation !== this.generation) return void 0;
         this.ea.clear();
@@ -2681,6 +2674,15 @@ Build version: 2026-09-08T17:53:22.744Z
         this.config.printSlideWidth,
         this.config.printSlideHeight
       );
+      const exportArea = {
+        x: Math.min(rect.left, rect.right),
+        y: Math.min(rect.top, rect.bottom),
+        width: Math.abs(rect.right - rect.left),
+        height: Math.abs(rect.bottom - rect.top)
+      };
+      const localElements = this.ea.getElementsIntersectionArea(elements, exportArea, {
+        includeBoundElements: true
+      });
       const cacheKey = [
         appState.theme,
         readBackgroundColor(appState),
@@ -2689,7 +2691,7 @@ Build version: 2026-09-08T17:53:22.744Z
         `opacity:${opacityKey}`,
         `area:${rect.left},${rect.top},${rect.right},${rect.bottom}`,
         `width:${targetWidth}`,
-        this.getFingerprint(elements)
+        getSlideVisualFingerprint(localElements, slide)
       ].join("|");
       const existing = this.cached.get(cacheKey);
       if (existing) return this.createPreviewElement(existing, ownerDocument);
@@ -2697,7 +2699,7 @@ Build version: 2026-09-08T17:53:22.744Z
       const cached = await this.queue.enqueue(
         cacheKey,
         () => this.exportPreview(
-          elements,
+          localElements,
           slide,
           hiddenElementIds,
           state.originalOpacities,
