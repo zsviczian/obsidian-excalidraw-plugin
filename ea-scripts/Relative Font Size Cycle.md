@@ -6,10 +6,8 @@ const api = ea.getExcalidrawAPI();
 const st = api.getAppState();
 const zoom = st.zoom.value;
 const currentItemFontSize = st.currentItemFontSize;
-
 const fontsizes = FONTSIZES.map(s=>s/zoom);
 const els = ea.getViewSelectedElements().filter(el=>el.type === "text");
-
 const findClosestIndex = (val, list) => {
   let closestIndex = 0;
   let closestDifference = Math.abs(list[0] - val);
@@ -22,15 +20,13 @@ const findClosestIndex = (val, list) => {
   }
   return closestIndex;
 }
-
 ea.viewUpdateScene({appState:{currentItemFontSize: fontsizes[(findClosestIndex(currentItemFontSize, fontsizes)+1) % fontsizes.length] }});
-
 if(els.length>0) {
   ea.copyViewElementsToEAforEditing(els);
   ea.getElements().forEach(el=> {
     el.fontSize = fontsizes[(findClosestIndex(el.fontSize, fontsizes)+1) % fontsizes.length];
     const font = ExcalidrawLib.getFontString(el);
-    const lineHeight = ExcalidrawLib.getDefaultLineHeight(el.fontFamily);
+    const lineHeight = (typeof el.lineHeight === "number" && Number.isFinite(el.lineHeight)) ? el.lineHeight : 1.25;
     const {width, height, baseline} = ExcalidrawLib.measureText(el.originalText, font, lineHeight);
     el.width = width;
     el.height = height;
@@ -38,3 +34,4 @@ if(els.length>0) {
   });
   ea.addElementsToView();
 }
+
