@@ -105,6 +105,16 @@ export class ViewSaveCoordinator {
     private readonly dependencies: ViewSaveCoordinatorDependencies,
   ) {}
 
+  /** Whether the shared save/synchronization exclusion flag is active. */
+  public get isSaveInProgress(): boolean {
+    return Boolean(this.view.semaphores?.saving);
+  }
+
+  /** Whether persistence is occupied by the existing save or autosave paths. */
+  public get isBusy(): boolean {
+    return this.isSaveInProgress || Boolean(this.view.semaphores?.autosaving);
+  }
+
   /** Runs the historical public save policy. */
   public async save(
     suppressReloadFromOwnWrite: boolean = true,

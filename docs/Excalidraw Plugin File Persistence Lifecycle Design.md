@@ -421,6 +421,8 @@ In particular:
 
 That distinction matters when evaluating future refactoring.
 
+External lifecycle consumers no longer read these fields directly. `ExcalidrawView` exposes semantic queries for closing/migration state and same-file editing, plus a one-shot operation that consumes own-write reload suppression. Save-state queries delegate to `ViewSaveCoordinator.isSaveInProgress` and `ViewSaveCoordinator.isBusy`. These accessors deliberately retain the existing storage and Boolean expressions; in particular, `isSaveInProgress` still reflects the broad `saving` field shared by persistence and synchronization until those operations are separated.
+
 ---
 
 # 7. Timers and timing-based guards

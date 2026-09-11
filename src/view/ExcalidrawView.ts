@@ -718,6 +718,42 @@ export default class ExcalidrawView
     return mainDocument === this.ownerDocument;
   }
 
+  /** Whether teardown has started for this view. */
+  public isClosing(): boolean {
+    return Boolean(this.semaphores?.viewunload);
+  }
+
+  /** Whether this runtime must reject ordinary work during teardown or migration. */
+  public isClosingOrMigrating(): boolean {
+    return Boolean(
+      this.semaphores?.viewunload || this.semaphores?.windowMigrating,
+    );
+  }
+
+  /** Whether another editor currently owns part of this drawing's Markdown. */
+  public isSameFileEditingActive(): boolean {
+    return Boolean(this.semaphores?.embeddableIsEditingSelf);
+  }
+
+  /** Whether the shared save/synchronization exclusion flag is active. */
+  public isSaveInProgress(): boolean {
+    return this.saveCoordinator.isSaveInProgress;
+  }
+
+  /** Whether the existing save or autosave path is occupied. */
+  public isPersistenceBusy(): boolean {
+    return this.saveCoordinator.isBusy;
+  }
+
+  /** Consumes the one-shot reload suppression armed for this view's own write. */
+  public consumeOwnWriteReloadSuppression(): boolean {
+    if (!this.semaphores?.preventReload) {
+      return false;
+    }
+    this.semaphores.preventReload = false;
+    return true;
+  }
+
   setHookServer(ea?: ExcalidrawAutomate) {
     if (ea) {
       this._hookServer = ea;

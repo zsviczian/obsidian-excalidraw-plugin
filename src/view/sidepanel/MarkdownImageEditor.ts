@@ -934,7 +934,7 @@ class MarkdownImageEditorController {
         if (saveEditor && canClearOwnerEditing) {
           await invalidatedView.forceSave(true, true);
           await invalidatedView.reload(false, invalidatedView.file);
-          // reload() clears semaphores.embeddableIsEditingSelf as soon as a debounce timer is
+          // reload() clears same-file editing as soon as a debounce timer is
           // pending, opening a window (spanning its vault.read() await) where a concurrently
           // polling autosave can slip in - see the matching comment in
           // persistOwnerAfterEditorFlush() for why this is a real, tight race. Re-arm it; the
@@ -1489,8 +1489,7 @@ class MarkdownImageEditorController {
       if (!this.ensureOwnerValid() || this.view !== ownerView) {
         return;
       }
-      const semaphores = ownerView.semaphores;
-      if (!semaphores?.saving && !semaphores?.autosaving) {
+      if (!ownerView.isPersistenceBusy()) {
         return;
       }
       await new Promise<void>((resolve) => {
@@ -1503,7 +1502,7 @@ class MarkdownImageEditorController {
    * Forces a disk save of the owner view, retrying if a concurrent save (autosave, or another
    * controller flushing during a handoff) claims the saving semaphore between
    * waitForOwnerSaveIdle() resolving and the save() call below. save() silently no-ops when
-   * semaphores.saving is already true when it is entered, and awaiting an already-resolved
+   * save-in-progress state is already true when it is entered, and awaiting an already-resolved
    * promise still yields a microtask turn, so a single poll-then-call attempt cannot guarantee
    * persistence on its own.
    */
@@ -1516,7 +1515,7 @@ class MarkdownImageEditorController {
       if (!this.ensureOwnerValid()) {
         return;
       }
-      if (this.view.semaphores.saving) {
+      if (this.view.isSaveInProgress()) {
         continue;
       }
       await this.view.save(true, true, true);
@@ -1526,7 +1525,7 @@ class MarkdownImageEditorController {
       // the same reload(false, file) call invalidateOwner() uses for the cross-view handoff case.
       if (this.ensureOwnerValid()) {
         await this.view.reload(false, this.view.file);
-        // reload() clears semaphores.embeddableIsEditingSelf as soon as a debounce timer is
+        // reload() clears same-file editing as soon as a debounce timer is
         // pending (it assumes editing has ended). It hasn't: flushCurrentElement() runs mid-session,
         // and switchElement()/flushPendingEditsBeforeHandoff() decide the real end state right
         // after this returns. Re-arm it immediately so nothing else can misread editing as finished

@@ -365,7 +365,7 @@ export class EventManager {
         //avoid double saving
         if (
           previouslyActiveEV?.isDirty() &&
-          !previouslyActiveEV.semaphores?.viewunload
+          !previouslyActiveEV.isClosing()
         ) {
           await previouslyActiveEV.save(true); //this will update transclusions in the drawing
         }

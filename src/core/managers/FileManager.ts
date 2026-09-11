@@ -667,10 +667,7 @@ export class PluginFileManager {
     const excalidrawViews = getExcalidrawViews(this.app);
     excalidrawViews.forEach((excalidrawView) => {
       void (async () => {
-        if (
-          excalidrawView.semaphores?.viewunload ||
-          excalidrawView.semaphores?.windowMigrating
-        ) {
+        if (excalidrawView.isClosingOrMigrating()) {
           return;
         }
         if (
@@ -682,8 +679,7 @@ export class PluginFileManager {
                 file.path.lastIndexOf(".excalidraw"),
               )}.md` === excalidrawView.file.path))
         ) {
-          if (excalidrawView.semaphores?.preventReload) {
-            excalidrawView.semaphores.preventReload = false;
+          if (excalidrawView.consumeOwnWriteReloadSuppression()) {
             return;
           }
 
@@ -724,7 +720,7 @@ export class PluginFileManager {
             return;
           }
           if (file.extension === "md") {
-            if (excalidrawView.semaphores?.embeddableIsEditingSelf) {
+            if (excalidrawView.isSameFileEditingActive()) {
               return;
             }
             const incomingData = new ExcalidrawData(this.plugin);
