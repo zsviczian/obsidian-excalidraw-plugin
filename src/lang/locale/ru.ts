@@ -128,6 +128,7 @@ export default {
     "Скопировать [[ссылка]] для выбранного элемента в буфер обмена.",
   INSERT_LINK_TO_ELEMENT_ERROR: "Выбор отдельного элемента в сцене",
   INSERT_LINK_TO_ELEMENT_READY: "Ссылка ГОТОВА и доступна в буфере обмена",
+  PADDING_ZOOM_ARIA: "Изменить отступ этого эмбеда area=",
   INSERT_LINK: "Вставить ссылку на файл",
   INSERT_COMMAND: "Вставить команду Obsidian в качестве ссылки",
   INSERT_IMAGE:
