@@ -2824,7 +2824,181 @@ The current multi-view camera protection is intentional and important.
 
 ---
 
-# 77. Final assessment
+# 77. Multiple-device and multiple-view synchronization scenarios
+
+Two important synchronization scenarios are worth making explicit because they exercise several of the lifecycle mechanisms described above.
+
+## 77.1 Same drawing edited on multiple devices
+
+A common case is the same `.excalidraw.md` file being edited independently on multiple devices, for example:
+
+* desktop;
+
+* iPad;
+
+* synchronized through Obsidian Sync or another file synchronization mechanism.
+
+The devices do not share a live collaborative session.
+
+Each device can temporarily contain newer local scene state while receiving a different version of the same vault file from synchronization.
+
+When such an incoming Vault modification reaches an open `ExcalidrawView`, the live scene should therefore not be replaced blindly.
+
+This is one of the primary use cases for:
+
+`synchronizeWithData(...)`
+
+The incoming file is parsed into `ExcalidrawData`, and the live scene is reconciled using Excalidraw element identity and version information.
+
+For matching element IDs:
+
+* a higher incoming element version wins;
+
+* a higher local element version survives;
+
+* equal-version but different content is handled according to the synchronization rules described earlier.
+
+If the resulting merged live scene differs from the incoming persisted state, the view must remain or become dirty so that the surviving local state can eventually be written back.
+
+### Deleted element tombstones
+
+`deletedElements` are retained as tombstones for serialization and synchronization.
+
+For example:
+
+```text
+Desktop:
+    element A deleted at version 6
+
+iPad:
+    element A still present at version 5
+```
+
+If element A simply disappeared from the serialized document, the other device would have insufficient information to determine that the element had been deliberately deleted.
+
+The tombstone preserves:
+
+* the element ID;
+
+* the newer element version;
+
+* the deleted state.
+
+This allows the newer deletion to defeat an older live version received from another copy of the drawing.
+
+Deleted elements are therefore part of the synchronization state even though they are no longer part of the visible scene.
+
+### Incoming modification while saving
+
+A synchronized file modification can arrive while the local view is saving.
+
+Such a Vault `modify` event must not automatically be treated as the expected echo of the local save.
+
+The lifecycle must distinguish between:
+
+* the self-save `modify` event suppressed through `preventReload`;
+
+* a genuine incoming modification from another device or another source.
+
+If synchronization cannot proceed immediately because persistence is active, the latest vault state should eventually be reread and reconciled rather than simply discarded.
+
+---
+
+## 77.2 Same file open as Excalidraw and Markdown
+
+Another common case is the same `.excalidraw.md` file being open simultaneously in:
+
+* an `ExcalidrawView`;
+
+* a Markdown view.
+
+The user can alternate between the two views and make changes in both representations of the same file.
+
+This exercises both document synchronization and viewport protection.
+
+### Preserve the latest Markdown state
+
+The live Excalidraw API can contain graphical changes that are newer than the vault file.
+
+At the same time, the Markdown view can write newer raw Markdown content.
+
+The next Excalidraw save must preserve both.
+
+In terms of the document representations described earlier:
+
+* `this.excalidrawAPI` can contain the newest graphical scene;
+
+* `this.data` must represent sufficiently current raw Markdown for subsequent serialization;
+
+* `this.excalidrawData` bridges the graphical and Markdown representations;
+
+* `viewSaveData` is the prepared serialized result eventually returned through `getViewData()`.
+
+A subsequent Excalidraw save must not reconstruct the `.excalidraw.md` file using stale raw Markdown and thereby overwrite changes made in the Markdown view.
+
+This applies to ordinary preserved Markdown content as well as Excalidraw-managed sections.
+
+### Preserve the Excalidraw viewport
+
+A same-file Markdown modification should synchronize document content without behaving like an intentional navigation event in the graphical view.
+
+The current Excalidraw viewport should therefore remain stable.
+
+In particular:
+
+* persisted `scrollX` should not replace the current view's horizontal position;
+
+* persisted `scrollY` should not replace the current view's vertical position;
+
+* persisted zoom should not replace the current zoom;
+
+* automatic `zoomToFit()` should not run merely because the other view modified the same file.
+
+This is the purpose of the multi-view viewport protection and `preventAutozoom` behavior described earlier.
+
+The file is shared between the views, but the active graphical viewport should remain local to the `ExcalidrawView`.
+
+---
+
+These two scenarios exercise different parts of the same lifecycle:
+
+```text
+multiple devices
+    → incoming Vault modification
+    → ExcalidrawData parsing
+    → synchronizeWithData()
+    → element-version and tombstone reconciliation
+    → dirty merged scene when required
+
+ExcalidrawView + Markdown view
+    → incoming same-file modification
+    → preserve current raw Markdown basis
+    → synchronize drawing state
+    → preserve scrollX / scrollY / zoom
+    → avoid unintended zoomToFit()
+```
+
+Both should remain explicit regression scenarios when changing:
+
+* `synchronizeWithData()`;
+
+* `deletedElements`;
+
+* `this.data`;
+
+* save revision handling;
+
+* `preventReload`;
+
+* incoming Vault modify handling;
+
+* multi-view reload behavior;
+
+* `preventAutozoom`.
+
+---
+
+# 78. Final assessment
 
 The Excalidraw file lifecycle is best understood as a distributed state machine spanning four domains:
 
