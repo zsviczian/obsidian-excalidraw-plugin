@@ -4750,6 +4750,7 @@ export default class ExcalidrawView
         currentItemStrokeColor: st.currentItemStrokeColor,
         currentItemBackgroundColor: st.currentItemBackgroundColor,
         currentItemFillStyle: st.currentItemFillStyle,
+        currentItemStickynoteStrokeColor: st.currentItemStickynoteStrokeColor,
         ...getAppStateStrokeWidthEntry(
           st.currentItemStrokeWidthKey,
           st.currentItemStrokeWidth,
