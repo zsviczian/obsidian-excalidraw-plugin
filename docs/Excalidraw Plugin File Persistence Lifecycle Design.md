@@ -86,7 +86,7 @@ flowchart LR
     D["this.data<br>raw Markdown"]
     ED["ExcalidrawData<br>parsed domain model"]
     API["Excalidraw API<br>live editor scene"]
-    S["viewSaveData<br>prepared serialization"]
+    S["preparedSaveText<br>prepared serialization"]
 
     F --> D
     D --> ED
@@ -178,7 +178,7 @@ This includes the current:
 
 This can be newer than both `ExcalidrawData` and the vault file while the user is drawing.
 
-### `viewSaveData`
+### `preparedSaveText`
 
 A prepared serialized snapshot.
 
@@ -316,7 +316,7 @@ This division is much cleaner than having a single giant `save()` method, althou
 |`this.data`|Last raw `.excalidraw.md` text accepted by the view|
 |`this.excalidrawData`|Parsed/domain representation|
 |`this.excalidrawAPI`|Current live Excalidraw editor|
-|`this.viewSaveData`|Fully prepared text intended for the next `getViewData()`|
+|`this.preparedSaveText`|Fully prepared text intended for the next `getViewData()`|
 |`this.lastSavedData`|`TextFileView`'s notion of its previously persisted text|
 |`deletedElements`|Deleted Excalidraw elements retained as tombstones for serialization/synchronization|
 
@@ -579,7 +579,7 @@ The revision model prevents that.
 
 # 12. Core save pipeline
 
-The actual persistence implementation remains in `ExcalidrawView.performSaveWithSideEffectPolicy()`.
+The actual persistence implementation remains in `ExcalidrawView.executeSaveRequest()`.
 
 The normal sequence is approximately:
 
@@ -590,7 +590,7 @@ flowchart TD
     C["Snapshot live API state"]
     D["ExcalidrawData.syncElements()"]
     E["Prepare serialized Markdown"]
-    F["getViewData() → viewSaveData"]
+    F["getViewData() → preparedSaveText"]
     G["TextFileView.save()"]
     H["Mark persisted revision"]
     I["BAK / autoexport / embed side effects"]
@@ -702,14 +702,14 @@ When the drawing is simultaneously being edited as Markdown in another view, com
 After preparation:
 
 ```ts
-viewSaveData = result;
+preparedSaveText = result;
 ```
 
 and:
 
 ```ts
 getViewData() {
-  return this.viewSaveData ?? this.data;
+  return this.preparedSaveText ?? this.data;
 }
 ```
 
@@ -723,7 +723,7 @@ This async-preparation/sync-getter bridge should be considered a fundamental con
 
 For an ordinary save:
 
-1. the final text is prepared into `viewSaveData`;
+1. the final text is prepared into `preparedSaveText`;
     
 2. `super.save()` invokes the Obsidian `TextFileView` persistence path;
     
@@ -811,7 +811,7 @@ Incoming Markdown is read from the vault and parsed into a temporary `Excalidraw
 
 The existing view then runs approximately:
 
-`synchronizeWithData(inData)`
+`synchronizeWithData(incomingData)`
 
 rather than replacing the entire live scene.
 
@@ -922,11 +922,11 @@ That is a valuable safety property.
 
 ---
 
-# 22. `lastLoadedFile`
+# 22. `textFileViewLoadedFile`
 
 `setViewData()` contains another defensive mechanism:
 
-`lastLoadedFile`
+`textFileViewLoadedFile`
 
 The comments document a situation where `TextFileView` can deliver modified file data after synchronization but before the plugin's own expected modify-handling sequence has completed.
 
@@ -985,15 +985,15 @@ Without this rule, changing the back side of a note in Markdown could cause the 
 
 ---
 
-# 24. `preventAutozoom`
+# 24. `suppressAutozoomOnce()`
 
-Incoming file reloads call `preventAutozoom()`.
+Incoming file reloads call `suppressAutozoomOnce()`.
 
 This is separate from `preventReload`.
 
 - `preventReload` prevents a reload altogether.
     
-- `preventAutozoom` allows the reload but prevents it from behaving like an intentional file-open navigation.
+- `suppressAutozoomOnce()` allows the reload but prevents it from behaving like an intentional file-open navigation.
     
 
 This distinction is important.
@@ -1482,7 +1482,7 @@ Broadly it:
 
 1. waits for plugin/runtime readiness;
     
-2. checks `lastLoadedFile`;
+2. checks `textFileViewLoadedFile`;
     
 3. marks the view not fully loaded;
     
@@ -1511,7 +1511,7 @@ A migration-created replacement view can skip some ordinary disk reconstruction 
 
 It resets or destroys state including:
 
-- `viewSaveData`;
+- `preparedSaveText`;
     
 - Canvas nodes;
     
@@ -1780,7 +1780,7 @@ Again, no view/window/DOM references are retained.
 
 Its purpose is specifically to let persistence move out of the old popout realm.
 
-If migration originates in a popout, `performSaveWithSideEffectPolicy()` can register the serialized drawing instead of calling the normal `TextFileView.save()` from the dying view.
+If migration originates in a popout, `executeSaveRequest()` can register the serialized drawing instead of calling the normal `TextFileView.save()` from the dying view.
 
 The replacement view consumes that text and performs:
 
@@ -2341,7 +2341,7 @@ This would make the distinction between:
 
 - `this.data`;
     
-- `viewSaveData`;
+- `preparedSaveText`;
     
 - `lastSavedData`;
     
@@ -2381,9 +2381,9 @@ Increment the generation again during:
 - a new file load.
     
 
-This is simple and would complement rather than replace `lastLoadedFile`.
+This is simple and would complement rather than replace `textFileViewLoadedFile`.
 
-`lastLoadedFile` can continue to represent the semantic Obsidian-modify special case.
+`textFileViewLoadedFile` can continue to represent the semantic Obsidian-modify special case.
 
 The generation token answers a different question:
 
@@ -2932,7 +2932,7 @@ In terms of the document representations described earlier:
 
 * `this.excalidrawData` bridges the graphical and Markdown representations;
 
-* `viewSaveData` is the prepared serialized result eventually returned through `getViewData()`.
+* `preparedSaveText` is the prepared serialized result eventually returned through `getViewData()`.
 
 A subsequent Excalidraw save must not reconstruct the `.excalidraw.md` file using stale raw Markdown and thereby overwrite changes made in the Markdown view.
 

@@ -727,11 +727,11 @@ export class PluginFileManager {
             if (excalidrawView.semaphores?.embeddableIsEditingSelf) {
               return;
             }
-            const inData = new ExcalidrawData(this.plugin);
+            const incomingData = new ExcalidrawData(this.plugin);
             try {
               const data = await this.app.vault.read(file);
-              await inData.loadData(data, file, getTextMode(data));
-              await excalidrawView.synchronizeWithData(inData);
+              await incomingData.loadData(data, file, getTextMode(data));
+              await excalidrawView.synchronizeWithData(incomingData);
             } catch (error: unknown) {
               errorlog({
                 where: "FileManager.modifyEventHandler",
@@ -742,7 +742,7 @@ export class PluginFileManager {
               new Notice(t("DRAWING_RELOAD_FAILED"), 60000);
               return;
             } finally {
-              inData.destroy();
+              incomingData.destroy();
             }
             if (excalidrawView?.isDirty()) {
               if (

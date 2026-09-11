@@ -56,15 +56,15 @@ export const WINDOW_BLUR_FORCE_SAVE_POLICY: Readonly<ForceSavePolicy> = {
  * mechanical coordinator extraction. */
 export interface ViewSaveCoordinatorDependencies {
   performSave: (
-    preventReload: boolean,
-    forcesave: boolean,
-    overrideEmbeddableIsEditingSelfDebounce: boolean,
+    suppressReloadFromOwnWrite: boolean,
+    forcePersistence: boolean,
+    bypassSameFileEditGuard: boolean,
     sideEffectPolicy: Readonly<SaveSideEffectPolicy>,
   ) => Promise<SaveExecutionResult>;
   requestSave: (
-    preventReload?: boolean,
-    forcesave?: boolean,
-    overrideEmbeddableIsEditingSelfDebounce?: boolean,
+    suppressReloadFromOwnWrite?: boolean,
+    forcePersistence?: boolean,
+    bypassSameFileEditGuard?: boolean,
   ) => Promise<void>;
   isDirty: () => boolean;
   checkSceneVersion: () => void;
@@ -75,9 +75,9 @@ export interface ViewSaveCoordinatorDependencies {
 }
 
 interface SaveRequest {
-  preventReload: boolean;
-  forcesave: boolean;
-  overrideEmbeddableIsEditingSelfDebounce: boolean;
+  suppressReloadFromOwnWrite: boolean;
+  forcePersistence: boolean;
+  bypassSameFileEditGuard: boolean;
   sideEffectPolicy: Readonly<SaveSideEffectPolicy>;
   revision: number;
 }
@@ -107,14 +107,14 @@ export class ViewSaveCoordinator {
 
   /** Runs the historical public save policy. */
   public async save(
-    preventReload: boolean = true,
-    forcesave: boolean = false,
-    overrideEmbeddableIsEditingSelfDebounce: boolean = false,
+    suppressReloadFromOwnWrite: boolean = true,
+    forcePersistence: boolean = false,
+    bypassSameFileEditGuard: boolean = false,
   ): Promise<void> {
     await this.enqueueSave({
-      preventReload,
-      forcesave,
-      overrideEmbeddableIsEditingSelfDebounce,
+      suppressReloadFromOwnWrite,
+      forcePersistence,
+      bypassSameFileEditGuard,
       sideEffectPolicy: DIRECT_SAVE_SIDE_EFFECT_POLICY,
       revision: this.currentRevision,
     });
@@ -149,13 +149,15 @@ export class ViewSaveCoordinator {
     incoming: SaveRequest,
   ): SaveRequest {
     const selected =
-      current.forcesave && !incoming.forcesave ? current : incoming;
+      current.forcePersistence && !incoming.forcePersistence
+        ? current
+        : incoming;
     return {
       ...selected,
-      forcesave: current.forcesave || incoming.forcesave,
-      overrideEmbeddableIsEditingSelfDebounce:
-        current.overrideEmbeddableIsEditingSelfDebounce ||
-        incoming.overrideEmbeddableIsEditingSelfDebounce,
+      forcePersistence:
+        current.forcePersistence || incoming.forcePersistence,
+      bypassSameFileEditGuard:
+        current.bypassSameFileEditGuard || incoming.bypassSameFileEditGuard,
       sideEffectPolicy: {
         triggerAutoexport:
           current.sideEffectPolicy.triggerAutoexport ||
@@ -173,7 +175,7 @@ export class ViewSaveCoordinator {
       this.pendingSaveRequest = null;
       if (
         completedRequest &&
-        !request.forcesave &&
+        !request.forcePersistence &&
         request.revision <= this.savedRevision
       ) {
         continue;
@@ -181,9 +183,9 @@ export class ViewSaveCoordinator {
       this.activeSaveRevision = request.revision;
       try {
         const result = await this.dependencies.performSave(
-          request.preventReload,
-          request.forcesave,
-          request.overrideEmbeddableIsEditingSelfDebounce,
+          request.suppressReloadFromOwnWrite,
+          request.forcePersistence,
+          request.bypassSameFileEditGuard,
           request.sideEffectPolicy,
         );
         this.completeSaveRevision(request, result);
@@ -214,9 +216,9 @@ export class ViewSaveCoordinator {
 
   private queueTrailingSave(): void {
     const request: SaveRequest = {
-      preventReload: true,
-      forcesave: false,
-      overrideEmbeddableIsEditingSelfDebounce: false,
+      suppressReloadFromOwnWrite: true,
+      forcePersistence: false,
+      bypassSameFileEditGuard: false,
       sideEffectPolicy: DIRECT_SAVE_SIDE_EFFECT_POLICY,
       revision: this.currentRevision,
     };
@@ -282,9 +284,9 @@ export class ViewSaveCoordinator {
     this.view.semaphores.forceSaving = true;
     try {
       const result = await this.enqueueSave({
-        preventReload: false,
-        forcesave: true,
-        overrideEmbeddableIsEditingSelfDebounce: true,
+        suppressReloadFromOwnWrite: false,
+        forcePersistence: true,
+        bypassSameFileEditGuard: true,
         sideEffectPolicy: {
           triggerAutoexport: policy.triggerAutoexport,
         },
@@ -370,9 +372,9 @@ export class ViewSaveCoordinator {
       return;
     }
     await this.enqueueSave({
-      preventReload: true,
-      forcesave: true,
-      overrideEmbeddableIsEditingSelfDebounce: true,
+      suppressReloadFromOwnWrite: true,
+      forcePersistence: true,
+      bypassSameFileEditGuard: true,
       sideEffectPolicy: DIRECT_SAVE_SIDE_EFFECT_POLICY,
       revision: this.currentRevision,
     });
