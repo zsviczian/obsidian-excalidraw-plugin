@@ -66,6 +66,7 @@ export interface ViewSaveCoordinatorDependencies {
     forcePersistence?: boolean,
     bypassSameFileEditGuard?: boolean,
   ) => Promise<void>;
+  isSynchronizing: () => boolean;
   isDirty: () => boolean;
   checkSceneVersion: () => void;
   refreshCanvasOffset: () => void;
@@ -105,14 +106,41 @@ export class ViewSaveCoordinator {
     private readonly dependencies: ViewSaveCoordinatorDependencies,
   ) {}
 
-  /** Whether the shared save/synchronization exclusion flag is active. */
+  /** Whether the coordinator-owned persistence exclusion flag is active. */
   public get isSaveInProgress(): boolean {
     return Boolean(this.view.semaphores?.saving);
   }
 
-  /** Whether persistence is occupied by the existing save or autosave paths. */
+  /** Whether persistence must wait for save, synchronization, or autosave work. */
   public get isBusy(): boolean {
-    return this.isSaveInProgress || Boolean(this.view.semaphores?.autosaving);
+    return (
+      this.isSaveOrSynchronizationInProgress ||
+      Boolean(this.view.semaphores?.autosaving)
+    );
+  }
+
+  private get isSaveOrSynchronizationInProgress(): boolean {
+    return this.isSaveInProgress || this.dependencies.isSynchronizing();
+  }
+
+  /** Runs one queued request while exclusively owning persistence state. */
+  private async performQueuedSave(
+    request: SaveRequest,
+  ): Promise<SaveExecutionResult> {
+    if (this.isSaveOrSynchronizationInProgress) {
+      return { status: "skipped" };
+    }
+    this.view.semaphores.saving = true;
+    try {
+      return await this.dependencies.performSave(
+        request.suppressReloadFromOwnWrite,
+        request.forcePersistence,
+        request.bypassSameFileEditGuard,
+        request.sideEffectPolicy,
+      );
+    } finally {
+      this.view.semaphores.saving = false;
+    }
   }
 
   /** Runs the historical public save policy. */
@@ -192,12 +220,7 @@ export class ViewSaveCoordinator {
       }
       this.activeSaveRevision = request.revision;
       try {
-        const result = await this.dependencies.performSave(
-          request.suppressReloadFromOwnWrite,
-          request.forcePersistence,
-          request.bypassSameFileEditGuard,
-          request.sideEffectPolicy,
-        );
+        const result = await this.performQueuedSave(request);
         this.completeSaveRevision(request, result);
         latestResult = result;
       } finally {
@@ -271,19 +294,13 @@ export class ViewSaveCoordinator {
     if (waitIfBusy) {
       let counter = 0;
       while (
-        (this.view.semaphores.autosaving ||
-          this.view.semaphores.saving ||
-          this.saveLoopPromise !== null) &&
+        (this.isBusy || this.saveLoopPromise !== null) &&
         counter++ < 100
       ) {
         await sleep(50);
       }
     }
-    if (
-      this.view.semaphores.autosaving ||
-      this.view.semaphores.saving ||
-      this.saveLoopPromise !== null
-    ) {
+    if (this.isBusy || this.saveLoopPromise !== null) {
       if (!silent) {
         new Notice(t("FORCE_SAVE_ABORTED"));
       }
@@ -337,7 +354,10 @@ export class ViewSaveCoordinator {
     }
     this.dependencies.checkSceneVersion();
     if (!this.dependencies.isDirty()) {
-      if (!this.view.semaphores.saving && this.saveLoopPromise === null) {
+      if (
+        !this.isSaveOrSynchronizationInProgress &&
+        this.saveLoopPromise === null
+      ) {
         return false;
       }
       // Preserve the existing Excalibrain unload compatibility check.
@@ -353,7 +373,7 @@ export class ViewSaveCoordinator {
       dirty = true;
       await this.saveLoopPromise;
     } else {
-      while (this.view.semaphores.saving && watchdog++ < 200) {
+      while (this.isSaveOrSynchronizationInProgress && watchdog++ < 200) {
         dirty = true;
         await sleep(40);
       }
@@ -480,9 +500,6 @@ export class ViewSaveCoordinator {
 
   /** Advances the edit revision and queues one trailing save when necessary. */
   public setDirty(): void {
-    if (this.view.semaphores.saving && this.activeSaveRevision === null) {
-      return;
-    }
     if (!this.dependencies.isDirty()) {
       this.resetAutosaveTimer();
     }

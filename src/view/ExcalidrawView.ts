@@ -558,6 +558,7 @@ export default class ExcalidrawView
   private pendingMigrationHandoffToken: string | null = null;
   private pendingMigrationBinaryFiles: BinaryFiles | null = null;
   private migrationBinaryFilePublication: Promise<void> | null = null;
+  private isSynchronizing = false;
 
   constructor(leaf: WorkspaceLeaf, plugin: ExcalidrawPlugin) {
     super(leaf);
@@ -587,6 +588,7 @@ export default class ExcalidrawView
           forcePersistence,
           bypassSameFileEditGuard,
         ),
+      isSynchronizing: () => this.isSynchronizing,
       isDirty: () => this.isDirty(),
       checkSceneVersion: () => {
         if (this.excalidrawAPI) {
@@ -735,12 +737,12 @@ export default class ExcalidrawView
     return Boolean(this.semaphores?.embeddableIsEditingSelf);
   }
 
-  /** Whether the shared save/synchronization exclusion flag is active. */
+  /** Whether the save coordinator currently owns persistence execution. */
   public isSaveInProgress(): boolean {
     return this.saveCoordinator.isSaveInProgress;
   }
 
-  /** Whether the existing save or autosave path is occupied. */
+  /** Whether persistence must wait for save, synchronization, or autosave work. */
   public isPersistenceBusy(): boolean {
     return this.saveCoordinator.isBusy;
   }
@@ -995,11 +997,6 @@ export default class ExcalidrawView
     ) {
       return { status: "skipped" };
     }
-    if (this.semaphores.saving) {
-      return { status: "skipped" };
-    }
-    this.semaphores.saving = true;
-
     //if there were no changes to the file super save will not save
     //and consequently main.ts modifyEventHandler will not fire
     //this.reload will not be called
@@ -1204,8 +1201,6 @@ export default class ExcalidrawView
         error: e,
       });
       warningUnknowSeriousError();
-    } finally {
-      this.semaphores.saving = false;
     }
     const reloadSucceeded = reloadIfWriteDidNotEmitModify
       ? await this.reload(true, this.file)
@@ -2140,7 +2135,10 @@ export default class ExcalidrawView
     //deliberately not calling super.onUnloadFile() to avoid autosave (saved in unload)
     await handleMarkdownImageEditorViewUnload(this);
     let counter = 0;
-    while (this.semaphores.saving && counter++ < 200) {
+    while (
+      (this.isSaveInProgress() || this.isSynchronizing) &&
+      counter++ < 200
+    ) {
       await sleep(50); //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1988
       if (counter++ === 15) {
         new Notice(t("SAVE_IS_TAKING_LONG"));
@@ -2453,7 +2451,7 @@ export default class ExcalidrawView
       this.semaphores.preventReload = false;
       return true;
     }
-    if (this.semaphores.saving) {
+    if (this.isSaveInProgress() || this.isSynchronizing) {
       return true;
     }
     if (this.compatibilityMode) {
@@ -3236,7 +3234,10 @@ export default class ExcalidrawView
     // deliberately accepts the low-probability risk of dropping a genuine
     // external sync collision.
     let counter = 0;
-    while (this.semaphores.saving && counter++ < 30) {
+    while (
+      (this.isSaveInProgress() || this.isSynchronizing) &&
+      counter++ < 30
+    ) {
       await sleep(100);
       if (
         this.semaphores.viewunload ||
@@ -3247,10 +3248,10 @@ export default class ExcalidrawView
         return;
       }
     }
-    if (this.semaphores.saving) {
+    if (this.isSaveInProgress() || this.isSynchronizing) {
       errorlog({
         where: "ExcalidrawView.synchronizeWithData",
-        message: `Aborting sync with received file (${synchronizedFilePath}) because semaphores.saving remained true for over 3 seconds`,
+        message: `Aborting sync with received file (${synchronizedFilePath}) because persistence or synchronization remained active for over 3 seconds`,
         fn: "synchronizeWithData",
       });
       return;
@@ -3266,7 +3267,7 @@ export default class ExcalidrawView
     if (!incomingData.scene) {
       return;
     }
-    this.semaphores.saving = true;
+    this.isSynchronizing = true;
     const fileIdsToReload = new Set<FileId>();
 
     try {
@@ -3486,7 +3487,7 @@ export default class ExcalidrawView
         error: e,
       });
     } finally {
-      this.semaphores.saving = false;
+      this.isSynchronizing = false;
     }
   }
 

@@ -392,7 +392,7 @@ The most relevant ones are:
 |Semaphore|Purpose|
 |---|---|
 |`dirty`|File-path ownership marker for dirty state|
-|`saving`|Broad mutual-exclusion flag used by saving and synchronization|
+|`saving`|Coordinator-owned persistence exclusion flag retained in the compatibility container|
 |`autosaving`|Autosave currently active|
 |`forceSaving`|Explicit force-save operation active|
 |`preventReload`|Consume the expected modify/reload resulting from this view's own save|
@@ -421,7 +421,7 @@ In particular:
 
 That distinction matters when evaluating future refactoring.
 
-External lifecycle consumers no longer read these fields directly. `ExcalidrawView` exposes semantic queries for closing/migration state and same-file editing, plus a one-shot operation that consumes own-write reload suppression. Save-state queries delegate to `ViewSaveCoordinator.isSaveInProgress` and `ViewSaveCoordinator.isBusy`. These accessors deliberately retain the existing storage and Boolean expressions; in particular, `isSaveInProgress` still reflects the broad `saving` field shared by persistence and synchronization until those operations are separated.
+External lifecycle consumers no longer read these fields directly. `ExcalidrawView` exposes semantic queries for closing/migration state and same-file editing, plus a one-shot operation that consumes own-write reload suppression. Save-state queries delegate to `ViewSaveCoordinator.isSaveInProgress` and `ViewSaveCoordinator.isBusy`. `ViewSaveCoordinator` is now the sole internal owner of `saving`; synchronization uses a separate view-local `isSynchronizing` state. `isBusy` combines those operations with autosave where callers must retain the historical broad exclusion behavior.
 
 ---
 
@@ -438,7 +438,7 @@ Important examples include:
 |`embeddableIsEditingSelf` release grace|2 s|Allow final Markdown editor modify event to arrive|
 |imported-image save flag|~3 s|Detect newly introduced binary files|
 |`preventAutozoom`|~1.5 s|Protect viewport around reload|
-|incoming sync waits for `saving`|up to ~3 s|Avoid save/sync collision|
+|incoming sync waits for persistence/synchronization|up to ~3 s|Avoid save/sync and overlapping-sync collisions|
 |force save waits for busy state|up to ~5 s|Allow an existing save to finish|
 |deferred file validation|~250 ms initial delay|Move dependency checking off critical rendering path|
 |unresolved file retry|~2 s|Retry unresolved embedded dependencies|
@@ -856,13 +856,9 @@ It is a pragmatic Excalidraw-version-based merge designed to avoid destroying ne
 
 # 19. Save versus incoming synchronization
 
-`synchronizeWithData()` currently shares the broad:
+`synchronizeWithData()` and persistence now have separate ownership states. `ViewSaveCoordinator` exclusively owns persistence execution through `semaphores.saving`, while the view-local synchronization path owns `isSynchronizing`.
 
-`semaphores.saving`
-
-with the persistence path.
-
-When an incoming modification arrives during a save, synchronization waits for the existing operation for up to roughly three seconds.
+When an incoming modification arrives during a save or an earlier synchronization, it waits for the existing operation for up to roughly three seconds.
 
 If saving remains active, the incoming event can be abandoned under the assumption that it is probably related to the save.
 
@@ -874,26 +870,19 @@ A better bounded solution is discussed in the recommendations.
 
 ---
 
-# 20. A subtle dirty-state coupling worth testing
+# 20. Synchronization dirty reconciliation
 
-There is a particularly important interaction between:
+There is a particularly important invariant spanning:
 
 - `synchronizeWithData()`;
     
-- `semaphores.saving`;
+- `isSynchronizing`;
     
 - `ViewSaveCoordinator.setDirty()`.
     
-
-Synchronization itself sets the broad `saving` semaphore.
-
 When the merged live scene differs from the incoming scene, the synchronization code intends to mark the view dirty so the locally surviving newer state can eventually be written back.
 
-However, `ViewSaveCoordinator.setDirty()` contains a guard that ignores dirty requests while the broad `saving` semaphore is active when no coordinator save revision is active.
-
-Because synchronization uses that same flag, the intended reconciliation dirty mark can be suppressed.
-
-I would not classify this as a proven user-visible defect without a targeted test because the view may already be dirty through another path. It is nevertheless a semantic mismatch between the old `saving` semaphore and the newer revision coordinator and should be treated as a high-value test/refactoring target.
+Synchronization no longer sets the persistence flag, and `ViewSaveCoordinator.setDirty()` no longer rejects revisions based on that flag. A reconciliation difference can therefore always advance the current revision, including after waiting for an older save. The resulting dirty revision is left for the existing autosave/flush paths to persist.
 
 ---
 
@@ -1977,26 +1966,11 @@ The dependency on internal Canvas APIs is mostly concentrated in `CanvasNodeFact
 
 # 59. Main architectural weaknesses
 
-## 59.1 `saving` has too many meanings
+## 59.1 Busy incoming synchronization can still be dropped
 
-The Boolean `semaphores.saving` currently means something close to:
+Persistence and synchronization now have distinct ownership states, and reconciliation can mark a newer surviving local scene dirty. However, an incoming synchronization still waits at most three seconds for persistence or another synchronization and then abandons that event.
 
-> "Something important involving scene/save synchronization is happening."
-
-It is used by:
-
-- persistence;
-    
-- incoming synchronization;
-    
-- reload suppression;
-    
-- dirty-state logic.
-    
-
-This creates coupling with the newer revision coordinator.
-
-The `synchronizeWithData()` / `setDirty()` interaction is the clearest example.
+This retains bounded work, but it does not guarantee that the latest Vault state is eventually reconciled. The next checkpoint should replace the dropped event with one pending latest-state synchronization.
 
 ---
 
@@ -2167,26 +2141,18 @@ This is the single improvement I would prioritize most.
 
 ---
 
-# 62. Priority 2 — split `saving` from `synchronizing`
+# 62. Priority 2 — split `saving` from `synchronizing` (implemented)
 
-Do not remove the save coordinator.
+The save coordinator remains in place and is now the authoritative internal owner of persistence state.
 
-Instead, let it become the authoritative owner of persistence state.
-
-Replace the broad conceptual flag with separate states such as:
+The implementation uses separate states:
 
 ```ts
-saveCoordinator.isSaving
-syncCoordinator.isSynchronizing
+saveCoordinator.isSaveInProgress
+view.isSynchronizing
 ```
 
-or, without creating another full manager:
-
-```ts
-semaphores.synchronizing
-```
-
-Then make the invariants explicit:
+The resulting invariants are:
 
 - persistence cannot begin certain synchronization stages;
     
@@ -2693,7 +2659,7 @@ Specifically test the current `synchronizeWithData()` case where:
 - view must become/remain dirty so the newer local state is eventually persisted.
     
 
-This test will establish whether the current `saving`/`setDirty()` interaction is already producing a defect.
+This test validates that the separated persistence/synchronization ownership continues to preserve the reconciliation dirty revision.
 
 ---
 
@@ -3042,17 +3008,15 @@ The highest-value next steps are therefore:
 
 1. move all persistence that must survive view/window destruction into a plugin-owned main-realm queue;
     
-2. separate persistence state from synchronization state instead of sharing `semaphores.saving`;
+2. retain one pending latest external synchronization rather than dropping a modify event when saving is busy;
     
-3. retain one pending latest external synchronization rather than dropping a modify event when saving is busy;
+3. turn same-file editing into an explicit multi-owner lease;
     
-4. turn same-file editing into an explicit multi-owner lease;
+4. make save/load snapshots and generations explicit;
     
-5. make save/load snapshots and generations explicit;
+5. serialize autoexports independently by revision;
     
-6. serialize autoexports independently by revision;
-    
-7. keep the existing incremental merge, viewport protection, dependency refresh, Canvas isolation, and early popout teardown behavior.
+6. keep the existing incremental merge, viewport protection, dependency refresh, Canvas isolation, and early popout teardown behavior.
     
 
 Those changes would simplify reasoning about the lifecycle considerably without attempting to change the fundamental constraints imposed by Obsidian, Electron, `TextFileView`, internal Canvas nodes, or the Excalidraw runtime.

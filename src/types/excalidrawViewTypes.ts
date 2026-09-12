@@ -131,7 +131,8 @@ export interface ViewSemaphores {
 
   isEditingText: boolean; //https://stackoverflow.com/questions/27132796/is-there-any-javascript-event-fired-when-the-on-screen-keyboard-on-mobile-safari
 
-  //Save is triggered by multiple threads when an Excalidraw pane is terminated
+  //Save is triggered by multiple threads when an Excalidraw pane is terminated.
+  //ViewSaveCoordinator is the sole internal owner of this compatibility field.
   //- by the view itself
   //- by the activeLeafChangeEventHandler change event handler
   //- by monkeypatches on detach(next)
