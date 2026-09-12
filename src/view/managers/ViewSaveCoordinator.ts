@@ -67,6 +67,7 @@ export interface ViewSaveCoordinatorDependencies {
     bypassSameFileEditGuard?: boolean,
   ) => Promise<void>;
   isSynchronizing: () => boolean;
+  yieldToPendingExternalSynchronization: () => Promise<void>;
   isDirty: () => boolean;
   checkSceneVersion: () => void;
   refreshCanvasOffset: () => void;
@@ -227,6 +228,10 @@ export class ViewSaveCoordinator {
         this.activeSaveRevision = null;
       }
       completedRequest = true;
+      // A trailing save may already be queued for a newer local revision.
+      // Let one pending latest-state Vault synchronization reconcile first;
+      // the resulting dirty revision then folds into that trailing save.
+      await this.dependencies.yieldToPendingExternalSynchronization();
     }
     return latestResult;
   }

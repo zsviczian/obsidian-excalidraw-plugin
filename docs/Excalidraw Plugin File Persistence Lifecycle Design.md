@@ -438,7 +438,7 @@ Important examples include:
 |`embeddableIsEditingSelf` release grace|2 s|Allow final Markdown editor modify event to arrive|
 |imported-image save flag|~3 s|Detect newly introduced binary files|
 |`preventAutozoom`|~1.5 s|Protect viewport around reload|
-|incoming sync waits for persistence/synchronization|up to ~3 s|Avoid save/sync and overlapping-sync collisions|
+|incoming sync waits for persistence/synchronization|until the active operation settles or lifecycle invalidates it|Avoid save/sync and overlapping-sync collisions without dropping the latest state|
 |force save waits for busy state|up to ~5 s|Allow an existing save to finish|
 |deferred file validation|~250 ms initial delay|Move dependency checking off critical rendering path|
 |unresolved file retry|~2 s|Retry unresolved embedded dependencies|
@@ -858,15 +858,13 @@ It is a pragmatic Excalidraw-version-based merge designed to avoid destroying ne
 
 `synchronizeWithData()` and persistence now have separate ownership states. `ViewSaveCoordinator` exclusively owns persistence execution through `semaphores.saving`, while the view-local synchronization path owns `isSynchronizing`.
 
-When an incoming modification arrives during a save or an earlier synchronization, it waits for the existing operation for up to roughly three seconds.
+`FileManager` now signals external synchronization by file and returns rather than reading, parsing, or retaining a waiter for the event-time contents. It targets initialized drawing views, excluding the `ExcalidrawLoading` placeholder that shares the same Obsidian view type but does not implement the drawing-view lifecycle contract. Each view retains at most one pending file path. The view waits for an active persistence operation or an earlier synchronization to settle, resolves the current `TFile`, then reads and parses the latest Vault text while owning synchronization state.
 
-If saving remains active, the incoming event can be abandoned under the assumption that it is probably related to the save.
+Queued persistence does not indefinitely outrank that marker. After an individual save completes, `ViewSaveCoordinator` yields to a pending external synchronization before starting a trailing save. Reconciliation can advance the dirty revision, and the trailing save then persists that combined latest state. This bounds synchronization latency even when edits continually replace the one trailing save request.
 
-This is one of the weaker points in the current design.
+Another modify event received during that operation merely re-arms the same marker. The loop rereads the latest Vault state once more before completing, so work remains bounded to one active synchronization and one latest trailing request.
 
-The assumption is usually correct for a save echo, but a genuinely external modification can theoretically occur during that interval.
-
-A better bounded solution is discussed in the recommendations.
+Same-file editing temporarily blocks acquisition but does not discard the marker. Once editing ownership and its release grace period end, the loop rereads and applies the latest Vault state without requiring another modify event. Lifecycle invalidation, file navigation, or loss of the view runtime still cancels work that no longer belongs to the active view. Expected own-save events are still filtered earlier by the separate reload-suppression mechanism.
 
 ---
 
@@ -1966,15 +1964,7 @@ The dependency on internal Canvas APIs is mostly concentrated in `CanvasNodeFact
 
 # 59. Main architectural weaknesses
 
-## 59.1 Busy incoming synchronization can still be dropped
-
-Persistence and synchronization now have distinct ownership states, and reconciliation can mark a newer surviving local scene dirty. However, an incoming synchronization still waits at most three seconds for persistence or another synchronization and then abandons that event.
-
-This retains bounded work, but it does not guarantee that the latest Vault state is eventually reconciled. The next checkpoint should replace the dropped event with one pending latest-state synchronization.
-
----
-
-## 59.2 Self-save detection is timing based
+## 59.1 Self-save detection is timing based
 
 `preventReload` works but represents expected causality as:
 
@@ -1989,7 +1979,7 @@ An unrelated external modification arriving in that window can theoretically be 
 
 ---
 
-## 59.3 Same-file editing is represented by one Boolean
+## 59.2 Same-file editing is represented by one Boolean
 
 `embeddableIsEditingSelf` is used by multiple related systems:
 
@@ -2008,15 +1998,7 @@ The need to clear and then re-arm it around some transitions indicates that the 
 
 ---
 
-## 59.4 Genuine incoming changes can be dropped while saving
-
-After the bounded synchronization wait, an incoming modify can be abandoned.
-
-That is reasonable for self-save noise but weak for real simultaneous modification.
-
----
-
-## 59.5 Ordinary unload persistence is only scheduled, not durably handed off
+## 59.3 Ordinary unload persistence is only scheduled, not durably handed off
 
 The migration code has a strong plugin-level handoff model.
 
@@ -2026,13 +2008,13 @@ These two solutions should converge.
 
 ---
 
-## 59.6 Autoexport lacks revision ordering
+## 59.4 Autoexport lacks revision ordering
 
 Exports are correctly non-blocking, but there is no obvious guarantee that older asynchronous export work cannot finish after newer work.
 
 ---
 
-## 59.7 Async `setViewData()` lacks an explicit load generation
+## 59.5 Async `setViewData()` lacks an explicit load generation
 
 `setViewData()` launches asynchronous work from a synchronous lifecycle method.
 
@@ -2040,7 +2022,7 @@ There are several guards against stale application, but a monotonically increasi
 
 ---
 
-## 59.8 Timer ownership is difficult to audit
+## 59.6 Timer ownership is difficult to audit
 
 There are many timers with substantially different safety requirements:
 
@@ -2169,34 +2151,36 @@ This directly resolves the `synchronizeWithData()` / `setDirty()` ambiguity.
 
 ---
 
-# 63. Priority 3 — queue one pending external synchronization
+# 63. Priority 3 — queue one pending external synchronization (implemented)
 
 Do not introduce a CRDT.
 
 That would be disproportionate to the problem and would not fit the current environment.
 
-Instead, if a genuine Vault modification arrives while saving:
+When a genuine Vault modification arrives while saving, the implementation now:
 
-1. record that an external refresh is pending;
+1. records that an external refresh is pending;
     
-2. retain only the newest event/path;
+2. retains only the newest event/path;
     
-3. once saving finishes, reread the current file with `Vault.read()`;
+3. once saving finishes, rereads the current file with `Vault.read()`;
     
-4. synchronize that newest state.
+4. synchronizes that newest state.
+
+The same marker also remains pending while a same-file embedded editor owns the document. It resumes after the edit guard releases rather than requiring a later modify event to recover the skipped update.
     
 
-Something as simple as:
+The view-owned state is intentionally bounded:
 
 ```ts
-pendingExternalSync = true;
+pendingExternalSyncPath: string | null
 ```
 
-can be enough, because the vault itself stores the newest authoritative text.
+because the vault itself stores the newest authoritative text.
 
 No unbounded queue is necessary.
 
-This removes the current possibility of losing an external modification merely because the save semaphore remained busy for three seconds.
+This removes the previous possibility of losing an external modification merely because persistence or synchronization remained busy for three seconds.
 
 Obsidian's own guidance recommends using Vault reads when working with current file contents rather than relying on potentially stale cached copies, which aligns well with this reread-latest approach. ([Developer Documentation](https://docs.obsidian.md/Plugins/Vault "Vault - Developer Documentation"))
 
@@ -2207,6 +2191,8 @@ Obsidian's own guidance recommends using Vault reads when working with current f
 Obsidian does not provide an origin token on a generic Vault `modify` event, so perfect causal identification is not available.
 
 However, `preventReload` can be stronger than a Boolean timer.
+
+The first timing reduction is implemented: save text is fully prepared before suppression is armed. The Boolean now covers only the live `TextFileView` write and its short post-write cleanup interval, rather than asynchronous compression as well. A failed write clears it immediately. This materially narrows false consumption but does not identify which view produced a same-path event.
 
 For each source path, store an expected write record such as:
 
@@ -3008,15 +2994,13 @@ The highest-value next steps are therefore:
 
 1. move all persistence that must survive view/window destruction into a plugin-owned main-realm queue;
     
-2. retain one pending latest external synchronization rather than dropping a modify event when saving is busy;
+2. turn same-file editing into an explicit multi-owner lease;
     
-3. turn same-file editing into an explicit multi-owner lease;
+3. make save/load snapshots and generations explicit;
     
-4. make save/load snapshots and generations explicit;
+4. serialize autoexports independently by revision;
     
-5. serialize autoexports independently by revision;
-    
-6. keep the existing incremental merge, viewport protection, dependency refresh, Canvas isolation, and early popout teardown behavior.
+5. keep the existing incremental merge, viewport protection, dependency refresh, Canvas isolation, and early popout teardown behavior.
     
 
 Those changes would simplify reasoning about the lifecycle considerably without attempting to change the fundamental constraints imposed by Obsidian, Electron, `TextFileView`, internal Canvas nodes, or the Excalidraw runtime.

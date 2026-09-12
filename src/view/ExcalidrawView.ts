@@ -559,6 +559,8 @@ export default class ExcalidrawView
   private pendingMigrationBinaryFiles: BinaryFiles | null = null;
   private migrationBinaryFilePublication: Promise<void> | null = null;
   private isSynchronizing = false;
+  private pendingExternalSyncPath: string | null = null;
+  private externalSyncLoopPromise: Promise<void> | null = null;
 
   constructor(leaf: WorkspaceLeaf, plugin: ExcalidrawPlugin) {
     super(leaf);
@@ -589,6 +591,8 @@ export default class ExcalidrawView
           bypassSameFileEditGuard,
         ),
       isSynchronizing: () => this.isSynchronizing,
+      yieldToPendingExternalSynchronization: () =>
+        this.yieldToPendingExternalSynchronization(),
       isDirty: () => this.isDirty(),
       checkSceneVersion: () => {
         if (this.excalidrawAPI) {
@@ -1053,8 +1057,7 @@ export default class ExcalidrawView
         // handler. Suppress the expected own-write echo when reloading would
         // interrupt the user's editing flow.
         this.clearPreventReloadTimer();
-
-        this.semaphores.preventReload = suppressReloadFromOwnWrite;
+        this.semaphores.preventReload = false;
         await this.prepareGetViewDataFromSnapshot(scene, deletedElements);
 
         // Persist from the plugin's main-window realm before closing a runtime
@@ -1114,7 +1117,19 @@ export default class ExcalidrawView
           return { status: "view-unload-scheduled" };
         }
 
-        await super.save();
+        // Serialization can take seconds for a large compressed scene. Arm
+        // suppression only for the actual write so an unrelated modification
+        // received while preparing the text remains eligible to synchronize.
+        this.semaphores.preventReload = suppressReloadFromOwnWrite;
+        try {
+          await super.save();
+        } catch (error: unknown) {
+          this.semaphores.preventReload = false;
+          throw error;
+        }
+        if (suppressReloadFromOwnWrite) {
+          this.setPreventReload();
+        }
 
         //saving to backup with a delay in case application closes in the meantime, I want to avoid both save and backup corrupted.
         const path = this.file.path;
@@ -1130,12 +1145,6 @@ export default class ExcalidrawView
         this.lastSaveTimestamp = this.file.stat.mtime;
         //this.clearDirty(); //moved to right after the persistence decision, to avoid autosave collision with load drawing
 
-        //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/629
-        //there were odd cases when preventReload semaphore did not get cleared and consequently a synchronized image
-        //did not update the open drawing
-        if (suppressReloadFromOwnWrite) {
-          this.setPreventReload();
-        }
       }
 
       // No reload means the file changed, so save-time exports can run.
@@ -3215,59 +3224,175 @@ export default class ExcalidrawView
     );
   }
 
+  private isSynchronizationTargetCurrent(filePath: string): boolean {
+    return Boolean(
+      filePath &&
+        !this.semaphores.viewunload &&
+        !this.semaphores.windowMigrating &&
+        this.excalidrawAPI &&
+        this.file?.path === filePath,
+    );
+  }
+
+  private async acquireSynchronization(filePath: string): Promise<boolean> {
+    while (
+      this.saveCoordinator.isSaveInProgress ||
+      this.isSynchronizing ||
+      this.isSameFileEditingActive()
+    ) {
+      await sleep(100);
+      if (!this.isSynchronizationTargetCurrent(filePath)) {
+        return false;
+      }
+    }
+    if (!this.isSynchronizationTargetCurrent(filePath)) {
+      return false;
+    }
+    this.isSynchronizing = true;
+    return true;
+  }
+
+  /** Gives a pending latest-state synchronization one turn between saves. */
+  private async yieldToPendingExternalSynchronization(): Promise<void> {
+    if (this.isSameFileEditingActive()) return;
+    const syncLoop = this.externalSyncLoopPromise;
+    if (syncLoop === null) return;
+    try {
+      await syncLoop;
+    } catch {
+      // requestExternalSynchronization() owns reporting for this loop.
+    }
+  }
+
+  /** Queues one latest-state synchronization for a same-file Vault modify. */
+  public requestExternalSynchronization(file: TFile): void {
+    if (!this.isSynchronizationTargetCurrent(file.path)) {
+      return;
+    }
+    this.pendingExternalSyncPath = file.path;
+    this.ensureExternalSyncLoop();
+  }
+
+  private ensureExternalSyncLoop(): void {
+    if (this.externalSyncLoopPromise !== null) return;
+    void this.startExternalSyncLoop().catch((error: unknown) => {
+      errorlog({
+        where: "ExcalidrawView.requestExternalSynchronization",
+        fn: "drain external synchronization",
+        error,
+      });
+      new Notice(t("DRAWING_RELOAD_FAILED"), 60000);
+    });
+  }
+
+  private startExternalSyncLoop(): Promise<void> {
+    if (this.externalSyncLoopPromise !== null) {
+      return this.externalSyncLoopPromise;
+    }
+    const loop = Promise.resolve().then(() =>
+      this.drainExternalSynchronization(),
+    );
+    const trackedLoop = loop.finally(() => {
+      if (this.externalSyncLoopPromise === trackedLoop) {
+        this.externalSyncLoopPromise = null;
+        // Cover an event that arms the marker after the drain's last loop
+        // check but before this promise's completion handler runs.
+        if (this.pendingExternalSyncPath !== null) {
+          this.ensureExternalSyncLoop();
+        }
+      }
+    });
+    this.externalSyncLoopPromise = trackedLoop;
+    return trackedLoop;
+  }
+
+  private async drainExternalSynchronization(): Promise<void> {
+    let shouldScheduleAutosave = false;
+    while (this.pendingExternalSyncPath) {
+      const filePath = this.pendingExternalSyncPath;
+      if (!this.isSynchronizationTargetCurrent(filePath)) {
+        if (this.pendingExternalSyncPath === filePath) {
+          this.pendingExternalSyncPath = null;
+        }
+        continue;
+      }
+      if (!(await this.acquireSynchronization(filePath))) {
+        if (this.pendingExternalSyncPath === filePath) {
+          this.pendingExternalSyncPath = null;
+        }
+        continue;
+      }
+
+      this.pendingExternalSyncPath = null;
+      const incomingData = new ExcalidrawData(this.plugin);
+      let parsedIncomingData = false;
+      try {
+        const file = this.app.vault.getFileByPath(filePath);
+        if (!file) {
+          continue;
+        }
+        const data = await this.app.vault.read(file);
+        await incomingData.loadData(data, file, getTextMode(data));
+        parsedIncomingData = true;
+        if (
+          this.isSynchronizationTargetCurrent(filePath) &&
+          !this.isSameFileEditingActive()
+        ) {
+          await this.applyIncomingSynchronization(
+            incomingData,
+            filePath,
+          );
+        } else if (this.isSynchronizationTargetCurrent(filePath)) {
+          this.pendingExternalSyncPath = filePath;
+        }
+      } catch (error: unknown) {
+        errorlog({
+          where: "ExcalidrawView.requestExternalSynchronization",
+          fn: "load synchronized drawing data",
+          message: `Rejected incoming drawing data for ${filePath}`,
+          error,
+        });
+        new Notice(t("DRAWING_RELOAD_FAILED"), 60000);
+      } finally {
+        incomingData.destroy();
+        this.isSynchronizing = false;
+      }
+
+      if (parsedIncomingData && this.isDirty()) {
+        shouldScheduleAutosave = true;
+      }
+    }
+    if (shouldScheduleAutosave && this.isDirty()) {
+      if (this.autosaveTimer && this.autosaveFunction) {
+        window.clearTimeout(this.autosaveTimer);
+      }
+      this.autosaveFunction?.();
+    }
+  }
+
   public async synchronizeWithData(incomingData: ExcalidrawData) {
     const synchronizedFilePath = this.file?.path;
     if (
       !synchronizedFilePath ||
-      this.semaphores.viewunload ||
-      this.semaphores.windowMigrating ||
-      !this.excalidrawAPI ||
-      this.semaphores.embeddableIsEditingSelf
+      !incomingData.scene ||
+      !(await this.acquireSynchronization(synchronizedFilePath))
     ) {
       return;
     }
-    // A save requests suppression of its own write echo, so FileManager
-    // consumes the first modify event. If another same-file event reaches this
-    // method while the save (or an earlier synchronization) is still active,
-    // retain the historical three-second bound and drop the event rather than
-    // applying a likely self-bounce after the active operation. This
-    // deliberately accepts the low-probability risk of dropping a genuine
-    // external sync collision.
-    let counter = 0;
-    while (
-      (this.isSaveInProgress() || this.isSynchronizing) &&
-      counter++ < 30
-    ) {
-      await sleep(100);
-      if (
-        this.semaphores.viewunload ||
-        this.semaphores.windowMigrating ||
-        !this.excalidrawAPI ||
-        this.file?.path !== synchronizedFilePath
-      ) {
-        return;
-      }
+    try {
+      await this.applyIncomingSynchronization(
+        incomingData,
+        synchronizedFilePath,
+      );
+    } finally {
+      this.isSynchronizing = false;
     }
-    if (this.isSaveInProgress() || this.isSynchronizing) {
-      errorlog({
-        where: "ExcalidrawView.synchronizeWithData",
-        message: `Aborting sync with received file (${synchronizedFilePath}) because persistence or synchronization remained active for over 3 seconds`,
-        fn: "synchronizeWithData",
-      });
-      return;
-    }
-    if (
-      this.semaphores.viewunload ||
-      this.semaphores.windowMigrating ||
-      !this.excalidrawAPI ||
-      this.file?.path !== synchronizedFilePath
-    ) {
-      return;
-    }
-    if (!incomingData.scene) {
-      return;
-    }
-    this.isSynchronizing = true;
+  }
+
+  private async applyIncomingSynchronization(
+    incomingData: ExcalidrawData,
+    synchronizedFilePath: string,
+  ): Promise<void> {
     const fileIdsToReload = new Set<FileId>();
 
     try {
@@ -3486,8 +3611,6 @@ export default class ExcalidrawView
         fn: "synchronizeWithData",
         error: e,
       });
-    } finally {
-      this.isSynchronizing = false;
     }
   }
 

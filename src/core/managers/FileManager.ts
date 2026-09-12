@@ -664,7 +664,7 @@ export class PluginFileManager {
     if (!(file instanceof TFile)) {
       return;
     }
-    const excalidrawViews = getExcalidrawViews(this.app);
+    const excalidrawViews = getExcalidrawViews(this.app, true);
     excalidrawViews.forEach((excalidrawView) => {
       void (async () => {
         if (excalidrawView.isClosingOrMigrating()) {
@@ -720,37 +720,7 @@ export class PluginFileManager {
             return;
           }
           if (file.extension === "md") {
-            if (excalidrawView.isSameFileEditingActive()) {
-              return;
-            }
-            const incomingData = new ExcalidrawData(this.plugin);
-            try {
-              const data = await this.app.vault.read(file);
-              await incomingData.loadData(data, file, getTextMode(data));
-              await excalidrawView.synchronizeWithData(incomingData);
-            } catch (error: unknown) {
-              errorlog({
-                where: "FileManager.modifyEventHandler",
-                fn: "load synchronized drawing data",
-                message: `Rejected incoming drawing data for ${file.path}`,
-                error,
-              });
-              new Notice(t("DRAWING_RELOAD_FAILED"), 60000);
-              return;
-            } finally {
-              incomingData.destroy();
-            }
-            if (excalidrawView?.isDirty()) {
-              if (
-                excalidrawView.autosaveTimer &&
-                excalidrawView.autosaveFunction
-              ) {
-                window.clearTimeout(excalidrawView.autosaveTimer);
-              }
-              if (excalidrawView.autosaveFunction) {
-                excalidrawView.autosaveFunction();
-              }
-            }
+            excalidrawView.requestExternalSynchronization(file);
           } else {
             await excalidrawView.reload(true, excalidrawView.file);
           }
