@@ -3,6 +3,11 @@ export type DrawingModifyRoute =
   | "incremental-sync"
   | "raw-reload";
 
+/** Whether a suppressed notification must still reach content inspection. */
+export const shouldInspectSuppressedModifyContent = (
+  fileExtension: string,
+): boolean => fileExtension === "md";
+
 interface DrawingModifyRouteInput {
   fileExtension: string;
   isEditingMarkdownSideInSplitView: boolean;

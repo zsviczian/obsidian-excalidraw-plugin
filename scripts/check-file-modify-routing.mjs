@@ -3,9 +3,8 @@ import { createJiti } from "jiti";
 
 const log = (message) => process.stdout.write(`${message}\n`);
 const jiti = createJiti(import.meta.url);
-const { getDrawingModifyRoute } = await jiti.import(
-  "../src/core/managers/fileModifyRouting.ts",
-);
+const { getDrawingModifyRoute, shouldInspectSuppressedModifyContent } =
+  await jiti.import("../src/core/managers/fileModifyRouting.ts");
 
 const route = (overrides = {}) =>
   getDrawingModifyRoute({
@@ -46,6 +45,16 @@ assert.equal(
   route({ fileExtension: "excalidraw" }),
   "raw-reload",
   "recent raw Excalidraw modifies retain their existing reload route",
+);
+assert.equal(
+  shouldInspectSuppressedModifyContent("md"),
+  true,
+  "Markdown notifications must reach exact-content inspection even while the legacy Boolean is armed",
+);
+assert.equal(
+  shouldInspectSuppressedModifyContent("excalidraw"),
+  false,
+  "raw Excalidraw files retain their staged legacy suppression behavior",
 );
 
 log("file modify routing checks passed");

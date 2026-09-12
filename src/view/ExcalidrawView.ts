@@ -263,6 +263,7 @@ import {
   type PreparedSave,
   type SaveOperationContext,
 } from "./managers/saveSnapshot";
+import { isRedundantObservedSaveContent } from "./managers/saveContentClassification";
 import type { ViewMigrationDrawingState } from "../core/managers/ViewMigrationHandoffManager";
 import { ImageInfo } from "src/types/excalidrawAutomateTypes";
 import { PageOrientation, PageSize } from "src/types/exportUtilTypes";
@@ -427,6 +428,12 @@ const warningUnknowSeriousError = () => {
 
 type ActionButtons = "save" | "isRaw" | "link" | "scriptInstall";
 
+interface SetViewDataLoad {
+  readonly promise: Promise<void>;
+  readonly resolve: () => void;
+  settled: boolean;
+}
+
 let windowMigratedDisableZoomOnce = false;
 
 export default class ExcalidrawView
@@ -524,6 +531,7 @@ export default class ExcalidrawView
   private lastAggregatedDh = 0;
   private lastOffsetDriftCheck: number = 0;
   private oldKeyboardScroll: { scrollY: number; scrollX: number } | null = null;
+  private activeSetViewDataLoad: SetViewDataLoad | null = null;
 
   //https://stackoverflow.com/questions/27132796/is-there-any-javascript-event-fired-when-the-on-screen-keyboard-on-mobile-safari
   private isEditingTextResetTimer: number | null = null;
@@ -1090,6 +1098,7 @@ export default class ExcalidrawView
           saveSnapshot.sourceText,
         );
         preparedSave = createPreparedSave(saveSnapshot, this.getViewData());
+        this.saveCoordinator.observePreparedSave(preparedSave);
 
         // Persist from the plugin's main-window realm before closing a runtime
         // whose container moved between windows. Calling TextFileView.save()
@@ -1779,10 +1788,11 @@ export default class ExcalidrawView
       }
       this.destroyers.push(
         //this.containerEl.onWindowMigrated(this.leaf.rebuildView.bind(this))
-        this.containerEl.onWindowMigrated(async () => {
+        this.containerEl.onWindowMigrated(async (destinationWindow) => {
           const f = this.file;
           const l = this.leaf;
           const plugin = this.plugin;
+          const activeSetViewDataLoad = this.activeSetViewDataLoad?.promise;
           // Obsidian may destroy the source Electron window before the normal
           // unload callbacks select detached-view persistence. Capture every
           // API-owned value synchronously, then unmount before the first await.
@@ -1797,6 +1807,9 @@ export default class ExcalidrawView
           if (migrationSaveRequired) {
             await this.saveCoordinator.flush();
           }
+          if (activeSetViewDataLoad !== undefined) {
+            await activeSetViewDataLoad;
+          }
           if (this.isDirty()) {
             this.semaphores.windowMigrating = false;
             warningUnknowSeriousError();
@@ -1806,6 +1819,13 @@ export default class ExcalidrawView
             ? this.createWindowMigrationDrawingState(migrationSnapshot)
             : null;
           this.windowMigrationSaveSnapshot = null;
+          // "Open in popout" invokes this callback while the new leaf's own
+          // setViewData() is still loading. Wait for that concrete load, then
+          // yield one destination task so its surrounding view-state
+          // transition can settle before closing and recreating this view.
+          await new Promise<void>((resolve) => {
+            destinationWindow.setTimeout(resolve, 0);
+          });
           try {
             await closeLeafView(l);
           } catch (error: unknown) {
@@ -2788,6 +2808,27 @@ export default class ExcalidrawView
 
   public isLoaded: boolean = false;
 
+  private beginSetViewDataLoad(): SetViewDataLoad {
+    let resolve!: () => void;
+    const promise = new Promise<void>((settle) => {
+      resolve = settle;
+    });
+    const load = { promise, resolve, settled: false };
+    this.activeSetViewDataLoad = load;
+    return load;
+  }
+
+  private completeSetViewDataLoad(load: SetViewDataLoad): void {
+    if (load.settled) {
+      return;
+    }
+    load.settled = true;
+    load.resolve();
+    if (this.activeSetViewDataLoad === load) {
+      this.activeSetViewDataLoad = null;
+    }
+  }
+
   /** Captures the one-shot handoff token before the base view loads data. */
   public async setState(
     state: Record<string, unknown>,
@@ -2801,6 +2842,7 @@ export default class ExcalidrawView
   }
 
   setViewData(data: string, clear: boolean = false) {
+    const setViewDataLoad = this.beginSetViewDataLoad();
     const migrationHandoffToken = this.pendingMigrationHandoffToken;
     this.pendingMigrationHandoffToken = null;
     if (this.textFileViewLoadedFile !== this.file) {
@@ -2809,6 +2851,7 @@ export default class ExcalidrawView
     //I am using the TextFileView-loaded file to control when the view reloads.
     //It seems text file view gets the modified file event after sync before the modifyEventHandler in main.ts
     //reload can only be triggered via reload()
+    let completionDelegatedToLayoutReady = false;
     void (async () => {
       await this.plugin.awaitInit();
       if (this.textFileViewLoadedFile === this.file) {
@@ -2818,6 +2861,9 @@ export default class ExcalidrawView
       if (!this.file) {
         return;
       }
+      const setViewDataFilePath = this.file.path;
+      const setViewDataTargetGeneration =
+        this.saveCoordinator.getSaveTargetGeneration();
       const migrationDrawingHandoff = migrationHandoffToken
         ? this.plugin.consumeViewMigrationHandoff({
             token: migrationHandoffToken,
@@ -2877,7 +2923,7 @@ export default class ExcalidrawView
           warningUnknowSeriousError();
         }
       }
-      this.app.workspace.onLayoutReady(async () => {
+      const loadAfterLayoutReady = async () => {
         //the leaf moved to a window and ExcalidrawView was destructed
         //Happens during Obsidian startup if View opens in new window.
         if (!this?.app) {
@@ -3093,6 +3139,11 @@ export default class ExcalidrawView
           }
         }
         await this.loadDrawing(true);
+        this.saveCoordinator.observeAcceptedContent(
+          setViewDataFilePath,
+          setViewDataTargetGeneration,
+          data,
+        );
 
         onLoadMessages(
           this.excalidrawData.scene as {
@@ -3166,8 +3217,18 @@ export default class ExcalidrawView
         if (migrationHandoffPersistenceFailed) {
           this.setDirty();
         }
+      };
+      completionDelegatedToLayoutReady = true;
+      this.app.workspace.onLayoutReady(() => {
+        void loadAfterLayoutReady().finally(() => {
+          this.completeSetViewDataLoad(setViewDataLoad);
+        });
       });
-    })();
+    })().finally(() => {
+      if (!completionDelegatedToLayoutReady) {
+        this.completeSetViewDataLoad(setViewDataLoad);
+      }
+    });
   }
 
   private getGridColor(bgColor: string): { Bold: string; Regular: string } {
@@ -3361,6 +3422,8 @@ export default class ExcalidrawView
       }
 
       this.pendingExternalSyncPath = null;
+      const synchronizationTargetGeneration =
+        this.saveCoordinator.getSaveTargetGeneration();
       const incomingData = new ExcalidrawData(this.plugin);
       let parsedIncomingData = false;
       try {
@@ -3369,16 +3432,39 @@ export default class ExcalidrawView
           continue;
         }
         const data = await this.app.vault.read(file);
+        if (
+          !this.isSynchronizationTargetCurrent(filePath) ||
+          synchronizationTargetGeneration !==
+            this.saveCoordinator.getSaveTargetGeneration()
+        ) {
+          continue;
+        }
+        const classification =
+          this.saveCoordinator.classifyContent(
+            filePath,
+            synchronizationTargetGeneration,
+            data,
+          );
+        if (isRedundantObservedSaveContent(classification)) {
+          continue;
+        }
         await incomingData.loadData(data, file, getTextMode(data));
         parsedIncomingData = true;
         if (
           this.isSynchronizationTargetCurrent(filePath) &&
           !this.isSameFileEditingActive()
         ) {
-          await this.applyIncomingSynchronization(
+          const applied = await this.applyIncomingSynchronization(
             incomingData,
             filePath,
           );
+          if (applied) {
+            this.saveCoordinator.observeAcceptedContent(
+              filePath,
+              synchronizationTargetGeneration,
+              data,
+            );
+          }
         } else if (this.isSynchronizationTargetCurrent(filePath)) {
           this.pendingExternalSyncPath = filePath;
         }
@@ -3429,7 +3515,7 @@ export default class ExcalidrawView
   private async applyIncomingSynchronization(
     incomingData: ExcalidrawData,
     synchronizedFilePath: string,
-  ): Promise<void> {
+  ): Promise<boolean> {
     const fileIdsToReload = new Set<FileId>();
 
     try {
@@ -3643,6 +3729,7 @@ export default class ExcalidrawView
           undefined,
         );
       }
+      return true;
     } catch (e) {
       errorlog({
         where: "ExcalidrawView.synchronizeWithData",
@@ -3650,6 +3737,7 @@ export default class ExcalidrawView
         fn: "synchronizeWithData",
         error: e,
       });
+      return false;
     }
   }
 

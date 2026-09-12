@@ -50,7 +50,10 @@ import { errorlog, getExportTheme } from "src/utils/utils";
 import { getImageCache } from "src/shared/ImageCache";
 import { PaneTarget } from "src/types/utilTypes";
 import { t } from "src/lang/helpers";
-import { getDrawingModifyRoute } from "./fileModifyRouting";
+import {
+  getDrawingModifyRoute,
+  shouldInspectSuppressedModifyContent,
+} from "./fileModifyRouting";
 
 export class PluginFileManager {
   private plugin: ExcalidrawPlugin;
@@ -665,22 +668,29 @@ export class PluginFileManager {
     if (!(file instanceof TFile)) {
       return;
     }
+    const matchesModifiedDrawing = (view: ExcalidrawView): boolean =>
+      Boolean(
+        view.file &&
+          (view.file.path === file.path ||
+            (file.extension === "excalidraw" &&
+              `${file.path.substring(
+                0,
+                file.path.lastIndexOf(".excalidraw"),
+              )}.md` === view.file.path)),
+      );
     const excalidrawViews = getExcalidrawViews(this.app, true);
     excalidrawViews.forEach((excalidrawView) => {
       void (async () => {
         if (excalidrawView.isClosingOrMigrating()) {
           return;
         }
-        if (
-          excalidrawView.file &&
-          (excalidrawView.file.path === file.path ||
-            (file.extension === "excalidraw" &&
-              `${file.path.substring(
-                0,
-                file.path.lastIndexOf(".excalidraw"),
-              )}.md` === excalidrawView.file.path))
-        ) {
-          if (excalidrawView.consumeOwnWriteReloadSuppression()) {
+        if (matchesModifiedDrawing(excalidrawView)) {
+          const suppressionConsumed =
+            excalidrawView.consumeOwnWriteReloadSuppression();
+          if (
+            suppressionConsumed &&
+            !shouldInspectSuppressedModifyContent(file.extension)
+          ) {
             return;
           }
 
@@ -720,7 +730,6 @@ export class PluginFileManager {
             isPersistenceBusy: excalidrawView.isPersistenceBusy(),
             isStale: excalidrawView.lastSaveTimestamp + 300000 < Date.now(),
           });
-
           if (route === "full-reload") {
             await excalidrawView.reload(true, excalidrawView.file);
             return;

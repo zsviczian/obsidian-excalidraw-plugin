@@ -5,6 +5,13 @@ import { t } from "../../lang/helpers";
 import { errorlog } from "../../utils/coreUtils";
 import type ExcalidrawView from "../ExcalidrawView";
 import {
+  classifyObservedSaveContent,
+  type AcceptedContentIdentity,
+  isSameSaveOperation,
+  type ObservedContentClassification,
+  type ObservedWriteAttempt,
+} from "./saveContentClassification";
+import {
   getAcknowledgedSaveRevision,
   type PreparedSave,
   type SaveOperationContext,
@@ -111,6 +118,8 @@ export class ViewSaveCoordinator {
   private nextSaveOperationId = 1;
   private targetGeneration = 0;
   private lastSuccessfulPreparedSave: PreparedSave | null = null;
+  private latestObservedWriteAttempt: ObservedWriteAttempt | null = null;
+  private acceptedContentIdentity: AcceptedContentIdentity | null = null;
 
   public constructor(
     private readonly view: ExcalidrawView,
@@ -257,6 +266,7 @@ export class ViewSaveCoordinator {
     request: SaveRequest,
     result: SaveExecutionResult,
   ): void {
+    this.completeObservedWriteAttempt(result);
     if (
       result.status === "persisted" ||
       result.status === "window-migration-handed-off" ||
@@ -565,11 +575,97 @@ export class ViewSaveCoordinator {
   public beginSaveTarget(): void {
     this.targetGeneration += 1;
     this.lastSuccessfulPreparedSave = null;
+    this.latestObservedWriteAttempt = null;
+    this.acceptedContentIdentity = null;
   }
 
   /** Latest exact content known to have completed this view's write path. */
   public getLastSuccessfulPreparedSave(): Readonly<PreparedSave> | null {
     return this.lastSuccessfulPreparedSave;
+  }
+
+  /** Current file-load identity for persistence content classification. */
+  public getSaveTargetGeneration(): number {
+    return this.targetGeneration;
+  }
+
+  /** Records preparation without treating the payload as persisted. */
+  public observePreparedSave(preparedSave: PreparedSave): void {
+    if (!this.isPreparedSaveForCurrentTarget(preparedSave)) {
+      return;
+    }
+    this.latestObservedWriteAttempt = {
+      preparedSave,
+      state: "prepared",
+    };
+  }
+
+  /** Records exact text successfully installed as an incoming baseline. */
+  public observeAcceptedContent(
+    filePath: string,
+    targetGeneration: number,
+    text: string,
+  ): void {
+    if (
+      this.view.file?.path !== filePath ||
+      this.targetGeneration !== targetGeneration
+    ) {
+      return;
+    }
+    this.acceptedContentIdentity = {
+      filePath,
+      targetGeneration,
+      text,
+    };
+  }
+
+  /** Classifies observed Vault content against this view's known baselines. */
+  public classifyContent(
+    filePath: string,
+    targetGeneration: number,
+    text: string,
+  ): ObservedContentClassification {
+    return classifyObservedSaveContent({
+      filePath,
+      targetGeneration,
+      observedText: text,
+      currentRevision: this.currentRevision,
+      savedRevision: this.savedRevision,
+      successfulWrite: this.lastSuccessfulPreparedSave,
+      latestAttempt: this.latestObservedWriteAttempt,
+      acceptedContent: this.acceptedContentIdentity,
+    });
+  }
+
+  private isPreparedSaveForCurrentTarget(preparedSave: PreparedSave): boolean {
+    return (
+      preparedSave.targetGeneration === this.targetGeneration &&
+      preparedSave.filePath === this.view.file?.path
+    );
+  }
+
+  private completeObservedWriteAttempt(result: SaveExecutionResult): void {
+    const preparedSave = result.preparedSave;
+    if (!preparedSave || !this.isPreparedSaveForCurrentTarget(preparedSave)) {
+      return;
+    }
+    if (
+      !this.latestObservedWriteAttempt ||
+      !isSameSaveOperation(
+        this.latestObservedWriteAttempt.preparedSave,
+        preparedSave,
+      )
+    ) {
+      return;
+    }
+    const state: ObservedWriteAttempt["state"] =
+      result.status === "persisted" ||
+      result.status === "window-migration-persisted"
+        ? "successful"
+        : result.status === "failed"
+          ? "failed"
+          : "handed-off";
+    this.latestObservedWriteAttempt = { preparedSave, state };
   }
 
   /** Clears the current file's dirty marker and updates its clean baseline. */
