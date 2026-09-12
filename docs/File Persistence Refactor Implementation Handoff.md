@@ -1,0 +1,373 @@
+# File persistence refactor: implementation handoff
+
+Updated: 2026-09-12. Status: baseline comparison completed; the maintainer confirms the isolated `NEVER` change resolves dirty ping-pong. Sustained alternating edits still leave the two views divergent. Next implementation stage, after this revised assessment is confirmed, is 5b.1 tracing the first missed propagation.
+
+This is the execution specification for checkpoint 5b and original checkpoints 6–12. Read it with [AGENTS.md](../AGENTS.md), [CONTRIBUTING.md](../CONTRIBUTING.md), the opening review in [File Persistence Lifecycle Design](<Excalidraw Plugin File Persistence Lifecycle Design.md>), and the concluding “Updated File persistance refactor plan 2026-09-12 (Astra)” section of [RefactorPlan.md](../RefactorPlan.md). This document owns detailed tasks and acceptance gates; RefactorPlan owns checkpoint summaries, maintainer acceptance, and commit/action history. Do not maintain another independent task list.
+
+The earlier failed 5b experiment produced dirty/save ping-pong. After restoring 5a and applying only `CaptureUpdateAction.NEVER` to incoming scene publication, the maintainer confirms that symptom is resolved. However, repeated A-edit → B-edit → A-edit → B-edit on the 4,400+ element drawing eventually stops propagating changes and leaves conflicting live versions. The cause of that remaining divergence is unknown. Do not infer that the earlier “5a still works” report certified every stress scenario, or that removing remote history capture caused or cannot have contributed to this remaining failure. Do not explain it as retained views from an earlier plugin runtime: the maintainer restarts Obsidian when deploying builds.
+
+## 1. Execution ledger and rules
+
+The six 5b steps below are numbered consecutively for handoff clarity. In the earlier lifecycle review, minimum snapshot ownership was called “9a before 5b.3”; here it is **5b.3 (original 9a)**, observation is **5b.4**, and enabling matching is **5b.5**. They are the same six tasks, not additional checkpoints.
+
+| ID | Deliverable | State | Evidence / acceptance / commit |
+| --- | --- | --- | --- |
+| 5b.0 | Preserve experiment; establish committed 5a baseline | Comparison completed | Source stash `2b158abb204fd9b7e76aeea0a80e12476ce9879e`; HEAD `3899d056`; baseline bundle SHA-256 `cd2f5459151c56cb6ec920bb7ff369eec489be76cc87159292bf4e7dd90dc560`; maintainer confirmed 5a works. This is a comparison result, not certification of all stress interleavings |
+| 5b.0a | Publish incoming synchronization as non-undoable remote state | Dirty-loop correction confirmed; retained for next stage | Only `IMMEDIATELY` → `NEVER` restored. Bundle SHA-256 `acfe02c8592ccae73aaea8ffb1ab034b8517358081f1c72360088244ee14adeb`. Remaining alternating-edit divergence is tracked under 5b.1–5b.5; detailed undo/viewport coverage is not newly certified by this report |
+| 5b.1 | Trace first missed propagation, with dirty-origin tracing if needed | Next, after plan confirmation | Account for each edit from source capture/write through every receiver's routing/read/merge/publication; classify the first break and the settled queue/disk state |
+| 5b.2 | Reproduce failure; implement demonstrated prerequisites | Not started | First reproduce the observed interleaving. Fix queue/merge prerequisites here, or explicitly assign a proved suppression/snapshot defect to 5b.3–5b.5; final convergence remains blocked until that fix passes |
+| 5b.3 / 9a | Minimum immutable save ownership | Not started | Capture/preparation/write completion contract and race tests |
+| 5b.4 | Observe candidate content classification | Not started | Classification truth table and controlled interleavings |
+| 5b.5 | Enable matching at the coalesced read boundary | Not started | Full checkpoint 5 acceptance; remove temporary diagnostics |
+| 6 | Detached persistence ownership and ordering | Blocked on 5b acceptance | Data-only handoff; explicit outcomes and live-write ordering |
+| 7 | BAK after successful detached persistence | Blocked on 6 | Exact successful payload and empty-scene safeguard |
+| 8 | Same-file multi-owner edit gate | Planned | Move forward only as an explicitly demonstrated prerequisite |
+| 9 | Complete normalized save/export snapshot | Planned | Builds on 9a, without repeating its implementation |
+| 10 | Snapshot autoexports, then ordered exports | Planned | Two separate acceptance gates |
+| 11 | Async load generation | Planned | Move a narrow portion forward only if evidence requires it |
+| 12 | Remaining semaphore/timer cleanup | Last | Each retired state has a verified owner |
+
+For each implementation increment:
+
+1. State the invariant, concrete failing evidence, affected callers, and smallest proposed correction. Do not bundle history, viewport, image loading, and dirty policy into an echo-detection change.
+2. Update this ledger and RefactorPlan with what is implemented versus manually accepted. A build is not acceptance. Never mark all of 5b complete because one reproduction improves.
+3. Run production build and focused diagnostics before handing off a test build. Keep genuine failures/notices visible; hiding a busy notice or rejecting a modify silently is not a fix.
+4. Recommend risk-based tests, wait for required maintainer results, and commit only when requested. Remove temporary diagnostics before a production commit. If a correction fails, record that, preserve its comparison patch, and return to its preceding accepted boundary rather than stacking another guessed predicate.
+5. Preserve the TextFileView facade, public scripting APIs, existing serialized data, merge behavior outside the demonstrated defect, early migration unmount, viewport ownership, and dependency-refresh fallback. No new protocol, blanket CRDT, version bump, package upgrade, or manager solely to make a diagram cleaner.
+
+## 2. Checkpoint 5b.0 — recover and validate the baseline
+
+### Exact state at handoff
+
+- Branch observed: `file-persistence-improvements`; HEAD `3899d056`, `fix: deduplicate copied markdown image renders`.
+- `af1cbe74`, `fix: retain latest external drawing sync`, is the committed checkpoint 4/5a baseline. `3899d056` adds only the separately accepted image-loader fix. Prefer `3899d056` initially so the image waves do not confound the stress test.
+- `a42e9525` is the save/synchronization ownership checkpoint. Do not jump back that far unless the 5a comparison supplies a reason.
+- Uncommitted experimental runtime paths at review: `src/core/managers/FileManager.ts`, `src/types/excalidrawViewTypes.ts`, `src/view/ExcalidrawView.ts`, `src/view/components/CustomEmbeddable.tsx`, `src/view/managers/ViewSaveCoordinator.ts`.
+- Documentation changes include the maintainer's appended plan and this handoff. They remained outside the source-only stash and are still present in the working tree. No branch switch or destructive rollback was performed.
+
+### Safe preservation procedure
+
+1. Read `git status --short`, `git branch --show-current`, `git log -6 --oneline`, `git diff --stat`, and `git diff --cached --stat`. Inspect all overlapping/new changes. Stop if the five paths above now contain unrelated user work; do not assume this inventory is still exact.
+2. Record plugin dependency/lockfile identity, installed `@zsviczian/excalidraw` version and hashes of its four `dist/obsidian` artifacts, Node/npm versions, current production bundle hash, and sibling-repository branch/status if its artifacts were copied locally. `node_modules` is ignored and survives stashing: a Git commit alone does not identify the runtime package. At review the declared Excalidraw dependency was `0.18.135`; verify rather than reinstalling blindly.
+3. Preserve the known experiment with a **path-scoped stash**, leaving documentation in the working tree. After confirming the inventory and index, use:
+
+   ```sh
+   git stash push -m "checkpoint-5b failed experiment before baseline validation" -- \
+     src/core/managers/FileManager.ts \
+     src/types/excalidrawViewTypes.ts \
+     src/view/ExcalidrawView.ts \
+     src/view/components/CustomEmbeddable.tsx \
+     src/view/managers/ViewSaveCoordinator.ts
+   git rev-parse 'stash@{0}'
+   git stash show --stat 'stash@{0}'
+   git status --short
+   git diff 3899d056 -- src
+   ```
+
+   Record the resolved stash object ID in the ledger, not only `stash@{0}` (its index can change). Inspect the saved patch and verify the final source diff is empty. If new experiment files are untracked, preserve them explicitly too; the command above does not include them. Never use `git stash -a`, broad cleaning, or a hard reset. Do not include the roadmap in a blanket stash and then lose the instructions needed to resume.
+4. At the reviewed HEAD, stashing those paths restores baseline source without moving the branch. If HEAD has advanced, plan a separate baseline worktree after preserving changes rather than overwriting unrelated commits. The exact `af1cbe74` comparison can also use a separate worktree; do not silently remove the accepted image fix from the development branch.
+5. Keep the stash until the replacement 5b is accepted. Consult it as evidence with `git stash show -p <recorded-OID>`. Do not automatically `pop` it after a good baseline test: that would reintroduce all the unvalidated predicates together. Restoring any part later is a separately reviewed action.
+6. Keep these documentation edits through the comparison. If the maintainer requests a documentation checkpoint, stage only the explicit documentation paths, not the source experiment. This specification does not itself authorize a commit or deployment.
+
+The procedure above was executed on 2026-09-12 for the documented five source paths. It remains here as the recovery/audit procedure; revalidate the inventory before reusing it.
+
+### 5b.0 execution record
+
+- Branch/HEAD after restoration: `file-persistence-improvements` at `3899d056`. `git diff 3899d056 -- src` was empty.
+- Failed experiment: stash object `2b158abb204fd9b7e76aeea0a80e12476ce9879e`, message `checkpoint-5b failed experiment before baseline validation`. It contains exactly the five documented source paths, 144 insertions and 61 deletions. Retain this object through 5b acceptance; do not identify it later only as `stash@{0}`.
+- The three planning files were excluded from the stash. Their pre-stash SHA-256 values were `7546b8f...ed0` (`RefactorPlan.md`), `e4dd2686...1eb` (lifecycle design), and `e5a0e919...d99` (this handoff). They subsequently changed only to record this execution; they were not rolled back or stashed.
+- Toolchain: Node `v22.22.2`, npm `10.9.7`. Declared and installed `@zsviczian/excalidraw` version: `0.18.135`. Sibling fork was on `master` with no reported working-tree changes.
+- Installed fork artifact SHA-256 values: production JS `42e36f9e...e2`; development JS `5df27a6a...f61`; production CSS `e371caed...7db`; development CSS `1151ae7f...947`. Preserve the full command output in the conversation record; abbreviations here are for readability.
+- Failed-experiment bundle before restoration: 4,904,430 bytes, SHA-256 `003c1de0...e15`. Rebuilt baseline bundle: 4,903,363 bytes, SHA-256 `cd2f5459...560`.
+- `npm run build` passed in 11.1 seconds and reported 33 circular-dependency warnings (three shown plus “and 30 more”). `node --check dist/main.js` passed. Focused ESLint across the five restored paths reported the existing 19 errors: 18 in `ExcalidrawView.ts` and one in `CustomEmbeddable.tsx`; the other three files were clean. `git diff --check` passed.
+- No deployment destination or private fixture identity was inferred or recorded. No Obsidian runtime test has been performed against this rebuilt baseline yet.
+- The maintainer subsequently confirmed that 5a still works. The receiving view nevertheless became dirty after receiving only view A's synchronized input. This is the accepted baseline observation motivating isolated checkpoint 5b.0a.
+
+### Baseline test record
+
+Build baseline with Node 22+, `npm run build`, and `node --check dist/main.js`. Record actual build warnings, touched-file lint baseline, `dist/main.js` size/hash, and deployment destination. Do not assume the historical 33 Rollup circular warnings or earlier lint counts still apply. Use the established maintainer test-vault deployment workflow and only an authorized destination. Do not edit generated artifacts by hand. Verify the deployed bundle is the one just built, then fully restart Obsidian.
+
+Use disposable fixture copies, preserving the original outside the test mutation path. Record compression/text mode, autosave interval/settings, autoexport options, zoom-to-fit setting, Obsidian/Electron/OS versions, open leaves, and whether both views were fully loaded before interaction. Do not log private fixture contents into the repository.
+
+Test first with a minimal drawing, then the reported approximately 4,400-element drawing with 500+ Markdown images (72 distinct images copied repeatedly). Start every comparison from the same fixture bytes; prior experiments may have altered versions/indices even if the drawing looks unchanged.
+
+| Baseline case | Required observation |
+| --- | --- |
+| One edit in A; switch once to B; no more input | Same intended content; finite save/sync activity; both eventually clean; no rescue edit/save needed |
+| A/B deliberately at different pan/zoom; alternate edits | Elements propagate; receiving camera stays local |
+| Both edit before the other write is applied | Distinct non-conflicting edits survive; no perpetual dirty cycle after input stops |
+| Repeat incoming unchanged contents / reopen unchanged drawing | No endless normalization saves; reopening preserves content and layers |
+| Back-of-note editor held active while other view edits, then released | Pending scene update appears after release; Markdown content survives |
+| Receiving view has not saved for more than five minutes | Record whether full reload runs; verify local content and viewport, not merely the incremental path |
+
+Wait for initial asset work and at least multiple configured autosave periods after input stops; record actual timings rather than declaring success after the old two-second suppression window. Compare file contents after close/reopen as well as visible canvases. Run image-loading overlap as a separate case, not an accidental variation between builds.
+
+**Gate:** baseline comparison completed. The maintainer confirmed that 5a still works; preserve that observation without extending it to unreported stress/undo/platform cases. Continue from the isolated capture-mode result below.
+
+### Checkpoint 5b.0a — isolated remote history publication
+
+The baseline publishes the merged incoming scene using `CaptureUpdateAction.IMMEDIATELY`. The maintainer observed that a clean receiver becomes dirty after receiving only that synchronized input. Apply only the previously attempted capture-mode correction: publish with `CaptureUpdateAction.NEVER`, documenting that incoming Vault state is not a local undoable edit and that locally retained merge state is handled by the existing explicit dirty branch above publication.
+
+Do not restore the failed experiment's content hash, expected-write record, viewport app-state injection, dirty-predicate replacement, semaphore removal, or `CustomEmbeddable` edits. This checkpoint does not claim to solve checkpoint 5b's echo-classification problem.
+
+**Gate:** with clean A and B, edit only A and let synchronization settle. B must receive the element change without entering dirty state, adding the incoming operation to its local undo history, saving the same state back, or moving its independent viewport. Then make a local edit in B and verify it becomes dirty, can be undone, persists, and synchronizes to A. Finally repeat several alternating edits on the large fixture and stop input; both views must converge cleanly without a force save. If ping-pong returns, record the first unexpected transition under 5b.1 rather than adding another adjacent fix.
+
+Automated validation: `npm run build` passed in 11.6 seconds with the established 33 circular-dependency warnings; `node --check dist/main.js` and `git diff --check` passed. The bundle is 4,903,357 bytes with the SHA-256 recorded in the ledger. Focused `ExcalidrawView.ts` lint reports its same 18 existing errors, none on the changed publication. The maintainer confirms dirty ping-pong is resolved, but reports sustained alternating-edit divergence. Retain this narrow improvement and proceed to 5b.1 for the remaining failure. The broad convergence portion of the gate remains open for overall 5b acceptance; do not keep adding fixes under baseline checkpoint 5b.0a.
+
+### Assessment after 5b.0a — separate progress from convergence
+
+The remaining issue belongs to checkpoint 5b. It should be investigated now in 5b.1 and reproduced in 5b.2; its eventual correction may depend on 5b.3 snapshot ownership or 5b.4/5b.5 content classification. No later checkpoint is guaranteed to fix it. Original checkpoints 6–12 remain gated on live-view convergence. In particular, the detached-write queue does not fix two active `TextFileView` writers by itself.
+
+Keep `3899d056` plus the isolated `NEVER` change as the current diagnostic starting point. The only source diff at this assessment is that capture mode and its two comment lines. The five-file failed experiment remains stashed. Do not repeat baseline restoration or pop the stash. A controlled comparison without `NEVER` is useful only if a trace implicates history/dirty callbacks; record matching fixtures and edit cadence, and restore the accepted change after comparison. Do not infer causation from the order of user reports.
+
+Current source gives these concrete investigation targets, in this order of boundary observation rather than certainty of cause:
+
+| Boundary / verified behavior | What the trace must establish |
+| --- | --- |
+| `FileManager.modifyEventHandler()` calls `consumeOwnWriteReloadSuppression()` before setting a pending-sync marker. It checks only the Boolean. | Was the first notification needed by the receiver consumed here? A marker cannot preserve a notification that never reaches it |
+| `executeSaveRequest()` arms the Boolean before `super.save()`, then calls `setPreventReload()` after success; that method sets it to true again and schedules cleanup. | If the own-write modify already consumed the first arm before the save promise resolved, did completion re-arm it and consume another view's later write? This is a source-permitted timing sequence, not a reproduced explanation of the current incident |
+| Suppression timeout only clears the flag; it does not reread or schedule synchronization. | Did both views settle with no pending work despite a suppressed required notification? Waiting for the timeout cannot itself recover that notification |
+| Notification routing can choose full reload, including after five minutes since last save; `reload()` can return early while save/sync or same-file editing is active. | Did a routed event get no incremental marker and no applied reload? Log the branch and early-return reason; a returned `true` is not proof content was installed |
+| The save loop yields to the whole sync drain; per-view saves do not coordinate cross-view writes. | Is a missing change queued but waiting, or did another write supersede its disk state before read/merge? Distinguish active operation, whole-loop lifetime, trailing request, and dirty revision |
+| Live capture and model normalization share mutable inputs; incoming application can catch errors internally. | Did the change reach prepared bytes and successful publication, and did it survive later callbacks? Parse completion or a resolved application promise alone is not proof of publication |
+
+For the re-arm scenario, the conditional timeline is A arms → A's own event clears → A save resolves and arms again → B writes → A consumes B's event with no pending marker. Trace event/write ordering in Obsidian before selecting any correction. Shortening/removing the timer or deleting the second arm still leaves the origin-blind Boolean; neither is a sufficient general solution without the controlled cases.
+
+`NEVER` may eliminate redundant saves that previously happened to emit another modify and retry a missed synchronization. That is a hypothesis to test, not grounds to restore unnecessary dirty revisions. Also check the opposite failure: if real local work is no longer tracked, the first break occurs before source persistence. The desired contract is explicit eventual propagation after finite edits without depending on an accidental follow-up save.
+
+### First diagnostic run for the remaining divergence
+
+Use the current build's settings and a fresh fixture. For the first attribution run, wait for initial image loading and make distinct changes to separate simple elements (or add distinct simple shapes), recording anonymous element/edit identities. Repeat the user's A/B switching cadence; editing different elements separates propagation failure from same-element conflict policy. Add image-loading overlap and same-element competing edits as subsequent cases.
+
+Capture both views' operations on one sequence timeline. Begin with cheap routing, suppression arm/consume/re-arm/expiry, save completion, pending-marker and ownership events. Trace selected edit identity/version through captured/prepared and read/published states. Use the already-owned save text and sync read for payload observation; do not add an asynchronous Vault read for every modify just for diagnostics. Deep raw/parsed/merged field comparisons are the second tier if the event reaches reconciliation but content changes unexpectedly.
+
+At the first visible divergence, stop editing and collect a read-only snapshot of both scenes' relevant edit identities, disk state, current/saved revisions, active/queued save, pending sync/loop, same-file guard, and suppression state. Record elapsed settling time. Avoid force-save, reload, or close until this evidence is captured because those actions alter the state under investigation. No automatic diagnostic writes or repair loop.
+
+Classify the earliest break:
+
+1. **Source edit absent from prepared/successfully written content:** inspect local dirty tracking, capture revision, normalization and acknowledgement (5b.2/5b.3).
+2. **Source write present but receiver event consumed/unrouted:** inspect suppression/routing; reproduce the decision and implement its validated replacement (5b.2 then 5b.4/5b.5 as needed).
+3. **Receiver work queued but never acquired/completed:** inspect save/sync/gate waits, exceptions and request fairness (5b.2).
+4. **Read/merge/publication omits a required change, or subsequent work overwrites it:** inspect actual write order, merge results, publication and callbacks; use 5b.2 or 5b.3 according to the demonstrated boundary.
+
+These are classifications for selecting the correction, not four changes to implement speculatively. The next implementation deliverable is the trace and its smallest reproducible failing case.
+
+## 3. Source map and verified hazards
+
+Use symbol searches; line numbers in older notes drift. The following describes reviewed source and the failed working patch, not guaranteed post-stash behavior.
+
+| Boundary | Inspect these files/symbols | What must be distinguished |
+| --- | --- | --- |
+| Notification and leaf-switch entry | `src/core/managers/FileManager.ts: modifyEventHandler`; `EventManager.ts: onModifyHandler`, `onActiveLeafChangeHandler` | Same-path Markdown versus raw `.excalidraw`; initialized view versus `ExcalidrawLoading`; split-switch/full-reload/Markdown-view branches |
+| Per-view persistence | `src/view/managers/ViewSaveCoordinator.ts: enqueueSave`, `drainSaveQueue`, `performQueuedSave`, `completeSaveRevision`, `setDirty`, `flush`, `forceSaveWithPolicy` | Active write versus queued save-loop lifetime; queued/requested versus captured revision; dirty visuals versus acknowledged state |
+| External synchronization | `src/view/ExcalidrawView.ts: requestExternalSynchronization`, `startExternalSyncLoop`, `drainExternalSynchronization`, `acquireSynchronization`, `yieldToPendingExternalSynchronization`, `applyIncomingSynchronization` | Notification marker versus read in progress; parser model versus live merge; same-file guard; cancellation/finally boundaries |
+| All dirty sources | Same view: `onExcalidrawIncrement`, `onChange`, `checkSceneVersion`, explicit `setDirty`; tracked-app-state helpers | Durable store increments, tracked persisted app state, ordered version hash, explicit reconciliation, delayed metadata/image mutations |
+| Save representations | Same view: `executeSaveRequest`, `getSceneWithAppState`, `prepareGetViewDataFromSnapshot`, `getViewData`, `loadDrawing`, `setViewData`; `src/shared/ExcalidrawData.ts: loadData`, `syncElements` | Raw Markdown buffer; raw parsed JSON; normalized mutable model; live API; exact text passed to TextFileView |
+| Image publication | `src/view/managers/ViewSceneFileManager.ts`; `src/shared/EmbeddedFileLoader.ts`; view `addFiles`/`updateScene`; image scaling helpers | Queued loader versus actual callback/decode completion; render-only work versus persisted geometry/customData |
+| Fork store/index behavior | Sibling `packages/element/src/index.ts: hashElementsVersion`; `fractionalIndex.ts: syncInvalidIndices`; installed fork `CaptureUpdateAction`, store callbacks, `updateScene` implementation | Real published artifact behavior; ordered nonce hashing; index mutation; synchronous flush versus delayed callback; history capture semantics |
+| Detached persistence | View migration callback and unload branches; `src/core/managers/ViewMigrationPersistenceHandoffManager.ts`, `ViewMigrationHandoffManager.ts`; `src/shared/BackupPersistenceQueue.ts` | Drawing-state transfer versus serialized persistence transfer; accepted handoff versus completed source write |
+
+Verified facts to preserve in future reasoning:
+
+- `loadData()` applies remaining non-text `elementLinkMap` entries by setting the link and incrementing `version` and `versionNonce` unconditionally. An isolated execution of that exact loop with an unchanged link demonstrated the increment; the loop also exists at `3899d056`. This is **not** an end-to-end reproduction of ping-pong. Do not remove version increments globally without checking actual link changes and consumers.
+- `hashElementsVersion()` is ordered nonce hashing, not a numerical revision sum or complete content comparison. Reordering can be a genuine layer edit. `ExcalidrawView.updateScene()` normalizes indices after synchronization has computed `previousSceneVersion`; the normalization can mutate versions. Trace the actual installed array and callbacks before changing baseline timing.
+- The uncommitted `hasLocalStateToPersist && !isDirty()` guard suppresses revision advancement for an already-dirty view. An already-dirty Boolean does not establish whether a waiting/active request includes a newly reconciled change. Conversely, every repeated reconciliation is not automatically a new document change.
+- `setDirty()` advances `currentRevision` and updates a trailing request when `saveLoopPromise` exists. The loop can be alive while `activeSaveRevision` is null and it is awaiting external synchronization. Trace whether the trailing request receives the reconciliation revision. `forceSave` refuses several kinds of busy state; the notice does not prove a physical Vault write is hung.
+- `yieldToPendingExternalSynchronization()` awaits the **whole** external drain, not one iteration despite its comment. Further events can extend it. Pending state being bounded does not guarantee finite work or fairness.
+- Incoming tombstone IDs filter local elements before the live-element version comparison. Do not claim newer-local-versus-older-deletion behavior is version-aware without a separate correction and test.
+- `getSceneWithAppState()` retains API elements and nested objects; a shallow files map still shares values. `syncElements()` assigns the provided scene and mutates it across awaits, including clearing `scene.files` after synchronization. `readonly` does not make this an immutable capture.
+- `loadDrawing(false, deletedElements)` may run during save normalization. Camera stripping in the reload branch is not automatically exercised by that call. Adding app state to `updateScene()` can change flush behavior as well as values. The observed camera improvement does not prove which mechanism caused it.
+- `await loadSceneFiles()` does not await all image publication/decoding. Some image helpers change geometry/customData without a version bump; do not classify all image differences as disposable cache noise.
+- Incremental sync does not explicitly adopt the drain's raw Markdown into `this.data`; serialization uses that buffer's envelope. Verify Obsidian's actual TextFileView callback/buffer contract before claiming a stale buffer, or fixing one by blindly overwriting local Markdown. `setViewData()` has a same-file early return after asynchronous initialization.
+- Exact prepared-text equality describes observed bytes, not who emitted a Vault event. View revisions are local counters. Even serialized writes in a single JavaScript realm can race across awaits; a per-view coordinator is not a per-path write coordinator.
+
+## 4. Checkpoint 5b.1 — trace the first erroneous transition
+
+Create a temporary, isolated diagnostic patch with prefix such as `EXCALIDRAW_PERSISTENCE_5B`. Use `log` from `src/utils/debugHelper.ts`, not direct console calls. Emit one copyable string per event, with monotonically assigned anonymous view/operation IDs and sequence numbers. Bound captured observations; do not retain views, scenes, or giant payloads in a global debug buffer. Remove diagnostics and search both `src/` and the rebuilt `dist/main.js` before a production commit.
+
+Trace the missing-propagation boundary first as specified above. The following is the available diagnostic inventory; enable deeper per-element comparisons only when routing/write evidence requires them. Dirty-origin tracing remains necessary for source edits and any recurrence of ping-pong, but an unexpected dirty event is no longer required to begin diagnosis.
+
+- Dirty origin and before/after current/saved/active/requested revision; previous/current ordered scene hash; tracked-app-state category; whether a queued request was created/replaced. Do not merely log the final header-icon color.
+- Save trigger (autosave, switch/blur, force, flush, teardown), capture start, preparation completion, actual write invocation/completion/failure/no-op, queue yield/resume, and terminal acknowledgement. A resolved whole-loop promise is not an individual write-completion event.
+- Modify notification, classification candidate/result, pending marker transitions, sync acquisition/release, exact target/runtime validity, Vault read start/completion, parse start/completion, publication, and full-reload branch.
+- At raw, parsed, merged, published, and serialized boundaries: bounded anonymous element transition samples plus counts of changed IDs, versions/nonces, indices/order, links, text dimensions, deletion state, image geometry/customData, and tracked app-state categories. Capture immutable scalar observations immediately; do not inspect a live object later and call it its earlier state.
+- Fingerprint raw/prepared text at selected operation boundaries. Do not hash multi-megabyte scenes on every `onChange` or await extra diagnostic work inside behavior-critical paths. If hashing is deferred, label when input was captured versus when the digest completed. Measure diagnostic overhead and confirm the uninstrumented symptom too.
+- Observe TextFileView `getViewData`/`setViewData` and its inherited save contract using the supported runtime/debugger or local typings/source where available; use obsidian-typings as the API reference. Do not introduce an unverified TextFileView override merely to collect a trace.
+- Separate delayed loader callbacks, scene publication, and store/onChange notification. A queued loader, synchronous API return, frame callback, and actual paint are different milestones.
+
+Start with a single edit/switch to establish normal routing, then reproduce the reported repeated alternating edits. Identify the first required edit that fails to reach the other view; a quiet but divergent pair is as significant as busy queues. If a new dirty loop occurs, identify its first unwarranted dirty transition and follow the resulting write. If normalization produces a required write, check that its result stabilizes on the next cycle.
+
+**Gate:** attach a concise trace interpretation and unresolved questions to the ledger. If the trace changes timing enough to hide the bug, reduce it and use deterministic barriers in the test harness; do not declare resolution. Do not add a new production manager/guard in this diagnostic checkpoint.
+
+## 5. Checkpoint 5b.2 — reproduce and establish convergence
+
+There is no established plugin view/model unit-test suite in `package.json`. Do not invent an `npm test` success claim. Establish a small reproducible harness with a documented command using current tooling; prefer actual functions/classes and injected Vault/scheduler boundaries over a copied imitation of the algorithm. A source-loop micro-test proves only that loop. Test helpers may control promise completion order; avoid timing-dependent real sleeps. Pure helpers can be extracted mechanically only when needed and separately reviewed.
+
+Define three separate comparisons:
+
+1. **Exact bytes:** what the Vault read or actual save contained. Suitable for redundant-content detection, not merge ownership.
+2. **Persisted document meaning:** elements including order/deletions/custom fields, persisted app state, and Markdown envelope under existing format rules. Any excluded field requires a concrete reason; do not erase all indices, nonces, camera values, or image dimensions to make tests pass.
+3. **View-local runtime state:** camera, selection, render caches, and editor state where the existing policy treats them as local. Some camera/tool settings are serialized under current settings; local runtime ownership does not authorize removing them from the file format.
+
+Required controlled cases:
+
+| Case | Assertion / decision required |
+| --- | --- |
+| Parse and serialize unchanged non-text links repeatedly | After any explicitly justified normalization, versions and writes reach a fixed point; real link changes still persist |
+| Equal elements with different order/invalid fractional indices | Genuine layer changes survive; normalization converges; dirty baseline corresponds to what was actually installed |
+| Raw/parsed text, bound text, equations, copied Markdown images | Normalization does not endlessly toggle fields; durable geometry changes are retained |
+| Older incoming N, newer local N+1 | Local result remains eligible for persistence even if the receiver was previously clean or already dirty |
+| Incoming-only changes to a clean receiver | Accepting the persisted baseline alone does not create a write-back loop |
+| Same element changed in both views; deletion versus edit | Record existing tie/deletion policy; preserve it unless a demonstrated correction is explicitly approved; never claim both conflicting values survive |
+| Repeated/duplicate notification and notification during sync finalization | Latest work is not lost at marker clear or promise-finally boundaries; unchanged events do not generate writes |
+| Pending save waits for sync; reconciliation changes state | Pending request covers the reconciled revision; acknowledgement cannot strand that change |
+| Save fails, parse fails, or view changes while awaiting | Flags/promises release; dirty state and existing valid drawing survive; no false success or stale publication |
+| Markdown/back-of-note changes while scene save is preparing | Latest accepted envelope is retained or a conflict is explicitly handled; no silent header/tail overwrite |
+
+Control at least these cross-view interleavings: A writes, B reads A, B merges/saves; A and B both prepare before either completes; B writes between A's notification and A's read; A receives another notification while applying the first; old read/hash completes after navigation/record replacement. Test on-demand leaf-switch saves with autosave, not autosave alone.
+
+If two saves can overwrite an unseen non-conflicting edit before any reader observes it, a latest-read marker alone cannot fix that. Produce the failing timeline and decide whether a narrow plugin-owned per-path reconciliation/write boundary is needed. Such coordination must still use `super.save()` for live writes, must reread/reconcile under the relevant boundary, and must preserve main-realm migration rules. Mere FIFO serialization or choosing the last arrival is not conflict resolution. Treat this as an explicit prerequisite checkpoint, not an incidental new queue inside hash detection.
+
+**Gate:** record the earliest failing case and its responsible boundary. For a queue/merge correction implemented here, record its passing reproduction and callback/history effects. If the failure is specifically the Boolean suppression that 5b.4/5b.5 replace, or snapshot ownership addressed in 5b.3, retain the failing regression case and explicitly carry that acceptance requirement to the named step. Do not require 5b.2 to solve the Boolean with an interim heuristic just to reach the designed replacement, and do not claim overall convergence before it is fixed. Independent defects must not be hidden by the pending replacement. Undo/redo must keep local edits undoable without making remote acceptance a spurious user edit. Re-run both first-edit and sustained large-scene cases after each relevant correction.
+
+## 6. Checkpoint 5b.3 — minimum save ownership (original 9a)
+
+Before implementing, write the capture/acknowledgement contract. Conceptual names below describe roles, not a demand for new managers or final public types:
+
+- **Save intent:** trigger, force/guard/side-effect policy, producer identity, and requested revision. A queued intent can predate capture.
+- **SaveSnapshot:** file identity/runtime generation, capture revision, owned scene/app-state/deletion/selection inputs, and the Markdown envelope or its explicitly accepted base identity.
+- **PreparedSave:** exact final text, normalized state identity, producer/capture revision, and persistence-relevant eligibility/options. Mutable preparation scratch is not exposed as an immutable result.
+- **Write completion:** operation identity, actual successful prepared payload identity, and the revision it is safe to acknowledge. Failure/skipping/handoff are not successful disk writes.
+
+Use existing project/fork types; keep view-scoped types local unless shared. Choose the revision-capture point explicitly: forwarding `requestedRevision` is not enough if capture happens later. Either capture that exact revision when requested, or capture current state later and return its actual captured revision. Do not acknowledge revisions that arrived after capture. Preserve public `save(...)`/force-save delegates and policy merging.
+
+Inventory every mutable input used after an await: elements and nested points/bindings/customData, deleted elements, selected IDs, app-state nested objects, file metadata, Markdown envelope/element maps, and normalization outputs. Copy mutable structures needed by preparation; share immutable strings/bytes only under a documented ownership rule. Do not JSON-clone the entire live API/app state (it contains runtime objects), nor duplicate all image data URLs unnecessarily. Dev tests can freeze owned captures, but must not freeze objects still owned by Excalidraw.
+
+`syncElements()` currently installs and mutates the scene in `this.excalidrawData`. Determine which preparation mutations must later be reflected in the live model. Do not solve immutability by simply detaching everything and dropping normalized metadata, or by publishing an old snapshot over newer local edits. Prove that API mutations during compression cannot change prepared text or exported normalized state.
+
+Capture after any intentionally awaited edit/deletion prompt, with target revalidation. For migration, capture all API-owned values synchronously and unmount before the **first await**, as required today; do not move an ordinary save's waits into that pre-unmount path. Keep teardown and replacement file identity checks distinct from source runtime lifetime.
+
+Audit `getViewData()` and `super.save()` so the text fingerprinted is exactly the text the inherited bridge consumes, including headers/frontmatter/back-of-note and compression. Preserve forced no-op save's explicit reload behavior (`reloadIfWriteDidNotEmitModify`); unchanged text can still require a refresh without a modify event. Verify BAK's existing `lastSavedData` source corresponds to this completed write before building on it.
+
+**Gate:** paused compression plus further edits, nested-object mutation, queued revision advancement, failed write, no-op force save, malformed incoming Markdown, navigation, and migration. Older completion cannot clear a newer revision; normalization cannot overwrite newer live work. Measure peak retained data on the large fixture. No export queue yet.
+
+## 7. Checkpoint 5b.4 — observe classification without changing suppression
+
+Alongside the now-validated baseline behavior, maintain a temporary candidate record and log what a replacement would do. Do not consume notifications based on the candidate yet. Keep candidate calculations bounded and separate from production scheduling; observation can perturb timing, so compare uninstrumented runs as well.
+
+Candidate identity needs a producer/operation ID, target file/runtime identity, captured revision, exact prepared-text fingerprint, and write state. Producer revision is meaningful only for that producer. A newly started write must not be labeled successful; a record from an older operation must not clear its replacement after a delayed promise settles. Track a successfully accepted document baseline separately where needed. Bound retention; do not store an unbounded hash history.
+
+| Observed state | Required interpretation |
+| --- | --- |
+| Bytes match this target's known successful prepared write, with no newer local edits | Candidate redundant content; not proof the notification originated here |
+| Same bytes, but local edits occurred after capture | Do not clear or acknowledge those newer edits; any skipped merge is only an optimization for already represented disk content |
+| Bytes match only a pending/failed/abandoned attempt | Not established successful content; defer/classify after outcome or process normally |
+| Bytes match the fully accepted current document baseline | Repeated notification may be redundant without a current expected-write record; define this independently of timeout expiry |
+| Different or unknown bytes; read/hash failure | Keep external work eligible; report failure through existing paths; do not consume as an own write |
+| Target/runtime/record changed during await | Result cannot classify the replacement target; preserve any newer target work |
+| Later writer produced identical bytes | Equality can make content redundant, but cannot establish writer identity |
+
+Test record replacement, successful write notification before/after promise completion, no-op write without notification, duplicate/delayed events, failed write, rename, close, A→B→A navigation, and two writers. Observe force-save and same-file editor callers, including the two suppression calls removed in the failed `CustomEmbeddable.tsx` patch.
+
+**Gate:** every skip decision is justified by known accepted/successful content and cannot lose newer local state. Record disagreements with actual outcomes before changing behavior. Timeout is cleanup, never evidence of origin.
+
+## 8. Checkpoint 5b.5 — enable coalesced content matching
+
+Keep the modify callback lightweight: initialized-target validation, existing routing, and marking latest-state work. For the incremental Markdown path, the view's pending-sync operation should own the fresh read and candidate comparison after acquiring the appropriate save/sync/lifecycle boundary. Reuse that read for parsing; do not create a separate per-event read/hash task ahead of it. Preserve raw `.excalidraw`, full-reload, explicit refresh, and same-file branches; either route them through a validated equivalent classification boundary or explicitly retain their safe behavior during staged rollout.
+
+Logical operation (adapt existing code rather than introducing another loop):
+
+1. Mark a current file as needing inspection; notifications while busy retain this demand.
+2. Acquire the operation boundary without waiting on a whole save loop that is itself waiting for this sync. Revalidate the exact runtime/file after meaningful awaits; same path alone is insufficient for navigation away and back.
+3. Claim the current pending marker before the read, preserving any later notification as trailing demand. Read current Vault text once, compare against valid success/acceptance identity, and parse only if reconciliation is needed.
+4. On redundant content, do not alter newer local dirty revisions or manufacture a new save. On changed content, parse/reconcile through the tested pipeline and advance the accepted baseline only after successful application. If an editor acquires the file meanwhile, retain pending demand and wait for release.
+5. Release ownership in `finally`; inspect any trailing demand, including one arriving between the last loop check and promise cleanup. Use existing bounded state if sufficient; add a notification epoch only if a proved gap requires it. Parse failure must retain valid live state without starting an endless retry loop on the same malformed bytes.
+6. Save genuinely unpersisted reconciled state through the existing coordinator. Prove fairness between finite pending sync and trailing saves; no early return may strand a dirty revision behind a stale request.
+
+Hashing must be browser/mobile-safe. Exact bytes are the write identity; if a fingerprint is used, document collision assumptions and failure behavior. Do not confuse the Excalidraw scene hash with a full-text fingerprint. Revalidate record/runtime after asynchronous digest completion. Timeouts only release abandoned records; expired records must not cause an otherwise unchanged document to start a save cycle.
+
+Before removing `preventReload` storage/accessors, search **all** callers and classify their purpose: ordinary save echo, explicit force/reload request, same-file editor grace, migration, and teardown. Keep the successful 5a rule (no arming before serialization) until its replacement is accepted. Do not carry forward the failed patch's history mode, camera arguments, or dirty predicate simply because they are adjacent in the diff; each needs its own evidence and gate. If the same-file ownership gate is a prerequisite, execute checkpoint 8 explicitly before retiring those calls.
+
+**Final 5b gate:** both small and large fixtures settle after one edit/switch and sustained alternating edits with no rescue save, repeat unchanged notifications without write-back, preserve distinct competing edits in both views and on disk, keep cameras independent, keep undo/redo coherent, retain Markdown/layers/deletions after reopen, and make force-save available after work actually settles. Clean icons alone are insufficient: neither view may remain stale while both queues are idle. Test clean and dirty receivers, image work in flight, save/read failures, and a receiving view past the five-minute threshold. Then smoke-test main/popout interaction and physical mobile hashing/loading. Remove diagnostic code, rebuild, repeat the first-edit and sustained alternating tests without instrumentation, and obtain maintainer acceptance before moving to 6.
+
+## 9. Original checkpoint 6 — plugin-owned detached persistence
+
+Start with ordinary dirty unload as its own change; migrate the special window-handoff path only after ordinary handoff is proven. Reuse the scheduling/cleanup lessons of `BackupPersistenceQueue`, not its entire policy: that queue currently drops pending work on `destroy()` and uses latest arrival, neither of which automatically provides source-document durability.
+
+Define a data-only immutable request with operation/producer identity, file targeting information, captured revision, exact text, reason, and captured backup eligibility. Never retain view/Window/DOM/React/API/package lease references or callbacks closing over them. The plugin/main realm owns timers and execution and resolves the `TFile` at execution with `getFileByPath()`.
+
+Required decisions before implementation:
+
+- How the request relates to the last accepted source state and to newer live writes. View-local revisions cannot establish a global newest payload. If a successful-write sequence is introduced, define it at the actual ordered write boundary; assigning arrival tickets does not make two stale snapshots causally comparable.
+- One active plus one newest trailing payload is safe only when the trailing candidate demonstrably supersedes the previous candidate. For independent producers, reuse any validated per-path reconciliation boundary from 5b.2 or explicitly resolve the conflict. Do not silently discard independent edits to preserve a queue-size target; if no safe bounded policy has been specified, stop and request the design decision.
+- Separate `accepted/handed-off`, `persisted`, `superseded`, and `failed`. Replace `view-unload-scheduled` honestly. Decide how the coordinator/migration state represents pending responsibility without claiming Vault completion. Do not mark a handed-off revision as persisted merely to clear the old view's icon.
+- Rename/delete/recreate-same-path behavior: resolve at execution but do not write stale text into a different file merely because the path exists again. Define cancellation/retargeting using the repository's lifecycle, not an invented permanent TFile ID.
+- Shutdown/failure: define a bounded retained failure/reporting policy and flush opportunity; plugin unload/application exit may not await promises. An in-memory queue survives a view, not process failure. Do not add a hidden retry loop, recreate deleted files, or claim crash durability.
+
+Keep live writes on `super.save()`. Preserve synchronous capture and source unmount before asynchronous migration work; popout-to-main final writing remains replacement/main-realm owned. Keep `ViewMigrationHandoffManager` drawing state separate. Deleting `ViewMigrationPersistenceHandoffManager` is the final proven consolidation, not the first edit.
+
+**Tests:** dirty ordinary close; closing two views with distinct edits; old unload payload versus newer live save; immediate reopen; rename/delete/recreate; injected failure; source popout destroyed; dirty migration both directions; last popout close; plugin shutdown. Confirm no duplicate writes and no source runtime retained. Main-window ordering tests first, then native Electron teardown on available desktop systems and one mobile unload/navigation run.
+
+## 10. Original checkpoint 7 — detached BAK after successful source write
+
+Schedule BAK only from confirmed Vault completion using that operation's exact text and captured non-empty-scene eligibility. Do not inspect a retired view or a later live scene to decide whether the old write is safe to back up. Preserve the existing safeguard; its current element-count semantics must not silently change with tombstone representation.
+
+Coalesced/superseded attempts that never write produce no BAK. Failed source writes produce no BAK. Integrate scheduling with existing main-window `ImageCache`/`BackupPersistenceQueue` storage rather than creating a second database or per-popout store. Order backups consistently with successful source writes, including live and detached completions. An older delayed callback must not replace a newer successful backup. Define source-write failure and backup-write failure as different results; a backup failure does not undo a source write.
+
+**Tests:** exact payload identity, source failure preserving prior BAK, backup failure, empty scene, trailing supersession, slow older versus newer write, source close immediately after handoff, purge/clear with queued work. Verify durable backups are never treated as disposable preview cache. Keep recovery reporting plugin-owned and privacy-preserving.
+
+## 11. Original checkpoint 8 — same-file edit ownership gate
+
+Read the complete entry/flush/release paths in `CustomEmbeddable.tsx`, `MarkdownImageEditor.ts`, and the view's self-edit guard methods. Identify whether ownership is view-local, per file, or shared between paths before selecting storage scope; changing scope to plugin-global is a behavior change, not an accessor rename.
+
+Specify idempotent `acquire(ownerId)`, `release(ownerId, graceMs)`, `hasActiveOwners`, `isInGracePeriod`, `isBlocked`. Different simultaneous editors need distinct IDs; repeated acquire from one owner must not leak a counter. Final-owner release starts the relevant grace period; reacquire cancels/replaces only the appropriate release state. Old timers must not unblock a new owner or a different file. Distinguish editor flush completion from its UI closing.
+
+Resume pending latest-state synchronization after release/grace without another modify event. Preserve raw Markdown and explicit bypass/force-save semantics. Replace clear/re-arm workarounds only after their original ordering is reproduced by the new gate. Ensure editor teardown releases ownership even on failed saves, without claiming the failed content persisted.
+
+**Tests:** two overlapping owners, switching image editors while the old one flushes, Canvas self-embed plus image editor, reactivation during grace, final Markdown modify during grace, external drawing change held pending, navigation/close/migration, and touch edit/exit on a physical mobile device. Add no new debounce duration without measured need.
+
+## 12. Original checkpoint 9 — finish the normalized snapshot contract
+
+Extend accepted 9a/5b.3 rather than recapturing the live API after persistence. `PreparedSave` should retain the normalized scene and settings/input identity needed by secondary outputs, as well as exact source text. Normalization may clear runtime file payloads; preserve or resolve the corresponding export assets without reading a later live view's scene.
+
+Specify ownership of embedded-file metadata, Markdown/equation references, deletions, selection, app-state export options, and file path. Reference-based external assets may themselves change while exporting: document whether fidelity means source-scene revision or also frozen dependency contents. Do not promise historical external-asset bytes unless captured; avoid embedding all large image payloads by default. Persisted unknown/custom fields must survive.
+
+**Tests:** full-scene versus selected export, parsed/raw text, equations, Markdown images, PDF crops, app-state-only edits, deleted elements, normalization during concurrent editing, migration, and peak retained memory while one operation plus a trailing operation exists. Releasing a view must not leak a snapshot through callbacks.
+
+## 13. Original checkpoint 10 — autoexport fidelity, then ordering
+
+**10a:** Make automatic `saveSVG`, `savePNG`, and raw `.excalidraw` output consume the successful `PreparedSave`, including normalized scene/options/path. Inspect `ViewExportManager`'s downstream `loadFilesForExport` and option getters: passing only a scene argument is insufficient if they still consult a later live model. Preserve manual exports' live-scene behavior and existing autoexport trigger policy, including blur and forced-save distinctions. Never export a failed/merely handed-off source request as a successful source revision.
+
+**10b:** Add one active export and one newest eligible trailing export per source/format/theme, ordered by the validated source-persistence identity. Per-view revision maximum is invalid. Check resolved output-path collisions across formats/themes/renames too. Serialize or reject obsolete completion before the final output write so a slow old render cannot overwrite a newer export. A queued old autoexport must not write to a renamed/recreated target without an explicit path policy.
+
+Do not make source persistence wait for slow image rendering/export completion. Detached autoside-effect behavior must be specified separately; never retain a retired view merely to finish an export. Raw `.excalidraw` autoexport can participate in existing modify/compatibility routing; test that it does not create another feedback loop.
+
+**Tests:** N saving while N+1 is edited, slow N rendering versus N+1, two source views, light/dark outputs, source failure, export failure with newer trailing success, rename, close, manual export during queued autoexport, and matching exported elements to the saved source scene rather than the latest API scene.
+
+## 14. Original checkpoint 11 — asynchronous load generation
+
+Add a monotonically increasing view/runtime load generation. Each `setViewData()` entry captures generation and exact target identity before asynchronous initialization. Invalidate on replacement load, clear, close, and migration. Check after meaningful awaits and before mutations of model, raw text, API, React tree, file state, and dirty baselines. File-path equality alone fails A→B→A navigation. Disposal must invalidate work even if the field still points to the same path.
+
+Keep `textFileViewLoadedFile` and its explanatory comment: it suppresses duplicate same-file TextFileView delivery, not obsolete async continuations. Coordinate with the loader's existing API/path checks rather than replacing them with one broad Boolean. Stale tasks may finish private computation and clean up their own resources, but must not clear flags/baselines belonging to the current generation. Do not serialize all loads behind a dying runtime.
+
+If generation checks were required earlier by 5b, document exactly what is already covered and finish only the remaining boundaries here. Check main/popout replacement identity without violating early unmount.
+
+**Tests:** slow A then fast B; A→B→A; repeated same-file `setViewData`; close during fonts/initialization/compression; migration during load; delayed asset callback from retired API; parse failure followed by valid load; physical-mobile rapid navigation. No stale task may dirty or clear the replacement drawing.
+
+## 15. Original checkpoint 12 — remaining flags and timers
+
+Inventory every remaining semaphore/timer by owner, acquisition, release, cancellation, callback target, and durability requirement. Use a table in the completion review. Retire one cohesive group per checkpoint; do not rename the entire object while behavior is changing.
+
+- Save ownership belongs to its accepted coordinator; synchronization to its accepted acquisition/drain; content identities to the tested classifier; same-file editor ownership to its gate.
+- Keep lifecycle state (closing/migrating/popout teardown), initial-load/autozoom state, and interaction throttles distinct. A single generic `isBusy` is a caller convenience, not an adequate owner model.
+- Durability timers belong to the plugin/main realm; scene-file timers to `ViewSceneFileManager`; interaction timers may be view-owned. Never transfer IndexedDB/local-storage ownership to a popout.
+- Clear timers/listeners idempotently, protect callback generation, and verify there is no wait cycle between save, sync, gate release, and unload. Use existing Obsidian registration helpers where appropriate.
+- Path-scoping residual global embed invalidation and Canvas capability hardening remain lower-priority separate changes. Do not reopen the accepted image-render deduplication fix without new evidence.
+
+**Tests:** main-window close/navigation, restored/new popout, dirty migration, last-popout destruction, mobile navigation, repeated enable/disable, no late callback after release, and the full first-edit/two-view convergence gate once cleanup finishes.
+
+## 16. Required handoff record after each step
+
+Update the ledger with: source commit or uncommitted scope; fixture/settings and installed artifact identity; exact automated commands/results; manual cases passed/failed/not run; new invariant and evidence; remaining uncertainties; next permitted action. Record rollback/stash identity if used. Keep private reproduction material outside committed docs unless the maintainer explicitly provides a public fixture.
+
+No further production behavior change without either a deterministic failing case or a causal runtime trace. No proceeding to detached persistence while checkpoint 5 still requires another edit or forced save to settle. This is a sequence of independently reviewable experiments with acceptance gates, not authorization to implement all remaining checkpoints unattended.

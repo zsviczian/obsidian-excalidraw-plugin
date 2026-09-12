@@ -3594,7 +3594,9 @@ export default class ExcalidrawView
       }
       this.updateScene({
         elements: mergedElements,
-        captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+        // Incoming Vault state is synchronization, not a local undoable edit.
+        // Local state retained by the merge is marked dirty above.
+        captureUpdate: CaptureUpdateAction.NEVER,
       });
       if (fileIdsToReload.size > 0) {
         await this.loadSceneFiles(
