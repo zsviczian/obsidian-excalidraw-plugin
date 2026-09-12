@@ -1345,6 +1345,21 @@ export class EmbeddedFilesLoader {
     const markdownImageFileIds = new Set(
       markdownImageElements.map((element) => element.fileId),
     );
+    // Ordinary copies of a local Markdown image intentionally share one
+    // fileId. Render and publish that shared binary once while retaining all
+    // elements for per-element metadata normalization below.
+    const markdownImageElementsByFileId = new Map<
+      FileId,
+      ExcalidrawImageElement[]
+    >();
+    for (const element of markdownImageElements) {
+      const elements = markdownImageElementsByFileId.get(element.fileId);
+      if (elements) {
+        elements.push(element);
+      } else {
+        markdownImageElementsByFileId.set(element.fileId, [element]);
+      }
+    }
     if (markdownImageRenderCache) {
       for (const fileId of markdownImageRenderCache.keys()) {
         if (!markdownImageFileIds.has(fileId)) {
@@ -1386,6 +1401,41 @@ export class EmbeddedFilesLoader {
       FileId,
       MarkdownImageRenderCacheEntry
     >();
+    const normalizeMarkdownImageElement = (
+      element: ExcalidrawImageElement,
+    ) => {
+      const customData = element.customData?.[
+        MARKDOWN_IMAGE_CUSTOM_DATA_KEY
+      ] as MarkdownImageCustomData | undefined;
+      if (!customData) {
+        return null;
+      }
+      const render = resolveMarkdownImageRenderSettings(
+        this.plugin.settings.markdownImageSettings.defaults,
+        customData.render,
+      );
+      const legacyRender = customData.render as MarkdownImageRenderSettings & {
+        theme?: unknown;
+      };
+      if ("theme" in legacyRender) {
+        const migratedRender = { ...legacyRender };
+        delete migratedRender.theme;
+        addAppendUpdateCustomData(element, {
+          [MARKDOWN_IMAGE_CUSTOM_DATA_KEY]: {
+            ...customData,
+            render: migratedRender as MarkdownImageRenderSettings,
+          },
+        });
+      }
+      if (
+        typeof element.customData?.doNotInvertSVGInDarkMode !== "boolean"
+      ) {
+        addAppendUpdateCustomData(element, {
+          doNotInvertSVGInDarkMode: false,
+        });
+      }
+      return { customData, render };
+    };
 
     function* loadIterator(
       loader: EmbeddedFilesLoader,
@@ -1502,46 +1552,25 @@ export class EmbeddedFilesLoader {
         return;
       }
 
-      for (const element of markdownImageElements) {
-        const id = element.fileId;
+      for (const [id, elements] of markdownImageElementsByFileId) {
         if (fileIDWhiteList && !fileIDWhiteList.has(id)) {
           continue;
         }
+        const element = elements[0];
         yield createSafeLoadTask(
           async () => {
             if (loader.terminate) {
               return;
             }
-            const customData = element.customData?.[
-              MARKDOWN_IMAGE_CUSTOM_DATA_KEY
-            ] as MarkdownImageCustomData | undefined;
-            if (!customData) {
+            const normalized = normalizeMarkdownImageElement(element);
+            if (!normalized) {
               return;
             }
-            const render = resolveMarkdownImageRenderSettings(
-              loader.plugin.settings.markdownImageSettings.defaults,
-              customData.render,
-            );
-            const legacyRender = customData.render as MarkdownImageRenderSettings & {
-              theme?: unknown;
-            };
-            if ("theme" in legacyRender) {
-              const migratedRender = { ...legacyRender };
-              delete migratedRender.theme;
-              addAppendUpdateCustomData(element, {
-                [MARKDOWN_IMAGE_CUSTOM_DATA_KEY]: {
-                  ...customData,
-                  render: migratedRender as MarkdownImageRenderSettings,
-                },
-              });
-            }
-            if (
-              typeof element.customData?.doNotInvertSVGInDarkMode !== "boolean"
-            ) {
-              addAppendUpdateCustomData(
-                element,
-                { doNotInvertSVGInDarkMode: false },
-              );
+            const { customData, render } = normalized;
+            // Copies sharing this fileId need the same legacy metadata
+            // normalization even though only one SVG is generated.
+            for (const copy of elements.slice(1)) {
+              normalizeMarkdownImageElement(copy);
             }
             let sourceFile = excalidrawData.file;
             let markdown: string | undefined;
