@@ -50,6 +50,7 @@ import { errorlog, getExportTheme } from "src/utils/utils";
 import { getImageCache } from "src/shared/ImageCache";
 import { PaneTarget } from "src/types/utilTypes";
 import { t } from "src/lang/helpers";
+import { getDrawingModifyRoute } from "./fileModifyRouting";
 
 export class PluginFileManager {
   private plugin: ExcalidrawPlugin;
@@ -712,14 +713,19 @@ export class PluginFileManager {
             (activeView === excalidrawView &&
               this.plugin.isRecentSplitViewSwitch());
 
-          if (
-            !isEditingMarkdownSideInSplitView &&
-            excalidrawView.lastSaveTimestamp + 300000 < Date.now()
-          ) {
+          const route = getDrawingModifyRoute({
+            fileExtension: file.extension,
+            isEditingMarkdownSideInSplitView,
+            isDirty: excalidrawView.isDirty(),
+            isPersistenceBusy: excalidrawView.isPersistenceBusy(),
+            isStale: excalidrawView.lastSaveTimestamp + 300000 < Date.now(),
+          });
+
+          if (route === "full-reload") {
             await excalidrawView.reload(true, excalidrawView.file);
             return;
           }
-          if (file.extension === "md") {
+          if (route === "incremental-sync") {
             excalidrawView.requestExternalSynchronization(file);
           } else {
             await excalidrawView.reload(true, excalidrawView.file);
