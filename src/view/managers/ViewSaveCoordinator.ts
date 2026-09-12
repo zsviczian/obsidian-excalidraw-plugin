@@ -4,6 +4,11 @@ import type { AppState } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { t } from "../../lang/helpers";
 import { errorlog } from "../../utils/coreUtils";
 import type ExcalidrawView from "../ExcalidrawView";
+import {
+  getAcknowledgedSaveRevision,
+  type PreparedSave,
+  type SaveOperationContext,
+} from "./saveSnapshot";
 
 /** Side effects selected for one save request. */
 export interface SaveSideEffectPolicy {
@@ -23,6 +28,7 @@ export type SaveExecutionStatus =
 /** Result used by the coordinator to advance the saved revision safely. */
 export interface SaveExecutionResult {
   status: SaveExecutionStatus;
+  preparedSave?: PreparedSave;
 }
 
 /** Clean durability baseline transferred with a migrated drawing. */
@@ -56,6 +62,7 @@ export const WINDOW_BLUR_FORCE_SAVE_POLICY: Readonly<ForceSavePolicy> = {
  * mechanical coordinator extraction. */
 export interface ViewSaveCoordinatorDependencies {
   performSave: (
+    operation: SaveOperationContext,
     suppressReloadFromOwnWrite: boolean,
     forcePersistence: boolean,
     bypassSameFileEditGuard: boolean,
@@ -101,6 +108,9 @@ export class ViewSaveCoordinator {
   private activeSaveRevision: number | null = null;
   private pendingSaveRequest: SaveRequest | null = null;
   private saveLoopPromise: Promise<SaveExecutionResult> | null = null;
+  private nextSaveOperationId = 1;
+  private targetGeneration = 0;
+  private lastSuccessfulPreparedSave: PreparedSave | null = null;
 
   public constructor(
     private readonly view: ExcalidrawView,
@@ -131,9 +141,16 @@ export class ViewSaveCoordinator {
     if (this.isSaveOrSynchronizationInProgress) {
       return { status: "skipped" };
     }
+    const operation: SaveOperationContext = {
+      producerId: this.view.id,
+      targetGeneration: this.targetGeneration,
+      operationId: this.nextSaveOperationId++,
+      requestedRevision: request.revision,
+    };
     this.view.semaphores.saving = true;
     try {
       return await this.dependencies.performSave(
+        operation,
         request.suppressReloadFromOwnWrite,
         request.forcePersistence,
         request.bypassSameFileEditGuard,
@@ -247,7 +264,18 @@ export class ViewSaveCoordinator {
       result.status === "view-unload-scheduled" ||
       result.status === "unchanged"
     ) {
-      this.savedRevision = Math.max(this.savedRevision, request.revision);
+      const acknowledgedRevision = getAcknowledgedSaveRevision(
+        request.revision,
+        result.preparedSave,
+      );
+      this.savedRevision = Math.max(this.savedRevision, acknowledgedRevision);
+      if (
+        result.preparedSave &&
+        (result.status === "persisted" ||
+          result.status === "window-migration-persisted")
+      ) {
+        this.lastSuccessfulPreparedSave = result.preparedSave;
+      }
       this.reconcileDirtyState();
     }
   }
@@ -523,6 +551,25 @@ export class ViewSaveCoordinator {
       Boolean(this.view.semaphores?.dirty) &&
       this.view.semaphores.dirty === this.view.file?.path
     );
+  }
+
+  /** Revision sampled synchronously with a view-owned save capture. */
+  public getCurrentRevisionForSaveCapture(): number {
+    return this.currentRevision;
+  }
+
+  /**
+   * Starts a new save-target identity without attempting to fence asynchronous
+   * loading. Full load-continuation invalidation remains checkpoint 11.
+   */
+  public beginSaveTarget(): void {
+    this.targetGeneration += 1;
+    this.lastSuccessfulPreparedSave = null;
+  }
+
+  /** Latest exact content known to have completed this view's write path. */
+  public getLastSuccessfulPreparedSave(): Readonly<PreparedSave> | null {
+    return this.lastSuccessfulPreparedSave;
   }
 
   /** Clears the current file's dirty marker and updates its clean baseline. */

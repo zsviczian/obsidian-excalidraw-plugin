@@ -257,6 +257,12 @@ import {
   ViewSaveCoordinator,
   WINDOW_BLUR_FORCE_SAVE_POLICY,
 } from "./managers/ViewSaveCoordinator";
+import {
+  createPreparedSave,
+  createSaveSnapshot,
+  type PreparedSave,
+  type SaveOperationContext,
+} from "./managers/saveSnapshot";
 import type { ViewMigrationDrawingState } from "../core/managers/ViewMigrationHandoffManager";
 import { ImageInfo } from "src/types/excalidrawAutomateTypes";
 import { PageOrientation, PageSize } from "src/types/exportUtilTypes";
@@ -569,12 +575,14 @@ export default class ExcalidrawView
     this.canvasNodeFactory = new CanvasNodeFactory(this);
     this.saveCoordinator = new ViewSaveCoordinator(this, {
       performSave: (
+        operation,
         suppressReloadFromOwnWrite,
         forcePersistence,
         bypassSameFileEditGuard,
         sideEffectPolicy,
       ) =>
         this.executeSaveRequest(
+          operation,
           suppressReloadFromOwnWrite,
           forcePersistence,
           bypassSameFileEditGuard,
@@ -980,6 +988,7 @@ export default class ExcalidrawView
   }
 
   private async executeSaveRequest(
+    operation: SaveOperationContext,
     suppressReloadFromOwnWrite: boolean,
     forcePersistence: boolean,
     bypassSameFileEditGuard: boolean,
@@ -1007,6 +1016,7 @@ export default class ExcalidrawView
     //reloadIfWriteDidNotEmitModify flags that an unchanged file must still be reloaded.
     let reloadIfWriteDidNotEmitModify: boolean = false;
     let executionStatus: SaveExecutionResult["status"] = "unchanged";
+    let preparedSave: PreparedSave | undefined;
     try {
       const windowMigrationSaveSnapshot = this.windowMigrationSaveSnapshot;
       if (
@@ -1024,14 +1034,31 @@ export default class ExcalidrawView
         const appStateSnapshot = windowMigrationSaveSnapshot
           ? null
           : this.excalidrawAPI.getAppState();
-        const scene = windowMigrationSaveSnapshot
+        const sourceScene = windowMigrationSaveSnapshot
           ? windowMigrationSaveSnapshot.scene
           : this.getSceneWithAppState(undefined, appStateSnapshot);
-        const deletedElements = windowMigrationSaveSnapshot
+        if (!sourceScene) {
+          return { status: "skipped" };
+        }
+        const sourceDeletedElements = windowMigrationSaveSnapshot
           ? windowMigrationSaveSnapshot.deletedElements
           : this.excalidrawAPI
               .getSceneElementsIncludingDeleted()
               .filter((element: ExcalidrawElement) => element.isDeleted);
+        const saveSnapshot = createSaveSnapshot({
+          operation,
+          filePath: this.file.path,
+          capturedRevision:
+            this.saveCoordinator.getCurrentRevisionForSaveCapture(),
+          sourceText: this.data,
+          scene: sourceScene,
+          deletedElements: sourceDeletedElements,
+          selectedElementIds:
+            windowMigrationSaveSnapshot?.selectedElementIds ??
+            appStateSnapshot.selectedElementIds,
+        });
+        const scene = saveSnapshot.scene;
+        const deletedElements = saveSnapshot.deletedElements;
 
         let syncChanged = false;
         if (this.compatibilityMode) {
@@ -1039,8 +1066,7 @@ export default class ExcalidrawView
         } else {
           syncChanged = await this.excalidrawData.syncElements(
             scene,
-            windowMigrationSaveSnapshot?.selectedElementIds ??
-              appStateSnapshot.selectedElementIds,
+            saveSnapshot.selectedElementIds,
           );
         }
 
@@ -1058,14 +1084,19 @@ export default class ExcalidrawView
         // interrupt the user's editing flow.
         this.clearPreventReloadTimer();
         this.semaphores.preventReload = false;
-        await this.prepareGetViewDataFromSnapshot(scene, deletedElements);
+        await this.prepareGetViewDataFromSnapshot(
+          scene,
+          deletedElements,
+          saveSnapshot.sourceText,
+        );
+        preparedSave = createPreparedSave(saveSnapshot, this.getViewData());
 
         // Persist from the plugin's main-window realm before closing a runtime
         // whose container moved between windows. Calling TextFileView.save()
         // from a migrated popout can retain the destroyed Electron window in
         // the Node file operation.
         if (this.semaphores?.windowMigrating) {
-          const d = this.getViewData();
+          const d = preparedSave.text;
           const plugin = this.plugin;
           const file = this.file;
           const sourceWindow = this.packageLease?.window;
@@ -1076,7 +1107,10 @@ export default class ExcalidrawView
               data: d,
             });
             this.data = d;
-            return { status: "window-migration-handed-off" };
+            return {
+              status: "window-migration-handed-off",
+              preparedSave,
+            };
           }
           await new Promise<void>((resolve, reject) => {
             window.setTimeout(() => {
@@ -1093,14 +1127,13 @@ export default class ExcalidrawView
           this.data = d;
           this.lastSavedData = d;
           this.lastSaveTimestamp = file.stat.mtime;
-          return { status: "window-migration-persisted" };
+          return { status: "window-migration-persisted", preparedSave };
         }
 
         // Existing delayed view-unload workaround for ordinary close/plugin
         // teardown. Migration takes the awaited branch above instead.
         if (this.semaphores?.viewunload) {
-          await this.prepareGetViewDataFromSnapshot(scene, deletedElements);
-          const d = this.getViewData();
+          const d = preparedSave.text;
           const plugin = this.plugin;
           const file = this.file;
           window.setTimeout(() => {
@@ -1114,7 +1147,7 @@ export default class ExcalidrawView
               // await getImageCache().addBAKToCache(file.path, d);
             })();
           }, 200);
-          return { status: "view-unload-scheduled" };
+          return { status: "view-unload-scheduled", preparedSave };
         }
 
         // Serialization can take seconds for a large compressed scene. Arm
@@ -1135,7 +1168,7 @@ export default class ExcalidrawView
         const path = this.file.path;
         const data = this.lastSavedData;
         //if the scene is empty, do not save to BAK (this could be due to a crash when the BAK should not be updated)
-        if (scene && scene.elements && scene.elements.length > 0) {
+        if (preparedSave.hasNonDeletedElements) {
           getImageCache().scheduleBAKToCache(path, data, 50);
         }
         reloadIfWriteDidNotEmitModify =
@@ -1144,7 +1177,6 @@ export default class ExcalidrawView
           forcePersistence;
         this.lastSaveTimestamp = this.file.stat.mtime;
         //this.clearDirty(); //moved to right after the persistence decision, to avoid autosave collision with load drawing
-
       }
 
       // No reload means the file changed, so save-time exports can run.
@@ -1215,7 +1247,8 @@ export default class ExcalidrawView
       ? await this.reload(true, this.file)
       : true;
     this.saveCoordinator.resetAutosaveTimer(); //next autosave period starts after save
-    return { status: reloadSucceeded ? executionStatus : "failed" };
+    const status = reloadSucceeded ? executionStatus : "failed";
+    return { status, preparedSave };
   }
 
   // get the new file content
@@ -1235,19 +1268,20 @@ export default class ExcalidrawView
   private async prepareGetViewDataFromSnapshot(
     sceneSnapshot?: ReturnType<ExcalidrawView["getScene"]>,
     deletedElementsSnapshot?: ExcalidrawElement[],
+    sourceTextSnapshot: string = this.data,
   ): Promise<void> {
     if (
       (!this.excalidrawAPI && typeof sceneSnapshot === "undefined") ||
       !this.excalidrawData.loaded
     ) {
-      this.preparedSaveText = this.data;
+      this.preparedSaveText = sourceTextSnapshot;
       return;
     }
 
     const captureScene = typeof sceneSnapshot === "undefined";
     const scene = captureScene ? this.getScene() : sceneSnapshot;
     if (!scene) {
-      this.preparedSaveText = this.data;
+      this.preparedSaveText = sourceTextSnapshot;
       return;
     }
 
@@ -1299,11 +1333,11 @@ export default class ExcalidrawView
       }
 
       const header = syncMarkdownImagesInHeader(
-        getExcalidrawMarkdownHeaderSection(this.data, keys),
+        getExcalidrawMarkdownHeaderSection(sourceTextSnapshot, keys),
         this.excalidrawData.markdownImages,
       );
       const tail = this.plugin.settings.zoteroCompatibility
-        ? (RE_TAIL.exec(this.data)?.[1] ?? "")
+        ? (RE_TAIL.exec(sourceTextSnapshot)?.[1] ?? "")
         : "";
 
       if (!this.excalidrawData.disableCompression) {
@@ -1333,7 +1367,7 @@ export default class ExcalidrawView
       return;
     }
 
-    this.preparedSaveText = this.data;
+    this.preparedSaveText = sourceTextSnapshot;
   }
 
   getViewData() {
@@ -2769,6 +2803,9 @@ export default class ExcalidrawView
   setViewData(data: string, clear: boolean = false) {
     const migrationHandoffToken = this.pendingMigrationHandoffToken;
     this.pendingMigrationHandoffToken = null;
+    if (this.textFileViewLoadedFile !== this.file) {
+      this.saveCoordinator.beginSaveTarget();
+    }
     //I am using the TextFileView-loaded file to control when the view reloads.
     //It seems text file view gets the modified file event after sync before the modifyEventHandler in main.ts
     //reload can only be triggered via reload()
