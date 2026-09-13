@@ -121,6 +121,11 @@ import {
   type ViewMigrationHandoffRegistration,
   type ViewMigrationHandoffRequest,
 } from "./managers/ViewMigrationHandoffManager";
+import {
+  ViewPersistenceQueue,
+  type ViewPersistenceRequest,
+} from "./managers/ViewPersistenceQueue";
+import { errorlog } from "../utils/coreUtils";
 
 declare const PLUGIN_VERSION: string;
 declare const INITIAL_TIMESTAMP: number;
@@ -169,6 +174,7 @@ export default class ExcalidrawPlugin extends Plugin {
   private startupTimer: StartupTimer;
   private viewMigrationHandoffManager: ViewMigrationHandoffManager;
   private viewMigrationPersistenceHandoffManager: ViewMigrationPersistenceHandoffManager;
+  private viewPersistenceQueue: ViewPersistenceQueue;
   public stencilLibraryManager: StencilLibraryManager;
   public eaInstances = new WeakArray<ExcalidrawAutomate>();
   public fourthFontLoaded: boolean = false;
@@ -215,6 +221,19 @@ export default class ExcalidrawPlugin extends Plugin {
     this.viewMigrationHandoffManager = new ViewMigrationHandoffManager();
     this.viewMigrationPersistenceHandoffManager =
       new ViewMigrationPersistenceHandoffManager();
+    const persistenceApp = this.app;
+    this.viewPersistenceQueue = new ViewPersistenceQueue({
+      resolveFile: (filePath) => persistenceApp.vault.getFileByPath(filePath),
+      write: (file, text) => persistenceApp.vault.modify(file, text),
+      onFailure: (result) => {
+        errorlog({
+          where: "ViewPersistenceQueue",
+          fn: result.request.reason,
+          error: result.error,
+        });
+        new Notice(t("WARNING_SERIOUS_ERROR"), 60000);
+      },
+    });
     this.filesMaster = new Map<
       FileId,
       {
@@ -1295,6 +1314,11 @@ export default class ExcalidrawPlugin extends Plugin {
   /** Discards a handoff when the old view could not be replaced. */
   public discardViewMigrationPersistenceHandoff(leafId: string): void {
     this.viewMigrationPersistenceHandoffManager.discard(leafId);
+  }
+
+  /** Transfers immutable drawing text out of a retiring view runtime. */
+  public handoffViewPersistence(request: ViewPersistenceRequest): void {
+    void this.viewPersistenceQueue.enqueue(request);
   }
 
   get taskbone() {

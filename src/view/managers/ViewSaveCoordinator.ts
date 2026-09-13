@@ -27,7 +27,7 @@ export type SaveExecutionStatus =
   | "persisted"
   | "window-migration-handed-off"
   | "window-migration-persisted"
-  | "view-unload-scheduled"
+  | "persistence-handed-off"
   | "unchanged"
   | "skipped"
   | "failed";
@@ -271,7 +271,7 @@ export class ViewSaveCoordinator {
       result.status === "persisted" ||
       result.status === "window-migration-handed-off" ||
       result.status === "window-migration-persisted" ||
-      result.status === "view-unload-scheduled" ||
+      result.status === "persistence-handed-off" ||
       result.status === "unchanged"
     ) {
       const acknowledgedRevision = getAcknowledgedSaveRevision(

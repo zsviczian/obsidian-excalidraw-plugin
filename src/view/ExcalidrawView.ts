@@ -1139,24 +1139,27 @@ export default class ExcalidrawView
           return { status: "window-migration-persisted", preparedSave };
         }
 
-        // Existing delayed view-unload workaround for ordinary close/plugin
-        // teardown. Migration takes the awaited branch above instead.
+        // Ordinary view unload transfers immutable text to plugin-owned
+        // persistence. Migration retains its specialized path above until the
+        // general queue is independently validated.
         if (this.semaphores?.viewunload) {
-          const d = preparedSave.text;
-          const plugin = this.plugin;
+          if (!preparedSave.text) {
+            throw new Error("Cannot hand off an empty drawing payload");
+          }
           const file = this.file;
-          window.setTimeout(() => {
-            void (async () => {
-              if (!d) {
-                return;
-              }
-              await plugin.app.vault.modify(file, d);
-              // This is a shady edge case: do not sacrifice the BAK file in
-              // case the drawing is empty.
-              // await getImageCache().addBAKToCache(file.path, d);
-            })();
-          }, 200);
-          return { status: "view-unload-scheduled", preparedSave };
+          this.plugin.handoffViewPersistence({
+            producerId: preparedSave.producerId,
+            targetGeneration: preparedSave.targetGeneration,
+            operationId: preparedSave.operationId,
+            requestedRevision: preparedSave.requestedRevision,
+            capturedRevision: preparedSave.capturedRevision,
+            filePath: preparedSave.filePath,
+            expectedFileCtime: file.stat.ctime,
+            text: preparedSave.text,
+            hasNonDeletedElements: preparedSave.hasNonDeletedElements,
+            reason: "view-unload",
+          });
+          return { status: "persistence-handed-off", preparedSave };
         }
 
         // Serialization can take seconds for a large compressed scene. Arm
