@@ -102,8 +102,6 @@ export type MarkdownBlockCacheEntry = {
 
 export interface ViewSemaphores {
   warnAboutLinearElementLinkClick: boolean;
-  //flag to prevent overwriting the changes the user makes in an embeddable view editing the back side of the drawing
-  embeddableIsEditingSelf: boolean;
   popoutUnload: boolean; //the unloaded Excalidraw view was the last leaf in the popout window
   windowMigrating: boolean; //the current runtime is being replaced after its container moved between windows
   viewloaded: boolean; //onLayoutReady in view.onload has completed.

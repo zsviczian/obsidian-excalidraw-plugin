@@ -589,12 +589,21 @@ export async function updateMarkdownImage(
   markdown: string,
   render: MarkdownImageRenderSettings,
   source: MarkdownImageSource,
-  shouldApply: () => boolean = () => true,
+  sameFileEditOwnerOrShouldApply: string | (() => boolean) = () => true,
+  shouldApplyAfterOwner: () => boolean = () => true,
 ): Promise<boolean> {
   if (containsReservedMarkdownImageMarker(markdown)) {
     return false;
   }
-  view.setMarkdownImageEditorIsEditing();
+  const sameFileEditOwnerId =
+    typeof sameFileEditOwnerOrShouldApply === "string"
+      ? sameFileEditOwnerOrShouldApply
+      : undefined;
+  const shouldApply =
+    typeof sameFileEditOwnerOrShouldApply === "function"
+      ? sameFileEditOwnerOrShouldApply
+      : shouldApplyAfterOwner;
+  view.setMarkdownImageEditorIsEditing(sameFileEditOwnerId);
   const sourceFile =
     source === "external"
       ? (view.excalidrawData.getFile(element.fileId)?.file ?? view.file)
@@ -638,8 +647,8 @@ export async function updateMarkdownImage(
   // is moved out of view, and none of that tells us whether the editor is still visible. Saving
   // here ties persistence directly to the one thing we know for certain changed: the element in
   // the scene. forceSave's waitIfBusy avoids silently no-oping against a concurrent save, and the
-  // override bypasses the embeddableIsEditingSelf debounce without touching it, so this does not
-  // disrupt the ongoing edit the way a reload()-driven refresh would.
+  // bypass leaves this controller's same-file ownership intact, so it does
+  // not disrupt the ongoing edit the way a reload-driven refresh would.
   await view.forceSave(true, true);
   return true;
 }

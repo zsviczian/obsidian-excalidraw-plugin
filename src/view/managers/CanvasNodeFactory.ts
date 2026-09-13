@@ -60,6 +60,10 @@ export class CanvasNodeFactory {
   initialized: boolean = false;
   public isInitialized = () => this.initialized;
   private observer: CustomMutationObserver | MutationObserver;
+  private readonly pendingEditRequests = new WeakMap<
+    ObsidianCanvasNode,
+    object
+  >();
 
   constructor(private view: ExcalidrawView) {}
 
@@ -157,15 +161,25 @@ export class CanvasNodeFactory {
     node: ObsidianCanvasNode,
     theme: string,
     isEditingSelf: boolean,
+    elementId?: string,
   ) {
     if (!this.initialized || !node || !node.isEditable()) {
       return;
     }
 
+    const request = {};
+    this.pendingEditRequests.set(node, request);
     try {
       if (isEditingSelf) {
-        await this.view.setEmbeddableNodeIsEditing();
+        await this.view.setEmbeddableNodeIsEditing(elementId);
       }
+      if (
+        !this.initialized ||
+        this.pendingEditRequests.get(node) !== request
+      ) {
+        return;
+      }
+      this.pendingEditRequests.delete(node);
 
       node.startEditing();
       node.isEditing = true;
@@ -189,16 +203,24 @@ export class CanvasNodeFactory {
     } catch (error) {
       console.error("Error starting edit:", error);
       node.isEditing = false;
+      if (this.pendingEditRequests.get(node) === request) {
+        this.pendingEditRequests.delete(node);
+      }
+      if (isEditingSelf && this.pendingEditRequests.get(node) === undefined) {
+        this.view.clearEmbeddableNodeIsEditing(elementId);
+      }
     }
   }
 
-  public stopEditing(node: ObsidianCanvasNode) {
-    if (!this.initialized || !node || !node.isEditing || !node.isEditable()) {
+  public stopEditing(node: ObsidianCanvasNode, elementId?: string) {
+    if (!node) {
       return;
     }
+    this.pendingEditRequests.delete(node);
+    this.view.clearEmbeddableNodeIsEditing(elementId);
+    if (!this.initialized || !node.isEditing || !node.isEditable()) return;
 
     try {
-      this.view.clearEmbeddableNodeIsEditing();
       node.child.showPreview();
       node.isEditing = false;
       this.observer?.disconnect();
@@ -218,15 +240,22 @@ export class CanvasNodeFactory {
     if (!this.initialized || !node) {
       return;
     }
+    this.pendingEditRequests.delete(node);
+    let registeredElementId: string | undefined;
     if (elementId && this.nodes.get(elementId) === node) {
+      registeredElementId = elementId;
       this.nodes.delete(elementId);
     } else {
-      for (const [registeredElementId, registeredNode] of this.nodes) {
+      for (const [candidateElementId, registeredNode] of this.nodes) {
         if (registeredNode === node) {
-          this.nodes.delete(registeredElementId);
+          registeredElementId = candidateElementId;
+          this.nodes.delete(candidateElementId);
           break;
         }
       }
+    }
+    if (registeredElementId) {
+      this.view.clearEmbeddableNodeIsEditing(registeredElementId);
     }
     this.canvas.removeNode(node);
     node.detach();
@@ -236,7 +265,9 @@ export class CanvasNodeFactory {
     if (!this.initialized) {
       return;
     }
-    this.nodes.forEach((node) => {
+    this.nodes.forEach((node, elementId) => {
+      this.pendingEditRequests.delete(node);
+      this.view.clearEmbeddableNodeIsEditing(elementId);
       this.canvas.removeNode(node);
       node.detach();
     });

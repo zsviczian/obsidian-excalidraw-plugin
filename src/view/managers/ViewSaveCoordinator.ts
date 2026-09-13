@@ -483,7 +483,7 @@ export class ViewSaveCoordinator {
           this.view.plugin.autosaveEnabled &&
           !this.view.semaphores.forceSaving &&
           !this.view.semaphores.autosaving &&
-          !this.view.semaphores.embeddableIsEditingSelf &&
+          !this.view.isSameFileEditingActive() &&
           !isFreedrawActive &&
           !isEditingText &&
           !isEditingNewElement

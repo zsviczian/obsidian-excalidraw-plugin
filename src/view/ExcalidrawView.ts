@@ -156,6 +156,7 @@ import {
   isMarkdownImageElement,
 } from "../shared/MarkdownImage";
 import {
+  beginMarkdownImageEditorViewUnload,
   handleMarkdownImageEditorSelection,
   handleMarkdownImageEditorViewUnload,
   openMarkdownImageEditor as openMarkdownImageEditorSidepanel,
@@ -248,6 +249,8 @@ import { ViewExportManager } from "./managers/ViewExportManager";
 import { ViewFullscreenManager } from "./managers/ViewFullscreenManager";
 import { ViewLinkNavigationManager } from "./managers/ViewLinkNavigationManager";
 import { ViewExcalidrawExtensionRenderer } from "./managers/ViewExcalidrawExtensionRenderer";
+import { SameFileEditGate } from "./managers/SameFileEditGate";
+import { shouldRetainLoadedFileAfterReload } from "./textFileViewReloadPolicy";
 import { MarkdownImageController } from "./managers/MarkdownImageController";
 import {
   getVisibleImageFileIds,
@@ -303,6 +306,8 @@ const EMBEDDABLE_SEMAPHORE_TIMEOUT = 2000;
 const PREVENT_RELOAD_TIMEOUT = 2000;
 const MIGRATION_BINARY_FILE_BATCH_SIZE = 4;
 const RE_TAIL = /^## Drawing\n[\s\S]*\n%%$(.*)/ms;
+const LEGACY_EMBEDDABLE_EDIT_OWNER = "legacy-embeddable";
+const LEGACY_MARKDOWN_IMAGE_EDIT_OWNER = "legacy-markdown-image";
 
 type MigrationImageAPI = ExcalidrawImperativeAPI & {
   awaitImageFiles?: (fileIds: readonly FileId[]) => Promise<void>;
@@ -451,6 +456,7 @@ export default class ExcalidrawView
   private markdownImageController: MarkdownImageController;
   private sceneFileManager: ViewSceneFileManager;
   private saveCoordinator: ViewSaveCoordinator;
+  private sameFileEditGate: SameFileEditGate;
   public hoverPopover: HoverPopover | null = null;
   private freedrawLastActiveTimestamp: number = 0;
   public exportDialog: ExportDialog | null = null;
@@ -497,7 +503,6 @@ export default class ExcalidrawView
 
   public semaphores: ViewSemaphores | null = {
     warnAboutLinearElementLinkClick: true,
-    embeddableIsEditingSelf: false,
     popoutUnload: false,
     windowMigrating: false,
     viewloaded: false,
@@ -539,7 +544,6 @@ export default class ExcalidrawView
   //https://stackoverflow.com/questions/27132796/is-there-any-javascript-event-fired-when-the-on-screen-keyboard-on-mobile-safari
   private isEditingTextResetTimer: number | null = null;
   private preventReloadResetTimer: number | null = null;
-  private editingSelfResetTimer: number | null = null;
   private colorChangeTimer: number | null = null;
   private previousSceneVersion = 0;
   private previousTrackedAppState: TrackedAppStateSnapshot | null = null;
@@ -582,6 +586,9 @@ export default class ExcalidrawView
   constructor(leaf: WorkspaceLeaf, plugin: ExcalidrawPlugin) {
     super(leaf);
     this._plugin = plugin;
+    this.sameFileEditGate = new SameFileEditGate(
+      () => this.ownerWindow ?? window,
+    );
     this.excalidrawData = new ExcalidrawData(plugin, this);
     this.canvasNodeFactory = new CanvasNodeFactory(this);
     this.saveCoordinator = new ViewSaveCoordinator(this, {
@@ -757,7 +764,7 @@ export default class ExcalidrawView
 
   /** Whether another editor currently owns part of this drawing's Markdown. */
   public isSameFileEditingActive(): boolean {
-    return Boolean(this.semaphores?.embeddableIsEditingSelf);
+    return this.sameFileEditGate.isBlocked;
   }
 
   /** Whether the save coordinator currently owns persistence execution. */
@@ -954,9 +961,10 @@ export default class ExcalidrawView
     }
   }
 
-  public async setEmbeddableNodeIsEditing() {
-    this.clearEmbeddableNodeIsEditingTimer();
-    this.semaphores.embeddableIsEditingSelf = true;
+  public async setEmbeddableNodeIsEditing(
+    ownerId: string = LEGACY_EMBEDDABLE_EDIT_OWNER,
+  ) {
+    this.sameFileEditGate.acquire(`embeddable:${ownerId}`);
     // Wait for any in-flight save (e.g. a Markdown-image editor flush) rather than silently
     // aborting: a same-file back-of-the-note embeddable is about to open its own editor on this
     // same file, so the disk copy must be current or the embeddable's editor will load a stale
@@ -964,24 +972,45 @@ export default class ExcalidrawView
     await this.forceSave(true, true);
   }
 
-  /** Debounces self-edit reloads without forcing a disk save. */
-  public setMarkdownImageEditorIsEditing(): void {
-    this.clearEmbeddableNodeIsEditingTimer();
-    this.semaphores.embeddableIsEditingSelf = true;
-    this.clearEmbeddableNodeIsEditing();
-  }
-
-  public clearEmbeddableNodeIsEditingTimer() {
-    if (this.editingSelfResetTimer) {
-      window.clearTimeout(this.editingSelfResetTimer);
-      this.editingSelfResetTimer = null;
+  /** Acquires same-file ownership for one Markdown-image editor controller. */
+  public setMarkdownImageEditorIsEditing(
+    ownerId?: string,
+  ): void {
+    const resolvedOwnerId = ownerId ?? LEGACY_MARKDOWN_IMAGE_EDIT_OWNER;
+    const gateOwnerId = `markdown-image:${resolvedOwnerId}`;
+    this.sameFileEditGate.acquire(gateOwnerId);
+    if (ownerId === undefined) {
+      // Preserve the former public no-argument pulse while the feature-owned
+      // controller uses explicit acquire/release ownership.
+      this.sameFileEditGate.release(
+        gateOwnerId,
+        EMBEDDABLE_SEMAPHORE_TIMEOUT,
+      );
     }
   }
 
-  public clearEmbeddableNodeIsEditing() {
-    this.clearEmbeddableNodeIsEditingTimer();
-    this.editingSelfResetTimer = window.setTimeout(
-      () => (this.semaphores.embeddableIsEditingSelf = false),
+  /** Releases one Markdown-image owner through the established grace period. */
+  public clearMarkdownImageEditorIsEditing(
+    ownerId: string = LEGACY_MARKDOWN_IMAGE_EDIT_OWNER,
+  ): void {
+    this.sameFileEditGate.release(
+      `markdown-image:${ownerId}`,
+      EMBEDDABLE_SEMAPHORE_TIMEOUT,
+    );
+  }
+
+  /** Preserves the historical generic timer-cancellation API. */
+  public clearEmbeddableNodeIsEditingTimer(
+    ownerId: string = LEGACY_EMBEDDABLE_EDIT_OWNER,
+  ): void {
+    this.sameFileEditGate.cancelRelease(`embeddable:${ownerId}`);
+  }
+
+  public clearEmbeddableNodeIsEditing(
+    ownerId: string = LEGACY_EMBEDDABLE_EDIT_OWNER,
+  ): void {
+    this.sameFileEditGate.release(
+      `embeddable:${ownerId}`,
       EMBEDDABLE_SEMAPHORE_TIMEOUT,
     );
   }
@@ -1029,7 +1058,7 @@ export default class ExcalidrawView
     }
     if (
       !bypassSameFileEditGuard &&
-      this.semaphores.embeddableIsEditingSelf
+      this.isSameFileEditingActive()
     ) {
       return { status: "skipped" };
     }
@@ -1838,6 +1867,12 @@ export default class ExcalidrawView
           const l = this.leaf;
           const plugin = this.plugin;
           const activeSetViewDataLoad = this.activeSetViewDataLoad?.promise;
+          const sameFileEditWasBlocked = this.isSameFileEditingActive();
+          const mustRefreshMigrationSourceText =
+            !this.compatibilityMode &&
+            (sameFileEditWasBlocked ||
+              this.pendingExternalSyncPath === f.path ||
+              this.isSynchronizing);
           // Obsidian may destroy the source Electron window before the normal
           // unload callbacks select detached-view persistence. Capture every
           // API-owned value synchronously, then unmount before the first await.
@@ -1845,11 +1880,41 @@ export default class ExcalidrawView
           this.clearExcalidrawInitializeTimer();
           this.sceneFileManager.terminateActiveLoaders();
           this.windowMigrationSaveSnapshot = null;
-          const migrationSnapshot = this.captureWindowMigrationSnapshot();
+          // Start the editor flush synchronously so an in-memory Markdown
+          // fragment advances dirty state before the migration snapshot is
+          // captured. Await it only after the mandatory source-root unmount.
+          // This also joins an invalidation already started by a leaf switch,
+          // preventing its forced save from registering a persistence handoff
+          // after the replacement view has already checked the queue.
+          const markdownImageEditorUnload =
+            beginMarkdownImageEditorViewUnload(this);
+          const migrationSnapshot = this.captureWindowMigrationSnapshot(
+            markdownImageEditorUnload !== null,
+          );
           const migrationSaveRequired =
             this.windowMigrationSaveSnapshot !== null;
           this.unmountExcalidrawRoot();
+          if (markdownImageEditorUnload !== null) {
+            await markdownImageEditorUnload;
+          }
           if (migrationSaveRequired) {
+            if (mustRefreshMigrationSourceText) {
+              // The modify event produced by a same-file Markdown editor is
+              // deliberately held until its release grace settles. Migration
+              // invalidates that pending scene synchronization, but must not
+              // serialize the captured drawing against the older Markdown
+              // envelope. Wait only the already-established grace duration,
+              // then read after the mandatory synchronous source unmount.
+              if (sameFileEditWasBlocked) {
+                await new Promise<void>((resolve) => {
+                  destinationWindow.setTimeout(
+                    resolve,
+                    EMBEDDABLE_SEMAPHORE_TIMEOUT,
+                  );
+                });
+              }
+              this.data = await plugin.app.vault.read(f);
+            }
             await this.saveCoordinator.flush();
           }
           if (activeSetViewDataLoad !== undefined) {
@@ -2277,7 +2342,9 @@ export default class ExcalidrawView
    * until after synchronization, compression, or native file access can let
    * Electron destroy the source popout window first and freeze Obsidian.
    */
-  private captureWindowMigrationSnapshot(): {
+  private captureWindowMigrationSnapshot(
+    forceSaveSnapshot: boolean = false,
+  ): {
     scene: NonNullable<ReturnType<ExcalidrawView["getScene"]>>;
     files: BinaryFiles;
   } | null {
@@ -2292,7 +2359,7 @@ export default class ExcalidrawView
       return null;
     }
     const files = { ...(scene.files ?? {}) };
-    if (this.isDirty()) {
+    if (this.isDirty() || forceSaveSnapshot) {
       this.windowMigrationSaveSnapshot = {
         scene,
         deletedElements: api
@@ -2343,7 +2410,7 @@ export default class ExcalidrawView
     //once from "unregisterView"
     //the from "detachLeavesOfType"
     this.clearPreventReloadTimer();
-    this.clearEmbeddableNodeIsEditingTimer();
+    this.sameFileEditGate.destroy();
     this.clearExcalidrawInitializeTimer();
     if (!this.dropManager && !this.excalidrawRoot) {
       return;
@@ -2495,10 +2562,7 @@ export default class ExcalidrawView
       window.clearTimeout(this.preventReloadResetTimer);
       this.preventReloadResetTimer = null;
     }
-    if (this.editingSelfResetTimer) {
-      window.clearTimeout(this.editingSelfResetTimer);
-      this.editingSelfResetTimer = null;
-    }
+    this.sameFileEditGate.destroy();
     if (this.resizeBatchTimer) {
       window.clearTimeout(this.resizeBatchTimer);
       this.resizeBatchTimer = null;
@@ -2539,18 +2603,13 @@ export default class ExcalidrawView
   ): Promise<boolean> {
     const loadOnModifyTrigger = file && file === this.file;
 
-    //once you've finished editing the embeddable, the first time the file
-    //reloads will be because of the embeddable changed the file,
-    //there is a 2000 ms time window allowed for this, but typically this will
-    //happen within 100 ms. When this happens the timer is cleared and the
-    //next time reload triggers the file will be reloaded as normal.
-    if (this.semaphores.embeddableIsEditingSelf) {
-      if (this.editingSelfResetTimer) {
-        this.clearEmbeddableNodeIsEditingTimer();
-        this.semaphores.embeddableIsEditingSelf = false;
-      }
+    // A same-file editor caused this modify. Refresh the raw Markdown envelope
+    // immediately, but retain one pending scene synchronization until every
+    // owner and its release grace period have settled.
+    if (this.isSameFileEditingActive()) {
       if (loadOnModifyTrigger) {
         this.data = await this.app.vault.read(this.file);
+        this.requestExternalSynchronization(file);
       }
       return true;
     }
@@ -2598,7 +2657,12 @@ export default class ExcalidrawView
     }
 
     this.data = incomingData;
-    this.textFileViewLoadedFile = null;
+    this.textFileViewLoadedFile = shouldRetainLoadedFileAfterReload(
+      fullreload,
+      Boolean(loadOnModifyTrigger),
+    )
+      ? this.file
+      : null;
     if (loadOnModifyTrigger) {
       this.suppressAutozoomOnce();
     }
@@ -3478,12 +3542,11 @@ export default class ExcalidrawView
         ) {
           continue;
         }
-        const classification =
-          this.saveCoordinator.classifyContent(
-            filePath,
-            synchronizationTargetGeneration,
-            data,
-          );
+        const classification = this.saveCoordinator.classifyContent(
+          filePath,
+          synchronizationTargetGeneration,
+          data,
+        );
         if (isRedundantObservedSaveContent(classification)) {
           continue;
         }
@@ -3519,7 +3582,6 @@ export default class ExcalidrawView
         incomingData.destroy();
         this.isSynchronizing = false;
       }
-
       if (parsedIncomingData && this.isDirty()) {
         shouldScheduleAutosave = true;
       }
