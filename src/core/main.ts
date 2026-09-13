@@ -124,6 +124,7 @@ import {
 import {
   ViewPersistenceQueue,
   type ViewPersistenceRequest,
+  type ViewPersistenceWriteLease,
 } from "./managers/ViewPersistenceQueue";
 import { errorlog } from "../utils/coreUtils";
 
@@ -1319,6 +1320,13 @@ export default class ExcalidrawPlugin extends Plugin {
   /** Transfers immutable drawing text out of a retiring view runtime. */
   public handoffViewPersistence(request: ViewPersistenceRequest): void {
     void this.viewPersistenceQueue.enqueue(request);
+  }
+
+  /** Reserves the plugin-owned per-path boundary for a live view write. */
+  public acquireViewPersistenceWriteLease(
+    filePath: string,
+  ): Promise<ViewPersistenceWriteLease> {
+    return this.viewPersistenceQueue.acquireWriteLease(filePath);
   }
 
   get taskbone() {

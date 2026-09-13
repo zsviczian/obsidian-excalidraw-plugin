@@ -995,6 +995,18 @@ export default class ExcalidrawView
     );
   }
 
+  private async withPersistenceWriteLease<T>(
+    filePath: string,
+    operation: () => T | Promise<T>,
+  ): Promise<T> {
+    const lease = await this.plugin.acquireViewPersistenceWriteLease(filePath);
+    try {
+      return await operation();
+    } finally {
+      lease.release();
+    }
+  }
+
   private async executeSaveRequest(
     operation: SaveOperationContext,
     suppressReloadFromOwnWrite: boolean,
@@ -1121,18 +1133,22 @@ export default class ExcalidrawView
               preparedSave,
             };
           }
-          await new Promise<void>((resolve, reject) => {
-            window.setTimeout(() => {
-              if (!d) {
-                resolve();
-                return;
-              }
-              void plugin.app.vault.modify(file, d).then(resolve, reject);
-              // This is a shady edge case: do not sacrifice the BAK file in
-              // case the drawing is empty.
-              // await getImageCache().addBAKToCache(file.path, d);
-            }, 200);
-          });
+          await this.withPersistenceWriteLease(
+            preparedSave.filePath,
+            () =>
+              new Promise<void>((resolve, reject) => {
+                window.setTimeout(() => {
+                  if (!d) {
+                    resolve();
+                    return;
+                  }
+                  void plugin.app.vault.modify(file, d).then(resolve, reject);
+                  // This is a shady edge case: do not sacrifice the BAK file in
+                  // case the drawing is empty.
+                  // await getImageCache().addBAKToCache(file.path, d);
+                }, 200);
+              }),
+          );
           this.data = d;
           this.lastSavedData = d;
           this.lastSaveTimestamp = file.stat.mtime;
@@ -1147,19 +1163,24 @@ export default class ExcalidrawView
             throw new Error("Cannot hand off an empty drawing payload");
           }
           const file = this.file;
-          this.plugin.handoffViewPersistence({
-            producerId: preparedSave.producerId,
-            targetGeneration: preparedSave.targetGeneration,
-            operationId: preparedSave.operationId,
-            requestedRevision: preparedSave.requestedRevision,
-            capturedRevision: preparedSave.capturedRevision,
-            filePath: preparedSave.filePath,
-            expectedFileCtime: file.stat.ctime,
-            text: preparedSave.text,
-            hasNonDeletedElements: preparedSave.hasNonDeletedElements,
-            reason: "view-unload",
-          });
-          return { status: "persistence-handed-off", preparedSave };
+          return await this.withPersistenceWriteLease(
+            preparedSave.filePath,
+            () => {
+              this.plugin.handoffViewPersistence({
+                producerId: preparedSave.producerId,
+                targetGeneration: preparedSave.targetGeneration,
+                operationId: preparedSave.operationId,
+                requestedRevision: preparedSave.requestedRevision,
+                capturedRevision: preparedSave.capturedRevision,
+                filePath: preparedSave.filePath,
+                expectedFileCtime: file.stat.ctime,
+                text: preparedSave.text,
+                hasNonDeletedElements: preparedSave.hasNonDeletedElements,
+                reason: "view-unload",
+              });
+              return { status: "persistence-handed-off", preparedSave };
+            },
+          );
         }
 
         // Serialization can take seconds for a large compressed scene. Arm
@@ -1167,7 +1188,12 @@ export default class ExcalidrawView
         // received while preparing the text remains eligible to synchronize.
         this.semaphores.preventReload = suppressReloadFromOwnWrite;
         try {
-          await super.save();
+          await this.withPersistenceWriteLease(
+            preparedSave.filePath,
+            async () => {
+              await super.save();
+            },
+          );
         } catch (error: unknown) {
           this.semaphores.preventReload = false;
           throw error;

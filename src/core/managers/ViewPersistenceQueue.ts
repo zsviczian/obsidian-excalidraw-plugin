@@ -37,6 +37,19 @@ interface ViewPersistenceQueueOptions {
 }
 
 /**
+ * A data-only reservation for one drawing path. The owner must release it in
+ * `finally`; the queue never retains the live view performing the write.
+ */
+export interface ViewPersistenceWriteLease {
+  release(): void;
+}
+
+interface PathReservation {
+  readonly ready: Promise<void>;
+  readonly release: () => void;
+}
+
+/**
  * Persists immutable drawing text after its originating view may be destroyed.
  *
  * Requests for one path execute in accepted order and are never coalesced:
@@ -58,21 +71,59 @@ export class ViewPersistenceQueue {
   public enqueue(
     request: ViewPersistenceRequest,
   ): Promise<ViewPersistenceResult> {
-    const previous = this.pathTails.get(request.filePath) ?? Promise.resolve();
-    const completion = previous.then(() => this.execute(request));
-    const tail: Promise<void> = completion.then((): void => undefined);
-    this.pathTails.set(request.filePath, tail);
-    void tail.finally(() => {
-      if (this.pathTails.get(request.filePath) === tail) {
-        this.pathTails.delete(request.filePath);
+    const reservation = this.reservePath(request.filePath);
+    return (async (): Promise<ViewPersistenceResult> => {
+      await reservation.ready;
+      try {
+        return await this.execute(request);
+      } finally {
+        reservation.release();
       }
-    });
-    return completion;
+    })();
+  }
+
+  /**
+   * Reserves the same per-path write boundary for a live `TextFileView` save.
+   * Only the gate is retained here; the caller keeps and invokes its own live
+   * write after acquisition.
+   */
+  public async acquireWriteLease(
+    filePath: string,
+  ): Promise<ViewPersistenceWriteLease> {
+    const reservation = this.reservePath(filePath);
+    await reservation.ready;
+    return { release: reservation.release };
   }
 
   /** Waits for all requests accepted for one path before this call. */
   public async flush(filePath: string): Promise<void> {
     await this.pathTails.get(filePath);
+  }
+
+  private reservePath(filePath: string): PathReservation {
+    const previous = this.pathTails.get(filePath) ?? Promise.resolve();
+    let releaseGate: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => {
+      releaseGate = resolve;
+    });
+    const tail = previous.then(() => gate);
+    this.pathTails.set(filePath, tail);
+    void tail.finally(() => {
+      if (this.pathTails.get(filePath) === tail) {
+        this.pathTails.delete(filePath);
+      }
+    });
+    let released = false;
+    return {
+      ready: previous,
+      release: () => {
+        if (released) {
+          return;
+        }
+        released = true;
+        releaseGate();
+      },
+    };
   }
 
   private async execute(
@@ -109,11 +160,7 @@ export class ViewPersistenceQueue {
   }
 
   private fail(
-    status:
-      | "invalid-request"
-      | "target-missing"
-      | "target-changed"
-      | "failed",
+    status: "invalid-request" | "target-missing" | "target-changed" | "failed",
     request: ViewPersistenceRequest,
     error: unknown,
   ): ViewPersistenceResult {
