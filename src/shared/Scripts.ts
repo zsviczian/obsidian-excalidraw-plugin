@@ -53,6 +53,15 @@ type CompiledScript = {
   executable: ScriptExecutable | null;
 };
 
+type ViewAutostartRuntime = NonNullable<
+  ExcalidrawView["selectedElementActionsMenu"]
+>;
+
+type ViewAutostartAttachment = {
+  runtime: ViewAutostartRuntime;
+  completion: Promise<void>;
+};
+
 export interface ScriptFileRenamePlan {
   renames: Array<{
     file: TFile;
@@ -85,7 +94,7 @@ export class ScriptEngine {
   /** Successful or in-flight automatic attachments, scoped to a view and script path. */
   private autostartAttachments = new WeakMap<
     ExcalidrawView,
-    Map<string, Promise<void>>
+    Map<string, ViewAutostartAttachment>
   >();
   /** EAs whose top-level script invocation currently has a view-autostart trigger. */
   private viewAutostartEAs = new WeakSet<ExcalidrawAutomate>();
@@ -755,6 +764,12 @@ export class ScriptEngine {
     view: ExcalidrawView,
     where: string,
   ): Promise<void> {
+    const runtime = view.selectedElementActionsMenu;
+    if (!runtime) {
+      // Hidden workspace leaves may not have mounted their React tree yet.
+      // Their mount effect will request attachment after creating the menu.
+      return;
+    }
     let attachments = this.autostartAttachments.get(view);
     if (!attachments) {
       attachments = new Map();
@@ -762,23 +777,35 @@ export class ScriptEngine {
     }
     const scriptPath = file.path;
     const existing = attachments.get(scriptPath);
-    if (existing !== undefined) {
-      await existing;
+    if (existing?.runtime === runtime) {
+      await existing.completion;
       return;
     }
 
     let succeeded = false;
+    let runtimeWasReplaced = false;
     const run = (async (): Promise<void> => {
       try {
-        await this.executeScriptFile(
-          view,
-          file,
-          scriptName,
-          "view-autostart",
-        );
+        const executable = await this.getCompiledScript(file);
+        if (view.selectedElementActionsMenu !== runtime) {
+          runtimeWasReplaced = true;
+          return;
+        }
+        if (executable) {
+          await this.executeExecutable(
+            view,
+            executable,
+            scriptName,
+            file,
+            "view-autostart",
+          );
+        }
         succeeded = true;
       } catch (error: unknown) {
         errorlog({ where, scriptName, error });
+      }
+      if (runtimeWasReplaced) {
+        return;
       }
       try {
         await this.recordAutostartResult(scriptName, !succeeded);
@@ -786,9 +813,10 @@ export class ScriptEngine {
         errorlog({ where: `${where}.recordAutostartResult`, scriptName, error });
       }
     })();
-    attachments.set(scriptPath, run);
+    const attachment = { runtime, completion: run };
+    attachments.set(scriptPath, attachment);
     await run;
-    if (!succeeded && attachments.get(scriptPath) === run) {
+    if (!succeeded && attachments.get(scriptPath) === attachment) {
       attachments.delete(scriptPath);
     }
   }
