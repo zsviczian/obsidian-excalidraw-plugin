@@ -682,7 +682,7 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 ```excalidraw-script-install
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Slideshow.md
 ```
-<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Slideshow.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">The script will convert your drawing into a slideshow presentation.<br><a href="https://www.youtube.com/watch?v=JwgtCrIVeEU" target="_blank"><img src ="https://i.ytimg.com/vi/JwgtCrIVeEU/maxresdefault.jpg" style="width:560px;"></a></td></tr></table>
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Slideshow.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">The script will convert your drawing into a slideshow presentation.<br><a href="https://www.youtube.com/watch?v=7DDY8rRDzdU" target="_blank"><img src ="https://i.ytimg.com/vi/7DDY8rRDzdU/maxresdefault.jpg" style="width:560px;"></a></td></tr></table>
 
 ## Split Ellipse
 ```excalidraw-script-install

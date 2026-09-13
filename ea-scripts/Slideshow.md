@@ -1,12 +1,19 @@
 /*
 # Slideshow
 
-Converts the active Excalidraw drawing into a slideshow presentation. The built
-script is emitted to `build/slideshow/slideshow.md`.
+Converts the active Excalidraw drawing into a slideshow presentation.
 
-[Watch the Slideshow 3.0 walkthrough](https://www.youtube.com/watch?v=JwgtCrIVeEU) and the [Excalidraw 2.27.0 update video](https://youtu.be/am2HOlbYsxI?si=4UPdmFMJcpM6j9oR&t=272)
+[![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/logo-slideshow-v4.png)](https://community.sketch-your-mind.com/slideshow)
+
+To get the most out of the Slideshow script check out the [Slideshow mini-course](https://community.sketch-your-mind.com/slideshow) on the Sketch Your Mind Community.
+
+![](https://youtu.be/7DDY8rRDzdU)
+
+[Also watch the Excalidraw 2.27.0 update video](https://youtu.be/am2HOlbYsxI?t=272)
 
 ![Slideshow example](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-slideshow-2.jpg)
+
+[Slideshow mini-course](https://community.sketch-your-mind.com/slideshow)
 
 ## Launch behavior
 
@@ -18,8 +25,10 @@ script is emitted to `build/slideshow/slideshow.md`.
   hotkey starts that view's presentation. A normal invocation starts fullscreen; whether presenter
   notes open follows the persisted sidepanel setting. Shift resumes saved progress, Alt/Option
   starts windowed, and Cmd/Ctrl opens/focuses the Slideshow sidepanel instead of presenting.
-  Invoking the script again while a presentation is active advances the existing controller unless
-  Cmd/Ctrl is held, in which case the presentation ends and the sidepanel opens.
+  A selected frame or line/arrow overrides the saved source; with no relevant selection, the exact
+  presentation source last chosen in the sidepanel for that drawing is used. A normal invocation
+  while a presentation is active advances the existing controller. Shift re-resolves the selected or
+  saved source and resumes that source's own continuation point.
 - Slideshow uses `utils.executionSource` so autostart remains registration-only while the very
   first manual toolbar, command, or hotkey invocation can start presenting immediately.
 - The presentation toolbar's settings button ends the active presentation and opens the sidepanel.
@@ -33,11 +42,11 @@ script is emitted to `build/slideshow/slideshow.md`.
 A drawing can contain one frame presentation plus any number of independent line/arrow presentations. The sidepanel keeps an explicit presentation-source selection; selecting ordinary canvas elements never changes which deck the sorter is editing.
 
 - Frames form one presentation source when the drawing contains frames.
-- A line/arrow becomes a presentation source only after slideshow metadata is created for it. Selecting an ordinary line does **not** implicitly turn it into a slideshow or replace the sidepanel deck.
+- A line/arrow becomes a presentation source only after slideshow metadata is created for it. Merely selecting an ordinary line does not replace the sidepanel deck, but manually launching Slideshow with that line selected creates the presentation metadata and uses that line for the launch.
 - When an ordinary line/arrow with at least one complete point pair is selected, the sidepanel shows a contextual **Create line presentation** action in the top toolbar.
 - Every persisted line presentation has its own optional name. Use its ellipsis/settings action beside the deck summary to rename it or remove only its slideshow metadata. Removing presentation metadata never deletes the line itself and restores its original styling if the path had been persistently hidden.
 - If presentation names collide, the selector disambiguates them only in the UI as `Name (1)`, `Name (2)`, and so on; element ids remain the stable identity. Unnamed paths use `Line presentation` with the same duplicate-numbering rule.
-- When multiple sources exist, the presentation selector lists `Frames` plus every named line presentation independently. Manual script launch prefers a selected **persisted** line presentation; otherwise frames are the default when available, then the first persisted line presentation.
+- When multiple sources exist, the presentation selector lists `Frames` plus every named line presentation independently. The selected source is persisted per drawing and becomes the manual-launch default whenever no frame or line/arrow is selected on the canvas. A selected frame or line/arrow overrides that default for the invocation.
 - Frames without slideshow metadata retain alphabetical ordering.
 - The first sorter mutation writes explicit normalized `order` metadata; after that, frame renames do not change presentation order.
 - Excluded frame and line slides remain visible and editable in the sorter, but are omitted from presentation and PDF output.
@@ -123,11 +132,12 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
 - **Normal script invocation:** start fullscreen. Slides-only vs presenter notes follows the sidepanel setting.
 - **Run in a window:** Hold Alt/Option while launching the script.
 - **Resume from the last slide:** Hold Shift while launching the script. Progress is held only in
-  temporary runtime memory and is tracked independently for each concrete Excalidraw view, even
-  when two views show the same file. It can be combined with Alt/Option.
+  temporary runtime memory and is tracked independently for each presentation source in each
+  concrete Excalidraw view, even when two views show the same file. It can be combined with
+  Alt/Option.
 - **Open the Slideshow sidepanel:** Hold Cmd on macOS or Ctrl on Windows/Linux while invoking the script.
 
-Build version: 2026-09-10T16:55:07.251Z
+Build version: 2026-09-13T11:10:54.313Z
 
 ```javascript
 */
@@ -207,6 +217,10 @@ Build version: 2026-09-10T16:55:07.251Z
     quickGuideMarkerFrames: "Marker frames are ideal slideshow markers: they define a slide without changing the visual grouping of the drawing.",
     quickGuideAnimations: "Slides can reveal elements or groups in a sequence using appear, fade, slide-in, zoom-in, and timed animation steps.",
     quickGuideNotes: "Add presenter notes per slide. With a second display, presenter mode shows notes and the next slide separately from the audience view.",
+    quickGuideLearnMoreTitle: "Learn more",
+    quickGuideVideo: "Getting Started with Obsidian Excalidraw Slideshow v4",
+    quickGuideVideoThumbnailAlt: "Slideshow v4 video thumbnail",
+    quickGuideCourse: "Slideshow mini-course",
     startPresentation: "Start presentation",
     startFromBeginning: "From beginning",
     presentationStartOptions: "Presentation start options",
@@ -2411,34 +2425,83 @@ Build version: 2026-09-10T16:55:07.251Z
 
   // src/sharedUtils/AsyncTaskQueue.ts
   var AsyncTaskQueue = class {
-    tail = Promise.resolve();
+    constructor(concurrency = 1) {
+      this.concurrency = concurrency;
+      if (!Number.isInteger(concurrency) || concurrency < 1) {
+        throw new RangeError("AsyncTaskQueue concurrency must be a positive integer.");
+      }
+    }
     generation = 0;
+    activeCount = 0;
     pending = /* @__PURE__ */ new Map();
+    waiting = [];
+    idleResolvers = /* @__PURE__ */ new Set();
     enqueue(key, task, isRelevant = () => true) {
       const existing = this.pending.get(key);
       if (existing) return existing;
       const generation = this.generation;
-      const result = this.tail.then(async () => {
-        if (generation !== this.generation || !isRelevant()) return void 0;
-        return await task();
+      let resolveResult = () => void 0;
+      let rejectResult = () => void 0;
+      const result = new Promise((resolve, reject) => {
+        resolveResult = resolve;
+        rejectResult = reject;
       });
       this.pending.set(key, result);
-      this.tail = result.then(
-        () => void 0,
-        () => void 0
-      );
+      this.waiting.push({
+        generation,
+        isRelevant,
+        task,
+        resolve: resolveResult,
+        reject: rejectResult
+      });
       const removePending = () => {
         if (this.pending.get(key) === result) this.pending.delete(key);
+        this.resolveIdleIfNeeded();
       };
       void result.then(removePending, removePending);
+      this.pump();
       return result;
     }
     clear() {
       this.generation += 1;
       this.pending.clear();
+      for (const waiting of this.waiting.splice(0)) waiting.resolve(void 0);
+      this.resolveIdleIfNeeded();
     }
     async idle() {
-      await this.tail;
+      if (this.activeCount === 0 && this.waiting.length === 0) return;
+      await new Promise((resolve) => this.idleResolvers.add(resolve));
+    }
+    pump() {
+      while (this.activeCount < this.concurrency && this.waiting.length > 0) {
+        const next = this.waiting.shift();
+        if (!next) break;
+        if (next.generation !== this.generation) {
+          next.resolve(void 0);
+          continue;
+        }
+        try {
+          if (!next.isRelevant()) {
+            next.resolve(void 0);
+            continue;
+          }
+        } catch (error) {
+          next.reject(error);
+          continue;
+        }
+        this.activeCount += 1;
+        void Promise.resolve().then(next.task).then(next.resolve, next.reject).finally(() => {
+          this.activeCount -= 1;
+          this.pump();
+          this.resolveIdleIfNeeded();
+        });
+      }
+      this.resolveIdleIfNeeded();
+    }
+    resolveIdleIfNeeded() {
+      if (this.activeCount !== 0 || this.waiting.length !== 0) return;
+      for (const resolve of this.idleResolvers) resolve();
+      this.idleResolvers.clear();
     }
   };
 
@@ -2491,22 +2554,7 @@ Build version: 2026-09-10T16:55:07.251Z
   var PREVIEW_CACHE_BYTES = 64 * 1024 * 1024;
   var DEFAULT_PREVIEW_WIDTH = 960;
   var MAX_PREVIEW_SCALE = 2;
-  var EA_EXPORT_QUEUES = /* @__PURE__ */ new WeakMap();
-  async function withEaExportLock(ea2, task) {
-    const key = ea2;
-    const previous = EA_EXPORT_QUEUES.get(key) ?? Promise.resolve();
-    let release;
-    const gate = new Promise((resolve) => {
-      release = resolve;
-    });
-    EA_EXPORT_QUEUES.set(key, previous.catch(() => void 0).then(() => gate));
-    await previous.catch(() => void 0);
-    try {
-      return await task();
-    } finally {
-      release?.();
-    }
-  }
+  var PREVIEW_EXPORT_CONCURRENCY = 2;
   function getPreviewNavigationRect(slide, maxZoom, printSlideWidth = 1920, printSlideHeight = 1080) {
     return getNavigationRect(
       slide.rect,
@@ -2560,7 +2608,7 @@ Build version: 2026-09-10T16:55:07.251Z
       this.api = api;
       this.config = config;
     }
-    queue = new AsyncTaskQueue();
+    queue = new AsyncTaskQueue(PREVIEW_EXPORT_CONCURRENCY);
     cached = new ByteBudgetLruCache(
       PREVIEW_CACHE_BYTES,
       (preview) => URL.revokeObjectURL(preview.objectUrl)
@@ -2574,10 +2622,14 @@ Build version: 2026-09-10T16:55:07.251Z
     getAspectRatio() {
       return `${this.config.printSlideWidth} / ${this.config.printSlideHeight}`;
     }
-    /** Drops cached previews and invalidates queued work, for example after switching drawings. */
-    clear() {
+    /** Invalidates queued preview work while retaining already-rendered bitmaps. */
+    cancelPending() {
       this.generation += 1;
       this.queue.clear();
+    }
+    /** Drops cached previews and invalidates queued work, for example after switching drawings. */
+    clear() {
+      this.cancelPending();
       this.cached.clear();
     }
     createPreviewElement(cached, ownerDocument) {
@@ -2607,54 +2659,44 @@ Build version: 2026-09-10T16:55:07.251Z
         width: Math.abs(rect.right - rect.left),
         height: Math.abs(rect.bottom - rect.top)
       };
-      return await withEaExportLock(this.ea, async () => {
-        if (generation !== this.generation) return void 0;
-        this.ea.clear();
-        try {
-          this.ea.copyViewElementsToEAforEditing(localElements);
-          if (slide.kind === "path") {
-            const hiddenPath = this.ea.getElement(slide.pathId);
-            if (hiddenPath) hiddenPath.opacity = 0;
-          }
-          for (const [id, opacity] of originalOpacities ?? []) {
-            const element = this.ea.getElement(id);
-            if (element) element.opacity = opacity;
-          }
-          for (const id of hiddenElementIds) {
-            const element = this.ea.getElement(id);
-            if (element) element.opacity = 0;
-          }
-          const scale = Math.min(
-            MAX_PREVIEW_SCALE,
-            Math.max(targetWidth / Math.max(exportArea.width, 1), 0.01)
-          );
-          const blob = await this.ea.createViewPNG({
-            withBackground: true,
-            theme: appState.theme,
-            frameRendering: {
-              enabled: true,
-              name: false,
-              outline: false,
-              clip: false
-            },
-            padding: 0,
-            selectedOnly: false,
-            embedScene: false,
-            elementsOverride: this.ea.getElements(),
-            exportArea,
-            scale
-          });
-          if (generation !== this.generation) return void 0;
-          const cached = {
-            objectUrl: URL.createObjectURL(blob),
-            backgroundColor: readBackgroundColor(appState)
-          };
-          this.cached.set(cacheKey, cached, blob.size);
-          return cached;
-        } finally {
-          this.ea.clear();
-        }
+      if (generation !== this.generation) return void 0;
+      const hiddenIds = new Set(hiddenElementIds);
+      const exportElements = localElements.map((element) => {
+        let opacity = element.opacity;
+        if (slide.kind === "path" && element.id === slide.pathId) opacity = 0;
+        const originalOpacity = originalOpacities?.get(element.id);
+        if (originalOpacity !== void 0) opacity = originalOpacity;
+        if (hiddenIds.has(element.id)) opacity = 0;
+        if (opacity === element.opacity) return element;
+        return { ...element, opacity };
       });
+      const scale = Math.min(
+        MAX_PREVIEW_SCALE,
+        Math.max(targetWidth / Math.max(exportArea.width, 1), 0.01)
+      );
+      const blob = await this.ea.createViewPNG({
+        withBackground: true,
+        theme: appState.theme,
+        frameRendering: {
+          enabled: true,
+          name: false,
+          outline: false,
+          clip: false
+        },
+        padding: 0,
+        selectedOnly: false,
+        embedScene: false,
+        elementsOverride: exportElements,
+        exportArea,
+        scale
+      });
+      if (generation !== this.generation) return void 0;
+      const cached = {
+        objectUrl: URL.createObjectURL(blob),
+        backgroundColor: readBackgroundColor(appState)
+      };
+      this.cached.set(cacheKey, cached, blob.size);
+      return cached;
     }
     /** Creates a bounded raster preview in the caller's owner document. */
     async createPreview(slide, ownerDocument, state = {}) {
@@ -2729,6 +2771,7 @@ Build version: 2026-09-10T16:55:07.251Z
   var WINDOW_MODE_SETTING = "slideshowWindowMode";
   var NOTES_MODE_SETTING = "slideshowNotesMode";
   var PRESENTATION_TYPE_SETTING = "slideshowPresentationType";
+  var PRESENTATION_SOURCE_BY_DRAWING_SETTING = "slideshowPresentationSourceByDrawing";
   var DISPLAY_TARGETS_SETTING = "slideshowDisplayTargetsByDevice";
   var DISPLAY_TARGETS_BY_CONFIGURATION_SETTING = "slideshowDisplayTargetsByDeviceConfiguration";
   var PRESENTER_NOTES_FONT_SIZE_SETTING = "slideshowPresenterNotesFontSize";
@@ -2768,6 +2811,25 @@ Build version: 2026-09-10T16:55:07.251Z
       [WINDOW_MODE_SETTING]: preferences.windowMode,
       [NOTES_MODE_SETTING]: preferences.notesMode,
       ...preferences.presentationType ? { [PRESENTATION_TYPE_SETTING]: preferences.presentationType } : {}
+    });
+  }
+  function loadSlideshowPresentationSource(ea2, drawingPath) {
+    const raw = readSettings(ea2)[PRESENTATION_SOURCE_BY_DRAWING_SETTING];
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return void 0;
+    const source = raw[drawingPath];
+    if (source === "frame") return "frame";
+    return typeof source === "string" && source.startsWith("line:") ? source : void 0;
+  }
+  async function saveSlideshowPresentationSource(ea2, drawingPath, source) {
+    const settings = ea2.getScriptSettings();
+    const raw = settings[PRESENTATION_SOURCE_BY_DRAWING_SETTING];
+    const byDrawing = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+    await ea2.setScriptSettings({
+      ...settings,
+      [PRESENTATION_SOURCE_BY_DRAWING_SETTING]: {
+        ...byDrawing,
+        [drawingPath]: source
+      }
     });
   }
   function asDisplayPreferences(value) {
@@ -3220,6 +3282,7 @@ Build version: 2026-09-10T16:55:07.251Z
 .slideshow-presenter__notes.is-empty { color:var(--text-muted); font-style:italic; }
 .slideshow-presenter__progress { display:flex; align-items:center; gap:8px; color:var(--text-muted); font-size:var(--font-ui-small); }
 .slideshow-presenter__controls { display:flex; flex-wrap:wrap; gap:8px; margin-top:auto; padding-top:4px; }
+.slideshow-presenter:not(.is-notes-focused) .slideshow-presenter__controls { align-self:flex-end; }
 .slideshow-presenter__controls button { min-width:44px; min-height:40px; display:inline-flex; align-items:center; justify-content:center; gap:6px; }
 .slideshow-presenter__controls svg, .slideshow-presenter__close svg, .slideshow-presenter__layout-toggle svg { width:18px; height:18px; }
 .slideshow-presenter.is-notes-focused { overflow:hidden; }
@@ -6027,6 +6090,10 @@ Build version: 2026-09-10T16:55:07.251Z
   };
 
   // src/scripts/slideshow/slideshowQuickGuide.ts
+  var SLIDESHOW_VIDEO_URL = "https://youtu.be/7DDY8rRDzdU";
+  var SLIDESHOW_VIDEO_THUMBNAIL_URL = "https://img.youtube.com/vi/7DDY8rRDzdU/maxresdefault.jpg";
+  var SLIDESHOW_COURSE_THUMBNAIL_URL = "https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/logo-slideshow-v4.png";
+  var SLIDESHOW_COURSE_URL = "https://community.sketch-your-mind.com/slideshow";
   function openSlideshowQuickGuideModal(ea2, t) {
     const modal = new ea2.obsidian.Modal(app);
     modal.titleEl.setText(t("quickGuideTitle"));
@@ -6051,6 +6118,42 @@ Build version: 2026-09-10T16:55:07.251Z
     ]) {
       modal.contentEl.createEl("p", { text: t(key) });
     }
+    modal.contentEl.createEl("h3", { text: t("quickGuideLearnMoreTitle") });
+    const videoLink = modal.contentEl.createEl("a");
+    videoLink.href = SLIDESHOW_VIDEO_URL;
+    videoLink.target = "_blank";
+    videoLink.rel = "noopener noreferrer";
+    videoLink.style.display = "inline-flex";
+    videoLink.style.alignItems = "center";
+    videoLink.style.gap = "10px";
+    videoLink.style.marginBottom = "8px";
+    const videoThumbnail = videoLink.createEl("img");
+    videoThumbnail.src = SLIDESHOW_VIDEO_THUMBNAIL_URL;
+    videoThumbnail.alt = t("quickGuideVideoThumbnailAlt");
+    videoThumbnail.width = 112;
+    videoThumbnail.style.width = "112px";
+    videoThumbnail.style.height = "63px";
+    videoThumbnail.style.objectFit = "cover";
+    videoThumbnail.style.borderRadius = "6px";
+    videoThumbnail.style.flex = "0 0 auto";
+    videoLink.createSpan({ text: t("quickGuideVideo") });
+    modal.contentEl.createEl("br");
+    const courseLink = modal.contentEl.createEl("a");
+    courseLink.href = SLIDESHOW_COURSE_URL;
+    courseLink.target = "_blank";
+    courseLink.rel = "noopener noreferrer";
+    courseLink.style.display = "inline-flex";
+    courseLink.style.alignItems = "center";
+    courseLink.style.gap = "10px";
+    const courseThumbnail = courseLink.createEl("img");
+    courseThumbnail.src = SLIDESHOW_COURSE_THUMBNAIL_URL;
+    courseThumbnail.alt = t("quickGuideCourse");
+    courseThumbnail.width = 112;
+    courseThumbnail.style.width = "112px";
+    courseThumbnail.style.objectFit = "cover";
+    courseThumbnail.style.borderRadius = "6px";
+    courseThumbnail.style.flex = "0 0 auto";
+    courseLink.createSpan({ text: t("quickGuideCourse") });
     modal.open();
   }
 
@@ -6063,6 +6166,7 @@ Build version: 2026-09-10T16:55:07.251Z
       progress: /* @__PURE__ */ new WeakMap(),
       progressType: /* @__PURE__ */ new WeakMap(),
       progressSource: /* @__PURE__ */ new WeakMap(),
+      progressBySource: /* @__PURE__ */ new WeakMap(),
       presentations: /* @__PURE__ */ new WeakMap(),
       sidepanel: null
     };
@@ -6075,6 +6179,11 @@ Build version: 2026-09-10T16:55:07.251Z
     if (!("progressSource" in runtime) || !runtime.progressSource) {
       Object.assign(runtime, {
         progressSource: /* @__PURE__ */ new WeakMap()
+      });
+    }
+    if (!("progressBySource" in runtime) || !runtime.progressBySource) {
+      Object.assign(runtime, {
+        progressBySource: /* @__PURE__ */ new WeakMap()
       });
     }
     return runtime;
@@ -6095,7 +6204,14 @@ Build version: 2026-09-10T16:55:07.251Z
       const type = presentationSource === "frame" ? "frame" : "line";
       runtime.progressType.set(view, type);
       if (presentationSource === "frame" || presentationSource.startsWith("line:")) {
-        runtime.progressSource.set(view, presentationSource);
+        const source = presentationSource;
+        runtime.progressSource.set(view, source);
+        let bySource = runtime.progressBySource.get(view);
+        if (!bySource) {
+          bySource = /* @__PURE__ */ new Map();
+          runtime.progressBySource.set(view, bySource);
+        }
+        bySource.set(source, slide);
       }
     }
   }
@@ -6107,6 +6223,12 @@ Build version: 2026-09-10T16:55:07.251Z
   }
   function getSlideshowProgressSource(view) {
     return getSlideshowRuntime().progressSource.get(view);
+  }
+  function getSlideshowProgressForSource(view, source) {
+    const runtime = getSlideshowRuntime();
+    const exact = runtime.progressBySource.get(view)?.get(source);
+    if (exact !== void 0) return exact;
+    return runtime.progressSource.get(view) === source ? runtime.progress.get(view) : void 0;
   }
 
   // src/scripts/slideshow/SlideshowSidepanel.ts
@@ -6578,7 +6700,7 @@ Build version: 2026-09-10T16:55:07.251Z
       }
       const choices = resolveSlideDeckChoices(ea2);
       const drawingKey = view.file.path;
-      const storedSource = this.presentationSourceByDrawing.get(drawingKey);
+      const storedSource = this.presentationSourceByDrawing.get(drawingKey) ?? loadSlideshowPresentationSource(ea2, drawingKey);
       const presentationSourceKey = chooseSidepanelPresentationSourceKey(
         choices,
         storedSource,
@@ -6601,6 +6723,7 @@ Build version: 2026-09-10T16:55:07.251Z
       const selectedId = this.animationEditingSlideId ?? requestedSlideId ?? this.pendingSceneSlideId ?? this.sorter?.getSelectedSlideId() ?? null;
       const expandedNotesId = this.sorter?.getExpandedNotesSlideId() ?? null;
       const sorterScrollTop = this.sorter?.getScrollTop() ?? 0;
+      this.previewService?.cancelPending();
       this.sorter?.destroy();
       this.sorter = null;
       this.choices = choices;
@@ -6637,12 +6760,13 @@ Build version: 2026-09-10T16:55:07.251Z
       header.className = "slideshow-sidepanel__header";
       root.appendChild(header);
       const noVisibleSlides = Boolean(this.resolved && this.resolved.deck.visibleSlides.length === 0);
+      const exactResumeProgress = this.boundView && this.presentationSourceKey ? getSlideshowProgressForSource(this.boundView, this.presentationSourceKey) : void 0;
       const resumeSlide = this.boundView && this.resolved ? getResumeSlideForPresentation(
-        getSlideshowProgress(this.boundView),
-        getSlideshowProgressType(this.boundView),
+        exactResumeProgress ?? getSlideshowProgress(this.boundView),
+        exactResumeProgress !== void 0 && this.presentationSourceKey ? getPresentationSourceType(this.presentationSourceKey) : getSlideshowProgressType(this.boundView),
         this.presentationSourceKey ? getPresentationSourceType(this.presentationSourceKey) : null,
         this.resolved.deck.visibleSlides.length,
-        getSlideshowProgressSource(this.boundView),
+        exactResumeProgress !== void 0 ? this.presentationSourceKey ?? void 0 : getSlideshowProgressSource(this.boundView),
         this.presentationSourceKey
       ) : null;
       const selectedSlideId = this.sorter?.getSelectedSlideId() ?? preferredSlideId ?? this.resolved?.deck.slides[0]?.id ?? null;
@@ -6973,13 +7097,20 @@ Build version: 2026-09-10T16:55:07.251Z
       return `${name} \xB7 ${resolution}${primary}`;
     }
     persistLaunchPreferences() {
+      const source = this.presentationSourceKey;
+      const drawingPath = this.boundView?.file.path;
       const preferences = {
         startMode: this.startMode,
         windowMode: this.windowMode,
         notesMode: this.notesMode,
-        ...this.presentationSourceKey ? { presentationType: getPresentationSourceType(this.presentationSourceKey) } : {}
+        ...source ? { presentationType: getPresentationSourceType(source) } : {}
       };
-      this.settingsWriteQueue = this.settingsWriteQueue.then(() => saveSlideshowLaunchPreferences(this.options.ea, preferences)).catch((error) => console.error("Slideshow launch preference save failed", error));
+      this.settingsWriteQueue = this.settingsWriteQueue.then(async () => {
+        await saveSlideshowLaunchPreferences(this.options.ea, preferences);
+        if (source && drawingPath) {
+          await saveSlideshowPresentationSource(this.options.ea, drawingPath, source);
+        }
+      }).catch((error) => console.error("Slideshow launch preference save failed", error));
       return this.settingsWriteQueue;
     }
     persistDisplayPreferences() {
@@ -7012,13 +7143,28 @@ Build version: 2026-09-10T16:55:07.251Z
       this.settingsWriteQueue = this.settingsWriteQueue.then(() => saveSorterThumbnailMaxWidth(this.options.ea, width)).catch((error) => console.error("Slideshow thumbnail-size save failed", error));
       return this.settingsWriteQueue;
     }
-    hideSidepanelForWindowedPresentation() {
+    async prepareWindowedPresentation(view) {
       const sidepanelLeaf = this.options.ea.getSidepanelLeaf();
       const container = sidepanelLeaf?.view.containerEl;
-      if (!container) return;
-      const rect = container.getBoundingClientRect();
-      const visible = container.isConnected && rect.width > 1 && rect.height > 1 && this.ownerWindow.getComputedStyle(container).display !== "none";
-      if (visible) this.options.ea.toggleSidepanelView();
+      const sidepanelWindow = container?.ownerDocument.defaultView ?? null;
+      const requestFrame = view.ownerWindow.requestAnimationFrame?.bind(view.ownerWindow);
+      const nextFrame = () => requestFrame ? new Promise((resolve) => requestFrame(() => resolve())) : new Promise((resolve) => view.ownerWindow.setTimeout(resolve, 0));
+      if (sidepanelWindow && sidepanelWindow !== view.ownerWindow) {
+        await app.workspace.setActiveLeaf(view.leaf, { focus: true });
+        return;
+      }
+      if (container) {
+        const isVisible = () => {
+          const rect = container.getBoundingClientRect();
+          return container.isConnected && rect.width > 1 && rect.height > 1 && view.ownerWindow.getComputedStyle(container).display !== "none";
+        };
+        if (isVisible()) {
+          this.options.ea.toggleSidepanelView();
+          for (let frame = 0; frame < 20 && isVisible(); frame += 1) await nextFrame();
+        }
+      }
+      await app.workspace.setActiveLeaf(view.leaf, { focus: true });
+      await nextFrame();
     }
     async launchPresentation() {
       const view = this.boundView;
@@ -7028,12 +7174,13 @@ Build version: 2026-09-10T16:55:07.251Z
         return;
       const presentationType = getPresentationSourceType(presentationSourceKey);
       await this.persistLaunchPreferences();
+      const exactResumeProgress = getSlideshowProgressForSource(view, presentationSourceKey);
       const resume = getResumeSlideForPresentation(
-        getSlideshowProgress(view),
-        getSlideshowProgressType(view),
+        exactResumeProgress ?? getSlideshowProgress(view),
+        exactResumeProgress !== void 0 ? presentationType : getSlideshowProgressType(view),
         presentationType,
         resolved.deck.visibleSlides.length,
-        getSlideshowProgressSource(view),
+        exactResumeProgress !== void 0 ? presentationSourceKey : getSlideshowProgressSource(view),
         presentationSourceKey
       );
       const selectedId = this.sorter?.getSelectedSlideId() ?? null;
@@ -7070,7 +7217,7 @@ Build version: 2026-09-10T16:55:07.251Z
         ...openPresenterView && this.presentationDisplayId !== null ? { presentationDisplayId: this.presentationDisplayId } : {},
         ...openPresenterView && this.presenterDisplayId !== null ? { presenterDisplayId: this.presenterDisplayId } : {}
       };
-      if (!startFullscreen) this.hideSidepanelForWindowedPresentation();
+      if (!startFullscreen) await this.prepareWindowedPresentation(view);
       await this.options.startPresentation(presentationSourceKey, launchOptions);
     }
     async printPresentation(event) {
@@ -7636,14 +7783,12 @@ Build version: 2026-09-10T16:55:07.251Z
         await createLinePresentation(ea2, selected.id);
         return `line:${selected.id}`;
       }
+      return void 0;
     }
+    if (!isFrameElement(selected)) return void 0;
     const frames = ea2.getViewElements().filter(isFrameElement);
-    if (frames.length === 0) return void 0;
     const alreadyDeclared = frames.some((frame) => hasFrameSlideshowDeclaration(frame.customData));
-    if (!alreadyDeclared) {
-      const declarationFrame = isFrameElement(selected) ? selected : frames[0];
-      if (declarationFrame) await declareFrameSlideshow(ea2, declarationFrame.id);
-    }
+    if (!alreadyDeclared) await declareFrameSlideshow(ea2, selected.id);
     return "frame";
   }
   function resolveManualInvocationIntent(modifiers) {
@@ -7652,6 +7797,13 @@ Build version: 2026-09-10T16:55:07.251Z
       resume: modifiers.shiftKey,
       startFullscreen: !modifiers.altKey
     };
+  }
+  function chooseManualPresentationSourceKey(choices, selectedSource, savedSource, preferredType) {
+    if (selectedSource && resolvePresentationSource(choices, selectedSource)) return selectedSource;
+    if (savedSource && resolvePresentationSource(choices, savedSource)) return savedSource;
+    if (preferredType === "frame" && choices.frame) return "frame";
+    if (preferredType === "line" && choices.lines[0]) return choices.lines[0].key;
+    return choices.defaultSourceKey ?? void 0;
   }
   function resolveLaunchModifiers(view) {
     return { startFullscreen: !view.modifierKeyDown.altKey };
@@ -7694,7 +7846,7 @@ Build version: 2026-09-10T16:55:07.251Z
             void resizeFrameToPresentationAspect(
               latestContext.ea,
               element.id,
-              latestContext.config
+              loadSlideshowConfig(latestContext.ea)
             ).catch((error) => {
               console.error("Slideshow frame aspect-ratio resize failed", error);
               new Notice(latestContext.t("resizeFrameFailed"));
@@ -7725,7 +7877,8 @@ Build version: 2026-09-10T16:55:07.251Z
     const modifierDefaults = resolveLaunchModifiers(view);
     const savedProgressType = getSlideshowProgressType(view);
     const savedProgressSource = getSlideshowProgressSource(view);
-    const resumedSlide = launch.resume && (!savedProgressType || savedProgressType === setup.pathType) && (!savedProgressSource || savedProgressSource === setup.sourceKey) ? getSlideshowProgress(view) : void 0;
+    const exactProgress = getSlideshowProgressForSource(view, setup.sourceKey);
+    const resumedSlide = launch.resume && (exactProgress !== void 0 || (!savedProgressType || savedProgressType === setup.pathType) && (!savedProgressSource || savedProgressSource === setup.sourceKey)) ? exactProgress ?? getSlideshowProgress(view) : void 0;
     const initialSlide = launch.initialSlide ?? resumedSlide ?? 0;
     const controller = new SlideshowController({
       ea: ea2,
@@ -7855,20 +8008,28 @@ Build version: 2026-09-10T16:55:07.251Z
       reassertActiveTab
     );
   }
-  async function runManualSlideshowInvocation(context) {
+  async function runManualSlideshowInvocation(context, modifiers = context.view.modifierKeyDown) {
     const active = getSlideshowRuntime().presentations.get(context.view);
-    const preferredSourceKey = active ? void 0 : await ensureManualSlideshowDeclaration(context);
-    const intent = resolveManualInvocationIntent(context.view.modifierKeyDown);
-    if (intent.openSidepanel) {
-      await openSlideshowSidepanel(context, preferredSourceKey);
+    const intent = resolveManualInvocationIntent(modifiers);
+    if (active && !intent.resume && !intent.openSidepanel) {
+      active.advance();
       return;
     }
-    if (active) {
-      active.advance();
+    const selectedSourceKey = await ensureManualSlideshowDeclaration(context);
+    if (intent.openSidepanel) {
+      await openSlideshowSidepanel(context, selectedSourceKey);
       return;
     }
     context.ea.setView(context.view);
     const preferences = loadSlideshowLaunchPreferences(context.ea);
+    const choices = resolveSlideDeckChoices(context.ea);
+    const savedSource = loadSlideshowPresentationSource(context.ea, context.view.file.path);
+    const preferredSourceKey = chooseManualPresentationSourceKey(
+      choices,
+      selectedSourceKey,
+      savedSource,
+      preferences.presentationType
+    );
     const ownerWindow = context.view.ownerWindow;
     const displays = context.ea.DEVICE.isMobile ? [] : getAvailableDisplays(ownerWindow);
     const openPresenterView = !context.ea.DEVICE.isMobile && preferences.notesMode === "presenter" && displays.length > 1;
@@ -7912,6 +8073,7 @@ Build version: 2026-09-10T16:55:07.251Z
     }
     const targetView = scriptEa.targetView;
     if (!targetView) return;
+    const manualModifiers = scriptUtils.executionSource === "manual" ? { ...targetView.modifierKeyDown } : void 0;
     const context = {
       ea: scriptEa,
       utils: scriptUtils,
@@ -7923,7 +8085,7 @@ Build version: 2026-09-10T16:55:07.251Z
     if (!wasKnown) registerSlideshowElementActionProvider(context);
     await scriptEa.registerAutostart(t("autostartExplanation"));
     if (scriptUtils.executionSource !== "manual") return;
-    await runManualSlideshowInvocation(context);
+    await runManualSlideshowInvocation(context, manualModifiers);
   }
 
   // src/scripts/slideshow/main.ts
