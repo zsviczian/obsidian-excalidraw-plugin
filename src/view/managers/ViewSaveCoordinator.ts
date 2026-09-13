@@ -12,8 +12,10 @@ import {
   type ObservedWriteAttempt,
 } from "./saveContentClassification";
 import {
+  createPreparedSaveIdentity,
   getAcknowledgedSaveRevision,
   type PreparedSave,
+  type PreparedSaveIdentity,
   type SaveOperationContext,
 } from "./saveSnapshot";
 
@@ -117,7 +119,7 @@ export class ViewSaveCoordinator {
   private saveLoopPromise: Promise<SaveExecutionResult> | null = null;
   private nextSaveOperationId = 1;
   private targetGeneration = 0;
-  private lastSuccessfulPreparedSave: PreparedSave | null = null;
+  private lastSuccessfulPreparedSave: PreparedSaveIdentity | null = null;
   private latestObservedWriteAttempt: ObservedWriteAttempt | null = null;
   private acceptedContentIdentity: AcceptedContentIdentity | null = null;
 
@@ -284,7 +286,9 @@ export class ViewSaveCoordinator {
         (result.status === "persisted" ||
           result.status === "window-migration-persisted")
       ) {
-        this.lastSuccessfulPreparedSave = result.preparedSave;
+        this.lastSuccessfulPreparedSave = createPreparedSaveIdentity(
+          result.preparedSave,
+        );
       }
       this.reconcileDirtyState();
     }
@@ -580,7 +584,7 @@ export class ViewSaveCoordinator {
   }
 
   /** Latest exact content known to have completed this view's write path. */
-  public getLastSuccessfulPreparedSave(): Readonly<PreparedSave> | null {
+  public getLastSuccessfulPreparedSave(): Readonly<PreparedSaveIdentity> | null {
     return this.lastSuccessfulPreparedSave;
   }
 
@@ -595,7 +599,7 @@ export class ViewSaveCoordinator {
       return;
     }
     this.latestObservedWriteAttempt = {
-      preparedSave,
+      preparedSave: createPreparedSaveIdentity(preparedSave),
       state: "prepared",
     };
   }
@@ -649,11 +653,12 @@ export class ViewSaveCoordinator {
     if (!preparedSave || !this.isPreparedSaveForCurrentTarget(preparedSave)) {
       return;
     }
+    const preparedSaveIdentity = createPreparedSaveIdentity(preparedSave);
     if (
       !this.latestObservedWriteAttempt ||
       !isSameSaveOperation(
         this.latestObservedWriteAttempt.preparedSave,
-        preparedSave,
+        preparedSaveIdentity,
       )
     ) {
       return;
@@ -665,7 +670,10 @@ export class ViewSaveCoordinator {
         : result.status === "failed"
           ? "failed"
           : "handed-off";
-    this.latestObservedWriteAttempt = { preparedSave, state };
+    this.latestObservedWriteAttempt = {
+      preparedSave: preparedSaveIdentity,
+      state,
+    };
   }
 
   /** Clears the current file's dirty marker and updates its clean baseline. */

@@ -93,6 +93,7 @@ import {
   getSVG,
   getExportPadding,
   getWithBackground,
+  shouldEmbedScene,
   hasExportTheme,
   scaleLoadedImage,
   hyperlinkIsImage,
@@ -642,6 +643,7 @@ export default class ExcalidrawView
       getSVG,
       getWithBackground,
       isMaskFile,
+      shouldEmbedScene,
       sceneRemoveInternalLinks,
     });
     this.fullscreenManager = new ViewFullscreenManager(this);
@@ -1100,6 +1102,7 @@ export default class ExcalidrawView
         const saveSnapshot = createSaveSnapshot({
           operation,
           filePath: this.file.path,
+          sourceFileCtime: this.file.stat.ctime,
           capturedRevision:
             this.saveCoordinator.getCurrentRevisionForSaveCapture(),
           sourceText: this.data,
@@ -1108,6 +1111,8 @@ export default class ExcalidrawView
           selectedElementIds:
             windowMigrationSaveSnapshot?.selectedElementIds ??
             appStateSnapshot.selectedElementIds,
+          exportOptions:
+            this.exportManager.capturePreparedSaveExportOptions(sourceScene),
         });
         const scene = saveSnapshot.scene;
         const deletedElements = saveSnapshot.deletedElements;

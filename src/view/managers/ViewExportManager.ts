@@ -32,6 +32,7 @@ import {
   getPageDimensions,
 } from "../../utils/exportUtils";
 import type ExcalidrawView from "../ExcalidrawView";
+import type { PreparedSaveExportOptions } from "./saveSnapshot";
 
 /** Runtime dependencies supplied by the view's existing import graph. */
 export interface ViewExportDependencies {
@@ -45,6 +46,7 @@ export interface ViewExportDependencies {
   getSVG: typeof import("../../utils/utils").getSVG;
   getWithBackground: typeof import("../../utils/utils").getWithBackground;
   isMaskFile: typeof import("../../utils/utils").isMaskFile;
+  shouldEmbedScene: typeof import("../../utils/utils").shouldEmbedScene;
   sceneRemoveInternalLinks: typeof import("../../utils/excalidrawViewUtils").sceneRemoveInternalLinks;
 }
 
@@ -220,6 +222,51 @@ export class ViewExportManager {
           this.view.plugin,
           this.view.file,
         );
+  }
+
+  /** Captures render settings without creating or retaining an export dialog. */
+  public capturePreparedSaveExportOptions(
+    scene: ExcalidrawViewScene,
+  ): PreparedSaveExportOptions {
+    const file = this.view.file;
+    const dialog = this.view.exportDialog;
+    const sceneTheme = scene.appState.theme === "dark" ? "dark" : "light";
+    return {
+      theme: dialog
+        ? dialog.theme === "dark"
+          ? "dark"
+          : "light"
+        : (this.dependencies.getExportTheme(
+            this.view.plugin,
+            file,
+            sceneTheme,
+          ) as "light" | "dark"),
+      embedScene: dialog
+        ? dialog.embedScene
+        : this.dependencies.shouldEmbedScene(this.view.plugin, file),
+      padding: dialog
+        ? dialog.padding
+        : this.dependencies.getExportPadding(this.view.plugin, file),
+      scale: dialog
+        ? dialog.scale
+        : this.dependencies.getPNGScale(this.view.plugin, file),
+      withBackground: dialog
+        ? !dialog.transparent
+        : Boolean(
+            this.dependencies.getWithBackground(this.view.plugin, file),
+          ),
+      includeInternalLinks: dialog
+        ? dialog.exportInternalLinks
+        : Boolean(
+            this.dependencies.getExportInternalLinks(
+              this.view.plugin,
+              file,
+            ),
+          ),
+      isMask: Boolean(
+        file && this.dependencies.isMaskFile(this.view.plugin, file),
+      ),
+    };
   }
 
   /** Creates an SVG for the supplied scene using the view's export options. */

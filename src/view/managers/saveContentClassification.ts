@@ -1,4 +1,4 @@
-import type { PreparedSave } from "./saveSnapshot";
+import type { PreparedSaveIdentity } from "./saveSnapshot";
 
 export type ObservedWriteState =
   | "prepared"
@@ -7,7 +7,7 @@ export type ObservedWriteState =
   | "handed-off";
 
 export interface ObservedWriteAttempt {
-  readonly preparedSave: PreparedSave;
+  readonly preparedSave: PreparedSaveIdentity;
   readonly state: ObservedWriteState;
 }
 
@@ -44,7 +44,7 @@ interface ObservedContentInput {
   observedText: string;
   currentRevision: number;
   savedRevision: number;
-  successfulWrite: PreparedSave | null;
+  successfulWrite: PreparedSaveIdentity | null;
   latestAttempt: ObservedWriteAttempt | null;
   acceptedContent: AcceptedContentIdentity | null;
 }
@@ -58,8 +58,8 @@ const matchesTarget = (
   identity.targetGeneration === targetGeneration;
 
 export const isSameSaveOperation = (
-  left: PreparedSave,
-  right: PreparedSave,
+  left: PreparedSaveIdentity,
+  right: PreparedSaveIdentity,
 ): boolean =>
   left.producerId === right.producerId &&
   left.targetGeneration === right.targetGeneration &&
