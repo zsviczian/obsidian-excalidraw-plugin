@@ -1124,8 +1124,18 @@ export default class ExcalidrawView
           if (sourceWindow && sourceWindow !== window) {
             plugin.registerViewMigrationPersistenceHandoff({
               leafId: this.leaf.id,
-              filePath: file.path,
-              data: d,
+              request: {
+                producerId: preparedSave.producerId,
+                targetGeneration: preparedSave.targetGeneration,
+                operationId: preparedSave.operationId,
+                requestedRevision: preparedSave.requestedRevision,
+                capturedRevision: preparedSave.capturedRevision,
+                filePath: preparedSave.filePath,
+                expectedFileCtime: file.stat.ctime,
+                text: preparedSave.text,
+                hasNonDeletedElements: preparedSave.hasNonDeletedElements,
+                reason: "window-migration",
+              },
             });
             this.data = d;
             return {
@@ -2901,15 +2911,15 @@ export default class ExcalidrawView
             fileMtime: this.file.stat.mtime,
           })
         : null;
-      const migrationHandoffData = this.isInMainObsidianWorkspace
+      const migrationPersistenceHandoff = this.isInMainObsidianWorkspace
         ? this.plugin.consumeViewMigrationPersistenceHandoff(
             this.leaf.id,
             this.file.path,
           )
         : null;
       let migrationHandoffPersistenceFailed = false;
-      if (migrationHandoffData !== null) {
-        data = migrationHandoffData;
+      if (migrationPersistenceHandoff !== null) {
+        data = migrationPersistenceHandoff.request.text;
       }
       if (this.plugin.settings.compareManifestToPluginVersion) {
         void checkVersionMismatch(this.plugin);
@@ -2936,20 +2946,14 @@ export default class ExcalidrawView
       this.lastSaveTimestamp = this.file.stat.mtime;
       this.textFileViewLoadedFile = this.file;
       data = this.data = data.replaceAll("\r\n", "\n").replaceAll("\r", "\n");
-      if (migrationHandoffData !== null) {
-        try {
-          await this.app.vault.modify(this.file, data);
+      if (migrationPersistenceHandoff !== null) {
+        const persistenceResult = await migrationPersistenceHandoff.completion;
+        if (persistenceResult.status === "persisted") {
           this.preparedSaveText = data;
           this.lastSavedData = data;
           this.lastSaveTimestamp = this.file.stat.mtime;
-        } catch (error: unknown) {
+        } else {
           migrationHandoffPersistenceFailed = true;
-          errorlog({
-            where: "ExcalidrawView.setViewData",
-            fn: "persistViewMigrationHandoff",
-            error,
-          });
-          warningUnknowSeriousError();
         }
       }
       const loadAfterLayoutReady = async () => {

@@ -1,6 +1,8 @@
 import type { TFile } from "obsidian";
 
-export type ViewPersistenceReason = "view-unload";
+const DEFAULT_HANDOFF_TTL_MS = 15_000;
+
+export type ViewPersistenceReason = "view-unload" | "window-migration";
 
 /** Immutable drawing text accepted from a view that may immediately retire. */
 export interface ViewPersistenceRequest {
@@ -23,6 +25,7 @@ export type ViewPersistenceResult =
         | "invalid-request"
         | "target-missing"
         | "target-changed"
+        | "handoff-expired"
         | "failed";
       readonly request: ViewPersistenceRequest;
       readonly error: unknown;
@@ -31,6 +34,10 @@ export type ViewPersistenceResult =
 interface ViewPersistenceQueueOptions {
   readonly resolveFile: (filePath: string) => TFile | null;
   readonly write: (file: TFile, text: string) => Promise<void>;
+  readonly now: () => number;
+  readonly scheduleCleanup: (callback: () => void, delayMs: number) => number;
+  readonly cancelCleanup: (timer: number) => void;
+  readonly handoffTtlMs?: number;
   readonly onFailure?: (
     result: Exclude<ViewPersistenceResult, { status: "persisted" }>,
   ) => void;
@@ -49,6 +56,22 @@ interface PathReservation {
   readonly release: () => void;
 }
 
+export interface ViewMigrationPersistenceHandoff {
+  readonly leafId: string;
+  readonly request: ViewPersistenceRequest;
+}
+
+export interface ViewMigrationPersistenceConsumption {
+  readonly request: ViewPersistenceRequest;
+  readonly completion: Promise<ViewPersistenceResult>;
+}
+
+interface ViewMigrationPersistenceEntry
+  extends ViewMigrationPersistenceHandoff {
+  readonly reservation: PathReservation;
+  readonly expiresAt: number;
+}
+
 /**
  * Persists immutable drawing text after its originating view may be destroyed.
  *
@@ -58,12 +81,17 @@ interface PathReservation {
  * package lease, or callback closing over those objects.
  *
  * There is intentionally no destructive `destroy()`: plugin unload starts
- * asynchronous view conversions before their unload handoffs arrive. The
- * queue owns no timer or listener, and each path chain releases itself after
- * its final accepted write settles.
+ * asynchronous view conversions before their unload handoffs arrive. Each
+ * path chain releases itself after its final accepted write settles, and the
+ * plugin-main-window cleanup timer releases abandoned migration reservations.
  */
 export class ViewPersistenceQueue {
   private readonly pathTails = new Map<string, Promise<void>>();
+  private readonly migrationHandoffs = new Map<
+    string,
+    ViewMigrationPersistenceEntry
+  >();
+  private cleanupTimer: number | null = null;
 
   public constructor(private readonly options: ViewPersistenceQueueOptions) {}
 
@@ -95,6 +123,61 @@ export class ViewPersistenceQueue {
     return { release: reservation.release };
   }
 
+  /**
+   * Reserves persistence order for immutable text supplied by a source popout.
+   * No Vault write starts until the replacement view consumes the handoff.
+   */
+  public registerMigrationHandoff(
+    handoff: ViewMigrationPersistenceHandoff,
+  ): void {
+    this.pruneExpiredHandoffs();
+    const reservation = this.reservePath(handoff.request.filePath);
+    const previous = this.migrationHandoffs.get(handoff.leafId);
+    this.migrationHandoffs.set(handoff.leafId, {
+      ...handoff,
+      reservation,
+      expiresAt:
+        this.options.now() +
+        (this.options.handoffTtlMs ?? DEFAULT_HANDOFF_TTL_MS),
+    });
+    previous?.reservation.release();
+    this.scheduleHandoffCleanup();
+  }
+
+  /**
+   * Transfers execution ownership to the replacement main-window view. The
+   * returned completion represents the physical Vault write.
+   */
+  public consumeMigrationHandoff(
+    leafId: string,
+    filePath: string,
+  ): ViewMigrationPersistenceConsumption | null {
+    this.pruneExpiredHandoffs();
+    const entry = this.migrationHandoffs.get(leafId);
+    if (!entry) {
+      return null;
+    }
+    this.migrationHandoffs.delete(leafId);
+    this.scheduleHandoffCleanup();
+    if (entry.request.filePath !== filePath) {
+      this.rejectMigrationTarget(entry);
+      return null;
+    }
+    const completion = this.executeReservation(entry.request, entry.reservation);
+    return { request: entry.request, completion };
+  }
+
+  /** Releases ordering after a failed source-view replacement. */
+  public discardMigrationHandoff(leafId: string): void {
+    const entry = this.migrationHandoffs.get(leafId);
+    if (!entry) {
+      return;
+    }
+    this.migrationHandoffs.delete(leafId);
+    entry.reservation.release();
+    this.scheduleHandoffCleanup();
+  }
+
   /** Waits for all requests accepted for one path before this call. */
   public async flush(filePath: string): Promise<void> {
     await this.pathTails.get(filePath);
@@ -124,6 +207,62 @@ export class ViewPersistenceQueue {
         releaseGate();
       },
     };
+  }
+
+  private async executeReservation(
+    request: ViewPersistenceRequest,
+    reservation: PathReservation,
+  ): Promise<ViewPersistenceResult> {
+    await reservation.ready;
+    try {
+      return await this.execute(request);
+    } finally {
+      reservation.release();
+    }
+  }
+
+  private rejectMigrationTarget(entry: ViewMigrationPersistenceEntry): void {
+    entry.reservation.release();
+    this.fail(
+      "target-changed",
+      entry.request,
+      new Error("Migration persistence handoff target no longer matches"),
+    );
+  }
+
+  private pruneExpiredHandoffs(): void {
+    const now = this.options.now();
+    for (const [leafId, entry] of this.migrationHandoffs) {
+      if (entry.expiresAt > now) {
+        continue;
+      }
+      this.migrationHandoffs.delete(leafId);
+      entry.reservation.release();
+      this.fail(
+        "handoff-expired",
+        entry.request,
+        new Error("Migration persistence handoff expired before replacement"),
+      );
+    }
+  }
+
+  private scheduleHandoffCleanup(): void {
+    if (this.cleanupTimer !== null) {
+      this.options.cancelCleanup(this.cleanupTimer);
+      this.cleanupTimer = null;
+    }
+    if (this.migrationHandoffs.size === 0) {
+      return;
+    }
+    let nextExpiry = Number.POSITIVE_INFINITY;
+    for (const entry of this.migrationHandoffs.values()) {
+      nextExpiry = Math.min(nextExpiry, entry.expiresAt);
+    }
+    this.cleanupTimer = this.options.scheduleCleanup(() => {
+      this.cleanupTimer = null;
+      this.pruneExpiredHandoffs();
+      this.scheduleHandoffCleanup();
+    }, Math.max(0, nextExpiry - this.options.now()));
   }
 
   private async execute(
@@ -160,7 +299,12 @@ export class ViewPersistenceQueue {
   }
 
   private fail(
-    status: "invalid-request" | "target-missing" | "target-changed" | "failed",
+    status:
+      | "invalid-request"
+      | "target-missing"
+      | "target-changed"
+      | "handoff-expired"
+      | "failed",
     request: ViewPersistenceRequest,
     error: unknown,
   ): ViewPersistenceResult {

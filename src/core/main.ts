@@ -112,16 +112,14 @@ import { FooterSafeAreaManager } from "./managers/FooterSafeAreaManager";
 import { FontManager } from "./managers/FontManager";
 import { StartupTimer } from "./managers/StartupTimer";
 import {
-  ViewMigrationPersistenceHandoffManager,
-  type ViewMigrationPersistenceHandoff,
-} from "./managers/ViewMigrationPersistenceHandoffManager";
-import {
   ViewMigrationHandoffManager,
   type ViewMigrationDrawingState,
   type ViewMigrationHandoffRegistration,
   type ViewMigrationHandoffRequest,
 } from "./managers/ViewMigrationHandoffManager";
 import {
+  type ViewMigrationPersistenceConsumption,
+  type ViewMigrationPersistenceHandoff,
   ViewPersistenceQueue,
   type ViewPersistenceRequest,
   type ViewPersistenceWriteLease,
@@ -174,7 +172,6 @@ export default class ExcalidrawPlugin extends Plugin {
   private fontManager: FontManager;
   private startupTimer: StartupTimer;
   private viewMigrationHandoffManager: ViewMigrationHandoffManager;
-  private viewMigrationPersistenceHandoffManager: ViewMigrationPersistenceHandoffManager;
   private viewPersistenceQueue: ViewPersistenceQueue;
   public stencilLibraryManager: StencilLibraryManager;
   public eaInstances = new WeakArray<ExcalidrawAutomate>();
@@ -220,12 +217,15 @@ export default class ExcalidrawPlugin extends Plugin {
     this.loadTimestamp = INITIAL_TIMESTAMP;
     this.startupTimer = new StartupTimer(this.loadTimestamp, PLUGIN_VERSION);
     this.viewMigrationHandoffManager = new ViewMigrationHandoffManager();
-    this.viewMigrationPersistenceHandoffManager =
-      new ViewMigrationPersistenceHandoffManager();
     const persistenceApp = this.app;
+    const persistenceWindow = window;
     this.viewPersistenceQueue = new ViewPersistenceQueue({
       resolveFile: (filePath) => persistenceApp.vault.getFileByPath(filePath),
       write: (file, text) => persistenceApp.vault.modify(file, text),
+      now: () => Date.now(),
+      scheduleCleanup: (callback, delayMs) =>
+        persistenceWindow.setTimeout(callback, delayMs),
+      cancelCleanup: (timer) => persistenceWindow.clearTimeout(timer),
       onFailure: (result) => {
         errorlog({
           where: "ViewPersistenceQueue",
@@ -1007,7 +1007,6 @@ export default class ExcalidrawPlugin extends Plugin {
     delete window.PolyBool;
     this.packageManager.destroy();
     this.viewMigrationHandoffManager.destroy();
-    this.viewMigrationPersistenceHandoffManager.destroy();
     this.commandManager?.destroy();
     this.eventManager.destroy();
     terminateCompressionWorker();
@@ -1298,23 +1297,20 @@ export default class ExcalidrawPlugin extends Plugin {
   public registerViewMigrationPersistenceHandoff(
     handoff: ViewMigrationPersistenceHandoff,
   ): void {
-    this.viewMigrationPersistenceHandoffManager.register(handoff);
+    this.viewPersistenceQueue.registerMigrationHandoff(handoff);
   }
 
   /** Consumes serialized drawing text for the replacement main-window view. */
   public consumeViewMigrationPersistenceHandoff(
     leafId: string,
     filePath: string,
-  ): string | null {
-    return this.viewMigrationPersistenceHandoffManager.consume(
-      leafId,
-      filePath,
-    );
+  ): ViewMigrationPersistenceConsumption | null {
+    return this.viewPersistenceQueue.consumeMigrationHandoff(leafId, filePath);
   }
 
   /** Discards a handoff when the old view could not be replaced. */
   public discardViewMigrationPersistenceHandoff(leafId: string): void {
-    this.viewMigrationPersistenceHandoffManager.discard(leafId);
+    this.viewPersistenceQueue.discardMigrationHandoff(leafId);
   }
 
   /** Transfers immutable drawing text out of a retiring view runtime. */
