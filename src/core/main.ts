@@ -71,7 +71,10 @@ import {
   emulateCTRLClickForLinks,
   linkClickModifierType,
 } from "../utils/modifierkeyHelper";
-import { getImageCache } from "../shared/ImageCache";
+import {
+  getImageCache,
+  scheduleBAKAfterSuccessfulPersistence,
+} from "../shared/ImageCache";
 import { StylesManager } from "./managers/StylesManager";
 import { CustomMutationObserver, log } from "../utils/debugHelper";
 import { ExcalidrawConfig } from "../shared/ExcalidrawConfig";
@@ -222,6 +225,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.viewPersistenceQueue = new ViewPersistenceQueue({
       resolveFile: (filePath) => persistenceApp.vault.getFileByPath(filePath),
       write: (file, text) => persistenceApp.vault.modify(file, text),
+      scheduleBackup: scheduleBAKAfterSuccessfulPersistence,
       now: () => Date.now(),
       scheduleCleanup: (callback, delayMs) =>
         persistenceWindow.setTimeout(callback, delayMs),
@@ -233,6 +237,13 @@ export default class ExcalidrawPlugin extends Plugin {
           error: result.error,
         });
         new Notice(t("WARNING_SERIOUS_ERROR"), 60000);
+      },
+      onBackupScheduleFailure: (error) => {
+        errorlog({
+          where: "ViewPersistenceQueue",
+          fn: "scheduleBackup",
+          error,
+        });
       },
     });
     this.filesMaster = new Map<

@@ -34,12 +34,17 @@ export type ViewPersistenceResult =
 interface ViewPersistenceQueueOptions {
   readonly resolveFile: (filePath: string) => TFile | null;
   readonly write: (file: TFile, text: string) => Promise<void>;
+  readonly scheduleBackup: (filePath: string, text: string) => void;
   readonly now: () => number;
   readonly scheduleCleanup: (callback: () => void, delayMs: number) => number;
   readonly cancelCleanup: (timer: number) => void;
   readonly handoffTtlMs?: number;
   readonly onFailure?: (
     result: Exclude<ViewPersistenceResult, { status: "persisted" }>,
+  ) => void;
+  readonly onBackupScheduleFailure?: (
+    error: unknown,
+    request: ViewPersistenceRequest,
   ) => void;
 }
 
@@ -78,7 +83,8 @@ interface ViewMigrationPersistenceEntry
  * Requests for one path execute in accepted order and are never coalesced:
  * independent view revisions do not establish that a later arrival supersedes
  * an earlier snapshot. Queue entries contain no view, DOM, Window, React root,
- * package lease, or callback closing over those objects.
+ * package lease, or callback closing over those objects. Successful writes
+ * schedule their exact text for BAK before releasing the path reservation.
  *
  * There is intentionally no destructive `destroy()`: plugin unload starts
  * asynchronous view conversions before their unload handoffs arrive. Each
@@ -292,10 +298,17 @@ export class ViewPersistenceQueue {
     }
     try {
       await this.options.write(file, request.text);
-      return { status: "persisted", request };
     } catch (error: unknown) {
       return this.fail("failed", request, error);
     }
+    if (request.hasNonDeletedElements) {
+      try {
+        this.options.scheduleBackup(request.filePath, request.text);
+      } catch (error: unknown) {
+        this.options.onBackupScheduleFailure?.(error, request);
+      }
+    }
+    return { status: "persisted", request };
   }
 
   private fail(

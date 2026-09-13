@@ -205,7 +205,10 @@ import {
   tmpBruteForceCleanup,
   toggleImageAnchoring,
 } from "../utils/excalidrawViewUtils";
-import { getImageCache } from "../shared/ImageCache";
+import {
+  getImageCache,
+  scheduleBAKAfterSuccessfulPersistence,
+} from "../shared/ImageCache";
 import { CanvasNodeFactory } from "./managers/CanvasNodeFactory";
 import { EmbeddableMenu } from "./components/menu/EmbeddableActionsMenu";
 import { useDefaultExcalidrawFrame } from "../utils/customEmbeddableUtils";
@@ -1145,19 +1148,23 @@ export default class ExcalidrawView
           }
           await this.withPersistenceWriteLease(
             preparedSave.filePath,
-            () =>
-              new Promise<void>((resolve, reject) => {
+            async () => {
+              await new Promise<void>((resolve, reject) => {
                 window.setTimeout(() => {
                   if (!d) {
                     resolve();
                     return;
                   }
                   void plugin.app.vault.modify(file, d).then(resolve, reject);
-                  // This is a shady edge case: do not sacrifice the BAK file in
-                  // case the drawing is empty.
-                  // await getImageCache().addBAKToCache(file.path, d);
                 }, 200);
-              }),
+              });
+              if (d && preparedSave.hasNonDeletedElements) {
+                scheduleBAKAfterSuccessfulPersistence(
+                  preparedSave.filePath,
+                  preparedSave.text,
+                );
+              }
+            },
           );
           this.data = d;
           this.lastSavedData = d;
@@ -1166,8 +1173,8 @@ export default class ExcalidrawView
         }
 
         // Ordinary view unload transfers immutable text to plugin-owned
-        // persistence. Migration retains its specialized path above until the
-        // general queue is independently validated.
+        // persistence. Window migration retains its early-unmount and
+        // replacement-owned execution branches above.
         if (this.semaphores?.viewunload) {
           if (!preparedSave.text) {
             throw new Error("Cannot hand off an empty drawing payload");
@@ -1202,6 +1209,12 @@ export default class ExcalidrawView
             preparedSave.filePath,
             async () => {
               await super.save();
+              if (preparedSave.hasNonDeletedElements) {
+                scheduleBAKAfterSuccessfulPersistence(
+                  preparedSave.filePath,
+                  preparedSave.text,
+                );
+              }
             },
           );
         } catch (error: unknown) {
@@ -1212,13 +1225,6 @@ export default class ExcalidrawView
           this.setPreventReload();
         }
 
-        //saving to backup with a delay in case application closes in the meantime, I want to avoid both save and backup corrupted.
-        const path = this.file.path;
-        const data = this.lastSavedData;
-        //if the scene is empty, do not save to BAK (this could be due to a crash when the BAK should not be updated)
-        if (preparedSave.hasNonDeletedElements) {
-          getImageCache().scheduleBAKToCache(path, data, 50);
-        }
         reloadIfWriteDidNotEmitModify =
           this.lastSaveTimestamp === this.file.stat.mtime &&
           !suppressReloadFromOwnWrite &&
@@ -3117,7 +3123,7 @@ export default class ExcalidrawView
               void confirmationPrompt.waitForClose.then((confirmed) => {
                 void (async () => {
                   if (confirmed) {
-                    await this.app.vault.modify(file, drawingBAK);
+                    await plugin.app.vault.modify(file, drawingBAK);
                     plugin.excalidrawFileModes[leaf.id || file.path] =
                       VIEW_TYPE_EXCALIDRAW;
                     void setExcalidrawView(leaf);
