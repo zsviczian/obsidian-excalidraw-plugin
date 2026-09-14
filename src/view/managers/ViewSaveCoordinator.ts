@@ -90,6 +90,7 @@ export interface ViewSaveCoordinatorDependencies {
   getFreedrawLastActiveTimestamp: () => number;
   markDirtyVisuals: () => void;
   clearDirtyVisuals: () => void;
+  beginAutoexportSaveActivity: () => () => void;
 }
 
 interface SaveRequest {
@@ -201,11 +202,14 @@ export class ViewSaveCoordinator {
       return this.saveLoopPromise;
     }
 
+    const endAutoexportSaveActivity =
+      this.dependencies.beginAutoexportSaveActivity();
     const loop = Promise.resolve().then(() => this.drainSaveQueue());
     const trackedLoop = loop.finally(() => {
       if (this.saveLoopPromise === trackedLoop) {
         this.saveLoopPromise = null;
       }
+      endAutoexportSaveActivity();
     });
     this.saveLoopPromise = trackedLoop;
     return trackedLoop;
@@ -221,8 +225,7 @@ export class ViewSaveCoordinator {
         : incoming;
     return {
       ...selected,
-      forcePersistence:
-        current.forcePersistence || incoming.forcePersistence,
+      forcePersistence: current.forcePersistence || incoming.forcePersistence,
       bypassSameFileEditGuard:
         current.bypassSameFileEditGuard || incoming.bypassSameFileEditGuard,
       sideEffectPolicy: {

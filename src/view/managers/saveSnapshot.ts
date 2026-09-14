@@ -4,7 +4,11 @@ import type {
 } from "@zsviczian/excalidraw/types/excalidraw/types";
 import type { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/src/types";
 
-import type { ExcalidrawViewScene } from "../../types/excalidrawViewTypes";
+import type { ExcalidrawDataExportState } from "../../shared/ExcalidrawData";
+import type {
+  AutoexportConfig,
+  ExcalidrawViewScene,
+} from "../../types/excalidrawViewTypes";
 
 /** Coordinator identity for one physical save attempt. */
 export interface SaveOperationContext {
@@ -25,6 +29,9 @@ export interface PreparedSaveExportOptions {
   readonly isMask: boolean;
 }
 
+/** Drawing-owned registries needed to regenerate theme-dependent assets. */
+export type PreparedSaveExportData = ExcalidrawDataExportState;
+
 /** Save-owned input detached from mutable API scene structures. */
 export interface SaveSnapshot<
   TScene extends ExcalidrawViewScene = ExcalidrawViewScene,
@@ -39,6 +46,8 @@ export interface SaveSnapshot<
   readonly deletedElements: ExcalidrawElement[];
   readonly selectedElementIds: AppState["selectedElementIds"];
   readonly exportOptions: PreparedSaveExportOptions;
+  readonly exportData: PreparedSaveExportData | null;
+  readonly autoexportConfig: Readonly<AutoexportConfig>;
 }
 
 /** Lightweight exact-content identity retained after heavy save inputs release. */
@@ -56,6 +65,8 @@ export interface PreparedSave extends PreparedSaveIdentity {
   readonly deletedElements: readonly ExcalidrawElement[];
   readonly selectedElementIds: AppState["selectedElementIds"];
   readonly exportOptions: PreparedSaveExportOptions;
+  readonly exportData: PreparedSaveExportData | null;
+  readonly autoexportConfig: Readonly<AutoexportConfig>;
 }
 
 const clonePlainValue = (value: unknown): unknown => {
@@ -93,6 +104,52 @@ const cloneBinaryFiles = (files: BinaryFiles): BinaryFiles =>
     Object.entries(files).map(([id, file]) => [id, { ...file }]),
   );
 
+const clonePreparedSaveExportData = (
+  data: PreparedSaveExportData | null,
+): PreparedSaveExportData | null =>
+  data
+    ? {
+        sourceFilePath: data.sourceFilePath,
+        files: new Map(
+          Array.from(data.files, ([id, value]) => [
+            id,
+            {
+              ...value,
+              size: { ...value.size },
+              linkParts: value.linkParts ? { ...value.linkParts } : null,
+              filenameparts: value.filenameparts
+                ? { ...value.filenameparts }
+                : null,
+              colorMap: value.colorMap ? { ...value.colorMap } : null,
+              pdfPageViewProps: value.pdfPageViewProps
+                ? { ...value.pdfPageViewProps }
+                : null,
+            },
+          ]),
+        ),
+        markdownImages: new Map(
+          Array.from(data.markdownImages, ([id, value]) => [
+            id,
+            { ...value },
+          ]),
+        ),
+        equations: new Map(
+          Array.from(data.equations, ([id, value]) => [id, { ...value }]),
+        ),
+        markdownImageRenderDefaults: {
+          ...data.markdownImageRenderDefaults,
+          border: { ...data.markdownImageRenderDefaults.border },
+          transclusion: {
+            ...data.markdownImageRenderDefaults.transclusion,
+            border: {
+              ...data.markdownImageRenderDefaults.transclusion.border,
+            },
+          },
+        },
+        pdfScale: data.pdfScale,
+      }
+    : null;
+
 /**
  * Creates a mutable save-owned working scene with no shared mutable element,
  * app-state, or binary-file records. Immutable data-URL strings remain shared.
@@ -116,6 +173,8 @@ export const createSaveSnapshot = <TScene extends ExcalidrawViewScene>(input: {
   deletedElements: readonly ExcalidrawElement[];
   selectedElementIds: AppState["selectedElementIds"];
   exportOptions: PreparedSaveExportOptions;
+  exportData: PreparedSaveExportData | null;
+  autoexportConfig: Readonly<AutoexportConfig>;
 }): SaveSnapshot<TScene> => {
   const scene = cloneSceneForSave(input.scene);
   return {
@@ -131,6 +190,8 @@ export const createSaveSnapshot = <TScene extends ExcalidrawViewScene>(input: {
     ),
     selectedElementIds: { ...input.selectedElementIds },
     exportOptions: { ...input.exportOptions },
+    exportData: clonePreparedSaveExportData(input.exportData),
+    autoexportConfig: { ...input.autoexportConfig },
   };
 };
 
@@ -158,6 +219,8 @@ export const createPreparedSave = (
     ),
     selectedElementIds: { ...snapshot.selectedElementIds },
     exportOptions: { ...snapshot.exportOptions },
+    exportData: clonePreparedSaveExportData(snapshot.exportData),
+    autoexportConfig: { ...snapshot.autoexportConfig },
   };
 };
 

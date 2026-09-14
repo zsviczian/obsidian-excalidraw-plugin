@@ -127,6 +127,10 @@ import {
   type ViewPersistenceRequest,
   type ViewPersistenceWriteLease,
 } from "./managers/ViewPersistenceQueue";
+import {
+  AutoexportCoordinator,
+  type PreparedAutoexportRequest,
+} from "./managers/AutoexportCoordinator";
 import { errorlog } from "../utils/coreUtils";
 
 declare const PLUGIN_VERSION: string;
@@ -176,12 +180,13 @@ export default class ExcalidrawPlugin extends Plugin {
   private startupTimer: StartupTimer;
   private viewMigrationHandoffManager: ViewMigrationHandoffManager;
   private viewPersistenceQueue: ViewPersistenceQueue;
+  private autoexportCoordinator: AutoexportCoordinator;
   public stencilLibraryManager: StencilLibraryManager;
   public eaInstances = new WeakArray<ExcalidrawAutomate>();
   public fourthFontLoaded: boolean = false;
   public excalidrawConfig: ExcalidrawConfig;
   public excalidrawFileModes: { [file: string]: string } = {};
-  public declare settings: ExcalidrawSettings;
+  declare public settings: ExcalidrawSettings;
   /** Session-scoped autosave gate controlled by the temporary commands. */
   public autosaveEnabled: boolean = true;
   public activeExcalidrawView: ExcalidrawView = null;
@@ -222,6 +227,12 @@ export default class ExcalidrawPlugin extends Plugin {
     this.viewMigrationHandoffManager = new ViewMigrationHandoffManager();
     const persistenceApp = this.app;
     const persistenceWindow = window;
+    this.autoexportCoordinator = new AutoexportCoordinator(this, {
+      now: () => Date.now(),
+      setTimeout: (callback, delayMs) =>
+        persistenceWindow.setTimeout(callback, delayMs),
+      clearTimeout: (timer) => persistenceWindow.clearTimeout(timer),
+    });
     this.viewPersistenceQueue = new ViewPersistenceQueue({
       resolveFile: (filePath) => persistenceApp.vault.getFileByPath(filePath),
       write: (file, text) => persistenceApp.vault.modify(file, text),
@@ -245,6 +256,33 @@ export default class ExcalidrawPlugin extends Plugin {
           error,
         });
       },
+      onPersisted: (request) => {
+        if (request.autoexportRequest) {
+          if (
+            request.reason === "window-migration" &&
+            request.migrationLeafId
+          ) {
+            this.autoexportCoordinator.deferUntilMigrationComplete(
+              request.migrationLeafId,
+              request.autoexportRequest,
+            );
+          } else {
+            this.autoexportCoordinator.enqueue(request.autoexportRequest);
+          }
+        }
+      },
+      onPersistedCallbackFailure: (error) => {
+        errorlog({
+          where: "AutoexportCoordinator",
+          fn: "onPersisted",
+          error,
+        });
+      },
+      beginPersistenceActivity: (request) =>
+        this.autoexportCoordinator.beginSaveActivity(
+          request.filePath,
+          request.expectedFileCtime,
+        ),
     });
     this.filesMaster = new Map<
       FileId,
@@ -780,9 +818,10 @@ export default class ExcalidrawPlugin extends Plugin {
     keepOriginal: boolean = false,
   ): Promise<TFile> {
     const data = await this.app.vault.read(file);
-    const hasEmbeddedFiles = Object.keys(
-      (JSON_parse<{ files?: Record<string, unknown> }>(data).files ?? {}),
-    ).length > 0;
+    const hasEmbeddedFiles =
+      Object.keys(
+        JSON_parse<{ files?: Record<string, unknown> }>(data).files ?? {},
+      ).length > 0;
     const filename =
       file.name.substring(0, file.name.lastIndexOf(".excalidraw")) +
       (replaceExtension ? ".md" : ".excalidraw.md");
@@ -794,7 +833,11 @@ export default class ExcalidrawPlugin extends Plugin {
     log(fname);
     const initialMarkdown =
       FRONTMATTER + (await this.fileManager.exportSceneToMD(data, false));
-    const result = await createOrOverwriteFile(this.app, fname, initialMarkdown);
+    const result = await createOrOverwriteFile(
+      this.app,
+      fname,
+      initialMarkdown,
+    );
     if (hasEmbeddedFiles) {
       const convertedMarkdown =
         await this.fileManager.persistLegacySceneFilesInMarkdown(
@@ -955,6 +998,7 @@ export default class ExcalidrawPlugin extends Plugin {
     excalidrawViews.forEach(({ leaf }) => {
       void this.setMarkdownView(leaf);
     });
+    this.autoexportCoordinator.destroy();
 
     if (versionUpdateCheckTimer) {
       window.clearTimeout(versionUpdateCheckTimer);
@@ -1078,9 +1122,7 @@ export default class ExcalidrawPlugin extends Plugin {
     }
   }
 
-  public getStencilLibrary():
-    | StencilLibraryData
-    | Promise<StencilLibraryData> {
+  public getStencilLibrary(): StencilLibraryData | Promise<StencilLibraryData> {
     return this.stencilLibraryManager.getLibrary().then((libraryItems) => ({
       type: "excalidrawlib" as const,
       version: 2,
@@ -1327,6 +1369,43 @@ export default class ExcalidrawPlugin extends Plugin {
   /** Transfers immutable drawing text out of a retiring view runtime. */
   public handoffViewPersistence(request: ViewPersistenceRequest): void {
     void this.viewPersistenceQueue.enqueue(request);
+  }
+
+  /** Submits an immutable autoexport after a successful live source write. */
+  public enqueuePreparedAutoexport(request: PreparedAutoexportRequest): void {
+    this.autoexportCoordinator.enqueue(request);
+  }
+
+  /** Marks one view save queue active for automatic-export coalescing. */
+  public beginAutoexportSaveActivity(
+    sourceFilePath: string,
+    sourceFileCtime: number,
+  ): () => void {
+    return this.autoexportCoordinator.beginSaveActivity(
+      sourceFilePath,
+      sourceFileCtime,
+    );
+  }
+
+  /** Holds heavy migration autoexport work until the replacement view loads. */
+  public deferPreparedAutoexportUntilMigrationComplete(
+    leafId: string,
+    request: PreparedAutoexportRequest,
+  ): void {
+    this.autoexportCoordinator.deferUntilMigrationComplete(leafId, request);
+  }
+
+  /** Releases or discards a migration export after replacement load settles. */
+  public completeMigrationAutoexport(
+    leafId: string,
+    filePath: string,
+    loadSucceeded: boolean,
+  ): void {
+    this.autoexportCoordinator.completeMigration(
+      leafId,
+      filePath,
+      loadSucceeded,
+    );
   }
 
   /** Reserves the plugin-owned per-path boundary for a live view write. */

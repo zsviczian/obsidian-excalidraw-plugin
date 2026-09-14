@@ -15,6 +15,9 @@ const backups = [];
 const persistenceEvents = [];
 const failures = [];
 const backupScheduleFailures = [];
+const persistedCallbacks = [];
+const persistedCallbackFailures = [];
+const persistenceActivities = [];
 let releaseFirstWrite;
 const firstWriteBlocked = new Promise((resolve) => {
   releaseFirstWrite = resolve;
@@ -46,6 +49,20 @@ const queue = new ViewPersistenceQueue({
   onFailure: (result) => failures.push(result.status),
   onBackupScheduleFailure: (_error, failedRequest) =>
     backupScheduleFailures.push(failedRequest.text),
+  onPersisted: (persistedRequest) => {
+    persistedCallbacks.push(persistedRequest.text);
+    if (persistedRequest.text === "completion-callback-fail") {
+      throw new Error("injected completion callback failure");
+    }
+  },
+  onPersistedCallbackFailure: (_error, failedRequest) => {
+    persistedCallbackFailures.push(failedRequest.text);
+    throw new Error("injected completion diagnostic failure");
+  },
+  beginPersistenceActivity: (activeRequest) => {
+    persistenceActivities.push(`start:${activeRequest.text}`);
+    return () => persistenceActivities.push(`end:${activeRequest.text}`);
+  },
 });
 const request = (text, overrides = {}) => ({
   producerId: "view-1",
@@ -153,6 +170,22 @@ assert.deepEqual(
   ],
   "each backup is scheduled before the next accepted source write starts",
 );
+assert.deepEqual(
+  persistenceActivities,
+  [
+    "start:first",
+    "end:first",
+    "start:second",
+    "end:second",
+    "start:behind-live",
+    "end:behind-live",
+    "start:migration",
+    "end:migration",
+    "start:behind-migration",
+    "end:behind-migration",
+  ],
+  "detached and migration writes expose their complete physical activity",
+);
 
 queue.registerMigrationHandoff({
   leafId: "leaf-discarded",
@@ -228,11 +261,8 @@ assert.equal(
   "a successful empty-scene write preserves the prior backup",
 );
 assert.equal(
-  (
-    await queue.enqueue(
-      request("backup-schedule-fail", { operationId: 13 }),
-    )
-  ).status,
+  (await queue.enqueue(request("backup-schedule-fail", { operationId: 13 })))
+    .status,
   "persisted",
   "backup scheduling failure does not reclassify source persistence",
 );
@@ -242,7 +272,33 @@ assert.equal(
   "persisted",
   "a failed request does not strand later work",
 );
+assert.equal(
+  (
+    await queue.enqueue(
+      request("completion-callback-fail", { operationId: 15 }),
+    )
+  ).status,
+  "persisted",
+  "a completion callback failure cannot reclassify a successful source write",
+);
 await queue.flush("Drawing.md");
+assert.deepEqual(
+  persistedCallbacks,
+  [
+    "first",
+    "second",
+    "behind-live",
+    "migration",
+    "behind-migration",
+    "after-discard",
+    "empty-scene",
+    "backup-schedule-fail",
+    "after-failure",
+    "completion-callback-fail",
+  ],
+  "only successful physical writes publish persistence completion",
+);
+assert.deepEqual(persistedCallbackFailures, ["completion-callback-fail"]);
 assert.deepEqual(failures, [
   "target-changed",
   "target-missing",
@@ -273,12 +329,12 @@ const expiryQueue = new ViewPersistenceQueue({
 expiryQueue.registerMigrationHandoff({
   leafId: "leaf-expired",
   request: request("expired-migration", {
-    operationId: 15,
+    operationId: 16,
     reason: "window-migration",
   }),
 });
 const behindExpiredMigration = expiryQueue.enqueue(
-  request("after-expiry", { operationId: 16 }),
+  request("after-expiry", { operationId: 17 }),
 );
 assert.ok(cleanupCallback, "an abandoned handoff has a bounded cleanup");
 fakeNow = 10;

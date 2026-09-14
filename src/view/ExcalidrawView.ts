@@ -630,6 +630,12 @@ export default class ExcalidrawView
       getFreedrawLastActiveTimestamp: () => this.freedrawLastActiveTimestamp,
       markDirtyVisuals: () => this.markDirtyVisuals(),
       clearDirtyVisuals: () => this.clearDirtyVisuals(),
+      beginAutoexportSaveActivity: () => {
+        const file = this.file;
+        return file
+          ? this.plugin.beginAutoexportSaveActivity(file.path, file.stat.ctime)
+          : () => undefined;
+      },
     });
     this.exportManager = new ViewExportManager(this, {
       getOrCreateExportDialog: () => this.getOrCreateExportDialog(),
@@ -975,19 +981,14 @@ export default class ExcalidrawView
   }
 
   /** Acquires same-file ownership for one Markdown-image editor controller. */
-  public setMarkdownImageEditorIsEditing(
-    ownerId?: string,
-  ): void {
+  public setMarkdownImageEditorIsEditing(ownerId?: string): void {
     const resolvedOwnerId = ownerId ?? LEGACY_MARKDOWN_IMAGE_EDIT_OWNER;
     const gateOwnerId = `markdown-image:${resolvedOwnerId}`;
     this.sameFileEditGate.acquire(gateOwnerId);
     if (ownerId === undefined) {
       // Preserve the former public no-argument pulse while the feature-owned
       // controller uses explicit acquire/release ownership.
-      this.sameFileEditGate.release(
-        gateOwnerId,
-        EMBEDDABLE_SEMAPHORE_TIMEOUT,
-      );
+      this.sameFileEditGate.release(gateOwnerId, EMBEDDABLE_SEMAPHORE_TIMEOUT);
     }
   }
 
@@ -1058,10 +1059,7 @@ export default class ExcalidrawView
     if (this.markdownImageController.markdownImageDeletionPrompt !== null) {
       await this.markdownImageController.markdownImageDeletionPrompt;
     }
-    if (
-      !bypassSameFileEditGuard &&
-      this.isSameFileEditingActive()
-    ) {
+    if (!bypassSameFileEditGuard && this.isSameFileEditingActive()) {
       return { status: "skipped" };
     }
     //if there were no changes to the file super save will not save
@@ -1099,6 +1097,32 @@ export default class ExcalidrawView
           : this.excalidrawAPI
               .getSceneElementsIncludingDeleted()
               .filter((element: ExcalidrawElement) => element.isDeleted);
+        const exportOptions =
+          this.exportManager.capturePreparedSaveExportOptions(sourceScene);
+        const autoexportPreference = this.excalidrawData.autoexportPreference;
+        const autoexportConfig: AutoexportConfig = {
+          svg:
+            (autoexportPreference === AutoexportPreference.inherit &&
+              this.plugin.settings.autoexportSVG) ||
+            autoexportPreference === AutoexportPreference.both ||
+            autoexportPreference === AutoexportPreference.svg,
+          png:
+            (autoexportPreference === AutoexportPreference.inherit &&
+              this.plugin.settings.autoexportPNG) ||
+            autoexportPreference === AutoexportPreference.both ||
+            autoexportPreference === AutoexportPreference.png,
+          excalidraw:
+            !this.compatibilityMode &&
+            this.plugin.settings.autoexportExcalidraw,
+          theme: this.plugin.settings.autoExportLightAndDark
+            ? "both"
+            : exportOptions.theme,
+        };
+        const shouldCaptureAutoexportData =
+          sideEffectPolicy.triggerAutoexport &&
+          (autoexportConfig.svg ||
+            autoexportConfig.png ||
+            Boolean(this.getHookServer()?.onTriggerAutoexportHook));
         const saveSnapshot = createSaveSnapshot({
           operation,
           filePath: this.file.path,
@@ -1111,8 +1135,11 @@ export default class ExcalidrawView
           selectedElementIds:
             windowMigrationSaveSnapshot?.selectedElementIds ??
             appStateSnapshot.selectedElementIds,
-          exportOptions:
-            this.exportManager.capturePreparedSaveExportOptions(sourceScene),
+          exportOptions,
+          exportData: shouldCaptureAutoexportData
+            ? this.excalidrawData.exportPreparedSaveData()
+            : null,
+          autoexportConfig,
         });
         const scene = saveSnapshot.scene;
         const deletedElements = saveSnapshot.deletedElements;
@@ -1148,6 +1175,26 @@ export default class ExcalidrawView
         );
         preparedSave = createPreparedSave(saveSnapshot, this.getViewData());
         this.saveCoordinator.observePreparedSave(preparedSave);
+        const prepareAutoexportRequest = (includeOutputs: boolean) => {
+          try {
+            return this.exportManager.prepareAutoexportRequest(
+              preparedSave,
+              this.file,
+              includeOutputs && sideEffectPolicy.triggerAutoexport,
+            );
+          } catch (error: unknown) {
+            errorlog({
+              where: "ExcalidrawView.save",
+              fn: "prepareAutoexportRequest",
+              error,
+            });
+            return this.exportManager.prepareAutoexportRequest(
+              preparedSave,
+              this.file,
+              false,
+            );
+          }
+        };
 
         // Persist from the plugin's main-window realm before closing a runtime
         // whose container moved between windows. Calling TextFileView.save()
@@ -1159,6 +1206,7 @@ export default class ExcalidrawView
           const file = this.file;
           const sourceWindow = this.packageLease?.window;
           if (sourceWindow && sourceWindow !== window) {
+            const autoexportRequest = prepareAutoexportRequest(true);
             plugin.registerViewMigrationPersistenceHandoff({
               leafId: this.leaf.id,
               request: {
@@ -1172,6 +1220,8 @@ export default class ExcalidrawView
                 text: preparedSave.text,
                 hasNonDeletedElements: preparedSave.hasNonDeletedElements,
                 reason: "window-migration",
+                migrationLeafId: this.leaf.id,
+                autoexportRequest,
               },
             });
             this.data = d;
@@ -1180,6 +1230,7 @@ export default class ExcalidrawView
               preparedSave,
             };
           }
+          const autoexportRequest = prepareAutoexportRequest(true);
           await this.withPersistenceWriteLease(
             preparedSave.filePath,
             async () => {
@@ -1198,6 +1249,12 @@ export default class ExcalidrawView
                   preparedSave.text,
                 );
               }
+              if (d) {
+                plugin.deferPreparedAutoexportUntilMigrationComplete(
+                  this.leaf.id,
+                  autoexportRequest,
+                );
+              }
             },
           );
           this.data = d;
@@ -1214,6 +1271,7 @@ export default class ExcalidrawView
             throw new Error("Cannot hand off an empty drawing payload");
           }
           const file = this.file;
+          const autoexportRequest = prepareAutoexportRequest(true);
           return await this.withPersistenceWriteLease(
             preparedSave.filePath,
             () => {
@@ -1228,6 +1286,7 @@ export default class ExcalidrawView
                 text: preparedSave.text,
                 hasNonDeletedElements: preparedSave.hasNonDeletedElements,
                 reason: "view-unload",
+                autoexportRequest,
               });
               return { status: "persistence-handed-off", preparedSave };
             },
@@ -1243,11 +1302,21 @@ export default class ExcalidrawView
             preparedSave.filePath,
             async () => {
               await super.save();
+              reloadIfWriteDidNotEmitModify =
+                this.lastSaveTimestamp === this.file.stat.mtime &&
+                !suppressReloadFromOwnWrite &&
+                forcePersistence;
+              const autoexportRequest = reloadIfWriteDidNotEmitModify
+                ? undefined
+                : prepareAutoexportRequest(true);
               if (preparedSave.hasNonDeletedElements) {
                 scheduleBAKAfterSuccessfulPersistence(
                   preparedSave.filePath,
                   preparedSave.text,
                 );
+              }
+              if (autoexportRequest) {
+                this.plugin.enqueuePreparedAutoexport(autoexportRequest);
               }
             },
           );
@@ -1259,68 +1328,8 @@ export default class ExcalidrawView
           this.setPreventReload();
         }
 
-        reloadIfWriteDidNotEmitModify =
-          this.lastSaveTimestamp === this.file.stat.mtime &&
-          !suppressReloadFromOwnWrite &&
-          forcePersistence;
         this.lastSaveTimestamp = this.file.stat.mtime;
         //this.clearDirty(); //moved to right after the persistence decision, to avoid autosave collision with load drawing
-      }
-
-      // No reload means the file changed, so save-time exports can run.
-      //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1209 (added popout unload to the condition)
-      if (
-        !this.semaphores.windowMigrating &&
-        this.excalidrawAPI &&
-        sideEffectPolicy.triggerAutoexport &&
-        !reloadIfWriteDidNotEmitModify &&
-        !this.semaphores.autosaving &&
-        (!this.semaphores.viewunload || this.semaphores.popoutUnload)
-      ) {
-        const autoexportPreference = this.excalidrawData.autoexportPreference;
-        let autoexportConfig: AutoexportConfig = {
-          svg:
-            (autoexportPreference === AutoexportPreference.inherit &&
-              this.plugin.settings.autoexportSVG) ||
-            autoexportPreference === AutoexportPreference.both ||
-            autoexportPreference === AutoexportPreference.svg,
-          png:
-            (autoexportPreference === AutoexportPreference.inherit &&
-              this.plugin.settings.autoexportPNG) ||
-            autoexportPreference === AutoexportPreference.both ||
-            autoexportPreference === AutoexportPreference.png,
-          excalidraw:
-            !this.compatibilityMode &&
-            this.plugin.settings.autoexportExcalidraw,
-          theme: this.plugin.settings.autoExportLightAndDark
-            ? "both"
-            : (this.getViewExportTheme() as "dark" | "light"),
-        };
-        if (this.getHookServer().onTriggerAutoexportHook) {
-          try {
-            autoexportConfig =
-              this.getHookServer().onTriggerAutoexportHook({
-                excalidrawFile: this.file,
-                autoexportConfig,
-              }) ?? autoexportConfig;
-          } catch (e) {
-            errorlog({
-              where: "ExcalidrawView.save",
-              fn: "getHookServer().onTriggerAutoexportHook",
-              error: e,
-            });
-          }
-        }
-
-        if (autoexportConfig.svg) {
-          void this.saveSVG({ autoexportConfig });
-        }
-        if (autoexportConfig.png) {
-          void this.savePNG({ autoexportConfig });
-        }
-        if (autoexportConfig.excalidraw) {
-          this.saveExcalidraw();
-        }
       }
     } catch (e) {
       executionStatus = "failed";
@@ -1945,6 +1954,7 @@ export default class ExcalidrawView
             await closeLeafView(l);
           } catch (error: unknown) {
             plugin.discardViewMigrationPersistenceHandoff(l.id);
+            plugin.completeMigrationAutoexport(l.id, f.path, false);
             this.setDirty();
             this.semaphores.windowMigrating = false;
             throw error;
@@ -2347,9 +2357,7 @@ export default class ExcalidrawView
    * until after synchronization, compression, or native file access can let
    * Electron destroy the source popout window first and freeze Obsidian.
    */
-  private captureWindowMigrationSnapshot(
-    forceSaveSnapshot: boolean = false,
-  ): {
+  private captureWindowMigrationSnapshot(forceSaveSnapshot: boolean = false): {
     scene: NonNullable<ReturnType<ExcalidrawView["getScene"]>>;
     files: BinaryFiles;
   } | null {
@@ -2957,6 +2965,7 @@ export default class ExcalidrawView
 
   setViewData(data: string, clear: boolean = false) {
     const setViewDataLoad = this.beginSetViewDataLoad();
+    const plugin = this.plugin;
     const migrationHandoffToken = this.pendingMigrationHandoffToken;
     this.pendingMigrationHandoffToken = null;
     if (this.textFileViewLoadedFile !== this.file) {
@@ -2992,6 +3001,9 @@ export default class ExcalidrawView
             this.file.path,
           )
         : null;
+      const completesWindowMigration =
+        migrationHandoffToken !== null || migrationPersistenceHandoff !== null;
+      let migrationLoadSucceeded = false;
       let migrationHandoffPersistenceFailed = false;
       if (migrationPersistenceHandoff !== null) {
         data = migrationPersistenceHandoff.request.text;
@@ -3060,9 +3072,7 @@ export default class ExcalidrawView
             migrationDrawingHandoff.excalidrawData,
             this.file,
           ) &&
-          this.saveCoordinator.adoptMigrationState(
-            migrationDrawingHandoff.save,
-          )
+          this.saveCoordinator.adoptMigrationState(migrationDrawingHandoff.save)
         ) {
           this.excalidrawData.scene = {
             ...this.excalidrawData.scene,
@@ -3322,6 +3332,7 @@ export default class ExcalidrawView
           }
         }
         this.isLoaded = true;
+        migrationLoadSucceeded = true;
         if (migrationHandoffPersistenceFailed) {
           this.setDirty();
         }
@@ -3330,6 +3341,13 @@ export default class ExcalidrawView
       this.app.workspace.onLayoutReady(() => {
         void loadAfterLayoutReady().finally(() => {
           this.completeSetViewDataLoad(setViewDataLoad);
+          if (completesWindowMigration) {
+            plugin.completeMigrationAutoexport(
+              this.leaf.id,
+              setViewDataFilePath,
+              migrationLoadSucceeded && this.file?.path === setViewDataFilePath,
+            );
+          }
         });
       });
     })().finally(() => {
@@ -3357,15 +3375,13 @@ export default class ExcalidrawView
       // ColorMaster mutates `cm`, so this step is cumulative.
       const additionalBoldStep = extremeCanvas ? 10 : 5;
       // Dynamic color: concatenate opacity to the RGB string  !!! Excalidraw expects an RGBA string !!!
-      Regular = (isDark
-        ? cm.lighterBy(regularStep)
-        : cm.darkerBy(regularStep)
-      )
+      Regular = (isDark ? cm.lighterBy(regularStep) : cm.darkerBy(regularStep))
         .alphaTo(opacity)
         .stringRGB({ alpha: true });
-      Bold = (isDark
-        ? cm.lighterBy(additionalBoldStep)
-        : cm.darkerBy(additionalBoldStep)
+      Bold = (
+        isDark
+          ? cm.lighterBy(additionalBoldStep)
+          : cm.darkerBy(additionalBoldStep)
       )
         .alphaTo(opacity)
         .stringRGB({ alpha: true });
@@ -3433,10 +3449,10 @@ export default class ExcalidrawView
   private isSynchronizationTargetCurrent(filePath: string): boolean {
     return Boolean(
       filePath &&
-        !this.semaphores.viewunload &&
-        !this.semaphores.windowMigrating &&
-        this.excalidrawAPI &&
-        this.file?.path === filePath,
+      !this.semaphores.viewunload &&
+      !this.semaphores.windowMigrating &&
+      this.excalidrawAPI &&
+      this.file?.path === filePath,
     );
   }
 
@@ -3828,12 +3844,7 @@ export default class ExcalidrawView
         captureUpdate: CaptureUpdateAction.NEVER,
       });
       if (fileIdsToReload.size > 0) {
-        await this.loadSceneFiles(
-          false,
-          fileIdsToReload,
-          undefined,
-          undefined,
-        );
+        await this.loadSceneFiles(false, fileIdsToReload, undefined, undefined);
       }
       return true;
     } catch (e) {
@@ -3979,9 +3990,7 @@ export default class ExcalidrawView
         // after initialization so one all-at-once decode cannot block the
         // replacement editor's first paint.
         files:
-          this.pendingMigrationBinaryFiles === null
-            ? excalidrawData.files
-            : {},
+          this.pendingMigrationBinaryFiles === null ? excalidrawData.files : {},
         libraryItems: await this.getLibrary(),
       });
       //files are loaded when excalidrawAPI is mounted
@@ -4090,12 +4099,7 @@ export default class ExcalidrawView
         }
       }
       if (missingFileIds.size > 0) {
-        void this.loadSceneFiles(
-          false,
-          missingFileIds,
-          undefined,
-          undefined,
-        );
+        void this.loadSceneFiles(false, missingFileIds, undefined, undefined);
       } else {
         this.lastSceneLoadTime = Date.now();
       }
@@ -4125,10 +4129,11 @@ export default class ExcalidrawView
       this.migrationBinaryFilePublication !== null
     ) {
       if (this.migrationBinaryFilePublication === null) {
-        this.migrationBinaryFilePublication =
-          this.publishMigrationBinaryFiles(api).finally(() => {
-            this.migrationBinaryFilePublication = null;
-          });
+        this.migrationBinaryFilePublication = this.publishMigrationBinaryFiles(
+          api,
+        ).finally(() => {
+          this.migrationBinaryFilePublication = null;
+        });
       }
     } else {
       void this.loadSceneFiles(false, undefined, undefined, undefined);
@@ -4364,12 +4369,7 @@ export default class ExcalidrawView
     const plugin = this._plugin;
     const file = this.file;
     const leaf = this.leaf;
-    if (
-      !plugin ||
-      !file ||
-      leaf.view !== this ||
-      this.semaphores.viewunload
-    ) {
+    if (!plugin || !file || leaf.view !== this || this.semaphores.viewunload) {
       return;
     }
 
@@ -4391,10 +4391,7 @@ export default class ExcalidrawView
       }
 
       plugin.excalidrawFileModes[this.id || file.path] = "markdown";
-      await plugin.setMarkdownView(
-        leaf,
-        eState as ViewStateResult | undefined,
-      );
+      await plugin.setMarkdownView(leaf, eState as ViewStateResult | undefined);
     } catch (e: unknown) {
       errorlog({
         where: "ExcalidrawView.setMarkdownView",

@@ -1,4 +1,5 @@
 import type { TFile } from "obsidian";
+import type { PreparedAutoexportRequest } from "./AutoexportCoordinator";
 
 const DEFAULT_HANDOFF_TTL_MS = 15_000;
 
@@ -16,6 +17,9 @@ export interface ViewPersistenceRequest {
   readonly text: string;
   readonly hasNonDeletedElements: boolean;
   readonly reason: ViewPersistenceReason;
+  /** Required by window migration so autoexport waits for its replacement. */
+  readonly migrationLeafId?: string;
+  readonly autoexportRequest?: PreparedAutoexportRequest;
 }
 
 export type ViewPersistenceResult =
@@ -46,6 +50,14 @@ interface ViewPersistenceQueueOptions {
     error: unknown,
     request: ViewPersistenceRequest,
   ) => void;
+  readonly onPersisted?: (request: ViewPersistenceRequest) => void;
+  readonly onPersistedCallbackFailure?: (
+    error: unknown,
+    request: ViewPersistenceRequest,
+  ) => void;
+  readonly beginPersistenceActivity?: (
+    request: ViewPersistenceRequest,
+  ) => () => void;
 }
 
 /**
@@ -71,8 +83,7 @@ export interface ViewMigrationPersistenceConsumption {
   readonly completion: Promise<ViewPersistenceResult>;
 }
 
-interface ViewMigrationPersistenceEntry
-  extends ViewMigrationPersistenceHandoff {
+interface ViewMigrationPersistenceEntry extends ViewMigrationPersistenceHandoff {
   readonly reservation: PathReservation;
   readonly expiresAt: number;
 }
@@ -106,14 +117,7 @@ export class ViewPersistenceQueue {
     request: ViewPersistenceRequest,
   ): Promise<ViewPersistenceResult> {
     const reservation = this.reservePath(request.filePath);
-    return (async (): Promise<ViewPersistenceResult> => {
-      await reservation.ready;
-      try {
-        return await this.execute(request);
-      } finally {
-        reservation.release();
-      }
-    })();
+    return this.executeReservation(request, reservation);
   }
 
   /**
@@ -169,7 +173,10 @@ export class ViewPersistenceQueue {
       this.rejectMigrationTarget(entry);
       return null;
     }
-    const completion = this.executeReservation(entry.request, entry.reservation);
+    const completion = this.executeReservation(
+      entry.request,
+      entry.reservation,
+    );
     return { request: entry.request, completion };
   }
 
@@ -220,9 +227,12 @@ export class ViewPersistenceQueue {
     reservation: PathReservation,
   ): Promise<ViewPersistenceResult> {
     await reservation.ready;
+    const endPersistenceActivity =
+      this.options.beginPersistenceActivity?.(request) ?? (() => undefined);
     try {
       return await this.execute(request);
     } finally {
+      endPersistenceActivity();
       reservation.release();
     }
   }
@@ -264,11 +274,14 @@ export class ViewPersistenceQueue {
     for (const entry of this.migrationHandoffs.values()) {
       nextExpiry = Math.min(nextExpiry, entry.expiresAt);
     }
-    this.cleanupTimer = this.options.scheduleCleanup(() => {
-      this.cleanupTimer = null;
-      this.pruneExpiredHandoffs();
-      this.scheduleHandoffCleanup();
-    }, Math.max(0, nextExpiry - this.options.now()));
+    this.cleanupTimer = this.options.scheduleCleanup(
+      () => {
+        this.cleanupTimer = null;
+        this.pruneExpiredHandoffs();
+        this.scheduleHandoffCleanup();
+      },
+      Math.max(0, nextExpiry - this.options.now()),
+    );
   }
 
   private async execute(
@@ -306,6 +319,15 @@ export class ViewPersistenceQueue {
         this.options.scheduleBackup(request.filePath, request.text);
       } catch (error: unknown) {
         this.options.onBackupScheduleFailure?.(error, request);
+      }
+    }
+    try {
+      this.options.onPersisted?.(request);
+    } catch (error: unknown) {
+      try {
+        this.options.onPersistedCallbackFailure?.(error, request);
+      } catch {
+        // Secondary diagnostics cannot change a completed source write.
       }
     }
     return { status: "persisted", request };

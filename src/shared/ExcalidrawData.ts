@@ -49,7 +49,10 @@ import {
   DataURL,
   SceneData,
 } from "@zsviczian/excalidraw/types/excalidraw/types";
-import { EmbeddedFile } from "./EmbeddedFileLoader";
+import {
+  EmbeddedFile,
+  type EmbeddedFileExportState,
+} from "./EmbeddedFileLoader";
 import { EmbeddedDataRegistries } from "./EmbeddedDataRegistries";
 import { MimeType } from "src/types/embeddedFileLoaderTypes";
 import { MultiOptionConfirmationPrompt } from "./Dialogs/Prompt";
@@ -72,6 +75,7 @@ import {
   MARKDOWN_IMAGE_EMBEDDED_FILE_TOKEN,
   type MarkdownImageCustomData,
   type MarkdownImageData,
+  type MarkdownImageRenderSettings,
 } from "src/types/markdownImageTypes";
 import {
   changeThemeOfExcalidrawMD,
@@ -257,6 +261,16 @@ type TextElementData = {
   hasTextLink: boolean;
 };
 
+/** Drawing-owned registries required to regenerate save-time export assets. */
+export interface ExcalidrawDataExportState {
+  sourceFilePath: string;
+  files: ReadonlyMap<FileId, EmbeddedFileExportState>;
+  markdownImages: ReadonlyMap<FileId, MarkdownImageData>;
+  equations: ReadonlyMap<FileId, EquationItem>;
+  markdownImageRenderDefaults: MarkdownImageRenderSettings;
+  pdfScale: number;
+}
+
 /** Drawing-owned metadata transferred without retaining an old view. */
 export interface ExcalidrawDataMigrationState {
   sourceFilePath: string;
@@ -341,6 +355,51 @@ export class ExcalidrawData {
     this.compatibilityMode = null;
     this.textElementCommentedOut = null;
     this.selectedElementIds = null;
+  }
+
+  /** Captures only the data registries needed by a prepared save export. */
+  public exportPreparedSaveData(): ExcalidrawDataExportState | null {
+    if (
+      !this.loaded ||
+      !this.file ||
+      !this.files ||
+      !this.markdownImages ||
+      !this.equations
+    ) {
+      return null;
+    }
+    return {
+      sourceFilePath: this.file.path,
+      files: new Map(
+        Array.from(this.files, ([id, value]) => [
+          id,
+          value.exportPreparedSaveState(),
+        ]),
+      ),
+      markdownImages: new Map(
+        Array.from(this.markdownImages, ([id, value]) => [
+          id,
+          { ...value },
+        ]),
+      ),
+      equations: new Map(
+        Array.from(this.equations, ([id, value]) => [id, { ...value }]),
+      ),
+      markdownImageRenderDefaults: {
+        ...this.plugin.settings.markdownImageSettings.defaults,
+        border: {
+          ...this.plugin.settings.markdownImageSettings.defaults.border,
+        },
+        transclusion: {
+          ...this.plugin.settings.markdownImageSettings.defaults.transclusion,
+          border: {
+            ...this.plugin.settings.markdownImageSettings.defaults.transclusion
+              .border,
+          },
+        },
+      },
+      pdfScale: this.plugin.settings.pdfScale,
+    };
   }
 
   /**
