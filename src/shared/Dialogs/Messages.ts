@@ -30,8 +30,8 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 addStickyNote(topX: number, topY: number, text: string, formatting?: {width?: number; height?: number; fontSize?: number; fontFamily?: number; textAlign?: "left" | "center" | "right"; textVerticalAlign?: "top" | "middle" | "bottom";}, id?: string): string;
 \`\`\`
 
-## Fixed
-- Drawing persistence is now more reliable during rapid edits across multiple tabs, popout moves, and immediate closing. Backups and automatic exports now track the exact successfully saved revision.
+## Fixed / Refactored
+- Drawing persistence is now more reliable during rapid edits across multiple tabs, popout moves, and immediate closing. Backups and automatic exports now track the exact successfully saved revision. [#2933](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2933)
 - Rapidly changing Markdown image appearance, selection, or image/embeddable conversion no longer leaves a rejected image-render promise in the console or lets a superseded render overwrite the newer element state.
 `,
 "2.27.3": `
