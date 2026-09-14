@@ -191,11 +191,6 @@ export class ViewPersistenceQueue {
     this.scheduleHandoffCleanup();
   }
 
-  /** Waits for all requests accepted for one path before this call. */
-  public async flush(filePath: string): Promise<void> {
-    await this.pathTails.get(filePath);
-  }
-
   private reservePath(filePath: string): PathReservation {
     const previous = this.pathTails.get(filePath) ?? Promise.resolve();
     let releaseGate: () => void = () => undefined;

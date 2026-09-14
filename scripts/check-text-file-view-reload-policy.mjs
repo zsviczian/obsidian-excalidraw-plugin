@@ -23,4 +23,3 @@ assert.equal(
 );
 
 process.stdout.write("text-file-view reload policy checks passed\n");
-

@@ -7,4 +7,3 @@ export const shouldRetainLoadedFileAfterReload = (
   fullReload: boolean,
   loadOnModifyTrigger: boolean,
 ): boolean => !fullReload && loadOnModifyTrigger;
-

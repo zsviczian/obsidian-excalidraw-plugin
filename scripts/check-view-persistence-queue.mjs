@@ -281,7 +281,6 @@ assert.equal(
   "persisted",
   "a completion callback failure cannot reclassify a successful source write",
 );
-await queue.flush("Drawing.md");
 assert.deepEqual(
   persistedCallbacks,
   [

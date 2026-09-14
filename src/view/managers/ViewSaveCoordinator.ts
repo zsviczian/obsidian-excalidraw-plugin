@@ -579,19 +579,14 @@ export class ViewSaveCoordinator {
   }
 
   /**
-   * Starts a new save-target identity without attempting to fence asynchronous
-   * loading. Full load-continuation invalidation remains checkpoint 11.
+   * Starts a new save-target identity. Asynchronous load continuation validity
+   * is owned separately by the view's `ViewLoadGeneration`.
    */
   public beginSaveTarget(): void {
     this.targetGeneration += 1;
     this.lastSuccessfulPreparedSave = null;
     this.latestObservedWriteAttempt = null;
     this.acceptedContentIdentity = null;
-  }
-
-  /** Latest exact content known to have completed this view's write path. */
-  public getLastSuccessfulPreparedSave(): Readonly<PreparedSaveIdentity> | null {
-    return this.lastSuccessfulPreparedSave;
   }
 
   /** Current file-load identity for persistence content classification. */
