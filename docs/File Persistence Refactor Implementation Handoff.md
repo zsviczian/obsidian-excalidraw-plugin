@@ -695,7 +695,7 @@ This inventory is the boundary for checkpoint 12; it prevents a broad semaphore 
 
 **Runtime gate:** retain global PNG scale `1` (or another deliberately unsafe large-scene value) and the drawing frontmatter scale `0.1`. Rapidly alternate edits/saves until several source writes coalesce; no PNG blob failure should occur and the final PNG must use the small scale and match the persisted scene. Then change only the frontmatter scale while the drawing remains open and verify the next automatic PNG uses it without waiting for metadata indexing or reopening. Smoke-test one manual export to confirm its dialog scale is unchanged, plus one SVG-only/PNG-only/none frontmatter transition and one both-theme export.
 
-**Runtime acceptance — 2026-09-14:** the maintainer completed the rapid large-scene, live frontmatter change, manual export, and automatic-output selection tests without error. The intermittent PNG blob failure is resolved. This corrective increment is accepted for commit.
+**Runtime acceptance — 2026-09-14:** the maintainer completed the rapid large-scene, live frontmatter change, manual export, and automatic-output selection tests without error. The intermittent PNG blob failure is resolved. This corrective increment is committed as `1354930d`.
 
 ## 16. Required handoff record after each step
 
