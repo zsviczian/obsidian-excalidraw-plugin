@@ -1,4 +1,10 @@
-import { Notice } from "obsidian";
+import {
+  getFrontMatterInfo,
+  normalizePath,
+  Notice,
+  parseYaml,
+  type TFile,
+} from "obsidian";
 import type { FileId } from "@zsviczian/excalidraw/types/element/src/types";
 import type { BinaryFileData } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { DEVICE } from "../../constants/constants";
@@ -16,6 +22,11 @@ import type {
   PageSize,
 } from "../../types/exportUtilTypes";
 import type { FileData } from "../../types/embeddedFileLoaderTypes";
+import type {
+  PreparedAutoexportOutput,
+  PreparedAutoexportRequest,
+} from "../../core/managers/AutoexportCoordinator";
+import { errorlog } from "../../utils/coreUtils";
 import {
   download,
   exportImageToFile,
@@ -32,6 +43,11 @@ import {
   getPageDimensions,
 } from "../../utils/exportUtils";
 import type ExcalidrawView from "../ExcalidrawView";
+import type { PreparedSave, PreparedSaveExportOptions } from "./saveSnapshot";
+import {
+  resolvePreparedAutoexportSettings,
+  type PreparedAutoexportSettings,
+} from "./preparedAutoexportFrontmatter";
 
 /** Runtime dependencies supplied by the view's existing import graph. */
 export interface ViewExportDependencies {
@@ -45,6 +61,7 @@ export interface ViewExportDependencies {
   getSVG: typeof import("../../utils/utils").getSVG;
   getWithBackground: typeof import("../../utils/utils").getWithBackground;
   isMaskFile: typeof import("../../utils/utils").isMaskFile;
+  shouldEmbedScene: typeof import("../../utils/utils").shouldEmbedScene;
   sceneRemoveInternalLinks: typeof import("../../utils/excalidrawViewUtils").sceneRemoveInternalLinks;
 }
 
@@ -200,10 +217,7 @@ export class ViewExportManager {
     const ed = this.dependencies.getOrCreateExportDialog();
     return ed
       ? !ed.transparent
-      : this.dependencies.getWithBackground(
-          this.view.plugin,
-          this.view.file,
-        );
+      : this.dependencies.getWithBackground(this.view.plugin, this.view.file);
   }
 
   /** Resolves whether SVG and PDF exports preserve internal links. */
@@ -222,6 +236,179 @@ export class ViewExportManager {
         );
   }
 
+  private getSaveOwnedFrontmatter(text: string): Record<string, unknown> {
+    try {
+      const info = getFrontMatterInfo(text);
+      if (!info.exists) {
+        return {};
+      }
+      const parsed = parseYaml(info.frontmatter) as unknown;
+      return parsed !== null &&
+        typeof parsed === "object" &&
+        !Array.isArray(parsed)
+        ? (parsed as Record<string, unknown>)
+        : {};
+    } catch {
+      return {};
+    }
+  }
+
+  /** Captures automatic-export settings from the save-owned Markdown envelope. */
+  public capturePreparedSaveAutoexportSettings(
+    scene: ExcalidrawViewScene,
+    sourceText: string,
+  ): PreparedAutoexportSettings {
+    const sceneTheme = scene.appState.theme === "dark" ? "dark" : "light";
+    const settings = this.view.plugin.settings;
+    const exportOptions: PreparedSaveExportOptions = {
+      theme: settings.exportWithTheme ? sceneTheme : "light",
+      embedScene: settings.exportEmbedScene,
+      padding: settings.exportPaddingSVG,
+      scale: settings.pngExportScale,
+      withBackground: settings.exportWithBackground,
+      includeInternalLinks: true,
+      isMask: false,
+    };
+    return resolvePreparedAutoexportSettings(
+      {
+        exportOptions,
+        autoexportConfig: {
+          svg: settings.autoexportSVG,
+          png: settings.autoexportPNG,
+          excalidraw:
+            !this.view.compatibilityMode && settings.autoexportExcalidraw,
+          theme: settings.autoExportLightAndDark ? "both" : exportOptions.theme,
+        },
+      },
+      this.getSaveOwnedFrontmatter(sourceText),
+    );
+  }
+
+  /** Captures hook-adjusted output paths before the originating view retires. */
+  public prepareAutoexportRequest(
+    preparedSave: PreparedSave,
+    sourceFile: TFile,
+    includeOutputs: boolean,
+  ): PreparedAutoexportRequest {
+    const requestIdentity = {
+      producerId: preparedSave.producerId,
+      targetGeneration: preparedSave.targetGeneration,
+      operationId: preparedSave.operationId,
+      requestedRevision: preparedSave.requestedRevision,
+      sourceFilePath: preparedSave.filePath,
+      sourceFileCtime: preparedSave.sourceFileCtime,
+      capturedRevision: preparedSave.capturedRevision,
+    };
+    const createBarrier = (): PreparedAutoexportRequest => ({
+      ...requestIdentity,
+      kind: "barrier",
+      outputs: [],
+    });
+    if (!includeOutputs) {
+      return createBarrier();
+    }
+
+    const saveOwnedSettings = resolvePreparedAutoexportSettings(
+      {
+        exportOptions: preparedSave.exportOptions,
+        autoexportConfig: preparedSave.autoexportConfig,
+      },
+      this.getSaveOwnedFrontmatter(preparedSave.text),
+    );
+    let autoexportConfig: AutoexportConfig = {
+      ...saveOwnedSettings.autoexportConfig,
+    };
+    const hookServer = this.view.getHookServer();
+    if (hookServer?.onTriggerAutoexportHook) {
+      try {
+        autoexportConfig =
+          hookServer.onTriggerAutoexportHook({
+            excalidrawFile: sourceFile,
+            autoexportConfig,
+          }) ?? autoexportConfig;
+      } catch (error: unknown) {
+        errorlog({
+          where: "ViewExportManager.prepareAutoexportRequest",
+          fn: "onTriggerAutoexportHook",
+          error,
+        });
+      }
+    }
+
+    const outputs = new Map<string, PreparedAutoexportOutput>();
+    const addOutput = (
+      format: PreparedAutoexportOutput["format"],
+      theme: PreparedAutoexportOutput["theme"],
+      destinationExtension: string,
+      hookExtension: string = destinationExtension,
+    ) => {
+      let destinationPath = getIMGFilename(
+        preparedSave.filePath,
+        destinationExtension,
+      );
+      if (hookServer?.onImageExportPathHook) {
+        try {
+          destinationPath =
+            hookServer.onImageExportPathHook({
+              exportFilepath: destinationPath,
+              exportExtension: `.${hookExtension}`,
+              excalidrawFile: sourceFile,
+              action: "export",
+            }) ?? destinationPath;
+        } catch (error: unknown) {
+          errorlog({
+            where: "ViewExportManager.prepareAutoexportRequest",
+            fn: "onImageExportPathHook",
+            error,
+          });
+        }
+      }
+      destinationPath = normalizePath(destinationPath);
+      outputs.set(destinationPath, { format, theme, destinationPath });
+    };
+
+    if (autoexportConfig.excalidraw) {
+      addOutput("excalidraw", null, "excalidraw");
+    }
+    if (autoexportConfig.svg) {
+      if (autoexportConfig.theme === "both") {
+        addOutput("svg", "dark", "dark.svg");
+        addOutput("svg", "light", "light.svg");
+      } else {
+        addOutput(
+          "svg",
+          autoexportConfig.theme,
+          "svg",
+          `${autoexportConfig.theme}.svg`,
+        );
+      }
+    }
+    if (autoexportConfig.png) {
+      if (autoexportConfig.theme === "both") {
+        addOutput("png", "dark", "dark.png");
+        addOutput("png", "light", "light.png");
+      } else {
+        addOutput(
+          "png",
+          autoexportConfig.theme,
+          "png",
+          `${autoexportConfig.theme}.png`,
+        );
+      }
+    }
+    if (outputs.size === 0) {
+      return createBarrier();
+    }
+    return {
+      ...requestIdentity,
+      kind: "render",
+      scene: preparedSave.scene,
+      exportOptions: saveOwnedSettings.exportOptions,
+      exportData: preparedSave.exportData,
+      outputs: Array.from(outputs.values()),
+    };
+  }
+
   /** Creates an SVG for the supplied scene using the view's export options. */
   public async svg(
     scene: ExcalidrawViewScene,
@@ -232,10 +419,7 @@ export class ViewExportManager {
     const exportSettings: ExportSettings = {
       withBackground: !!this.getViewExportWithBackground(),
       withTheme: true,
-      isMask: this.dependencies.isMaskFile(
-        this.view.plugin,
-        this.view.file,
-      ),
+      isMask: this.dependencies.isMaskFile(this.view.plugin, this.view.file),
       skipInliningFonts: !embedFont,
     };
 
@@ -403,8 +587,7 @@ export class ViewExportManager {
       },
       pageProps: {
         dimensions: getPageDimensions(pageSize, orientation, { width, height }),
-        backgroundColor:
-          this.view.exportDialog?.getPaperColor() ?? "#FFFFFF",
+        backgroundColor: this.view.exportDialog?.getPaperColor() ?? "#FFFFFF",
         margin,
         alignment: this.view.exportDialog?.alignment ?? "center",
       },
@@ -421,10 +604,7 @@ export class ViewExportManager {
     const exportSettings: ExportSettings = {
       withBackground: !!this.getViewExportWithBackground(),
       withTheme: true,
-      isMask: this.dependencies.isMaskFile(
-        this.view.plugin,
-        this.view.file,
-      ),
+      isMask: this.dependencies.isMaskFile(this.view.plugin, this.view.file),
     };
 
     const exportTheme = this.getViewExportTheme(theme) as "dark" | "light";

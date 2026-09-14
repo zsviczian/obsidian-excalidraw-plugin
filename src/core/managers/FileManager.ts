@@ -50,6 +50,10 @@ import { errorlog, getExportTheme } from "src/utils/utils";
 import { getImageCache } from "src/shared/ImageCache";
 import { PaneTarget } from "src/types/utilTypes";
 import { t } from "src/lang/helpers";
+import {
+  getDrawingModifyRoute,
+  shouldInspectSuppressedModifyContent,
+} from "./fileModifyRouting";
 
 export class PluginFileManager {
   private plugin: ExcalidrawPlugin;
@@ -664,26 +668,29 @@ export class PluginFileManager {
     if (!(file instanceof TFile)) {
       return;
     }
-    const excalidrawViews = getExcalidrawViews(this.app);
-    excalidrawViews.forEach((excalidrawView) => {
-      void (async () => {
-        if (
-          excalidrawView.semaphores?.viewunload ||
-          excalidrawView.semaphores?.windowMigrating
-        ) {
-          return;
-        }
-        if (
-          excalidrawView.file &&
-          (excalidrawView.file.path === file.path ||
+    const matchesModifiedDrawing = (view: ExcalidrawView): boolean =>
+      Boolean(
+        view.file &&
+          (view.file.path === file.path ||
             (file.extension === "excalidraw" &&
               `${file.path.substring(
                 0,
                 file.path.lastIndexOf(".excalidraw"),
-              )}.md` === excalidrawView.file.path))
-        ) {
-          if (excalidrawView.semaphores?.preventReload) {
-            excalidrawView.semaphores.preventReload = false;
+              )}.md` === view.file.path)),
+      );
+    const excalidrawViews = getExcalidrawViews(this.app, true);
+    excalidrawViews.forEach((excalidrawView) => {
+      void (async () => {
+        if (excalidrawView.isClosingOrMigrating()) {
+          return;
+        }
+        if (matchesModifiedDrawing(excalidrawView)) {
+          const suppressionConsumed =
+            excalidrawView.consumeOwnWriteReloadSuppression();
+          if (
+            suppressionConsumed &&
+            !shouldInspectSuppressedModifyContent(file.extension)
+          ) {
             return;
           }
 
@@ -716,45 +723,19 @@ export class PluginFileManager {
             (activeView === excalidrawView &&
               this.plugin.isRecentSplitViewSwitch());
 
-          if (
-            !isEditingMarkdownSideInSplitView &&
-            excalidrawView.lastSaveTimestamp + 300000 < Date.now()
-          ) {
+          const route = getDrawingModifyRoute({
+            fileExtension: file.extension,
+            isEditingMarkdownSideInSplitView,
+            isDirty: excalidrawView.isDirty(),
+            isPersistenceBusy: excalidrawView.isPersistenceBusy(),
+            isStale: excalidrawView.lastSaveTimestamp + 300000 < Date.now(),
+          });
+          if (route === "full-reload") {
             await excalidrawView.reload(true, excalidrawView.file);
             return;
           }
-          if (file.extension === "md") {
-            if (excalidrawView.semaphores?.embeddableIsEditingSelf) {
-              return;
-            }
-            const inData = new ExcalidrawData(this.plugin);
-            try {
-              const data = await this.app.vault.read(file);
-              await inData.loadData(data, file, getTextMode(data));
-              await excalidrawView.synchronizeWithData(inData);
-            } catch (error: unknown) {
-              errorlog({
-                where: "FileManager.modifyEventHandler",
-                fn: "load synchronized drawing data",
-                message: `Rejected incoming drawing data for ${file.path}`,
-                error,
-              });
-              new Notice(t("DRAWING_RELOAD_FAILED"), 60000);
-              return;
-            } finally {
-              inData.destroy();
-            }
-            if (excalidrawView?.isDirty()) {
-              if (
-                excalidrawView.autosaveTimer &&
-                excalidrawView.autosaveFunction
-              ) {
-                window.clearTimeout(excalidrawView.autosaveTimer);
-              }
-              if (excalidrawView.autosaveFunction) {
-                excalidrawView.autosaveFunction();
-              }
-            }
+          if (route === "incremental-sync") {
+            excalidrawView.requestExternalSynchronization(file);
           } else {
             await excalidrawView.reload(true, excalidrawView.file);
           }

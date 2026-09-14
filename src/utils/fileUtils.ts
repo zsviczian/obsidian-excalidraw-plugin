@@ -840,27 +840,52 @@ export async function createOrOverwriteFile(
   path: string,
   content: string | ArrayBuffer | Blob,
 ): Promise<TFile> {
-  const { folderpath } = splitFolderAndFilename(path);
-  if (folderpath) {
-    await checkAndCreateFolder(folderpath);
-  }
-  const file = app.vault.getAbstractFileByPath(normalizePath(path));
+  path = normalizePath(path);
   if (content instanceof Blob) {
     content = await content.arrayBuffer();
   }
+  const { folderpath } = splitFolderAndFilename(path);
+  if (folderpath) {
+    try {
+      await checkAndCreateFolder(folderpath);
+    } catch (error: unknown) {
+      if (!app.vault.getFolderByPath(folderpath)) {
+        throw error;
+      }
+    }
+  }
+  const file = app.vault.getFileByPath(path);
   if (content instanceof ArrayBuffer) {
-    if (file && file instanceof TFile) {
+    if (file) {
       await app.vault.modifyBinary(file, content);
       return file;
     }
-    return await app.vault.createBinary(path, content);
+    try {
+      return await app.vault.createBinary(path, content);
+    } catch (error: unknown) {
+      const racedFile = app.vault.getFileByPath(path);
+      if (!racedFile) {
+        throw error;
+      }
+      await app.vault.modifyBinary(racedFile, content);
+      return racedFile;
+    }
   }
 
-  if (file && file instanceof TFile) {
+  if (file) {
     await app.vault.modify(file, content);
     return file;
   }
-  return await app.vault.create(path, content);
+  try {
+    return await app.vault.create(path, content);
+  } catch (error: unknown) {
+    const racedFile = app.vault.getFileByPath(path);
+    if (!racedFile) {
+      throw error;
+    }
+    await app.vault.modify(racedFile, content);
+    return racedFile;
+  }
 }
 
 export async function createFileAndAwaitMetacacheUpdate(

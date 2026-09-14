@@ -29,6 +29,7 @@ type ImageCacheMetadata = Partial<
 >;
 type BackupData = string;
 type BackupKey = string;
+const BACKUP_WRITE_DELAY_MS = 50;
 
 export type ImageKey = {
   filepath: string;
@@ -854,4 +855,27 @@ export const getImageCache = (): ImageCache => {
     );
   }
   return imageCache;
+};
+
+/**
+ * Queues the exact text from a completed drawing write for recovery.
+ * Backup failure is logged independently and never changes source persistence.
+ */
+export const scheduleBAKAfterSuccessfulPersistence = (
+  filepath: string,
+  data: BackupData,
+): void => {
+  try {
+    getImageCache().scheduleBAKToCache(
+      filepath,
+      data,
+      BACKUP_WRITE_DELAY_MS,
+    );
+  } catch (error: unknown) {
+    errorlog({
+      where: "ImageCache.scheduleBAKAfterSuccessfulPersistence",
+      fn: "schedule",
+      error,
+    });
+  }
 };

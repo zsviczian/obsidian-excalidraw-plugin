@@ -396,7 +396,7 @@ export class MarkdownImageController {
         const modificationPromise = shouldWaitForModification
           ? this.waitForViewFileModification(2500)
           : null;
-        this.view.canvasNodeFactory.stopEditing(node);
+        this.view.canvasNodeFactory.stopEditing(node, element.id);
         this.view.updateScene({ appState: { activeEmbeddable: null } });
         if (shouldWaitForModification) {
           await modificationPromise;

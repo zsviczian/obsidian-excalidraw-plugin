@@ -69,7 +69,6 @@ import {
   ExcalidrawData,
   REG_LINKINDEX_HYPERLINK,
   REGEX_LINK,
-  AutoexportPreference,
   getExcalidrawMarkdownHeaderSection,
   parseMarkdownImages,
   syncMarkdownImagesInHeader,
@@ -93,6 +92,7 @@ import {
   getSVG,
   getExportPadding,
   getWithBackground,
+  shouldEmbedScene,
   hasExportTheme,
   scaleLoadedImage,
   hyperlinkIsImage,
@@ -156,6 +156,7 @@ import {
   isMarkdownImageElement,
 } from "../shared/MarkdownImage";
 import {
+  beginMarkdownImageEditorViewUnload,
   handleMarkdownImageEditorSelection,
   handleMarkdownImageEditorViewUnload,
   openMarkdownImageEditor as openMarkdownImageEditorSidepanel,
@@ -205,7 +206,10 @@ import {
   tmpBruteForceCleanup,
   toggleImageAnchoring,
 } from "../utils/excalidrawViewUtils";
-import { getImageCache } from "../shared/ImageCache";
+import {
+  getImageCache,
+  scheduleBAKAfterSuccessfulPersistence,
+} from "../shared/ImageCache";
 import { CanvasNodeFactory } from "./managers/CanvasNodeFactory";
 import { EmbeddableMenu } from "./components/menu/EmbeddableActionsMenu";
 import { useDefaultExcalidrawFrame } from "../utils/customEmbeddableUtils";
@@ -245,6 +249,13 @@ import { ViewExportManager } from "./managers/ViewExportManager";
 import { ViewFullscreenManager } from "./managers/ViewFullscreenManager";
 import { ViewLinkNavigationManager } from "./managers/ViewLinkNavigationManager";
 import { ViewExcalidrawExtensionRenderer } from "./managers/ViewExcalidrawExtensionRenderer";
+import {
+  ViewLoadGeneration,
+  type ViewLoadToken,
+} from "./managers/ViewLoadGeneration";
+import { SameFileEditGate } from "./managers/SameFileEditGate";
+import { OwnWriteReloadGuard } from "./managers/OwnWriteReloadGuard";
+import { shouldRetainLoadedFileAfterReload } from "./textFileViewReloadPolicy";
 import { MarkdownImageController } from "./managers/MarkdownImageController";
 import {
   getVisibleImageFileIds,
@@ -257,6 +268,13 @@ import {
   ViewSaveCoordinator,
   WINDOW_BLUR_FORCE_SAVE_POLICY,
 } from "./managers/ViewSaveCoordinator";
+import {
+  createPreparedSave,
+  createSaveSnapshot,
+  type PreparedSave,
+  type SaveOperationContext,
+} from "./managers/saveSnapshot";
+import { isRedundantObservedSaveContent } from "./managers/saveContentClassification";
 import type { ViewMigrationDrawingState } from "../core/managers/ViewMigrationHandoffManager";
 import { ImageInfo } from "src/types/excalidrawAutomateTypes";
 import { PageOrientation, PageSize } from "src/types/exportUtilTypes";
@@ -293,6 +311,8 @@ const EMBEDDABLE_SEMAPHORE_TIMEOUT = 2000;
 const PREVENT_RELOAD_TIMEOUT = 2000;
 const MIGRATION_BINARY_FILE_BATCH_SIZE = 4;
 const RE_TAIL = /^## Drawing\n[\s\S]*\n%%$(.*)/ms;
+const LEGACY_EMBEDDABLE_EDIT_OWNER = "legacy-embeddable";
+const LEGACY_MARKDOWN_IMAGE_EDIT_OWNER = "legacy-markdown-image";
 
 type MigrationImageAPI = ExcalidrawImperativeAPI & {
   awaitImageFiles?: (fileIds: readonly FileId[]) => Promise<void>;
@@ -421,6 +441,13 @@ const warningUnknowSeriousError = () => {
 
 type ActionButtons = "save" | "isRaw" | "link" | "scriptInstall";
 
+interface SetViewDataLoad {
+  readonly promise: Promise<void>;
+  readonly resolve: () => void;
+  readonly token: ViewLoadToken<TFile>;
+  settled: boolean;
+}
+
 let windowMigratedDisableZoomOnce = false;
 
 export default class ExcalidrawView
@@ -435,6 +462,7 @@ export default class ExcalidrawView
   private markdownImageController: MarkdownImageController;
   private sceneFileManager: ViewSceneFileManager;
   private saveCoordinator: ViewSaveCoordinator;
+  private sameFileEditGate: SameFileEditGate;
   public hoverPopover: HoverPopover | null = null;
   private freedrawLastActiveTimestamp: number = 0;
   public exportDialog: ExportDialog | null = null;
@@ -459,7 +487,7 @@ export default class ExcalidrawView
   private _hookServer: ExcalidrawAutomate | null = null;
   public lastSaveTimestamp: number = 0; //used to validate if incoming file should sync with open file
   public lastSceneLoadTime: number = 0; //set when loadSceneFiles completes; used by leaf-switch change detection
-  private lastLoadedFile: TFile | null = null;
+  private textFileViewLoadedFile: TFile | null = null;
   //store key state for view mode link resolution
   private modifierKeyDown: ModifierKeys = {
     shiftKey: false,
@@ -481,7 +509,6 @@ export default class ExcalidrawView
 
   public semaphores: ViewSemaphores | null = {
     warnAboutLinearElementLinkClick: true,
-    embeddableIsEditingSelf: false,
     popoutUnload: false,
     windowMigrating: false,
     viewloaded: false,
@@ -489,12 +516,7 @@ export default class ExcalidrawView
     scriptsReady: false,
     justLoaded: false,
     preventAutozoom: false,
-    autosaving: false,
-    dirty: null,
-    preventReload: false,
     isEditingText: false,
-    saving: false,
-    forceSaving: false,
     hoverSleep: false,
     wheelTimeout: null,
     shouldSaveImportedImage: false,
@@ -518,11 +540,11 @@ export default class ExcalidrawView
   private lastAggregatedDh = 0;
   private lastOffsetDriftCheck: number = 0;
   private oldKeyboardScroll: { scrollY: number; scrollX: number } | null = null;
+  private activeSetViewDataLoad: SetViewDataLoad | null = null;
+  private readonly viewLoadGeneration = new ViewLoadGeneration<TFile>();
 
   //https://stackoverflow.com/questions/27132796/is-there-any-javascript-event-fired-when-the-on-screen-keyboard-on-mobile-safari
   private isEditingTextResetTimer: number | null = null;
-  private preventReloadResetTimer: number | null = null;
-  private editingSelfResetTimer: number | null = null;
   private colorChangeTimer: number | null = null;
   private previousSceneVersion = 0;
   private previousTrackedAppState: TrackedAppStateSnapshot | null = null;
@@ -558,35 +580,54 @@ export default class ExcalidrawView
   private pendingMigrationHandoffToken: string | null = null;
   private pendingMigrationBinaryFiles: BinaryFiles | null = null;
   private migrationBinaryFilePublication: Promise<void> | null = null;
+  private isSynchronizing = false;
+  private pendingExternalSyncPath: string | null = null;
+  private externalSyncLoopPromise: Promise<void> | null = null;
+  private readonly ownWriteReloadGuard: OwnWriteReloadGuard;
 
   constructor(leaf: WorkspaceLeaf, plugin: ExcalidrawPlugin) {
     super(leaf);
     this._plugin = plugin;
+    this.sameFileEditGate = new SameFileEditGate(
+      () => this.ownerWindow ?? window,
+    );
+    this.ownWriteReloadGuard = new OwnWriteReloadGuard(
+      {
+        setTimeout: (callback, delayMs) => window.setTimeout(callback, delayMs),
+        clearTimeout: (timer) => window.clearTimeout(timer),
+      },
+      PREVENT_RELOAD_TIMEOUT,
+    );
     this.excalidrawData = new ExcalidrawData(plugin, this);
     this.canvasNodeFactory = new CanvasNodeFactory(this);
     this.saveCoordinator = new ViewSaveCoordinator(this, {
       performSave: (
-        preventReload,
-        forcesave,
-        overrideEmbeddableIsEditingSelfDebounce,
+        operation,
+        suppressReloadFromOwnWrite,
+        forcePersistence,
+        bypassSameFileEditGuard,
         sideEffectPolicy,
       ) =>
-        this.performSaveWithSideEffectPolicy(
-          preventReload,
-          forcesave,
-          overrideEmbeddableIsEditingSelfDebounce,
+        this.executeSaveRequest(
+          operation,
+          suppressReloadFromOwnWrite,
+          forcePersistence,
+          bypassSameFileEditGuard,
           sideEffectPolicy,
         ),
       requestSave: (
-        preventReload,
-        forcesave,
-        overrideEmbeddableIsEditingSelfDebounce,
+        suppressReloadFromOwnWrite,
+        forcePersistence,
+        bypassSameFileEditGuard,
       ) =>
         this.save(
-          preventReload,
-          forcesave,
-          overrideEmbeddableIsEditingSelfDebounce,
+          suppressReloadFromOwnWrite,
+          forcePersistence,
+          bypassSameFileEditGuard,
         ),
+      isSynchronizing: () => this.isSynchronizing,
+      yieldToPendingExternalSynchronization: () =>
+        this.yieldToPendingExternalSynchronization(),
       isDirty: () => this.isDirty(),
       checkSceneVersion: () => {
         if (this.excalidrawAPI) {
@@ -597,6 +638,12 @@ export default class ExcalidrawView
       getFreedrawLastActiveTimestamp: () => this.freedrawLastActiveTimestamp,
       markDirtyVisuals: () => this.markDirtyVisuals(),
       clearDirtyVisuals: () => this.clearDirtyVisuals(),
+      beginAutoexportSaveActivity: () => {
+        const file = this.file;
+        return file
+          ? this.plugin.beginAutoexportSaveActivity(file.path, file.stat.ctime)
+          : () => undefined;
+      },
     });
     this.exportManager = new ViewExportManager(this, {
       getOrCreateExportDialog: () => this.getOrCreateExportDialog(),
@@ -610,6 +657,7 @@ export default class ExcalidrawView
       getSVG,
       getWithBackground,
       isMaskFile,
+      shouldEmbedScene,
       sceneRemoveInternalLinks,
     });
     this.fullscreenManager = new ViewFullscreenManager(this);
@@ -718,6 +766,38 @@ export default class ExcalidrawView
     return mainDocument === this.ownerDocument;
   }
 
+  /** Whether teardown has started for this view. */
+  public isClosing(): boolean {
+    return Boolean(this.semaphores?.viewunload);
+  }
+
+  /** Whether this runtime must reject ordinary work during teardown or migration. */
+  public isClosingOrMigrating(): boolean {
+    return Boolean(
+      this.semaphores?.viewunload || this.semaphores?.windowMigrating,
+    );
+  }
+
+  /** Whether another editor currently owns part of this drawing's Markdown. */
+  public isSameFileEditingActive(): boolean {
+    return this.sameFileEditGate.isBlocked;
+  }
+
+  /** Whether the save coordinator currently owns persistence execution. */
+  public isSaveInProgress(): boolean {
+    return this.saveCoordinator.isSaveInProgress;
+  }
+
+  /** Whether persistence must wait for save, synchronization, or autosave work. */
+  public isPersistenceBusy(): boolean {
+    return this.saveCoordinator.isBusy;
+  }
+
+  /** Consumes the one-shot reload suppression armed for this view's own write. */
+  public consumeOwnWriteReloadSuppression(): boolean {
+    return this.ownWriteReloadGuard.consume();
+  }
+
   setHookServer(ea?: ExcalidrawAutomate) {
     if (ea) {
       this._hookServer = ea;
@@ -730,7 +810,8 @@ export default class ExcalidrawView
     return this.hookServer ?? this.plugin.ea;
   }
 
-  preventAutozoom() {
+  /** Suppresses the next load-time autozoom during synchronization. */
+  public suppressAutozoomOnce(): void {
     if (this.semaphores) {
       this.semaphores.preventAutozoom = true;
     }
@@ -740,6 +821,11 @@ export default class ExcalidrawView
       }
       this.semaphores.preventAutozoom = false;
     }, 1500);
+  }
+
+  /** Preserves the historical public name for scripts and integrations. */
+  public preventAutozoom(): void {
+    this.suppressAutozoomOnce();
   }
 
   private getOrCreateExportDialog(): ExportDialog | null {
@@ -873,23 +959,22 @@ export default class ExcalidrawView
   }
 
   public setPreventReload() {
-    this.semaphores.preventReload = true;
-    this.preventReloadResetTimer = window.setTimeout(
-      () => (this.semaphores.preventReload = false),
-      PREVENT_RELOAD_TIMEOUT,
-    );
+    this.ownWriteReloadGuard.armCleanup();
   }
 
   public clearPreventReloadTimer() {
-    if (this.preventReloadResetTimer) {
-      window.clearTimeout(this.preventReloadResetTimer);
-      this.preventReloadResetTimer = null;
-    }
+    this.ownWriteReloadGuard.clearTimer();
   }
 
-  public async setEmbeddableNodeIsEditing() {
-    this.clearEmbeddableNodeIsEditingTimer();
-    this.semaphores.embeddableIsEditingSelf = true;
+  /** Clears both own-write suppression state and its cleanup callback. */
+  public clearOwnWriteReloadSuppression(): void {
+    this.ownWriteReloadGuard.clear();
+  }
+
+  public async setEmbeddableNodeIsEditing(
+    ownerId: string = LEGACY_EMBEDDABLE_EDIT_OWNER,
+  ) {
+    this.sameFileEditGate.acquire(`embeddable:${ownerId}`);
     // Wait for any in-flight save (e.g. a Markdown-image editor flush) rather than silently
     // aborting: a same-file back-of-the-note embeddable is about to open its own editor on this
     // same file, so the disk copy must be current or the embeddable's editor will load a stale
@@ -897,44 +982,73 @@ export default class ExcalidrawView
     await this.forceSave(true, true);
   }
 
-  /** Debounces self-edit reloads without forcing a disk save. */
-  public setMarkdownImageEditorIsEditing(): void {
-    this.clearEmbeddableNodeIsEditingTimer();
-    this.semaphores.embeddableIsEditingSelf = true;
-    this.clearEmbeddableNodeIsEditing();
-  }
-
-  public clearEmbeddableNodeIsEditingTimer() {
-    if (this.editingSelfResetTimer) {
-      window.clearTimeout(this.editingSelfResetTimer);
-      this.editingSelfResetTimer = null;
+  /** Acquires same-file ownership for one Markdown-image editor controller. */
+  public setMarkdownImageEditorIsEditing(ownerId?: string): void {
+    const resolvedOwnerId = ownerId ?? LEGACY_MARKDOWN_IMAGE_EDIT_OWNER;
+    const gateOwnerId = `markdown-image:${resolvedOwnerId}`;
+    this.sameFileEditGate.acquire(gateOwnerId);
+    if (ownerId === undefined) {
+      // Preserve the former public no-argument pulse while the feature-owned
+      // controller uses explicit acquire/release ownership.
+      this.sameFileEditGate.release(gateOwnerId, EMBEDDABLE_SEMAPHORE_TIMEOUT);
     }
   }
 
-  public clearEmbeddableNodeIsEditing() {
-    this.clearEmbeddableNodeIsEditingTimer();
-    this.editingSelfResetTimer = window.setTimeout(
-      () => (this.semaphores.embeddableIsEditingSelf = false),
+  /** Releases one Markdown-image owner through the established grace period. */
+  public clearMarkdownImageEditorIsEditing(
+    ownerId: string = LEGACY_MARKDOWN_IMAGE_EDIT_OWNER,
+  ): void {
+    this.sameFileEditGate.release(
+      `markdown-image:${ownerId}`,
+      EMBEDDABLE_SEMAPHORE_TIMEOUT,
+    );
+  }
+
+  /** Preserves the historical generic timer-cancellation API. */
+  public clearEmbeddableNodeIsEditingTimer(
+    ownerId: string = LEGACY_EMBEDDABLE_EDIT_OWNER,
+  ): void {
+    this.sameFileEditGate.cancelRelease(`embeddable:${ownerId}`);
+  }
+
+  public clearEmbeddableNodeIsEditing(
+    ownerId: string = LEGACY_EMBEDDABLE_EDIT_OWNER,
+  ): void {
+    this.sameFileEditGate.release(
+      `embeddable:${ownerId}`,
       EMBEDDABLE_SEMAPHORE_TIMEOUT,
     );
   }
 
   async save(
-    preventReload: boolean = true,
-    forcesave: boolean = false,
-    overrideEmbeddableIsEditingSelfDebounce: boolean = false,
+    suppressReloadFromOwnWrite: boolean = true,
+    forcePersistence: boolean = false,
+    bypassSameFileEditGuard: boolean = false,
   ): Promise<void> {
     await this.saveCoordinator.save(
-      preventReload,
-      forcesave,
-      overrideEmbeddableIsEditingSelfDebounce,
+      suppressReloadFromOwnWrite,
+      forcePersistence,
+      bypassSameFileEditGuard,
     );
   }
 
-  private async performSaveWithSideEffectPolicy(
-    preventReload: boolean,
-    forcesave: boolean,
-    overrideEmbeddableIsEditingSelfDebounce: boolean,
+  private async withPersistenceWriteLease<T>(
+    filePath: string,
+    operation: () => T | Promise<T>,
+  ): Promise<T> {
+    const lease = await this.plugin.acquireViewPersistenceWriteLease(filePath);
+    try {
+      return await operation();
+    } finally {
+      lease.release();
+    }
+  }
+
+  private async executeSaveRequest(
+    operation: SaveOperationContext,
+    suppressReloadFromOwnWrite: boolean,
+    forcePersistence: boolean,
+    bypassSameFileEditGuard: boolean,
     sideEffectPolicy: Readonly<SaveSideEffectPolicy>,
   ): Promise<SaveExecutionResult> {
     /*if(this.semaphores.viewunload && (this.ownerWindow !== window)) {
@@ -947,23 +1061,16 @@ export default class ExcalidrawView
     if (this.markdownImageController.markdownImageDeletionPrompt !== null) {
       await this.markdownImageController.markdownImageDeletionPrompt;
     }
-    if (
-      !overrideEmbeddableIsEditingSelfDebounce &&
-      this.semaphores.embeddableIsEditingSelf
-    ) {
+    if (!bypassSameFileEditGuard && this.isSameFileEditingActive()) {
       return { status: "skipped" };
     }
-    if (this.semaphores.saving) {
-      return { status: "skipped" };
-    }
-    this.semaphores.saving = true;
-
     //if there were no changes to the file super save will not save
     //and consequently main.ts modifyEventHandler will not fire
     //this.reload will not be called
-    //triggerReload is used to flag if there were no changes but file should be reloaded anyway
-    let triggerReload: boolean = false;
+    //reloadIfWriteDidNotEmitModify flags that an unchanged file must still be reloaded.
+    let reloadIfWriteDidNotEmitModify: boolean = false;
     let executionStatus: SaveExecutionResult["status"] = "unchanged";
+    let preparedSave: PreparedSave | undefined;
     try {
       const windowMigrationSaveSnapshot = this.windowMigrationSaveSnapshot;
       if (
@@ -975,20 +1082,53 @@ export default class ExcalidrawView
         return { status: "skipped" };
       }
 
-      const allowSave = this.isDirty() || forcesave; //removed this.semaphores.autosaving
-      executionStatus = allowSave ? "persisted" : "unchanged";
-      if (allowSave) {
+      const shouldPersist = this.isDirty() || forcePersistence;
+      executionStatus = shouldPersist ? "persisted" : "unchanged";
+      if (shouldPersist) {
         const appStateSnapshot = windowMigrationSaveSnapshot
           ? null
           : this.excalidrawAPI.getAppState();
-        const scene = windowMigrationSaveSnapshot
+        const sourceScene = windowMigrationSaveSnapshot
           ? windowMigrationSaveSnapshot.scene
           : this.getSceneWithAppState(undefined, appStateSnapshot);
-        const deletedElements = windowMigrationSaveSnapshot
+        if (!sourceScene) {
+          return { status: "skipped" };
+        }
+        const sourceDeletedElements = windowMigrationSaveSnapshot
           ? windowMigrationSaveSnapshot.deletedElements
           : this.excalidrawAPI
               .getSceneElementsIncludingDeleted()
               .filter((element: ExcalidrawElement) => element.isDeleted);
+        const { exportOptions, autoexportConfig } =
+          this.exportManager.capturePreparedSaveAutoexportSettings(
+            sourceScene,
+            this.data,
+          );
+        const shouldCaptureAutoexportData =
+          sideEffectPolicy.triggerAutoexport &&
+          (autoexportConfig.svg ||
+            autoexportConfig.png ||
+            Boolean(this.getHookServer()?.onTriggerAutoexportHook));
+        const saveSnapshot = createSaveSnapshot({
+          operation,
+          filePath: this.file.path,
+          sourceFileCtime: this.file.stat.ctime,
+          capturedRevision:
+            this.saveCoordinator.getCurrentRevisionForSaveCapture(),
+          sourceText: this.data,
+          scene: sourceScene,
+          deletedElements: sourceDeletedElements,
+          selectedElementIds:
+            windowMigrationSaveSnapshot?.selectedElementIds ??
+            appStateSnapshot.selectedElementIds,
+          exportOptions,
+          exportData: shouldCaptureAutoexportData
+            ? this.excalidrawData.exportPreparedSaveData()
+            : null,
+          autoexportConfig,
+        });
+        const scene = saveSnapshot.scene;
+        const deletedElements = saveSnapshot.deletedElements;
 
         let syncChanged = false;
         if (this.compatibilityMode) {
@@ -996,8 +1136,7 @@ export default class ExcalidrawView
         } else {
           syncChanged = await this.excalidrawData.syncElements(
             scene,
-            windowMigrationSaveSnapshot?.selectedElementIds ??
-              appStateSnapshot.selectedElementIds,
+            saveSnapshot.selectedElementIds,
           );
         }
 
@@ -1010,149 +1149,172 @@ export default class ExcalidrawView
           await this.loadDrawing(false, deletedElements);
         }
 
-        //reload() is triggered indirectly when saving by the modifyEventHandler in main.ts
-        //prevent reload is set here to override reload when not wanted: typically when the user is editing
-        //and we do not want to interrupt the flow by reloading the drawing into the canvas.
-        this.clearPreventReloadTimer();
-
-        this.semaphores.preventReload = preventReload;
-        await this.prepareGetViewDataFromSnapshot(scene, deletedElements);
+        // reload() is triggered indirectly when saving by FileManager's modify
+        // handler. Suppress the expected own-write echo when reloading would
+        // interrupt the user's editing flow.
+        this.clearOwnWriteReloadSuppression();
+        await this.prepareGetViewDataFromSnapshot(
+          scene,
+          deletedElements,
+          saveSnapshot.sourceText,
+        );
+        preparedSave = createPreparedSave(saveSnapshot, this.getViewData());
+        this.saveCoordinator.observePreparedSave(preparedSave);
+        const prepareAutoexportRequest = (includeOutputs: boolean) => {
+          try {
+            return this.exportManager.prepareAutoexportRequest(
+              preparedSave,
+              this.file,
+              includeOutputs && sideEffectPolicy.triggerAutoexport,
+            );
+          } catch (error: unknown) {
+            errorlog({
+              where: "ExcalidrawView.save",
+              fn: "prepareAutoexportRequest",
+              error,
+            });
+            return this.exportManager.prepareAutoexportRequest(
+              preparedSave,
+              this.file,
+              false,
+            );
+          }
+        };
 
         // Persist from the plugin's main-window realm before closing a runtime
         // whose container moved between windows. Calling TextFileView.save()
         // from a migrated popout can retain the destroyed Electron window in
         // the Node file operation.
         if (this.semaphores?.windowMigrating) {
-          const d = this.getViewData();
+          const d = preparedSave.text;
           const plugin = this.plugin;
           const file = this.file;
           const sourceWindow = this.packageLease?.window;
           if (sourceWindow && sourceWindow !== window) {
+            const autoexportRequest = prepareAutoexportRequest(true);
             plugin.registerViewMigrationPersistenceHandoff({
               leafId: this.leaf.id,
-              filePath: file.path,
-              data: d,
+              request: {
+                producerId: preparedSave.producerId,
+                targetGeneration: preparedSave.targetGeneration,
+                operationId: preparedSave.operationId,
+                requestedRevision: preparedSave.requestedRevision,
+                capturedRevision: preparedSave.capturedRevision,
+                filePath: preparedSave.filePath,
+                expectedFileCtime: file.stat.ctime,
+                text: preparedSave.text,
+                hasNonDeletedElements: preparedSave.hasNonDeletedElements,
+                reason: "window-migration",
+                migrationLeafId: this.leaf.id,
+                autoexportRequest,
+              },
             });
             this.data = d;
-            return { status: "window-migration-handed-off" };
+            return {
+              status: "window-migration-handed-off",
+              preparedSave,
+            };
           }
-          await new Promise<void>((resolve, reject) => {
-            window.setTimeout(() => {
-              if (!d) {
-                resolve();
-                return;
+          const autoexportRequest = prepareAutoexportRequest(true);
+          await this.withPersistenceWriteLease(
+            preparedSave.filePath,
+            async () => {
+              await new Promise<void>((resolve, reject) => {
+                window.setTimeout(() => {
+                  if (!d) {
+                    resolve();
+                    return;
+                  }
+                  void plugin.app.vault.modify(file, d).then(resolve, reject);
+                }, 200);
+              });
+              if (d && preparedSave.hasNonDeletedElements) {
+                scheduleBAKAfterSuccessfulPersistence(
+                  preparedSave.filePath,
+                  preparedSave.text,
+                );
               }
-              void plugin.app.vault.modify(file, d).then(resolve, reject);
-              // This is a shady edge case: do not sacrifice the BAK file in
-              // case the drawing is empty.
-              // await getImageCache().addBAKToCache(file.path, d);
-            }, 200);
-          });
+              if (d) {
+                plugin.deferPreparedAutoexportUntilMigrationComplete(
+                  this.leaf.id,
+                  autoexportRequest,
+                );
+              }
+            },
+          );
           this.data = d;
           this.lastSavedData = d;
           this.lastSaveTimestamp = file.stat.mtime;
-          return { status: "window-migration-persisted" };
+          return { status: "window-migration-persisted", preparedSave };
         }
 
-        // Existing delayed view-unload workaround for ordinary close/plugin
-        // teardown. Migration takes the awaited branch above instead.
+        // Ordinary view unload transfers immutable text to plugin-owned
+        // persistence. Window migration retains its early-unmount and
+        // replacement-owned execution branches above.
         if (this.semaphores?.viewunload) {
-          await this.prepareGetViewDataFromSnapshot(scene, deletedElements);
-          const d = this.getViewData();
-          const plugin = this.plugin;
+          if (!preparedSave.text) {
+            throw new Error("Cannot hand off an empty drawing payload");
+          }
           const file = this.file;
-          window.setTimeout(() => {
-            void (async () => {
-              if (!d) {
-                return;
+          const autoexportRequest = prepareAutoexportRequest(true);
+          return await this.withPersistenceWriteLease(
+            preparedSave.filePath,
+            () => {
+              this.plugin.handoffViewPersistence({
+                producerId: preparedSave.producerId,
+                targetGeneration: preparedSave.targetGeneration,
+                operationId: preparedSave.operationId,
+                requestedRevision: preparedSave.requestedRevision,
+                capturedRevision: preparedSave.capturedRevision,
+                filePath: preparedSave.filePath,
+                expectedFileCtime: file.stat.ctime,
+                text: preparedSave.text,
+                hasNonDeletedElements: preparedSave.hasNonDeletedElements,
+                reason: "view-unload",
+                autoexportRequest,
+              });
+              return { status: "persistence-handed-off", preparedSave };
+            },
+          );
+        }
+
+        // Serialization can take seconds for a large compressed scene. Arm
+        // suppression only for the actual write so an unrelated modification
+        // received while preparing the text remains eligible to synchronize.
+        this.ownWriteReloadGuard.setForWrite(suppressReloadFromOwnWrite);
+        try {
+          await this.withPersistenceWriteLease(
+            preparedSave.filePath,
+            async () => {
+              await super.save();
+              reloadIfWriteDidNotEmitModify =
+                this.lastSaveTimestamp === this.file.stat.mtime &&
+                !suppressReloadFromOwnWrite &&
+                forcePersistence;
+              const autoexportRequest = reloadIfWriteDidNotEmitModify
+                ? undefined
+                : prepareAutoexportRequest(true);
+              if (preparedSave.hasNonDeletedElements) {
+                scheduleBAKAfterSuccessfulPersistence(
+                  preparedSave.filePath,
+                  preparedSave.text,
+                );
               }
-              await plugin.app.vault.modify(file, d);
-              // This is a shady edge case: do not sacrifice the BAK file in
-              // case the drawing is empty.
-              // await getImageCache().addBAKToCache(file.path, d);
-            })();
-          }, 200);
-          return { status: "view-unload-scheduled" };
+              if (autoexportRequest) {
+                this.plugin.enqueuePreparedAutoexport(autoexportRequest);
+              }
+            },
+          );
+        } catch (error: unknown) {
+          this.clearOwnWriteReloadSuppression();
+          throw error;
         }
-
-        await super.save();
-
-        //saving to backup with a delay in case application closes in the meantime, I want to avoid both save and backup corrupted.
-        const path = this.file.path;
-        const data = this.lastSavedData;
-        //if the scene is empty, do not save to BAK (this could be due to a crash when the BAK should not be updated)
-        if (scene && scene.elements && scene.elements.length > 0) {
-          getImageCache().scheduleBAKToCache(path, data, 50);
-        }
-        triggerReload =
-          this.lastSaveTimestamp === this.file.stat.mtime &&
-          !preventReload &&
-          forcesave;
-        this.lastSaveTimestamp = this.file.stat.mtime;
-        //this.clearDirty(); //moved to right after allow save, to avoid autosave collision with load drawing
-
-        //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/629
-        //there were odd cases when preventReload semaphore did not get cleared and consequently a synchronized image
-        //did not update the open drawing
-        if (preventReload) {
+        if (suppressReloadFromOwnWrite) {
           this.setPreventReload();
         }
-      }
 
-      // !triggerReload means file has not changed. No need to re-export
-      //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1209 (added popout unload to the condition)
-      if (
-        !this.semaphores.windowMigrating &&
-        this.excalidrawAPI &&
-        sideEffectPolicy.triggerAutoexport &&
-        !triggerReload &&
-        !this.semaphores.autosaving &&
-        (!this.semaphores.viewunload || this.semaphores.popoutUnload)
-      ) {
-        const autoexportPreference = this.excalidrawData.autoexportPreference;
-        let autoexportConfig: AutoexportConfig = {
-          svg:
-            (autoexportPreference === AutoexportPreference.inherit &&
-              this.plugin.settings.autoexportSVG) ||
-            autoexportPreference === AutoexportPreference.both ||
-            autoexportPreference === AutoexportPreference.svg,
-          png:
-            (autoexportPreference === AutoexportPreference.inherit &&
-              this.plugin.settings.autoexportPNG) ||
-            autoexportPreference === AutoexportPreference.both ||
-            autoexportPreference === AutoexportPreference.png,
-          excalidraw:
-            !this.compatibilityMode &&
-            this.plugin.settings.autoexportExcalidraw,
-          theme: this.plugin.settings.autoExportLightAndDark
-            ? "both"
-            : (this.getViewExportTheme() as "dark" | "light"),
-        };
-        if (this.getHookServer().onTriggerAutoexportHook) {
-          try {
-            autoexportConfig =
-              this.getHookServer().onTriggerAutoexportHook({
-                excalidrawFile: this.file,
-                autoexportConfig,
-              }) ?? autoexportConfig;
-          } catch (e) {
-            errorlog({
-              where: "ExcalidrawView.save",
-              fn: "getHookServer().onTriggerAutoexportHook",
-              error: e,
-            });
-          }
-        }
-
-        if (autoexportConfig.svg) {
-          void this.saveSVG({ autoexportConfig });
-        }
-        if (autoexportConfig.png) {
-          void this.savePNG({ autoexportConfig });
-        }
-        if (autoexportConfig.excalidraw) {
-          this.saveExcalidraw();
-        }
+        this.lastSaveTimestamp = this.file.stat.mtime;
+        //this.clearDirty(); //moved to right after the persistence decision, to avoid autosave collision with load drawing
       }
     } catch (e) {
       executionStatus = "failed";
@@ -1162,14 +1324,13 @@ export default class ExcalidrawView
         error: e,
       });
       warningUnknowSeriousError();
-    } finally {
-      this.semaphores.saving = false;
     }
-    const reloadSucceeded = triggerReload
+    const reloadSucceeded = reloadIfWriteDidNotEmitModify
       ? await this.reload(true, this.file)
       : true;
     this.saveCoordinator.resetAutosaveTimer(); //next autosave period starts after save
-    return { status: reloadSucceeded ? executionStatus : "failed" };
+    const status = reloadSucceeded ? executionStatus : "failed";
+    return { status, preparedSave };
   }
 
   // get the new file content
@@ -1179,7 +1340,7 @@ export default class ExcalidrawView
    * I moved the logic from getViewData to prepareGetViewData because getViewData is Sync and prepareGetViewData is async
    * prepareGetViewData is async because of moving compression to a worker thread in 2.4.0
    */
-  private viewSaveData: string = "";
+  private preparedSaveText: string = "";
 
   async prepareGetViewData(): Promise<void> {
     await this.prepareGetViewDataFromSnapshot();
@@ -1189,19 +1350,20 @@ export default class ExcalidrawView
   private async prepareGetViewDataFromSnapshot(
     sceneSnapshot?: ReturnType<ExcalidrawView["getScene"]>,
     deletedElementsSnapshot?: ExcalidrawElement[],
+    sourceTextSnapshot: string = this.data,
   ): Promise<void> {
     if (
       (!this.excalidrawAPI && typeof sceneSnapshot === "undefined") ||
       !this.excalidrawData.loaded
     ) {
-      this.viewSaveData = this.data;
+      this.preparedSaveText = sourceTextSnapshot;
       return;
     }
 
     const captureScene = typeof sceneSnapshot === "undefined";
     const scene = captureScene ? this.getScene() : sceneSnapshot;
     if (!scene) {
-      this.viewSaveData = this.data;
+      this.preparedSaveText = sourceTextSnapshot;
       return;
     }
 
@@ -1253,11 +1415,11 @@ export default class ExcalidrawView
       }
 
       const header = syncMarkdownImagesInHeader(
-        getExcalidrawMarkdownHeaderSection(this.data, keys),
+        getExcalidrawMarkdownHeaderSection(sourceTextSnapshot, keys),
         this.excalidrawData.markdownImages,
       );
       const tail = this.plugin.settings.zoteroCompatibility
-        ? (RE_TAIL.exec(this.data)?.[1] ?? "")
+        ? (RE_TAIL.exec(sourceTextSnapshot)?.[1] ?? "")
         : "";
 
       if (!this.excalidrawData.disableCompression) {
@@ -1279,19 +1441,19 @@ export default class ExcalidrawView
       const result = header + generated + tail;
 
       this.excalidrawData.disableCompression = false;
-      this.viewSaveData = result;
+      this.preparedSaveText = result;
       return;
     }
     if (this.compatibilityMode) {
-      this.viewSaveData = JSON.stringify(scene, null, "\t");
+      this.preparedSaveText = JSON.stringify(scene, null, "\t");
       return;
     }
 
-    this.viewSaveData = this.data;
+    this.preparedSaveText = sourceTextSnapshot;
   }
 
   getViewData() {
-    return this.viewSaveData ?? this.data;
+    return this.preparedSaveText ?? this.data;
   }
 
   private hiddenMobileLeaves: [WorkspaceLeaf, string][] = [];
@@ -1699,10 +1861,18 @@ export default class ExcalidrawView
       }
       this.destroyers.push(
         //this.containerEl.onWindowMigrated(this.leaf.rebuildView.bind(this))
-        this.containerEl.onWindowMigrated(async () => {
+        this.containerEl.onWindowMigrated(async (destinationWindow) => {
           const f = this.file;
           const l = this.leaf;
           const plugin = this.plugin;
+          const activeSetViewDataLoad = this.activeSetViewDataLoad?.promise;
+          this.invalidateSetViewDataLoad();
+          const sameFileEditWasBlocked = this.isSameFileEditingActive();
+          const mustRefreshMigrationSourceText =
+            !this.compatibilityMode &&
+            (sameFileEditWasBlocked ||
+              this.pendingExternalSyncPath === f.path ||
+              this.isSynchronizing);
           // Obsidian may destroy the source Electron window before the normal
           // unload callbacks select detached-view persistence. Capture every
           // API-owned value synchronously, then unmount before the first await.
@@ -1710,12 +1880,45 @@ export default class ExcalidrawView
           this.clearExcalidrawInitializeTimer();
           this.sceneFileManager.terminateActiveLoaders();
           this.windowMigrationSaveSnapshot = null;
-          const migrationSnapshot = this.captureWindowMigrationSnapshot();
+          // Start the editor flush synchronously so an in-memory Markdown
+          // fragment advances dirty state before the migration snapshot is
+          // captured. Await it only after the mandatory source-root unmount.
+          // This also joins an invalidation already started by a leaf switch,
+          // preventing its forced save from registering a persistence handoff
+          // after the replacement view has already checked the queue.
+          const markdownImageEditorUnload =
+            beginMarkdownImageEditorViewUnload(this);
+          const migrationSnapshot = this.captureWindowMigrationSnapshot(
+            markdownImageEditorUnload !== null,
+          );
           const migrationSaveRequired =
             this.windowMigrationSaveSnapshot !== null;
           this.unmountExcalidrawRoot();
+          if (markdownImageEditorUnload !== null) {
+            await markdownImageEditorUnload;
+          }
           if (migrationSaveRequired) {
+            if (mustRefreshMigrationSourceText) {
+              // The modify event produced by a same-file Markdown editor is
+              // deliberately held until its release grace settles. Migration
+              // invalidates that pending scene synchronization, but must not
+              // serialize the captured drawing against the older Markdown
+              // envelope. Wait only the already-established grace duration,
+              // then read after the mandatory synchronous source unmount.
+              if (sameFileEditWasBlocked) {
+                await new Promise<void>((resolve) => {
+                  destinationWindow.setTimeout(
+                    resolve,
+                    EMBEDDABLE_SEMAPHORE_TIMEOUT,
+                  );
+                });
+              }
+              this.data = await plugin.app.vault.read(f);
+            }
             await this.saveCoordinator.flush();
+          }
+          if (activeSetViewDataLoad !== undefined) {
+            await activeSetViewDataLoad;
           }
           if (this.isDirty()) {
             this.semaphores.windowMigrating = false;
@@ -1726,10 +1929,18 @@ export default class ExcalidrawView
             ? this.createWindowMigrationDrawingState(migrationSnapshot)
             : null;
           this.windowMigrationSaveSnapshot = null;
+          // "Open in popout" invokes this callback while the new leaf's own
+          // setViewData() is still loading. Wait for that concrete load, then
+          // yield one destination task so its surrounding view-state
+          // transition can settle before closing and recreating this view.
+          await new Promise<void>((resolve) => {
+            destinationWindow.setTimeout(resolve, 0);
+          });
           try {
             await closeLeafView(l);
           } catch (error: unknown) {
             plugin.discardViewMigrationPersistenceHandoff(l.id);
+            plugin.completeMigrationAutoexport(l.id, f.path, false);
             this.setDirty();
             this.semaphores.windowMigrating = false;
             throw error;
@@ -2054,7 +2265,7 @@ export default class ExcalidrawView
     const api = this.excalidrawAPI;
     if (api && reload) {
       await this.save();
-      this.preventAutozoom();
+      this.suppressAutozoomOnce();
       await this.excalidrawData.loadData(this.data, this.file, this.textMode);
       this.excalidrawData.scene.appState.theme = api.getAppState().theme;
       await this.loadDrawing(false);
@@ -2096,9 +2307,13 @@ export default class ExcalidrawView
 
   async onUnloadFile(): Promise<void> {
     //deliberately not calling super.onUnloadFile() to avoid autosave (saved in unload)
+    this.invalidateSetViewDataLoad();
     await handleMarkdownImageEditorViewUnload(this);
     let counter = 0;
-    while (this.semaphores.saving && counter++ < 200) {
+    while (
+      (this.isSaveInProgress() || this.isSynchronizing) &&
+      counter++ < 200
+    ) {
       await sleep(50); //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1988
       if (counter++ === 15) {
         new Notice(t("SAVE_IS_TAKING_LONG"));
@@ -2129,7 +2344,7 @@ export default class ExcalidrawView
    * until after synchronization, compression, or native file access can let
    * Electron destroy the source popout window first and freeze Obsidian.
    */
-  private captureWindowMigrationSnapshot(): {
+  private captureWindowMigrationSnapshot(forceSaveSnapshot: boolean = false): {
     scene: NonNullable<ReturnType<ExcalidrawView["getScene"]>>;
     files: BinaryFiles;
   } | null {
@@ -2144,7 +2359,7 @@ export default class ExcalidrawView
       return null;
     }
     const files = { ...(scene.files ?? {}) };
-    if (this.isDirty()) {
+    if (this.isDirty() || forceSaveSnapshot) {
       this.windowMigrationSaveSnapshot = {
         scene,
         deletedElements: api
@@ -2194,8 +2409,9 @@ export default class ExcalidrawView
     //I noticed Obsidian calls this function twice when disabling the plugin
     //once from "unregisterView"
     //the from "detachLeavesOfType"
-    this.clearPreventReloadTimer();
-    this.clearEmbeddableNodeIsEditingTimer();
+    this.invalidateSetViewDataLoad();
+    this.ownWriteReloadGuard.destroy();
+    this.sameFileEditGate.destroy();
     this.clearExcalidrawInitializeTimer();
     if (!this.dropManager && !this.excalidrawRoot) {
       return;
@@ -2299,6 +2515,7 @@ export default class ExcalidrawView
   //onunload is called first
   onunload() {
     super.onunload();
+    this.invalidateSetViewDataLoad();
     this.destroyers.forEach((destroyer) => destroyer());
     this.restoreMobileLeaves();
     setMobileNavbarPosition(false);
@@ -2343,14 +2560,8 @@ export default class ExcalidrawView
       window.clearTimeout(this.isEditingTextResetTimer);
       this.isEditingTextResetTimer = null;
     }
-    if (this.preventReloadResetTimer) {
-      window.clearTimeout(this.preventReloadResetTimer);
-      this.preventReloadResetTimer = null;
-    }
-    if (this.editingSelfResetTimer) {
-      window.clearTimeout(this.editingSelfResetTimer);
-      this.editingSelfResetTimer = null;
-    }
+    this.ownWriteReloadGuard.destroy();
+    this.sameFileEditGate.destroy();
     if (this.resizeBatchTimer) {
       window.clearTimeout(this.resizeBatchTimer);
       this.resizeBatchTimer = null;
@@ -2391,31 +2602,25 @@ export default class ExcalidrawView
   ): Promise<boolean> {
     const loadOnModifyTrigger = file && file === this.file;
 
-    //once you've finished editing the embeddable, the first time the file
-    //reloads will be because of the embeddable changed the file,
-    //there is a 2000 ms time window allowed for this, but typically this will
-    //happen within 100 ms. When this happens the timer is cleared and the
-    //next time reload triggers the file will be reloaded as normal.
-    if (this.semaphores.embeddableIsEditingSelf) {
-      if (this.editingSelfResetTimer) {
-        this.clearEmbeddableNodeIsEditingTimer();
-        this.semaphores.embeddableIsEditingSelf = false;
-      }
+    // A same-file editor caused this modify. Refresh the raw Markdown envelope
+    // immediately, but retain one pending scene synchronization until every
+    // owner and its release grace period have settled.
+    if (this.isSameFileEditingActive()) {
       if (loadOnModifyTrigger) {
         this.data = await this.app.vault.read(this.file);
+        this.requestExternalSynchronization(file);
       }
       return true;
     }
 
-    if (this.semaphores.preventReload) {
-      this.semaphores.preventReload = false;
+    if (this.consumeOwnWriteReloadSuppression()) {
       return true;
     }
-    if (this.semaphores.saving) {
+    if (this.isSaveInProgress() || this.isSynchronizing) {
       return true;
     }
     if (this.compatibilityMode) {
-      this.lastLoadedFile = null;
+      this.textFileViewLoadedFile = null;
       this.clearDirty();
       return true;
     }
@@ -2450,9 +2655,14 @@ export default class ExcalidrawView
     }
 
     this.data = incomingData;
-    this.lastLoadedFile = null;
+    this.textFileViewLoadedFile = shouldRetainLoadedFileAfterReload(
+      fullreload,
+      Boolean(loadOnModifyTrigger),
+    )
+      ? this.file
+      : null;
     if (loadOnModifyTrigger) {
-      this.preventAutozoom();
+      this.suppressAutozoomOnce();
     }
     this.actionButtons?.save
       ?.querySelector("svg")
@@ -2500,7 +2710,7 @@ export default class ExcalidrawView
       }
     }
 
-    this.preventAutozoom();
+    this.suppressAutozoomOnce();
     this.zoomToElements(!api.getAppState().viewModeEnabled, elements);
   }
 
@@ -2614,7 +2824,7 @@ export default class ExcalidrawView
               query[0].match(/ \^([^ ]+)$/)?.[1] ??
               query[0].match(/^([^ :]+): \[\[[^\]]+]]$/)?.[1];
             if (elementId && elements.find((el) => el.id === elementId)) {
-              this.preventAutozoom();
+              this.suppressAutozoomOnce();
               window.setTimeout(() =>
                 this.zoomToElements(!api.getAppState().viewModeEnabled, [
                   elements.find((el) => el.id === elementId),
@@ -2646,7 +2856,7 @@ export default class ExcalidrawView
                       (el) => el.type === "image" && fileId.includes(el.fileId),
                     );
                     if (images.length > 0) {
-                      this.preventAutozoom();
+                      this.suppressAutozoomOnce();
                       window.setTimeout(() =>
                         this.zoomToElements(
                           !api.getAppState().viewModeEnabled,
@@ -2683,10 +2893,9 @@ export default class ExcalidrawView
     //super.setEphemeralState(state);
   }
 
-  // clear the view content
-  clear() {
+  private clearViewContent(): void {
     this.semaphores.warnAboutLinearElementLinkClick = true;
-    this.viewSaveData = "";
+    this.preparedSaveText = "";
     this.canvasNodeFactory.purgeNodes();
     this.embeddableRefs.clear();
     this.embeddableLeafRefs.clear();
@@ -2703,7 +2912,67 @@ export default class ExcalidrawView
     this.previousTrackedAppState = null;
   }
 
+  // clear the view content
+  clear() {
+    this.invalidateSetViewDataLoad();
+    this.clearViewContent();
+  }
+
   public isLoaded: boolean = false;
+
+  private getViewLoadTargetIdentity(file: TFile | null): string | null {
+    return file ? `${file.path}\u0000${file.stat.ctime}` : null;
+  }
+
+  private beginSetViewDataLoad(): SetViewDataLoad {
+    if (this.activeSetViewDataLoad) {
+      this.completeSetViewDataLoad(this.activeSetViewDataLoad);
+    }
+    let resolve!: () => void;
+    const promise = new Promise<void>((settle) => {
+      resolve = settle;
+    });
+    const load = {
+      promise,
+      resolve,
+      token: this.viewLoadGeneration.begin(
+        this.file,
+        this.getViewLoadTargetIdentity(this.file),
+      ),
+      settled: false,
+    };
+    this.activeSetViewDataLoad = load;
+    return load;
+  }
+
+  private invalidateSetViewDataLoad(): void {
+    this.viewLoadGeneration.invalidate();
+    if (this.activeSetViewDataLoad) {
+      this.completeSetViewDataLoad(this.activeSetViewDataLoad);
+    }
+  }
+
+  private isSetViewDataLoadCurrent(load: SetViewDataLoad): boolean {
+    return (
+      !load.settled &&
+      this.viewLoadGeneration.isCurrent(
+        load.token,
+        this.file,
+        this.getViewLoadTargetIdentity(this.file),
+      )
+    );
+  }
+
+  private completeSetViewDataLoad(load: SetViewDataLoad): void {
+    if (load.settled) {
+      return;
+    }
+    load.settled = true;
+    load.resolve();
+    if (this.activeSetViewDataLoad === load) {
+      this.activeSetViewDataLoad = null;
+    }
+  }
 
   /** Captures the one-shot handoff token before the base view loads data. */
   public async setState(
@@ -2718,45 +2987,67 @@ export default class ExcalidrawView
   }
 
   setViewData(data: string, clear: boolean = false) {
+    const setViewDataLoad = this.beginSetViewDataLoad();
+    const plugin = this.plugin;
+    const targetFile = setViewDataLoad.token.target;
+    const isCurrentLoad = () => this.isSetViewDataLoadCurrent(setViewDataLoad);
     const migrationHandoffToken = this.pendingMigrationHandoffToken;
     this.pendingMigrationHandoffToken = null;
-    //I am using last loaded file to control when the view reloads.
+    if (this.textFileViewLoadedFile !== this.file) {
+      this.saveCoordinator.beginSaveTarget();
+    }
+    //I am using the TextFileView-loaded file to control when the view reloads.
     //It seems text file view gets the modified file event after sync before the modifyEventHandler in main.ts
     //reload can only be triggered via reload()
+    let completionDelegatedToLayoutReady = false;
+    let completesWindowMigration = false;
+    let migrationLoadSucceeded = false;
+    let migrationAutoexportFilePath: string | null = null;
     void (async () => {
-      await this.plugin.awaitInit();
-      if (this.lastLoadedFile === this.file) {
+      await plugin.awaitInit();
+      if (!isCurrentLoad()) {
+        return;
+      }
+      if (this.textFileViewLoadedFile === targetFile) {
         return;
       }
       this.isLoaded = false;
-      if (!this.file) {
+      if (!targetFile) {
         return;
       }
+      const setViewDataFilePath = targetFile.path;
+      const setViewDataTargetGeneration =
+        this.saveCoordinator.getSaveTargetGeneration();
       const migrationDrawingHandoff = migrationHandoffToken
-        ? this.plugin.consumeViewMigrationHandoff({
+        ? plugin.consumeViewMigrationHandoff({
             token: migrationHandoffToken,
             leafId: this.leaf.id,
-            filePath: this.file.path,
-            fileMtime: this.file.stat.mtime,
+            filePath: targetFile.path,
+            fileMtime: targetFile.stat.mtime,
           })
         : null;
-      const migrationHandoffData = this.isInMainObsidianWorkspace
-        ? this.plugin.consumeViewMigrationPersistenceHandoff(
+      const migrationPersistenceHandoff = this.isInMainObsidianWorkspace
+        ? plugin.consumeViewMigrationPersistenceHandoff(
             this.leaf.id,
-            this.file.path,
+            targetFile.path,
           )
         : null;
+      completesWindowMigration =
+        migrationHandoffToken !== null || migrationPersistenceHandoff !== null;
+      migrationAutoexportFilePath = completesWindowMigration
+        ? setViewDataFilePath
+        : null;
       let migrationHandoffPersistenceFailed = false;
-      if (migrationHandoffData !== null) {
-        data = migrationHandoffData;
+      if (migrationPersistenceHandoff !== null) {
+        data = migrationPersistenceHandoff.request.text;
       }
-      if (this.plugin.settings.compareManifestToPluginVersion) {
-        void checkVersionMismatch(this.plugin);
+      if (plugin.settings.compareManifestToPluginVersion) {
+        void checkVersionMismatch(plugin);
       }
-      if (this.plugin.settings.showNewVersionNotification) {
+      if (plugin.settings.showNewVersionNotification) {
         void checkExcalidrawVersion();
       }
-      if (isMaskFile(this.plugin, this.file)) {
+      if (isMaskFile(plugin, targetFile)) {
         const notice = new Notice(t("MASK_FILE_NOTICE"), 5000);
         //add click and hold event listner to the notice
         let noticeTimeout: number;
@@ -2770,47 +3061,47 @@ export default class ExcalidrawView
         });
       }
       if (clear) {
-        this.clear();
+        this.clearViewContent();
       }
-      this.lastSaveTimestamp = this.file.stat.mtime;
-      this.lastLoadedFile = this.file;
+      this.lastSaveTimestamp = targetFile.stat.mtime;
       data = this.data = data.replaceAll("\r\n", "\n").replaceAll("\r", "\n");
-      if (migrationHandoffData !== null) {
-        try {
-          await this.app.vault.modify(this.file, data);
-          this.viewSaveData = data;
-          this.lastSavedData = data;
-          this.lastSaveTimestamp = this.file.stat.mtime;
-        } catch (error: unknown) {
-          migrationHandoffPersistenceFailed = true;
-          errorlog({
-            where: "ExcalidrawView.setViewData",
-            fn: "persistViewMigrationHandoff",
-            error,
-          });
-          warningUnknowSeriousError();
-        }
-      }
-      this.app.workspace.onLayoutReady(async () => {
-        //the leaf moved to a window and ExcalidrawView was destructed
-        //Happens during Obsidian startup if View opens in new window.
-        if (!this?.app) {
+      if (migrationPersistenceHandoff !== null) {
+        const persistenceResult = await migrationPersistenceHandoff.completion;
+        if (!isCurrentLoad()) {
           return;
         }
-        await this.plugin.awaitInit();
+        if (persistenceResult.status === "persisted") {
+          this.preparedSaveText = data;
+          this.lastSavedData = data;
+          this.lastSaveTimestamp = targetFile.stat.mtime;
+        } else {
+          migrationHandoffPersistenceFailed = true;
+        }
+      }
+      const loadAfterLayoutReady = async () => {
+        //the leaf moved to a window and ExcalidrawView was destructed
+        //Happens during Obsidian startup if View opens in new window.
+        if (!isCurrentLoad() || !this?.app) {
+          return;
+        }
+        await plugin.awaitInit();
+        if (!isCurrentLoad()) {
+          return;
+        }
         let counter = 0;
         while (
-          (!this.semaphores.viewloaded ||
-            !this.file ||
-            !this.plugin.fourthFontLoaded) &&
+          (!this.semaphores.viewloaded || !plugin.fourthFontLoaded) &&
           counter++ < 50
         ) {
           await sleep(50);
+          if (!isCurrentLoad()) {
+            return;
+          }
         }
-        if (!this.file) {
+        if (!isCurrentLoad()) {
           return;
         }
-        this.compatibilityMode = this.file.extension === "excalidraw";
+        this.compatibilityMode = targetFile.extension === "excalidraw";
         let migrationDrawingAdopted = false;
         if (
           migrationDrawingHandoff &&
@@ -2818,11 +3109,9 @@ export default class ExcalidrawView
             this.compatibilityMode &&
           this.excalidrawData.adoptMigrationState(
             migrationDrawingHandoff.excalidrawData,
-            this.file,
+            targetFile,
           ) &&
-          this.saveCoordinator.adoptMigrationState(
-            migrationDrawingHandoff.save,
-          )
+          this.saveCoordinator.adoptMigrationState(migrationDrawingHandoff.save)
         ) {
           this.excalidrawData.scene = {
             ...this.excalidrawData.scene,
@@ -2859,13 +3148,22 @@ export default class ExcalidrawView
             }
           }
         } else if (this.compatibilityMode) {
-          this.plugin.enableLegacyFilePopoverObserver();
+          plugin.enableLegacyFilePopoverObserver();
           this.actionButtons?.isRaw?.hide();
           // this.actionButtons.isParsed.hide();
           this.actionButtons?.link?.hide();
           this.textMode = TextMode.raw;
-          await this.excalidrawData.loadLegacyData(data, this.file);
-          if (!this.plugin.settings.compatibilityMode) {
+          if (
+            !(await this.excalidrawData.loadLegacyData(
+              data,
+              targetFile,
+              isCurrentLoad,
+            )) ||
+            !isCurrentLoad()
+          ) {
+            return;
+          }
+          if (!plugin.settings.compatibilityMode) {
             new Notice(t("COMPATIBILITY_MODE"), 4000);
           }
           this.excalidrawData.disableCompression = true;
@@ -2874,17 +3172,27 @@ export default class ExcalidrawView
           this.excalidrawData.disableCompression = false;
           const textMode = getTextMode(data);
           await this.changeTextMode(textMode, false);
+          if (!isCurrentLoad()) {
+            return;
+          }
           try {
             if (
               !(await this.excalidrawData.loadData(
                 data,
-                this.file,
+                targetFile,
                 this.textMode,
+                isCurrentLoad,
               ))
             ) {
               return;
             }
+            if (!isCurrentLoad()) {
+              return;
+            }
           } catch (e: unknown) {
+            if (!isCurrentLoad()) {
+              return;
+            }
             errorlog({
               where: "ExcalidrawView.setViewData",
               error: e,
@@ -2896,87 +3204,106 @@ export default class ExcalidrawView
               await this.setMarkdownView();
               return;
             }
-            const file = this.file;
-            const plugin = this.plugin;
+            const file = targetFile;
             const leaf = this.leaf;
-            void (async () => {
-              let confirmation: boolean | null = true;
-              let counter = 0;
-              const timestamp = Date.now();
-              while (!getImageCache().isReady() && confirmation) {
-                const message = `You've been now waiting for <b>${Math.round((Date.now() - timestamp) / 1000)}</b> seconds. `;
-                getImageCache().initializationNotice = true;
-                const confirmationPrompt = new MultiOptionConfirmationPrompt(
-                  plugin,
-                  `${
-                    counter > 0
-                      ? counter % 4 === 0
-                        ? `${message}The CACHE is still loading.<br><br>`
-                        : counter % 4 === 1
-                          ? `${
-                              message
-                            }Watch the top right corner for the notification.<br><br>`
-                          : counter % 4 === 2
-                            ? `${
-                                message
-                              }I really, really hope the backup will work for you! <br><br>`
-                            : `${
-                                message
-                              }I am sorry, it is taking a while, there is not much I can do... <br><br>`
-                      : ""
-                  }${t("CACHE_NOT_READY")}`,
-                );
-                confirmation = await confirmationPrompt.waitForClose;
-                counter++;
-              }
-
-              const drawingBAK = await getImageCache().getBAKFromCache(
-                file.path,
-              );
-              if (!drawingBAK) {
-                new Notice(
-                  `Error loading drawing:\n${(e as Error).message}${
-                    (e as Error).message ===
-                    "Cannot read property 'index' of undefined"
-                      ? "\n'# Drawing' section is likely missing"
-                      : ""
-                  }\n\nTry manually fixing the file or restoring an earlier version from sync history.`,
-                  10000,
-                );
-                return;
-              }
+            let confirmation: boolean | null = true;
+            let counter = 0;
+            const timestamp = Date.now();
+            while (
+              isCurrentLoad() &&
+              !getImageCache().isReady() &&
+              confirmation
+            ) {
+              const message = `You've been now waiting for <b>${Math.round((Date.now() - timestamp) / 1000)}</b> seconds. `;
+              getImageCache().initializationNotice = true;
               const confirmationPrompt = new MultiOptionConfirmationPrompt(
                 plugin,
-                t("BACKUP_AVAILABLE"),
+                `${
+                  counter > 0
+                    ? counter % 4 === 0
+                      ? `${message}The CACHE is still loading.<br><br>`
+                      : counter % 4 === 1
+                        ? `${
+                            message
+                          }Watch the top right corner for the notification.<br><br>`
+                        : counter % 4 === 2
+                          ? `${
+                              message
+                            }I really, really hope the backup will work for you! <br><br>`
+                          : `${
+                              message
+                            }I am sorry, it is taking a while, there is not much I can do... <br><br>`
+                    : ""
+                }${t("CACHE_NOT_READY")}`,
               );
-              void confirmationPrompt.waitForClose.then((confirmed) => {
-                void (async () => {
-                  if (confirmed) {
-                    await this.app.vault.modify(file, drawingBAK);
-                    plugin.excalidrawFileModes[leaf.id || file.path] =
-                      VIEW_TYPE_EXCALIDRAW;
-                    void setExcalidrawView(leaf);
-                  }
-                })();
-              });
-            })();
-            void this.setMarkdownView();
+              confirmation = await confirmationPrompt.waitForClose;
+              counter++;
+            }
+            if (!isCurrentLoad()) {
+              return;
+            }
+
+            const drawingBAK = await getImageCache().getBAKFromCache(
+              file.path,
+            );
+            if (!isCurrentLoad()) {
+              return;
+            }
+            if (!drawingBAK) {
+              new Notice(
+                `Error loading drawing:\n${(e as Error).message}${
+                  (e as Error).message ===
+                  "Cannot read property 'index' of undefined"
+                    ? "\n'# Drawing' section is likely missing"
+                    : ""
+                }\n\nTry manually fixing the file or restoring an earlier version from sync history.`,
+                10000,
+              );
+              await this.setMarkdownView();
+              return;
+            }
+            const confirmationPrompt = new MultiOptionConfirmationPrompt(
+              plugin,
+              t("BACKUP_AVAILABLE"),
+            );
+            const confirmed = await confirmationPrompt.waitForClose;
+            if (!isCurrentLoad()) {
+              return;
+            }
+            if (confirmed) {
+              await plugin.app.vault.modify(file, drawingBAK);
+              if (!isCurrentLoad()) {
+                return;
+              }
+              plugin.excalidrawFileModes[leaf.id || file.path] =
+                VIEW_TYPE_EXCALIDRAW;
+              void setExcalidrawView(leaf);
+              return;
+            }
+            await this.setMarkdownView();
             return;
           }
         }
 
         if (
+          isCurrentLoad() &&
           getImageCache().isReady() &&
           this.excalidrawData.scene &&
           this.excalidrawData.scene.elements &&
           this.excalidrawData.scene.elements.length === 0
         ) {
-          const backup = await getImageCache().getBAKFromCache(this.file.path);
+          const backup = await getImageCache().getBAKFromCache(targetFile.path);
+          if (!isCurrentLoad()) {
+            return;
+          }
           if (backup && backup.length > data.length) {
             window.setTimeout(() => {
               void (async () => {
+                if (!isCurrentLoad()) {
+                  return;
+                }
                 const confirmationPrompt = new MultiOptionConfirmationPrompt(
-                  this.plugin,
+                  plugin,
                   t("BACKUP_SAVE_AS_FILE"),
                   new Map([
                     [t("BACKUP_CANCEL"), 0],
@@ -2986,41 +3313,52 @@ export default class ExcalidrawView
                   t("BACKUP_SAVE"),
                 );
                 const result = await confirmationPrompt.waitForClose;
+                if (!isCurrentLoad()) {
+                  return;
+                }
                 if (result === 1) {
                   const path = getNewUniqueFilepath(
                     this.app.vault,
-                    `${this.file.basename}.restored.${this.file.extension}`,
-                    this.file.parent.path,
+                    `${targetFile.basename}.restored.${targetFile.extension}`,
+                    targetFile.parent.path,
                   );
                   const backupFile = await createFileAndAwaitMetacacheUpdate(
                     this.app,
                     path,
                     backup,
                   );
-                  await getImageCache().removeBAKFromCache(this.file.path);
-                  this.plugin.openDrawing(backupFile, "new-tab");
+                  if (!isCurrentLoad()) {
+                    return;
+                  }
+                  await getImageCache().removeBAKFromCache(targetFile.path);
+                  plugin.openDrawing(backupFile, "new-tab");
                 } else if (result === 2) {
-                  await getImageCache().removeBAKFromCache(this.file.path);
+                  await getImageCache().removeBAKFromCache(targetFile.path);
                 }
               })();
             });
           }
         }
-        await this.loadDrawing(true);
-
-        onLoadMessages(
-          this.excalidrawData.scene as {
-            elements: ExcalidrawElement[];
-            appState: AppState;
-          },
-        );
-
-        if (this.plugin.ea.onFileOpenHook) {
+        if (
+          !(await this.loadDrawing(
+            true,
+            undefined,
+            false,
+            false,
+            isCurrentLoad,
+          ))
+        ) {
+          return;
+        }
+        if (!isCurrentLoad()) {
+          return;
+        }
+        if (plugin.ea.onFileOpenHook) {
           const tempEA = getEA(this);
           try {
-            await this.plugin.ea.onFileOpenHook({
+            await plugin.ea.onFileOpenHook({
               ea: tempEA,
-              excalidrawFile: this.file,
+              excalidrawFile: targetFile,
               view: this,
             });
           } catch (e: unknown) {
@@ -3031,12 +3369,18 @@ export default class ExcalidrawView
           } finally {
             tempEA.destroy();
           }
+          if (!isCurrentLoad()) {
+            return;
+          }
         }
 
         const script = this.excalidrawData.getOnLoadScript();
         if (script) {
-          const scriptname = `${this.file.basename}-onlaod-script`;
+          const scriptname = `${targetFile.basename}-onlaod-script`;
           const runScript = async () => {
+            if (!isCurrentLoad()) {
+              return;
+            }
             if (!this.excalidrawAPI) {
               //need to wait for Excalidraw to initialize
               window.setTimeout((): void => {
@@ -3044,16 +3388,16 @@ export default class ExcalidrawView
               }, 200);
               return;
             }
-            void this.plugin.scriptEngine.executeScript(
+            void plugin.scriptEngine.executeScript(
               this,
               script,
               scriptname,
-              this.file,
+              targetFile,
               "drawing-onload",
             );
           };
           let allowOnloadScript: boolean | null =
-            this.plugin.settings.enableOnloadScripts;
+            plugin.settings.enableOnloadScripts;
           if (!allowOnloadScript) {
             const onloadScriptPromptButtons = new Map<string, boolean | null>([
               [t("ENABLE_ONLOAD_SCRIPTS_CONFIRM_DENY"), null],
@@ -3067,21 +3411,68 @@ export default class ExcalidrawView
               t("ENABLE_ONLOAD_SCRIPTS_CONFIRM_DENY"),
             );
             allowOnloadScript = await confirmationPrompt.waitForClose;
+            if (!isCurrentLoad()) {
+              return;
+            }
             if (allowOnloadScript) {
-              this.plugin.settings.enableOnloadScripts = true;
-              await this.plugin.saveSettings();
+              plugin.settings.enableOnloadScripts = true;
+              await plugin.saveSettings();
+              if (!isCurrentLoad()) {
+                return;
+              }
             }
           }
           if (allowOnloadScript) {
             await runScript();
           }
         }
+        if (!isCurrentLoad()) {
+          return;
+        }
+        this.textFileViewLoadedFile = targetFile;
+        this.saveCoordinator.observeAcceptedContent(
+          setViewDataFilePath,
+          setViewDataTargetGeneration,
+          data,
+        );
+        onLoadMessages(
+          this.excalidrawData.scene as {
+            elements: ExcalidrawElement[];
+            appState: AppState;
+          },
+        );
         this.isLoaded = true;
+        migrationLoadSucceeded = true;
         if (migrationHandoffPersistenceFailed) {
           this.setDirty();
         }
+      };
+      completionDelegatedToLayoutReady = true;
+      this.app.workspace.onLayoutReady(() => {
+        void loadAfterLayoutReady().finally(() => {
+          const loadWasCurrent = isCurrentLoad();
+          this.completeSetViewDataLoad(setViewDataLoad);
+          if (completesWindowMigration) {
+            plugin.completeMigrationAutoexport(
+              this.leaf.id,
+              setViewDataFilePath,
+              loadWasCurrent && migrationLoadSucceeded,
+            );
+          }
+        });
       });
-    })();
+    })().finally(() => {
+      if (!completionDelegatedToLayoutReady) {
+        this.completeSetViewDataLoad(setViewDataLoad);
+        if (migrationAutoexportFilePath !== null) {
+          plugin.completeMigrationAutoexport(
+            this.leaf.id,
+            migrationAutoexportFilePath,
+            false,
+          );
+        }
+      }
+    });
   }
 
   private getGridColor(bgColor: string): { Bold: string; Regular: string } {
@@ -3102,15 +3493,13 @@ export default class ExcalidrawView
       // ColorMaster mutates `cm`, so this step is cumulative.
       const additionalBoldStep = extremeCanvas ? 10 : 5;
       // Dynamic color: concatenate opacity to the RGB string  !!! Excalidraw expects an RGBA string !!!
-      Regular = (isDark
-        ? cm.lighterBy(regularStep)
-        : cm.darkerBy(regularStep)
-      )
+      Regular = (isDark ? cm.lighterBy(regularStep) : cm.darkerBy(regularStep))
         .alphaTo(opacity)
         .stringRGB({ alpha: true });
-      Bold = (isDark
-        ? cm.lighterBy(additionalBoldStep)
-        : cm.darkerBy(additionalBoldStep)
+      Bold = (
+        isDark
+          ? cm.lighterBy(additionalBoldStep)
+          : cm.darkerBy(additionalBoldStep)
       )
         .alphaTo(opacity)
         .stringRGB({ alpha: true });
@@ -3175,56 +3564,199 @@ export default class ExcalidrawView
     );
   }
 
-  public async synchronizeWithData(inData: ExcalidrawData) {
+  private isSynchronizationTargetCurrent(filePath: string): boolean {
+    return Boolean(
+      filePath &&
+      !this.semaphores.viewunload &&
+      !this.semaphores.windowMigrating &&
+      this.excalidrawAPI &&
+      this.file?.path === filePath,
+    );
+  }
+
+  private async acquireSynchronization(filePath: string): Promise<boolean> {
+    while (
+      this.saveCoordinator.isSaveInProgress ||
+      this.isSynchronizing ||
+      this.isSameFileEditingActive()
+    ) {
+      await sleep(100);
+      if (!this.isSynchronizationTargetCurrent(filePath)) {
+        return false;
+      }
+    }
+    if (!this.isSynchronizationTargetCurrent(filePath)) {
+      return false;
+    }
+    this.isSynchronizing = true;
+    return true;
+  }
+
+  /** Gives a pending latest-state synchronization one turn between saves. */
+  private async yieldToPendingExternalSynchronization(): Promise<void> {
+    if (this.isSameFileEditingActive()) return;
+    const syncLoop = this.externalSyncLoopPromise;
+    if (syncLoop === null) return;
+    try {
+      await syncLoop;
+    } catch {
+      // requestExternalSynchronization() owns reporting for this loop.
+    }
+  }
+
+  /** Queues one latest-state synchronization for a same-file Vault modify. */
+  public requestExternalSynchronization(file: TFile): void {
+    if (!this.isSynchronizationTargetCurrent(file.path)) {
+      return;
+    }
+    this.pendingExternalSyncPath = file.path;
+    this.ensureExternalSyncLoop();
+  }
+
+  private ensureExternalSyncLoop(): void {
+    if (this.externalSyncLoopPromise !== null) return;
+    void this.startExternalSyncLoop().catch((error: unknown) => {
+      errorlog({
+        where: "ExcalidrawView.requestExternalSynchronization",
+        fn: "drain external synchronization",
+        error,
+      });
+      new Notice(t("DRAWING_RELOAD_FAILED"), 60000);
+    });
+  }
+
+  private startExternalSyncLoop(): Promise<void> {
+    if (this.externalSyncLoopPromise !== null) {
+      return this.externalSyncLoopPromise;
+    }
+    const loop = Promise.resolve().then(() =>
+      this.drainExternalSynchronization(),
+    );
+    const trackedLoop = loop.finally(() => {
+      if (this.externalSyncLoopPromise === trackedLoop) {
+        this.externalSyncLoopPromise = null;
+        // Cover an event that arms the marker after the drain's last loop
+        // check but before this promise's completion handler runs.
+        if (this.pendingExternalSyncPath !== null) {
+          this.ensureExternalSyncLoop();
+        }
+      }
+    });
+    this.externalSyncLoopPromise = trackedLoop;
+    return trackedLoop;
+  }
+
+  private async drainExternalSynchronization(): Promise<void> {
+    let shouldScheduleAutosave = false;
+    while (this.pendingExternalSyncPath) {
+      const filePath = this.pendingExternalSyncPath;
+      if (!this.isSynchronizationTargetCurrent(filePath)) {
+        if (this.pendingExternalSyncPath === filePath) {
+          this.pendingExternalSyncPath = null;
+        }
+        continue;
+      }
+      if (!(await this.acquireSynchronization(filePath))) {
+        if (this.pendingExternalSyncPath === filePath) {
+          this.pendingExternalSyncPath = null;
+        }
+        continue;
+      }
+
+      this.pendingExternalSyncPath = null;
+      const synchronizationTargetGeneration =
+        this.saveCoordinator.getSaveTargetGeneration();
+      const incomingData = new ExcalidrawData(this.plugin);
+      let parsedIncomingData = false;
+      try {
+        const file = this.app.vault.getFileByPath(filePath);
+        if (!file) {
+          continue;
+        }
+        const data = await this.app.vault.read(file);
+        if (
+          !this.isSynchronizationTargetCurrent(filePath) ||
+          synchronizationTargetGeneration !==
+            this.saveCoordinator.getSaveTargetGeneration()
+        ) {
+          continue;
+        }
+        const classification = this.saveCoordinator.classifyContent(
+          filePath,
+          synchronizationTargetGeneration,
+          data,
+        );
+        if (isRedundantObservedSaveContent(classification)) {
+          continue;
+        }
+        await incomingData.loadData(data, file, getTextMode(data));
+        parsedIncomingData = true;
+        if (
+          this.isSynchronizationTargetCurrent(filePath) &&
+          !this.isSameFileEditingActive()
+        ) {
+          const applied = await this.applyIncomingSynchronization(
+            incomingData,
+            filePath,
+          );
+          if (applied) {
+            this.saveCoordinator.observeAcceptedContent(
+              filePath,
+              synchronizationTargetGeneration,
+              data,
+            );
+          }
+        } else if (this.isSynchronizationTargetCurrent(filePath)) {
+          this.pendingExternalSyncPath = filePath;
+        }
+      } catch (error: unknown) {
+        errorlog({
+          where: "ExcalidrawView.requestExternalSynchronization",
+          fn: "load synchronized drawing data",
+          message: `Rejected incoming drawing data for ${filePath}`,
+          error,
+        });
+        new Notice(t("DRAWING_RELOAD_FAILED"), 60000);
+      } finally {
+        incomingData.destroy();
+        this.isSynchronizing = false;
+      }
+      if (parsedIncomingData && this.isDirty()) {
+        shouldScheduleAutosave = true;
+      }
+    }
+    if (shouldScheduleAutosave && this.isDirty()) {
+      if (this.autosaveTimer && this.autosaveFunction) {
+        window.clearTimeout(this.autosaveTimer);
+      }
+      this.autosaveFunction?.();
+    }
+  }
+
+  public async synchronizeWithData(incomingData: ExcalidrawData) {
     const synchronizedFilePath = this.file?.path;
     if (
       !synchronizedFilePath ||
-      this.semaphores.viewunload ||
-      this.semaphores.windowMigrating ||
-      !this.excalidrawAPI ||
-      this.semaphores.embeddableIsEditingSelf
+      !incomingData.scene ||
+      !(await this.acquireSynchronization(synchronizedFilePath))
     ) {
       return;
     }
-    // A save sets preventReload so its first modify event is consumed by
-    // FileManager. If another same-file event reaches this method while the
-    // save (or an earlier synchronization) is still active, retain the
-    // historical three-second bound and drop the event rather than applying a
-    // likely self-bounce after the active operation. This deliberately accepts
-    // the low-probability risk of dropping a genuine external sync collision.
-    let counter = 0;
-    while (this.semaphores.saving && counter++ < 30) {
-      await sleep(100);
-      if (
-        this.semaphores.viewunload ||
-        this.semaphores.windowMigrating ||
-        !this.excalidrawAPI ||
-        this.file?.path !== synchronizedFilePath
-      ) {
-        return;
-      }
+    try {
+      await this.applyIncomingSynchronization(
+        incomingData,
+        synchronizedFilePath,
+      );
+    } finally {
+      this.isSynchronizing = false;
     }
-    if (this.semaphores.saving) {
-      errorlog({
-        where: "ExcalidrawView.synchronizeWithData",
-        message: `Aborting sync with received file (${synchronizedFilePath}) because semaphores.saving remained true for over 3 seconds`,
-        fn: "synchronizeWithData",
-      });
-      return;
-    }
-    if (
-      this.semaphores.viewunload ||
-      this.semaphores.windowMigrating ||
-      !this.excalidrawAPI ||
-      this.file?.path !== synchronizedFilePath
-    ) {
-      return;
-    }
-    if (!inData.scene) {
-      return;
-    }
-    this.semaphores.saving = true;
-    const reloadFiles = new Set<FileId>();
+  }
+
+  private async applyIncomingSynchronization(
+    incomingData: ExcalidrawData,
+    synchronizedFilePath: string,
+  ): Promise<boolean> {
+    const fileIdsToReload = new Set<FileId>();
 
     try {
       const syncMarkdownImageSource = (
@@ -3235,7 +3767,7 @@ export default class ExcalidrawView
           return false;
         }
         if (customData.source === "local") {
-          const incomingSource = inData.getMarkdownImage(
+          const incomingSource = incomingData.getMarkdownImage(
             incomingElement.fileId,
           );
           if (!incomingSource) {
@@ -3254,7 +3786,7 @@ export default class ExcalidrawView
           return true;
         }
 
-        const incomingFile = inData.getFile(incomingElement.fileId);
+        const incomingFile = incomingData.getFile(incomingElement.fileId);
         if (!incomingFile) {
           return false;
         }
@@ -3270,59 +3802,61 @@ export default class ExcalidrawView
         return true;
       };
 
-      const deletedIds = inData.deletedElements.map((el) => el.id);
-      const sceneElements = this.excalidrawAPI
+      const deletedIds = incomingData.deletedElements.map((el) => el.id);
+      const mergedElements = this.excalidrawAPI
         .getSceneElementsIncludingDeleted()
         //remove deleted elements
         .filter((el: ExcalidrawElement) => !deletedIds.contains(el.id));
-      const sceneElementIds = sceneElements.map(
+      const sceneElementIds = mergedElements.map(
         (el: ExcalidrawElement) => el.id,
       );
 
-      const manageMapChanges = (incomingElement: ExcalidrawElement) => {
+      const applyIncomingElementMetadata = (
+        incomingElement: ExcalidrawElement,
+      ) => {
         switch (incomingElement.type) {
           case "text":
             this.excalidrawData.textElements.set(
               incomingElement.id,
-              inData.textElements.get(incomingElement.id),
+              incomingData.textElements.get(incomingElement.id),
             );
             break;
           case "image":
             if (getMarkdownImageCustomData(incomingElement)) {
               syncMarkdownImageSource(incomingElement);
-              reloadFiles.add(incomingElement.fileId);
-            } else if (inData.getFile(incomingElement.fileId)) {
+              fileIdsToReload.add(incomingElement.fileId);
+            } else if (incomingData.getFile(incomingElement.fileId)) {
               this.excalidrawData.setFile(
                 incomingElement.fileId,
-                inData.getFile(incomingElement.fileId),
+                incomingData.getFile(incomingElement.fileId),
               );
-              reloadFiles.add(incomingElement.fileId);
-            } else if (inData.getEquation(incomingElement.fileId)) {
+              fileIdsToReload.add(incomingElement.fileId);
+            } else if (incomingData.getEquation(incomingElement.fileId)) {
               this.excalidrawData.setEquation(
                 incomingElement.fileId,
-                inData.getEquation(incomingElement.fileId),
+                incomingData.getEquation(incomingElement.fileId),
               );
-              reloadFiles.add(incomingElement.fileId);
+              fileIdsToReload.add(incomingElement.fileId);
             }
             break;
         }
 
-        if (inData.elementLinks.has(incomingElement.id)) {
+        if (incomingData.elementLinks.has(incomingElement.id)) {
           this.excalidrawData.elementLinks.set(
             incomingElement.id,
-            inData.elementLinks.get(incomingElement.id),
+            incomingData.elementLinks.get(incomingElement.id),
           );
         }
       };
 
       //update items with higher version number then in scene
-      inData.scene.elements.forEach(
+      incomingData.scene.elements.forEach(
         (
           incomingElement: ExcalidrawElement,
           idx: number,
           inElements: ExcalidrawElement[],
         ) => {
-          const sceneElement: ExcalidrawElement = sceneElements.filter(
+          const sceneElement: ExcalidrawElement = mergedElements.filter(
             (element: ExcalidrawElement) => element.id === incomingElement.id,
           )[0];
           if (
@@ -3333,13 +3867,13 @@ export default class ExcalidrawView
                 JSON.stringify(sceneElement) !==
                   JSON.stringify(incomingElement)))
           ) {
-            manageMapChanges(incomingElement);
+            applyIncomingElementMetadata(incomingElement);
             //place into correct element layer sequence
             const currentLayer = sceneElementIds.indexOf(incomingElement.id);
             //remove current element from scene
-            sceneElements.splice(currentLayer, 1);
+            mergedElements.splice(currentLayer, 1);
             if (idx === 0) {
-              sceneElements.splice(0, 0, incomingElement);
+              mergedElements.splice(0, 0, incomingElement);
               if (currentLayer !== 0) {
                 sceneElementIds.splice(currentLayer, 1);
                 sceneElementIds.splice(0, 0, incomingElement.id);
@@ -3347,22 +3881,22 @@ export default class ExcalidrawView
             } else {
               const prevId = inElements[idx - 1].id;
               const parentLayer = sceneElementIds.indexOf(prevId);
-              sceneElements.splice(parentLayer + 1, 0, incomingElement);
+              mergedElements.splice(parentLayer + 1, 0, incomingElement);
               if (parentLayer !== currentLayer - 1) {
                 sceneElementIds.splice(currentLayer, 1);
                 sceneElementIds.splice(parentLayer + 1, 0, incomingElement.id);
               }
             }
           } else if (!sceneElement) {
-            manageMapChanges(incomingElement);
+            applyIncomingElementMetadata(incomingElement);
 
             if (idx === 0) {
-              sceneElements.splice(0, 0, incomingElement);
+              mergedElements.splice(0, 0, incomingElement);
               sceneElementIds.splice(0, 0, incomingElement.id);
             } else {
               const prevId = inElements[idx - 1].id;
               const parentLayer = sceneElementIds.indexOf(prevId);
-              sceneElements.splice(parentLayer + 1, 0, incomingElement);
+              mergedElements.splice(parentLayer + 1, 0, incomingElement);
               sceneElementIds.splice(parentLayer + 1, 0, incomingElement.id);
             }
           } else if (sceneElement && incomingElement.type === "image") {
@@ -3371,12 +3905,12 @@ export default class ExcalidrawView
                 syncMarkdownImageSource(incomingElement) ||
                 !this.excalidrawAPI.getFiles()[incomingElement.fileId]
               ) {
-                reloadFiles.add(incomingElement.fileId);
+                fileIdsToReload.add(incomingElement.fileId);
               }
               return;
             }
             //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/632
-            const incomingFile = inData.getFile(incomingElement.fileId);
+            const incomingFile = incomingData.getFile(incomingElement.fileId);
             const sceneFile = this.excalidrawData.getFile(
               incomingElement.fileId,
             );
@@ -3394,40 +3928,43 @@ export default class ExcalidrawView
             if (shouldUpdate) {
               this.excalidrawData.setFile(
                 incomingElement.fileId,
-                inData.getFile(incomingElement.fileId),
+                incomingData.getFile(incomingElement.fileId),
               );
-              reloadFiles.add(incomingElement.fileId);
+              fileIdsToReload.add(incomingElement.fileId);
             }
           }
         },
       );
       const loadedFiles = this.excalidrawAPI.getFiles();
-      sceneElements.forEach((element) => {
+      mergedElements.forEach((element) => {
         if (
           element.type === "image" &&
           getMarkdownImageCustomData(element) &&
           !loadedFiles[element.fileId]
         ) {
           syncMarkdownImageSource(element);
-          reloadFiles.add(element.fileId);
+          fileIdsToReload.add(element.fileId);
         }
       });
-      this.previousSceneVersion = this.getSceneVersion(sceneElements);
+      this.previousSceneVersion = this.getSceneVersion(mergedElements);
       //changing files could result in a race condition for sync. If at the end of sync there are differences
       //set dirty will trigger an autosave
       if (
-        this.getSceneVersion(inData.scene.elements) !==
+        this.getSceneVersion(incomingData.scene.elements) !==
         this.previousSceneVersion
       ) {
         this.setDirty();
       }
       this.updateScene({
-        elements: sceneElements,
-        captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+        elements: mergedElements,
+        // Incoming Vault state is synchronization, not a local undoable edit.
+        // Local state retained by the merge is marked dirty above.
+        captureUpdate: CaptureUpdateAction.NEVER,
       });
-      if (reloadFiles.size > 0) {
-        await this.loadSceneFiles(false, reloadFiles, undefined, undefined);
+      if (fileIdsToReload.size > 0) {
+        await this.loadSceneFiles(false, fileIdsToReload, undefined, undefined);
       }
+      return true;
     } catch (e) {
       errorlog({
         where: "ExcalidrawView.synchronizeWithData",
@@ -3435,8 +3972,7 @@ export default class ExcalidrawView
         fn: "synchronizeWithData",
         error: e,
       });
-    } finally {
-      this.semaphores.saving = false;
+      return false;
     }
   }
 
@@ -3453,7 +3989,11 @@ export default class ExcalidrawView
     deletedElements?: ExcalidrawElement[],
     isReloading: boolean = false,
     preserveViewport: boolean = false,
-  ) {
+    isCurrent: () => boolean = () => true,
+  ): Promise<boolean> {
+    if (!isCurrent()) {
+      return false;
+    }
     const excalidrawData = this.excalidrawData.scene;
     const isOpenInMultipleLeaves =
       getExcalidraAndMarkdowViewsForFile(this.app, this.file).length > 1;
@@ -3468,7 +4008,7 @@ export default class ExcalidrawView
     this.semaphores.justLoaded = justloaded;
     this.clearDirty();
     const om = this.excalidrawData.getOpenMode();
-    this.semaphores.preventReload = false;
+    this.clearOwnWriteReloadSuppression();
     const penEnabled = this.plugin.isPenMode();
     const api = this.excalidrawAPI;
     if (api) {
@@ -3539,44 +4079,54 @@ export default class ExcalidrawView
       }
       this.onAfterLoadScene(justloaded);
     } else {
-      await this.instantiateExcalidraw({
-        elements: excalidrawData.elements,
-        appState: {
-          ...appState,
-          ...(excalidrawData.appState.frameRendering &&
-          excalidrawData.appState.frameRendering.markerName === undefined
-            ? {
-                frameRendering: {
-                  ...excalidrawData.appState.frameRendering,
-                  markerName: true,
-                  markerEnabled: true,
-                },
-              }
-            : {}),
-          zenModeEnabled: om.zenModeEnabled,
-          viewModeEnabled:
-            excalidrawData.elements.length > 0 ? om.viewModeEnabled : false,
-          linkOpacity: this.excalidrawData.getLinkOpacity(),
-          penMode: penEnabled,
-          penDetected: penEnabled,
-          allowPinchZoom: this.plugin.settings.allowPinchZoom,
-          allowWheelZoom: this.plugin.settings.allowWheelZoom,
-          pinnedScripts: this.plugin.settings.pinnedScripts,
-          customPens: this.plugin.settings.customPens.slice(
-            0,
-            this.plugin.settings.numberOfCustomPens,
-          ),
-          gridDirection: this.plugin.settings.gridSettings.GRID_DIRECTION,
+      const libraryItems = await this.getLibrary();
+      if (!isCurrent()) {
+        return false;
+      }
+      await this.instantiateExcalidraw(
+        {
+          elements: excalidrawData.elements,
+          appState: {
+            ...appState,
+            ...(excalidrawData.appState.frameRendering &&
+            excalidrawData.appState.frameRendering.markerName === undefined
+              ? {
+                  frameRendering: {
+                    ...excalidrawData.appState.frameRendering,
+                    markerName: true,
+                    markerEnabled: true,
+                  },
+                }
+              : {}),
+            zenModeEnabled: om.zenModeEnabled,
+            viewModeEnabled:
+              excalidrawData.elements.length > 0 ? om.viewModeEnabled : false,
+            linkOpacity: this.excalidrawData.getLinkOpacity(),
+            penMode: penEnabled,
+            penDetected: penEnabled,
+            allowPinchZoom: this.plugin.settings.allowPinchZoom,
+            allowWheelZoom: this.plugin.settings.allowWheelZoom,
+            pinnedScripts: this.plugin.settings.pinnedScripts,
+            customPens: this.plugin.settings.customPens.slice(
+              0,
+              this.plugin.settings.numberOfCustomPens,
+            ),
+            gridDirection: this.plugin.settings.gridSettings.GRID_DIRECTION,
+          },
+          // A migration publishes its already-transferred files progressively
+          // after initialization so one all-at-once decode cannot block the
+          // replacement editor's first paint.
+          files:
+            this.pendingMigrationBinaryFiles === null
+              ? excalidrawData.files
+              : {},
+          libraryItems,
         },
-        // A migration publishes its already-transferred files progressively
-        // after initialization so one all-at-once decode cannot block the
-        // replacement editor's first paint.
-        files:
-          this.pendingMigrationBinaryFiles === null
-            ? excalidrawData.files
-            : {},
-        libraryItems: await this.getLibrary(),
-      });
+        isCurrent,
+      );
+      if (!isCurrent()) {
+        return false;
+      }
       //files are loaded when excalidrawAPI is mounted
     }
     const isCompressed = this.data.match(/```compressed-json\n/gm) !== null;
@@ -3588,6 +4138,7 @@ export default class ExcalidrawView
     ) {
       this.setDirty();
     }
+    return true;
   }
 
   isEditedAsMarkdownInOtherView(): boolean {
@@ -3683,12 +4234,7 @@ export default class ExcalidrawView
         }
       }
       if (missingFileIds.size > 0) {
-        void this.loadSceneFiles(
-          false,
-          missingFileIds,
-          undefined,
-          undefined,
-        );
+        void this.loadSceneFiles(false, missingFileIds, undefined, undefined);
       } else {
         this.lastSceneLoadTime = Date.now();
       }
@@ -3718,10 +4264,11 @@ export default class ExcalidrawView
       this.migrationBinaryFilePublication !== null
     ) {
       if (this.migrationBinaryFilePublication === null) {
-        this.migrationBinaryFilePublication =
-          this.publishMigrationBinaryFiles(api).finally(() => {
-            this.migrationBinaryFilePublication = null;
-          });
+        this.migrationBinaryFilePublication = this.publishMigrationBinaryFiles(
+          api,
+        ).finally(() => {
+          this.migrationBinaryFilePublication = null;
+        });
       }
     } else {
       void this.loadSceneFiles(false, undefined, undefined, undefined);
@@ -3957,12 +4504,7 @@ export default class ExcalidrawView
     const plugin = this._plugin;
     const file = this.file;
     const leaf = this.leaf;
-    if (
-      !plugin ||
-      !file ||
-      leaf.view !== this ||
-      this.semaphores.viewunload
-    ) {
+    if (!plugin || !file || leaf.view !== this || this.semaphores.viewunload) {
       return;
     }
 
@@ -3984,10 +4526,7 @@ export default class ExcalidrawView
       }
 
       plugin.excalidrawFileModes[this.id || file.path] = "markdown";
-      await plugin.setMarkdownView(
-        leaf,
-        eState as ViewStateResult | undefined,
-      );
+      await plugin.setMarkdownView(leaf, eState as ViewStateResult | undefined);
     } catch (e: unknown) {
       errorlog({
         where: "ExcalidrawView.setMarkdownView",
@@ -4693,7 +5232,7 @@ export default class ExcalidrawView
       api.refreshAllArrows();
     }
     if (save) {
-      await this.save(false); //preventReload=false will ensure that markdown links are paresed and displayed correctly
+      await this.save(false); //suppressReloadFromOwnWrite=false ensures that Markdown links are parsed and displayed correctly
     } else {
       this.setDirty();
     }
@@ -5441,7 +5980,7 @@ export default class ExcalidrawView
       }
     }
     if (
-      !this.semaphores.dirty &&
+      !this.isDirty() &&
       st.editingTextElement === null &&
       //Removed because of
       //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/565
@@ -7241,11 +7780,23 @@ export default class ExcalidrawView
     }
   }
 
-  private async instantiateExcalidraw(initdata: ExcalidrawInitialDataState) {
+  private async instantiateExcalidraw(
+    initdata: ExcalidrawInitialDataState,
+    isCurrent: () => boolean = () => true,
+  ): Promise<void> {
     await this.plugin.awaitInit();
+    if (!isCurrent()) {
+      return;
+    }
     let counter = 0;
     while (!this.semaphores.scriptsReady && counter++ < 20) {
       await sleep(50);
+      if (!isCurrent()) {
+        return;
+      }
+    }
+    if (!isCurrent()) {
+      return;
     }
     this.contentEl.empty();
     const React = this.packages.react;
