@@ -119,6 +119,7 @@ export let {
   loadMermaid,
   syncInvalidIndices,
   getDefaultColorPalette,
+  convertToExcalidrawElements,
 } = excalidrawLib;
 
 export function updateExcalidrawLib() {
@@ -138,6 +139,7 @@ export function updateExcalidrawLib() {
       "getLineHeight",
       "restoreElements",
       "restoreLibraryItems",
+      "convertToExcalidrawElements",
     ];
 
     for (const fnName of requiredFunctions) {
@@ -178,6 +180,7 @@ export function updateExcalidrawLib() {
       loadMermaid,
       syncInvalidIndices,
       getDefaultColorPalette,
+      convertToExcalidrawElements,
     } = excalidrawLib);
   } catch (error) {
     if (error instanceof Error || typeof error === "string") {

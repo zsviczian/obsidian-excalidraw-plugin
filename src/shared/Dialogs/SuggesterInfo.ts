@@ -390,6 +390,12 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field: "addStickyNote",
+    code: 'addStickyNote(topX: number, topY: number, text: string, formatting?: {width?: number; height?: number; fontSize?: number; fontFamily?: number; textAlign?: "left" | "center" | "right"; textVerticalAlign?: "top" | "middle" | "bottom";}, id?: string): string;',
+    desc: "Adds a sticky note using the current EA colors and styles. The optional label is fitted automatically, and the function returns the note container ID.",
+    after: "",
+  },
+  {
     field: "addDiamond",
     code: "addDiamond(topX: number, topY: number, width: number, height: number, id?:string): string;",
     desc: null,

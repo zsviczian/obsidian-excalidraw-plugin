@@ -21,7 +21,17 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 ## New
 - Copied Markdown image SVGs now replace embedded base64 images and fonts with short placeholders, making them smaller and easier to share with AI agents when developing custom CSS.
 
+## New from Excalidraw.com
+- Create sticky notes with the new **Sticky note** tool or the **N** shortcut. Labels automatically fit and grow with their note, with dedicated colors and a creation-date footer. [#12064](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/12064)
+
+## New in Excalidraw Automate
+- Scripts can create native sticky notes, including automatically fitted labels:
+\`\`\`ts
+addStickyNote(topX: number, topY: number, text: string, formatting?: {width?: number; height?: number; fontSize?: number; fontFamily?: number; textAlign?: "left" | "center" | "right"; textVerticalAlign?: "top" | "middle" | "bottom";}, id?: string): string;
+\`\`\`
+
 ## Fixed
+- Drawing persistence is now more reliable during rapid edits across multiple tabs, popout moves, and immediate closing. Backups and automatic exports now track the exact successfully saved revision.
 - Rapidly changing Markdown image appearance, selection, or image/embeddable conversion no longer leaves a rejected image-render promise in the console or lets a superseded render overwrite the newer element state.
 `,
 "2.27.3": `
