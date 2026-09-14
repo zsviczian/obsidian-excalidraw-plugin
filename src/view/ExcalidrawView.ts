@@ -516,12 +516,8 @@ export default class ExcalidrawView
     scriptsReady: false,
     justLoaded: false,
     preventAutozoom: false,
-    autosaving: false,
-    dirty: null,
     preventReload: false,
     isEditingText: false,
-    saving: false,
-    forceSaving: false,
     hoverSleep: false,
     wheelTimeout: null,
     shouldSaveImportedImage: false,
@@ -1086,7 +1082,7 @@ export default class ExcalidrawView
         return { status: "skipped" };
       }
 
-      const shouldPersist = this.isDirty() || forcePersistence; //removed this.semaphores.autosaving
+      const shouldPersist = this.isDirty() || forcePersistence;
       executionStatus = shouldPersist ? "persisted" : "unchanged";
       if (shouldPersist) {
         const appStateSnapshot = windowMigrationSaveSnapshot
@@ -6005,7 +6001,7 @@ export default class ExcalidrawView
       }
     }
     if (
-      !this.semaphores.dirty &&
+      !this.isDirty() &&
       st.editingTextElement === null &&
       //Removed because of
       //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/565

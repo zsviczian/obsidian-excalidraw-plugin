@@ -115,6 +115,10 @@ export class ViewSaveCoordinator {
   public autosaveFunction: (() => void) | null = null;
   private currentRevision = 0;
   private savedRevision = 0;
+  private saveInProgress = false;
+  private autosaveInProgress = false;
+  private forceSaveInProgress = false;
+  private dirtyFilePath: string | null = null;
   private activeSaveRevision: number | null = null;
   private pendingSaveRequest: SaveRequest | null = null;
   private saveLoopPromise: Promise<SaveExecutionResult> | null = null;
@@ -131,14 +135,14 @@ export class ViewSaveCoordinator {
 
   /** Whether the coordinator-owned persistence exclusion flag is active. */
   public get isSaveInProgress(): boolean {
-    return Boolean(this.view.semaphores?.saving);
+    return this.saveInProgress;
   }
 
   /** Whether persistence must wait for save, synchronization, or autosave work. */
   public get isBusy(): boolean {
     return (
       this.isSaveOrSynchronizationInProgress ||
-      Boolean(this.view.semaphores?.autosaving)
+      this.autosaveInProgress
     );
   }
 
@@ -159,7 +163,7 @@ export class ViewSaveCoordinator {
       operationId: this.nextSaveOperationId++,
       requestedRevision: request.revision,
     };
-    this.view.semaphores.saving = true;
+    this.saveInProgress = true;
     try {
       return await this.dependencies.performSave(
         operation,
@@ -169,7 +173,7 @@ export class ViewSaveCoordinator {
         request.sideEffectPolicy,
       );
     } finally {
-      this.view.semaphores.saving = false;
+      this.saveInProgress = false;
     }
   }
 
@@ -312,14 +316,14 @@ export class ViewSaveCoordinator {
 
   private reconcileDirtyState(): void {
     if (this.currentRevision > this.savedRevision) {
-      this.view.semaphores.dirty = this.view.file?.path;
+      this.dirtyFilePath = this.view.file?.path;
       this.dependencies.markDirtyVisuals();
       return;
     }
     if (this.view.semaphores.viewunload || !this.view.excalidrawAPI) {
       return;
     }
-    this.view.semaphores.dirty = null;
+    this.dirtyFilePath = null;
     this.dependencies.clearDirtyVisuals();
   }
 
@@ -358,7 +362,7 @@ export class ViewSaveCoordinator {
     }
     this.view.clearPreventReloadTimer();
     this.view.semaphores.preventReload = false;
-    this.view.semaphores.forceSaving = true;
+    this.forceSaveInProgress = true;
     try {
       const result = await this.enqueueSave({
         suppressReloadFromOwnWrite: false,
@@ -391,7 +395,7 @@ export class ViewSaveCoordinator {
       });
       new Notice(t("WARNING_SERIOUS_ERROR"), 60000);
     } finally {
-      this.view.semaphores.forceSaving = false;
+      this.forceSaveInProgress = false;
     }
   }
 
@@ -488,8 +492,8 @@ export class ViewSaveCoordinator {
         if (
           this.dependencies.isDirty() &&
           this.view.plugin.autosaveEnabled &&
-          !this.view.semaphores.forceSaving &&
-          !this.view.semaphores.autosaving &&
+          !this.forceSaveInProgress &&
+          !this.autosaveInProgress &&
           !this.view.isSameFileEditingActive() &&
           !isFreedrawActive &&
           !isEditingText &&
@@ -497,11 +501,11 @@ export class ViewSaveCoordinator {
         ) {
           this.autosaveTimer = null;
           if (this.view.excalidrawAPI) {
-            this.view.semaphores.autosaving = true;
+            this.autosaveInProgress = true;
             // Preserve the non-blocking save used to avoid lag on large files.
             void this.dependencies
               .requestSave()
-              .then(() => (this.view.semaphores.autosaving = false));
+              .then(() => (this.autosaveInProgress = false));
           }
           this.autosaveTimer = window.setTimeout(
             timer,
@@ -511,7 +515,7 @@ export class ViewSaveCoordinator {
           this.autosaveTimer = window.setTimeout(
             timer,
             this.view.plugin.activeExcalidrawView === this.view &&
-              this.view.semaphores.dirty &&
+              this.dirtyFilePath &&
               this.view.plugin.autosaveEnabled
               ? 1000
               : this.view.autosaveInterval,
@@ -554,7 +558,7 @@ export class ViewSaveCoordinator {
       this.resetAutosaveTimer();
     }
     this.currentRevision += 1;
-    this.view.semaphores.dirty = this.view.file?.path;
+    this.dirtyFilePath = this.view.file?.path;
     this.dependencies.markDirtyVisuals();
     if (this.saveLoopPromise !== null) {
       this.queueTrailingSave();
@@ -565,8 +569,8 @@ export class ViewSaveCoordinator {
   public isDirty(): boolean {
     return (
       this.currentRevision > this.savedRevision &&
-      Boolean(this.view.semaphores?.dirty) &&
-      this.view.semaphores.dirty === this.view.file?.path
+      Boolean(this.dirtyFilePath) &&
+      this.dirtyFilePath === this.view.file?.path
     );
   }
 
@@ -690,7 +694,7 @@ export class ViewSaveCoordinator {
     }
     this.currentRevision += 1;
     this.savedRevision = this.currentRevision;
-    this.view.semaphores.dirty = null;
+    this.dirtyFilePath = null;
     this.dependencies.clearDirtyVisuals();
   }
 
@@ -727,7 +731,7 @@ export class ViewSaveCoordinator {
     }
     this.currentRevision = state.currentRevision;
     this.savedRevision = state.savedRevision;
-    this.view.semaphores.dirty = null;
+    this.dirtyFilePath = null;
     this.dependencies.clearDirtyVisuals();
     return true;
   }
