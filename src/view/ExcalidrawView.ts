@@ -69,7 +69,6 @@ import {
   ExcalidrawData,
   REG_LINKINDEX_HYPERLINK,
   REGEX_LINK,
-  AutoexportPreference,
   getExcalidrawMarkdownHeaderSection,
   parseMarkdownImages,
   syncMarkdownImagesInHeader,
@@ -1099,27 +1098,11 @@ export default class ExcalidrawView
           : this.excalidrawAPI
               .getSceneElementsIncludingDeleted()
               .filter((element: ExcalidrawElement) => element.isDeleted);
-        const exportOptions =
-          this.exportManager.capturePreparedSaveExportOptions(sourceScene);
-        const autoexportPreference = this.excalidrawData.autoexportPreference;
-        const autoexportConfig: AutoexportConfig = {
-          svg:
-            (autoexportPreference === AutoexportPreference.inherit &&
-              this.plugin.settings.autoexportSVG) ||
-            autoexportPreference === AutoexportPreference.both ||
-            autoexportPreference === AutoexportPreference.svg,
-          png:
-            (autoexportPreference === AutoexportPreference.inherit &&
-              this.plugin.settings.autoexportPNG) ||
-            autoexportPreference === AutoexportPreference.both ||
-            autoexportPreference === AutoexportPreference.png,
-          excalidraw:
-            !this.compatibilityMode &&
-            this.plugin.settings.autoexportExcalidraw,
-          theme: this.plugin.settings.autoExportLightAndDark
-            ? "both"
-            : exportOptions.theme,
-        };
+        const { exportOptions, autoexportConfig } =
+          this.exportManager.capturePreparedSaveAutoexportSettings(
+            sourceScene,
+            this.data,
+          );
         const shouldCaptureAutoexportData =
           sideEffectPolicy.triggerAutoexport &&
           (autoexportConfig.svg ||

@@ -1,4 +1,10 @@
-import { normalizePath, Notice, type TFile } from "obsidian";
+import {
+  getFrontMatterInfo,
+  normalizePath,
+  Notice,
+  parseYaml,
+  type TFile,
+} from "obsidian";
 import type { FileId } from "@zsviczian/excalidraw/types/element/src/types";
 import type { BinaryFileData } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { DEVICE } from "../../constants/constants";
@@ -38,6 +44,10 @@ import {
 } from "../../utils/exportUtils";
 import type ExcalidrawView from "../ExcalidrawView";
 import type { PreparedSave, PreparedSaveExportOptions } from "./saveSnapshot";
+import {
+  resolvePreparedAutoexportSettings,
+  type PreparedAutoexportSettings,
+} from "./preparedAutoexportFrontmatter";
 
 /** Runtime dependencies supplied by the view's existing import graph. */
 export interface ViewExportDependencies {
@@ -226,31 +236,52 @@ export class ViewExportManager {
         );
   }
 
-  /** Captures current automatic-export settings without retaining dialog state. */
-  public capturePreparedSaveExportOptions(
+  private getSaveOwnedFrontmatter(text: string): Record<string, unknown> {
+    try {
+      const info = getFrontMatterInfo(text);
+      if (!info.exists) {
+        return {};
+      }
+      const parsed = parseYaml(info.frontmatter) as unknown;
+      return parsed !== null &&
+        typeof parsed === "object" &&
+        !Array.isArray(parsed)
+        ? (parsed as Record<string, unknown>)
+        : {};
+    } catch {
+      return {};
+    }
+  }
+
+  /** Captures automatic-export settings from the save-owned Markdown envelope. */
+  public capturePreparedSaveAutoexportSettings(
     scene: ExcalidrawViewScene,
-  ): PreparedSaveExportOptions {
-    const file = this.view.file;
+    sourceText: string,
+  ): PreparedAutoexportSettings {
     const sceneTheme = scene.appState.theme === "dark" ? "dark" : "light";
-    return {
-      theme: this.dependencies.getExportTheme(
-        this.view.plugin,
-        file,
-        sceneTheme,
-      ) as "light" | "dark",
-      embedScene: this.dependencies.shouldEmbedScene(this.view.plugin, file),
-      padding: this.dependencies.getExportPadding(this.view.plugin, file),
-      scale: this.dependencies.getPNGScale(this.view.plugin, file),
-      withBackground: Boolean(
-        this.dependencies.getWithBackground(this.view.plugin, file),
-      ),
-      includeInternalLinks: Boolean(
-        this.dependencies.getExportInternalLinks(this.view.plugin, file),
-      ),
-      isMask: Boolean(
-        file && this.dependencies.isMaskFile(this.view.plugin, file),
-      ),
+    const settings = this.view.plugin.settings;
+    const exportOptions: PreparedSaveExportOptions = {
+      theme: settings.exportWithTheme ? sceneTheme : "light",
+      embedScene: settings.exportEmbedScene,
+      padding: settings.exportPaddingSVG,
+      scale: settings.pngExportScale,
+      withBackground: settings.exportWithBackground,
+      includeInternalLinks: true,
+      isMask: false,
     };
+    return resolvePreparedAutoexportSettings(
+      {
+        exportOptions,
+        autoexportConfig: {
+          svg: settings.autoexportSVG,
+          png: settings.autoexportPNG,
+          excalidraw:
+            !this.view.compatibilityMode && settings.autoexportExcalidraw,
+          theme: settings.autoExportLightAndDark ? "both" : exportOptions.theme,
+        },
+      },
+      this.getSaveOwnedFrontmatter(sourceText),
+    );
   }
 
   /** Captures hook-adjusted output paths before the originating view retires. */
@@ -277,8 +308,15 @@ export class ViewExportManager {
       return createBarrier();
     }
 
+    const saveOwnedSettings = resolvePreparedAutoexportSettings(
+      {
+        exportOptions: preparedSave.exportOptions,
+        autoexportConfig: preparedSave.autoexportConfig,
+      },
+      this.getSaveOwnedFrontmatter(preparedSave.text),
+    );
     let autoexportConfig: AutoexportConfig = {
-      ...preparedSave.autoexportConfig,
+      ...saveOwnedSettings.autoexportConfig,
     };
     const hookServer = this.view.getHookServer();
     if (hookServer?.onTriggerAutoexportHook) {
@@ -365,7 +403,7 @@ export class ViewExportManager {
       ...requestIdentity,
       kind: "render",
       scene: preparedSave.scene,
-      exportOptions: preparedSave.exportOptions,
+      exportOptions: saveOwnedSettings.exportOptions,
       exportData: preparedSave.exportData,
       outputs: Array.from(outputs.values()),
     };
