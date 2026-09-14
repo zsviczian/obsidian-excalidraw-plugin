@@ -119,10 +119,6 @@ export interface ViewSemaphores {
   //the preventAutozoomOnLoad flag will prevent the open drawing from autozooming when it is reloaded
   preventAutozoom: boolean;
 
-  //reload() is triggered by modifyEventHandler in main.ts. preventReload is a one time flag to abort reloading
-  //to avoid interrupting the flow of drawing by the user.
-  preventReload: boolean;
-
   isEditingText: boolean; //https://stackoverflow.com/questions/27132796/is-there-any-javascript-event-fired-when-the-on-screen-keyboard-on-mobile-safari
 
   hoverSleep: boolean; //flag with timer to prevent hover preview from being triggered dozens of times

@@ -360,8 +360,7 @@ export class ViewSaveCoordinator {
       }
       return;
     }
-    this.view.clearPreventReloadTimer();
-    this.view.semaphores.preventReload = false;
+    this.view.clearOwnWriteReloadSuppression();
     this.forceSaveInProgress = true;
     try {
       const result = await this.enqueueSave({

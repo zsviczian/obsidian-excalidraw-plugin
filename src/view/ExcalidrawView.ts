@@ -254,6 +254,7 @@ import {
   type ViewLoadToken,
 } from "./managers/ViewLoadGeneration";
 import { SameFileEditGate } from "./managers/SameFileEditGate";
+import { OwnWriteReloadGuard } from "./managers/OwnWriteReloadGuard";
 import { shouldRetainLoadedFileAfterReload } from "./textFileViewReloadPolicy";
 import { MarkdownImageController } from "./managers/MarkdownImageController";
 import {
@@ -515,7 +516,6 @@ export default class ExcalidrawView
     scriptsReady: false,
     justLoaded: false,
     preventAutozoom: false,
-    preventReload: false,
     isEditingText: false,
     hoverSleep: false,
     wheelTimeout: null,
@@ -545,7 +545,6 @@ export default class ExcalidrawView
 
   //https://stackoverflow.com/questions/27132796/is-there-any-javascript-event-fired-when-the-on-screen-keyboard-on-mobile-safari
   private isEditingTextResetTimer: number | null = null;
-  private preventReloadResetTimer: number | null = null;
   private colorChangeTimer: number | null = null;
   private previousSceneVersion = 0;
   private previousTrackedAppState: TrackedAppStateSnapshot | null = null;
@@ -584,12 +583,20 @@ export default class ExcalidrawView
   private isSynchronizing = false;
   private pendingExternalSyncPath: string | null = null;
   private externalSyncLoopPromise: Promise<void> | null = null;
+  private readonly ownWriteReloadGuard: OwnWriteReloadGuard;
 
   constructor(leaf: WorkspaceLeaf, plugin: ExcalidrawPlugin) {
     super(leaf);
     this._plugin = plugin;
     this.sameFileEditGate = new SameFileEditGate(
       () => this.ownerWindow ?? window,
+    );
+    this.ownWriteReloadGuard = new OwnWriteReloadGuard(
+      {
+        setTimeout: (callback, delayMs) => window.setTimeout(callback, delayMs),
+        clearTimeout: (timer) => window.clearTimeout(timer),
+      },
+      PREVENT_RELOAD_TIMEOUT,
     );
     this.excalidrawData = new ExcalidrawData(plugin, this);
     this.canvasNodeFactory = new CanvasNodeFactory(this);
@@ -788,11 +795,7 @@ export default class ExcalidrawView
 
   /** Consumes the one-shot reload suppression armed for this view's own write. */
   public consumeOwnWriteReloadSuppression(): boolean {
-    if (!this.semaphores?.preventReload) {
-      return false;
-    }
-    this.semaphores.preventReload = false;
-    return true;
+    return this.ownWriteReloadGuard.consume();
   }
 
   setHookServer(ea?: ExcalidrawAutomate) {
@@ -956,18 +959,16 @@ export default class ExcalidrawView
   }
 
   public setPreventReload() {
-    this.semaphores.preventReload = true;
-    this.preventReloadResetTimer = window.setTimeout(
-      () => (this.semaphores.preventReload = false),
-      PREVENT_RELOAD_TIMEOUT,
-    );
+    this.ownWriteReloadGuard.armCleanup();
   }
 
   public clearPreventReloadTimer() {
-    if (this.preventReloadResetTimer) {
-      window.clearTimeout(this.preventReloadResetTimer);
-      this.preventReloadResetTimer = null;
-    }
+    this.ownWriteReloadGuard.clearTimer();
+  }
+
+  /** Clears both own-write suppression state and its cleanup callback. */
+  public clearOwnWriteReloadSuppression(): void {
+    this.ownWriteReloadGuard.clear();
   }
 
   public async setEmbeddableNodeIsEditing(
@@ -1151,8 +1152,7 @@ export default class ExcalidrawView
         // reload() is triggered indirectly when saving by FileManager's modify
         // handler. Suppress the expected own-write echo when reloading would
         // interrupt the user's editing flow.
-        this.clearPreventReloadTimer();
-        this.semaphores.preventReload = false;
+        this.clearOwnWriteReloadSuppression();
         await this.prepareGetViewDataFromSnapshot(
           scene,
           deletedElements,
@@ -1281,7 +1281,7 @@ export default class ExcalidrawView
         // Serialization can take seconds for a large compressed scene. Arm
         // suppression only for the actual write so an unrelated modification
         // received while preparing the text remains eligible to synchronize.
-        this.semaphores.preventReload = suppressReloadFromOwnWrite;
+        this.ownWriteReloadGuard.setForWrite(suppressReloadFromOwnWrite);
         try {
           await this.withPersistenceWriteLease(
             preparedSave.filePath,
@@ -1306,7 +1306,7 @@ export default class ExcalidrawView
             },
           );
         } catch (error: unknown) {
-          this.semaphores.preventReload = false;
+          this.clearOwnWriteReloadSuppression();
           throw error;
         }
         if (suppressReloadFromOwnWrite) {
@@ -2410,7 +2410,7 @@ export default class ExcalidrawView
     //once from "unregisterView"
     //the from "detachLeavesOfType"
     this.invalidateSetViewDataLoad();
-    this.clearPreventReloadTimer();
+    this.ownWriteReloadGuard.destroy();
     this.sameFileEditGate.destroy();
     this.clearExcalidrawInitializeTimer();
     if (!this.dropManager && !this.excalidrawRoot) {
@@ -2560,10 +2560,7 @@ export default class ExcalidrawView
       window.clearTimeout(this.isEditingTextResetTimer);
       this.isEditingTextResetTimer = null;
     }
-    if (this.preventReloadResetTimer) {
-      window.clearTimeout(this.preventReloadResetTimer);
-      this.preventReloadResetTimer = null;
-    }
+    this.ownWriteReloadGuard.destroy();
     this.sameFileEditGate.destroy();
     if (this.resizeBatchTimer) {
       window.clearTimeout(this.resizeBatchTimer);
@@ -2616,8 +2613,7 @@ export default class ExcalidrawView
       return true;
     }
 
-    if (this.semaphores.preventReload) {
-      this.semaphores.preventReload = false;
+    if (this.consumeOwnWriteReloadSuppression()) {
       return true;
     }
     if (this.isSaveInProgress() || this.isSynchronizing) {
@@ -4012,7 +4008,7 @@ export default class ExcalidrawView
     this.semaphores.justLoaded = justloaded;
     this.clearDirty();
     const om = this.excalidrawData.getOpenMode();
-    this.semaphores.preventReload = false;
+    this.clearOwnWriteReloadSuppression();
     const penEnabled = this.plugin.isPenMode();
     const api = this.excalidrawAPI;
     if (api) {
