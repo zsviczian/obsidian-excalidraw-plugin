@@ -1345,7 +1345,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   private addVaultPathSupport(
     setting: Setting,
     text: TextComponent,
-    kind: "file" | "folder",
+    kind: "file" | "folder" | "file-or-folder",
     options: {
       optional?: boolean;
       extensions?: readonly string[];
@@ -1367,7 +1367,13 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       const exists = path
         ? kind === "folder"
           ? Boolean(this.app.vault.getFolderByPath(path))
-          : Boolean(this.app.vault.getFileByPath(path))
+          : kind === "file"
+            ? Boolean(this.app.vault.getFileByPath(path))
+            : Boolean(
+                this.app.vault.getFolderByPath(path) ||
+                  this.app.vault.getFileByPath(path) ||
+                  this.app.metadataCache.getFirstLinkpathDest(path, ""),
+              )
         : false;
       if (createFolderButtonEl) {
         setElementHidden(
@@ -1720,7 +1726,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
               );
             }
           },
-          vaultPath: { kind: "folder" },
+          vaultPath: { kind: "folder", options: { optional: true } },
         },
       },
     ];
@@ -1803,7 +1809,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           key: "templateFilePath",
           placeholder: t("TEMPLATE_PLACEHOLDER"),
           vaultPath: {
-            kind: "file",
+            kind: "file-or-folder",
             options: { optional: true, extensions: ["md", "excalidraw"] },
           },
         },

@@ -63,7 +63,7 @@ export type TextControl = SettingControlBase<string, StringSettingKey> & {
   placeholder?: string;
   sanitize?: (value: string) => string;
   vaultPath?: {
-    kind: "file" | "folder";
+    kind: "file" | "folder" | "file-or-folder";
     options?: {
       optional?: boolean;
       extensions?: readonly string[];

@@ -16,7 +16,7 @@ export interface LegacySettingsAdapterHost {
   addVaultPathSupport(
     setting: Setting,
     text: TextComponent,
-    kind: "file" | "folder",
+    kind: "file" | "folder" | "file-or-folder",
     options: NonNullable<TextControl["vaultPath"]>["options"],
   ): void;
 }
