@@ -21,6 +21,12 @@ import {
   MARKDOWN_IMAGE_CUSTOM_DATA_KEY,
   type MarkdownImageCustomData,
 } from "../../types/markdownImageTypes";
+import {
+  logNestedDependencyDiagnostic,
+  nestedDependencyElapsedMs,
+} from "../../utils/nestedDependencyDiagnostics";
+
+let sceneLoaderDiagnosticSequence = 0;
 
 /** Runtime dependencies supplied by the composition root to avoid adding a
  * circular import.
@@ -246,6 +252,13 @@ export class ViewSceneFileManager {
     const fileIDs = new Set(candidates.keys());
     const currentFile = this.view.file.path;
     const loader = this.dependencies.createEmbeddedFilesLoader();
+    const diagnosticOperationId = ++sceneLoaderDiagnosticSequence;
+    const scheduledAt = performance.now();
+    let emittedFiles = 0;
+    logNestedDependencyDiagnostic(
+      `phase=deferred-scheduled operation=${diagnosticOperationId} ` +
+        `candidates=${candidates.size} sceneCacheEnabled=${Number(this.view.plugin.settings.allowImageCacheInScene)}`,
+    );
     this.deferredValidationFilePath = currentFile;
     this.deferredValidationTimer = window.setTimeout(() => {
       this.deferredValidationTimer = null;
@@ -257,6 +270,11 @@ export class ViewSceneFileManager {
       }
 
       this.deferredValidationLoader = loader;
+      const startedAt = performance.now();
+      logNestedDependencyDiagnostic(
+        `phase=deferred-start operation=${diagnosticOperationId} ` +
+          `candidates=${candidates.size} waitMs=${nestedDependencyElapsedMs(scheduledAt)}`,
+      );
       // Second pass is intentionally conservative: revalidate only stale-first
       // candidates, run one at a time, and emit only regenerated images.
       void loader.loadSceneFiles({
@@ -277,12 +295,18 @@ export class ViewSceneFileManager {
             return;
           }
           if (files && files.length > 0) {
+            emittedFiles += files.length;
             void this.dependencies.addFiles(files, this.view, isDark);
           }
           if (!final) {
             return;
           }
           this.view.lastSceneLoadTime = Date.now();
+          logNestedDependencyDiagnostic(
+            `phase=deferred-complete operation=${diagnosticOperationId} ` +
+              `candidates=${candidates.size} emittedFiles=${emittedFiles} ` +
+              `wallMs=${nestedDependencyElapsedMs(startedAt)}`,
+          );
           if (this.deferredValidationLoader === loader) {
             this.deferredValidationLoader = null;
           }
@@ -411,6 +435,15 @@ export class ViewSceneFileManager {
       this.nextLoader = null;
       this.activeLoader = l;
       const prioritizedFileIds = getVisibleImageFileIds(this.view);
+      const diagnosticOperationId = ++sceneLoaderDiagnosticSequence;
+      const startedAt = performance.now();
+      let emittedFiles = 0;
+      logNestedDependencyDiagnostic(
+        `phase=initial-start operation=${diagnosticOperationId} ` +
+          `entries=${Array.from(this.view.excalidrawData.getFileEntries()).length} ` +
+          `sceneCacheEnabled=${Number(this.view.plugin.settings.allowImageCacheInScene)} ` +
+          `visibleFileIds=${prioritizedFileIds.size}`,
+      );
       void l.loadSceneFiles({
         excalidrawData: this.view.excalidrawData,
         sceneElements: this.view.getViewElements(),
@@ -434,12 +467,18 @@ export class ViewSceneFileManager {
             callback();
           }
           if (files && files.length > 0) {
+            emittedFiles += files.length;
             void this.dependencies.addFiles(files, this.view, isDark);
           }
           if (!final) {
             return;
           }
           this.view.lastSceneLoadTime = Date.now();
+          logNestedDependencyDiagnostic(
+            `phase=initial-complete operation=${diagnosticOperationId} ` +
+              `emittedFiles=${emittedFiles} deferredCandidates=${this.pendingDeferredValidationCandidates.size} ` +
+              `wallMs=${nestedDependencyElapsedMs(startedAt)}`,
+          );
           if (this.activeLoader === l) {
             this.activeLoader = null;
           }

@@ -560,6 +560,7 @@ class ImageCache {
           file,
           cachedData.mtime,
           this.plugin,
+          "indexeddb-cache-validation",
         );
         if (dependencyChanged) {
           return undefined;

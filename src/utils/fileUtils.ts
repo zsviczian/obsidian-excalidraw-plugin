@@ -30,6 +30,10 @@ import { IMAGE_MIME_TYPES, MimeType } from "src/types/embeddedFileLoaderTypes";
 import type { PdfJsDocumentProxy } from "src/types/pdfJsTypes";
 import { setElementDisplay } from "./htmlUtils";
 import { NestedFileMap } from "src/types/utilTypes";
+import {
+  nestedDependencyElapsedMs,
+  recordNestedTreeDiagnostic,
+} from "./nestedDependencyDiagnostics";
 export { splitFolderAndFilename } from "./pathUtils";
 
 declare const mainDocument: Document;
@@ -598,13 +602,16 @@ export function getAllNestedExcalidrawFiles(
   plugin: ExcalidrawPlugin, // Replace `any` with `ExcalidrawPlugin` type in your actual code
   rootFile: TFile,
   includeImages = false,
+  diagnosticCallSite = "unspecified",
 ): NestedFileMap {
+  const traversalStartedAt = performance.now();
   const app = plugin.app;
 
   // Phase 1: Build the Adjacency List (Directed Acyclic Graph)
   // This ensures we only parse the metadata cache for each file exactly once.
   const adjacencyList = new Map<TFile, TFile[]>();
   const parsedFiles = new Set<string>();
+  let dependencyEdges = 0;
 
   function parseFile(file: TFile) {
     if (parsedFiles.has(file.path)) {
@@ -692,11 +699,13 @@ export function getAllNestedExcalidrawFiles(
       }
     }
 
+    dependencyEdges += uniqueChildren.size;
     adjacencyList.set(file, Array.from(uniqueChildren.values()));
   }
 
   // Populate the adjacency list
   parseFile(rootFile);
+  const parseElapsedMs = nestedDependencyElapsedMs(traversalStartedAt);
 
   // Phase 2: Generate the paths from the in-memory Adjacency List
   const result: NestedFileMap = new Map();
@@ -705,6 +714,8 @@ export function getAllNestedExcalidrawFiles(
   const stack: { file: TFile; path: TFile[] }[] = [
     { file: rootFile, path: [rootFile] },
   ];
+  let generatedPaths = 0;
+  let maximumDepth = 0;
 
   while (stack.length > 0) {
     const { file, path } = stack.pop();
@@ -725,11 +736,27 @@ export function getAllNestedExcalidrawFiles(
       }
 
       node.paths.push(childPath);
+      generatedPaths++;
+      maximumDepth = Math.max(maximumDepth, childPath.length - 1);
 
       // Push to stack to continue generating paths for its children
       stack.push({ file: child, path: childPath });
     }
   }
+
+  const totalElapsedMs = nestedDependencyElapsedMs(traversalStartedAt);
+  recordNestedTreeDiagnostic({
+    callSite: diagnosticCallSite,
+    includeImages,
+    uniqueFiles: result.size + 1,
+    parsedDrawings: parsedFiles.size,
+    dependencyEdges,
+    generatedPaths,
+    maximumDepth,
+    parseMs: parseElapsedMs,
+    pathsMs: Math.round((totalElapsedMs - parseElapsedMs) * 10) / 10,
+    totalMs: totalElapsedMs,
+  });
 
   return result;
 }
@@ -742,7 +769,12 @@ export const getExcalidrawEmbeddedFilesFiletree = (
     return [];
   }
 
-  const result = getAllNestedExcalidrawFiles(plugin, sourceFile, true);
+  const result = getAllNestedExcalidrawFiles(
+    plugin,
+    sourceFile,
+    true,
+    "ea-filetree",
+  );
   return Array.from(result.keys());
 };
 
@@ -750,6 +782,7 @@ export const hasExcalidrawEmbeddedImagesTreeChanged = (
   sourceFile: TFile,
   mtime: number,
   plugin: ExcalidrawPlugin,
+  diagnosticCallSite = "cache-validation",
 ): boolean => {
   if (!sourceFile || !plugin.isExcalidrawFile(sourceFile)) {
     return false;
@@ -757,7 +790,12 @@ export const hasExcalidrawEmbeddedImagesTreeChanged = (
 
   // Include ordinary vault files because they may be Markdown-image sources
   // nested inside an otherwise unchanged Excalidraw drawing.
-  const nestedTree = getAllNestedExcalidrawFiles(plugin, sourceFile, true);
+  const nestedTree = getAllNestedExcalidrawFiles(
+    plugin,
+    sourceFile,
+    true,
+    diagnosticCallSite,
+  );
   for (const file of nestedTree.keys()) {
     if (file.stat.mtime > mtime) {
       return true;

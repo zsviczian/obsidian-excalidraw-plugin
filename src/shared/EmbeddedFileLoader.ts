@@ -1576,6 +1576,7 @@ export class EmbeddedFilesLoader {
                   file,
                   deferredValidation.cacheMtime,
                   loader.plugin,
+                  "deferred-scene-validation",
                 ),
               );
               if (cacheIsValid) {

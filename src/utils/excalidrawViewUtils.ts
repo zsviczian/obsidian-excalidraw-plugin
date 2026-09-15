@@ -202,7 +202,12 @@ export function getChangedTopLevelDependencyFileIDs(
   // Walk the full nested visual-dependency tree of the root drawing.
   // If any nested file changed since lastLoadTime, mark all top-level embeds
   // that include it (identified via path[1]) as needing a rebuild.
-  const nestedTree = getAllNestedExcalidrawFiles(plugin, view.file, true);
+  const nestedTree = getAllNestedExcalidrawFiles(
+    plugin,
+    view.file,
+    true,
+    "leaf-switch",
+  );
   for (const [file, node] of nestedTree.entries()) {
     if (file.stat.mtime <= lastLoadTime) {
       continue;
