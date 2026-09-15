@@ -9,6 +9,7 @@ import type {
   TextControl,
 } from "src/core/settings/settingSpecs";
 import { configureSliderWithText } from "src/utils/sliderUtils";
+import { cloneSettingFragment } from "src/core/settings/reusableSettingFragments";
 
 /** Legacy-only services used by custom text controls. */
 export interface LegacySettingsAdapterHost {
@@ -53,8 +54,8 @@ export class LegacySettingsAdapter {
         : (control.disabled ?? false);
     if (control.type === "slider") {
       configureSliderWithText(setting, {
-        name: spec.name,
-        desc: spec.desc,
+        name: cloneSettingFragment(spec.name),
+        desc: cloneSettingFragment(spec.desc),
         value: this.bindings.getSpecValue(spec) as number,
         min: control.min,
         max: control.max,
@@ -66,9 +67,9 @@ export class LegacySettingsAdapter {
       return;
     }
 
-    setting.setName(spec.name);
+    setting.setName(cloneSettingFragment(spec.name));
     if (spec.desc) {
-      setting.setDesc(spec.desc);
+      setting.setDesc(cloneSettingFragment(spec.desc));
     }
 
     switch (control.type) {

@@ -91,6 +91,7 @@ import {
 import { SettingBindingRegistry } from "src/core/settings/SettingBindingRegistry";
 import { LegacySettingsAdapter } from "src/core/settings/LegacySettingsAdapter";
 import { DeclarativeSettingsAdapter } from "src/core/settings/DeclarativeSettingsAdapter";
+import { makeDescriptionsReusable } from "src/core/settings/reusableSettingFragments";
 import { SettingsPersistenceQueue } from "src/core/settings/SettingsPersistenceQueue";
 import type {
   SettingBindingKey,
@@ -1284,7 +1285,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   ): SettingDefinitionItem<SettingBindingKey>[] {
     this.declarativePagePathsByTag = null;
     this.declarativeSettingsAdapter.beginBuild(registerBindings);
-    return [
+    return makeDescriptionsReusable([
       this.createDeclarativeUtilitiesDefinition("Root", true),
       this.declarativeSettingsAdapter.toDefinition(
         this.getSettingsLayoutSpec(),
@@ -1292,7 +1293,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       ...this.getSettingsPages().map((page) =>
         this.toDeclarativePage(page),
       ),
-    ];
+    ]);
   }
   /**
    * Returns the complete searchable settings tree when supported and selected.
