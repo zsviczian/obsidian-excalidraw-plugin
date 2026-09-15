@@ -44,6 +44,7 @@ color = ea
 //uncomment for random color:
 //color = '#'+(Math.random()*0xFFFFFF<<0).toString(16).padStart(6,"0");
 ea.style.strokeColor = color;
+ea.style.roundness = {type: 3, value:32};
 id = ea.addRect(
 	box.topX - padding,
 	box.topY - padding,
