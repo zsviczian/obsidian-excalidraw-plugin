@@ -5328,6 +5328,7 @@ export default class ExcalidrawView
         bindingPreference: st.bindingPreference,
         isMidpointSnappingEnabled: st.isMidpointSnappingEnabled,
         boxSelectionMode: st.boxSelectionMode,
+        inputDevice: st.inputDevice,
       },
       prevTextMode: this.prevTextMode,
       files,

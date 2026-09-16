@@ -803,8 +803,9 @@ export default {
     "在觸控筆模式下使用自由畫筆工具時，雙指縮放可能造成干擾。<br>" +
     "<b>開啟：</b>允許雙指縮放。<b>關閉： </b>禁止雙指縮放。",
 
-  DEFAULT_WHEELZOOM_NAME: "滑鼠滾輪縮放",
-  DEFAULT_WHEELZOOM_DESC: `<b>開啟：</b>滑鼠滾輪為縮放繪圖，${labelCTRL()}+滑鼠滾輪為滾動繪圖。<br><b>關閉：</b>滑鼠滾輪為滾動繪圖，${labelCTRL()}+滑鼠滾輪為縮放繪圖。`,
+  DEFAULT_WHEELZOOM_NAME: "反轉繪圖的滾輪縮放設定",
+  DEFAULT_WHEELZOOM_DESC:
+    "套用於所有繪圖，並反轉繪圖中的<b>輸入裝置</b>設定（滑鼠滾輪用於縮放還是捲動）。繪圖中的設定僅適用於目前繪圖，也可以儲存到範本中。",
 
   ZOOM_TO_FIT_NAME: "調整面板尺寸後自動縮放",
   ZOOM_TO_FIT_DESC:

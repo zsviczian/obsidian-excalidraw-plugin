@@ -803,8 +803,9 @@ export default {
     "在触控笔模式下使用自由画笔工具时，双指缩放可能造成干扰。<br>" +
     "<b>开启：</b>允许双指缩放。<b>关闭： </b>禁止双指缩放。",
 
-  DEFAULT_WHEELZOOM_NAME: "鼠标滚轮缩放",
-  DEFAULT_WHEELZOOM_DESC: `<b>开启：</b>鼠标滚轮为缩放绘图，${labelCTRL()}+鼠标滚轮为滚动绘图。<br><b>关闭：</b>鼠标滚轮为滚动绘图，${labelCTRL()}+鼠标滚轮为缩放绘图。`,
+  DEFAULT_WHEELZOOM_NAME: "反转绘图的滚轮缩放设置",
+  DEFAULT_WHEELZOOM_DESC:
+    "应用于所有绘图，并反转绘图中的<b>输入设备</b>设置（鼠标滚轮用于缩放还是滚动）。绘图中的设置仅适用于当前绘图，也可以保存到模板中。",
 
   ZOOM_TO_FIT_NAME: "调整面板尺寸后自动缩放",
   ZOOM_TO_FIT_DESC:

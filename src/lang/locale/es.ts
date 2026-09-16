@@ -843,8 +843,9 @@ export default {
     "El zoom con pellizco en modo lápiz, al usar la herramienta de dibujo a mano alzada, está deshabilitado por defecto para evitar zooms accidentales no deseados con la palma de la mano.<br>" +
     "<b><u>Activado:</u></b> Habilita el zoom con pellizco en modo lápiz <br><b><u>Desactivado:</u></b>Deshabilita el zoom con pellizco en modo lápiz",
 
-  DEFAULT_WHEELZOOM_NAME: "Rueda del mouse para zoom por defecto",
-  DEFAULT_WHEELZOOM_DESC: `<b><u>Activado:</u></b> Rueda del mouse para zoom; ${labelCTRL()} + rueda del mouse para desplazarse</br><b><u>Desactivado:</u></b>${labelCTRL()} + rueda del mouse para zoom; Rueda del mouse para desplazarse`,
+  DEFAULT_WHEELZOOM_NAME: "Invertir la preferencia de zoom con la rueda",
+  DEFAULT_WHEELZOOM_DESC:
+    "Se aplica a todos los dibujos e invierte la preferencia de <b>Dispositivo de entrada</b> del dibujo (si la rueda del ratón hace zoom o desplaza). La preferencia del dibujo solo se aplica al dibujo actual y se puede guardar en una plantilla.",
 
   ZOOM_TO_FIT_NAME: "Zoom para ajustar al redimensionar la vista",
   ZOOM_TO_FIT_DESC:
