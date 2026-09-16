@@ -8,12 +8,15 @@
 # Generates:
 #   ./repository.zip
 #
-# The ZIP preserves the repository-relative directory structure while excluding:
-# - node_modules, dist, and other ignored folders
+# The ZIP preserves repository-relative directory structure while excluding:
+# - node_modules, dist, and other ignored folders at any depth
 # - __MACOSX folders
 # - .DS_Store and other ignored filenames
 # - common binary/media/archive/executable file types
 # - files detected as binary even if their extension is unknown
+#
+# Ignored directories are pruned directly by `find`, so large folders such as
+# node_modules are never traversed.
 #
 # Requirements:
 # - bash
@@ -187,19 +190,6 @@ contains_exact() {
   return 1
 }
 
-path_has_ignored_dir() {
-  local relative_path="$1"
-  local dir
-
-  for dir in "${IGNORE_DIRS[@]}"; do
-    if [[ "$relative_path" == "$dir/"* || "$relative_path" == *"/$dir/"* ]]; then
-      return 0
-    fi
-  done
-
-  return 1
-}
-
 is_ignored_filename() {
   local filename="$1"
   contains_exact "$filename" "${IGNORE_FILENAMES[@]}"
@@ -232,8 +222,13 @@ looks_binary() {
 }
 
 # ---------------------------------------------------------------------------
-# Build file list
+# Requirements
 # ---------------------------------------------------------------------------
+
+command -v find >/dev/null 2>&1 || {
+  echo "Error: 'find' is required but was not found." >&2
+  exit 1
+}
 
 command -v zip >/dev/null 2>&1 || {
   echo "Error: 'zip' is required but was not found." >&2
@@ -245,6 +240,41 @@ command -v file >/dev/null 2>&1 || {
   exit 1
 }
 
+# ---------------------------------------------------------------------------
+# Build find expression
+# ---------------------------------------------------------------------------
+#
+# Produces an expression equivalent to:
+#
+#   find . \
+#     \( -type d \( -name node_modules -o -name dist ... \) -prune \) \
+#     -o \
+#     \( -type f -print0 \)
+#
+# This is important for large repositories: find does not even descend into
+# ignored directories such as packages/*/node_modules.
+
+FIND_ARGS=(.)
+
+if ((${#IGNORE_DIRS[@]} > 0)); then
+  FIND_ARGS+=("(" "-type" "d" "(")
+
+  for i in "${!IGNORE_DIRS[@]}"; do
+    if ((i > 0)); then
+      FIND_ARGS+=("-o")
+    fi
+    FIND_ARGS+=("-name" "${IGNORE_DIRS[$i]}")
+  done
+
+  FIND_ARGS+=(")" "-prune" ")" "-o")
+fi
+
+FIND_ARGS+=("(" "-type" "f" "-print0" ")")
+
+# ---------------------------------------------------------------------------
+# Build file list
+# ---------------------------------------------------------------------------
+
 TMP_LIST="$(mktemp)"
 trap 'rm -f "$TMP_LIST"' EXIT
 
@@ -252,16 +282,10 @@ included=0
 skipped_binary=0
 skipped_type=0
 skipped_name=0
-skipped_dir=0
 
 while IFS= read -r -d '' full_path; do
   relative_path="${full_path#./}"
   filename="${relative_path##*/}"
-
-  if path_has_ignored_dir "$relative_path"; then
-    ((skipped_dir += 1))
-    continue
-  fi
 
   if is_ignored_filename "$filename"; then
     ((skipped_name += 1))
@@ -280,7 +304,11 @@ while IFS= read -r -d '' full_path; do
 
   printf '%s\n' "$relative_path" >> "$TMP_LIST"
   ((included += 1))
-done < <(find . -type f -print0)
+done < <(find "${FIND_ARGS[@]}")
+
+# ---------------------------------------------------------------------------
+# Create archive
+# ---------------------------------------------------------------------------
 
 # Remove any previous archive before creating the new one.
 rm -f "$OUTPUT"
@@ -298,7 +326,7 @@ zip -q "$OUTPUT" -@ < "$TMP_LIST"
 
 echo "Created $OUTPUT"
 echo "Included files: $included"
-echo "Skipped because of ignored folders: $skipped_dir"
+echo "Ignored directories were pruned before scanning."
 echo "Skipped because of ignored filenames: $skipped_name"
 echo "Skipped because of ignored file types: $skipped_type"
 echo "Skipped because binary content was detected: $skipped_binary"
