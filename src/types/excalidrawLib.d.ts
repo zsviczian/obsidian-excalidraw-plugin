@@ -114,7 +114,6 @@ declare namespace ExcalidrawLib {
   type ObsidianExcalidrawHostAdapter = Readonly<{
     protocolVersion: 2;
     isDoubleTapEraserEnabled: () => boolean;
-    isRightClickPanEnabled: () => boolean;
     getZoomToFitMaxLevel: () => number;
     isPenModeCrosshairVisible: () => boolean;
     isSingleFingerPanningEnabled: () => boolean;

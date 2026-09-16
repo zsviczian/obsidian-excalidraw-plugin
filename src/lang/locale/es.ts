@@ -834,10 +834,6 @@ export default {
   ZOOM_AND_PAN_HEAD: "Zoom y panorámica",
   ZOOM_AND_PAN_DESC:
     "Configura el comportamiento del ratón, el tacto, la apertura, el cambio de tamaño y el intervalo de zoom.",
-  PAN_WITH_RIGHT_MOUSE_BUTTON_NAME:
-    "Desplazar el lienzo con el botón derecho del mouse (abrir menú con 'm')",
-  PAN_WITH_RIGHT_MOUSE_BUTTON_DESC:
-    "Cuando está habilitado, puedes desplazar el lienzo haciendo clic derecho y arrastrando. El menú contextual se abrirá con la tecla 'm', a menos que estés editando texto.",
   DEFAULT_PINCHZOOM_NAME: "Permitir zoom con pellizco en modo lápiz",
   DEFAULT_PINCHZOOM_DESC:
     "El zoom con pellizco en modo lápiz, al usar la herramienta de dibujo a mano alzada, está deshabilitado por defecto para evitar zooms accidentales no deseados con la palma de la mano.<br>" +

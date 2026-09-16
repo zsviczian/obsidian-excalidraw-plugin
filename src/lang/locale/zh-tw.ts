@@ -795,9 +795,6 @@ export default {
   ZOOM_AND_PAN_HEAD: "縮放和平移",
   ZOOM_AND_PAN_DESC:
     "設定滑鼠、觸控、開啟、調整大小和縮放範圍行為。",
-  PAN_WITH_RIGHT_MOUSE_BUTTON_NAME: "右鍵拖動平移",
-  PAN_WITH_RIGHT_MOUSE_BUTTON_DESC:
-    "右鍵點選並拖動來平移繪圖（和線上白板工具 Miro 類似）。按 'm' 鍵開啟上下文選單。",
   DEFAULT_PINCHZOOM_NAME: "允許在觸控筆模式下進行雙指縮放",
   DEFAULT_PINCHZOOM_DESC:
     "在觸控筆模式下使用自由畫筆工具時，雙指縮放可能造成干擾。<br>" +

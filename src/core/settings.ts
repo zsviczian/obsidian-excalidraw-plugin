@@ -3002,16 +3002,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   private getZoomAndPanSpecs(): SettingSpec[] {
     return [
       {
-        name: t("PAN_WITH_RIGHT_MOUSE_BUTTON_NAME"),
-        desc: fragWithHTML(t("PAN_WITH_RIGHT_MOUSE_BUTTON_DESC")),
-        aliases: ["right click pan", "mouse pan"],
-        control: {
-          type: "toggle",
-          key: "panWithRightMouseButton",
-          reload: true,
-        },
-      },
-      {
         name: t("DEFAULT_PINCHZOOM_NAME"),
         desc: fragWithHTML(t("DEFAULT_PINCHZOOM_DESC")),
         aliases: ["pinch zoom", "pen mode zoom", "touch zoom"],

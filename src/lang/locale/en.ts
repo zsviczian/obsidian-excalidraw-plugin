@@ -873,9 +873,6 @@ export default {
   ZOOM_AND_PAN_HEAD: "Zoom and Pan",
   ZOOM_AND_PAN_DESC:
     "Configure mouse, touch, opening, resizing, and zoom-range behavior.",
-  PAN_WITH_RIGHT_MOUSE_BUTTON_NAME: "Right-click drag to pan",
-  PAN_WITH_RIGHT_MOUSE_BUTTON_DESC:
-    "Right-click and drag to pan the canvas (Miro-style). Press 'm' to open the context menu.",
   DEFAULT_PINCHZOOM_NAME: "Allow pinch zoom in pen mode",
   DEFAULT_PINCHZOOM_DESC:
     "Pinch zoom in pen mode when using the freedraw tool is disabled by default to prevent unwanted accidental zooming with your palm.<br>" +
