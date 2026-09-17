@@ -32,6 +32,7 @@ import {
   getPDFDoc,
   getURLImageExtension,
   hasExcalidrawEmbeddedImagesTreeChanged,
+  createNestedFileDependencyGraphContext,
   readLocalFileBinary,
 } from "../utils/fileUtils";
 import { blobToDataURL, errorlog, getDataURL } from "../utils/coreUtils";
@@ -1498,6 +1499,11 @@ export class EmbeddedFilesLoader {
       FileId,
       DeferredCacheValidation
     >();
+    // Deferred candidates frequently share most of the same nested graph.
+    // Scope this cache to one load so metadata is parsed once without retaining
+    // dependency state across synchronization operations.
+    const deferredDependencyGraphContext =
+      createNestedFileDependencyGraphContext(true);
     const deferredGenerationEntries: typeof entries = [];
     const renderedMarkdownImageCacheEntries = new Map<
       FileId,
@@ -1576,6 +1582,7 @@ export class EmbeddedFilesLoader {
                   file,
                   deferredValidation.cacheMtime,
                   loader.plugin,
+                  deferredDependencyGraphContext,
                 ),
               );
               if (cacheIsValid) {

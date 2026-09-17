@@ -31,7 +31,8 @@ import {
   FileId,
   NonDeletedExcalidrawElement,
 } from "@zsviczian/excalidraw/types/element/src/types";
-import { getAllNestedExcalidrawFiles } from "./fileUtils";
+import { getNestedFileDependencyGraph } from "./fileUtils";
+import { getMatchingTopLevelDependencyKeys } from "./nestedDependencyTraversal";
 import {
   getEmbeddedFilenameParts,
   getLinkParts,
@@ -199,25 +200,24 @@ export function getChangedTopLevelDependencyFileIDs(
     return changedFileIDs;
   }
 
-  // Walk the full nested visual-dependency tree of the root drawing.
-  // If any nested file changed since lastLoadTime, mark all top-level embeds
-  // that include it (identified via path[1]) as needing a rebuild.
-  const nestedTree = getAllNestedExcalidrawFiles(plugin, view.file, true);
-  for (const [file, node] of nestedTree.entries()) {
-    if (file.stat.mtime <= lastLoadTime) {
+  const dependencyGraph = getNestedFileDependencyGraph(
+    plugin,
+    view.file,
+    true,
+  );
+  const changedTopLevelPaths = getMatchingTopLevelDependencyKeys(
+    dependencyGraph,
+    view.file.path,
+    new Set(excalidrawFileIdsByPath.keys()),
+    (file) => file.stat.mtime > lastLoadTime,
+  );
+  for (const path of changedTopLevelPaths) {
+    const fileIds = excalidrawFileIdsByPath.get(path);
+    if (!fileIds) {
       continue;
     }
-    for (const path of node.paths) {
-      const topLevelDep = path[1];
-      if (!topLevelDep) {
-        continue;
-      }
-      const fileIds = excalidrawFileIdsByPath.get(topLevelDep.path);
-      if (fileIds) {
-        for (const fileId of fileIds) {
-          changedFileIDs.add(fileId);
-        }
-      }
+    for (const fileId of fileIds) {
+      changedFileIDs.add(fileId);
     }
   }
 
