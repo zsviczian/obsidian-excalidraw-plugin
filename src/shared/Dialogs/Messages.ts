@@ -220,6 +220,7 @@ ${getYouTubeDiv("aqt5NJE2sJ8")}
 - Fixed the "Customize the Embedded File Link" action. If you change the dimensions of the markdown image or the pdf page reference number, the image immediately updates in the scene. You can also use this feature to swap out images e.g. a png icon to an SVG icon. Default shortcut is CTRL+WIN+Click or CMD+Control+Click on the image element.
 - LaTeX and Mermaid did not work on iOS. Released updated Excalidraw Extras and bumped the minimum required version to 0.0.15. [#2825](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2825)
 - Malformed "Source" URL in ExcalidrawLib and Excalidraw Data json. [#2826]${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2826)
+- Markdown-image editor did not function if Obsidian default for new tabs was set to preview mode.
 
 ## New in ExcalidrawAutomate
 - Added \`onSceneChangeHook\` to allow scripts and sidepanel tabs to react to scene changes. The hook supports filtering by \`appStateKeys\` and checking for tab visibility to optimize performance.

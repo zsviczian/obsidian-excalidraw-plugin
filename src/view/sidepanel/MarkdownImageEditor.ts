@@ -98,6 +98,18 @@ const setBlockReferenceIcon = (button: ButtonComponent): void => {
   button.setIcon(BLOCK_REFERENCE_ICON_ID);
 };
 
+/**
+ * Forces a Markdown-image editor view into edit mode, regardless of the
+ * user's `defaultViewMode` vault setting. Reading mode is not meaningful in
+ * this embedded editor and leaves the user with no way to switch back.
+ */
+const forceSourceMode = (view: MarkdownView): void => {
+  const modes = view.modes;
+  if (modes?.source) {
+    view.setMode?.(modes.source);
+  }
+};
+
 const getNativeColorValue = (color: string): string => {
   if (/^#[0-9a-f]{6}$/i.test(color)) {
     return color;
@@ -1673,6 +1685,7 @@ class MarkdownImageEditorController {
       } else {
         await leaf.openFile(sourceFile, {
           active: false,
+          state: { mode: "source" },
         });
       }
       if (
@@ -1685,6 +1698,7 @@ class MarkdownImageEditorController {
         return;
       }
       if (leaf.view instanceof MarkdownView) {
+        forceSourceMode(leaf.view);
         this.editorView = leaf.view;
         this.prepareEditorView(host, leaf.view);
         this.revealExternalSourceSubpath(leaf.view, sourceFile, ref);
@@ -1727,6 +1741,7 @@ class MarkdownImageEditorController {
       return;
     }
     fragmentView.setViewData(source.markdown, true);
+    forceSourceMode(fragmentView);
     this.editorView = fragmentView;
     this.prepareEditorView(host, fragmentView);
     this.watchEditorChanges();
