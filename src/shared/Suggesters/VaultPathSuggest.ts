@@ -2,10 +2,11 @@ import {
   AbstractInputSuggest,
   App,
   TAbstractFile,
+  TFile,
   TFolder,
 } from "obsidian";
 
-type VaultPathSuggestionKind = "file" | "folder";
+type VaultPathSuggestionKind = "file" | "folder" | "file-or-folder";
 
 /** Adds reusable Vault-aware completion to settings path inputs. */
 export class VaultPathSuggest extends AbstractInputSuggest<TAbstractFile> {
@@ -23,18 +24,17 @@ export class VaultPathSuggest extends AbstractInputSuggest<TAbstractFile> {
     const normalizedExtensions = extensions?.map((extension) =>
       extension.toLowerCase().replace(/^\./, ""),
     );
-    this.candidates =
-      kind === "folder"
-        ? app.vault
-            .getAllLoadedFiles()
-            .filter((file) => file instanceof TFolder)
-        : app.vault
-            .getFiles()
-            .filter(
-              (file) =>
-                !normalizedExtensions ||
-                normalizedExtensions.includes(file.extension.toLowerCase()),
-            );
+    this.candidates = app.vault.getAllLoadedFiles().filter((file) => {
+      if (file instanceof TFolder) {
+        return kind !== "file";
+      }
+      return (
+        kind !== "folder" &&
+        file instanceof TFile &&
+        (!normalizedExtensions ||
+          normalizedExtensions.includes(file.extension.toLowerCase()))
+      );
+    });
     this.limit = 30;
   }
 

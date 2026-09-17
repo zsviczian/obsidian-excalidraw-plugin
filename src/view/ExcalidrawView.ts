@@ -4025,11 +4025,16 @@ export default class ExcalidrawView
       this.updateScene(
         {
           elements: excalidrawData.elements.concat(deletedElements ?? []), //need to preserve deleted elements during autosave if images, links, etc. are updated
-          files: excalidrawData.files,
           captureUpdate: CaptureUpdateAction.NEVER,
         },
         justloaded,
       );
+      // updateScene() does not accept binary files. Legacy/external scenes may
+      // have no other source for their embedded image data.
+      const files = Object.values(excalidrawData.files ?? {});
+      if (files.length > 0) {
+        api.addFiles(files);
+      }
       this.updateScene({
         //elements: excalidrawData.elements.concat(deletedElements??[]), //need to preserve deleted elements during autosave if images, links, etc. are updated
         appState: {
@@ -5323,6 +5328,7 @@ export default class ExcalidrawView
         bindingPreference: st.bindingPreference,
         isMidpointSnappingEnabled: st.isMidpointSnappingEnabled,
         boxSelectionMode: st.boxSelectionMode,
+        inputDevice: st.inputDevice,
       },
       prevTextMode: this.prevTextMode,
       files,

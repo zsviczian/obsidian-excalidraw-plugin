@@ -834,17 +834,14 @@ export default {
   ZOOM_AND_PAN_HEAD: "Zoom y panorámica",
   ZOOM_AND_PAN_DESC:
     "Configura el comportamiento del ratón, el tacto, la apertura, el cambio de tamaño y el intervalo de zoom.",
-  PAN_WITH_RIGHT_MOUSE_BUTTON_NAME:
-    "Desplazar el lienzo con el botón derecho del mouse (abrir menú con 'm')",
-  PAN_WITH_RIGHT_MOUSE_BUTTON_DESC:
-    "Cuando está habilitado, puedes desplazar el lienzo haciendo clic derecho y arrastrando. El menú contextual se abrirá con la tecla 'm', a menos que estés editando texto.",
   DEFAULT_PINCHZOOM_NAME: "Permitir zoom con pellizco en modo lápiz",
   DEFAULT_PINCHZOOM_DESC:
     "El zoom con pellizco en modo lápiz, al usar la herramienta de dibujo a mano alzada, está deshabilitado por defecto para evitar zooms accidentales no deseados con la palma de la mano.<br>" +
     "<b><u>Activado:</u></b> Habilita el zoom con pellizco en modo lápiz <br><b><u>Desactivado:</u></b>Deshabilita el zoom con pellizco en modo lápiz",
 
-  DEFAULT_WHEELZOOM_NAME: "Rueda del mouse para zoom por defecto",
-  DEFAULT_WHEELZOOM_DESC: `<b><u>Activado:</u></b> Rueda del mouse para zoom; ${labelCTRL()} + rueda del mouse para desplazarse</br><b><u>Desactivado:</u></b>${labelCTRL()} + rueda del mouse para zoom; Rueda del mouse para desplazarse`,
+  DEFAULT_WHEELZOOM_NAME: "Invertir la preferencia de zoom con la rueda",
+  DEFAULT_WHEELZOOM_DESC:
+    "Se aplica a todos los dibujos e invierte la preferencia de <b>Dispositivo de entrada</b> del dibujo (si la rueda del ratón hace zoom o desplaza). La preferencia del dibujo solo se aplica al dibujo actual y se puede guardar en una plantilla.",
 
   ZOOM_TO_FIT_NAME: "Zoom para ajustar al redimensionar la vista",
   ZOOM_TO_FIT_DESC:

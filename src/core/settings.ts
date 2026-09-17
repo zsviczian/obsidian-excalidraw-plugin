@@ -91,6 +91,7 @@ import {
 import { SettingBindingRegistry } from "src/core/settings/SettingBindingRegistry";
 import { LegacySettingsAdapter } from "src/core/settings/LegacySettingsAdapter";
 import { DeclarativeSettingsAdapter } from "src/core/settings/DeclarativeSettingsAdapter";
+import { makeDescriptionsReusable } from "src/core/settings/reusableSettingFragments";
 import { SettingsPersistenceQueue } from "src/core/settings/SettingsPersistenceQueue";
 import type {
   SettingBindingKey,
@@ -1284,7 +1285,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   ): SettingDefinitionItem<SettingBindingKey>[] {
     this.declarativePagePathsByTag = null;
     this.declarativeSettingsAdapter.beginBuild(registerBindings);
-    return [
+    return makeDescriptionsReusable([
       this.createDeclarativeUtilitiesDefinition("Root", true),
       this.declarativeSettingsAdapter.toDefinition(
         this.getSettingsLayoutSpec(),
@@ -1292,7 +1293,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       ...this.getSettingsPages().map((page) =>
         this.toDeclarativePage(page),
       ),
-    ];
+    ]);
   }
   /**
    * Returns the complete searchable settings tree when supported and selected.
@@ -1344,7 +1345,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   private addVaultPathSupport(
     setting: Setting,
     text: TextComponent,
-    kind: "file" | "folder",
+    kind: "file" | "folder" | "file-or-folder",
     options: {
       optional?: boolean;
       extensions?: readonly string[];
@@ -1366,7 +1367,13 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       const exists = path
         ? kind === "folder"
           ? Boolean(this.app.vault.getFolderByPath(path))
-          : Boolean(this.app.vault.getFileByPath(path))
+          : kind === "file"
+            ? Boolean(this.app.vault.getFileByPath(path))
+            : Boolean(
+                this.app.vault.getFolderByPath(path) ||
+                  this.app.vault.getFileByPath(path) ||
+                  this.app.metadataCache.getFirstLinkpathDest(path, ""),
+              )
         : false;
       if (createFolderButtonEl) {
         setElementHidden(
@@ -1719,7 +1726,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
               );
             }
           },
-          vaultPath: { kind: "folder" },
+          vaultPath: { kind: "folder", options: { optional: true } },
         },
       },
     ];
@@ -1802,7 +1809,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           key: "templateFilePath",
           placeholder: t("TEMPLATE_PLACEHOLDER"),
           vaultPath: {
-            kind: "file",
+            kind: "file-or-folder",
             options: { optional: true, extensions: ["md", "excalidraw"] },
           },
         },
@@ -2994,16 +3001,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
   private getZoomAndPanSpecs(): SettingSpec[] {
     return [
-      {
-        name: t("PAN_WITH_RIGHT_MOUSE_BUTTON_NAME"),
-        desc: fragWithHTML(t("PAN_WITH_RIGHT_MOUSE_BUTTON_DESC")),
-        aliases: ["right click pan", "mouse pan"],
-        control: {
-          type: "toggle",
-          key: "panWithRightMouseButton",
-          reload: true,
-        },
-      },
       {
         name: t("DEFAULT_PINCHZOOM_NAME"),
         desc: fragWithHTML(t("DEFAULT_PINCHZOOM_DESC")),

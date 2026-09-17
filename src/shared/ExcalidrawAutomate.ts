@@ -236,6 +236,7 @@ import {
   normalizeSceneArea,
 } from "src/utils/excalidrawElementUtils";
 import { cropPNGBlob } from "src/utils/imageExportUtils";
+import { RELEASE_NOTES } from "./Dialogs/Messages";
 
 type ExcalidrawAutomateHelpTarget = ((...args: unknown[]) => unknown) | string;
 
@@ -4632,6 +4633,13 @@ export class ExcalidrawAutomate {
     return groupId.length > 0 ? groupId[0] : null;
   }
 
+  /**
+   * This is a convenience method to get the release notes for the plugin.
+   * @returns {Object} The release notes object.
+   */
+  getReleaseNotes(): { [k: string]: string } {
+    return RELEASE_NOTES;
+  }
   /**
    * Gets all the elements from elements[] that share one or more groupIds with the specified element.
    * @param {ExcalidrawElement} element - The element to check.

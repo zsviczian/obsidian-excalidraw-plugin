@@ -873,16 +873,14 @@ export default {
   ZOOM_AND_PAN_HEAD: "Zoom and Pan",
   ZOOM_AND_PAN_DESC:
     "Configure mouse, touch, opening, resizing, and zoom-range behavior.",
-  PAN_WITH_RIGHT_MOUSE_BUTTON_NAME: "Right-click drag to pan",
-  PAN_WITH_RIGHT_MOUSE_BUTTON_DESC:
-    "Right-click and drag to pan the canvas (Miro-style). Press 'm' to open the context menu.",
   DEFAULT_PINCHZOOM_NAME: "Allow pinch zoom in pen mode",
   DEFAULT_PINCHZOOM_DESC:
     "Pinch zoom in pen mode when using the freedraw tool is disabled by default to prevent unwanted accidental zooming with your palm.<br>" +
     "<b><u>Toggle ON:</u></b> Enable pinch zoom in pen mode<br><b><u>Toggle OFF:</u></b>Disable pinch zoom in pen mode",
 
-  DEFAULT_WHEELZOOM_NAME: "Mouse wheel to zoom by default",
-  DEFAULT_WHEELZOOM_DESC: `<b><u>Toggle ON:</u></b> Mouse wheel to zoom; ${labelCTRL()} + mouse wheel to scroll</br><b><u>Toggle OFF:</u></b>${labelCTRL()} + mouse wheel to zoom; Mouse wheel to scroll`,
+  DEFAULT_WHEELZOOM_NAME: "Invert the drawing's wheel zoom preference",
+  DEFAULT_WHEELZOOM_DESC:
+    "Applies to all drawings and inverts the drawing's <b>Input device</b> preference (whether the mouse wheel zooms or scrolls). The drawing preference applies only to the current drawing and can be saved in a template.",
 
   ZOOM_TO_FIT_NAME: "Zoom to fit on view resize",
   ZOOM_TO_FIT_DESC:

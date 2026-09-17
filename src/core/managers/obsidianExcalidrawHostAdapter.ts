@@ -16,7 +16,6 @@ export const createObsidianExcalidrawHostAdapter = (
 ): ExcalidrawLib.ObsidianExcalidrawHostAdapter => ({
   protocolVersion,
   isDoubleTapEraserEnabled: () => plugin.settings.penModeDoubleTapEraser,
-  isRightClickPanEnabled: () => plugin.settings.panWithRightMouseButton,
   getZoomToFitMaxLevel: () => plugin.settings.zoomToFitMaxLevel,
   isPenModeCrosshairVisible: () => plugin.settings.penModeCrosshairVisible,
   isSingleFingerPanningEnabled: () =>
