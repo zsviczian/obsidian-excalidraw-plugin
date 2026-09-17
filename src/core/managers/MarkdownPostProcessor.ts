@@ -1252,6 +1252,24 @@ const tmpObsidianWYSIWYG = async (
     return;
   }
 
+  //This internal-embed's src may point to a completely different file than the
+  //Excalidraw file we are currently rendering (e.g. a plain image embedded in the
+  //markdown side of a hybrid note). Resolve the actual link target and only take
+  //over rendering when it is genuinely an Excalidraw drawing; otherwise leave the
+  //embed alone so Obsidian's native renderer can display it.
+  //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2292
+  const embedSrc = internalEmbedDiv.getAttribute("src")?.split("#")[0];
+  const embedTargetFile = embedSrc
+    ? metadataCache.getFirstLinkpathDest(embedSrc, ctx.sourcePath)
+    : null;
+  if (
+    !embedTargetFile ||
+    !(embedTargetFile instanceof TFile) ||
+    !plugin.isExcalidrawFile(embedTargetFile)
+  ) {
+    return;
+  }
+
   el.empty();
 
   if (internalEmbedDiv.hasAttribute("ready")) {
@@ -1266,7 +1284,7 @@ const tmpObsidianWYSIWYG = async (
       return;
     }
 
-    const imgDiv = await processInternalEmbed(internalEmbedDiv, file);
+    const imgDiv = await processInternalEmbed(internalEmbedDiv, embedTargetFile);
     if (!imgDiv) {
       return;
     }
@@ -1339,8 +1357,13 @@ export const markdownPostProcessor = async (
     return;
   }
   await plugin.awaitSettings();
+  //Obsidian's Export to PDF renders the document in its own window (main window or a
+  //popout), not necessarily mainDocument, so the print marker must be looked up on the
+  //document this section actually belongs to rather than always on the main window.
+  //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2292
+  const printOwnerDocument = el.ownerDocument ?? mainDocument;
   const isPrinting = Boolean(
-    mainDocument.body.querySelectorAll("body > .print").length > 0,
+    printOwnerDocument.body.querySelectorAll("body > .print").length > 0,
   );
   //firstElementChild: https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1956
   const isFrontmatter =
@@ -1373,7 +1396,17 @@ export const markdownPostProcessor = async (
     !plugin.settings.renderImageInHoverPreviewForMDNotes;
   const embeddedItems = el.querySelectorAll(".internal-embed");
 
-  if (isPrinting && plugin.settings.renderImageInMarkdownToPDF) {
+  //tmpObsidianWYSIWYG only knows how to handle the frontmatter/area-ref section that
+  //renders this drawing's own preview. When this section contains real embeds of its
+  //own (e.g. a plain image embedded in the markdown side of a hybrid note), it must be
+  //routed to processReadingMode below instead, exactly like the non-print case - otherwise
+  //tmpObsidianWYSIWYG empties and discards the section without rendering anything back.
+  //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2292
+  if (
+    isPrinting &&
+    plugin.settings.renderImageInMarkdownToPDF &&
+    embeddedItems.length === 0
+  ) {
     await tmpObsidianWYSIWYG(
       el,
       ctx,
