@@ -25,12 +25,6 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 - Create sticky notes with the new **Sticky note** tool or the **N** shortcut. Labels automatically fit and grow with their note, with dedicated colors and a creation-date footer. [#12064](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/12064)
 - Right click panning (without enabling a specific "Miro-style" setting) is now supported. [#12110](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/12110)
 
-## New in Excalidraw Automate
-- Scripts can create native sticky notes, including automatically fitted labels:
-\`\`\`ts
-addStickyNote(topX: number, topY: number, text: string, formatting?: {width?: number; height?: number; fontSize?: number; fontFamily?: number; textAlign?: "left" | "center" | "right"; textVerticalAlign?: "top" | "middle" | "bottom";}, id?: string): string;
-\`\`\`
-
 ## Fixed / Refactored
 - Lasso tool was not available in the More Tools menu in Tray Mode [#2937](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2937)
 - \`.excalidraw\` drawings with embedded binary images now render those images when opened into an already-used Excalidraw tab. [#2929](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2929)
@@ -39,6 +33,13 @@ addStickyNote(topX: number, topY: number, text: string, formatting?: {width?: nu
 - Rapidly changing Markdown image appearance, selection, or image/embeddable conversion no longer leaves a rejected image-render promise in the console or lets a superseded render overwrite the newer element state.
 - Fixed a bug where, with *"Render Excalidraw as Image in Obsidian PDF Export"* enabled, exporting a Hybrid Note (an Excalidraw drawing with your own Markdown content alongside it) to PDF could render blank sections wherever a regular image (or other non-Excalidraw) embed appeared on the Markdown side. [#2292](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2292), 🙏[bluechallenge](${URLs.GITHUB_COM}/bluechallenge) [#2936](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2936)
 - Selection rectangles in popout windows are no longer positioned incorrectly when displays use different DPI settings. [#2940](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2940)
+
+## New/Fixed in Excalidraw Automate
+- Scripts can create native sticky notes, including automatically fitted labels:
+\`\`\`ts
+addStickyNote(topX: number, topY: number, text: string, formatting?: {width?: number; height?: number; fontSize?: number; fontFamily?: number; textAlign?: "left" | "center" | "right"; textVerticalAlign?: "top" | "middle" | "bottom";}, id?: string): string;
+\`\`\`
+- Unbound arrows created with Excalidraw Automate's \`addArrow()\` no longer contain incomplete binding data that could cause an error when selected.
 `,
 "2.27.3": `
 ## Fixed and updated

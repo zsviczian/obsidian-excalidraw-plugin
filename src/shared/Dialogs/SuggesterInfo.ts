@@ -440,7 +440,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     desc:
       "Adds an arrow element.\n" +
       'Arrowheads: "arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null.\n' +
-      'Bindings: "inside" | "outside" Sets startObjectId/endObjectId to bind the arrow ends to shapes. Bind mode: "orbit" (default) or "inside".\n' +
+      'Set startObjectId/endObjectId to bind the corresponding arrow end to a shape; omit an object ID to leave that end unbound. Bind mode: "orbit" (default) or "inside".\n' +
       "Fixed point: [xRatio,yRatio] in 0..1 (percentage of bound element width/height) to bind to a specific point on the element. In case of orbit mode, the orbit will happen around this immaginary point.\n" +
       "Elbowed: true will create an elbowed arrow.",
     after: "",

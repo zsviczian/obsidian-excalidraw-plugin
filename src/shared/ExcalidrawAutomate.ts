@@ -2729,8 +2729,8 @@ export class ExcalidrawAutomate {
    * @param {Object} [formatting] - Formatting options for the arrow element.
    * @param {"arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null} [formatting.startArrowHead] - The start arrowhead type.
    * @param {"arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null} [formatting.endArrowHead] - The end arrowhead type.
-   * @param {string} [formatting.startObjectId] - The ID of the start object.
-   * @param {string} [formatting.endObjectId] - The ID of the end object.
+   * @param {string} [formatting.startObjectId] - The ID of the start object. When omitted, the arrow start is unbound.
+   * @param {string} [formatting.endObjectId] - The ID of the end object. When omitted, the arrow end is unbound.
    * BindMode Determines whether the arrow remains outside the shape or is allowed to
    * go all the way inside the shape up to the exact fixed point.
    * @param {"inside" | "orbit"} [formatting.startBindMode] - The binding mode for the start object.
@@ -2778,20 +2778,32 @@ export class ExcalidrawAutomate {
     },
     id?: string,
   ): string {
-    const startFixedPoint = normalizeFixedPoint(formatting?.startFixedPoint);
-    const endFixedPoint = normalizeFixedPoint(formatting?.endFixedPoint);
-    const startMode = normalizeBindMode(formatting?.startBindMode);
-    const endMode = normalizeBindMode(formatting?.endBindMode);
     const box = getLineBox(points);
     const elbowed = formatting?.elbowed ?? false;
-    const startElement = formatting?.startObjectId
+    const startObjectId = formatting?.startObjectId;
+    const endObjectId = formatting?.endObjectId;
+    const startBinding: FixedPointBinding | null = startObjectId
+      ? {
+          elementId: startObjectId,
+          mode: normalizeBindMode(formatting?.startBindMode),
+          fixedPoint: normalizeFixedPoint(formatting?.startFixedPoint),
+        }
+      : null;
+    const endBinding: FixedPointBinding | null = endObjectId
+      ? {
+          elementId: endObjectId,
+          mode: normalizeBindMode(formatting?.endBindMode),
+          fixedPoint: normalizeFixedPoint(formatting?.endFixedPoint),
+        }
+      : null;
+    const startElement = startBinding
       ? (this.getElement(
-          formatting.startObjectId,
+          startBinding.elementId,
         ) as Mutable<ExcalidrawBindableElement>)
       : null;
-    const endElement = formatting?.endObjectId
+    const endElement = endBinding
       ? (this.getElement(
-          formatting.endObjectId,
+          endBinding.elementId,
         ) as Mutable<ExcalidrawBindableElement>)
       : null;
     id = id ?? nanoid();
@@ -2799,16 +2811,8 @@ export class ExcalidrawAutomate {
       points: normalizeLinePoints(points),
       elbowed,
       lastCommittedPoint: null,
-      startBinding: {
-        elementId: formatting?.startObjectId,
-        mode: startMode,
-        fixedPoint: startFixedPoint,
-      },
-      endBinding: {
-        elementId: formatting?.endObjectId,
-        mode: endMode,
-        fixedPoint: endFixedPoint,
-      },
+      startBinding,
+      endBinding,
       //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/388
       startArrowhead:
         typeof formatting?.startArrowHead !== "undefined"
