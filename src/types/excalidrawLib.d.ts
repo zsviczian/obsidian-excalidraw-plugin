@@ -81,7 +81,7 @@ type EmbeddedLink =
     ))
   | null;
 
-declare namespace ExcalidrawLib {
+export declare namespace ExcalidrawLib {
   type ObsidianCommonHostUIMode = "full" | "compact" | "tray" | "mobile";
 
   type ObsidianCommonHostAdapter = Readonly<{
