@@ -40,7 +40,23 @@ The repository already contains:
 
 7. Copy the generated `.md` script and its preview SVG from `build/` into the Script Engine folder configured in Excalidraw settings. Run the script from an Excalidraw drawing.
 
+> **Important:** files under `src/scripts/{slug}/` are development source files. In particular, `src/scripts/{slug}/main.ts` is **not** a script you can copy into Obsidian and run directly. After creating or changing a script, ask your coding agent to run `npm run build`, or run it yourself. The ready-to-run Script Engine artifact is generated under `build/{slug}/`.
+
 The generated `.md` file contains executable JavaScript for the Excalidraw Script Engine; it is not an Obsidian plugin. If `.md` and `.js` versions with the same script name are both present, Excalidraw prefers the `.md` version.
+
+### Keep your script workspace up to date
+
+The template can update its shared tooling, Excalidraw Automate types, agent guidance, and build infrastructure without replacing your scripts. A good update sequence is:
+
+```bash
+npm run update-template:check
+npm run update-template
+npm install
+npm run check
+npm run build
+```
+
+Run `npm install` after `npm run update-template` because a template update may change `package.json` or `package-lock.json`. Then run the checks and rebuild your scripts before testing them in Obsidian.
 
 ## Why AI agents work so well for scripting
 
@@ -75,11 +91,12 @@ Browse the Community Script Store for examples and inspiration before starting f
 
 The template's authoring guidance handles the details, but these principles matter:
 
+- Work in `src/scripts/{slug}/`; treat `build/` as generated output. Do not hand-edit the built script as your source of truth.
 - Excalidraw scene elements are immutable; edit them through the Excalidraw Automate workbench and commit the result back to the view.
 - The Script Engine injects `ea` and `utils`. Runtime Obsidian APIs are available through `ea.obsidian`.
 - Scripts with UI or long-lived behavior need deliberate cleanup and lifecycle handling.
 - Test cancellation, empty selections, undo/save behavior, view changes, and any mobile-specific UI on a physical mobile device.
-- Run `npm run check` and `npm run build` before distributing a script.
+- Run `npm run check` and `npm run build` before testing or distributing a changed script.
 
 ## Scripts are code
 
@@ -87,9 +104,20 @@ A script can change your drawing and can also work with files in your vault. Tre
 
 ## Share a script with the community
 
-Community scripts are maintained in the central [Obsidian Excalidraw repository](https://github.com/zsviczian/obsidian-excalidraw-plugin/tree/master/ea-scripts). If you build something broadly useful, open a focused pull request with the script, its icon/preview, and its Script Store catalog entry.
+Community scripts are maintained in the central [Obsidian Excalidraw repository](https://github.com/zsviczian/obsidian-excalidraw-plugin/tree/master/ea-scripts). Publish the **built** `.md` artifact, not `src/scripts/{slug}/main.ts`, together with its matching SVG icon/preview when applicable and an entry in `ea-scripts/script-store.json`.
 
-For repository-specific publishing steps, see [ea-scripts/README.md](../ea-scripts/README.md).
+The current Script Store workflow is:
+
+```bash
+npm run script-store:check
+npm run script-store:build
+```
+
+`script-store:build` validates the catalog and updates `directory-info.json` only for script or icon files that actually changed. Do not hand-edit unrelated `mtime` values: existing timestamps are part of backward-compatible update detection.
+
+`ea-scripts/index-new.md` is the frozen legacy catalog for older Excalidraw versions. Routine Script Store publishing should not modify it. New scripts are published through `script-store.json` unless a maintainer deliberately updates the legacy catalog separately.
+
+For the repository-specific publishing rules and current compatibility notes, see [ea-scripts/README.md](../ea-scripts/README.md).
 
 ## More resources
 
