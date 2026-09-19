@@ -2066,6 +2066,15 @@ button.excalidraw-font-picker {
   object-fit: contain;
 }
 
+/* Script icons are external SVG images and cannot inherit --icon-fill-color
+ * like the inline SVGs in the Excalidraw tools panel. Match Excalidraw's
+ * dark-theme image treatment (THEME_FILTER) so monochrome script icons stay
+ * legible on dark store backgrounds. */
+.theme-dark .excalidraw-script-store__icon img,
+.theme-dark .excalidraw-script-store__detail-icon img {
+  filter: invert(93%) hue-rotate(180deg) saturate(1.25);
+}
+
 .excalidraw-script-store__icon img.is-hidden,
 .excalidraw-script-store__detail-icon img.is-hidden {
   display: none;
