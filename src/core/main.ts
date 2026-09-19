@@ -1500,14 +1500,14 @@ export default class ExcalidrawPlugin extends Plugin {
    * @param inputEl The text input element to attach the suggester to.
    * @param widthWrapper Optional HTML element to wrap the width of suggester element.
    * @param containerEl Optional container element used as collision boundary.
-   * @param surpessPlaceholder Whether to suppress the placeholder text. Defaults to true.
+   * @param suppressPlaceholder Whether to suppress the placeholder text. Defaults to true.
    * @returns A KeyBlocker instance for managing keyboard input.
    */
   public attachInlineLinkSuggester(
     inputEl: HTMLInputElement | HTMLTextAreaElement,
     widthWrapper?: HTMLElement,
     containerEl?: HTMLDivElement,
-    surpessPlaceholder: boolean = true,
+    suppressPlaceholder: boolean = true,
   ): KeyBlocker {
     const getSourcePath = () => {
       this.ea.setView();
@@ -1519,7 +1519,7 @@ export default class ExcalidrawPlugin extends Plugin {
       inputEl,
       getSourcePath,
       widthWrapper,
-      surpessPlaceholder,
+      suppressPlaceholder,
       containerEl,
     );
   }
