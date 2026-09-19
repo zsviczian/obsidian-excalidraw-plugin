@@ -627,6 +627,7 @@ Update source content by running npm run doc in the plugin repository.
 `);
     const manifestScript = path.join(TEMPLATE_REPO_ROOT, 'scripts/template-manifest.mjs');
     if (fs.existsSync(manifestScript)) {
+      console.log('[template] Refreshing managed-file manifest...');
       execFileSync(process.execPath, [manifestScript], { cwd: TEMPLATE_REPO_ROOT, stdio: 'inherit' });
     }
     return;
