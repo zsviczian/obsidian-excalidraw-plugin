@@ -2635,11 +2635,21 @@ export interface SelectableFontOption {
 /* lib/types/githubTypes.d.ts */
 /* ******************************** */
 /**
- * Metadata entry describing a file in the remote EA scripts directory listing.
+ * Metadata entry describing a file in the legacy remote EA scripts directory listing.
  */
 export type RemoteDirectoryInfo = {
     fname: string;
     mtime: number;
+};
+/**
+ * File metadata returned by GitHub's repository contents endpoint.
+ */
+export type GitHubRepositoryContentFile = {
+    name: string;
+    path: string;
+    sha: string;
+    type: "file" | "dir" | "symlink" | "submodule";
+    download_url?: string | null;
 };
 
 /* ************************************** */
@@ -2871,6 +2881,32 @@ export interface InputPromptOptions {
     controlsOnTop?: boolean;
     draggable?: boolean;
 }
+
+/* ************************************* */
+/* lib/types/scriptStoreTypes.d.ts */
+/* ************************************* */
+export type ScriptStoreCategory = {
+    name: string;
+    description: string;
+};
+export type ScriptStoreEntry = {
+    name: string;
+    file: string;
+    installUrl: string;
+    iconUrl: string;
+    author: string;
+    authorUrl: string;
+    sourceUrl: string;
+    descriptionHtml: string;
+    categories: string[];
+    featuredRank?: number;
+};
+export type ScriptStoreCatalog = {
+    version: number;
+    categories: ScriptStoreCategory[];
+    scripts: ScriptStoreEntry[];
+};
+export type ScriptStoreInstallState = "install" | "update" | "up-to-date" | "error";
 
 /* ************************************** */
 /* lib/types/sidepanelTabTypes.d.ts */
@@ -6959,7 +6995,7 @@ Content structure:
 2. The curated script overview (index-new.md)
 3. Raw source of every *.md script in /ea-scripts (each fenced code block is auto-closed to ensure well-formed aggregation)
 
-Generated on: 2026-09-19T09:34:28.553Z
+Generated on: 2026-09-19T14:44:44.719Z
 
 ---
 
@@ -58890,6 +58926,26 @@ Open the script you are interested in and save it to your Obsidian Vault includi
 |[Zoom to Fit Selected Elements](Zoom%20to%20Fit%20Selected%20Elements.md)|Similar to Excalidraw standard <kbd>SHIFT+2</kbd> feature: Zoom to fit selected elements, but with the ability to zoom to 1000%. Inspiration: [#272](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/272)||[@zsviczian](https://github.com/zsviczian)|
 |[Hardware Eraser Suppoer](Hardware%20Eraser%20Support.md)|Allows the use of pen inversion/hardware erasers on supported pens.|[@threethan](https://github.com/threethan)|
 |[Hardware Eraser Suppoer](Auto%20Draw%20for%20Pen.md)|Automatically switched from the Select tool to the Draw tool when a pen is hovered, and then back.|[@threethan](https://github.com/threethan)|
+## Publishing a community script
+
+The current Script Store reads metadata from `ea-scripts/script-store.json`. Add or update one catalog entry when publishing a script, plus the script file and its matching SVG icon/preview when applicable.
+
+Run:
+
+```bash
+npm run script-store:check
+npm run script-store:build
+```
+
+`script-store:build` validates `script-store.json` and updates `directory-info.json` only for script or icon files that are actually modified/new in the current Git working tree. It **does not recalculate historical timestamps**, and repeated builds preserve an already-updated value. When the repository was exported without `.git`, all existing mtimes are left untouched.
+
+`index-new.md` is a frozen legacy catalog for older Excalidraw versions. Routine Script Store publishing must not generate or modify it. New scripts added only to `script-store.json` are intentionally unavailable in older plugin versions unless a maintainer explicitly updates the legacy catalog separately.
+
+Do not hand-edit unrelated `mtime` values. The plugin still uses these timestamps for backward-compatible script update detection.
+
+### Beta release compatibility
+
+Released 2.27.x clients fetch `ea-scripts/index-new.md` and `ea-scripts/directory-info.json` directly from the repository `master` branch at runtime. Keep `index-new.md` unchanged during routine 2.28 Script Store work. `directory-info.json` may still advance for scripts/icons that are actually updated, preserving the established update behavior for scripts already present in the legacy catalog.
 
 ---
 

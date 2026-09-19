@@ -2354,11 +2354,21 @@ export interface SelectableFontOption {
 /* lib/types/githubTypes.d.ts */
 /* ******************************** */
 /**
- * Metadata entry describing a file in the remote EA scripts directory listing.
+ * Metadata entry describing a file in the legacy remote EA scripts directory listing.
  */
 export type RemoteDirectoryInfo = {
     fname: string;
     mtime: number;
+};
+/**
+ * File metadata returned by GitHub's repository contents endpoint.
+ */
+export type GitHubRepositoryContentFile = {
+    name: string;
+    path: string;
+    sha: string;
+    type: "file" | "dir" | "symlink" | "submodule";
+    download_url?: string | null;
 };
 
 /* ************************************** */
@@ -2590,6 +2600,32 @@ export interface InputPromptOptions {
     controlsOnTop?: boolean;
     draggable?: boolean;
 }
+
+/* ************************************* */
+/* lib/types/scriptStoreTypes.d.ts */
+/* ************************************* */
+export type ScriptStoreCategory = {
+    name: string;
+    description: string;
+};
+export type ScriptStoreEntry = {
+    name: string;
+    file: string;
+    installUrl: string;
+    iconUrl: string;
+    author: string;
+    authorUrl: string;
+    sourceUrl: string;
+    descriptionHtml: string;
+    categories: string[];
+    featuredRank?: number;
+};
+export type ScriptStoreCatalog = {
+    version: number;
+    categories: ScriptStoreCategory[];
+    scripts: ScriptStoreEntry[];
+};
+export type ScriptStoreInstallState = "install" | "update" | "up-to-date" | "error";
 
 /* ************************************** */
 /* lib/types/sidepanelTabTypes.d.ts */
