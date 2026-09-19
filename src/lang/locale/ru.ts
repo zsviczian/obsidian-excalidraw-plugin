@@ -1509,23 +1509,16 @@ export default {
   //carveout.ts
   NEW_DRAWING_TIMEOUT:
     "Файл не найден. Создание нового рисунка Excalidraw занимает слишком много времени. Пожалуйста, попробуйте снова.",
-
   SCRIPT_INSTALLED_NOTICE: "Установлено",
   SCRIPT_INSTALL_ERROR_NOTICE: "Ошибка установки скрипта",
   SCRIPT_STORE_TITLE: "Скрипты сообщества",
   SCRIPT_STORE_LOADING: "Загрузка скриптов сообщества...",
-  SCRIPT_STORE_AUTOMATE_TITLE: "Excalidraw Automate",
-  SCRIPT_STORE_AUTOMATE_DESC:
-    "Освойте движок скриптов и превратите повторяющиеся действия на холсте в сценарии одним нажатием.",
-  SCRIPT_STORE_AUTOMATE_ACTION: "Смотреть введение",
-  SCRIPT_STORE_AI_TITLE: "Создавайте скрипты с ИИ",
-  SCRIPT_STORE_AI_DESC:
-    "Используйте справочные материалы Excalidraw Automate вместе с ИИ для создания собственных скриптов.",
-  SCRIPT_STORE_AI_ACTION: "Смотреть видео об ИИ-скриптинге",
-  SCRIPT_STORE_PUBLISH_TITLE: "Поделиться скриптом",
-  SCRIPT_STORE_PUBLISH_DESC:
-    "Скрипты сообщества хранятся в одном проверяемом репозитории. Добавьте скрипт и запись каталога в отдельном pull request.",
-  SCRIPT_STORE_PUBLISH_ACTION: "Руководство по публикации",
+  SCRIPT_STORE_MASTERY_TITLE: "Excalidraw Mastery",
+  SCRIPT_STORE_MASTERY_DESC: "Освойте Excalidraw и Visual PKM",
+  SCRIPT_STORE_COFFEE_TITLE: "Купить мне кофе",
+  SCRIPT_STORE_COFFEE_DESC: "Поддержать дальнейшую разработку Excalidraw",
+  SCRIPT_STORE_SCRIPTING_BANNER_ALT: "Автоматизируйте что угодно с помощью скриптов Excalidraw",
+  SCRIPT_STORE_SCRIPTING_BANNER_CAPTION: "Создавайте собственные скрипты Excalidraw. Нажмите, чтобы узнать больше.",
   SCRIPT_STORE_UPDATES_TITLE: "Доступны обновления",
   SCRIPT_STORE_UPDATES_DESC: "Обновляйте установленные скрипты без поиска по каталогу.",
   SCRIPT_STORE_UPDATE_ALL: "Обновить все",

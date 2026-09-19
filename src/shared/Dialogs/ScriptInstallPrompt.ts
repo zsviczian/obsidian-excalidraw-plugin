@@ -6,28 +6,26 @@ import {
   request,
   setIcon,
 } from "obsidian";
-import ExcalidrawPlugin from "../../core/main";
-import { errorlog } from "../../utils/utils";
-import { log } from "src/utils/debugHelper";
-import { ContentSearcher } from "../components/ContentSearcher";
 import {
-  getYouTubeThumbnailUrl,
-  getYouTubeUrl,
+  getPluginRepositoryBlobUrl,
+  getPluginRepositoryRawUrl,
   URLs,
-} from "src/constants/safeUrls";
-import { t } from "src/lang/helpers";
+} from "../../constants/safeUrls";
+import { t } from "../../lang/helpers";
 import type {
   ScriptStoreCatalog,
   ScriptStoreEntry,
   ScriptStoreInstallState,
-} from "src/types/scriptStoreTypes";
-import type { GitHubRepositoryContentFile } from "src/types/githubTypes";
+} from "../../types/scriptStoreTypes";
+import { sanitizedFragment, setSanitizedHtml } from "../../utils/htmlUtils";
 import {
-  getRemoteScriptFiles,
   getScriptInstallState,
   installScript,
-} from "src/utils/scriptLibraryUtils";
-import { sanitizedFragment, setSanitizedHtml } from "src/utils/htmlUtils";
+  type ScriptLibraryPluginContext,
+} from "../../utils/scriptLibraryUtils";
+import { errorlog } from "../../utils/utils";
+import { log } from "../../utils/debugHelper";
+import { ContentSearcher } from "../components/ContentSearcher";
 
 const LEGACY_URL =
   URLs.RAW_GITHUBUSERCONTENT_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_MASTER_EA_SCRIPTS_INDEX_NEW_MD;
@@ -37,6 +35,84 @@ const FEATURED_CATEGORY = "Editors Picks";
 
 type StoreView = "all" | "installed";
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
+
+const isUnknownArray = (value: unknown): value is unknown[] =>
+  Array.isArray(value);
+
+const isStringArray = (value: unknown): value is string[] =>
+  isUnknownArray(value) &&
+  value.every((item: unknown) => typeof item === "string");
+
+const isScriptStoreEntry = (value: unknown): value is ScriptStoreEntry =>
+  isRecord(value) &&
+  typeof value.name === "string" &&
+  typeof value.file === "string" &&
+  typeof value.installUrl === "string" &&
+  typeof value.iconUrl === "string" &&
+  typeof value.author === "string" &&
+  typeof value.authorUrl === "string" &&
+  typeof value.sourceUrl === "string" &&
+  typeof value.descriptionHtml === "string" &&
+  isStringArray(value.categories) &&
+  (value.featuredRank === undefined || typeof value.featuredRank === "number");
+
+const isScriptStoreCategory = (
+  value: unknown,
+): value is ScriptStoreCatalog["categories"][number] =>
+  isRecord(value) &&
+  typeof value.name === "string" &&
+  typeof value.description === "string";
+
+const parseScriptStoreCatalog = (source: string): ScriptStoreCatalog => {
+  const parsed: unknown = JSON.parse(source) as unknown;
+  if (
+    !isRecord(parsed) ||
+    parsed.version !== 1 ||
+    !isUnknownArray(parsed.scripts) ||
+    !parsed.scripts.every(isScriptStoreEntry) ||
+    !isUnknownArray(parsed.categories) ||
+    !parsed.categories.every(isScriptStoreCategory)
+  ) {
+    throw new Error("Unsupported script store catalog");
+  }
+  return {
+    version: parsed.version,
+    scripts: parsed.scripts,
+    categories: parsed.categories,
+  };
+};
+
+const getScriptInstallUrl = (entry: ScriptStoreEntry): string =>
+  getPluginRepositoryRawUrl(`ea-scripts/${entry.file}`);
+
+const getScriptIconUrl = (entry: ScriptStoreEntry): string =>
+  getPluginRepositoryRawUrl(
+    `ea-scripts/${entry.file.replace(/\.(?:md|js)$/i, ".svg")}`,
+  );
+
+const getScriptSourceUrl = (entry: ScriptStoreEntry): string =>
+  getPluginRepositoryBlobUrl(`ea-scripts/${entry.file}`);
+
+const rewriteLegacyInstallUrls = (source: string): string =>
+  source.replace(
+    /(```excalidraw-script-install\s*\r?\n)([^\r\n]+)(\r?\n```)/g,
+    (match, opening: string, installUrl: string, closing: string) => {
+      try {
+        const filename = decodeURIComponent(
+          new URL(installUrl.trim()).pathname.split("/").pop() ?? "",
+        );
+        if (!/\.(?:md|js)$/i.test(filename)) {
+          return match;
+        }
+        return `${opening}${getPluginRepositoryRawUrl(`ea-scripts/${filename}`)}${closing}`;
+      } catch {
+        return match;
+      }
+    },
+  );
+
 export class ScriptInstallPrompt extends Modal {
   private contentDiv: HTMLDivElement;
   private renderComponent: Component;
@@ -45,9 +121,8 @@ export class ScriptInstallPrompt extends Modal {
   private selectedCategory = "";
   private searchQuery = "";
   private storeView: StoreView = "all";
-  private remoteFiles: Map<string, GitHubRepositoryContentFile> | null = null;
 
-  constructor(private plugin: ExcalidrawPlugin) {
+  constructor(private plugin: ScriptLibraryPluginContext) {
     super(plugin.app);
   }
 
@@ -55,10 +130,14 @@ export class ScriptInstallPrompt extends Modal {
     this.titleEl.setText(t("SCRIPT_STORE_TITLE"));
     this.renderComponent = new Component();
     this.renderComponent.load();
-    this.contentEl.addClass("excalidraw-scriptengine-install");
-    this.contentEl.addClass("excalidraw-script-store");
-    this.containerEl.addClass("excalidraw-scriptengine-install");
-    this.containerEl.addClass("excalidraw-script-store");
+    this.contentEl.classList.add(
+      "excalidraw-scriptengine-install",
+      "excalidraw-script-store",
+    );
+    this.containerEl.classList.add(
+      "excalidraw-scriptengine-install",
+      "excalidraw-script-store",
+    );
     this.contentDiv = this.contentEl.createDiv({
       cls: "excalidraw-script-store__content",
     });
@@ -67,7 +146,7 @@ export class ScriptInstallPrompt extends Modal {
   }
 
   private renderLoading(): void {
-    this.contentDiv.empty();
+    this.contentDiv.replaceChildren();
     const loading = this.contentDiv.createDiv({
       cls: "excalidraw-script-store__loading",
     });
@@ -80,20 +159,8 @@ export class ScriptInstallPrompt extends Modal {
 
   private async loadStore(): Promise<void> {
     try {
-      const [source, remoteFiles] = await Promise.all([
-        request({ url: CATALOG_URL }),
-        getRemoteScriptFiles(),
-      ]);
-      const catalog = JSON.parse(source) as ScriptStoreCatalog;
-      if (
-        catalog?.version !== 1 ||
-        !Array.isArray(catalog.scripts) ||
-        !Array.isArray(catalog.categories)
-      ) {
-        throw new Error("Unsupported script store catalog");
-      }
-      this.catalog = catalog;
-      this.remoteFiles = remoteFiles;
+      const source = await request({ url: CATALOG_URL });
+      this.catalog = parseScriptStoreCatalog(source);
       await this.refreshInstallStates();
       this.renderStore();
     } catch (error: unknown) {
@@ -107,14 +174,12 @@ export class ScriptInstallPrompt extends Modal {
       return;
     }
     const stateEntries = await Promise.all(
-      this.catalog.scripts.map(async (entry) => [
-        entry.name,
-        await getScriptInstallState(
-          this.plugin,
-          entry.installUrl,
-          this.remoteFiles,
-        ),
-      ] as const),
+      this.catalog.scripts.map(async (entry) =>
+        [
+          entry.name,
+          await getScriptInstallState(this.plugin, getScriptInstallUrl(entry)),
+        ] as const,
+      ),
     );
     this.installStates = new Map(stateEntries);
   }
@@ -123,90 +188,74 @@ export class ScriptInstallPrompt extends Modal {
     if (!this.catalog) {
       return;
     }
-    this.contentDiv.empty();
-    this.renderIntro();
+    this.contentDiv.replaceChildren();
+    this.renderSupportBar();
+    this.renderScriptingBanner();
     this.renderUpdates();
     this.renderBrowseControls();
     this.renderScriptGrid();
   }
 
-  private renderIntro(): void {
-    const intro = this.contentDiv.createDiv({
-      cls: "excalidraw-script-store__intro-grid",
+  private renderSupportBar(): void {
+    const support = this.contentDiv.createDiv({
+      cls: "excalidraw-script-store__support-bar",
     });
-    this.renderFeatureCard(
-      intro,
-      "wand-sparkles",
-      t("SCRIPT_STORE_AUTOMATE_TITLE"),
-      t("SCRIPT_STORE_AUTOMATE_DESC"),
-      t("SCRIPT_STORE_AUTOMATE_ACTION"),
-      getYouTubeUrl("hePJcObHIso"),
-    );
-    this.renderVideoFeatureCard(
-      intro,
-      getYouTubeThumbnailUrl("6BjhUyfS4iM"),
-      t("SCRIPT_STORE_AI_TITLE"),
-      t("SCRIPT_STORE_AI_DESC"),
-      t("SCRIPT_STORE_AI_ACTION"),
-      getYouTubeUrl("6BjhUyfS4iM"),
-    );
-    this.renderFeatureCard(
-      intro,
-      "git-pull-request",
-      t("SCRIPT_STORE_PUBLISH_TITLE"),
-      t("SCRIPT_STORE_PUBLISH_DESC"),
-      t("SCRIPT_STORE_PUBLISH_ACTION"),
-      URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_BLOB_MASTER_EA_SCRIPTS_README_MD,
-    );
+
+    const mastery = support.createEl("a", {
+      href: URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_EM,
+      cls: "excalidraw-script-store__support-item",
+      attr: { target: "_blank", rel: "noopener noreferrer" },
+    });
+    mastery.createEl("img", {
+      cls: "excalidraw-script-store__support-logo",
+      attr: {
+        src: URLs.SKETCH_YOUR_MIND_COM_IMAGES_LOGO_EM_PNG,
+        alt: t("SCRIPT_STORE_MASTERY_TITLE"),
+        loading: "lazy",
+      },
+    });
+    const masteryText = mastery.createDiv({
+      cls: "excalidraw-script-store__support-text",
+    });
+    masteryText.createEl("strong", { text: t("SCRIPT_STORE_MASTERY_TITLE") });
+    masteryText.createSpan({ text: t("SCRIPT_STORE_MASTERY_DESC") });
+
+    const coffee = support.createEl("a", {
+      href: URLs.KO_FI_COM_ZSOLT,
+      cls: "excalidraw-script-store__support-item",
+      attr: { target: "_blank", rel: "noopener noreferrer" },
+    });
+    const coffeeIcon = coffee.createSpan({
+      cls: "excalidraw-script-store__support-icon",
+    });
+    setIcon(coffeeIcon, "coffee");
+    const coffeeText = coffee.createDiv({
+      cls: "excalidraw-script-store__support-text",
+    });
+    coffeeText.createEl("strong", { text: t("SCRIPT_STORE_COFFEE_TITLE") });
+    coffeeText.createSpan({ text: t("SCRIPT_STORE_COFFEE_DESC") });
   }
 
-  private renderFeatureCard(
-    parent: HTMLElement,
-    iconName: string,
-    title: string,
-    description: string,
-    action: string,
-    href: string,
-  ): void {
-    const card = parent.createDiv({ cls: "excalidraw-script-store__feature" });
-    const icon = card.createDiv({ cls: "excalidraw-script-store__feature-icon" });
-    setIcon(icon, iconName);
-    card.createEl("h3", { text: title });
-    card.createEl("p", { text: description });
-    card.createEl("a", {
-      text: action,
-      href,
-      cls: "excalidraw-script-store__feature-link",
+  private renderScriptingBanner(): void {
+    const section = this.contentDiv.createDiv({
+      cls: "excalidraw-script-store__scripting-promo",
+    });
+    const link = section.createEl("a", {
+      href: URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_BLOB_MASTER_DOCS_EA_SCRIPTING_MD,
+      cls: "excalidraw-script-store__scripting-link",
       attr: { target: "_blank", rel: "noopener noreferrer" },
     });
-  }
-
-  private renderVideoFeatureCard(
-    parent: HTMLElement,
-    imageUrl: string,
-    title: string,
-    description: string,
-    action: string,
-    href: string,
-  ): void {
-    const card = parent.createDiv({
-      cls: ["excalidraw-script-store__feature", "is-video"],
+    link.createEl("img", {
+      cls: "excalidraw-script-store__scripting-banner",
+      attr: {
+        src: URLs.RAW_GITHUBUSERCONTENT_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_MASTER_IMAGE_BANNER_AUTOMATE_ANYTHING_PNG,
+        alt: t("SCRIPT_STORE_SCRIPTING_BANNER_ALT"),
+        loading: "lazy",
+      },
     });
-    const imageLink = card.createEl("a", {
-      href,
-      cls: "excalidraw-script-store__feature-image-link",
-      attr: { target: "_blank", rel: "noopener noreferrer" },
-    });
-    imageLink.createEl("img", {
-      attr: { src: imageUrl, alt: title, loading: "lazy" },
-    });
-    card.createEl("h3", { text: title });
-    card.createEl("p", { text: description });
-    card.createEl("a", {
-      text: action,
-      href,
-      cls: "excalidraw-script-store__feature-link",
-      attr: { target: "_blank", rel: "noopener noreferrer" },
+    link.createDiv({
+      cls: "excalidraw-script-store__scripting-caption",
+      text: t("SCRIPT_STORE_SCRIPTING_BANNER_CAPTION"),
     });
   }
 
@@ -233,7 +282,9 @@ export class ScriptInstallPrompt extends Modal {
     const title = titleWrap.createEl("h2", {
       text: `${t("SCRIPT_STORE_UPDATES_TITLE")} (${updates.length})`,
     });
-    const icon = title.createSpan({ cls: "excalidraw-script-store__inline-icon" });
+    const icon = title.createSpan({
+      cls: "excalidraw-script-store__inline-icon",
+    });
     setIcon(icon, "circle-arrow-up");
     titleWrap.createEl("p", { text: t("SCRIPT_STORE_UPDATES_DESC") });
 
@@ -242,18 +293,20 @@ export class ScriptInstallPrompt extends Modal {
       cls: "mod-cta",
       type: "button",
     });
-    updateAll.onClickEvent(() => {
+    updateAll.addEventListener("click", () => {
       void this.updateAll(updateAll);
     });
 
-    const list = section.createDiv({ cls: "excalidraw-script-store__update-list" });
+    const list = section.createDiv({
+      cls: "excalidraw-script-store__update-list",
+    });
     updates.forEach((entry) => {
       const button = list.createEl("button", {
         text: entry.name,
         cls: "excalidraw-script-store__update-chip",
         type: "button",
       });
-      button.onClickEvent(() => this.renderDetail(entry));
+      button.addEventListener("click", () => this.renderDetail(entry));
     });
   }
 
@@ -267,7 +320,7 @@ export class ScriptInstallPrompt extends Modal {
     let failures = 0;
     for (const entry of updates) {
       try {
-        await installScript(this.plugin, entry.installUrl, false);
+        await installScript(this.plugin, getScriptInstallUrl(entry), false);
         this.installStates.set(entry.name, "up-to-date");
       } catch {
         failures += 1;
@@ -349,10 +402,10 @@ export class ScriptInstallPrompt extends Modal {
       cls: this.storeView === view ? "is-active" : undefined,
       type: "button",
     });
-    button.onClickEvent(() => {
+    button.addEventListener("click", () => {
       this.storeView = view;
       parent.querySelectorAll("button").forEach((item) => {
-        item.toggleClass("is-active", item === button);
+        item.classList.toggle("is-active", item === button);
       });
       this.renderScriptGrid();
     });
@@ -367,10 +420,10 @@ export class ScriptInstallPrompt extends Modal {
       cls: "excalidraw-script-store__results",
     });
     const entries = this.getFilteredEntries();
-    const summary = results.createDiv({
+    results.createDiv({
       cls: "excalidraw-script-store__result-summary",
+      text: `${entries.length} ${t("SCRIPT_STORE_RESULTS")}`,
     });
-    summary.setText(`${entries.length} ${t("SCRIPT_STORE_RESULTS")}`);
     if (entries.length === 0) {
       const empty = results.createDiv({
         cls: "excalidraw-script-store__empty",
@@ -393,7 +446,10 @@ export class ScriptInstallPrompt extends Modal {
     const featuredRank = new Map(
       this.catalog.scripts
         .filter((entry) => entry.categories.includes(FEATURED_CATEGORY))
-        .map((entry) => [entry.name, entry.featuredRank ?? Number.MAX_SAFE_INTEGER]),
+        .map((entry) => [
+          entry.name,
+          entry.featuredRank ?? Number.MAX_SAFE_INTEGER,
+        ]),
     );
     return this.catalog.scripts
       .filter((entry) => {
@@ -440,14 +496,14 @@ export class ScriptInstallPrompt extends Modal {
     const state = this.installStates.get(entry.name) ?? "error";
     const card = parent.createDiv({ cls: "excalidraw-script-store__card" });
     if (state === "update") {
-      card.addClass("has-update");
+      card.classList.add("has-update");
     }
     const main = card.createEl("button", {
       cls: "excalidraw-script-store__card-main",
       type: "button",
       attr: { "aria-label": `${t("SCRIPT_STORE_DETAILS")}: ${entry.name}` },
     });
-    main.onClickEvent(() => this.renderDetail(entry));
+    main.addEventListener("click", () => this.renderDetail(entry));
 
     const iconWrap = main.createDiv({ cls: "excalidraw-script-store__icon" });
     const fallback = iconWrap.createSpan({
@@ -455,14 +511,21 @@ export class ScriptInstallPrompt extends Modal {
     });
     setIcon(fallback, "scroll-text");
     const image = iconWrap.createEl("img", {
-      attr: { src: entry.iconUrl, alt: "", loading: "lazy" },
+      attr: { src: getScriptIconUrl(entry), alt: "", loading: "lazy" },
     });
-    image.addEventListener("error", () => image.addClass("is-hidden"), {
-      once: true,
-    });
+    image.addEventListener(
+      "error",
+      () => {
+        image.classList.add("is-hidden");
+        fallback.classList.add("is-visible");
+      },
+      { once: true },
+    );
 
     const text = main.createDiv({ cls: "excalidraw-script-store__card-text" });
-    const titleRow = text.createDiv({ cls: "excalidraw-script-store__title-row" });
+    const titleRow = text.createDiv({
+      cls: "excalidraw-script-store__title-row",
+    });
     titleRow.createEl("h3", { text: entry.name });
     this.renderStateBadge(titleRow, state);
     if (entry.categories.includes(FEATURED_CATEGORY)) {
@@ -479,9 +542,11 @@ export class ScriptInstallPrompt extends Modal {
         text: `${t("SCRIPT_STORE_BY")} ${entry.author}`,
       });
     }
-    text.createEl("p", { text: this.getDescriptionSnippet(entry) });
+    text.createEl("p", { text: this.getDescription(entry) });
 
-    const footer = card.createDiv({ cls: "excalidraw-script-store__card-footer" });
+    const footer = card.createDiv({
+      cls: "excalidraw-script-store__card-footer",
+    });
     const categoryText = entry.categories
       .filter((name) => name !== FEATURED_CATEGORY)
       .slice(0, 2)
@@ -493,7 +558,7 @@ export class ScriptInstallPrompt extends Modal {
       cls: state === "update" ? "mod-cta" : undefined,
     });
     action.disabled = state === "up-to-date";
-    action.onClickEvent((event) => {
+    action.addEventListener("click", (event) => {
       event.stopPropagation();
       void this.installEntry(entry, action);
     });
@@ -522,14 +587,10 @@ export class ScriptInstallPrompt extends Modal {
     setIcon(icon, state === "update" ? "circle-arrow-up" : "check");
   }
 
-  private getDescriptionSnippet(entry: ScriptStoreEntry): string {
-    const text = (sanitizedFragment(entry.descriptionHtml).textContent ?? "")
+  private getDescription(entry: ScriptStoreEntry): string {
+    return (sanitizedFragment(entry.descriptionHtml).textContent ?? "")
       .replace(/\s+/g, " ")
       .trim();
-    if (text.length <= 180) {
-      return text;
-    }
-    return `${text.substring(0, 177).trimEnd()}…`;
   }
 
   private getActionLabel(state: ScriptStoreInstallState): string {
@@ -552,7 +613,7 @@ export class ScriptInstallPrompt extends Modal {
     button.disabled = true;
     button.setText(t("SCRIPT_STORE_UPDATING"));
     try {
-      await installScript(this.plugin, entry.installUrl, false);
+      await installScript(this.plugin, getScriptInstallUrl(entry), false);
       this.installStates.set(entry.name, "up-to-date");
       new Notice(`${t("SCRIPT_INSTALLED_NOTICE")}: ${entry.name}`);
       this.renderStore();
@@ -566,7 +627,7 @@ export class ScriptInstallPrompt extends Modal {
 
   private renderDetail(entry: ScriptStoreEntry): void {
     const state = this.installStates.get(entry.name) ?? "error";
-    this.contentDiv.empty();
+    this.contentDiv.replaceChildren();
     const back = this.contentDiv.createEl("button", {
       text: t("SCRIPT_STORE_BACK"),
       cls: "excalidraw-script-store__back",
@@ -574,26 +635,41 @@ export class ScriptInstallPrompt extends Modal {
     });
     const backIcon = back.createSpan();
     setIcon(backIcon, "arrow-left");
-    back.onClickEvent(() => this.renderStore());
+    back.addEventListener("click", () => this.renderStore());
 
     const detail = this.contentDiv.createDiv({
       cls: "excalidraw-script-store__detail",
     });
-    const hero = detail.createDiv({ cls: "excalidraw-script-store__detail-hero" });
-    const iconWrap = hero.createDiv({ cls: "excalidraw-script-store__detail-icon" });
-    const fallback = iconWrap.createSpan();
+    const hero = detail.createDiv({
+      cls: "excalidraw-script-store__detail-hero",
+    });
+    const iconWrap = hero.createDiv({
+      cls: "excalidraw-script-store__detail-icon",
+    });
+    const fallback = iconWrap.createSpan({
+      cls: "excalidraw-script-store__detail-icon-fallback",
+    });
     setIcon(fallback, "scroll-text");
     const image = iconWrap.createEl("img", {
-      attr: { src: entry.iconUrl, alt: "", loading: "lazy" },
+      attr: { src: getScriptIconUrl(entry), alt: "", loading: "lazy" },
     });
-    image.addEventListener("error", () => image.addClass("is-hidden"), {
-      once: true,
-    });
+    image.addEventListener(
+      "error",
+      () => {
+        image.classList.add("is-hidden");
+        fallback.classList.add("is-visible");
+      },
+      { once: true },
+    );
 
-    const title = hero.createDiv({ cls: "excalidraw-script-store__detail-title" });
+    const title = hero.createDiv({
+      cls: "excalidraw-script-store__detail-title",
+    });
     title.createEl("h1", { text: entry.name });
     if (entry.author) {
-      const byline = title.createDiv({ cls: "excalidraw-script-store__detail-byline" });
+      const byline = title.createDiv({
+        cls: "excalidraw-script-store__detail-byline",
+      });
       byline.append(`${t("SCRIPT_STORE_BY")} `);
       if (entry.authorUrl) {
         byline.createEl("a", {
@@ -605,21 +681,28 @@ export class ScriptInstallPrompt extends Modal {
         byline.append(entry.author);
       }
     }
-    const tags = title.createDiv({ cls: "excalidraw-script-store__detail-tags" });
+    const tags = title.createDiv({
+      cls: "excalidraw-script-store__detail-tags",
+    });
     entry.categories.forEach((category) =>
       tags.createSpan({ text: category, cls: "excalidraw-script-store__tag" }),
     );
 
-    const actions = title.createDiv({ cls: "excalidraw-script-store__detail-actions" });
+    const actions = title.createDiv({
+      cls: "excalidraw-script-store__detail-actions",
+    });
     const install = actions.createEl("button", {
       text: this.getActionLabel(state),
       type: "button",
       cls: state === "update" || state === "install" ? "mod-cta" : undefined,
     });
-    install.onClickEvent(() => void this.installEntry(entry, install));
+    install.disabled = state === "up-to-date";
+    install.addEventListener("click", () => {
+      void this.installEntry(entry, install);
+    });
     actions.createEl("a", {
       text: t("SCRIPT_STORE_VIEW_SOURCE"),
-      href: entry.sourceUrl,
+      href: getScriptSourceUrl(entry),
       cls: "excalidraw-script-store__source-link",
       attr: { target: "_blank", rel: "noopener noreferrer" },
     });
@@ -643,11 +726,11 @@ export class ScriptInstallPrompt extends Modal {
         this.close();
         return;
       }
-      this.contentDiv.empty();
+      this.contentDiv.replaceChildren();
       new ContentSearcher(this.contentDiv);
       await MarkdownRenderer.render(
         this.plugin.app,
-        source,
+        rewriteLegacyInstallUrls(source),
         this.contentDiv,
         "",
         this.renderComponent,
@@ -668,7 +751,7 @@ export class ScriptInstallPrompt extends Modal {
   }
 
   onClose(): void {
-    this.contentEl.empty();
+    this.contentEl.replaceChildren();
     this.renderComponent.unload();
   }
 }

@@ -1,12 +1,8 @@
-import { Notice, request, TFile } from "obsidian";
+import { Notice, request, TFile, type App } from "obsidian";
 import { SCRIPT_INSTALL_FOLDER } from "src/constants/constants";
 import { URLs } from "src/constants/safeUrls";
 import { t } from "src/lang/helpers";
-import type ExcalidrawPlugin from "src/core/main";
-import type {
-  GitHubRepositoryContentFile,
-  RemoteDirectoryInfo,
-} from "src/types/githubTypes";
+import type { RemoteDirectoryInfo } from "src/types/githubTypes";
 import type { ScriptStoreInstallState } from "src/types/scriptStoreTypes";
 import { ExcalidrawSidepanelView } from "src/view/sidepanel/Sidepanel";
 import { errorlog } from "./coreUtils";
@@ -19,16 +15,39 @@ import {
 } from "./scriptFileUtils";
 import { hideElement, setButtonBgColor, showElement } from "./styleUtils";
 
-const REMOTE_METADATA_CACHE_TTL = 15 * 60 * 1000;
-let remoteScriptFilesPromise: Promise<
-  Map<string, GitHubRepositoryContentFile> | null
-> | null = null;
-let remoteScriptFilesFetchedAt = 0;
-let legacyDirectoryInfoPromise: Promise<Map<string, number> | null> | null =
-  null;
-let legacyDirectoryInfoFetchedAt = 0;
+type ScriptLibrarySettings = {
+  scriptFolderPath: string;
+  allowJavaScriptFiles: boolean;
+  storeScriptFilesAsJavaScript: boolean;
+};
 
-const getDownloadedScriptsFolder = (plugin: ExcalidrawPlugin): string =>
+type ScriptLibraryScriptEngine = {
+  scriptIconMap: Record<string, unknown> | null;
+  getScriptName(file: TFile | string): string;
+  loadScripts(generation?: number): Promise<void>;
+  renameManagedScriptFile(file: TFile, destinationPath: string): Promise<void>;
+};
+
+/** Narrow plugin surface required by the community-script library helpers. */
+export type ScriptLibraryPluginContext = {
+  app: App;
+  settings: ScriptLibrarySettings;
+  scriptEngine: ScriptLibraryScriptEngine;
+};
+
+const REMOTE_METADATA_CACHE_TTL = 15 * 60 * 1000;
+let directoryInfoPromise: Promise<Map<string, number> | null> | null = null;
+let directoryInfoFetchedAt = 0;
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
+
+const isRemoteDirectoryInfo = (value: unknown): value is RemoteDirectoryInfo =>
+  isRecord(value) &&
+  typeof value.fname === "string" &&
+  typeof value.mtime === "number";
+
+const getDownloadedScriptsFolder = (plugin: ScriptLibraryPluginContext): string =>
   `${plugin.settings.scriptFolderPath}/${SCRIPT_INSTALL_FOLDER}`;
 
 const decodeRemoteFilename = (source: string): string => {
@@ -45,78 +64,8 @@ const decodeRemoteFilename = (source: string): string => {
   }
 };
 
-/**
- * Returns the current GitHub file listing for ea-scripts. The result is cached
- * so rendering many script cards costs one API request, not one request per
- * script.
- */
-export const getRemoteScriptFiles = async (): Promise<
-  Map<string, GitHubRepositoryContentFile> | null
-> => {
-  if (
-    !remoteScriptFilesPromise ||
-    Date.now() - remoteScriptFilesFetchedAt > REMOTE_METADATA_CACHE_TTL
-  ) {
-    remoteScriptFilesFetchedAt = Date.now();
-    remoteScriptFilesPromise = (async () => {
-      try {
-        const result = JSON.parse(
-          await request({
-            url: URLs.API_GITHUB_COM_REPOS_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_CONTENTS_EA_SCRIPTS,
-          }),
-        ) as unknown;
-        if (!Array.isArray(result)) {
-          return null;
-        }
-        const files = new Map<string, GitHubRepositoryContentFile>();
-        result.forEach((entry: GitHubRepositoryContentFile) => {
-          if (entry?.type === "file" && entry.name && entry.sha) {
-            files.set(entry.name, entry);
-          }
-        });
-        return files.size > 0 ? files : null;
-      } catch (error: unknown) {
-        errorlog({
-          where: "scriptLibraryUtils.getRemoteScriptFiles",
-          error,
-        });
-        return null;
-      }
-    })();
-  }
-  return await remoteScriptFilesPromise;
-};
-
-const getLegacyDirectoryInfo = async (): Promise<Map<string, number> | null> => {
-  if (
-    !legacyDirectoryInfoPromise ||
-    Date.now() - legacyDirectoryInfoFetchedAt > REMOTE_METADATA_CACHE_TTL
-  ) {
-    legacyDirectoryInfoFetchedAt = Date.now();
-    legacyDirectoryInfoPromise = (async () => {
-      try {
-        const directoryInfo = JSON.parse(
-          await request({
-            url: URLs.RAW_GITHUBUSERCONTENT_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_MASTER_EA_SCRIPTS_DIRECTORY_INFO_JSON,
-          }),
-        ) as RemoteDirectoryInfo[];
-        const files = new Map<string, number>();
-        directoryInfo.forEach((file) => files.set(file.fname, file.mtime));
-        return files.size > 0 ? files : null;
-      } catch (error: unknown) {
-        errorlog({
-          where: "scriptLibraryUtils.getLegacyDirectoryInfo",
-          error,
-        });
-        return null;
-      }
-    })();
-  }
-  return await legacyDirectoryInfoPromise;
-};
-
 const getLocalScriptFile = (
-  plugin: ExcalidrawPlugin,
+  plugin: ScriptLibraryPluginContext,
   remoteFilename: string,
 ): TFile | null => {
   const folder = getDownloadedScriptsFolder(plugin);
@@ -127,44 +76,51 @@ const getLocalScriptFile = (
   );
 };
 
-const getGitBlobSha = async (
-  plugin: ExcalidrawPlugin,
-  file: TFile,
-): Promise<string> => {
-  const fileData = new Uint8Array(await plugin.app.vault.readBinary(file));
-  const header = new TextEncoder().encode(`blob ${fileData.byteLength}\0`);
-  const blob = new Uint8Array(header.byteLength + fileData.byteLength);
-  blob.set(header, 0);
-  blob.set(fileData, header.byteLength);
-  const digest = await crypto.subtle.digest("SHA-1", blob);
-  return Array.from(new Uint8Array(digest))
-    .map((byte) => byte.toString(16).padStart(2, "0"))
-    .join("");
+const getDirectoryInfo = async (): Promise<Map<string, number> | null> => {
+  if (
+    !directoryInfoPromise ||
+    Date.now() - directoryInfoFetchedAt > REMOTE_METADATA_CACHE_TTL
+  ) {
+    directoryInfoFetchedAt = Date.now();
+    directoryInfoPromise = (async () => {
+      try {
+        const parsed: unknown = JSON.parse(
+          await request({
+            url: URLs.RAW_GITHUBUSERCONTENT_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_MASTER_EA_SCRIPTS_DIRECTORY_INFO_JSON,
+          }),
+        ) as unknown;
+        if (!Array.isArray(parsed)) {
+          return null;
+        }
+        const files = new Map<string, number>();
+        parsed.forEach((entry: unknown) => {
+          if (isRemoteDirectoryInfo(entry)) {
+            files.set(entry.fname, entry.mtime);
+          }
+        });
+        return files.size > 0 ? files : null;
+      } catch (error: unknown) {
+        errorlog({
+          where: "scriptLibraryUtils.getDirectoryInfo",
+          error,
+        });
+        return null;
+      }
+    })();
+  }
+  return await directoryInfoPromise;
 };
 
-const isRemoteFileDifferent = async (
-  plugin: ExcalidrawPlugin,
-  localFile: TFile | null,
-  remoteFile: GitHubRepositoryContentFile | undefined,
-): Promise<boolean> => {
-  if (!remoteFile) {
-    return false;
-  }
-  if (!localFile) {
-    return true;
-  }
-  return (await getGitBlobSha(plugin, localFile)) !== remoteFile.sha;
-};
-
-const getLegacyInstallState = async (
-  plugin: ExcalidrawPlugin,
+const getInstallStateFromDirectoryInfo = async (
+  plugin: ScriptLibraryPluginContext,
   scriptFile: TFile,
   remoteFilename: string,
 ): Promise<ScriptStoreInstallState> => {
-  const files = await getLegacyDirectoryInfo();
+  const files = await getDirectoryInfo();
   if (!files?.has(remoteFilename)) {
     return "error";
   }
+
   const scriptMtime = files.get(remoteFilename) ?? 0;
   if (scriptMtime > scriptFile.stat.mtime) {
     return "update";
@@ -184,49 +140,29 @@ const getLegacyInstallState = async (
 };
 
 /**
- * Resolves one library script's install/update state. SHA comparison is the
- * primary path; directory-info.json remains a compatibility fallback.
+ * Resolves one community script's install/update state using the legacy mtime
+ * contract. directory-info.json is the compatibility source of truth.
  */
 export const getScriptInstallState = async (
-  plugin: ExcalidrawPlugin,
+  plugin: ScriptLibraryPluginContext,
   source: string,
-  remoteFiles?: Map<string, GitHubRepositoryContentFile> | null,
 ): Promise<ScriptStoreInstallState> => {
   const remoteFilename = decodeRemoteFilename(source);
   const scriptFile = getLocalScriptFile(plugin, remoteFilename);
   if (!scriptFile) {
     return "install";
   }
-
-  const files = remoteFiles ?? (await getRemoteScriptFiles());
-  const remoteScript = files?.get(remoteFilename);
-  if (!files || !remoteScript) {
-    return await getLegacyInstallState(plugin, scriptFile, remoteFilename);
-  }
-
-  if (await isRemoteFileDifferent(plugin, scriptFile, remoteScript)) {
-    return "update";
-  }
-
-  const remoteIcon = files.get(getIMGFilename(remoteFilename, "svg"));
-  if (!remoteIcon) {
-    return "up-to-date";
-  }
-  const localIcon = plugin.app.vault.getFileByPath(
-    getIMGFilename(scriptFile.path, "svg"),
+  return await getInstallStateFromDirectoryInfo(
+    plugin,
+    scriptFile,
+    remoteFilename,
   );
-  return (await isRemoteFileDifferent(plugin, localIcon, remoteIcon))
-    ? "update"
-    : "up-to-date";
 };
 
 const restartSidepanelTabIfActive = async (
-  plugin: ExcalidrawPlugin,
+  plugin: ScriptLibraryPluginContext,
   scriptFile: TFile,
 ): Promise<void> => {
-  if (!plugin.scriptEngine) {
-    return;
-  }
   const scriptName = plugin.scriptEngine.getScriptName(scriptFile);
   const spView = ExcalidrawSidepanelView.getExisting(false);
   if (!spView || !scriptName || !spView.getTabByScript(scriptName)) {
@@ -250,7 +186,7 @@ export type InstalledScriptResult = {
 
 /** Installs or updates one managed community script. */
 export const installScript = async (
-  plugin: ExcalidrawPlugin,
+  plugin: ScriptLibraryPluginContext,
   source: string,
   showNotice = true,
 ): Promise<InstalledScriptResult> => {
@@ -265,8 +201,9 @@ export const installScript = async (
 
   let scriptFile = getLocalScriptFile(plugin, remoteFilename);
   let scriptPath = getLocalScriptPath();
-  const iconPath = getIMGFilename(scriptPath, "svg");
-  let iconFile = plugin.app.vault.getFileByPath(iconPath);
+  let iconFile = plugin.app.vault.getFileByPath(
+    getIMGFilename(scriptPath, "svg"),
+  );
 
   const download = async (
     url: string,
@@ -299,17 +236,14 @@ export const installScript = async (
       throw new Error("Script file not found");
     }
 
-    const resolvedIconPath = getIMGFilename(scriptFile.path, "svg");
+    const iconPath = getIMGFilename(scriptFile.path, "svg");
     iconFile = await download(
       getIMGFilename(source, "svg"),
-      plugin.app.vault.getFileByPath(resolvedIconPath),
-      resolvedIconPath,
+      plugin.app.vault.getFileByPath(iconPath),
+      iconPath,
     );
 
-    if (
-      plugin.scriptEngine.scriptIconMap &&
-      Object.keys(plugin.scriptEngine.scriptIconMap).length === 0
-    ) {
+    if (Object.keys(plugin.scriptEngine.scriptIconMap ?? {}).length === 0) {
       await plugin.scriptEngine.loadScripts();
     }
     await restartSidepanelTabIfActive(plugin, scriptFile);
@@ -330,9 +264,9 @@ export const installScript = async (
   }
 };
 
-/** Returns the installed managed scripts whose Git blob differs from GitHub. */
+/** Returns installed managed scripts with a newer script mtime. */
 export const getInstalledScriptUpdates = async (
-  plugin: ExcalidrawPlugin,
+  plugin: ScriptLibraryPluginContext,
 ): Promise<string[]> => {
   if (!plugin.settings.scriptFolderPath) {
     return [];
@@ -349,53 +283,26 @@ export const getInstalledScriptUpdates = async (
     return [];
   }
 
-  const remoteFiles = await getRemoteScriptFiles();
-  if (remoteFiles) {
-    const updates: string[] = [];
-    for (const scriptFile of installedScripts) {
-      const stem = getScriptFileStem(scriptFile.name);
-      const remoteScript =
-        remoteFiles.get(`${stem}.md`) ?? remoteFiles.get(`${stem}.js`);
-      if (!remoteScript) {
-        continue;
-      }
-      if (await isRemoteFileDifferent(plugin, scriptFile, remoteScript)) {
-        updates.push(stem);
-        continue;
-      }
-      const remoteIcon = remoteFiles.get(`${stem}.svg`);
-      if (!remoteIcon) {
-        continue;
-      }
-      const localIcon = plugin.app.vault.getFileByPath(
-        `${scriptFile.parent?.path}/${stem}.svg`,
-      );
-      if (await isRemoteFileDifferent(plugin, localIcon, remoteIcon)) {
-        updates.push(stem);
-      }
-    }
-    return updates.sort((a, b) => a.localeCompare(b));
-  }
-
-  const legacyFiles = await getLegacyDirectoryInfo();
-  if (!legacyFiles) {
+  const files = await getDirectoryInfo();
+  if (!files) {
     return [];
   }
+
   return installedScripts
     .filter((scriptFile) => {
       const stem = getScriptFileStem(scriptFile.name);
-      const remoteMtime = Math.max(
-        legacyFiles.get(`${stem}.md`) ?? 0,
-        legacyFiles.get(`${stem}.js`) ?? 0,
+      const scriptMtime = Math.max(
+        files.get(`${stem}.md`) ?? 0,
+        files.get(`${stem}.js`) ?? 0,
       );
-      return remoteMtime > scriptFile.stat.mtime;
+      return scriptMtime > scriptFile.stat.mtime;
     })
     .map((scriptFile) => getScriptFileStem(scriptFile.name))
     .sort((a, b) => a.localeCompare(b));
 };
 
 export const installButton = async (
-  plugin: ExcalidrawPlugin,
+  plugin: ScriptLibraryPluginContext,
   button: HTMLButtonElement,
   button2: HTMLButtonElement | null,
   source: string,

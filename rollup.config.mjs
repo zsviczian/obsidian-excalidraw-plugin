@@ -1,4 +1,5 @@
 import { nodeResolve } from '@rollup/plugin-node-resolve';
+import { execFileSync } from 'node:child_process';
 import zlib from 'node:zlib';
 import visualizer from 'rollup-plugin-visualizer';
 import commonjs from '@rollup/plugin-commonjs';
@@ -32,7 +33,59 @@ const absolutePath = path.resolve(DIST_FOLDER);
 fs.mkdirSync(absolutePath, { recursive: true });
 const isProd = (process.env.NODE_ENV === "production");
 const isLib = (process.env.NODE_ENV === "lib");
-console.log(`Running: ${process.env.NODE_ENV}; isProd: ${isProd}; isLib: ${isLib}`);
+
+const DEFAULT_PLUGIN_REPOSITORY = {
+  owner: "zsviczian",
+  name: "obsidian-excalidraw-plugin",
+  ref: "master",
+};
+
+const resolvePluginRepositoryContext = () => {
+  const repository = { ...DEFAULT_PLUGIN_REPOSITORY };
+
+  try {
+    const remoteUrl = execFileSync("git", ["remote", "get-url", "origin"], {
+      cwd: process.cwd(),
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim();
+    const match = remoteUrl.match(
+      /github\.com[:/]([^/]+)\/([^/]+?)(?:\.git)?$/i,
+    );
+    if (match) {
+      repository.owner = match[1];
+      repository.name = match[2];
+    }
+
+    const branch = execFileSync("git", ["branch", "--show-current"], {
+      cwd: process.cwd(),
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim();
+    if (branch) {
+      repository.ref = branch;
+      return repository;
+    }
+
+    const commit = execFileSync("git", ["rev-parse", "HEAD"], {
+      cwd: process.cwd(),
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim();
+    if (commit) {
+      repository.ref = commit;
+    }
+  } catch {
+    // Source archives do not include .git. Keep canonical release defaults.
+  }
+
+  return repository;
+};
+
+const pluginRepository = resolvePluginRepositoryContext();
+console.log(
+  `Running: ${process.env.NODE_ENV}; isProd: ${isProd}; isLib: ${isLib}; repository: ${pluginRepository.owner}/${pluginRepository.name}@${pluginRepository.ref}`,
+);
 
 
 // Add non-English locales here to embed them as compressed payloads in main.js.
@@ -301,6 +354,9 @@ const getRollupPlugins = (tsconfig, ...plugins) => [
   replace({
     preventAssignment: true,
     "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV),
+    __PLUGIN_REPOSITORY_OWNER__: JSON.stringify(pluginRepository.owner),
+    __PLUGIN_REPOSITORY_NAME__: JSON.stringify(pluginRepository.name),
+    __PLUGIN_REPOSITORY_REF__: JSON.stringify(pluginRepository.ref),
   }),
   commonjs(),
   nodeResolve({ browser: true, preferBuiltins: false }),

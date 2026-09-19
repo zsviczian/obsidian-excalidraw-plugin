@@ -11,18 +11,6 @@ Click to watch the intro video:
 
 See the [Excalidraw Script Engine](https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.html) documentation for more details.
 
-## Publishing a community script
-
-The community Script Store is driven by `script-store.json`. `index-new.md` and `directory-info.json` are backward-compatibility artifacts and should not be edited by hand.
-
-1. Add the script to `ea-scripts/`. The filename is the installed script name.
-2. Add a matching SVG icon when practical (`My Script.md` -> `My Script.svg`) and a preview image under `images/` when useful.
-3. Add one entry to `ea-scripts/script-store.json` with the author, description, categories, install/source URLs, and icon URL. Add `featuredRank` only for an **Editors Picks** entry.
-4. Run `npm run script-store:build` to validate the catalog and regenerate the legacy Markdown store and timestamp fallback.
-5. Run `npm run script-store:check`, `npm run code`, and the normal build before opening a pull request.
-
-The current plugin compares installed scripts with GitHub blob SHAs, so contributors no longer need to calculate or hand-edit modified timestamps. `directory-info.json` remains generated for older plugin versions and as a fallback.
-
 ## How to install scripts into your Obsidian Vault
 To install one of the built-in scripts:
 - Open up an excalidraw drawing in Obsidian
@@ -96,3 +84,17 @@ Open the script you are interested in and save it to your Obsidian Vault includi
 |[Zoom to Fit Selected Elements](Zoom%20to%20Fit%20Selected%20Elements.md)|Similar to Excalidraw standard <kbd>SHIFT+2</kbd> feature: Zoom to fit selected elements, but with the ability to zoom to 1000%. Inspiration: [#272](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/272)||[@zsviczian](https://github.com/zsviczian)|
 |[Hardware Eraser Suppoer](Hardware%20Eraser%20Support.md)|Allows the use of pen inversion/hardware erasers on supported pens.|[@threethan](https://github.com/threethan)|
 |[Hardware Eraser Suppoer](Auto%20Draw%20for%20Pen.md)|Automatically switched from the Select tool to the Draw tool when a pen is hovered, and then back.|[@threethan](https://github.com/threethan)|
+## Publishing a community script
+
+The current Script Store reads metadata from `ea-scripts/script-store.json`. Add or update one catalog entry when publishing a script, plus the script file and its matching SVG icon/preview when applicable.
+
+Run:
+
+```bash
+npm run script-store:check
+npm run script-store:build
+```
+
+`script-store:build` regenerates the legacy `index-new.md` catalog for older plugin versions. It **does not recalculate historical timestamps** in `directory-info.json`. Only script or icon files that are actually modified/new in the current Git working tree receive a new `mtime`, and repeated builds preserve an already-updated value. When the repository was exported without `.git`, all existing mtimes are left untouched.
+
+Do not hand-edit unrelated `mtime` values. The plugin still uses these timestamps for backward-compatible script update detection.

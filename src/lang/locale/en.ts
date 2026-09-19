@@ -1524,25 +1524,21 @@ export default {
   SCRIPT_INSTALL_ERROR_NOTICE: "Error installing script",
   SCRIPT_STORE_TITLE: "Community scripts",
   SCRIPT_STORE_LOADING: "Loading community scripts...",
-  SCRIPT_STORE_AUTOMATE_TITLE: "Excalidraw Automate",
-  SCRIPT_STORE_AUTOMATE_DESC:
-    "Learn the scripting engine and turn repeated canvas work into one-click workflows.",
-  SCRIPT_STORE_AUTOMATE_ACTION: "Watch the introduction",
-  SCRIPT_STORE_AI_TITLE: "Create scripts with AI",
-  SCRIPT_STORE_AI_DESC:
-    "Use the Excalidraw Automate reference material with AI to build scripts for your own workflow.",
-  SCRIPT_STORE_AI_ACTION: "Watch AI scripting superpowers",
-  SCRIPT_STORE_PUBLISH_TITLE: "Share a script",
-  SCRIPT_STORE_PUBLISH_DESC:
-    "Community scripts live in one reviewed repository. Add your script and catalog entry in a focused pull request.",
-  SCRIPT_STORE_PUBLISH_ACTION: "Publishing guide",
+  SCRIPT_STORE_MASTERY_TITLE: "Excalidraw Mastery",
+  SCRIPT_STORE_MASTERY_DESC: "Master Excalidraw and Visual PKM",
+  SCRIPT_STORE_COFFEE_TITLE: "Buy me a coffee",
+  SCRIPT_STORE_COFFEE_DESC: "Support continued Excalidraw development",
+  SCRIPT_STORE_SCRIPTING_BANNER_ALT: "Automate anything with Excalidraw scripts",
+  SCRIPT_STORE_SCRIPTING_BANNER_CAPTION:
+    "Create your own Excalidraw scripts. Click here to learn more.",
   SCRIPT_STORE_UPDATES_TITLE: "Updates available",
   SCRIPT_STORE_UPDATES_DESC:
     "Update installed community scripts without hunting through the catalog.",
   SCRIPT_STORE_UPDATE_ALL: "Update all",
   SCRIPT_STORE_UPDATING: "Updating...",
   SCRIPT_STORE_UPDATE_ALL_DONE: "All community scripts are up to date.",
-  SCRIPT_STORE_UPDATE_ALL_PARTIAL: "Some scripts could not be updated. Failed:",
+  SCRIPT_STORE_UPDATE_ALL_PARTIAL:
+    "Some scripts could not be updated. Failed:",
   SCRIPT_STORE_BROWSE_TITLE: "Browse scripts",
   SCRIPT_STORE_BROWSE_DESC: "Search by name, author, description, or category.",
   SCRIPT_STORE_SEARCH_PLACEHOLDER: "Search community scripts",

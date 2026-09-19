@@ -1867,26 +1867,18 @@ Si quieres ver lo que ya es posible hoy, aquí tienes una presentación de las f
   //carveout.ts
   NEW_DRAWING_TIMEOUT:
     "Archivo no encontrado. El nuevo dibujo de Excalidraw está tardando demasiado en crearse. Inténtelo de nuevo.",
-
   SCRIPT_INSTALLED_NOTICE: "Instalado",
   SCRIPT_INSTALL_ERROR_NOTICE: "Error al instalar el script",
   SCRIPT_STORE_TITLE: "Scripts de la comunidad",
   SCRIPT_STORE_LOADING: "Cargando scripts de la comunidad...",
-  SCRIPT_STORE_AUTOMATE_TITLE: "Excalidraw Automate",
-  SCRIPT_STORE_AUTOMATE_DESC:
-    "Aprende el motor de scripts y convierte tareas repetitivas del lienzo en flujos de trabajo de un clic.",
-  SCRIPT_STORE_AUTOMATE_ACTION: "Ver la introducción",
-  SCRIPT_STORE_AI_TITLE: "Crea scripts con IA",
-  SCRIPT_STORE_AI_DESC:
-    "Usa el material de referencia de Excalidraw Automate con IA para crear scripts para tu propio flujo de trabajo.",
-  SCRIPT_STORE_AI_ACTION: "Ver superpoderes de scripting con IA",
-  SCRIPT_STORE_PUBLISH_TITLE: "Comparte un script",
-  SCRIPT_STORE_PUBLISH_DESC:
-    "Los scripts de la comunidad viven en un repositorio revisado. Añade tu script y su entrada de catálogo en un pull request enfocado.",
-  SCRIPT_STORE_PUBLISH_ACTION: "Guía de publicación",
+  SCRIPT_STORE_MASTERY_TITLE: "Excalidraw Mastery",
+  SCRIPT_STORE_MASTERY_DESC: "Domina Excalidraw y Visual PKM",
+  SCRIPT_STORE_COFFEE_TITLE: "Invítame a un café",
+  SCRIPT_STORE_COFFEE_DESC: "Apoya el desarrollo continuo de Excalidraw",
+  SCRIPT_STORE_SCRIPTING_BANNER_ALT: "Automatiza cualquier cosa con scripts de Excalidraw",
+  SCRIPT_STORE_SCRIPTING_BANNER_CAPTION: "Crea tus propios scripts de Excalidraw. Haz clic aquí para saber más.",
   SCRIPT_STORE_UPDATES_TITLE: "Actualizaciones disponibles",
-  SCRIPT_STORE_UPDATES_DESC:
-    "Actualiza los scripts instalados sin buscarlos por todo el catálogo.",
+  SCRIPT_STORE_UPDATES_DESC: "Actualiza los scripts instalados sin buscarlos por todo el catálogo.",
   SCRIPT_STORE_UPDATE_ALL: "Actualizar todo",
   SCRIPT_STORE_UPDATING: "Actualizando...",
   SCRIPT_STORE_UPDATE_ALL_DONE: "Todos los scripts de la comunidad están actualizados.",
