@@ -19,7 +19,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 `,
 "2.28.0": `
 ## New
-- The Community Script Store now has a searchable card-based library, a focused update section with **Update all**, and a compact top area for Excalidraw Mastery, support, and creating your own scripts. Script details now support reinstalling, opening local files in a new tab, uninstalling, and moving managed scripts between groups under the **Downloaded** folder. Update detection keeps the existing \`directory-info.json\` modified-time contract, ignores private copies outside **Downloaded**, and handles duplicate managed copies consistently.
+- The Community Script Store now has a searchable card-based library, a focused update section with **Update all**, and a compact top area for Excalidraw Mastery, support, and creating your own scripts. Script details now support reinstalling, opening local files in a new tab, uninstalling, and moving managed scripts between groups under the **Downloaded** folder. Update detection keeps the existing \`directory-info.json\` modified-time contract, ignores private copies outside **Downloaded**, and handles duplicate managed copies consistently. [#2944](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2944)
 - Copied Markdown image SVGs now replace embedded base64 images and fonts with short placeholders, making them smaller and easier to share with AI agents when developing custom CSS.
 
 ## New from Excalidraw.com
@@ -41,6 +41,8 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 addStickyNote(topX: number, topY: number, text: string, formatting?: {width?: number; height?: number; fontSize?: number; fontFamily?: number; textAlign?: "left" | "center" | "right"; textVerticalAlign?: "top" | "middle" | "bottom";}, id?: string): string;
 \`\`\`
 - Unbound arrows created with Excalidraw Automate's \`addArrow()\` no longer contain incomplete binding data that could cause an error when selected.
+- Updated the [ea-script-template](${URLs.GITHUB_COM}/zsviczian/ea-script-template). Read [EA Script prompting with AI is magical](${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM}/t/10977)
+
 `,
 "2.27.3": `
 ## Fixed and updated
