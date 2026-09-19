@@ -2254,6 +2254,107 @@ button.excalidraw-font-picker {
   margin-top: 0.7rem;
 }
 
+.excalidraw-script-store__local-management {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  background: var(--background-secondary);
+}
+
+.excalidraw-script-store__local-management h2 {
+  margin: 0 0 0.8rem;
+  font-size: var(--font-ui-medium);
+}
+
+.excalidraw-script-store__local-copy + .excalidraw-script-store__local-copy {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+.excalidraw-script-store__local-copy-label {
+  width: fit-content;
+  margin-bottom: 0.5rem;
+  padding: 0.12rem 0.4rem;
+  border-radius: var(--radius-s);
+  background: var(--background-primary-alt);
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  font-weight: var(--font-medium);
+}
+
+.excalidraw-script-store__local-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.excalidraw-script-store__local-info {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.excalidraw-script-store__local-info code {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.excalidraw-script-store__local-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 0.4rem;
+}
+
+.excalidraw-script-store__local-note {
+  margin-top: 0.75rem;
+  padding: 0.6rem 0.7rem;
+  border-radius: var(--radius-s);
+  background: var(--background-primary-alt);
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  line-height: 1.4;
+}
+
+.excalidraw-script-store__group-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.9rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+.excalidraw-script-store__group-row > label {
+  flex: 0 0 auto;
+  font-weight: var(--font-medium);
+}
+
+.excalidraw-script-store__group-controls {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.excalidraw-script-store__group-controls select {
+  min-width: 10rem;
+  max-width: 15rem;
+}
+
+.excalidraw-script-store__group-controls input {
+  min-width: 8rem;
+  flex: 1 1 auto;
+}
+
 .excalidraw-script-store__detail-description {
   margin-top: 1rem;
   line-height: 1.55;
@@ -2276,8 +2377,25 @@ button.excalidraw-font-picker {
   }
 
   .excalidraw-script-store__updates-header,
-  .excalidraw-script-store__detail-hero {
+  .excalidraw-script-store__detail-hero,
+  .excalidraw-script-store__local-row,
+  .excalidraw-script-store__group-row {
+    align-items: stretch;
     flex-direction: column;
+  }
+
+  .excalidraw-script-store__local-actions button {
+    flex: 1 1 auto;
+  }
+
+  .excalidraw-script-store__group-controls {
+    flex-wrap: wrap;
+  }
+
+  .excalidraw-script-store__group-controls select,
+  .excalidraw-script-store__group-controls input {
+    max-width: none;
+    flex: 1 1 12rem;
   }
 
   .excalidraw-script-store__controls > select,

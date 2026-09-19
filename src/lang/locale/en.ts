@@ -1560,6 +1560,25 @@ export default {
   SCRIPT_STORE_REINSTALL: "Reinstall",
   SCRIPT_STORE_BACK: "Back to scripts",
   SCRIPT_STORE_VIEW_SOURCE: "View source",
+  SCRIPT_STORE_LOCAL_TITLE: "Installed script",
+  SCRIPT_STORE_MULTIPLE_COPIES:
+    "Multiple managed copies found. Update checks use the first copy below. You can open, move, or uninstall each copy separately.",
+  SCRIPT_STORE_PRIMARY_COPY: "Used for update checks",
+  SCRIPT_STORE_ADDITIONAL_COPY: "Additional copy",
+  SCRIPT_STORE_LOCAL_FILE: "Local file",
+  SCRIPT_STORE_OPEN_LOCAL: "Open local file",
+  SCRIPT_STORE_OPEN_LOCAL_FAILED: "Could not open the local script file.",
+  SCRIPT_STORE_JS_OPEN_NOTE:
+    "JavaScript files are not editable in Obsidian by default. If no plugin provides a .js editor, opening this file may hand it off to an external app.",
+  SCRIPT_STORE_UNINSTALL: "Uninstall",
+  SCRIPT_STORE_UNINSTALLED: "Uninstalled",
+  SCRIPT_STORE_UNINSTALL_FAILED: "Could not uninstall",
+  SCRIPT_STORE_GROUP_LABEL: "Script group",
+  SCRIPT_STORE_GROUP_ROOT: "No group (Downloaded)",
+  SCRIPT_STORE_NEW_GROUP_PLACEHOLDER: "New group name",
+  SCRIPT_STORE_MOVE_TO_GROUP: "Move",
+  SCRIPT_STORE_MOVED_TO_GROUP: "Moved script",
+  SCRIPT_STORE_MOVE_FAILED: "Could not move script",
   SCRIPT_INSTALL_PROMPT_FETCH_ERROR:
     "Error opening the Excalidraw Script Store page. " +
     "Please double check that you can access the website. " +
@@ -1726,7 +1745,7 @@ export default {
 
   //Utils.ts
   UPDATE_AVAILABLE: `A newer version of Excalidraw is available in Community Plugins.\n\nYou are using ${PLUGIN_VERSION}.\nThe latest is`,
-  SCRIPT_UPDATES_AVAILABLE: `Script updates available - check the script store.\n\n${DEVICE.isDesktop ? `This message is available in console.log (${DEVICE.isMacOS ? "CMD+OPT+i" : "CTRL+SHIFT+i"})\n\n` : ""}If you have organized scripts into subfolders under the script store folder and have multiple copies of the same script, you may need to clean up unused versions to clear this alert. For private copies of scripts that should not be updated, store them outside the script store folder.`,
+  SCRIPT_UPDATES_AVAILABLE: `Script updates available - check the script store.\n\n${DEVICE.isDesktop ? `This message is available in console.log (${DEVICE.isMacOS ? "CMD+OPT+i" : "CTRL+SHIFT+i"})\n\n` : ""}Only community scripts stored under the Downloaded folder are checked for updates. Copies elsewhere in your script folder are ignored.`,
   ERROR_PNG_TOO_LARGE:
     "Error exporting PNG - PNG too large, try a smaller resolution",
 

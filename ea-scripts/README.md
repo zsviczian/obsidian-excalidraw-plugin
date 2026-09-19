@@ -98,3 +98,7 @@ npm run script-store:build
 `script-store:build` regenerates the legacy `index-new.md` catalog for older plugin versions. It **does not recalculate historical timestamps** in `directory-info.json`. Only script or icon files that are actually modified/new in the current Git working tree receive a new `mtime`, and repeated builds preserve an already-updated value. When the repository was exported without `.git`, all existing mtimes are left untouched.
 
 Do not hand-edit unrelated `mtime` values. The plugin still uses these timestamps for backward-compatible script update detection.
+
+### Beta release compatibility
+
+Released 2.27.x clients fetch `ea-scripts/index-new.md` and `ea-scripts/directory-info.json` directly from the repository `master` branch at runtime. Beta-only Script Store work can therefore be merged to `master` without affecting those clients **only if these two legacy files remain unchanged**. Before publishing a beta, verify that both files have no diff against the currently published `master` state.

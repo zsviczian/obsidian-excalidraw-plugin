@@ -1577,7 +1577,7 @@ export default {
 
   //Utils.ts
   UPDATE_AVAILABLE: `Excalidraw 的新版本已在社群外掛中可用。\n\n您正在使用 ${PLUGIN_VERSION}。\n最新版本是`,
-  SCRIPT_UPDATES_AVAILABLE: `指令碼更新可用 - 請檢查指令碼儲存。\n\n${DEVICE.isDesktop ? `此訊息可在控制台日誌中檢視 (${DEVICE.isMacOS ? "CMD+OPT+i" : "CTRL+SHIFT+i"})\n\n` : ""}如果您已將指令碼組織到指令碼儲存資料夾下的子資料夾中，並且存在同一指令碼的多個副本，可能需要清理未使用的版本以消除此警報。對於無需更新的私人指令碼副本，請將它們儲存在指令碼儲存資料夾之外。`,
+  SCRIPT_UPDATES_AVAILABLE: `指令碼更新可用 - 請檢查指令碼儲存。\n\n${DEVICE.isDesktop ? `此訊息可在控制台日誌中檢視 (${DEVICE.isMacOS ? "CMD+OPT+i" : "CTRL+SHIFT+i"})\n\n` : ""}只檢查 Downloaded 資料夾下的社群指令碼更新。指令碼資料夾中其他位置的副本會被忽略。`,
   ERROR_PNG_TOO_LARGE: "匯出 PNG 時出錯 - PNG 檔案過大，請嘗試較小的解析度",
 
   //modifierkeyHelper.ts
@@ -1857,4 +1857,23 @@ Obsidian 的 Excalidraw 外掛遠不只是畫圖工具。由於它與 Obsidian �
   SCRIPT_STORE_REINSTALL: "重新安裝",
   SCRIPT_STORE_BACK: "返回指令碼列表",
   SCRIPT_STORE_VIEW_SOURCE: "檢視原始碼",
+  SCRIPT_STORE_LOCAL_TITLE: "已安裝指令碼",
+  SCRIPT_STORE_MULTIPLE_COPIES:
+    "找到多個受管理的副本。更新檢查使用下方第一個副本。你可以分別開啟、移動或解除安裝每個副本。",
+  SCRIPT_STORE_PRIMARY_COPY: "用於更新檢查",
+  SCRIPT_STORE_ADDITIONAL_COPY: "其他副本",
+  SCRIPT_STORE_LOCAL_FILE: "本機檔案",
+  SCRIPT_STORE_OPEN_LOCAL: "開啟本機檔案",
+  SCRIPT_STORE_OPEN_LOCAL_FAILED: "無法開啟本機指令碼檔案。",
+  SCRIPT_STORE_JS_OPEN_NOTE:
+    "Obsidian 預設不支援編輯 JavaScript 檔案。如果沒有外掛提供 .js 編輯器，開啟檔案時可能會交給外部應用程式。",
+  SCRIPT_STORE_UNINSTALL: "解除安裝",
+  SCRIPT_STORE_UNINSTALLED: "已解除安裝",
+  SCRIPT_STORE_UNINSTALL_FAILED: "無法解除安裝",
+  SCRIPT_STORE_GROUP_LABEL: "指令碼群組",
+  SCRIPT_STORE_GROUP_ROOT: "不分組（Downloaded）",
+  SCRIPT_STORE_NEW_GROUP_PLACEHOLDER: "新群組名稱",
+  SCRIPT_STORE_MOVE_TO_GROUP: "移動",
+  SCRIPT_STORE_MOVED_TO_GROUP: "指令碼已移動",
+  SCRIPT_STORE_MOVE_FAILED: "無法移動指令碼",
 };

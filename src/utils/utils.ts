@@ -161,7 +161,8 @@ async function checkScriptUpdates() {
     const updates = await getInstalledScriptUpdates(EXCALIDRAW_PLUGIN);
     if (updates.length > 0) {
       const message = `${t("SCRIPT_UPDATES_AVAILABLE")}\n\n${updates.join("\n")}`;
-      new Notice(message, 8000 + updates.length * 1000);
+      const timeout = Math.min(60_000, 30_000 + updates.length * 2_000);
+      new Notice(message, timeout);
       log(message);
     }
   } catch (e: unknown) {

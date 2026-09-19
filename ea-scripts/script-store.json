@@ -34,7 +34,7 @@
       "description": "**Keywords**: Sharing, Teamwork, Exporting, Distribution, Cooperative, Publish"
     },
     {
-      "name": "Conversation and Creation",
+      "name": "Conversion and Creation",
       "description": "**Keywords**: Transform, Generate, Craft, Produce, Change, Originate"
     },
     {
@@ -92,7 +92,7 @@
       "sourceUrl": "https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Add%20Next%20Step%20in%20Process.md",
       "descriptionHtml": "This script will prompt you for the title of the process step, then will create a stick note with the text. If an element is selected then the script will connect this new step with an arrow to the previous step (the selected element). If no element is selected, then the script assumes this is the first step in the process and will only output the sticky note with the text that was entered.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-add-process-step.jpg'>",
       "categories": [
-        "Conversation and Creation"
+        "Conversion and Creation"
       ]
     },
     {
@@ -201,7 +201,7 @@
       "descriptionHtml": "Turn the canvas into a comic-strip studio: pick one of 30 page layouts (or generate one for any panel count — angled polygon panels included), split panels with action-beat cuts, then fill them from a who × costume × action character picker with real thumbnails. Painted POW!/BOOM!/ZAP! FX stamp straight into panels, and reserved callout zones hand off to the Comicbook Callout Editor for speech bubbles. A free 8-character starter cast (176 poses + 3 FX) installs with one click from inside the script; add-on packs import from .strippack files.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-comic-strip-director.jpg'>",
       "categories": [
         "Editors Picks",
-        "Conversation and Creation"
+        "Conversion and Creation"
       ],
       "featuredRank": 27
     },
@@ -259,7 +259,7 @@
       "descriptionHtml": "Convert selected freedraw objects into editable lines. This will allow you to adjust your drawings by dragging line points and will also allow you to select shape fill in case of enclosed lines. You can adjust conversion point density in settings.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-convert-freedraw-to-line.jpg'>",
       "categories": [
         "Editors Picks",
-        "Conversation and Creation"
+        "Conversion and Creation"
       ],
       "featuredRank": 22
     },
@@ -367,7 +367,7 @@
       "descriptionHtml": "Select some elements in the scene. The script will take these elements and move them into a new Excalidraw file, and open that file. The selected elements will also be replaced in your original drawing with the embedded Excalidraw file (the one that was just created). You will be prompted for the file name of the new deconstructed image. The script is useful if you want to break a larger drawing into smaller reusable parts that you want to reference in multiple drawings.<br><a href=\"https://www.youtube.com/watch?v=HRtaaD34Zzg\" target=\"_blank\"><img src =\"https://i.ytimg.com/vi/HRtaaD34Zzg/maxresdefault.jpg\" style=\"width:400px;\"></a><br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-deconstruct.jpg'>",
       "categories": [
         "Editors Picks",
-        "Conversation and Creation"
+        "Conversion and Creation"
       ],
       "featuredRank": 0
     },
@@ -606,7 +606,7 @@
       "sourceUrl": "https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Full-Year%20Calendar%20Generator.md",
       "descriptionHtml": "Generates a complete calendar for a specified year.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-full-year-calendar-exemple.excalidraw.png'>",
       "categories": [
-        "Conversation and Creation"
+        "Conversion and Creation"
       ]
     },
     {
@@ -673,7 +673,7 @@
       "sourceUrl": "https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Linear%20Calendar%20Generator.md",
       "descriptionHtml": "Generates a complete calendar for a specified year.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-Linear-Calendar-Generator.jpg'>",
       "categories": [
-        "Conversation and Creation"
+        "Conversion and Creation"
       ]
     },
     {

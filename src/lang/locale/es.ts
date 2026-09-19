@@ -1650,7 +1650,7 @@ export default {
 
   //Utils.ts
   UPDATE_AVAILABLE: `Hay una versión más nueva de Excalidraw disponible en los Complementos de la Comunidad.\n\nEstás usando la versión ${PLUGIN_VERSION}.\nLa última versión es `,
-  SCRIPT_UPDATES_AVAILABLE: `Hay actualizaciones de scripts disponibles; revisa la tienda de scripts.\n\n${DEVICE.isDesktop ? `Este mensaje está disponible en console.log (${DEVICE.isMacOS ? "CMD+OPT+i" : "CTRL+SHIFT+i"})\n\n` : ""}Si has organizado los scripts en subcarpetas dentro de la carpeta de la tienda de scripts y tienes varias copias del mismo script, es posible que necesites limpiar las versiones no utilizadas para borrar esta alerta. Para copias privadas de scripts que no deben actualizarse, guárdalas fuera de la carpeta de la tienda de scripts.`,
+  SCRIPT_UPDATES_AVAILABLE: `Hay actualizaciones de scripts disponibles; revisa la tienda de scripts.\n\n${DEVICE.isDesktop ? `Este mensaje está disponible en console.log (${DEVICE.isMacOS ? "CMD+OPT+i" : "CTRL+SHIFT+i"})\n\n` : ""}Solo se comprueban las actualizaciones de los scripts de la comunidad guardados bajo la carpeta Downloaded. Las copias situadas en otros lugares de la carpeta de scripts se ignoran.`,
   ERROR_PNG_TOO_LARGE:
     "Error al exportar PNG: El archivo PNG es demasiado grande, intenta una resolución más pequeña.",
 
@@ -1904,4 +1904,23 @@ Si quieres ver lo que ya es posible hoy, aquí tienes una presentación de las f
   SCRIPT_STORE_REINSTALL: "Reinstalar",
   SCRIPT_STORE_BACK: "Volver a scripts",
   SCRIPT_STORE_VIEW_SOURCE: "Ver código fuente",
+  SCRIPT_STORE_LOCAL_TITLE: "Script instalado",
+  SCRIPT_STORE_MULTIPLE_COPIES:
+    "Se encontraron varias copias administradas. Las comprobaciones de actualización usan la primera copia. Puedes abrir, mover o desinstalar cada copia por separado.",
+  SCRIPT_STORE_PRIMARY_COPY: "Usada para comprobar actualizaciones",
+  SCRIPT_STORE_ADDITIONAL_COPY: "Copia adicional",
+  SCRIPT_STORE_LOCAL_FILE: "Archivo local",
+  SCRIPT_STORE_OPEN_LOCAL: "Abrir archivo local",
+  SCRIPT_STORE_OPEN_LOCAL_FAILED: "No se pudo abrir el archivo local del script.",
+  SCRIPT_STORE_JS_OPEN_NOTE:
+    "Obsidian no permite editar archivos JavaScript de forma predeterminada. Si ningún plugin proporciona un editor .js, el archivo puede abrirse en una aplicación externa.",
+  SCRIPT_STORE_UNINSTALL: "Desinstalar",
+  SCRIPT_STORE_UNINSTALLED: "Desinstalado",
+  SCRIPT_STORE_UNINSTALL_FAILED: "No se pudo desinstalar",
+  SCRIPT_STORE_GROUP_LABEL: "Grupo de scripts",
+  SCRIPT_STORE_GROUP_ROOT: "Sin grupo (Downloaded)",
+  SCRIPT_STORE_NEW_GROUP_PLACEHOLDER: "Nombre del nuevo grupo",
+  SCRIPT_STORE_MOVE_TO_GROUP: "Mover",
+  SCRIPT_STORE_MOVED_TO_GROUP: "Script movido",
+  SCRIPT_STORE_MOVE_FAILED: "No se pudo mover el script",
 };

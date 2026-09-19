@@ -1577,7 +1577,7 @@ export default {
 
   //Utils.ts
   UPDATE_AVAILABLE: `Excalidraw 的新版本已在社区插件中可用。\n\n您正在使用 ${PLUGIN_VERSION}。\n最新版本是`,
-  SCRIPT_UPDATES_AVAILABLE: `脚本更新可用 - 请检查脚本存储。\n\n${DEVICE.isDesktop ? `此消息可在控制台日志中查看 (${DEVICE.isMacOS ? "CMD+OPT+i" : "CTRL+SHIFT+i"})\n\n` : ""}如果您已将脚本组织到脚本存储文件夹下的子文件夹中，并且存在同一脚本的多个副本，可能需要清理未使用的版本以消除此警报。对于无需更新的私人脚本副本，请将它们存储在脚本存储文件夹之外。`,
+  SCRIPT_UPDATES_AVAILABLE: `脚本更新可用 - 请检查脚本存储。\n\n${DEVICE.isDesktop ? `此消息可在控制台日志中查看 (${DEVICE.isMacOS ? "CMD+OPT+i" : "CTRL+SHIFT+i"})\n\n` : ""}只检查 Downloaded 文件夹下的社区脚本更新。脚本文件夹中其他位置的副本会被忽略。`,
   ERROR_PNG_TOO_LARGE: "导出 PNG 时出错 - PNG 文件过大，请尝试较小的分辨率",
 
   //modifierkeyHelper.ts
@@ -1857,4 +1857,23 @@ Obsidian 的 Excalidraw 插件远不只是画图工具。由于它与 Obsidian �
   SCRIPT_STORE_REINSTALL: "重新安装",
   SCRIPT_STORE_BACK: "返回脚本列表",
   SCRIPT_STORE_VIEW_SOURCE: "查看源代码",
+  SCRIPT_STORE_LOCAL_TITLE: "已安装脚本",
+  SCRIPT_STORE_MULTIPLE_COPIES:
+    "发现多个受管理的副本。更新检查使用下面的第一个副本。你可以分别打开、移动或卸载每个副本。",
+  SCRIPT_STORE_PRIMARY_COPY: "用于更新检查",
+  SCRIPT_STORE_ADDITIONAL_COPY: "其他副本",
+  SCRIPT_STORE_LOCAL_FILE: "本地文件",
+  SCRIPT_STORE_OPEN_LOCAL: "打开本地文件",
+  SCRIPT_STORE_OPEN_LOCAL_FAILED: "无法打开本地脚本文件。",
+  SCRIPT_STORE_JS_OPEN_NOTE:
+    "Obsidian 默认不支持编辑 JavaScript 文件。如果没有插件提供 .js 编辑器，打开文件时可能会交给外部应用。",
+  SCRIPT_STORE_UNINSTALL: "卸载",
+  SCRIPT_STORE_UNINSTALLED: "已卸载",
+  SCRIPT_STORE_UNINSTALL_FAILED: "无法卸载",
+  SCRIPT_STORE_GROUP_LABEL: "脚本分组",
+  SCRIPT_STORE_GROUP_ROOT: "不分组（Downloaded）",
+  SCRIPT_STORE_NEW_GROUP_PLACEHOLDER: "新分组名称",
+  SCRIPT_STORE_MOVE_TO_GROUP: "移动",
+  SCRIPT_STORE_MOVED_TO_GROUP: "脚本已移动",
+  SCRIPT_STORE_MOVE_FAILED: "无法移动脚本",
 };

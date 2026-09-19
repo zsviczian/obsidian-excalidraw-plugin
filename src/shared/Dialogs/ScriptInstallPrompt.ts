@@ -3,9 +3,11 @@ import {
   MarkdownRenderer,
   Modal,
   Notice,
+  normalizePath,
   request,
   setIcon,
 } from "obsidian";
+import { SCRIPT_INSTALL_FOLDER } from "../../constants/constants";
 import {
   getPluginRepositoryBlobUrl,
   getPluginRepositoryRawUrl,
@@ -19,8 +21,12 @@ import type {
 } from "../../types/scriptStoreTypes";
 import { sanitizedFragment, setSanitizedHtml } from "../../utils/htmlUtils";
 import {
+  getInstalledScriptFiles,
+  getInstalledScriptGroups,
   getScriptInstallState,
   installScript,
+  moveInstalledScriptToGroup,
+  uninstallScript,
   type ScriptLibraryPluginContext,
 } from "../../utils/scriptLibraryUtils";
 import { errorlog } from "../../utils/utils";
@@ -606,9 +612,16 @@ export class ScriptInstallPrompt extends Modal {
     }
   }
 
+  private getDetailActionLabel(state: ScriptStoreInstallState): string {
+    return state === "up-to-date"
+      ? t("SCRIPT_STORE_REINSTALL")
+      : this.getActionLabel(state);
+  }
+
   private async installEntry(
     entry: ScriptStoreEntry,
     button: HTMLButtonElement,
+    stayOnDetail = false,
   ): Promise<void> {
     button.disabled = true;
     button.setText(t("SCRIPT_STORE_UPDATING"));
@@ -616,7 +629,11 @@ export class ScriptInstallPrompt extends Modal {
       await installScript(this.plugin, getScriptInstallUrl(entry), false);
       this.installStates.set(entry.name, "up-to-date");
       new Notice(`${t("SCRIPT_INSTALLED_NOTICE")}: ${entry.name}`);
-      this.renderStore();
+      if (stayOnDetail) {
+        this.renderDetail(entry);
+      } else {
+        this.renderStore();
+      }
     } catch {
       this.installStates.set(entry.name, "error");
       new Notice(`${t("SCRIPT_INSTALL_ERROR_NOTICE")}: ${entry.name}`);
@@ -692,13 +709,12 @@ export class ScriptInstallPrompt extends Modal {
       cls: "excalidraw-script-store__detail-actions",
     });
     const install = actions.createEl("button", {
-      text: this.getActionLabel(state),
+      text: this.getDetailActionLabel(state),
       type: "button",
       cls: state === "update" || state === "install" ? "mod-cta" : undefined,
     });
-    install.disabled = state === "up-to-date";
     install.addEventListener("click", () => {
-      void this.installEntry(entry, install);
+      void this.installEntry(entry, install, true);
     });
     actions.createEl("a", {
       text: t("SCRIPT_STORE_VIEW_SOURCE"),
@@ -706,6 +722,10 @@ export class ScriptInstallPrompt extends Modal {
       cls: "excalidraw-script-store__source-link",
       attr: { target: "_blank", rel: "noopener noreferrer" },
     });
+
+    if (state !== "install") {
+      this.renderInstalledScriptManagement(detail, entry);
+    }
 
     const description = detail.createDiv({
       cls: "excalidraw-script-store__detail-description",
@@ -715,6 +735,218 @@ export class ScriptInstallPrompt extends Modal {
       link.setAttribute("target", "_blank");
       link.setAttribute("rel", "noopener noreferrer");
     });
+  }
+
+  private renderInstalledScriptManagement(
+    parent: HTMLElement,
+    entry: ScriptStoreEntry,
+  ): void {
+    const source = getScriptInstallUrl(entry);
+    const localFiles = getInstalledScriptFiles(this.plugin, source);
+    if (localFiles.length === 0) {
+      return;
+    }
+
+    const section = parent.createDiv({
+      cls: "excalidraw-script-store__local-management",
+    });
+    section.createEl("h2", { text: t("SCRIPT_STORE_LOCAL_TITLE") });
+
+    if (localFiles.length > 1) {
+      section.createDiv({
+        cls: "excalidraw-script-store__local-note",
+        text: t("SCRIPT_STORE_MULTIPLE_COPIES"),
+      });
+    }
+
+    if (this.plugin.settings.storeScriptFilesAsJavaScript) {
+      section.createDiv({
+        cls: "excalidraw-script-store__local-note",
+        text: t("SCRIPT_STORE_JS_OPEN_NOTE"),
+      });
+    }
+
+    const groups = getInstalledScriptGroups(this.plugin);
+    localFiles.forEach((localFile, index) => {
+      const copy = section.createDiv({
+        cls: "excalidraw-script-store__local-copy",
+      });
+      if (localFiles.length > 1) {
+        copy.createDiv({
+          cls: "excalidraw-script-store__local-copy-label",
+          text:
+            index === 0
+              ? t("SCRIPT_STORE_PRIMARY_COPY")
+              : t("SCRIPT_STORE_ADDITIONAL_COPY"),
+        });
+      }
+
+      const fileRow = copy.createDiv({
+        cls: "excalidraw-script-store__local-row",
+      });
+      const fileInfo = fileRow.createDiv({
+        cls: "excalidraw-script-store__local-info",
+      });
+      fileInfo.createEl("strong", { text: t("SCRIPT_STORE_LOCAL_FILE") });
+      fileInfo.createEl("code", { text: localFile.path });
+
+      const fileActions = fileRow.createDiv({
+        cls: "excalidraw-script-store__local-actions",
+      });
+      const openButton = fileActions.createEl("button", {
+        text: t("SCRIPT_STORE_OPEN_LOCAL"),
+        type: "button",
+      });
+      openButton.onClickEvent(() => {
+        void this.openLocalScript(localFile.path);
+      });
+      const uninstallButton = fileActions.createEl("button", {
+        text: t("SCRIPT_STORE_UNINSTALL"),
+        type: "button",
+        cls: "mod-warning",
+      });
+      uninstallButton.onClickEvent(() => {
+        void this.uninstallEntry(entry, uninstallButton, localFile.path);
+      });
+
+      const downloadedRoot = normalizePath(
+        `${this.plugin.settings.scriptFolderPath}/${SCRIPT_INSTALL_FOLDER}`,
+      );
+      const currentGroup =
+        localFile.parent?.path === downloadedRoot
+          ? ""
+          : localFile.parent?.path.slice(downloadedRoot.length + 1) ?? "";
+      const groupRow = copy.createDiv({
+        cls: "excalidraw-script-store__group-row",
+      });
+      const groupLabel = groupRow.createEl("label", {
+        text: t("SCRIPT_STORE_GROUP_LABEL"),
+      });
+      const groupControls = groupRow.createDiv({
+        cls: "excalidraw-script-store__group-controls",
+      });
+      const groupSelect = groupControls.createEl("select", {
+        attr: {
+          id: `excalidraw-script-store-group-${index}`,
+          "aria-label": t("SCRIPT_STORE_GROUP_LABEL"),
+        },
+      });
+      groupSelect.createEl("option", {
+        text: t("SCRIPT_STORE_GROUP_ROOT"),
+        value: "",
+      });
+      groups.forEach((group) => {
+        groupSelect.createEl("option", { text: group, value: group });
+      });
+      if (
+        currentGroup &&
+        !Array.from(groupSelect.options).some(
+          (option) => option.value === currentGroup,
+        )
+      ) {
+        groupSelect.createEl("option", {
+          text: currentGroup,
+          value: currentGroup,
+        });
+      }
+      groupSelect.value = currentGroup;
+      groupLabel.htmlFor = groupSelect.id;
+
+      const newGroup = groupControls.createEl("input", {
+        type: "text",
+        placeholder: t("SCRIPT_STORE_NEW_GROUP_PLACEHOLDER"),
+        attr: { "aria-label": t("SCRIPT_STORE_NEW_GROUP_PLACEHOLDER") },
+      });
+      const moveButton = groupControls.createEl("button", {
+        text: t("SCRIPT_STORE_MOVE_TO_GROUP"),
+        type: "button",
+      });
+      moveButton.onClickEvent(() => {
+        const targetGroup = newGroup.value.trim() || groupSelect.value;
+        void this.moveEntryToGroup(
+          entry,
+          localFile.path,
+          targetGroup,
+          moveButton,
+        );
+      });
+    });
+  }
+
+  private async openLocalScript(localPath: string): Promise<void> {
+    const localFile = this.plugin.app.vault.getFileByPath(
+      normalizePath(localPath),
+    );
+    if (!localFile) {
+      return;
+    }
+    try {
+      this.close();
+      await this.plugin.app.workspace.getLeaf(true).openFile(localFile, {
+        active: true,
+      });
+    } catch (error: unknown) {
+      errorlog({
+        where: "ScriptInstallPrompt.openLocalScript",
+        source: localFile.path,
+        error,
+      });
+      new Notice(t("SCRIPT_STORE_OPEN_LOCAL_FAILED"));
+    }
+  }
+
+  private async uninstallEntry(
+    entry: ScriptStoreEntry,
+    button: HTMLButtonElement,
+    localPath: string,
+  ): Promise<void> {
+    button.disabled = true;
+    try {
+      const source = getScriptInstallUrl(entry);
+      await uninstallScript(this.plugin, source, localPath);
+      const state = await getScriptInstallState(this.plugin, source);
+      this.installStates.set(entry.name, state);
+      new Notice(`${t("SCRIPT_STORE_UNINSTALLED")}: ${entry.name}`);
+      this.renderDetail(entry);
+    } catch (error: unknown) {
+      errorlog({
+        where: "ScriptInstallPrompt.uninstallEntry",
+        source: localPath,
+        error,
+      });
+      new Notice(`${t("SCRIPT_STORE_UNINSTALL_FAILED")}: ${entry.name}`);
+      button.disabled = false;
+    }
+  }
+
+  private async moveEntryToGroup(
+    entry: ScriptStoreEntry,
+    localPath: string,
+    targetGroup: string,
+    button: HTMLButtonElement,
+  ): Promise<void> {
+    button.disabled = true;
+    try {
+      const source = getScriptInstallUrl(entry);
+      await moveInstalledScriptToGroup(
+        this.plugin,
+        source,
+        targetGroup,
+        localPath,
+      );
+      const state = await getScriptInstallState(this.plugin, source);
+      this.installStates.set(entry.name, state);
+      new Notice(`${t("SCRIPT_STORE_MOVED_TO_GROUP")}: ${entry.name}`);
+      this.renderDetail(entry);
+    } catch (error: unknown) {
+      errorlog({
+        where: "ScriptInstallPrompt.moveEntryToGroup",
+        source: localPath,
+        error,
+      });
+      new Notice(`${t("SCRIPT_STORE_MOVE_FAILED")}: ${entry.name}`);
+      button.disabled = false;
+    }
   }
 
   private async renderLegacyStore(): Promise<void> {

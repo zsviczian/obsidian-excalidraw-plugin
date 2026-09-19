@@ -19,7 +19,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 `,
 "2.28.0": `
 ## New
-- The Community Script Store now has a searchable card-based library, a focused update section with **Update all**, and a compact top area for Excalidraw Mastery, support, and creating your own scripts. Script update detection keeps the existing \`directory-info.json\` modified-time contract.
+- The Community Script Store now has a searchable card-based library, a focused update section with **Update all**, and a compact top area for Excalidraw Mastery, support, and creating your own scripts. Script details now support reinstalling, opening local files in a new tab, uninstalling, and moving managed scripts between groups under the **Downloaded** folder. Update detection keeps the existing \`directory-info.json\` modified-time contract, ignores private copies outside **Downloaded**, and handles duplicate managed copies consistently.
 - Copied Markdown image SVGs now replace embedded base64 images and fonts with short placeholders, making them smaller and easier to share with AI agents when developing custom CSS.
 
 ## New from Excalidraw.com

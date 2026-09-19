@@ -1,4 +1,11 @@
-import { Notice, request, TFile, type App } from "obsidian";
+import {
+  normalizePath,
+  Notice,
+  request,
+  TFile,
+  TFolder,
+  type App,
+} from "obsidian";
 import { SCRIPT_INSTALL_FOLDER } from "src/constants/constants";
 import { URLs } from "src/constants/safeUrls";
 import { t } from "src/lang/helpers";
@@ -25,6 +32,7 @@ type ScriptLibraryScriptEngine = {
   scriptIconMap: Record<string, unknown> | null;
   getScriptName(file: TFile | string): string;
   loadScripts(generation?: number): Promise<void>;
+  reloadScripts(): Promise<void>;
   renameManagedScriptFile(file: TFile, destinationPath: string): Promise<void>;
 };
 
@@ -47,8 +55,12 @@ const isRemoteDirectoryInfo = (value: unknown): value is RemoteDirectoryInfo =>
   typeof value.fname === "string" &&
   typeof value.mtime === "number";
 
-const getDownloadedScriptsFolder = (plugin: ScriptLibraryPluginContext): string =>
-  `${plugin.settings.scriptFolderPath}/${SCRIPT_INSTALL_FOLDER}`;
+const getDownloadedScriptsFolder = (
+  plugin: ScriptLibraryPluginContext,
+): string =>
+  normalizePath(
+    `${plugin.settings.scriptFolderPath}/${SCRIPT_INSTALL_FOLDER}`,
+  );
 
 const decodeRemoteFilename = (source: string): string => {
   try {
@@ -64,16 +76,230 @@ const decodeRemoteFilename = (source: string): string => {
   }
 };
 
+const isInDownloadedScriptsFolder = (
+  plugin: ScriptLibraryPluginContext,
+  file: TFile,
+): boolean => {
+  const root = getDownloadedScriptsFolder(plugin);
+  return Boolean(root) && file.path.startsWith(`${root}/`);
+};
+
+const sortManagedCopies = (
+  plugin: ScriptLibraryPluginContext,
+  files: TFile[],
+): TFile[] => {
+  const root = getDownloadedScriptsFolder(plugin);
+  return [...files].sort((a, b) => {
+    const aRelative = a.path.slice(root.length + 1);
+    const bRelative = b.path.slice(root.length + 1);
+    const aDepth = aRelative.split("/").length - 1;
+    const bDepth = bRelative.split("/").length - 1;
+    return aDepth - bDepth || a.path.localeCompare(b.path);
+  });
+};
+
+const getLocalScriptFiles = (
+  plugin: ScriptLibraryPluginContext,
+  remoteFilename: string,
+): TFile[] => {
+  const stem = getScriptFileStem(remoteFilename);
+  const matches = getPreferredScriptFiles(
+    plugin.app.vault
+      .getFiles()
+      .filter(
+        (file) =>
+          isInDownloadedScriptsFolder(plugin, file) &&
+          isScriptFilePath(file.path) &&
+          getScriptFileStem(file.name) === stem,
+      ),
+  );
+  return sortManagedCopies(plugin, matches);
+};
+
 const getLocalScriptFile = (
   plugin: ScriptLibraryPluginContext,
   remoteFilename: string,
+): TFile | null => getLocalScriptFiles(plugin, remoteFilename)[0] ?? null;
+
+/** Returns all managed local copies for one community script. */
+export const getInstalledScriptFiles = (
+  plugin: ScriptLibraryPluginContext,
+  source: string,
+): TFile[] => getLocalScriptFiles(plugin, decodeRemoteFilename(source));
+
+/**
+ * Returns the primary managed local copy for one community script.
+ * A copy directly under Downloaded wins; otherwise the shallowest grouped copy
+ * is used. Additional copies are intentionally ignored for update detection.
+ */
+export const getInstalledScriptFile = (
+  plugin: ScriptLibraryPluginContext,
+  source: string,
+): TFile | null => getInstalledScriptFiles(plugin, source)[0] ?? null;
+
+/** Returns existing group folders relative to the Downloaded folder. */
+export const getInstalledScriptGroups = (
+  plugin: ScriptLibraryPluginContext,
+): string[] => {
+  const rootPath = getDownloadedScriptsFolder(plugin);
+  const root = plugin.app.vault.getFolderByPath(rootPath);
+  if (!root) {
+    return [];
+  }
+
+  const groups: string[] = [];
+  const visit = (folder: TFolder): void => {
+    folder.children.forEach((child) => {
+      if (!(child instanceof TFolder)) {
+        return;
+      }
+      groups.push(child.path.slice(rootPath.length + 1));
+      visit(child);
+    });
+  };
+  visit(root);
+  return groups.sort((a, b) => a.localeCompare(b));
+};
+
+const getManagedScriptFile = (
+  plugin: ScriptLibraryPluginContext,
+  source: string,
+  localPath?: string,
 ): TFile | null => {
-  const folder = getDownloadedScriptsFolder(plugin);
-  const stem = getScriptFileStem(remoteFilename);
-  return (
-    plugin.app.vault.getFileByPath(`${folder}/${stem}.md`) ??
-    plugin.app.vault.getFileByPath(`${folder}/${stem}.js`)
+  const files = getInstalledScriptFiles(plugin, source);
+  if (!localPath) {
+    return files[0] ?? null;
+  }
+  const normalizedPath = normalizePath(localPath);
+  return files.find((file) => file.path === normalizedPath) ?? null;
+};
+
+const ensureFolderPath = async (
+  plugin: ScriptLibraryPluginContext,
+  folderPath: string,
+): Promise<void> => {
+  const normalized = normalizePath(folderPath);
+  const parts = normalized.split("/").filter(Boolean);
+  let current = "";
+  for (const part of parts) {
+    current = current ? `${current}/${part}` : part;
+    if (plugin.app.vault.getFolderByPath(current)) {
+      continue;
+    }
+    if (plugin.app.vault.getFileByPath(current)) {
+      throw new Error(
+        `Cannot create script group because a file exists at ${current}`,
+      );
+    }
+    await plugin.app.vault.createFolder(current);
+  }
+};
+
+/** Moves an installed script and its optional icon to a relative script group. */
+export const moveInstalledScriptToGroup = async (
+  plugin: ScriptLibraryPluginContext,
+  source: string,
+  relativeGroup: string,
+  localPath?: string,
+): Promise<TFile> => {
+  const scriptFile = getManagedScriptFile(plugin, source, localPath);
+  if (!scriptFile) {
+    throw new Error("Script is not installed");
+  }
+
+  const root = getDownloadedScriptsFolder(plugin);
+  const requestedGroup = relativeGroup.trim();
+  const group = requestedGroup ? normalizePath(requestedGroup) : "";
+  const destinationFolder = group ? normalizePath(`${root}/${group}`) : root;
+  if (destinationFolder !== root && !destinationFolder.startsWith(`${root}/`)) {
+    throw new Error("Invalid script group");
+  }
+  await ensureFolderPath(plugin, destinationFolder);
+
+  const destinationPath = normalizePath(
+    `${destinationFolder}/${scriptFile.name}`,
   );
+  if (destinationPath === scriptFile.path) {
+    return scriptFile;
+  }
+  const destinationStem = getScriptFileStem(scriptFile.name);
+  const conflictingScript = ["md", "js"]
+    .map((extension) =>
+      plugin.app.vault.getFileByPath(
+        normalizePath(`${destinationFolder}/${destinationStem}.${extension}`),
+      ),
+    )
+    .find((file) => file && file.path !== scriptFile.path);
+  if (conflictingScript) {
+    throw new Error("A script with this name already exists in that group");
+  }
+
+  const sourceIconPath = getIMGFilename(scriptFile.path, "svg");
+  const destinationIconPath = getIMGFilename(destinationPath, "svg");
+  const iconFile = plugin.app.vault.getFileByPath(sourceIconPath);
+  if (iconFile && plugin.app.vault.getFileByPath(destinationIconPath)) {
+    throw new Error(
+      "A script icon with this name already exists in that group",
+    );
+  }
+
+  let iconMoved = false;
+  try {
+    if (iconFile) {
+      await plugin.app.fileManager.renameFile(iconFile, destinationIconPath);
+      iconMoved = true;
+    }
+    await plugin.scriptEngine.renameManagedScriptFile(
+      scriptFile,
+      destinationPath,
+    );
+  } catch (error: unknown) {
+    if (iconMoved) {
+      const movedIcon = plugin.app.vault.getFileByPath(destinationIconPath);
+      if (movedIcon) {
+        try {
+          await plugin.app.fileManager.renameFile(movedIcon, sourceIconPath);
+        } catch (rollbackError: unknown) {
+          errorlog({
+            where: "scriptLibraryUtils.moveInstalledScriptToGroup.rollback",
+            source: destinationIconPath,
+            error: rollbackError,
+          });
+        }
+      }
+    }
+    throw error;
+  }
+
+  return plugin.app.vault.getFileByPath(destinationPath) ?? scriptFile;
+};
+
+/** Removes an installed community script and its optional local icon. */
+export const uninstallScript = async (
+  plugin: ScriptLibraryPluginContext,
+  source: string,
+  localPath?: string,
+): Promise<void> => {
+  const scriptFile = getManagedScriptFile(plugin, source, localPath);
+  if (!scriptFile) {
+    return;
+  }
+  const iconFile = plugin.app.vault.getFileByPath(
+    getIMGFilename(scriptFile.path, "svg"),
+  );
+  await plugin.app.fileManager.trashFile(scriptFile);
+  if (iconFile) {
+    try {
+      await plugin.app.fileManager.trashFile(iconFile);
+    } catch (error: unknown) {
+      errorlog({
+        where: "scriptLibraryUtils.uninstallScript.icon",
+        source: iconFile.path,
+        error,
+      });
+    }
+  }
+  await plugin.scriptEngine.reloadScripts();
 };
 
 const getDirectoryInfo = async (): Promise<Map<string, number> | null> => {
@@ -111,13 +337,13 @@ const getDirectoryInfo = async (): Promise<Map<string, number> | null> => {
   return await directoryInfoPromise;
 };
 
-const getInstallStateFromDirectoryInfo = async (
+const getInstallStateFromDirectoryInfo = (
   plugin: ScriptLibraryPluginContext,
   scriptFile: TFile,
   remoteFilename: string,
-): Promise<ScriptStoreInstallState> => {
-  const files = await getDirectoryInfo();
-  if (!files?.has(remoteFilename)) {
+  files: Map<string, number>,
+): ScriptStoreInstallState => {
+  if (!files.has(remoteFilename)) {
     return "error";
   }
 
@@ -152,10 +378,15 @@ export const getScriptInstallState = async (
   if (!scriptFile) {
     return "install";
   }
-  return await getInstallStateFromDirectoryInfo(
+  const files = await getDirectoryInfo();
+  if (!files) {
+    return "error";
+  }
+  return getInstallStateFromDirectoryInfo(
     plugin,
     scriptFile,
     remoteFilename,
+    files,
   );
 };
 
@@ -193,13 +424,15 @@ export const installScript = async (
   const remoteFilename = decodeRemoteFilename(source);
   const scriptStem = getScriptFileStem(remoteFilename);
   const folder = getDownloadedScriptsFolder(plugin);
-  const getLocalScriptPath = (): string =>
-    `${folder}/${scriptStem}.${getManagedScriptFileExtension(
+  let scriptFile = getLocalScriptFile(plugin, remoteFilename);
+  const getLocalScriptPath = (): string => {
+    const targetFolder = scriptFile?.parent?.path ?? folder;
+    return `${targetFolder}/${scriptStem}.${getManagedScriptFileExtension(
       plugin.settings.allowJavaScriptFiles,
       plugin.settings.storeScriptFilesAsJavaScript,
     )}`;
+  };
 
-  let scriptFile = getLocalScriptFile(plugin, remoteFilename);
   let scriptPath = getLocalScriptPath();
   let iconFile = plugin.app.vault.getFileByPath(
     getIMGFilename(scriptPath, "svg"),
@@ -264,22 +497,28 @@ export const installScript = async (
   }
 };
 
-/** Returns installed managed scripts with a newer script mtime. */
+/**
+ * Returns community scripts with updates, considering only managed copies under
+ * the Downloaded folder. When duplicate managed copies exist, update detection
+ * uses the same primary-copy selection as the script-store details page.
+ */
 export const getInstalledScriptUpdates = async (
   plugin: ScriptLibraryPluginContext,
 ): Promise<string[]> => {
   if (!plugin.settings.scriptFolderPath) {
     return [];
   }
-  const folder = getDownloadedScriptsFolder(plugin);
-  const installedScripts = getPreferredScriptFiles(
+
+  const managedFiles = getPreferredScriptFiles(
     plugin.app.vault
       .getFiles()
       .filter(
-        (file) => file.parent?.path === folder && isScriptFilePath(file.path),
+        (file) =>
+          isInDownloadedScriptsFolder(plugin, file) &&
+          isScriptFilePath(file.path),
       ),
   );
-  if (installedScripts.length === 0) {
+  if (managedFiles.length === 0) {
     return [];
   }
 
@@ -288,17 +527,41 @@ export const getInstalledScriptUpdates = async (
     return [];
   }
 
-  return installedScripts
-    .filter((scriptFile) => {
-      const stem = getScriptFileStem(scriptFile.name);
-      const scriptMtime = Math.max(
-        files.get(`${stem}.md`) ?? 0,
-        files.get(`${stem}.js`) ?? 0,
-      );
-      return scriptMtime > scriptFile.stat.mtime;
-    })
-    .map((scriptFile) => getScriptFileStem(scriptFile.name))
-    .sort((a, b) => a.localeCompare(b));
+  const copiesByStem = new Map<string, TFile[]>();
+  managedFiles.forEach((file) => {
+    const stem = getScriptFileStem(file.name);
+    const copies = copiesByStem.get(stem) ?? [];
+    copies.push(file);
+    copiesByStem.set(stem, copies);
+  });
+
+  const updates: string[] = [];
+  copiesByStem.forEach((copies, stem) => {
+    const scriptFile = sortManagedCopies(plugin, copies)[0];
+    if (!scriptFile) {
+      return;
+    }
+    const remoteFilename = files.has(`${stem}.md`)
+      ? `${stem}.md`
+      : files.has(`${stem}.js`)
+        ? `${stem}.js`
+        : null;
+    if (!remoteFilename) {
+      return;
+    }
+    if (
+      getInstallStateFromDirectoryInfo(
+        plugin,
+        scriptFile,
+        remoteFilename,
+        files,
+      ) === "update"
+    ) {
+      updates.push(stem);
+    }
+  });
+
+  return updates.sort((a, b) => a.localeCompare(b));
 };
 
 export const installButton = async (
