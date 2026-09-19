@@ -95,10 +95,12 @@ npm run script-store:check
 npm run script-store:build
 ```
 
-`script-store:build` regenerates the legacy `index-new.md` catalog for older plugin versions. It **does not recalculate historical timestamps** in `directory-info.json`. Only script or icon files that are actually modified/new in the current Git working tree receive a new `mtime`, and repeated builds preserve an already-updated value. When the repository was exported without `.git`, all existing mtimes are left untouched.
+`script-store:build` validates `script-store.json` and updates `directory-info.json` only for script or icon files that are actually modified/new in the current Git working tree. It **does not recalculate historical timestamps**, and repeated builds preserve an already-updated value. When the repository was exported without `.git`, all existing mtimes are left untouched.
+
+`index-new.md` is a frozen legacy catalog for older Excalidraw versions. Routine Script Store publishing must not generate or modify it. New scripts added only to `script-store.json` are intentionally unavailable in older plugin versions unless a maintainer explicitly updates the legacy catalog separately.
 
 Do not hand-edit unrelated `mtime` values. The plugin still uses these timestamps for backward-compatible script update detection.
 
 ### Beta release compatibility
 
-Released 2.27.x clients fetch `ea-scripts/index-new.md` and `ea-scripts/directory-info.json` directly from the repository `master` branch at runtime. Beta-only Script Store work can therefore be merged to `master` without affecting those clients **only if these two legacy files remain unchanged**. Before publishing a beta, verify that both files have no diff against the currently published `master` state.
+Released 2.27.x clients fetch `ea-scripts/index-new.md` and `ea-scripts/directory-info.json` directly from the repository `master` branch at runtime. Keep `index-new.md` unchanged during routine 2.28 Script Store work. `directory-info.json` may still advance for scripts/icons that are actually updated, preserving the established update behavior for scripts already present in the legacy catalog.

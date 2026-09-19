@@ -297,7 +297,7 @@ The AI training material is maintained independently from publishing PRs; do not
 - Add or update the script under [ea-scripts](https://github.com/zsviczian/obsidian-excalidraw-plugin/tree/master/ea-scripts).
 - Add or update the preview image under [images](https://github.com/zsviczian/obsidian-excalidraw-plugin/tree/master/images).
 - Add or update the script's catalog entry in [ea-scripts/script-store.json](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/script-store.json).
-- Run `npm run script-store:check`, then `npm run script-store:build`. The build regenerates the backward-compatible `index-new.md` catalog and advances `directory-info.json` only for script/icon files that actually changed.
+- Run `npm run script-store:check`, then `npm run script-store:build`. The build validates the catalog and advances `directory-info.json` only for script/icon files that actually changed; it does not modify the frozen legacy `index-new.md` catalog.
 - Do not hand-edit unrelated `mtime` values in [ea-scripts/directory-info.json](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/directory-info.json). Historical mtimes are part of the plugin's update-detection contract.
 - Keep the PR focused on the script and its generated references.
 
