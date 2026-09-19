@@ -21,8 +21,8 @@
     "mindmap": "node scripts/deploy-mindmap-builder.mjs",
     "lint": "eslint .",
     "lint:fix": "npx prettier --write \"src/**/*.{ts,tsx}\" && eslint --max-warnings=0 --ext .ts,.tsx ./src --fix",
-    "repo:export": "bash scripts/generate-repository-zip.sh",
-    "repo:update": "rsync -av --progress ~/Downloads/update/ ./"
+    "repo:export": "node scripts/generate-repository-zip.mjs",
+    "repo:update": "node scripts/update-repository.mjs"
   },
   "keywords": [],
   "author": "",
