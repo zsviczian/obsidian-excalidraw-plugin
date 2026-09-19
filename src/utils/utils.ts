@@ -16,7 +16,6 @@ import {
   getCommonBoundingBox,
   DEVICE,
   getContainerElement,
-  SCRIPT_INSTALL_FOLDER,
   VIEW_TYPE_EXCALIDRAW,
 } from "../constants/constants";
 import type ExcalidrawPlugin from "../core/main";
@@ -46,18 +45,13 @@ import { VersionMismatchPrompt } from "src/shared/Dialogs/VersionMismatch";
 import type { ExcalidrawSettings } from "src/core/settingsDefaults";
 import { FileData } from "src/types/embeddedFileLoaderTypes";
 import { ExportSettings } from "src/types/exportUtilTypes";
-import { RemoteDirectoryInfo } from "src/types/githubTypes";
 import { UIMode } from "src/shared/Dialogs/UIModeSettingComponent";
 import ExcalidrawView from "../view/ExcalidrawView";
 import { getEmptyDrawingElementsRuntime } from "src/constants/emptydrawing";
 import { makeEntitiesXmlSafe, sanitizedFragment } from "./htmlUtils";
 import { URLs } from "src/constants/safeUrls";
 import { isInstanceOfSVGSVGElement } from "./typechecks";
-import {
-  getPreferredScriptFiles,
-  getScriptFileStem,
-  isScriptFilePath,
-} from "./scriptFileUtils";
+import { getInstalledScriptUpdates } from "./scriptLibraryUtils";
 export { arrayToMap };
 export { errorlog, getDataURL } from "./coreUtils";
 export { addAppendUpdateCustomData } from "./elementCustomDataUtils";
@@ -164,50 +158,11 @@ async function checkScriptUpdates() {
       return;
     }
 
-    const folder = `${EXCALIDRAW_PLUGIN.settings.scriptFolderPath}/${SCRIPT_INSTALL_FOLDER}`;
-    const installedScripts = getPreferredScriptFiles(
-      EXCALIDRAW_PLUGIN.app.vault
-        .getFiles()
-        .filter(
-          (file) => file.parent?.path === folder && isScriptFilePath(file.path),
-        ),
-    );
-
-    if (installedScripts.length === 0) {
-      return;
-    }
-
-    // Get directory info from GitHub
-    const files = new Map<string, number>();
-    const directoryInfo = JSON.parse(
-      await request({
-        url: URLs.RAW_GITHUBUSERCONTENT_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_MASTER_EA_SCRIPTS_DIRECTORY_INFO_JSON,
-      }),
-    ) as RemoteDirectoryInfo[];
-    directoryInfo.forEach((f: RemoteDirectoryInfo) =>
-      files.set(f.fname, f.mtime),
-    );
-
-    if (files.size === 0) {
-      return;
-    }
-
-    // Check if any installed scripts have updates
-    const updates: string[] = [];
-    for (const scriptFile of installedScripts) {
-      const stem = getScriptFileStem(scriptFile.name);
-      const remoteMtime = Math.max(
-        files.get(`${stem}.md`) ?? 0,
-        files.get(`${stem}.js`) ?? 0,
-      );
-      if (remoteMtime > scriptFile.stat.mtime) {
-        updates.push(stem);
-      }
-    }
-
+    const updates = await getInstalledScriptUpdates(EXCALIDRAW_PLUGIN);
     if (updates.length > 0) {
-      const message = `${t("SCRIPT_UPDATES_AVAILABLE")}\n\n${updates.sort().join("\n")}`;
-      new Notice(message, 8000 + updates.length * 1000);
+      const message = `${t("SCRIPT_UPDATES_AVAILABLE")}\n\n${updates.join("\n")}`;
+      const timeout = Math.min(60_000, 30_000 + updates.length * 2_000);
+      new Notice(message, timeout);
       log(message);
     }
   } catch (e: unknown) {

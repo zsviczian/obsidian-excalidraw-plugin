@@ -1520,6 +1520,65 @@ export default {
     "Script execution error. Please find error message on the developer console.",
 
   //ScriptInstallPrompt.ts
+  SCRIPT_INSTALLED_NOTICE: "Installed",
+  SCRIPT_INSTALL_ERROR_NOTICE: "Error installing script",
+  SCRIPT_STORE_TITLE: "Community scripts",
+  SCRIPT_STORE_LOADING: "Loading community scripts...",
+  SCRIPT_STORE_MASTERY_TITLE: "Excalidraw Mastery",
+  SCRIPT_STORE_MASTERY_DESC: "Master Excalidraw and Visual PKM",
+  SCRIPT_STORE_COFFEE_TITLE: "Buy me a coffee",
+  SCRIPT_STORE_COFFEE_DESC: "Support continued Excalidraw development",
+  SCRIPT_STORE_SCRIPTING_BANNER_ALT: "Automate anything with Excalidraw scripts",
+  SCRIPT_STORE_SCRIPTING_BANNER_CAPTION:
+    "Create your own Excalidraw scripts. Click here to learn more.",
+  SCRIPT_STORE_UPDATES_TITLE: "Updates available",
+  SCRIPT_STORE_UPDATES_DESC:
+    "Update installed community scripts without hunting through the catalog.",
+  SCRIPT_STORE_UPDATE_ALL: "Update all",
+  SCRIPT_STORE_UPDATING: "Updating...",
+  SCRIPT_STORE_UPDATE_ALL_DONE: "All community scripts are up to date.",
+  SCRIPT_STORE_UPDATE_ALL_PARTIAL:
+    "Some scripts could not be updated. Failed:",
+  SCRIPT_STORE_BROWSE_TITLE: "Browse scripts",
+  SCRIPT_STORE_BROWSE_DESC: "Search by name, author, description, or category.",
+  SCRIPT_STORE_SEARCH_PLACEHOLDER: "Search community scripts",
+  SCRIPT_STORE_CATEGORY_LABEL: "Script category",
+  SCRIPT_STORE_ALL_CATEGORIES: "All categories",
+  SCRIPT_STORE_ALL_SCRIPTS: "All",
+  SCRIPT_STORE_INSTALLED_SCRIPTS: "Installed",
+  SCRIPT_STORE_RESULTS: "scripts",
+  SCRIPT_STORE_NO_RESULTS: "No scripts found",
+  SCRIPT_STORE_NO_RESULTS_DESC: "Try a different search or category.",
+  SCRIPT_STORE_DETAILS: "Script details",
+  SCRIPT_STORE_FEATURED: "Featured",
+  SCRIPT_STORE_BY: "By",
+  SCRIPT_STORE_UPDATE_BADGE: "Update",
+  SCRIPT_STORE_INSTALLED_BADGE: "Installed",
+  SCRIPT_STORE_CHECK_FAILED: "Check failed",
+  SCRIPT_STORE_INSTALL: "Install",
+  SCRIPT_STORE_UPDATE: "Update",
+  SCRIPT_STORE_REINSTALL: "Reinstall",
+  SCRIPT_STORE_BACK: "Back to scripts",
+  SCRIPT_STORE_VIEW_SOURCE: "View source",
+  SCRIPT_STORE_LOCAL_TITLE: "Installed script",
+  SCRIPT_STORE_MULTIPLE_COPIES:
+    "Multiple managed copies found. Update checks use the first copy below. You can open, move, or uninstall each copy separately.",
+  SCRIPT_STORE_PRIMARY_COPY: "Used for update checks",
+  SCRIPT_STORE_ADDITIONAL_COPY: "Additional copy",
+  SCRIPT_STORE_LOCAL_FILE: "Local file",
+  SCRIPT_STORE_OPEN_LOCAL: "Open local file",
+  SCRIPT_STORE_OPEN_LOCAL_FAILED: "Could not open the local script file.",
+  SCRIPT_STORE_JS_OPEN_NOTE:
+    "JavaScript files are not editable in Obsidian by default. If no plugin provides a .js editor, opening this file may hand it off to an external app.",
+  SCRIPT_STORE_UNINSTALL: "Uninstall",
+  SCRIPT_STORE_UNINSTALLED: "Uninstalled",
+  SCRIPT_STORE_UNINSTALL_FAILED: "Could not uninstall",
+  SCRIPT_STORE_GROUP_LABEL: "Script group",
+  SCRIPT_STORE_GROUP_ROOT: "No group (Downloaded)",
+  SCRIPT_STORE_NEW_GROUP_PLACEHOLDER: "New group name",
+  SCRIPT_STORE_MOVE_TO_GROUP: "Move",
+  SCRIPT_STORE_MOVED_TO_GROUP: "Moved script",
+  SCRIPT_STORE_MOVE_FAILED: "Could not move script",
   SCRIPT_INSTALL_PROMPT_FETCH_ERROR:
     "Error opening the Excalidraw Script Store page. " +
     "Please double check that you can access the website. " +
@@ -1686,7 +1745,7 @@ export default {
 
   //Utils.ts
   UPDATE_AVAILABLE: `A newer version of Excalidraw is available in Community Plugins.\n\nYou are using ${PLUGIN_VERSION}.\nThe latest is`,
-  SCRIPT_UPDATES_AVAILABLE: `Script updates available - check the script store.\n\n${DEVICE.isDesktop ? `This message is available in console.log (${DEVICE.isMacOS ? "CMD+OPT+i" : "CTRL+SHIFT+i"})\n\n` : ""}If you have organized scripts into subfolders under the script store folder and have multiple copies of the same script, you may need to clean up unused versions to clear this alert. For private copies of scripts that should not be updated, store them outside the script store folder.`,
+  SCRIPT_UPDATES_AVAILABLE: `Script updates available - check the script store.\n\n${DEVICE.isDesktop ? `This message is available in console.log (${DEVICE.isMacOS ? "CMD+OPT+i" : "CTRL+SHIFT+i"})\n\n` : ""}Only community scripts stored under the Downloaded folder are checked for updates. Copies elsewhere in your script folder are ignored.`,
   ERROR_PNG_TOO_LARGE:
     "Error exporting PNG - PNG too large, try a smaller resolution",
 

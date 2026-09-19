@@ -8,7 +8,7 @@ Scope summary:
 - Keep [docs/AITrainingData](docs/AITrainingData) as the canonical output location.
 - Keep [docs/AITrainingData/ExcalidrawAutomate full library for LLM training.md](docs/AITrainingData/ExcalidrawAutomate%20full%20library%20for%20LLM%20training.md) as a stable entrypoint, but curate it as a router to skill-first references.
 - Use one unified generator behind `npm run doc`.
-- Keep [ea-scripts/index-new.md](ea-scripts/index-new.md) manually curated.
+- Keep [ea-scripts/script-store.json](ea-scripts/script-store.json) as the contributor-facing catalog; keep [ea-scripts/index-new.md](ea-scripts/index-new.md) frozen for legacy clients and generate only targeted update metadata in `directory-info.json`.
 - Keep skill generation manually triggered by maintainer workflows (no automatic watcher/CI updates in this phase).
 - Add strict naming rules for script preview images under [images](images).
 
@@ -23,10 +23,10 @@ Scope summary:
 - It must warn AI tools that generated code quality may fail if linked skill/reference URLs are inaccessible (for example: URL access disabled in some chat tools).
 
 3. Script library publishing guidance
-- `index-new.md` remains manual.
+- [ea-scripts/script-store.json](ea-scripts/script-store.json) is the contributor-facing metadata source.
 - Agents should be guided to open a proper PR for publishing scripts in this repository instead of trying to bypass the normal contribution workflow.
-- Every publishing PR (new script or script update) must update [ea-scripts/directory-info.json](ea-scripts/directory-info.json).
-- For updates, the `mtime` value for the updated script file must be refreshed so the plugin can detect local update availability.
+- `npm run script-store:build` validates the current catalog and advances `directory-info.json` only for script/icon files that actually changed; it never rewrites `index-new.md`.
+- Historical `mtime` values must remain untouched; they are part of the plugin's backward-compatible update-detection contract.
 
 4. Template repository direction
 - A separate repository will be created first.
@@ -56,7 +56,7 @@ Target branch: `improved-scripting-skills`.
 | Unify generator implementation behind `npm run doc` | Complete | Added shared generator core at [scripts/excalidraw-docs-generator-core.mjs](scripts/excalidraw-docs-generator-core.mjs); both [scripts/generate-script-library.mjs](scripts/generate-script-library.mjs) and [scripts/skill-builder.mjs](scripts/skill-builder.mjs) are thin wrappers over one code path |
 | Ensure canonical pen type completeness in generated docs | Complete | Generated references now include canonical Obsidian pen stroke type definitions plus the full public `src/types` and `lib/types` declaration surface |
 | Curate legacy training entrypoint warning and routing | Complete | Legacy training entrypoint now warns about inaccessible references, names the master repository, and routes agents to the curated skill/reference set with absolute GitHub URLs |
-| Add PR publishing workflow guidance for scripting agents | Complete | Generated skill guidance now directs script publishing through PRs, keeps `index-new.md` manual, and requires `directory-info.json` mtime updates |
+| Add PR publishing workflow guidance for scripting agents | Complete | Generated skill guidance now directs script publishing through PRs, uses `script-store.json` as catalog metadata, and generates only targeted legacy mtime updates |
 | Add strict image naming and validation | Complete | Generator now warns on non-conforming preview filenames and documents the `scripts-{slug}.{ext}` rule in generated publishing guidance |
 | Optional template-repo sync from `npm run doc` | Complete | `npm run doc` now refreshes a co-located `ea-script-template` bootstrap under `.ai/excalidraw-automate/` when the sibling repo is present |
 
@@ -123,12 +123,12 @@ Planned changes:
 - Add concise maintainer-approved workflow guidance in skill docs:
   - add script to [ea-scripts](ea-scripts)
   - add image to [images](images)
-  - update [ea-scripts/index-new.md](ea-scripts/index-new.md) manually
-  - update [ea-scripts/directory-info.json](ea-scripts/directory-info.json) in the same PR
-  - for script updates, refresh the target script `mtime` entry in [ea-scripts/directory-info.json](ea-scripts/directory-info.json)
+  - add or update the entry in [ea-scripts/script-store.json](ea-scripts/script-store.json)
+  - run `npm run script-store:check` and `npm run script-store:build`
+  - allow the generator to advance only the changed script/icon `mtime` entry in [ea-scripts/directory-info.json](ea-scripts/directory-info.json)
   - keep AI training material updates out of script publishing PRs
   - open PR with focused diff and validation notes
-- Explicitly avoid automating `index-new.md`.
+- Treat `index-new.md` as a frozen backward-compatibility catalog. Routine publishing must not modify it; new scripts are intentionally unavailable to older clients unless a maintainer explicitly updates the legacy catalog separately.
 
 Acceptance:
 - Publishing workflow appears in generated skill material.
@@ -136,7 +136,7 @@ Acceptance:
 
 Status:
 - Complete.
-- The generated skill file now includes a dedicated publishing workflow section with absolute repository links, PR-only guidance, manual `index-new.md` curation, and `directory-info.json` update requirements.
+- The generated skill file now includes a dedicated publishing workflow section with absolute repository links, PR-only guidance, a frozen legacy catalog, and targeted `directory-info.json` updates.
 
 ### Checkpoint 5: Strict image naming convention and validator
 Objective:

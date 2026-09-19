@@ -297,9 +297,9 @@ The AI training material is maintained independently from publishing PRs; do not
 
 - Add or update the script under [ea-scripts](https://github.com/zsviczian/obsidian-excalidraw-plugin/tree/master/ea-scripts).
 - Add or update the preview image under [images](https://github.com/zsviczian/obsidian-excalidraw-plugin/tree/master/images).
-- Keep [ea-scripts/index-new.md](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/index-new.md) manually curated; do not automate it.
-- Update [ea-scripts/directory-info.json](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/directory-info.json) in the same PR.
-- For script updates, refresh the matching entry's `mtime` in [ea-scripts/directory-info.json](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/directory-info.json) so the plugin can detect the newer local version.
+- Add or update the script's catalog entry in [ea-scripts/script-store.json](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/script-store.json).
+- Run `npm run script-store:check`, then `npm run script-store:build`. The build validates the catalog and advances `directory-info.json` only for script/icon files that actually changed; it does not modify the frozen legacy `index-new.md` catalog.
+- Do not hand-edit unrelated `mtime` values in [ea-scripts/directory-info.json](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/directory-info.json). Historical mtimes are part of the plugin's update-detection contract.
 - Keep the PR focused on the script and its generated references.
 
 ### How to use the Script Examples
