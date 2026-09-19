@@ -19,6 +19,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 `,
 "2.28.0": `
 ## New
+- The Community Script Store has been redesigned with searchable script cards, categories, installed-script filtering, richer script details, an updates section, and **Update all**. Update checks now compare downloaded scripts with GitHub file versions while retaining the legacy script index and timestamp metadata as fallbacks for backward compatibility. Publishing a community script now uses a single \`script-store.json\` catalog entry plus a generator for the legacy files.
 - Copied Markdown image SVGs now replace embedded base64 images and fonts with short placeholders, making them smaller and easier to share with AI agents when developing custom CSS.
 
 ## New from Excalidraw.com

@@ -1736,3 +1736,508 @@ button.excalidraw-font-picker {
     grid-template-columns: 1fr;
   }
 }
+
+/* Community script store */
+.excalidraw-script-store .modal {
+  width: min(1100px, 96vw);
+  max-width: 1100px;
+  height: min(900px, 92vh);
+  max-height: 92vh;
+}
+
+.excalidraw-script-store .modal-content {
+  max-width: none;
+  user-select: text;
+}
+
+.excalidraw-script-store__content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding-bottom: 1rem;
+}
+
+.excalidraw-script-store__loading {
+  min-height: 16rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  color: var(--text-muted);
+}
+
+.excalidraw-script-store__loading-icon svg {
+  animation: excalidraw-script-store-spin 1s linear infinite;
+}
+
+@keyframes excalidraw-script-store-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.excalidraw-script-store__intro-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.excalidraw-script-store__feature {
+  display: flex;
+  flex-direction: column;
+  min-height: 12rem;
+  padding: 1rem;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-l);
+  background: var(--background-secondary);
+  overflow: hidden;
+}
+
+.excalidraw-script-store__feature h3 {
+  margin: 0.45rem 0 0.35rem;
+}
+
+.excalidraw-script-store__feature p {
+  flex: 1;
+  margin: 0 0 0.75rem;
+  color: var(--text-muted);
+}
+
+.excalidraw-script-store__feature-icon {
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--interactive-accent);
+}
+
+.excalidraw-script-store__feature-image-link {
+  display: block;
+  margin: -1rem -1rem 0.35rem;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: var(--background-primary-alt);
+}
+
+.excalidraw-script-store__feature-image-link img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.excalidraw-script-store__feature-link,
+.excalidraw-script-store__source-link {
+  width: fit-content;
+  font-weight: var(--font-semibold);
+}
+
+.excalidraw-script-store__updates {
+  padding: 1rem;
+  border: 1px solid var(--interactive-accent);
+  border-radius: var(--radius-l);
+  background: var(--background-secondary);
+}
+
+.excalidraw-script-store__updates-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.excalidraw-script-store__updates h2,
+.excalidraw-script-store__browse-header h2 {
+  margin: 0;
+}
+
+.excalidraw-script-store__updates p,
+.excalidraw-script-store__browse-header p {
+  margin: 0.2rem 0 0;
+  color: var(--text-muted);
+}
+
+.excalidraw-script-store__inline-icon {
+  display: inline-flex;
+  margin-left: 0.45rem;
+  vertical-align: text-bottom;
+}
+
+.excalidraw-script-store__inline-icon svg {
+  width: 1em;
+  height: 1em;
+}
+
+.excalidraw-script-store__update-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+}
+
+.excalidraw-script-store__update-chip {
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--radius-s);
+  font-size: var(--font-ui-smaller);
+}
+
+.excalidraw-script-store__browse-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.excalidraw-script-store__controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.excalidraw-script-store__search {
+  position: relative;
+  flex: 1 1 18rem;
+  min-width: 12rem;
+}
+
+.excalidraw-script-store__search > span {
+  position: absolute;
+  left: 0.65rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  color: var(--text-faint);
+  pointer-events: none;
+}
+
+.excalidraw-script-store__search svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.excalidraw-script-store__search input {
+  width: 100%;
+  padding-left: 2rem;
+}
+
+.excalidraw-script-store__controls select {
+  min-width: 12rem;
+}
+
+.excalidraw-script-store__view-toggle {
+  display: flex;
+}
+
+.excalidraw-script-store__view-toggle button {
+  border-radius: 0;
+}
+
+.excalidraw-script-store__view-toggle button:first-child {
+  border-radius: var(--button-radius) 0 0 var(--button-radius);
+}
+
+.excalidraw-script-store__view-toggle button:last-child {
+  border-radius: 0 var(--button-radius) var(--button-radius) 0;
+}
+
+.excalidraw-script-store__view-toggle button.is-active {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+
+.excalidraw-script-store__result-summary {
+  margin-bottom: 0.55rem;
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+}
+
+.excalidraw-script-store__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 0.7rem;
+}
+
+.excalidraw-script-store__card {
+  display: flex;
+  flex-direction: column;
+  min-height: 15rem;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  background: var(--background-primary);
+  overflow: hidden;
+  transition: border-color var(--anim-duration-fast) ease-in-out,
+    transform var(--anim-duration-fast) ease-in-out;
+}
+
+.excalidraw-script-store__card:hover {
+  border-color: var(--background-modifier-border-hover);
+  transform: translateY(-1px);
+}
+
+.excalidraw-script-store__card.has-update {
+  border-color: var(--interactive-accent);
+}
+
+.excalidraw-script-store__card-main {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+  width: 100%;
+  padding: 0.9rem;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+  color: var(--text-normal);
+  text-align: left;
+  cursor: pointer;
+}
+
+.excalidraw-script-store__card-main:hover {
+  background: var(--background-modifier-hover);
+}
+
+.excalidraw-script-store__icon {
+  position: relative;
+  flex: 0 0 3.1rem;
+  width: 3.1rem;
+  height: 3.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-m);
+  background: var(--background-secondary);
+  overflow: hidden;
+}
+
+.excalidraw-script-store__icon img {
+  position: relative;
+  z-index: 1;
+  width: 2.55rem;
+  height: 2.55rem;
+  object-fit: contain;
+}
+
+.excalidraw-script-store__icon img.is-hidden,
+.excalidraw-script-store__detail-icon img.is-hidden {
+  display: none;
+}
+
+.excalidraw-script-store__icon-fallback {
+  position: absolute;
+  display: flex;
+  color: var(--text-muted);
+}
+
+.excalidraw-script-store__card-text {
+  min-width: 0;
+}
+
+.excalidraw-script-store__title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.excalidraw-script-store__title-row h3 {
+  margin: 0;
+  font-size: var(--font-ui-medium);
+}
+
+.excalidraw-script-store__author {
+  margin-top: 0.15rem;
+  color: var(--text-faint);
+  font-size: var(--font-ui-smaller);
+}
+
+.excalidraw-script-store__card-text p {
+  margin: 0.55rem 0 0;
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+  line-height: 1.45;
+}
+
+.excalidraw-script-store__badge,
+.excalidraw-script-store__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.12rem 0.4rem;
+  border-radius: var(--radius-s);
+  background: var(--background-secondary-alt);
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  font-weight: var(--font-medium);
+}
+
+.excalidraw-script-store__badge svg {
+  width: 0.85em;
+  height: 0.85em;
+}
+
+.excalidraw-script-store__badge.has-update,
+.excalidraw-script-store__badge.is-featured {
+  color: var(--interactive-accent);
+}
+
+.excalidraw-script-store__card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-height: 3.2rem;
+  padding: 0.65rem 0.8rem;
+  border-top: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+}
+
+.excalidraw-script-store__card-footer > span {
+  min-width: 0;
+  color: var(--text-faint);
+  font-size: var(--font-ui-smaller);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.excalidraw-script-store__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 15rem;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.excalidraw-script-store__empty h3 {
+  margin-bottom: 0;
+}
+
+.excalidraw-script-store__back {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.excalidraw-script-store__back svg {
+  width: 1em;
+  height: 1em;
+}
+
+.excalidraw-script-store__detail {
+  width: min(800px, 100%);
+  margin: 0 auto;
+}
+
+.excalidraw-script-store__detail-hero {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.excalidraw-script-store__detail-icon {
+  position: relative;
+  flex: 0 0 5rem;
+  width: 5rem;
+  height: 5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-l);
+  background: var(--background-secondary);
+  color: var(--text-muted);
+  overflow: hidden;
+}
+
+.excalidraw-script-store__detail-icon img {
+  position: absolute;
+  width: 4.2rem;
+  height: 4.2rem;
+  object-fit: contain;
+  background: var(--background-secondary);
+}
+
+.excalidraw-script-store__detail-title {
+  min-width: 0;
+  flex: 1;
+}
+
+.excalidraw-script-store__detail-title h1 {
+  margin: 0;
+}
+
+.excalidraw-script-store__detail-byline {
+  margin-top: 0.25rem;
+  color: var(--text-muted);
+}
+
+.excalidraw-script-store__detail-tags,
+.excalidraw-script-store__detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.7rem;
+}
+
+.excalidraw-script-store__detail-description {
+  margin-top: 1rem;
+  line-height: 1.55;
+}
+
+.excalidraw-script-store__detail-description img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-m);
+}
+
+@media (max-width: 800px) {
+  .excalidraw-script-store__intro-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .excalidraw-script-store__feature {
+    min-height: auto;
+  }
+
+  .excalidraw-script-store__updates-header,
+  .excalidraw-script-store__detail-hero {
+    flex-direction: column;
+  }
+
+  .excalidraw-script-store__controls > select,
+  .excalidraw-script-store__view-toggle {
+    flex: 1 1 auto;
+  }
+
+  .excalidraw-script-store__view-toggle button {
+    flex: 1;
+  }
+}
+
+@media (max-width: 500px) {
+  .excalidraw-script-store .modal {
+    width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+  }
+
+  .excalidraw-script-store__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .excalidraw-script-store__controls {
+    align-items: stretch;
+  }
+
+  .excalidraw-script-store__controls > select,
+  .excalidraw-script-store__view-toggle {
+    width: 100%;
+  }
+}

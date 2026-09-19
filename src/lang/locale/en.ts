@@ -1520,6 +1520,50 @@ export default {
     "Script execution error. Please find error message on the developer console.",
 
   //ScriptInstallPrompt.ts
+  SCRIPT_INSTALLED_NOTICE: "Installed",
+  SCRIPT_INSTALL_ERROR_NOTICE: "Error installing script",
+  SCRIPT_STORE_TITLE: "Community scripts",
+  SCRIPT_STORE_LOADING: "Loading community scripts...",
+  SCRIPT_STORE_AUTOMATE_TITLE: "Excalidraw Automate",
+  SCRIPT_STORE_AUTOMATE_DESC:
+    "Learn the scripting engine and turn repeated canvas work into one-click workflows.",
+  SCRIPT_STORE_AUTOMATE_ACTION: "Watch the introduction",
+  SCRIPT_STORE_AI_TITLE: "Create scripts with AI",
+  SCRIPT_STORE_AI_DESC:
+    "Use the Excalidraw Automate reference material with AI to build scripts for your own workflow.",
+  SCRIPT_STORE_AI_ACTION: "Watch AI scripting superpowers",
+  SCRIPT_STORE_PUBLISH_TITLE: "Share a script",
+  SCRIPT_STORE_PUBLISH_DESC:
+    "Community scripts live in one reviewed repository. Add your script and catalog entry in a focused pull request.",
+  SCRIPT_STORE_PUBLISH_ACTION: "Publishing guide",
+  SCRIPT_STORE_UPDATES_TITLE: "Updates available",
+  SCRIPT_STORE_UPDATES_DESC:
+    "Update installed community scripts without hunting through the catalog.",
+  SCRIPT_STORE_UPDATE_ALL: "Update all",
+  SCRIPT_STORE_UPDATING: "Updating...",
+  SCRIPT_STORE_UPDATE_ALL_DONE: "All community scripts are up to date.",
+  SCRIPT_STORE_UPDATE_ALL_PARTIAL: "Some scripts could not be updated. Failed:",
+  SCRIPT_STORE_BROWSE_TITLE: "Browse scripts",
+  SCRIPT_STORE_BROWSE_DESC: "Search by name, author, description, or category.",
+  SCRIPT_STORE_SEARCH_PLACEHOLDER: "Search community scripts",
+  SCRIPT_STORE_CATEGORY_LABEL: "Script category",
+  SCRIPT_STORE_ALL_CATEGORIES: "All categories",
+  SCRIPT_STORE_ALL_SCRIPTS: "All",
+  SCRIPT_STORE_INSTALLED_SCRIPTS: "Installed",
+  SCRIPT_STORE_RESULTS: "scripts",
+  SCRIPT_STORE_NO_RESULTS: "No scripts found",
+  SCRIPT_STORE_NO_RESULTS_DESC: "Try a different search or category.",
+  SCRIPT_STORE_DETAILS: "Script details",
+  SCRIPT_STORE_FEATURED: "Featured",
+  SCRIPT_STORE_BY: "By",
+  SCRIPT_STORE_UPDATE_BADGE: "Update",
+  SCRIPT_STORE_INSTALLED_BADGE: "Installed",
+  SCRIPT_STORE_CHECK_FAILED: "Check failed",
+  SCRIPT_STORE_INSTALL: "Install",
+  SCRIPT_STORE_UPDATE: "Update",
+  SCRIPT_STORE_REINSTALL: "Reinstall",
+  SCRIPT_STORE_BACK: "Back to scripts",
+  SCRIPT_STORE_VIEW_SOURCE: "View source",
   SCRIPT_INSTALL_PROMPT_FETCH_ERROR:
     "Error opening the Excalidraw Script Store page. " +
     "Please double check that you can access the website. " +

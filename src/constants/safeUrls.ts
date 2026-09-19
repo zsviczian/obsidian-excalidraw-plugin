@@ -54,6 +54,16 @@ export const URL_REGISTRY = {
       "https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/directory-info.json",
       UrlPurpose.APP_LOGIC,
     ),
+  API_GITHUB_COM_REPOS_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_CONTENTS_EA_SCRIPTS:
+    defineUrl(
+      "https://api.github.com/repos/zsviczian/obsidian-excalidraw-plugin/contents/ea-scripts?ref=master",
+      UrlPurpose.APP_LOGIC,
+    ),
+  RAW_GITHUBUSERCONTENT_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_MASTER_EA_SCRIPTS_SCRIPT_STORE_JSON:
+    defineUrl(
+      "https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/script-store.json",
+      UrlPurpose.APP_LOGIC,
+    ),
   API_GITHUB_COM_REPOS_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES: defineUrl(
     "https://api.github.com/repos/zsviczian/obsidian-excalidraw-plugin/releases?per_page=15&page=1",
     UrlPurpose.APP_LOGIC,
@@ -235,6 +245,11 @@ export const URL_REGISTRY = {
     "https://github.com/zsviczian/obsidian-excalidraw-plugin/pull",
     UrlPurpose.RELEASE_LOG,
   ),
+  GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_BLOB_MASTER_EA_SCRIPTS_README_MD:
+    defineUrl(
+      "https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/README.md",
+      UrlPurpose.DOCS,
+    ),
   GITHUB_COM_SREEDHARSREERAM: defineUrl(
     "https://github.com/sreedharsreeram",
     UrlPurpose.RELEASE_LOG,

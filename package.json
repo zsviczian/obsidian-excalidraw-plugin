@@ -22,7 +22,9 @@
     "lint": "eslint .",
     "lint:fix": "npx prettier --write \"src/**/*.{ts,tsx}\" && eslint --max-warnings=0 --ext .ts,.tsx ./src --fix",
     "repo:export": "node scripts/generate-repository-zip.mjs",
-    "repo:update": "node scripts/update-repository.mjs"
+    "repo:update": "node scripts/update-repository.mjs",
+    "script-store:build": "node scripts/build-script-store.mjs",
+    "script-store:check": "node scripts/build-script-store.mjs --check"
   },
   "keywords": [],
   "author": "",

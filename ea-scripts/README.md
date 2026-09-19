@@ -11,6 +11,18 @@ Click to watch the intro video:
 
 See the [Excalidraw Script Engine](https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.html) documentation for more details.
 
+## Publishing a community script
+
+The community Script Store is driven by `script-store.json`. `index-new.md` and `directory-info.json` are backward-compatibility artifacts and should not be edited by hand.
+
+1. Add the script to `ea-scripts/`. The filename is the installed script name.
+2. Add a matching SVG icon when practical (`My Script.md` -> `My Script.svg`) and a preview image under `images/` when useful.
+3. Add one entry to `ea-scripts/script-store.json` with the author, description, categories, install/source URLs, and icon URL. Add `featuredRank` only for an **Editors Picks** entry.
+4. Run `npm run script-store:build` to validate the catalog and regenerate the legacy Markdown store and timestamp fallback.
+5. Run `npm run script-store:check`, `npm run code`, and the normal build before opening a pull request.
+
+The current plugin compares installed scripts with GitHub blob SHAs, so contributors no longer need to calculate or hand-edit modified timestamps. `directory-info.json` remains generated for older plugin versions and as a fallback.
+
 ## How to install scripts into your Obsidian Vault
 To install one of the built-in scripts:
 - Open up an excalidraw drawing in Obsidian
