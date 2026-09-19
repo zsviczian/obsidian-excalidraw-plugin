@@ -27,6 +27,20 @@ Before spending your valuable time writing code for a new feature or significant
 
 The shipped plugin is `dist/main.js`, `dist/styles.css`, and `dist/manifest.json`. Keep `main.js` below the release size limit and report its byte size after dependency or packaging changes.
 
+## Updating the EA script template
+
+`npm run doc` and `npm run skill` both build the public library declarations, then
+run full documentation generation. When `../ea-script-template` exists, they also
+refresh its local agent references, generated EA declaration graph and provenance,
+type dependencies, and template update manifest. The template consumes declarations
+only; personal script workspaces no longer need this plugin as a Git dependency.
+
+After generation, run `npm install`, `npm run check`, `npm run build`, and
+`npm run test:template` in the template. Review both repositories separately and
+publish the template's updated `master` so users can receive the snapshot with
+`npm run update-template`. See the template's `.template/README.md` for ownership,
+conflict handling, and the one-time adoption procedure for older workspaces.
+
 ## 🧪 Testing
 
 At this time, the project **has no comprehensive automated test suite**. As a contributor, you are responsible for testing your changes thoroughly.

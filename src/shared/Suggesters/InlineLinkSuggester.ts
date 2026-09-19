@@ -96,7 +96,7 @@ export class InlineLinkSuggester
     inputEl: HTMLInputElement | HTMLTextAreaElement,
     getSourcePath: () => string | undefined,
     widthWrapper?: HTMLElement,
-    surpessPlaceholder: boolean = false,
+    suppressPlaceholder: boolean = false,
     collisionBoundary?: HTMLElement,
   ) {
     super(app, inputEl, [], collisionBoundary);
@@ -107,7 +107,7 @@ export class InlineLinkSuggester
     this.handleBracketKeyDown = (event: KeyboardEvent) =>
       this.onBracketKeyDown(event);
     this.limit = 20;
-    if (!surpessPlaceholder) {
+    if (!suppressPlaceholder) {
       this.setPlaceholder(t("INLINE_HINT"));
     }
     this.emptyStateText = "No match";
