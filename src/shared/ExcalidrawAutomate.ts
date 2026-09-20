@@ -871,6 +871,24 @@ export class ExcalidrawAutomate {
   }
 
   /**
+   * Returns the current target view when it is safe to perform a live-view
+   * operation. Calls that arrive after EA destruction or while the target view
+   * is unloading are expected teardown races and are ignored silently. Genuine
+   * calls without an active target view still report the usual EA API error.
+   */
+  private getReadyTargetView(source: string): ExcalidrawView | null {
+    const view = this.targetView;
+    if (this.destroyed || view?.semaphores?.viewunload) {
+      return null;
+    }
+    if (view?._loaded) {
+      return view;
+    }
+    errorMessage("targetView not set", source);
+    return null;
+  }
+
+  /**
    * Registers synchronous cleanup owned by this EA instance. Use this for
    * external listeners, observers, timers, and subscriptions that EA cannot
    * release itself. Cleanup runs when this EA is destroyed.
@@ -3868,11 +3886,10 @@ export class ExcalidrawAutomate {
    * @param {boolean} [forceViewMode=false] - Whether to force view mode.
    */
   viewToggleFullScreen(forceViewMode: boolean = false): void {
-    if (!this.targetView || !this.targetView?._loaded) {
-      errorMessage("targetView not set", "viewToggleFullScreen()");
+    const view = this.getReadyTargetView("viewToggleFullScreen()");
+    if (!view) {
       return;
     }
-    const view = this.targetView;
     const isFullscreen = view.isFullscreen();
     if (forceViewMode) {
       view.updateScene({
@@ -3882,9 +3899,7 @@ export class ExcalidrawAutomate {
         },
         captureUpdate: CaptureUpdateAction.NEVER,
       });
-      this.targetView.toolsPanelRef?.current?.setExcalidrawViewMode(
-        !isFullscreen,
-      );
+      view.toolsPanelRef?.current?.setExcalidrawViewMode(!isFullscreen);
     }
 
     if (isFullscreen) {
@@ -3899,11 +3914,10 @@ export class ExcalidrawAutomate {
    * @param {boolean} enabled - Whether to enable view mode.
    */
   setViewModeEnabled(enabled: boolean): void {
-    if (!this.targetView || !this.targetView?._loaded) {
-      errorMessage("targetView not set", "viewToggleFullScreen()");
+    const view = this.getReadyTargetView("setViewModeEnabled()");
+    if (!view) {
       return;
     }
-    const view = this.targetView;
     view.updateScene({
       appState: { viewModeEnabled: enabled },
       captureUpdate: CaptureUpdateAction.NEVER,
@@ -3933,15 +3947,15 @@ export class ExcalidrawAutomate {
     },
     restore: boolean = false,
   ): void {
-    if (!this.targetView || !this.targetView?._loaded) {
-      errorMessage("targetView not set", "viewToggleFullScreen()");
+    const view = this.getReadyTargetView("viewUpdateScene()");
+    if (!view) {
       return;
     }
     if (!scene.storeAction) {
       scene.storeAction = scene.commitToHistory ? "capture" : "update";
     }
 
-    this.targetView.updateScene(
+    view.updateScene(
       {
         elements: scene.elements,
         appState: scene.appState,
@@ -4016,11 +4030,26 @@ export class ExcalidrawAutomate {
     elements: ExcalidrawElement[],
     margin: number = 0.05,
   ): void {
-    if (!this.targetView || !this.targetView?._loaded) {
-      errorMessage("targetView not set", "viewToggleFullScreen()");
+    const view = this.getReadyTargetView("viewZoomToElements()");
+    if (!view) {
       return;
     }
-    this.targetView.zoomToElements(selectElements, elements, margin);
+    view.zoomToElements(selectElements, elements, margin);
+  }
+
+  /**
+   * Clears the target view's current dirty marker without saving.
+   *
+   * This is intended for integrations that deliberately render generated or
+   * transient scene state with `save=false`. It does not disable future dirty
+   * tracking or persistence. Calls racing view teardown are ignored.
+   */
+  clearViewDirty(): void {
+    const view = this.getReadyTargetView("clearViewDirty()");
+    if (!view) {
+      return;
+    }
+    view.clearDirty();
   }
 
   /**
@@ -4038,15 +4067,15 @@ export class ExcalidrawAutomate {
     shouldRestoreElements: boolean = false,
     captureUpdate: CaptureUpdateActionType = CaptureUpdateAction.IMMEDIATELY,
   ): Promise<boolean> {
-    if (!this.targetView || !this.targetView?._loaded) {
-      errorMessage("targetView not set", "addElementsToView()");
+    const view = this.getReadyTargetView("addElementsToView()");
+    if (!view) {
       return false;
     }
     const elements = this.getElements();
     if (elements.some((el) => el.type === "embeddable")) {
-      patchMobileView(this.targetView);
+      patchMobileView(view);
     }
-    const result = await this.targetView.addElements({
+    const result = await view.addElements({
       newElements: elements,
       repositionToCursor,
       save,
@@ -4065,24 +4094,28 @@ export class ExcalidrawAutomate {
    * @returns {boolean} True if successful, false otherwise.
    */
   registerThisAsViewEA(): boolean {
-    if (!this.targetView || !this.targetView?._loaded) {
-      errorMessage("targetView not set", "addElementsToView()");
+    const view = this.getReadyTargetView("registerThisAsViewEA()");
+    if (!view) {
       return false;
     }
-    this.targetView.setHookServer(this);
+    view.setHookServer(this);
     return true;
   }
 
   /**
-   * Sets the target view EA to window.ExcalidrawAutomate.
-   * @returns {boolean} True if successful, false otherwise.
+   * Restores the target view's default plugin-global EA hook server. This is a
+   * teardown operation, so it remains valid while the view itself is unloading.
+   * @returns {boolean} True if a target view was available, false otherwise.
    */
   deregisterThisAsViewEA(): boolean {
-    if (!this.targetView || !this.targetView?._loaded) {
-      errorMessage("targetView not set", "addElementsToView()");
+    const view = this.targetView;
+    if (!view) {
+      if (!this.destroyed) {
+        errorMessage("targetView not set", "deregisterThisAsViewEA()");
+      }
       return false;
     }
-    this.targetView.setHookServer(this);
+    view.setHookServer();
     return true;
   }
 
@@ -5381,6 +5414,14 @@ export class ExcalidrawAutomate {
       }
     });
     this.sidepanelTab?.close();
+    const targetView = this.targetView;
+    try {
+      if (targetView?.getHookServer() === this) {
+        targetView.setHookServer();
+      }
+    } catch {
+      // The target view may already be past its unload lifecycle.
+    }
     this.targetView = null;
     this.plugin = null;
     this.elementsDict = {};

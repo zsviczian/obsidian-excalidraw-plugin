@@ -662,6 +662,24 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field: "clearViewDirty",
+    code: "clearViewDirty(): void;",
+    desc: "Clears the target view's current dirty marker without saving. Intended for generated/transient scene integrations that update a view with save=false. Calls racing view teardown are ignored.",
+    after: "",
+  },
+  {
+    field: "registerThisAsViewEA",
+    code: "registerThisAsViewEA(): boolean;",
+    desc: "Registers this EA instance as the hook server for its target view.",
+    after: "",
+  },
+  {
+    field: "deregisterThisAsViewEA",
+    code: "deregisterThisAsViewEA(): boolean;",
+    desc: "Restores the target view's default plugin-global EA hook server. Safe to call during view teardown.",
+    after: "",
+  },
+  {
     field: "connectObjectWithViewSelectedElement",
     code: "connectObjectWithViewSelectedElement(objectA: string, connectionA: ConnectionPoint, connectionB: ConnectionPoint, formatting?: {numberOfPoints?: number; startArrowHead?: string; endArrowHead?: string; padding?: number;},): boolean;",
     desc: "Connect an object to the selected element in the view\nSee tooltip for connectObjects for details",

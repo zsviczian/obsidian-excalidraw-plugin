@@ -36,6 +36,15 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 - Selection rectangles in popout windows are no longer positioned incorrectly when displays use different DPI settings. [#2940](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2940)
 
 ## New/Fixed in Excalidraw Automate
+- Added three view-lifecycle helpers for integrations that use a view-local Excalidraw Automate instance or render generated/transient scene state:
+\`\`\`ts
+clearViewDirty(): void;
+registerThisAsViewEA(): boolean;
+deregisterThisAsViewEA(): boolean;
+\`\`\`
+  - \`clearViewDirty()\` clears the target view's current dirty marker without saving it.
+  - \`registerThisAsViewEA()\` registers the EA instance as the hook server for its target view.
+  - \`deregisterThisAsViewEA()\` restores the default plugin-global EA hook server and is safe to use during view teardown.
 - Scripts can create native sticky notes, including automatically fitted labels:
 \`\`\`ts
 addStickyNote(topX: number, topY: number, text: string, formatting?: {width?: number; height?: number; fontSize?: number; fontFamily?: number; textAlign?: "left" | "center" | "right"; textVerticalAlign?: "top" | "middle" | "bottom";}, id?: string): string;
