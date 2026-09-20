@@ -1,6 +1,4 @@
 import {
-  Component,
-  MarkdownRenderer,
   Modal,
   Notice,
   normalizePath,
@@ -23,18 +21,14 @@ import { sanitizedFragment, setSanitizedHtml } from "../../utils/htmlUtils";
 import {
   getInstalledScriptFiles,
   getInstalledScriptGroups,
-  getScriptInstallState,
+  getScriptInstallStates,
   installScript,
   moveInstalledScriptToGroup,
   uninstallScript,
   type ScriptLibraryPluginContext,
 } from "../../utils/scriptLibraryUtils";
 import { errorlog } from "../../utils/utils";
-import { log } from "../../utils/debugHelper";
-import { ContentSearcher } from "../components/ContentSearcher";
 
-const LEGACY_URL =
-  URLs.RAW_GITHUBUSERCONTENT_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_MASTER_EA_SCRIPTS_INDEX_NEW_MD;
 const CATALOG_URL =
   URLs.RAW_GITHUBUSERCONTENT_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_MASTER_EA_SCRIPTS_SCRIPT_STORE_JSON;
 const FEATURED_CATEGORY = "Editors Picks";
@@ -101,29 +95,11 @@ const getScriptIconUrl = (entry: ScriptStoreEntry): string =>
 const getScriptSourceUrl = (entry: ScriptStoreEntry): string =>
   getPluginRepositoryBlobUrl(`ea-scripts/${entry.file}`);
 
-const rewriteLegacyInstallUrls = (source: string): string =>
-  source.replace(
-    /(```excalidraw-script-install\s*\r?\n)([^\r\n]+)(\r?\n```)/g,
-    (match, opening: string, installUrl: string, closing: string) => {
-      try {
-        const filename = decodeURIComponent(
-          new URL(installUrl.trim()).pathname.split("/").pop() ?? "",
-        );
-        if (!/\.(?:md|js)$/i.test(filename)) {
-          return match;
-        }
-        return `${opening}${getPluginRepositoryRawUrl(`ea-scripts/${filename}`)}${closing}`;
-      } catch {
-        return match;
-      }
-    },
-  );
-
 export class ScriptInstallPrompt extends Modal {
   private contentDiv: HTMLDivElement;
-  private renderComponent: Component;
   private catalog: ScriptStoreCatalog | null = null;
   private installStates = new Map<string, ScriptStoreInstallState>();
+  private descriptionText = new Map<string, string>();
   private selectedCategory = "";
   private searchQuery = "";
   private storeView: StoreView = "all";
@@ -134,8 +110,6 @@ export class ScriptInstallPrompt extends Modal {
 
   onOpen(): void {
     this.titleEl.setText(t("SCRIPT_STORE_TITLE"));
-    this.renderComponent = new Component();
-    this.renderComponent.load();
     this.contentEl.classList.add(
       "excalidraw-scriptengine-install",
       "excalidraw-script-store",
@@ -171,7 +145,8 @@ export class ScriptInstallPrompt extends Modal {
       this.renderStore();
     } catch (error: unknown) {
       errorlog({ where: "ScriptInstallPrompt.loadStore", error });
-      await this.renderLegacyStore();
+      new Notice(t("SCRIPT_INSTALL_PROMPT_OPEN_ERROR"));
+      this.close();
     }
   }
 
@@ -179,15 +154,16 @@ export class ScriptInstallPrompt extends Modal {
     if (!this.catalog) {
       return;
     }
-    const stateEntries = await Promise.all(
-      this.catalog.scripts.map(async (entry) =>
-        [
-          entry.name,
-          await getScriptInstallState(this.plugin, getScriptInstallUrl(entry)),
-        ] as const,
-      ),
+    const sources = this.catalog.scripts.map((entry) =>
+      getScriptInstallUrl(entry),
     );
-    this.installStates = new Map(stateEntries);
+    const states = await getScriptInstallStates(this.plugin, sources);
+    this.installStates = new Map(
+      this.catalog.scripts.map((entry, index) => [
+        entry.name,
+        states.get(sources[index]) ?? "error",
+      ]),
+    );
   }
 
   private renderStore(): void {
@@ -476,7 +452,7 @@ export class ScriptInstallPrompt extends Modal {
           entry.name,
           entry.author,
           entry.categories.join(" "),
-          sanitizedFragment(entry.descriptionHtml).textContent ?? "",
+          this.getDescription(entry),
         ]
           .join(" ")
           .toLowerCase();
@@ -594,9 +570,17 @@ export class ScriptInstallPrompt extends Modal {
   }
 
   private getDescription(entry: ScriptStoreEntry): string {
-    return (sanitizedFragment(entry.descriptionHtml).textContent ?? "")
+    const cached = this.descriptionText.get(entry.file);
+    if (cached !== undefined) {
+      return cached;
+    }
+    const description = (
+      sanitizedFragment(entry.descriptionHtml).textContent ?? ""
+    )
       .replace(/\s+/g, " ")
       .trim();
+    this.descriptionText.set(entry.file, description);
+    return description;
   }
 
   private getActionLabel(state: ScriptStoreInstallState): string {
@@ -904,8 +888,9 @@ export class ScriptInstallPrompt extends Modal {
     try {
       const source = getScriptInstallUrl(entry);
       await uninstallScript(this.plugin, source, localPath);
-      const state = await getScriptInstallState(this.plugin, source);
-      this.installStates.set(entry.name, state);
+      if (getInstalledScriptFiles(this.plugin, source).length === 0) {
+        this.installStates.set(entry.name, "install");
+      }
       new Notice(`${t("SCRIPT_STORE_UNINSTALLED")}: ${entry.name}`);
       this.renderDetail(entry);
     } catch (error: unknown) {
@@ -934,8 +919,6 @@ export class ScriptInstallPrompt extends Modal {
         targetGroup,
         localPath,
       );
-      const state = await getScriptInstallState(this.plugin, source);
-      this.installStates.set(entry.name, state);
       new Notice(`${t("SCRIPT_STORE_MOVED_TO_GROUP")}: ${entry.name}`);
       this.renderDetail(entry);
     } catch (error: unknown) {
@@ -949,41 +932,7 @@ export class ScriptInstallPrompt extends Modal {
     }
   }
 
-  private async renderLegacyStore(): Promise<void> {
-    try {
-      const source = await request({ url: LEGACY_URL });
-      if (!source) {
-        new Notice(t("SCRIPT_INSTALL_PROMPT_FETCH_ERROR"), 5000);
-        log(LEGACY_URL);
-        this.close();
-        return;
-      }
-      this.contentDiv.replaceChildren();
-      new ContentSearcher(this.contentDiv);
-      await MarkdownRenderer.render(
-        this.plugin.app,
-        rewriteLegacyInstallUrls(source),
-        this.contentDiv,
-        "",
-        this.renderComponent,
-      );
-      this.contentDiv
-        .querySelectorAll("h1[data-heading],h2[data-heading],h3[data-heading]")
-        .forEach((el) => {
-          el.setAttribute("id", el.getAttribute("data-heading") ?? "");
-        });
-      this.contentDiv.querySelectorAll("a.internal-link").forEach((el) => {
-        el.removeAttribute("target");
-      });
-    } catch (error: unknown) {
-      errorlog({ where: "ScriptInstallPrompt.renderLegacyStore", error });
-      new Notice(t("SCRIPT_INSTALL_PROMPT_OPEN_ERROR"));
-      this.close();
-    }
-  }
-
   onClose(): void {
     this.contentEl.replaceChildren();
-    this.renderComponent.unload();
   }
 }

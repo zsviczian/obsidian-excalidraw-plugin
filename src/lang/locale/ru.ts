@@ -38,13 +38,6 @@ export default {
   EMBEDDABLE_RELATIVE_ZOOM:
     "Масштабирование выбранных встраиваемых элементов до 100% относительно текущего масштаба холста",
   OPEN_IMAGE_SOURCE: "Открыть чертеж Excalidraw",
-  INSTALL_SCRIPT: "Установите скрипт",
-  UPDATE_SCRIPT: "Доступно обновление - нажмите для установки",
-  CHECKING_SCRIPT:
-    "Проверка на наличие новой версии - Нажмите для переустановки",
-  UNABLETOCHECK_SCRIPT:
-    "Проверка обновления не удалась - Нажмите, чтобы переустановить",
-  UPTODATE_SCRIPT: "Скрипт обновлен - Нажмите для переустановки",
   OPEN_AS_EXCALIDRAW: "Открыть как рисунок Excalidraw",
   TOGGLE_MODE: "Переключение между режимами Excalidraw и Markdown",
   CONVERT_NOTE_TO_EXCALIDRAW:

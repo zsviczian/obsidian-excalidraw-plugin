@@ -45,11 +45,6 @@ export default {
   EMBEDDABLE_RELATIVE_ZOOM:
     "Scale selected embeddable elements to 100% relative to the current canvas zoom",
   OPEN_IMAGE_SOURCE: "Open Excalidraw drawing",
-  INSTALL_SCRIPT: "Install the script",
-  UPDATE_SCRIPT: "Update available - Click to install",
-  CHECKING_SCRIPT: "Checking for newer version - Click to reinstall",
-  UNABLETOCHECK_SCRIPT: "Update check failed - Click to reinstall",
-  UPTODATE_SCRIPT: "Script is up to date - Click to reinstall",
   OPEN_AS_EXCALIDRAW: "Open as Excalidraw Drawing",
   TOGGLE_MODE: "Toggle between Excalidraw and Markdown mode",
   DUPLICATE_IMAGE: "Duplicate selected image with a different image ID",

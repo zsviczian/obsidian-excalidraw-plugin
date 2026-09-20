@@ -44,12 +44,6 @@ export default {
   EMBEDDABLE_RELATIVE_ZOOM:
     "Escalar Elementos Incrustados seleccionados al 100% con respecto al zoom actual del lienzo",
   OPEN_IMAGE_SOURCE: "Abrir bosquejo de Excalidraw",
-  INSTALL_SCRIPT: "Instalar script",
-  UPDATE_SCRIPT: "Actualización disponible - Click aquí para instalar",
-  CHECKING_SCRIPT: "Buscando versión más reciente - Click aquí para reinstalar",
-  UNABLETOCHECK_SCRIPT:
-    "Fallo en la verificación de actualización - Click aquí para reinstalar",
-  UPTODATE_SCRIPT: "Script actualizado - Click aquí para reinstalar",
   OPEN_AS_EXCALIDRAW: "Abrir como bosquejo de Excalidraw",
   TOGGLE_MODE: "Alternar entre modo Excalidraw y Markdown",
   DUPLICATE_IMAGE: "Duplicar imagen seleccionada con un ID de imagen diferente",

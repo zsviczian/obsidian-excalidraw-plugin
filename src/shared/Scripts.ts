@@ -378,6 +378,23 @@ export class ScriptEngine {
     );
   }
 
+  /**
+   * Runs a coordinated script-file mutation without letting the vault event
+   * handlers trigger full registry reloads for each intermediate file change.
+   * The caller is responsible for refreshing the affected registry entries.
+   */
+  public async withScriptFileEventsSuspended<T>(
+    operation: () => Promise<T>,
+  ): Promise<T> {
+    const wasSuspended = this.scriptFileEventsSuspended;
+    this.scriptFileEventsSuspended = true;
+    try {
+      return await operation();
+    } finally {
+      this.scriptFileEventsSuspended = wasSuspended;
+    }
+  }
+
   updateScriptPath() {
     if (this.scriptPath === this.plugin.settings.scriptFolderPath) {
       return;
@@ -423,6 +440,47 @@ export class ScriptEngine {
     await this.loadScripts(generation);
     if (generation !== this.scriptRegistryGeneration) {
       return;
+    }
+    getExcalidrawViews(this.app, true).forEach((view) =>
+      view.updatePinnedScripts(),
+    );
+  }
+
+  /** Refreshes one script after an in-place write without reloading all scripts. */
+  public async refreshManagedScriptFile(file: TFile): Promise<void> {
+    this.invalidateCompiledScript(file.path);
+    if (!this.isInScriptFolder(file.path) || !this.isScriptPath(file.path)) {
+      return;
+    }
+    if (!this.loadedScriptPaths.has(file.path)) {
+      await this.loadScript(file);
+      return;
+    }
+    await this.addScriptIconToMap(
+      file.path,
+      this.getScriptName(file),
+      this.scriptRegistryGeneration,
+    );
+  }
+
+  /** Removes one deleted script from the live registry without a full reload. */
+  public async removeManagedScriptFile(
+    scriptPath: string,
+    scriptName: string,
+  ): Promise<void> {
+    this.invalidateCompiledScript(scriptPath);
+    this.clearAutostartAttachment(scriptPath);
+    if (
+      this.loadedScriptPaths.has(scriptPath) ||
+      Boolean(this.scriptIconMap?.[scriptPath])
+    ) {
+      this.unloadScript(scriptName, scriptPath);
+    }
+    const hasAutostartState =
+      scriptName in this.plugin.settings.autostartScripts ||
+      scriptName in this.plugin.settings.autostartScriptFailures;
+    if (hasAutostartState && !this.getScriptFileByName(scriptName)) {
+      await this.purgeAutostartPermission(scriptName);
     }
     getExcalidrawViews(this.app, true).forEach((view) =>
       view.updatePinnedScripts(),
@@ -589,14 +647,73 @@ export class ScriptEngine {
     destinationPath: string,
   ): Promise<void> {
     const sourcePath = file.path;
-    const startupScriptPath = resolveConfiguredStartupScriptPath(
-      this.plugin.settings.startupScriptPath,
+    if (sourcePath === destinationPath) {
+      return;
+    }
+    if (
+      this.app.vault.getFileByPath(destinationPath) ||
+      this.app.vault.getFolderByPath(destinationPath)
+    ) {
+      throw new Error(`Script destination already exists: ${destinationPath}`);
+    }
+
+    const sourceScriptName = this.getScriptName(sourcePath);
+    const wasLoaded = this.loadedScriptPaths.has(sourcePath);
+    const originalPinnedScripts = [...this.plugin.settings.pinnedScripts];
+    const originalStartupScriptPath = this.plugin.settings.startupScriptPath;
+    const resolvedStartupPath = resolveConfiguredStartupScriptPath(
+      originalStartupScriptPath,
     );
-    await this.migrateScriptFiles({
-      renames: [{ file, sourcePath, destinationPath }],
-      conflicts: [],
-      includesStartupScript: startupScriptPath === sourcePath,
+    const pinnedChanged = originalPinnedScripts.includes(sourcePath);
+    const startupChanged = resolvedStartupPath === sourcePath;
+    let renamed = false;
+
+    await this.withScriptFileEventsSuspended(async () => {
+      try {
+        await this.app.fileManager.renameFile(file, destinationPath);
+        renamed = true;
+
+        if (pinnedChanged) {
+          this.plugin.settings.pinnedScripts = originalPinnedScripts.map((path) =>
+            path === sourcePath ? destinationPath : path,
+          );
+        }
+        if (startupChanged) {
+          this.plugin.settings.startupScriptPath = destinationPath;
+        }
+        if (pinnedChanged || startupChanged) {
+          await this.plugin.saveSettings();
+        }
+      } catch (error: unknown) {
+        this.plugin.settings.pinnedScripts = originalPinnedScripts;
+        this.plugin.settings.startupScriptPath = originalStartupScriptPath;
+        if (renamed) {
+          try {
+            await this.app.fileManager.renameFile(file, sourcePath);
+          } catch (rollbackError: unknown) {
+            errorlog({
+              where: "ScriptEngine.renameManagedScriptFile.rollback",
+              sourcePath: destinationPath,
+              error: rollbackError,
+            });
+          }
+        }
+        throw error;
+      }
     });
+
+    this.invalidateCompiledScript(sourcePath);
+    this.invalidateCompiledScript(file.path);
+    this.clearAutostartAttachment(sourcePath);
+    if (wasLoaded) {
+      this.unloadScript(sourceScriptName, sourcePath);
+    }
+    if (this.isInScriptFolder(file.path) && this.isScriptPath(file.path)) {
+      await this.loadScript(file);
+    }
+    getExcalidrawViews(this.app, true).forEach((view) =>
+      view.updatePinnedScripts(),
+    );
   }
 
   public getScriptName(f: TFile | string): string {

@@ -20,7 +20,6 @@ import {
   getScriptFileStem,
   isScriptFilePath,
 } from "./scriptFileUtils";
-import { hideElement, setButtonBgColor, showElement } from "./styleUtils";
 
 type ScriptLibrarySettings = {
   scriptFolderPath: string;
@@ -29,10 +28,10 @@ type ScriptLibrarySettings = {
 };
 
 type ScriptLibraryScriptEngine = {
-  scriptIconMap: Record<string, unknown> | null;
   getScriptName(file: TFile | string): string;
-  loadScripts(generation?: number): Promise<void>;
-  reloadScripts(): Promise<void>;
+  withScriptFileEventsSuspended<T>(operation: () => Promise<T>): Promise<T>;
+  refreshManagedScriptFile(file: TFile): Promise<void>;
+  removeManagedScriptFile(scriptPath: string, scriptName: string): Promise<void>;
   renameManagedScriptFile(file: TFile, destinationPath: string): Promise<void>;
 };
 
@@ -76,14 +75,6 @@ const decodeRemoteFilename = (source: string): string => {
   }
 };
 
-const isInDownloadedScriptsFolder = (
-  plugin: ScriptLibraryPluginContext,
-  file: TFile,
-): boolean => {
-  const root = getDownloadedScriptsFolder(plugin);
-  return Boolean(root) && file.path.startsWith(`${root}/`);
-};
-
 const sortManagedCopies = (
   plugin: ScriptLibraryPluginContext,
   files: TFile[],
@@ -98,22 +89,47 @@ const sortManagedCopies = (
   });
 };
 
+const getManagedScriptFilesByStem = (
+  plugin: ScriptLibraryPluginContext,
+): Map<string, TFile[]> => {
+  const root = plugin.app.vault.getFolderByPath(
+    getDownloadedScriptsFolder(plugin),
+  );
+  if (!root) {
+    return new Map();
+  }
+
+  const managedFiles: TFile[] = [];
+  const visit = (folder: TFolder): void => {
+    folder.children.forEach((child) => {
+      if (child instanceof TFolder) {
+        visit(child);
+      } else if (child instanceof TFile && isScriptFilePath(child.path)) {
+        managedFiles.push(child);
+      }
+    });
+  };
+  visit(root);
+
+  const filesByStem = new Map<string, TFile[]>();
+  getPreferredScriptFiles(managedFiles).forEach((file) => {
+    const stem = getScriptFileStem(file.name);
+    const files = filesByStem.get(stem) ?? [];
+    files.push(file);
+    filesByStem.set(stem, files);
+  });
+  filesByStem.forEach((files, stem) => {
+    filesByStem.set(stem, sortManagedCopies(plugin, files));
+  });
+  return filesByStem;
+};
+
 const getLocalScriptFiles = (
   plugin: ScriptLibraryPluginContext,
   remoteFilename: string,
 ): TFile[] => {
   const stem = getScriptFileStem(remoteFilename);
-  const matches = getPreferredScriptFiles(
-    plugin.app.vault
-      .getFiles()
-      .filter(
-        (file) =>
-          isInDownloadedScriptsFolder(plugin, file) &&
-          isScriptFilePath(file.path) &&
-          getScriptFileStem(file.name) === stem,
-      ),
-  );
-  return sortManagedCopies(plugin, matches);
+  return getManagedScriptFilesByStem(plugin).get(stem) ?? [];
 };
 
 const getLocalScriptFile = (
@@ -245,20 +261,24 @@ export const moveInstalledScriptToGroup = async (
 
   let iconMoved = false;
   try {
-    if (iconFile) {
-      await plugin.app.fileManager.renameFile(iconFile, destinationIconPath);
-      iconMoved = true;
-    }
-    await plugin.scriptEngine.renameManagedScriptFile(
-      scriptFile,
-      destinationPath,
-    );
+    await plugin.scriptEngine.withScriptFileEventsSuspended(async () => {
+      if (iconFile) {
+        await plugin.app.fileManager.renameFile(iconFile, destinationIconPath);
+        iconMoved = true;
+      }
+      await plugin.scriptEngine.renameManagedScriptFile(
+        scriptFile,
+        destinationPath,
+      );
+    });
   } catch (error: unknown) {
     if (iconMoved) {
       const movedIcon = plugin.app.vault.getFileByPath(destinationIconPath);
       if (movedIcon) {
         try {
-          await plugin.app.fileManager.renameFile(movedIcon, sourceIconPath);
+          await plugin.scriptEngine.withScriptFileEventsSuspended(async () => {
+            await plugin.app.fileManager.renameFile(movedIcon, sourceIconPath);
+          });
         } catch (rollbackError: unknown) {
           errorlog({
             where: "scriptLibraryUtils.moveInstalledScriptToGroup.rollback",
@@ -287,19 +307,23 @@ export const uninstallScript = async (
   const iconFile = plugin.app.vault.getFileByPath(
     getIMGFilename(scriptFile.path, "svg"),
   );
-  await plugin.app.fileManager.trashFile(scriptFile);
-  if (iconFile) {
-    try {
-      await plugin.app.fileManager.trashFile(iconFile);
-    } catch (error: unknown) {
-      errorlog({
-        where: "scriptLibraryUtils.uninstallScript.icon",
-        source: iconFile.path,
-        error,
-      });
+  const scriptPath = scriptFile.path;
+  const scriptName = plugin.scriptEngine.getScriptName(scriptFile);
+  await plugin.scriptEngine.withScriptFileEventsSuspended(async () => {
+    await plugin.app.fileManager.trashFile(scriptFile);
+    if (iconFile) {
+      try {
+        await plugin.app.fileManager.trashFile(iconFile);
+      } catch (error: unknown) {
+        errorlog({
+          where: "scriptLibraryUtils.uninstallScript.icon",
+          source: iconFile.path,
+          error,
+        });
+      }
     }
-  }
-  await plugin.scriptEngine.reloadScripts();
+  });
+  await plugin.scriptEngine.removeManagedScriptFile(scriptPath, scriptName);
 };
 
 const getDirectoryInfo = async (): Promise<Map<string, number> | null> => {
@@ -369,26 +393,53 @@ const getInstallStateFromDirectoryInfo = (
  * Resolves one community script's install/update state using the legacy mtime
  * contract. directory-info.json is the compatibility source of truth.
  */
+export const getScriptInstallStates = async (
+  plugin: ScriptLibraryPluginContext,
+  sources: readonly string[],
+): Promise<Map<string, ScriptStoreInstallState>> => {
+  const filesByStem = getManagedScriptFilesByStem(plugin);
+  const remoteFiles = sources.map((source) => ({
+    source,
+    remoteFilename: decodeRemoteFilename(source),
+  }));
+  const hasInstalledScripts = remoteFiles.some(({ remoteFilename }) =>
+    filesByStem.has(getScriptFileStem(remoteFilename)),
+  );
+  const states = new Map<string, ScriptStoreInstallState>();
+  if (!hasInstalledScripts) {
+    remoteFiles.forEach(({ source }) => states.set(source, "install"));
+    return states;
+  }
+
+  const files = await getDirectoryInfo();
+  remoteFiles.forEach(({ source, remoteFilename }) => {
+    const scriptFile =
+      filesByStem.get(getScriptFileStem(remoteFilename))?.[0] ?? null;
+    if (!scriptFile) {
+      states.set(source, "install");
+      return;
+    }
+    states.set(
+      source,
+      files
+        ? getInstallStateFromDirectoryInfo(
+            plugin,
+            scriptFile,
+            remoteFilename,
+            files,
+          )
+        : "error",
+    );
+  });
+  return states;
+};
+
+/** Resolves one community script's install/update state. */
 export const getScriptInstallState = async (
   plugin: ScriptLibraryPluginContext,
   source: string,
-): Promise<ScriptStoreInstallState> => {
-  const remoteFilename = decodeRemoteFilename(source);
-  const scriptFile = getLocalScriptFile(plugin, remoteFilename);
-  if (!scriptFile) {
-    return "install";
-  }
-  const files = await getDirectoryInfo();
-  if (!files) {
-    return "error";
-  }
-  return getInstallStateFromDirectoryInfo(
-    plugin,
-    scriptFile,
-    remoteFilename,
-    files,
-  );
-};
+): Promise<ScriptStoreInstallState> =>
+  (await getScriptInstallStates(plugin, [source])).get(source) ?? "error";
 
 const restartSidepanelTabIfActive = async (
   plugin: ScriptLibraryPluginContext,
@@ -438,47 +489,59 @@ export const installScript = async (
     getIMGFilename(scriptPath, "svg"),
   );
 
-  const download = async (
-    url: string,
-    file: TFile | null,
-    localPath: string,
-  ): Promise<TFile | null> => {
+  const fetchRemote = async (url: string): Promise<string | null> => {
     const data = await request({ url });
     if (!data || data.startsWith("404: Not Found")) {
       return null;
     }
-    return await createOrOverwriteFile(
-      plugin.app,
-      file?.path ?? localPath,
-      data,
-    );
+    return data;
   };
 
   try {
-    scriptPath = getLocalScriptPath();
-    if (scriptFile && scriptFile.path !== scriptPath) {
-      if (plugin.app.vault.getFileByPath(scriptPath)) {
-        scriptPath = scriptFile.path;
-      } else {
-        await plugin.scriptEngine.renameManagedScriptFile(scriptFile, scriptPath);
-      }
-    }
-
-    scriptFile = await download(source, scriptFile, scriptPath);
-    if (!scriptFile) {
+    const [scriptData, iconData] = await Promise.all([
+      fetchRemote(source),
+      fetchRemote(getIMGFilename(source, "svg")),
+    ]);
+    if (!scriptData) {
       throw new Error("Script file not found");
     }
 
-    const iconPath = getIMGFilename(scriptFile.path, "svg");
-    iconFile = await download(
-      getIMGFilename(source, "svg"),
-      plugin.app.vault.getFileByPath(iconPath),
-      iconPath,
-    );
+    await plugin.scriptEngine.withScriptFileEventsSuspended(async () => {
+      scriptPath = getLocalScriptPath();
+      if (scriptFile && scriptFile.path !== scriptPath) {
+        if (plugin.app.vault.getFileByPath(scriptPath)) {
+          scriptPath = scriptFile.path;
+        } else {
+          await plugin.scriptEngine.renameManagedScriptFile(
+            scriptFile,
+            scriptPath,
+          );
+        }
+      }
 
-    if (Object.keys(plugin.scriptEngine.scriptIconMap ?? {}).length === 0) {
-      await plugin.scriptEngine.loadScripts();
+      scriptFile = await createOrOverwriteFile(
+        plugin.app,
+        scriptFile?.path ?? scriptPath,
+        scriptData,
+      );
+
+      const iconPath = getIMGFilename(scriptFile.path, "svg");
+      if (iconData) {
+        const existingIcon = plugin.app.vault.getFileByPath(iconPath);
+        iconFile = await createOrOverwriteFile(
+          plugin.app,
+          existingIcon?.path ?? iconPath,
+          iconData,
+        );
+      } else {
+        iconFile = null;
+      }
+    });
+
+    if (!scriptFile) {
+      throw new Error("Script file was not created");
     }
+    await plugin.scriptEngine.refreshManagedScriptFile(scriptFile);
     await restartSidepanelTabIfActive(plugin, scriptFile);
     if (showNotice) {
       new Notice(`${t("SCRIPT_INSTALLED_NOTICE")}: ${scriptFile.basename}`);
@@ -509,16 +572,8 @@ export const getInstalledScriptUpdates = async (
     return [];
   }
 
-  const managedFiles = getPreferredScriptFiles(
-    plugin.app.vault
-      .getFiles()
-      .filter(
-        (file) =>
-          isInDownloadedScriptsFolder(plugin, file) &&
-          isScriptFilePath(file.path),
-      ),
-  );
-  if (managedFiles.length === 0) {
+  const copiesByStem = getManagedScriptFilesByStem(plugin);
+  if (copiesByStem.size === 0) {
     return [];
   }
 
@@ -527,17 +582,9 @@ export const getInstalledScriptUpdates = async (
     return [];
   }
 
-  const copiesByStem = new Map<string, TFile[]>();
-  managedFiles.forEach((file) => {
-    const stem = getScriptFileStem(file.name);
-    const copies = copiesByStem.get(stem) ?? [];
-    copies.push(file);
-    copiesByStem.set(stem, copies);
-  });
-
   const updates: string[] = [];
   copiesByStem.forEach((copies, stem) => {
-    const scriptFile = sortManagedCopies(plugin, copies)[0];
+    const scriptFile = copies[0];
     if (!scriptFile) {
       return;
     }
@@ -562,80 +609,4 @@ export const getInstalledScriptUpdates = async (
   });
 
   return updates.sort((a, b) => a.localeCompare(b));
-};
-
-export const installButton = async (
-  plugin: ScriptLibraryPluginContext,
-  button: HTMLButtonElement,
-  button2: HTMLButtonElement | null,
-  source: string,
-): Promise<void> => {
-  const setButtonText = (
-    text: "CHECKING" | "INSTALL" | "UPTODATE" | "UPDATE" | "ERROR",
-  ) => {
-    if (button2) {
-      hideElement(button2);
-    }
-    switch (text) {
-      case "CHECKING":
-        button.setText(t("CHECKING_SCRIPT"));
-        setButtonBgColor(button, "normal");
-        break;
-      case "INSTALL":
-        button.setText(t("INSTALL_SCRIPT"));
-        setButtonBgColor(button, "accent");
-        break;
-      case "UPTODATE":
-        button.setText(t("UPTODATE_SCRIPT"));
-        setButtonBgColor(button, "normal");
-        break;
-      case "UPDATE":
-        button.setText(t("UPDATE_SCRIPT"));
-        setButtonBgColor(button, "success");
-        if (button2) {
-          showElement(button2);
-        }
-        break;
-      case "ERROR":
-        button.setText(t("UNABLETOCHECK_SCRIPT"));
-        setButtonBgColor(button, "normal");
-        break;
-    }
-  };
-
-  button.addClass("mod-muted");
-  setButtonText(
-    getLocalScriptFile(plugin, decodeRemoteFilename(source))
-      ? "CHECKING"
-      : "INSTALL",
-  );
-
-  button.onclick = async () => {
-    setButtonText("CHECKING");
-    try {
-      await installScript(plugin, source);
-      setButtonText("UPTODATE");
-    } catch {
-      setButtonText("ERROR");
-    }
-  };
-  if (button2) {
-    button2.onclick = button.onclick;
-  }
-
-  const state = await getScriptInstallState(plugin, source);
-  switch (state) {
-    case "install":
-      setButtonText("INSTALL");
-      break;
-    case "update":
-      setButtonText("UPDATE");
-      break;
-    case "up-to-date":
-      setButtonText("UPTODATE");
-      break;
-    case "error":
-      setButtonText("ERROR");
-      break;
-  }
 };

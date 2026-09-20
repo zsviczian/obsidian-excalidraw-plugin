@@ -329,11 +329,6 @@ export const URL_REGISTRY = {
     "https://community.sketch-your-mind.com/vtw",
     UrlPurpose.SUPPORT,
   ),
-  RAW_GITHUBUSERCONTENT_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_MASTER_EA_SCRIPTS_INDEX_NEW_MD:
-    defineUrl(
-      getPluginRepositoryRawUrl("ea-scripts/index-new.md"),
-      UrlPurpose.APP_LOGIC,
-    ),
   WWW_W3SCHOOLS_COM_COLORS_DEFAULT_ASP: defineUrl(
     "https://www.w3schools.com/colors/default.asp",
     UrlPurpose.DOCS,

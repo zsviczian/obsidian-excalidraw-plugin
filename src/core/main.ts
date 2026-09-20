@@ -25,7 +25,6 @@ import {
   FRONTMATTER_KEYS,
   FRONTMATTER,
   JSON_parse,
-  SCRIPT_INSTALL_CODEBLOCK,
   EXPORT_TYPES,
   EXPORT_IMG_ICON_NAME,
   EXPORT_IMG_ICON,
@@ -104,8 +103,6 @@ import { getHighlightColor } from "src/utils/dynamicStyling";
 import { InlineLinkSuggester } from "src/shared/Suggesters/InlineLinkSuggester";
 import { KeyBlocker } from "src/types/excalidrawAutomateTypes";
 import { UIMode } from "src/shared/Dialogs/UIModeSettingComponent";
-import { hideElement, setButtonBgColor } from "src/utils/styleUtils";
-import { installButton } from "src/utils/scriptLibraryUtils";
 import { insertLaTeXToView } from "src/utils/excalidrawViewHelpers";
 import type { MarkdownImageData } from "src/types/markdownImageTypes";
 import { StencilLibraryManager } from "./managers/StencilLibraryManager";
@@ -618,14 +615,6 @@ export default class ExcalidrawPlugin extends Plugin {
     }
     this.logStartupEvent("Editor handler initialized");
 
-    try {
-      this.registerInstallCodeblockProcessor();
-    } catch (e) {
-      new Notice("Error registering script install-codeblock processor", 6000);
-      console.error("Error registering script install-codeblock processor", e);
-    }
-    this.logStartupEvent("Script install-codeblock processor registered");
-
     this.commandManager.initialize();
 
     try {
@@ -730,48 +719,6 @@ export default class ExcalidrawPlugin extends Plugin {
       return true;
     }
     return false;
-  }
-
-  private registerInstallCodeblockProcessor() {
-    const codeblockProcessor = async (source: string, el: HTMLElement) => {
-      // The mirrored update button is only available in the Script Library
-      // index layout. Other render contexts do not have the adjacent heading.
-      let button2: HTMLButtonElement = null;
-      const heading = el.previousElementSibling?.getAttribute("data-heading");
-      const link = heading
-        ? Array.from(el.parentElement?.querySelectorAll("a") ?? []).find(
-            (anchor) => anchor.getAttribute("href") === `#${heading}`,
-          )
-        : null;
-      if (link?.parentElement) {
-        link.addClass("excalidraw-installCodeBlock-link");
-        button2 = link.parentElement.createEl("button", null, (b) => {
-          b.setText(t("UPDATE_SCRIPT"));
-          b.addClass("mod-muted");
-          setButtonBgColor(b, "success");
-          hideElement(b);
-        });
-      }
-
-      source = source.trim();
-      el.createEl("button", null, (button) => {
-        void installButton(this, button, button2, source);
-      });
-    };
-
-    this.registerMarkdownCodeBlockProcessor(
-      SCRIPT_INSTALL_CODEBLOCK,
-      async (source, el) => {
-        el.addEventListener(RERENDER_EVENT, (e) => {
-          void (async () => {
-            e.stopPropagation();
-            el.empty();
-            await codeblockProcessor(source, el);
-          })();
-        });
-        await codeblockProcessor(source, el);
-      },
-    );
   }
 
   /**
