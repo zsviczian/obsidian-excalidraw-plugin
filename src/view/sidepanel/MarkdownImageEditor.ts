@@ -115,6 +115,12 @@ const getNativeColorValue = (color: string): string => {
     : "#000000";
 };
 
+const replaceEmbeddedBase64DataWithPlaceholders = (svg: string): string =>
+  svg.replace(
+    /(data:[^,)"'\s<>]*;base64,)[a-z\d+/]+={0,2}/gi,
+    "$1...",
+  );
+
 class MarkdownFragmentView extends MarkdownView {
   private saveFragment: (markdown: string) => Promise<void>;
   private closing = false;
@@ -762,7 +768,10 @@ class MarkdownImageEditorController {
         new Notice(t("MARKDOWN_IMAGE_SVG_COPY_ERROR"));
         return;
       }
-      await clipboard.writeText(new TextDecoder().decode(data));
+      const svg = new TextDecoder().decode(data);
+      await clipboard.writeText(
+        replaceEmbeddedBase64DataWithPlaceholders(svg),
+      );
       new Notice(t("MARKDOWN_IMAGE_SVG_COPIED"));
     } catch (error: unknown) {
       errorlog({
