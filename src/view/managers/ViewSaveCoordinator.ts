@@ -4,6 +4,20 @@ import type { AppState } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { t } from "../../lang/helpers";
 import { errorlog } from "../../utils/coreUtils";
 import type ExcalidrawView from "../ExcalidrawView";
+import {
+  classifyObservedSaveContent,
+  type AcceptedContentIdentity,
+  isSameSaveOperation,
+  type ObservedContentClassification,
+  type ObservedWriteAttempt,
+} from "./saveContentClassification";
+import {
+  createPreparedSaveIdentity,
+  getAcknowledgedSaveRevision,
+  type PreparedSave,
+  type PreparedSaveIdentity,
+  type SaveOperationContext,
+} from "./saveSnapshot";
 
 /** Side effects selected for one save request. */
 export interface SaveSideEffectPolicy {
@@ -15,7 +29,7 @@ export type SaveExecutionStatus =
   | "persisted"
   | "window-migration-handed-off"
   | "window-migration-persisted"
-  | "view-unload-scheduled"
+  | "persistence-handed-off"
   | "unchanged"
   | "skipped"
   | "failed";
@@ -23,6 +37,7 @@ export type SaveExecutionStatus =
 /** Result used by the coordinator to advance the saved revision safely. */
 export interface SaveExecutionResult {
   status: SaveExecutionStatus;
+  preparedSave?: PreparedSave;
 }
 
 /** Clean durability baseline transferred with a migrated drawing. */
@@ -56,28 +71,32 @@ export const WINDOW_BLUR_FORCE_SAVE_POLICY: Readonly<ForceSavePolicy> = {
  * mechanical coordinator extraction. */
 export interface ViewSaveCoordinatorDependencies {
   performSave: (
-    preventReload: boolean,
-    forcesave: boolean,
-    overrideEmbeddableIsEditingSelfDebounce: boolean,
+    operation: SaveOperationContext,
+    suppressReloadFromOwnWrite: boolean,
+    forcePersistence: boolean,
+    bypassSameFileEditGuard: boolean,
     sideEffectPolicy: Readonly<SaveSideEffectPolicy>,
   ) => Promise<SaveExecutionResult>;
   requestSave: (
-    preventReload?: boolean,
-    forcesave?: boolean,
-    overrideEmbeddableIsEditingSelfDebounce?: boolean,
+    suppressReloadFromOwnWrite?: boolean,
+    forcePersistence?: boolean,
+    bypassSameFileEditGuard?: boolean,
   ) => Promise<void>;
+  isSynchronizing: () => boolean;
+  yieldToPendingExternalSynchronization: () => Promise<void>;
   isDirty: () => boolean;
   checkSceneVersion: () => void;
   refreshCanvasOffset: () => void;
   getFreedrawLastActiveTimestamp: () => number;
   markDirtyVisuals: () => void;
   clearDirtyVisuals: () => void;
+  beginAutoexportSaveActivity: () => () => void;
 }
 
 interface SaveRequest {
-  preventReload: boolean;
-  forcesave: boolean;
-  overrideEmbeddableIsEditingSelfDebounce: boolean;
+  suppressReloadFromOwnWrite: boolean;
+  forcePersistence: boolean;
+  bypassSameFileEditGuard: boolean;
   sideEffectPolicy: Readonly<SaveSideEffectPolicy>;
   revision: number;
 }
@@ -96,25 +115,78 @@ export class ViewSaveCoordinator {
   public autosaveFunction: (() => void) | null = null;
   private currentRevision = 0;
   private savedRevision = 0;
+  private saveInProgress = false;
+  private autosaveInProgress = false;
+  private forceSaveInProgress = false;
+  private dirtyFilePath: string | null = null;
   private activeSaveRevision: number | null = null;
   private pendingSaveRequest: SaveRequest | null = null;
   private saveLoopPromise: Promise<SaveExecutionResult> | null = null;
+  private nextSaveOperationId = 1;
+  private targetGeneration = 0;
+  private lastSuccessfulPreparedSave: PreparedSaveIdentity | null = null;
+  private latestObservedWriteAttempt: ObservedWriteAttempt | null = null;
+  private acceptedContentIdentity: AcceptedContentIdentity | null = null;
 
   public constructor(
     private readonly view: ExcalidrawView,
     private readonly dependencies: ViewSaveCoordinatorDependencies,
   ) {}
 
+  /** Whether the coordinator-owned persistence exclusion flag is active. */
+  public get isSaveInProgress(): boolean {
+    return this.saveInProgress;
+  }
+
+  /** Whether persistence must wait for save, synchronization, or autosave work. */
+  public get isBusy(): boolean {
+    return (
+      this.isSaveOrSynchronizationInProgress ||
+      this.autosaveInProgress
+    );
+  }
+
+  private get isSaveOrSynchronizationInProgress(): boolean {
+    return this.isSaveInProgress || this.dependencies.isSynchronizing();
+  }
+
+  /** Runs one queued request while exclusively owning persistence state. */
+  private async performQueuedSave(
+    request: SaveRequest,
+  ): Promise<SaveExecutionResult> {
+    if (this.isSaveOrSynchronizationInProgress) {
+      return { status: "skipped" };
+    }
+    const operation: SaveOperationContext = {
+      producerId: this.view.id,
+      targetGeneration: this.targetGeneration,
+      operationId: this.nextSaveOperationId++,
+      requestedRevision: request.revision,
+    };
+    this.saveInProgress = true;
+    try {
+      return await this.dependencies.performSave(
+        operation,
+        request.suppressReloadFromOwnWrite,
+        request.forcePersistence,
+        request.bypassSameFileEditGuard,
+        request.sideEffectPolicy,
+      );
+    } finally {
+      this.saveInProgress = false;
+    }
+  }
+
   /** Runs the historical public save policy. */
   public async save(
-    preventReload: boolean = true,
-    forcesave: boolean = false,
-    overrideEmbeddableIsEditingSelfDebounce: boolean = false,
+    suppressReloadFromOwnWrite: boolean = true,
+    forcePersistence: boolean = false,
+    bypassSameFileEditGuard: boolean = false,
   ): Promise<void> {
     await this.enqueueSave({
-      preventReload,
-      forcesave,
-      overrideEmbeddableIsEditingSelfDebounce,
+      suppressReloadFromOwnWrite,
+      forcePersistence,
+      bypassSameFileEditGuard,
       sideEffectPolicy: DIRECT_SAVE_SIDE_EFFECT_POLICY,
       revision: this.currentRevision,
     });
@@ -134,11 +206,14 @@ export class ViewSaveCoordinator {
       return this.saveLoopPromise;
     }
 
+    const endAutoexportSaveActivity =
+      this.dependencies.beginAutoexportSaveActivity();
     const loop = Promise.resolve().then(() => this.drainSaveQueue());
     const trackedLoop = loop.finally(() => {
       if (this.saveLoopPromise === trackedLoop) {
         this.saveLoopPromise = null;
       }
+      endAutoexportSaveActivity();
     });
     this.saveLoopPromise = trackedLoop;
     return trackedLoop;
@@ -149,13 +224,14 @@ export class ViewSaveCoordinator {
     incoming: SaveRequest,
   ): SaveRequest {
     const selected =
-      current.forcesave && !incoming.forcesave ? current : incoming;
+      current.forcePersistence && !incoming.forcePersistence
+        ? current
+        : incoming;
     return {
       ...selected,
-      forcesave: current.forcesave || incoming.forcesave,
-      overrideEmbeddableIsEditingSelfDebounce:
-        current.overrideEmbeddableIsEditingSelfDebounce ||
-        incoming.overrideEmbeddableIsEditingSelfDebounce,
+      forcePersistence: current.forcePersistence || incoming.forcePersistence,
+      bypassSameFileEditGuard:
+        current.bypassSameFileEditGuard || incoming.bypassSameFileEditGuard,
       sideEffectPolicy: {
         triggerAutoexport:
           current.sideEffectPolicy.triggerAutoexport ||
@@ -173,25 +249,24 @@ export class ViewSaveCoordinator {
       this.pendingSaveRequest = null;
       if (
         completedRequest &&
-        !request.forcesave &&
+        !request.forcePersistence &&
         request.revision <= this.savedRevision
       ) {
         continue;
       }
       this.activeSaveRevision = request.revision;
       try {
-        const result = await this.dependencies.performSave(
-          request.preventReload,
-          request.forcesave,
-          request.overrideEmbeddableIsEditingSelfDebounce,
-          request.sideEffectPolicy,
-        );
+        const result = await this.performQueuedSave(request);
         this.completeSaveRevision(request, result);
         latestResult = result;
       } finally {
         this.activeSaveRevision = null;
       }
       completedRequest = true;
+      // A trailing save may already be queued for a newer local revision.
+      // Let one pending latest-state Vault synchronization reconcile first;
+      // the resulting dirty revision then folds into that trailing save.
+      await this.dependencies.yieldToPendingExternalSynchronization();
     }
     return latestResult;
   }
@@ -200,23 +275,37 @@ export class ViewSaveCoordinator {
     request: SaveRequest,
     result: SaveExecutionResult,
   ): void {
+    this.completeObservedWriteAttempt(result);
     if (
       result.status === "persisted" ||
       result.status === "window-migration-handed-off" ||
       result.status === "window-migration-persisted" ||
-      result.status === "view-unload-scheduled" ||
+      result.status === "persistence-handed-off" ||
       result.status === "unchanged"
     ) {
-      this.savedRevision = Math.max(this.savedRevision, request.revision);
+      const acknowledgedRevision = getAcknowledgedSaveRevision(
+        request.revision,
+        result.preparedSave,
+      );
+      this.savedRevision = Math.max(this.savedRevision, acknowledgedRevision);
+      if (
+        result.preparedSave &&
+        (result.status === "persisted" ||
+          result.status === "window-migration-persisted")
+      ) {
+        this.lastSuccessfulPreparedSave = createPreparedSaveIdentity(
+          result.preparedSave,
+        );
+      }
       this.reconcileDirtyState();
     }
   }
 
   private queueTrailingSave(): void {
     const request: SaveRequest = {
-      preventReload: true,
-      forcesave: false,
-      overrideEmbeddableIsEditingSelfDebounce: false,
+      suppressReloadFromOwnWrite: true,
+      forcePersistence: false,
+      bypassSameFileEditGuard: false,
       sideEffectPolicy: DIRECT_SAVE_SIDE_EFFECT_POLICY,
       revision: this.currentRevision,
     };
@@ -227,14 +316,14 @@ export class ViewSaveCoordinator {
 
   private reconcileDirtyState(): void {
     if (this.currentRevision > this.savedRevision) {
-      this.view.semaphores.dirty = this.view.file?.path;
+      this.dirtyFilePath = this.view.file?.path;
       this.dependencies.markDirtyVisuals();
       return;
     }
     if (this.view.semaphores.viewunload || !this.view.excalidrawAPI) {
       return;
     }
-    this.view.semaphores.dirty = null;
+    this.dirtyFilePath = null;
     this.dependencies.clearDirtyVisuals();
   }
 
@@ -259,32 +348,25 @@ export class ViewSaveCoordinator {
     if (waitIfBusy) {
       let counter = 0;
       while (
-        (this.view.semaphores.autosaving ||
-          this.view.semaphores.saving ||
-          this.saveLoopPromise !== null) &&
+        (this.isBusy || this.saveLoopPromise !== null) &&
         counter++ < 100
       ) {
         await sleep(50);
       }
     }
-    if (
-      this.view.semaphores.autosaving ||
-      this.view.semaphores.saving ||
-      this.saveLoopPromise !== null
-    ) {
+    if (this.isBusy || this.saveLoopPromise !== null) {
       if (!silent) {
         new Notice(t("FORCE_SAVE_ABORTED"));
       }
       return;
     }
-    this.view.clearPreventReloadTimer();
-    this.view.semaphores.preventReload = false;
-    this.view.semaphores.forceSaving = true;
+    this.view.clearOwnWriteReloadSuppression();
+    this.forceSaveInProgress = true;
     try {
       const result = await this.enqueueSave({
-        preventReload: false,
-        forcesave: true,
-        overrideEmbeddableIsEditingSelfDebounce: true,
+        suppressReloadFromOwnWrite: false,
+        forcePersistence: true,
+        bypassSameFileEditGuard: true,
         sideEffectPolicy: {
           triggerAutoexport: policy.triggerAutoexport,
         },
@@ -312,7 +394,7 @@ export class ViewSaveCoordinator {
       });
       new Notice(t("WARNING_SERIOUS_ERROR"), 60000);
     } finally {
-      this.view.semaphores.forceSaving = false;
+      this.forceSaveInProgress = false;
     }
   }
 
@@ -325,7 +407,10 @@ export class ViewSaveCoordinator {
     }
     this.dependencies.checkSceneVersion();
     if (!this.dependencies.isDirty()) {
-      if (!this.view.semaphores.saving && this.saveLoopPromise === null) {
+      if (
+        !this.isSaveOrSynchronizationInProgress &&
+        this.saveLoopPromise === null
+      ) {
         return false;
       }
       // Preserve the existing Excalibrain unload compatibility check.
@@ -341,7 +426,7 @@ export class ViewSaveCoordinator {
       dirty = true;
       await this.saveLoopPromise;
     } else {
-      while (this.view.semaphores.saving && watchdog++ < 200) {
+      while (this.isSaveOrSynchronizationInProgress && watchdog++ < 200) {
         dirty = true;
         await sleep(40);
       }
@@ -370,9 +455,9 @@ export class ViewSaveCoordinator {
       return;
     }
     await this.enqueueSave({
-      preventReload: true,
-      forcesave: true,
-      overrideEmbeddableIsEditingSelfDebounce: true,
+      suppressReloadFromOwnWrite: true,
+      forcePersistence: true,
+      bypassSameFileEditGuard: true,
       sideEffectPolicy: DIRECT_SAVE_SIDE_EFFECT_POLICY,
       revision: this.currentRevision,
     });
@@ -406,20 +491,20 @@ export class ViewSaveCoordinator {
         if (
           this.dependencies.isDirty() &&
           this.view.plugin.autosaveEnabled &&
-          !this.view.semaphores.forceSaving &&
-          !this.view.semaphores.autosaving &&
-          !this.view.semaphores.embeddableIsEditingSelf &&
+          !this.forceSaveInProgress &&
+          !this.autosaveInProgress &&
+          !this.view.isSameFileEditingActive() &&
           !isFreedrawActive &&
           !isEditingText &&
           !isEditingNewElement
         ) {
           this.autosaveTimer = null;
           if (this.view.excalidrawAPI) {
-            this.view.semaphores.autosaving = true;
+            this.autosaveInProgress = true;
             // Preserve the non-blocking save used to avoid lag on large files.
             void this.dependencies
               .requestSave()
-              .then(() => (this.view.semaphores.autosaving = false));
+              .then(() => (this.autosaveInProgress = false));
           }
           this.autosaveTimer = window.setTimeout(
             timer,
@@ -429,7 +514,7 @@ export class ViewSaveCoordinator {
           this.autosaveTimer = window.setTimeout(
             timer,
             this.view.plugin.activeExcalidrawView === this.view &&
-              this.view.semaphores.dirty &&
+              this.dirtyFilePath &&
               this.view.plugin.autosaveEnabled
               ? 1000
               : this.view.autosaveInterval,
@@ -468,14 +553,11 @@ export class ViewSaveCoordinator {
 
   /** Advances the edit revision and queues one trailing save when necessary. */
   public setDirty(): void {
-    if (this.view.semaphores.saving && this.activeSaveRevision === null) {
-      return;
-    }
     if (!this.dependencies.isDirty()) {
       this.resetAutosaveTimer();
     }
     this.currentRevision += 1;
-    this.view.semaphores.dirty = this.view.file?.path;
+    this.dirtyFilePath = this.view.file?.path;
     this.dependencies.markDirtyVisuals();
     if (this.saveLoopPromise !== null) {
       this.queueTrailingSave();
@@ -486,9 +568,113 @@ export class ViewSaveCoordinator {
   public isDirty(): boolean {
     return (
       this.currentRevision > this.savedRevision &&
-      Boolean(this.view.semaphores?.dirty) &&
-      this.view.semaphores.dirty === this.view.file?.path
+      Boolean(this.dirtyFilePath) &&
+      this.dirtyFilePath === this.view.file?.path
     );
+  }
+
+  /** Revision sampled synchronously with a view-owned save capture. */
+  public getCurrentRevisionForSaveCapture(): number {
+    return this.currentRevision;
+  }
+
+  /**
+   * Starts a new save-target identity. Asynchronous load continuation validity
+   * is owned separately by the view's `ViewLoadGeneration`.
+   */
+  public beginSaveTarget(): void {
+    this.targetGeneration += 1;
+    this.lastSuccessfulPreparedSave = null;
+    this.latestObservedWriteAttempt = null;
+    this.acceptedContentIdentity = null;
+  }
+
+  /** Current file-load identity for persistence content classification. */
+  public getSaveTargetGeneration(): number {
+    return this.targetGeneration;
+  }
+
+  /** Records preparation without treating the payload as persisted. */
+  public observePreparedSave(preparedSave: PreparedSave): void {
+    if (!this.isPreparedSaveForCurrentTarget(preparedSave)) {
+      return;
+    }
+    this.latestObservedWriteAttempt = {
+      preparedSave: createPreparedSaveIdentity(preparedSave),
+      state: "prepared",
+    };
+  }
+
+  /** Records exact text successfully installed as an incoming baseline. */
+  public observeAcceptedContent(
+    filePath: string,
+    targetGeneration: number,
+    text: string,
+  ): void {
+    if (
+      this.view.file?.path !== filePath ||
+      this.targetGeneration !== targetGeneration
+    ) {
+      return;
+    }
+    this.acceptedContentIdentity = {
+      filePath,
+      targetGeneration,
+      text,
+    };
+  }
+
+  /** Classifies observed Vault content against this view's known baselines. */
+  public classifyContent(
+    filePath: string,
+    targetGeneration: number,
+    text: string,
+  ): ObservedContentClassification {
+    return classifyObservedSaveContent({
+      filePath,
+      targetGeneration,
+      observedText: text,
+      currentRevision: this.currentRevision,
+      savedRevision: this.savedRevision,
+      successfulWrite: this.lastSuccessfulPreparedSave,
+      latestAttempt: this.latestObservedWriteAttempt,
+      acceptedContent: this.acceptedContentIdentity,
+    });
+  }
+
+  private isPreparedSaveForCurrentTarget(preparedSave: PreparedSave): boolean {
+    return (
+      preparedSave.targetGeneration === this.targetGeneration &&
+      preparedSave.filePath === this.view.file?.path
+    );
+  }
+
+  private completeObservedWriteAttempt(result: SaveExecutionResult): void {
+    const preparedSave = result.preparedSave;
+    if (!preparedSave || !this.isPreparedSaveForCurrentTarget(preparedSave)) {
+      return;
+    }
+    const preparedSaveIdentity = createPreparedSaveIdentity(preparedSave);
+    if (
+      !this.latestObservedWriteAttempt ||
+      !isSameSaveOperation(
+        this.latestObservedWriteAttempt.preparedSave,
+        preparedSaveIdentity,
+      )
+    ) {
+      return;
+    }
+    const state: ObservedWriteAttempt["state"] =
+      result.status === "persisted" ||
+      result.status === "window-migration-persisted"
+        ? "successful"
+        : result.status === "failed"
+          ? "failed"
+          : "handed-off";
+    this.latestObservedWriteAttempt = {
+      preparedSave: preparedSaveIdentity,
+      state,
+    };
   }
 
   /** Clears the current file's dirty marker and updates its clean baseline. */
@@ -502,7 +688,7 @@ export class ViewSaveCoordinator {
     }
     this.currentRevision += 1;
     this.savedRevision = this.currentRevision;
-    this.view.semaphores.dirty = null;
+    this.dirtyFilePath = null;
     this.dependencies.clearDirtyVisuals();
   }
 
@@ -539,7 +725,7 @@ export class ViewSaveCoordinator {
     }
     this.currentRevision = state.currentRevision;
     this.savedRevision = state.savedRevision;
-    this.view.semaphores.dirty = null;
+    this.dirtyFilePath = null;
     this.dependencies.clearDirtyVisuals();
     return true;
   }

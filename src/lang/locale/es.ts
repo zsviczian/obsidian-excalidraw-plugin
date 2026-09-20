@@ -44,12 +44,6 @@ export default {
   EMBEDDABLE_RELATIVE_ZOOM:
     "Escalar Elementos Incrustados seleccionados al 100% con respecto al zoom actual del lienzo",
   OPEN_IMAGE_SOURCE: "Abrir bosquejo de Excalidraw",
-  INSTALL_SCRIPT: "Instalar script",
-  UPDATE_SCRIPT: "Actualización disponible - Click aquí para instalar",
-  CHECKING_SCRIPT: "Buscando versión más reciente - Click aquí para reinstalar",
-  UNABLETOCHECK_SCRIPT:
-    "Fallo en la verificación de actualización - Click aquí para reinstalar",
-  UPTODATE_SCRIPT: "Script actualizado - Click aquí para reinstalar",
   OPEN_AS_EXCALIDRAW: "Abrir como bosquejo de Excalidraw",
   TOGGLE_MODE: "Alternar entre modo Excalidraw y Markdown",
   DUPLICATE_IMAGE: "Duplicar imagen seleccionada con un ID de imagen diferente",
@@ -835,17 +829,14 @@ export default {
   ZOOM_AND_PAN_HEAD: "Zoom y panorámica",
   ZOOM_AND_PAN_DESC:
     "Configura el comportamiento del ratón, el tacto, la apertura, el cambio de tamaño y el intervalo de zoom.",
-  PAN_WITH_RIGHT_MOUSE_BUTTON_NAME:
-    "Desplazar el lienzo con el botón derecho del mouse (abrir menú con 'm')",
-  PAN_WITH_RIGHT_MOUSE_BUTTON_DESC:
-    "Cuando está habilitado, puedes desplazar el lienzo haciendo clic derecho y arrastrando. El menú contextual se abrirá con la tecla 'm', a menos que estés editando texto.",
   DEFAULT_PINCHZOOM_NAME: "Permitir zoom con pellizco en modo lápiz",
   DEFAULT_PINCHZOOM_DESC:
     "El zoom con pellizco en modo lápiz, al usar la herramienta de dibujo a mano alzada, está deshabilitado por defecto para evitar zooms accidentales no deseados con la palma de la mano.<br>" +
     "<b><u>Activado:</u></b> Habilita el zoom con pellizco en modo lápiz <br><b><u>Desactivado:</u></b>Deshabilita el zoom con pellizco en modo lápiz",
 
-  DEFAULT_WHEELZOOM_NAME: "Rueda del mouse para zoom por defecto",
-  DEFAULT_WHEELZOOM_DESC: `<b><u>Activado:</u></b> Rueda del mouse para zoom; ${labelCTRL()} + rueda del mouse para desplazarse</br><b><u>Desactivado:</u></b>${labelCTRL()} + rueda del mouse para zoom; Rueda del mouse para desplazarse`,
+  DEFAULT_WHEELZOOM_NAME: "Invertir la preferencia de zoom con la rueda",
+  DEFAULT_WHEELZOOM_DESC:
+    "Se aplica a todos los dibujos e invierte la preferencia de <b>Dispositivo de entrada</b> del dibujo (si la rueda del ratón hace zoom o desplaza). La preferencia del dibujo solo se aplica al dibujo actual y se puede guardar en una plantilla.",
 
   ZOOM_TO_FIT_NAME: "Zoom para ajustar al redimensionar la vista",
   ZOOM_TO_FIT_DESC:
@@ -1654,7 +1645,7 @@ export default {
 
   //Utils.ts
   UPDATE_AVAILABLE: `Hay una versión más nueva de Excalidraw disponible en los Complementos de la Comunidad.\n\nEstás usando la versión ${PLUGIN_VERSION}.\nLa última versión es `,
-  SCRIPT_UPDATES_AVAILABLE: `Hay actualizaciones de scripts disponibles; revisa la tienda de scripts.\n\n${DEVICE.isDesktop ? `Este mensaje está disponible en console.log (${DEVICE.isMacOS ? "CMD+OPT+i" : "CTRL+SHIFT+i"})\n\n` : ""}Si has organizado los scripts en subcarpetas dentro de la carpeta de la tienda de scripts y tienes varias copias del mismo script, es posible que necesites limpiar las versiones no utilizadas para borrar esta alerta. Para copias privadas de scripts que no deben actualizarse, guárdalas fuera de la carpeta de la tienda de scripts.`,
+  SCRIPT_UPDATES_AVAILABLE: `Hay actualizaciones de scripts disponibles; revisa la tienda de scripts.\n\n${DEVICE.isDesktop ? `Este mensaje está disponible en console.log (${DEVICE.isMacOS ? "CMD+OPT+i" : "CTRL+SHIFT+i"})\n\n` : ""}Solo se comprueban las actualizaciones de los scripts de la comunidad guardados bajo la carpeta Downloaded. Las copias situadas en otros lugares de la carpeta de scripts se ignoran.`,
   ERROR_PNG_TOO_LARGE:
     "Error al exportar PNG: El archivo PNG es demasiado grande, intenta una resolución más pequeña.",
 
@@ -1871,4 +1862,60 @@ Si quieres ver lo que ya es posible hoy, aquí tienes una presentación de las f
   //carveout.ts
   NEW_DRAWING_TIMEOUT:
     "Archivo no encontrado. El nuevo dibujo de Excalidraw está tardando demasiado en crearse. Inténtelo de nuevo.",
+  SCRIPT_INSTALLED_NOTICE: "Instalado",
+  SCRIPT_INSTALL_ERROR_NOTICE: "Error al instalar el script",
+  SCRIPT_STORE_TITLE: "Scripts de la comunidad",
+  SCRIPT_STORE_LOADING: "Cargando scripts de la comunidad...",
+  SCRIPT_STORE_MASTERY_TITLE: "Excalidraw Mastery",
+  SCRIPT_STORE_MASTERY_DESC: "Domina Excalidraw y Visual PKM",
+  SCRIPT_STORE_COFFEE_TITLE: "Invítame a un café",
+  SCRIPT_STORE_COFFEE_DESC: "Apoya el desarrollo continuo de Excalidraw",
+  SCRIPT_STORE_SCRIPTING_BANNER_ALT: "Automatiza cualquier cosa con scripts de Excalidraw",
+  SCRIPT_STORE_SCRIPTING_BANNER_CAPTION: "Crea tus propios scripts de Excalidraw. Haz clic aquí para saber más.",
+  SCRIPT_STORE_UPDATES_TITLE: "Actualizaciones disponibles",
+  SCRIPT_STORE_UPDATES_DESC: "Actualiza los scripts instalados sin buscarlos por todo el catálogo.",
+  SCRIPT_STORE_UPDATE_ALL: "Actualizar todo",
+  SCRIPT_STORE_UPDATING: "Actualizando...",
+  SCRIPT_STORE_UPDATE_ALL_DONE: "Todos los scripts de la comunidad están actualizados.",
+  SCRIPT_STORE_UPDATE_ALL_PARTIAL: "No se pudieron actualizar algunos scripts. Fallidos:",
+  SCRIPT_STORE_BROWSE_TITLE: "Explorar scripts",
+  SCRIPT_STORE_BROWSE_DESC: "Busca por nombre, autor, descripción o categoría.",
+  SCRIPT_STORE_SEARCH_PLACEHOLDER: "Buscar scripts de la comunidad",
+  SCRIPT_STORE_CATEGORY_LABEL: "Categoría del script",
+  SCRIPT_STORE_ALL_CATEGORIES: "Todas las categorías",
+  SCRIPT_STORE_ALL_SCRIPTS: "Todos",
+  SCRIPT_STORE_INSTALLED_SCRIPTS: "Instalados",
+  SCRIPT_STORE_RESULTS: "scripts",
+  SCRIPT_STORE_NO_RESULTS: "No se encontraron scripts",
+  SCRIPT_STORE_NO_RESULTS_DESC: "Prueba otra búsqueda o categoría.",
+  SCRIPT_STORE_DETAILS: "Detalles del script",
+  SCRIPT_STORE_FEATURED: "Destacado",
+  SCRIPT_STORE_BY: "Por",
+  SCRIPT_STORE_UPDATE_BADGE: "Actualizar",
+  SCRIPT_STORE_INSTALLED_BADGE: "Instalado",
+  SCRIPT_STORE_CHECK_FAILED: "Falló la comprobación",
+  SCRIPT_STORE_INSTALL: "Instalar",
+  SCRIPT_STORE_UPDATE: "Actualizar",
+  SCRIPT_STORE_REINSTALL: "Reinstalar",
+  SCRIPT_STORE_BACK: "Volver a scripts",
+  SCRIPT_STORE_VIEW_SOURCE: "Ver código fuente",
+  SCRIPT_STORE_LOCAL_TITLE: "Script instalado",
+  SCRIPT_STORE_MULTIPLE_COPIES:
+    "Se encontraron varias copias administradas. Las comprobaciones de actualización usan la primera copia. Puedes abrir, mover o desinstalar cada copia por separado.",
+  SCRIPT_STORE_PRIMARY_COPY: "Usada para comprobar actualizaciones",
+  SCRIPT_STORE_ADDITIONAL_COPY: "Copia adicional",
+  SCRIPT_STORE_LOCAL_FILE: "Archivo local",
+  SCRIPT_STORE_OPEN_LOCAL: "Abrir archivo local",
+  SCRIPT_STORE_OPEN_LOCAL_FAILED: "No se pudo abrir el archivo local del script.",
+  SCRIPT_STORE_JS_OPEN_NOTE:
+    "Obsidian no permite editar archivos JavaScript de forma predeterminada. Si ningún plugin proporciona un editor .js, el archivo puede abrirse en una aplicación externa.",
+  SCRIPT_STORE_UNINSTALL: "Desinstalar",
+  SCRIPT_STORE_UNINSTALLED: "Desinstalado",
+  SCRIPT_STORE_UNINSTALL_FAILED: "No se pudo desinstalar",
+  SCRIPT_STORE_GROUP_LABEL: "Grupo de scripts",
+  SCRIPT_STORE_GROUP_ROOT: "Sin grupo (Downloaded)",
+  SCRIPT_STORE_NEW_GROUP_PLACEHOLDER: "Nombre del nuevo grupo",
+  SCRIPT_STORE_MOVE_TO_GROUP: "Mover",
+  SCRIPT_STORE_MOVED_TO_GROUP: "Script movido",
+  SCRIPT_STORE_MOVE_FAILED: "No se pudo mover el script",
 };

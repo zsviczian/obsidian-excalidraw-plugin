@@ -1,8 +1,11 @@
 /* eslint-disable no-console */
 import fs from 'fs';
 import path from 'path';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { syncScriptTemplateTypes } from './sync-script-template-types.mjs';
 
-const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const EA_SCRIPTS_DIR = path.join(ROOT, 'ea-scripts');
 const INDEX_NEW = path.join(EA_SCRIPTS_DIR, 'index-new.md');
 const OUT_DIR = path.join(path.join(ROOT, 'docs'), 'AITrainingData');
@@ -44,13 +47,15 @@ In addition to ExcalidrawAutomate, you can also use two other sources of functio
 
 A dedicated section “ExcalidrawLib module functions” in this document lists the function signatures extracted directly from the ExcalidrawLib TypeScript declarations.
 
+- **Never use native browser dialogs in scripts:** Do not use \`window.confirm\`, \`window.alert\`, \`window.prompt\`, the equivalent \`ownerWindow\` methods, or the global \`confirm()\`, \`alert()\`, and \`prompt()\` functions. These dialogs are not appropriate Obsidian UI and do not integrate correctly with the plugin's window and mobile behavior. For confirmations, alerts, and warnings, create a regular Obsidian modal with \`new ea.obsidian.Modal(ea.plugin.app)\` (not \`FloatingModal\`), render the message and buttons in \`contentEl\`, and resolve the result from the modal's button callbacks or \`onClose\` handler. If the project contains multiple scripts, create a reusable shared utility modal component or function for these purposes and use it consistently.
 - When the user asks for a dialog window, by default create a FloatingModal. Do not extend the FloatingModal class. Instead, define the modal's behavior by creating a new instance (e.g., \`const modal = new ea.FloatingModal(...)\`) and then assigning functions directly to the \`onOpen\` and \`onClose\` properties of that instance.
 For a reference, follow the implementation pattern used in the "Printable Layout Wizard.md" script.
 - Elements have a \`customData\` property that can be used to store arbitrary data. To ensure the data the script adds to elements use the \`ea.addAppendUpdateCustomData\` function. This function ensures that existing customData is preserved when adding new data.
 - Elements can be hidden by setting their opacity to 0. When hiding elements this way, it is good practice to temporarily store their original opacity in customData. This allows for easy restoration of the original opacity later.
 - Elements can be deleted from the scene by setting their isDeleted property to true.
 - The Obsidian.md module is available on \`ea.obsidian\`.
-- Version checks are distinct: use \`ea.verifyMinimumPluginVersion()\` for the Excalidraw plugin and \`ea.verifyMinAppVersion()\` only for the Obsidian application version.
+- In a template-based script workspace, \`src/types/ea.d.ts\` is an upstream-managed projection of the Script Engine API. Never edit it or generated declarations under \`.template/types/\`. Put repository-specific ambient declarations and type augmentations in \`src/types/local.d.ts\` instead, so template updates can replace the generated API safely.
+- Version checks are distinct: use \`ea.verifyMinimumPluginVersion()\` for the Excalidraw plugin and \`ea.obsidian.requireApiVersion()\` only for the Obsidian application version.
 - \`utils.executionSource\` describes why the current top-level invocation happened. Supported values are \`"manual"\`, \`"plugin-startup"\`, \`"view-autostart"\`, \`"sidepanel-restore"\`, \`"sidepanel-reload"\`, and \`"drawing-onload"\`. It does not indicate whether code came from the compilation cache or whether the script has run before.
 - \`ea.registerAutostart(message?)\` requests view-autostart permission. The script is automatically attached once to each ExcalidrawView, while manual toolbar/command/hotkey invocation remains independently repeatable. The optional explanation appears as the second paragraph of the permission prompt; do not imply that the script's main interactive action starts automatically when only its tools/providers do.
 - \`ea.registerCleanup(cleanup)\` registers synchronous cleanup owned by the current EA instance. Use it for external listeners, timers, observers, and subscriptions; the cleanup runs when that EA is destroyed.
@@ -131,6 +136,7 @@ To keep this training file concise, large external type definitions are not incl
 *   **Simple Input:** For straightforward user input, use the \`utils\` object provided to the script.
     *   \`await utils.inputPrompt()\`: To get a string or number from the user.
     *   \`await utils.suggester()\`: To let the user select from a predefined list of options.
+*   **Confirmations, Alerts, and Warnings:** Never use native browser dialogs such as \`window.confirm()\`, \`window.alert()\`, \`window.prompt()\`, \`ownerWindow.confirm()\`, or their global equivalents. Use a regular Obsidian modal instead: \`const modal = new ea.obsidian.Modal(ea.plugin.app)\`. Render the message and explicit action buttons in \`modal.contentEl\`, then resolve the user's choice from the button callbacks or \`onClose\`. Do not use \`FloatingModal\` for these simple confirmation or alert/warning dialogs. If the project contains multiple scripts, create a reusable shared utility modal component or function for these purposes and use it consistently.
 *   **Complex Dialogs:** When a more complex UI with multiple controls is needed, create a floating dialog window.
     *   **Use \`FloatingModal\`:** Always create a new instance: \`const modal = new ea.FloatingModal(ea.plugin.app);\`.
     *   **Do Not Extend:** Do not use \`class MyModal extends ea.FloatingModal\`.
@@ -611,6 +617,7 @@ function syncTemplateRepository(mode = 'full') {
     fs.rmSync(TEMPLATE_BOOTSTRAP_DIR, { recursive: true, force: true });
     copyDirectoryRecursive(SKILL_DIR, TEMPLATE_BOOTSTRAP_DIR);
     normalizeTemplateScriptReferences();
+    syncScriptTemplateTypes(TEMPLATE_REPO_ROOT);
     writeTemplateBootstrapFile('README.md', `# ExcalidrawAutomate skill snapshot
 
 This directory is synchronized from the plugin repository:
@@ -618,6 +625,11 @@ https://github.com/zsviczian/obsidian-excalidraw-plugin/tree/master/docs/AITrain
 
 Update source content by running npm run doc in the plugin repository.
 `);
+    const manifestScript = path.join(TEMPLATE_REPO_ROOT, 'scripts/template-manifest.mjs');
+    if (fs.existsSync(manifestScript)) {
+      console.log('[template] Refreshing managed-file manifest...');
+      execFileSync(process.execPath, [manifestScript], { cwd: TEMPLATE_REPO_ROOT, stdio: 'inherit' });
+    }
     return;
   }
 
@@ -922,9 +934,9 @@ The AI training material is maintained independently from publishing PRs; do not
 
 - Add or update the script under [ea-scripts](https://github.com/zsviczian/obsidian-excalidraw-plugin/tree/master/ea-scripts).
 - Add or update the preview image under [images](https://github.com/zsviczian/obsidian-excalidraw-plugin/tree/master/images).
-- Keep [ea-scripts/index-new.md](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/index-new.md) manually curated; do not automate it.
-- Update [ea-scripts/directory-info.json](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/directory-info.json) in the same PR.
-- For script updates, refresh the matching entry's \`mtime\` in [ea-scripts/directory-info.json](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/directory-info.json) so the plugin can detect the newer local version.
+- Add or update the script's catalog entry in [ea-scripts/script-store.json](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/script-store.json).
+- Run \`npm run script-store:check\`, then \`npm run script-store:build\`. The build validates the catalog and advances \`directory-info.json\` only for script/icon files that actually changed; it does not modify the frozen legacy \`index-new.md\` catalog.
+- Do not hand-edit unrelated \`mtime\` values in [ea-scripts/directory-info.json](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/directory-info.json). Historical mtimes are part of the plugin's update-detection contract.
 - Keep the PR focused on the script and its generated references.
 
 ### How to use the Script Examples

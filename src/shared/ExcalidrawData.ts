@@ -49,7 +49,10 @@ import {
   DataURL,
   SceneData,
 } from "@zsviczian/excalidraw/types/excalidraw/types";
-import { EmbeddedFile } from "./EmbeddedFileLoader";
+import {
+  EmbeddedFile,
+  type EmbeddedFileExportState,
+} from "./EmbeddedFileLoader";
 import { EmbeddedDataRegistries } from "./EmbeddedDataRegistries";
 import { MimeType } from "src/types/embeddedFileLoaderTypes";
 import { MultiOptionConfirmationPrompt } from "./Dialogs/Prompt";
@@ -72,6 +75,7 @@ import {
   MARKDOWN_IMAGE_EMBEDDED_FILE_TOKEN,
   type MarkdownImageCustomData,
   type MarkdownImageData,
+  type MarkdownImageRenderSettings,
 } from "src/types/markdownImageTypes";
 import {
   changeThemeOfExcalidrawMD,
@@ -138,6 +142,7 @@ export type ExcalidrawDataScene = Omit<
 };
 
 type RegExpMatchIteratorResult = IteratorResult<RegExpMatchArray, undefined>;
+type LoadGenerationGuard = () => boolean;
 
 type SceneElementIndexes = {
   linkedNonTextElementsById: Map<string, ExcalidrawElement>;
@@ -257,6 +262,16 @@ type TextElementData = {
   hasTextLink: boolean;
 };
 
+/** Drawing-owned registries required to regenerate save-time export assets. */
+export interface ExcalidrawDataExportState {
+  sourceFilePath: string;
+  files: ReadonlyMap<FileId, EmbeddedFileExportState>;
+  markdownImages: ReadonlyMap<FileId, MarkdownImageData>;
+  equations: ReadonlyMap<FileId, EquationItem>;
+  markdownImageRenderDefaults: MarkdownImageRenderSettings;
+  pdfScale: number;
+}
+
 /** Drawing-owned metadata transferred without retaining an old view. */
 export interface ExcalidrawDataMigrationState {
   sourceFilePath: string;
@@ -341,6 +356,51 @@ export class ExcalidrawData {
     this.compatibilityMode = null;
     this.textElementCommentedOut = null;
     this.selectedElementIds = null;
+  }
+
+  /** Captures only the data registries needed by a prepared save export. */
+  public exportPreparedSaveData(): ExcalidrawDataExportState | null {
+    if (
+      !this.loaded ||
+      !this.file ||
+      !this.files ||
+      !this.markdownImages ||
+      !this.equations
+    ) {
+      return null;
+    }
+    return {
+      sourceFilePath: this.file.path,
+      files: new Map(
+        Array.from(this.files, ([id, value]) => [
+          id,
+          value.exportPreparedSaveState(),
+        ]),
+      ),
+      markdownImages: new Map(
+        Array.from(this.markdownImages, ([id, value]) => [
+          id,
+          { ...value },
+        ]),
+      ),
+      equations: new Map(
+        Array.from(this.equations, ([id, value]) => [id, { ...value }]),
+      ),
+      markdownImageRenderDefaults: {
+        ...this.plugin.settings.markdownImageSettings.defaults,
+        border: {
+          ...this.plugin.settings.markdownImageSettings.defaults.border,
+        },
+        transclusion: {
+          ...this.plugin.settings.markdownImageSettings.defaults.transclusion,
+          border: {
+            ...this.plugin.settings.markdownImageSettings.defaults.transclusion
+              .border,
+          },
+        },
+      },
+      pdfScale: this.plugin.settings.pdfScale,
+    };
   }
 
   /**
@@ -675,8 +735,9 @@ export class ExcalidrawData {
     data: string,
     file: TFile,
     textMode: TextMode,
+    isCurrent: LoadGenerationGuard = () => true,
   ): Promise<boolean> {
-    if (!file) {
+    if (!file || !isCurrent()) {
       return false;
     }
 
@@ -703,6 +764,9 @@ export class ExcalidrawData {
       if (f && f instanceof TFile && f.stat.mtime > file.stat.mtime) {
         //the .excalidraw file is newer then the .md file
         const d = await this.app.vault.read(f);
+        if (!isCurrent()) {
+          return false;
+        }
         parsedScene = JSON.parse(d) as ExcalidrawDataScene;
       }
     }
@@ -779,6 +843,9 @@ export class ExcalidrawData {
       );
       prompt.contentEl.focus();
       const confirmation = await prompt.waitForClose;
+      if (!isCurrent()) {
+        return false;
+      }
       if (!confirmation) {
         throw new Error(ERROR_IFRAME_CONVERSION_CANCELED);
       }
@@ -786,6 +853,9 @@ export class ExcalidrawData {
     this.initializeNonInitializedFields();
 
     const timer = window.setTimeout(() => {
+      if (!isCurrent()) {
+        return;
+      }
       const notice = new Notice(t("FONT_LOAD_SLOW"), 15000);
       notice.messageEl.oncontextmenu = () => {
         displayFontMessage(this.app);
@@ -793,6 +863,9 @@ export class ExcalidrawData {
     }, 5000);
     await loadSceneFonts(nonDeletedSceneElements);
     window.clearTimeout(timer);
+    if (!isCurrent()) {
+      return false;
+    }
 
     if (!this.scene.files) {
       this.scene.files = {}; //loading legacy scenes that do not yet have the files attribute.
@@ -872,7 +945,9 @@ export class ExcalidrawData {
       position = data.search(RE_TEXTELEMENTS_FALLBACK_2);
     }
     if (position === -1) {
-      await this.setTextMode(textMode);
+      if (!(await this.setTextMode(textMode, isCurrent)) || !isCurrent()) {
+        return false;
+      }
       this.loaded = true;
       return true; //Text Elements header does not exist
     }
@@ -953,6 +1028,9 @@ export class ExcalidrawData {
             elementLinkMap.delete(id);
           }
           const parseRes = await this.parse(text);
+          if (!isCurrent()) {
+            return false;
+          }
           textEl.rawText = text;
           this.textElements.set(id, {
             raw: text,
@@ -1053,13 +1131,19 @@ export class ExcalidrawData {
     //e.g. if the entire text elements section was deleted.
     this.findNewTextElementsInScene();
     this.findNewElementLinksInScene(); //non-text element links
-    await this.setTextMode(textMode);
+    if (!(await this.setTextMode(textMode, isCurrent)) || !isCurrent()) {
+      return false;
+    }
     this.loaded = true;
     return true;
   }
 
-  public async loadLegacyData(data: string, file: TFile): Promise<boolean> {
-    if (!file) {
+  public async loadLegacyData(
+    data: string,
+    file: TFile,
+    isCurrent: LoadGenerationGuard = () => true,
+  ): Promise<boolean> {
+    if (!file || !isCurrent()) {
       return false;
     }
     this.loaded = false;
@@ -1088,17 +1172,22 @@ export class ExcalidrawData {
     this.mermaids.clear();
     this.findNewTextElementsInScene();
     this.findNewElementLinksInScene();
-    await this.setTextMode(TextMode.raw); //legacy files are always displayed in raw mode.
+    if (!(await this.setTextMode(TextMode.raw, isCurrent)) || !isCurrent()) {
+      return false;
+    } //legacy files are always displayed in raw mode.
     this.loaded = true;
     return true;
   }
 
-  public async setTextMode(textMode: TextMode) {
-    if (!this.scene) {
-      return;
+  public async setTextMode(
+    textMode: TextMode,
+    isCurrent: LoadGenerationGuard = () => true,
+  ): Promise<boolean> {
+    if (!this.scene || !isCurrent()) {
+      return false;
     }
     this.textMode = textMode;
-    await this.updateSceneTextElements();
+    return await this.updateSceneTextElements(isCurrent);
   }
 
   /**
@@ -1107,7 +1196,9 @@ export class ExcalidrawData {
    * @param forceupdate : will update text elements even if text contents has not changed, this will
    * correct sizing issues
    */
-  private async updateSceneTextElements() {
+  private async updateSceneTextElements(
+    isCurrent: LoadGenerationGuard = () => true,
+  ): Promise<boolean> {
     //update text in scene based on textElements Map
     //first get scene text elements
     const elementsMap = arrayToMap(this.scene.elements) as ElementsMap;
@@ -1117,7 +1208,10 @@ export class ExcalidrawData {
     for (const te of texts) {
       const container = getContainerElement(te, elementsMap);
       const originalText =
-        (await this.getText(te.id)) ?? te.originalText ?? te.text;
+        (await this.getText(te.id, isCurrent)) ?? te.originalText ?? te.text;
+      if (!isCurrent()) {
+        return false;
+      }
       const { text, x, y, width, height } = refreshTextDimensions(
         te,
         container,
@@ -1140,9 +1234,13 @@ export class ExcalidrawData {
         );
       }
     }
+    return true;
   }
 
-  private async getText(id: string): Promise<string> {
+  private async getText(
+    id: string,
+    isCurrent: LoadGenerationGuard = () => true,
+  ): Promise<string> {
     const text = this.textElements.get(id);
     if (!text) {
       return null;
@@ -1150,6 +1248,9 @@ export class ExcalidrawData {
     if (this.textMode === TextMode.parsed) {
       if (!text.parsed) {
         const parseRes = await this.parse(text.raw);
+        if (!isCurrent()) {
+          return null;
+        }
         this.textElements.set(id, {
           raw: text.raw,
           parsed: parseRes.parsed,

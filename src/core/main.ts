@@ -25,7 +25,6 @@ import {
   FRONTMATTER_KEYS,
   FRONTMATTER,
   JSON_parse,
-  SCRIPT_INSTALL_CODEBLOCK,
   EXPORT_TYPES,
   EXPORT_IMG_ICON_NAME,
   EXPORT_IMG_ICON,
@@ -71,7 +70,10 @@ import {
   emulateCTRLClickForLinks,
   linkClickModifierType,
 } from "../utils/modifierkeyHelper";
-import { getImageCache } from "../shared/ImageCache";
+import {
+  getImageCache,
+  scheduleBAKAfterSuccessfulPersistence,
+} from "../shared/ImageCache";
 import { cleanupPaddingUI } from "../shared/PaddingUI";
 import { StylesManager } from "./managers/StylesManager";
 import { CustomMutationObserver, log } from "../utils/debugHelper";
@@ -102,8 +104,6 @@ import { getHighlightColor } from "src/utils/dynamicStyling";
 import { InlineLinkSuggester } from "src/shared/Suggesters/InlineLinkSuggester";
 import { KeyBlocker } from "src/types/excalidrawAutomateTypes";
 import { UIMode } from "src/shared/Dialogs/UIModeSettingComponent";
-import { hideElement, setButtonBgColor } from "src/utils/styleUtils";
-import { installButton } from "src/utils/scriptLibraryUtils";
 import { insertLaTeXToView } from "src/utils/excalidrawViewHelpers";
 import type { MarkdownImageData } from "src/types/markdownImageTypes";
 import { StencilLibraryManager } from "./managers/StencilLibraryManager";
@@ -113,15 +113,23 @@ import { FooterSafeAreaManager } from "./managers/FooterSafeAreaManager";
 import { FontManager } from "./managers/FontManager";
 import { StartupTimer } from "./managers/StartupTimer";
 import {
-  ViewMigrationPersistenceHandoffManager,
-  type ViewMigrationPersistenceHandoff,
-} from "./managers/ViewMigrationPersistenceHandoffManager";
-import {
   ViewMigrationHandoffManager,
   type ViewMigrationDrawingState,
   type ViewMigrationHandoffRegistration,
   type ViewMigrationHandoffRequest,
 } from "./managers/ViewMigrationHandoffManager";
+import {
+  type ViewMigrationPersistenceConsumption,
+  type ViewMigrationPersistenceHandoff,
+  ViewPersistenceQueue,
+  type ViewPersistenceRequest,
+  type ViewPersistenceWriteLease,
+} from "./managers/ViewPersistenceQueue";
+import {
+  AutoexportCoordinator,
+  type PreparedAutoexportRequest,
+} from "./managers/AutoexportCoordinator";
+import { errorlog } from "../utils/coreUtils";
 
 declare const PLUGIN_VERSION: string;
 declare const INITIAL_TIMESTAMP: number;
@@ -169,13 +177,14 @@ export default class ExcalidrawPlugin extends Plugin {
   private fontManager: FontManager;
   private startupTimer: StartupTimer;
   private viewMigrationHandoffManager: ViewMigrationHandoffManager;
-  private viewMigrationPersistenceHandoffManager: ViewMigrationPersistenceHandoffManager;
+  private viewPersistenceQueue: ViewPersistenceQueue;
+  private autoexportCoordinator: AutoexportCoordinator;
   public stencilLibraryManager: StencilLibraryManager;
   public eaInstances = new WeakArray<ExcalidrawAutomate>();
   public fourthFontLoaded: boolean = false;
   public excalidrawConfig: ExcalidrawConfig;
   public excalidrawFileModes: { [file: string]: string } = {};
-  public declare settings: ExcalidrawSettings;
+  declare public settings: ExcalidrawSettings;
   /** Session-scoped autosave gate controlled by the temporary commands. */
   public autosaveEnabled: boolean = true;
   public activeExcalidrawView: ExcalidrawView = null;
@@ -214,8 +223,65 @@ export default class ExcalidrawPlugin extends Plugin {
     this.loadTimestamp = INITIAL_TIMESTAMP;
     this.startupTimer = new StartupTimer(this.loadTimestamp, PLUGIN_VERSION);
     this.viewMigrationHandoffManager = new ViewMigrationHandoffManager();
-    this.viewMigrationPersistenceHandoffManager =
-      new ViewMigrationPersistenceHandoffManager();
+    const persistenceApp = this.app;
+    const persistenceWindow = window;
+    this.autoexportCoordinator = new AutoexportCoordinator(this, {
+      now: () => Date.now(),
+      setTimeout: (callback, delayMs) =>
+        persistenceWindow.setTimeout(callback, delayMs),
+      clearTimeout: (timer) => persistenceWindow.clearTimeout(timer),
+    });
+    this.viewPersistenceQueue = new ViewPersistenceQueue({
+      resolveFile: (filePath) => persistenceApp.vault.getFileByPath(filePath),
+      write: (file, text) => persistenceApp.vault.modify(file, text),
+      scheduleBackup: scheduleBAKAfterSuccessfulPersistence,
+      now: () => Date.now(),
+      scheduleCleanup: (callback, delayMs) =>
+        persistenceWindow.setTimeout(callback, delayMs),
+      cancelCleanup: (timer) => persistenceWindow.clearTimeout(timer),
+      onFailure: (result) => {
+        errorlog({
+          where: "ViewPersistenceQueue",
+          fn: result.request.reason,
+          error: result.error,
+        });
+        new Notice(t("WARNING_SERIOUS_ERROR"), 60000);
+      },
+      onBackupScheduleFailure: (error) => {
+        errorlog({
+          where: "ViewPersistenceQueue",
+          fn: "scheduleBackup",
+          error,
+        });
+      },
+      onPersisted: (request) => {
+        if (request.autoexportRequest) {
+          if (
+            request.reason === "window-migration" &&
+            request.migrationLeafId
+          ) {
+            this.autoexportCoordinator.deferUntilMigrationComplete(
+              request.migrationLeafId,
+              request.autoexportRequest,
+            );
+          } else {
+            this.autoexportCoordinator.enqueue(request.autoexportRequest);
+          }
+        }
+      },
+      onPersistedCallbackFailure: (error) => {
+        errorlog({
+          where: "AutoexportCoordinator",
+          fn: "onPersisted",
+          error,
+        });
+      },
+      beginPersistenceActivity: (request) =>
+        this.autoexportCoordinator.beginSaveActivity(
+          request.filePath,
+          request.expectedFileCtime,
+        ),
+    });
     this.filesMaster = new Map<
       FileId,
       {
@@ -550,14 +616,6 @@ export default class ExcalidrawPlugin extends Plugin {
     }
     this.logStartupEvent("Editor handler initialized");
 
-    try {
-      this.registerInstallCodeblockProcessor();
-    } catch (e) {
-      new Notice("Error registering script install-codeblock processor", 6000);
-      console.error("Error registering script install-codeblock processor", e);
-    }
-    this.logStartupEvent("Script install-codeblock processor registered");
-
     this.commandManager.initialize();
 
     try {
@@ -664,48 +722,6 @@ export default class ExcalidrawPlugin extends Plugin {
     return false;
   }
 
-  private registerInstallCodeblockProcessor() {
-    const codeblockProcessor = async (source: string, el: HTMLElement) => {
-      // The mirrored update button is only available in the Script Library
-      // index layout. Other render contexts do not have the adjacent heading.
-      let button2: HTMLButtonElement = null;
-      const heading = el.previousElementSibling?.getAttribute("data-heading");
-      const link = heading
-        ? Array.from(el.parentElement?.querySelectorAll("a") ?? []).find(
-            (anchor) => anchor.getAttribute("href") === `#${heading}`,
-          )
-        : null;
-      if (link?.parentElement) {
-        link.addClass("excalidraw-installCodeBlock-link");
-        button2 = link.parentElement.createEl("button", null, (b) => {
-          b.setText(t("UPDATE_SCRIPT"));
-          b.addClass("mod-muted");
-          setButtonBgColor(b, "success");
-          hideElement(b);
-        });
-      }
-
-      source = source.trim();
-      el.createEl("button", null, (button) => {
-        void installButton(this, button, button2, source);
-      });
-    };
-
-    this.registerMarkdownCodeBlockProcessor(
-      SCRIPT_INSTALL_CODEBLOCK,
-      async (source, el) => {
-        el.addEventListener(RERENDER_EVENT, (e) => {
-          void (async () => {
-            e.stopPropagation();
-            el.empty();
-            await codeblockProcessor(source, el);
-          })();
-        });
-        await codeblockProcessor(source, el);
-      },
-    );
-  }
-
   /**
    * Displays a transcluded .excalidraw image in markdown preview mode
    */
@@ -750,9 +766,10 @@ export default class ExcalidrawPlugin extends Plugin {
     keepOriginal: boolean = false,
   ): Promise<TFile> {
     const data = await this.app.vault.read(file);
-    const hasEmbeddedFiles = Object.keys(
-      (JSON_parse<{ files?: Record<string, unknown> }>(data).files ?? {}),
-    ).length > 0;
+    const hasEmbeddedFiles =
+      Object.keys(
+        JSON_parse<{ files?: Record<string, unknown> }>(data).files ?? {},
+      ).length > 0;
     const filename =
       file.name.substring(0, file.name.lastIndexOf(".excalidraw")) +
       (replaceExtension ? ".md" : ".excalidraw.md");
@@ -764,7 +781,11 @@ export default class ExcalidrawPlugin extends Plugin {
     log(fname);
     const initialMarkdown =
       FRONTMATTER + (await this.fileManager.exportSceneToMD(data, false));
-    const result = await createOrOverwriteFile(this.app, fname, initialMarkdown);
+    const result = await createOrOverwriteFile(
+      this.app,
+      fname,
+      initialMarkdown,
+    );
     if (hasEmbeddedFiles) {
       const convertedMarkdown =
         await this.fileManager.persistLegacySceneFilesInMarkdown(
@@ -926,6 +947,7 @@ export default class ExcalidrawPlugin extends Plugin {
     excalidrawViews.forEach(({ leaf }) => {
       void this.setMarkdownView(leaf);
     });
+    this.autoexportCoordinator.destroy();
 
     if (versionUpdateCheckTimer) {
       window.clearTimeout(versionUpdateCheckTimer);
@@ -989,7 +1011,6 @@ export default class ExcalidrawPlugin extends Plugin {
     delete window.PolyBool;
     this.packageManager.destroy();
     this.viewMigrationHandoffManager.destroy();
-    this.viewMigrationPersistenceHandoffManager.destroy();
     this.commandManager?.destroy();
     this.eventManager.destroy();
     terminateCompressionWorker();
@@ -1050,9 +1071,7 @@ export default class ExcalidrawPlugin extends Plugin {
     }
   }
 
-  public getStencilLibrary():
-    | StencilLibraryData
-    | Promise<StencilLibraryData> {
+  public getStencilLibrary(): StencilLibraryData | Promise<StencilLibraryData> {
     return this.stencilLibraryManager.getLibrary().then((libraryItems) => ({
       type: "excalidrawlib" as const,
       version: 2,
@@ -1280,23 +1299,69 @@ export default class ExcalidrawPlugin extends Plugin {
   public registerViewMigrationPersistenceHandoff(
     handoff: ViewMigrationPersistenceHandoff,
   ): void {
-    this.viewMigrationPersistenceHandoffManager.register(handoff);
+    this.viewPersistenceQueue.registerMigrationHandoff(handoff);
   }
 
   /** Consumes serialized drawing text for the replacement main-window view. */
   public consumeViewMigrationPersistenceHandoff(
     leafId: string,
     filePath: string,
-  ): string | null {
-    return this.viewMigrationPersistenceHandoffManager.consume(
-      leafId,
-      filePath,
-    );
+  ): ViewMigrationPersistenceConsumption | null {
+    return this.viewPersistenceQueue.consumeMigrationHandoff(leafId, filePath);
   }
 
   /** Discards a handoff when the old view could not be replaced. */
   public discardViewMigrationPersistenceHandoff(leafId: string): void {
-    this.viewMigrationPersistenceHandoffManager.discard(leafId);
+    this.viewPersistenceQueue.discardMigrationHandoff(leafId);
+  }
+
+  /** Transfers immutable drawing text out of a retiring view runtime. */
+  public handoffViewPersistence(request: ViewPersistenceRequest): void {
+    void this.viewPersistenceQueue.enqueue(request);
+  }
+
+  /** Submits an immutable autoexport after a successful live source write. */
+  public enqueuePreparedAutoexport(request: PreparedAutoexportRequest): void {
+    this.autoexportCoordinator.enqueue(request);
+  }
+
+  /** Marks one view save queue active for automatic-export coalescing. */
+  public beginAutoexportSaveActivity(
+    sourceFilePath: string,
+    sourceFileCtime: number,
+  ): () => void {
+    return this.autoexportCoordinator.beginSaveActivity(
+      sourceFilePath,
+      sourceFileCtime,
+    );
+  }
+
+  /** Holds heavy migration autoexport work until the replacement view loads. */
+  public deferPreparedAutoexportUntilMigrationComplete(
+    leafId: string,
+    request: PreparedAutoexportRequest,
+  ): void {
+    this.autoexportCoordinator.deferUntilMigrationComplete(leafId, request);
+  }
+
+  /** Releases or discards a migration export after replacement load settles. */
+  public completeMigrationAutoexport(
+    leafId: string,
+    filePath: string,
+    loadSucceeded: boolean,
+  ): void {
+    this.autoexportCoordinator.completeMigration(
+      leafId,
+      filePath,
+      loadSucceeded,
+    );
+  }
+
+  /** Reserves the plugin-owned per-path boundary for a live view write. */
+  public acquireViewPersistenceWriteLease(
+    filePath: string,
+  ): Promise<ViewPersistenceWriteLease> {
+    return this.viewPersistenceQueue.acquireWriteLease(filePath);
   }
 
   get taskbone() {
@@ -1384,14 +1449,14 @@ export default class ExcalidrawPlugin extends Plugin {
    * @param inputEl The text input element to attach the suggester to.
    * @param widthWrapper Optional HTML element to wrap the width of suggester element.
    * @param containerEl Optional container element used as collision boundary.
-   * @param surpessPlaceholder Whether to suppress the placeholder text. Defaults to true.
+   * @param suppressPlaceholder Whether to suppress the placeholder text. Defaults to true.
    * @returns A KeyBlocker instance for managing keyboard input.
    */
   public attachInlineLinkSuggester(
     inputEl: HTMLInputElement | HTMLTextAreaElement,
     widthWrapper?: HTMLElement,
     containerEl?: HTMLDivElement,
-    surpessPlaceholder: boolean = true,
+    suppressPlaceholder: boolean = true,
   ): KeyBlocker {
     const getSourcePath = () => {
       this.ea.setView();
@@ -1403,7 +1468,7 @@ export default class ExcalidrawPlugin extends Plugin {
       inputEl,
       getSourcePath,
       widthWrapper,
-      surpessPlaceholder,
+      suppressPlaceholder,
       containerEl,
     );
   }

@@ -17,9 +17,41 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
-"2.27.4": `
+"2.28.0": `
 ## New
+- The Community Script Store now has a searchable card-based library, a focused update section with **Update all**, and a compact top area for Excalidraw Mastery, support, and creating your own scripts. Script details now support reinstalling, opening local files in a new tab, uninstalling, and moving managed scripts between groups under the **Downloaded** folder. Update detection keeps the existing \`directory-info.json\` modified-time contract, ignores private copies outside **Downloaded**, and handles duplicate managed copies consistently. [#2944](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2944)
 - Copied Markdown image SVGs now replace embedded base64 images and fonts with short placeholders, making them smaller and easier to share with AI agents when developing custom CSS.
+
+## New from Excalidraw.com
+- Create sticky notes with the new **Sticky note** tool or the **N** shortcut. Labels automatically fit and grow with their note, with dedicated colors and a creation-date footer. [#12064](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/12064)
+- Right click panning (without enabling a specific "Miro-style" setting) is now supported. [#12110](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/12110)
+
+## Fixed / Refactored
+- Lasso tool was not available in the More Tools menu in Tray Mode [#2937](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2937)
+- \`.excalidraw\` drawings with embedded binary images now render those images when opened into an already-used Excalidraw tab. [#2929](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2929)
+- Descriptions in settings no longer disappear when you revisit a settings page from search results. [#2935](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2935)
+- Drawing persistence is now more reliable during rapid edits across multiple tabs, popout moves, and immediate closing. Backups and automatic exports now track the exact successfully saved revision. [#2933](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2933)
+- Rapidly changing Markdown image appearance, selection, or image/embeddable conversion no longer leaves a rejected image-render promise in the console or lets a superseded render overwrite the newer element state.
+- Fixed a bug where, with *"Render Excalidraw as Image in Obsidian PDF Export"* enabled, exporting a Hybrid Note (an Excalidraw drawing with your own Markdown content alongside it) to PDF could render blank sections wherever a regular image (or other non-Excalidraw) embed appeared on the Markdown side. [#2292](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2292), 🙏[bluechallenge](${URLs.GITHUB_COM}/bluechallenge) [#2936](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2936)
+- Selection rectangles in popout windows are no longer positioned incorrectly when displays use different DPI settings. [#2940](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2940)
+
+## New/Fixed in Excalidraw Automate
+- Added three view-lifecycle helpers for integrations that use a view-local Excalidraw Automate instance or render generated/transient scene state:
+\`\`\`ts
+clearViewDirty(): void;
+registerThisAsViewEA(): boolean;
+deregisterThisAsViewEA(): boolean;
+\`\`\`
+  - \`clearViewDirty()\` clears the target view's current dirty marker without saving it.
+  - \`registerThisAsViewEA()\` registers the EA instance as the hook server for its target view.
+  - \`deregisterThisAsViewEA()\` restores the default plugin-global EA hook server and is safe to use during view teardown.
+- Scripts can create native sticky notes, including automatically fitted labels:
+\`\`\`ts
+addStickyNote(topX: number, topY: number, text: string, formatting?: {width?: number; height?: number; fontSize?: number; fontFamily?: number; textAlign?: "left" | "center" | "right"; textVerticalAlign?: "top" | "middle" | "bottom";}, id?: string): string;
+\`\`\`
+- Unbound arrows created with Excalidraw Automate's \`addArrow()\` no longer contain incomplete binding data that could cause an error when selected.
+- Updated the [ea-script-template](${URLs.GITHUB_COM}/zsviczian/ea-script-template). Read [EA Script prompting with AI is magical](${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM}/t/10977)
+
 `,
 "2.27.3": `
 ## Fixed and updated
@@ -202,6 +234,7 @@ ${getYouTubeDiv("aqt5NJE2sJ8")}
 - Fixed the "Customize the Embedded File Link" action. If you change the dimensions of the markdown image or the pdf page reference number, the image immediately updates in the scene. You can also use this feature to swap out images e.g. a png icon to an SVG icon. Default shortcut is CTRL+WIN+Click or CMD+Control+Click on the image element.
 - LaTeX and Mermaid did not work on iOS. Released updated Excalidraw Extras and bumped the minimum required version to 0.0.15. [#2825](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2825)
 - Malformed "Source" URL in ExcalidrawLib and Excalidraw Data json. [#2826]${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2826)
+- Markdown-image editor did not function if Obsidian default for new tabs was set to preview mode.
 
 ## New in ExcalidrawAutomate
 - Added \`onSceneChangeHook\` to allow scripts and sidepanel tabs to react to scene changes. The hook supports filtering by \`appStateKeys\` and checking for tab visibility to optimize performance.

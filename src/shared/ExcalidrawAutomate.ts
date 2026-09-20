@@ -49,6 +49,7 @@ import {
   mermaidToExcalidraw,
   refreshTextDimensions,
   getFontFamilyString,
+  convertToExcalidrawElements,
 } from "src/constants/constants";
 import {
   blobToBase64,
@@ -235,6 +236,7 @@ import {
   normalizeSceneArea,
 } from "src/utils/excalidrawElementUtils";
 import { cropPNGBlob } from "src/utils/imageExportUtils";
+import { RELEASE_NOTES } from "./Dialogs/Messages";
 
 type ExcalidrawAutomateHelpTarget = ((...args: unknown[]) => unknown) | string;
 
@@ -866,6 +868,24 @@ export class ExcalidrawAutomate {
     this.plugin = plugin;
     this.reset();
     this.targetView = view;
+  }
+
+  /**
+   * Returns the current target view when it is safe to perform a live-view
+   * operation. Calls that arrive after EA destruction or while the target view
+   * is unloading are expected teardown races and are ignored silently. Genuine
+   * calls without an active target view still report the usual EA API error.
+   */
+  private getReadyTargetView(source: string): ExcalidrawView | null {
+    const view = this.targetView;
+    if (this.destroyed || view?.semaphores?.viewunload) {
+      return null;
+    }
+    if (view?._loaded) {
+      return view;
+    }
+    errorMessage("targetView not set", source);
+    return null;
   }
 
   /**
@@ -2122,6 +2142,7 @@ export class ExcalidrawAutomate {
       locked: false,
       frameId: null as string | null,
       hasTextLink: !!(eltype === "text" && link),
+      created: Date.now(),
       ...(scale ? { scale } : {}),
     } as unknown as Mutable<ExcalidrawElement>;
   }
@@ -2329,6 +2350,70 @@ export class ExcalidrawAutomate {
       width,
       height,
     );
+    return id;
+  }
+
+  /**
+   * Adds a sticky note and its optional fitted label to the ExcalidrawAutomate
+   * instance. Width and height default to Excalidraw's sticky-note size.
+   * @param {number} topX - The x-coordinate of the top-left corner.
+   * @param {number} topY - The y-coordinate of the top-left corner.
+   * @param {string} text - The sticky-note text. An empty string creates an unlabeled note.
+   * @param {Object} [formatting] - Sticky-note size and label formatting.
+   * @param {number} [formatting.width] - The initial width of the note.
+   * @param {number} [formatting.height] - The initial height of the note.
+   * @param {number} [formatting.fontSize] - The label's maximum font size.
+   * @param {number} [formatting.fontFamily] - The label font family.
+   * @param {"left" | "center" | "right"} [formatting.textAlign] - The label's horizontal alignment.
+   * @param {"top" | "middle" | "bottom"} [formatting.textVerticalAlign] - The label's vertical alignment.
+   * @param {string} [id] - The ID of the sticky-note element.
+   * @returns {string} The ID of the added sticky note.
+   */
+  addStickyNote(
+    topX: number,
+    topY: number,
+    text: string,
+    formatting?: {
+      width?: number;
+      height?: number;
+      fontSize?: number;
+      fontFamily?: number;
+      textAlign?: "left" | "center" | "right";
+      textVerticalAlign?: "top" | "middle" | "bottom";
+    },
+    id?: string,
+  ): string {
+    id = id ?? nanoid();
+    const elements = convertToExcalidrawElements(
+      [
+        {
+          ...this.boxedElement(
+            id,
+            "stickynote",
+            topX,
+            topY,
+            formatting?.width ?? 0,
+            formatting?.height ?? 0,
+          ),
+          type: "stickynote" as const,
+          label: text
+            ? {
+                text,
+                fontSize: formatting?.fontSize ?? this.style.fontSize,
+                fontFamily: formatting?.fontFamily ?? this.style.fontFamily,
+                textAlign:
+                  formatting?.textAlign ?? this.style.textAlign,
+                verticalAlign:
+                  formatting?.textVerticalAlign ?? this.style.verticalAlign,
+              }
+            : undefined,
+        },
+      ],
+      { regenerateIds: false },
+    );
+    for (const element of elements) {
+      this.elementsDict[element.id] = element;
+    }
     return id;
   }
 
@@ -2662,8 +2747,8 @@ export class ExcalidrawAutomate {
    * @param {Object} [formatting] - Formatting options for the arrow element.
    * @param {"arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null} [formatting.startArrowHead] - The start arrowhead type.
    * @param {"arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null} [formatting.endArrowHead] - The end arrowhead type.
-   * @param {string} [formatting.startObjectId] - The ID of the start object.
-   * @param {string} [formatting.endObjectId] - The ID of the end object.
+   * @param {string} [formatting.startObjectId] - The ID of the start object. When omitted, the arrow start is unbound.
+   * @param {string} [formatting.endObjectId] - The ID of the end object. When omitted, the arrow end is unbound.
    * BindMode Determines whether the arrow remains outside the shape or is allowed to
    * go all the way inside the shape up to the exact fixed point.
    * @param {"inside" | "orbit"} [formatting.startBindMode] - The binding mode for the start object.
@@ -2711,20 +2796,32 @@ export class ExcalidrawAutomate {
     },
     id?: string,
   ): string {
-    const startFixedPoint = normalizeFixedPoint(formatting?.startFixedPoint);
-    const endFixedPoint = normalizeFixedPoint(formatting?.endFixedPoint);
-    const startMode = normalizeBindMode(formatting?.startBindMode);
-    const endMode = normalizeBindMode(formatting?.endBindMode);
     const box = getLineBox(points);
     const elbowed = formatting?.elbowed ?? false;
-    const startElement = formatting?.startObjectId
+    const startObjectId = formatting?.startObjectId;
+    const endObjectId = formatting?.endObjectId;
+    const startBinding: FixedPointBinding | null = startObjectId
+      ? {
+          elementId: startObjectId,
+          mode: normalizeBindMode(formatting?.startBindMode),
+          fixedPoint: normalizeFixedPoint(formatting?.startFixedPoint),
+        }
+      : null;
+    const endBinding: FixedPointBinding | null = endObjectId
+      ? {
+          elementId: endObjectId,
+          mode: normalizeBindMode(formatting?.endBindMode),
+          fixedPoint: normalizeFixedPoint(formatting?.endFixedPoint),
+        }
+      : null;
+    const startElement = startBinding
       ? (this.getElement(
-          formatting.startObjectId,
+          startBinding.elementId,
         ) as Mutable<ExcalidrawBindableElement>)
       : null;
-    const endElement = formatting?.endObjectId
+    const endElement = endBinding
       ? (this.getElement(
-          formatting.endObjectId,
+          endBinding.elementId,
         ) as Mutable<ExcalidrawBindableElement>)
       : null;
     id = id ?? nanoid();
@@ -2732,16 +2829,8 @@ export class ExcalidrawAutomate {
       points: normalizeLinePoints(points),
       elbowed,
       lastCommittedPoint: null,
-      startBinding: {
-        elementId: formatting?.startObjectId,
-        mode: startMode,
-        fixedPoint: startFixedPoint,
-      },
-      endBinding: {
-        elementId: formatting?.endObjectId,
-        mode: endMode,
-        fixedPoint: endFixedPoint,
-      },
+      startBinding,
+      endBinding,
       //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/388
       startArrowhead:
         typeof formatting?.startArrowHead !== "undefined"
@@ -3797,11 +3886,10 @@ export class ExcalidrawAutomate {
    * @param {boolean} [forceViewMode=false] - Whether to force view mode.
    */
   viewToggleFullScreen(forceViewMode: boolean = false): void {
-    if (!this.targetView || !this.targetView?._loaded) {
-      errorMessage("targetView not set", "viewToggleFullScreen()");
+    const view = this.getReadyTargetView("viewToggleFullScreen()");
+    if (!view) {
       return;
     }
-    const view = this.targetView;
     const isFullscreen = view.isFullscreen();
     if (forceViewMode) {
       view.updateScene({
@@ -3811,9 +3899,7 @@ export class ExcalidrawAutomate {
         },
         captureUpdate: CaptureUpdateAction.NEVER,
       });
-      this.targetView.toolsPanelRef?.current?.setExcalidrawViewMode(
-        !isFullscreen,
-      );
+      view.toolsPanelRef?.current?.setExcalidrawViewMode(!isFullscreen);
     }
 
     if (isFullscreen) {
@@ -3828,11 +3914,10 @@ export class ExcalidrawAutomate {
    * @param {boolean} enabled - Whether to enable view mode.
    */
   setViewModeEnabled(enabled: boolean): void {
-    if (!this.targetView || !this.targetView?._loaded) {
-      errorMessage("targetView not set", "viewToggleFullScreen()");
+    const view = this.getReadyTargetView("setViewModeEnabled()");
+    if (!view) {
       return;
     }
-    const view = this.targetView;
     view.updateScene({
       appState: { viewModeEnabled: enabled },
       captureUpdate: CaptureUpdateAction.NEVER,
@@ -3862,15 +3947,15 @@ export class ExcalidrawAutomate {
     },
     restore: boolean = false,
   ): void {
-    if (!this.targetView || !this.targetView?._loaded) {
-      errorMessage("targetView not set", "viewToggleFullScreen()");
+    const view = this.getReadyTargetView("viewUpdateScene()");
+    if (!view) {
       return;
     }
     if (!scene.storeAction) {
       scene.storeAction = scene.commitToHistory ? "capture" : "update";
     }
 
-    this.targetView.updateScene(
+    view.updateScene(
       {
         elements: scene.elements,
         appState: scene.appState,
@@ -3945,11 +4030,26 @@ export class ExcalidrawAutomate {
     elements: ExcalidrawElement[],
     margin: number = 0.05,
   ): void {
-    if (!this.targetView || !this.targetView?._loaded) {
-      errorMessage("targetView not set", "viewToggleFullScreen()");
+    const view = this.getReadyTargetView("viewZoomToElements()");
+    if (!view) {
       return;
     }
-    this.targetView.zoomToElements(selectElements, elements, margin);
+    view.zoomToElements(selectElements, elements, margin);
+  }
+
+  /**
+   * Clears the target view's current dirty marker without saving.
+   *
+   * This is intended for integrations that deliberately render generated or
+   * transient scene state with `save=false`. It does not disable future dirty
+   * tracking or persistence. Calls racing view teardown are ignored.
+   */
+  clearViewDirty(): void {
+    const view = this.getReadyTargetView("clearViewDirty()");
+    if (!view) {
+      return;
+    }
+    view.clearDirty();
   }
 
   /**
@@ -3967,15 +4067,15 @@ export class ExcalidrawAutomate {
     shouldRestoreElements: boolean = false,
     captureUpdate: CaptureUpdateActionType = CaptureUpdateAction.IMMEDIATELY,
   ): Promise<boolean> {
-    if (!this.targetView || !this.targetView?._loaded) {
-      errorMessage("targetView not set", "addElementsToView()");
+    const view = this.getReadyTargetView("addElementsToView()");
+    if (!view) {
       return false;
     }
     const elements = this.getElements();
     if (elements.some((el) => el.type === "embeddable")) {
-      patchMobileView(this.targetView);
+      patchMobileView(view);
     }
-    const result = await this.targetView.addElements({
+    const result = await view.addElements({
       newElements: elements,
       repositionToCursor,
       save,
@@ -3994,24 +4094,28 @@ export class ExcalidrawAutomate {
    * @returns {boolean} True if successful, false otherwise.
    */
   registerThisAsViewEA(): boolean {
-    if (!this.targetView || !this.targetView?._loaded) {
-      errorMessage("targetView not set", "addElementsToView()");
+    const view = this.getReadyTargetView("registerThisAsViewEA()");
+    if (!view) {
       return false;
     }
-    this.targetView.setHookServer(this);
+    view.setHookServer(this);
     return true;
   }
 
   /**
-   * Sets the target view EA to window.ExcalidrawAutomate.
-   * @returns {boolean} True if successful, false otherwise.
+   * Restores the target view's default plugin-global EA hook server. This is a
+   * teardown operation, so it remains valid while the view itself is unloading.
+   * @returns {boolean} True if a target view was available, false otherwise.
    */
   deregisterThisAsViewEA(): boolean {
-    if (!this.targetView || !this.targetView?._loaded) {
-      errorMessage("targetView not set", "addElementsToView()");
+    const view = this.targetView;
+    if (!view) {
+      if (!this.destroyed) {
+        errorMessage("targetView not set", "deregisterThisAsViewEA()");
+      }
       return false;
     }
-    this.targetView.setHookServer(this);
+    view.setHookServer();
     return true;
   }
 
@@ -4566,6 +4670,13 @@ export class ExcalidrawAutomate {
     return groupId.length > 0 ? groupId[0] : null;
   }
 
+  /**
+   * This is a convenience method to get the release notes for the plugin.
+   * @returns {Object} The release notes object.
+   */
+  getReleaseNotes(): { [k: string]: string } {
+    return RELEASE_NOTES;
+  }
   /**
    * Gets all the elements from elements[] that share one or more groupIds with the specified element.
    * @param {ExcalidrawElement} element - The element to check.
@@ -5303,6 +5414,14 @@ export class ExcalidrawAutomate {
       }
     });
     this.sidepanelTab?.close();
+    const targetView = this.targetView;
+    try {
+      if (targetView?.getHookServer() === this) {
+        targetView.setHookServer();
+      }
+    } catch {
+      // The target view may already be past its unload lifecycle.
+    }
     this.targetView = null;
     this.plugin = null;
     this.elementsDict = {};

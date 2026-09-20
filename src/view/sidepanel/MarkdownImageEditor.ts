@@ -98,6 +98,18 @@ const setBlockReferenceIcon = (button: ButtonComponent): void => {
   button.setIcon(BLOCK_REFERENCE_ICON_ID);
 };
 
+/**
+ * Forces a Markdown-image editor view into edit mode, regardless of the
+ * user's `defaultViewMode` vault setting. Reading mode is not meaningful in
+ * this embedded editor and leaves the user with no way to switch back.
+ */
+const forceSourceMode = (view: MarkdownView): void => {
+  const modes = view.modes;
+  if (modes?.source) {
+    view.setMode?.(modes.source);
+  }
+};
+
 const getNativeColorValue = (color: string): string => {
   if (/^#[0-9a-f]{6}$/i.test(color)) {
     return color;
@@ -157,6 +169,8 @@ class MarkdownFragmentView extends MarkdownView {
   }
 }
 
+let nextMarkdownImageEditOwnerId = 1;
+
 class MarkdownImageEditorController {
   private readonly app: App;
   private readonly plugin: ExcalidrawPlugin;
@@ -202,6 +216,8 @@ class MarkdownImageEditorController {
   private focusOwnerButtonEl: HTMLButtonElement | null = null;
   private ownerStatusEl: HTMLElement | null = null;
   private mobileViewPatchCleanup: (() => void) | null = null;
+  private readonly sameFileEditOwnerId =
+    `markdown-image-editor:${nextMarkdownImageEditOwnerId++}`;
 
   constructor(public view: ExcalidrawView) {
     this.app = view.app;
@@ -265,7 +281,7 @@ class MarkdownImageEditorController {
         this.view.plugin,
         element,
       );
-      this.view.setMarkdownImageEditorIsEditing();
+      this.view.setMarkdownImageEditorIsEditing(this.sameFileEditOwnerId);
       this.renderPanel();
       this.focusEditorIfRequested();
       return true;
@@ -933,14 +949,9 @@ class MarkdownImageEditorController {
         // disk afterward - force it now while we still have a definite reference to the view.
         if (saveEditor && canClearOwnerEditing) {
           await invalidatedView.forceSave(true, true);
-          await invalidatedView.reload(false, invalidatedView.file);
-          // reload() clears semaphores.embeddableIsEditingSelf as soon as a debounce timer is
-          // pending, opening a window (spanning its vault.read() await) where a concurrently
-          // polling autosave can slip in - see the matching comment in
-          // persistOwnerAfterEditorFlush() for why this is a real, tight race. Re-arm it; the
-          // finally block below calls clearEmbeddableNodeIsEditing() right after, which is the
-          // intended graceful (debounced) wind-down instead of reload()'s abrupt one.
-          invalidatedView.setMarkdownImageEditorIsEditing();
+          if (!invalidatedView.isClosingOrMigrating()) {
+            await invalidatedView.reload(false, invalidatedView.file);
+          }
         }
       } catch (error: unknown) {
         errorlog({
@@ -949,7 +960,9 @@ class MarkdownImageEditorController {
         });
       } finally {
         if (canClearOwnerEditing) {
-          invalidatedView.clearEmbeddableNodeIsEditing();
+          invalidatedView.clearMarkdownImageEditorIsEditing(
+            this.sameFileEditOwnerId,
+          );
         }
         this.element = null;
         this.renderSettings = null;
@@ -1066,7 +1079,7 @@ class MarkdownImageEditorController {
       ? getMarkdownImageRenderSettings(this.plugin, selectedMarkdownImage)
       : null;
     if (selectedMarkdownImage) {
-      nextView.setMarkdownImageEditorIsEditing();
+      nextView.setMarkdownImageEditorIsEditing(this.sameFileEditOwnerId);
     }
     this.renderPanel();
   }
@@ -1292,6 +1305,7 @@ class MarkdownImageEditorController {
           external.markdown,
           this.renderSettings,
           "external",
+          this.sameFileEditOwnerId,
         )),
     );
     if (!this.ensureOwnerValid()) {
@@ -1344,6 +1358,7 @@ class MarkdownImageEditorController {
       external.markdown,
       this.renderSettings,
       "local",
+      this.sameFileEditOwnerId,
     );
     if (!this.ensureOwnerValid()) {
       return;
@@ -1489,8 +1504,7 @@ class MarkdownImageEditorController {
       if (!this.ensureOwnerValid() || this.view !== ownerView) {
         return;
       }
-      const semaphores = ownerView.semaphores;
-      if (!semaphores?.saving && !semaphores?.autosaving) {
+      if (!ownerView.isPersistenceBusy()) {
         return;
       }
       await new Promise<void>((resolve) => {
@@ -1503,7 +1517,7 @@ class MarkdownImageEditorController {
    * Forces a disk save of the owner view, retrying if a concurrent save (autosave, or another
    * controller flushing during a handoff) claims the saving semaphore between
    * waitForOwnerSaveIdle() resolving and the save() call below. save() silently no-ops when
-   * semaphores.saving is already true when it is entered, and awaiting an already-resolved
+   * save-in-progress state is already true when it is entered, and awaiting an already-resolved
    * promise still yields a microtask turn, so a single poll-then-call attempt cannot guarantee
    * persistence on its own.
    */
@@ -1516,7 +1530,7 @@ class MarkdownImageEditorController {
       if (!this.ensureOwnerValid()) {
         return;
       }
-      if (this.view.semaphores.saving) {
+      if (this.view.isSaveInProgress()) {
         continue;
       }
       await this.view.save(true, true, true);
@@ -1524,17 +1538,9 @@ class MarkdownImageEditorController {
       // Markdown-image header section from a stale copy on every later save in this same view
       // (e.g. switching directly from one Markdown image to another via switchElement()). Reuse
       // the same reload(false, file) call invalidateOwner() uses for the cross-view handoff case.
+      // The same-file gate retains this controller's ownership across that raw-data refresh.
       if (this.ensureOwnerValid()) {
         await this.view.reload(false, this.view.file);
-        // reload() clears semaphores.embeddableIsEditingSelf as soon as a debounce timer is
-        // pending (it assumes editing has ended). It hasn't: flushCurrentElement() runs mid-session,
-        // and switchElement()/flushPendingEditsBeforeHandoff() decide the real end state right
-        // after this returns. Re-arm it immediately so nothing else can misread editing as finished
-        // in that gap; the caller's own clear/set call right after this resolves is what should
-        // decide the final state, not reload()'s side effect.
-        if (this.ensureOwnerValid()) {
-          this.view.setMarkdownImageEditorIsEditing();
-        }
       }
       return;
     }
@@ -1569,7 +1575,7 @@ class MarkdownImageEditorController {
    * by a brand new controller instance for a different element (see openMarkdownImageEditor()).
    * Without this, dispose()/close() detach and save the editor via a fire-and-forget call, so the
    * previous element's edits can still be in flight after the new controller has already started
-   * editing (and locking, via embeddableIsEditingSelf) a different element.
+   * editing (and owning the same-file gate for) a different element.
    */
   public async flushPendingEditsBeforeHandoff(): Promise<void> {
     if (this.closed || !this.element) {
@@ -1602,9 +1608,9 @@ class MarkdownImageEditorController {
       ? getMarkdownImageRenderSettings(this.view.plugin, element)
       : null;
     if (element) {
-      this.view.setMarkdownImageEditorIsEditing();
+      this.view.setMarkdownImageEditorIsEditing(this.sameFileEditOwnerId);
     } else {
-      this.view.clearEmbeddableNodeIsEditing();
+      this.view.clearMarkdownImageEditorIsEditing(this.sameFileEditOwnerId);
     }
     this.renderPanel();
   }
@@ -1679,6 +1685,7 @@ class MarkdownImageEditorController {
       } else {
         await leaf.openFile(sourceFile, {
           active: false,
+          state: { mode: "source" },
         });
       }
       if (
@@ -1691,6 +1698,7 @@ class MarkdownImageEditorController {
         return;
       }
       if (leaf.view instanceof MarkdownView) {
+        forceSourceMode(leaf.view);
         this.editorView = leaf.view;
         this.prepareEditorView(host, leaf.view);
         this.revealExternalSourceSubpath(leaf.view, sourceFile, ref);
@@ -1719,7 +1727,7 @@ class MarkdownImageEditorController {
           markdown,
         });
         ownerView.setDirty();
-        ownerView.setMarkdownImageEditorIsEditing();
+        ownerView.setMarkdownImageEditorIsEditing(this.sameFileEditOwnerId);
       },
     );
     await leaf.open(fragmentView);
@@ -1733,6 +1741,7 @@ class MarkdownImageEditorController {
       return;
     }
     fragmentView.setViewData(source.markdown, true);
+    forceSourceMode(fragmentView);
     this.editorView = fragmentView;
     this.prepareEditorView(host, fragmentView);
     this.watchEditorChanges();
@@ -2066,7 +2075,7 @@ class MarkdownImageEditorController {
           return;
         }
         this.editorContentDirty = true;
-        this.view.setMarkdownImageEditorIsEditing();
+        this.view.setMarkdownImageEditorIsEditing(this.sameFileEditOwnerId);
         const source = this.element
           ? this.view.excalidrawData.getMarkdownImage(this.element.fileId)
           : null;
@@ -2142,6 +2151,7 @@ class MarkdownImageEditorController {
           renderMarkdown,
           renderSettings,
           source.source,
+          this.sameFileEditOwnerId,
         );
         if (!updated || !this.ensureOwnerValid()) {
           return;
@@ -2203,47 +2213,68 @@ class MarkdownImageEditorController {
     ) {
       return;
     }
-    this.setRenderStatus(true);
-    try {
-      const source = await getMarkdownImageSource(this.view, this.element);
+    const element = this.element;
+    const renderSettings = this.renderSettings;
+    const editorView = this.editorView;
+    const isCurrentRender = (): boolean => {
       if (
-        !source ||
         generation !== this.renderGeneration ||
         this.closed ||
-        !this.ensureOwnerValid()
+        !this.isOwnerViewValid() ||
+        this.element?.id !== element.id
       ) {
+        return false;
+      }
+      const current = this.view
+        .getViewElements()
+        .find((candidate) => candidate.id === element.id);
+      return current?.type === "image" && current.fileId === element.fileId;
+    };
+    this.setRenderStatus(true);
+    try {
+      const source = await getMarkdownImageSource(this.view, element);
+      if (!source || !isCurrentRender()) {
         return;
       }
       const liveMarkdown =
         markdown ??
-        (source.source === "local" && this.editorView
-          ? this.editorView.getViewData()
+        (source.source === "local" && this.editorView === editorView
+          ? editorView?.getViewData() ?? source.markdown
           : source.markdown);
       const updated = await updateMarkdownImage(
         this.view,
-        this.element,
+        element,
         liveMarkdown,
-        this.renderSettings,
+        renderSettings,
         source.source,
+        this.sameFileEditOwnerId,
+        isCurrentRender,
       );
-      if (
-        !this.ensureOwnerValid() ||
-        !updated ||
-        generation !== this.renderGeneration
-      ) {
+      if (!updated || !isCurrentRender()) {
         return;
       }
       const nextElement = this.view
         .getViewElements()
-        .find((candidate) => candidate.id === this.element?.id);
+        .find((candidate) => candidate.id === element.id);
       if (nextElement?.type === "image") {
         this.element = nextElement;
       }
       if (
-        !this.editorView ||
-        liveMarkdown === this.editorView.getViewData()
+        !editorView ||
+        (this.editorView === editorView &&
+          liveMarkdown === editorView.getViewData())
       ) {
         this.editorContentDirty = false;
+      }
+    } catch (error: unknown) {
+      // A superseded render is expected during rapid selection changes and
+      // image/embeddable conversion. Preserve the last successful image and
+      // only report a failure if this render still owns the selected image.
+      if (isCurrentRender()) {
+        errorlog({
+          where: "MarkdownImageEditorController.applyRender",
+          error,
+        });
       }
     } finally {
       if (generation === this.renderGeneration) {
@@ -2370,7 +2401,9 @@ class MarkdownImageEditorController {
     } finally {
       this.cancelScheduledRender();
       if (canClearOwnerEditing) {
-        this.view.clearEmbeddableNodeIsEditing();
+        this.view.clearMarkdownImageEditorIsEditing(
+          this.sameFileEditOwnerId,
+        );
       }
       this.element = null;
       this.renderSettings = null;
@@ -2441,10 +2474,21 @@ export function handleMarkdownImageEditorSelection(
 export async function handleMarkdownImageEditorViewUnload(
   view: ExcalidrawView,
 ): Promise<void> {
+  await beginMarkdownImageEditorViewUnload(view);
+}
+
+/**
+ * Starts or joins editor invalidation while synchronously reporting whether
+ * the retiring view owns that work. Window migration uses the nullable return
+ * to retain an API-owned save snapshot before its mandatory early unmount.
+ */
+export function beginMarkdownImageEditorViewUnload(
+  view: ExcalidrawView,
+): Promise<void> | null {
   if (!activeController || activeController.view !== view) {
-    return;
+    return null;
   }
-  await activeController.invalidateOwner(true);
+  return activeController.invalidateOwner(true);
 }
 
 /**

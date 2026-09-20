@@ -1200,7 +1200,7 @@ function RenderObsidianView({
     if (isEditingRef.current) {
       if (leafRef.current?.node) {
         containerRef.current?.addClasses(["is-editing", "is-focused"]);
-        view.canvasNodeFactory.stopEditing(leafRef.current.node);
+        view.canvasNodeFactory.stopEditing(leafRef.current.node, element.id);
       }
       isEditingRef.current = false;
     }
@@ -1226,12 +1226,12 @@ function RenderObsidianView({
         // Special case: if the card is a back-of-the-note card, ticking a checkbox in
         // reading mode triggers a change to the open file which would result in a view update.
         if (!isActiveRef.current && isPreviewRef.current) {
-          view.clearEmbeddableNodeIsEditing();
+          view.clearEmbeddableNodeIsEditing(element.id);
           isPreviewRef.current = false;
         }
         if (isActiveRef.current && currentFile?.path === view.file.path) {
           view.setPreventReload();
-          void view.setEmbeddableNodeIsEditing();
+          void view.setEmbeddableNodeIsEditing(element.id);
           isPreviewRef.current = true;
         }
         return;
@@ -1255,6 +1255,7 @@ function RenderObsidianView({
           leafRef.current.node,
           newTheme,
           isEditingSelf,
+          element.id,
         );
         return;
       }
@@ -1381,7 +1382,7 @@ function RenderObsidianView({
         ) {
           if (fileRef.current?.path === view.file.path) {
             view.setPreventReload();
-            void view.setEmbeddableNodeIsEditing();
+            void view.setEmbeddableNodeIsEditing(element.id);
           }
         } else if (
           view.plugin.settings.markdownNodeOneClickEditing &&
@@ -1395,6 +1396,7 @@ function RenderObsidianView({
             node,
             newTheme,
             isEditingSelf,
+            element.id,
           );
         }
       } else {
@@ -1402,10 +1404,10 @@ function RenderObsidianView({
           fileRef.current?.path === view.file.path &&
           !containerRef.current?.hasClass("is-editing")
         ) {
-          view.clearEmbeddableNodeIsEditing(); //else it will be cleared in stopEditing right below
+          view.clearEmbeddableNodeIsEditing(element.id); //else it will be cleared in stopEditing right below
         }
         containerRef.current?.removeClasses(["is-editing", "is-focused"]);
-        view.canvasNodeFactory.stopEditing(node);
+        view.canvasNodeFactory.stopEditing(node, element.id);
       }
       return;
     }

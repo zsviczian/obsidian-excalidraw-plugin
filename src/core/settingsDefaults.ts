@@ -105,7 +105,6 @@ export interface ExcalidrawSettings {
   penModeDoubleTapEraser: boolean;
   penModeSingleFingerPanning: boolean;
   penModeCrosshairVisible: boolean;
-  panWithRightMouseButton: boolean; //mfuria #329
   renderImageInMarkdownReadingMode: boolean;
   renderImageInHoverPreviewForMDNotes: boolean;
   renderImageInMarkdownToPDF: boolean;
@@ -553,7 +552,6 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   penModeDoubleTapEraser: true,
   penModeSingleFingerPanning: true,
   penModeCrosshairVisible: true,
-  panWithRightMouseButton: false, //mfuria #329
   renderImageInMarkdownReadingMode: false,
   renderImageInHoverPreviewForMDNotes: false,
   renderImageInMarkdownToPDF: false,

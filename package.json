@@ -21,8 +21,10 @@
     "mindmap": "node scripts/deploy-mindmap-builder.mjs",
     "lint": "eslint .",
     "lint:fix": "npx prettier --write \"src/**/*.{ts,tsx}\" && eslint --max-warnings=0 --ext .ts,.tsx ./src --fix",
-    "repo:export": "bash scripts/generate-repository-zip.sh",
-    "repo:update": "rsync -av --progress ~/Downloads/update/ ./"
+    "repo:export": "node scripts/generate-repository-zip.mjs",
+    "repo:update": "node scripts/update-repository.mjs",
+    "script-store:build": "node scripts/build-script-store.mjs",
+    "script-store:check": "node scripts/build-script-store.mjs --check"
   },
   "keywords": [],
   "author": "",
@@ -32,7 +34,7 @@
     "@popperjs/core": "^2.11.8",
     "@radix-ui/number": "^1.1.2",
     "@zsviczian/colormaster": "^1.2.2",
-    "@zsviczian/excalidraw": "0.18.134",
+    "@zsviczian/excalidraw": "0.18.137",
     "chroma-js": "^3.1.2",
     "clsx": "^2.0.0",
     "es6-promise-pool": "2.5.0",

@@ -37,11 +37,6 @@ export default {
   EMBEDDABLE_PROPERTIES: "Embeddable 元素设置",
   EMBEDDABLE_RELATIVE_ZOOM: "使元素的缩放级别等于当前绘图的缩放级别",
   OPEN_IMAGE_SOURCE: "打开 Excalidraw 绘图",
-  INSTALL_SCRIPT: "安装此脚本",
-  UPDATE_SCRIPT: "有可用更新 - 点击安装",
-  CHECKING_SCRIPT: "检查更新中 - 点击重新安装",
-  UNABLETOCHECK_SCRIPT: "检查更新失败 - 点击重新安装",
-  UPTODATE_SCRIPT: "脚本已是最新 - 点击重新安装",
   OPEN_AS_EXCALIDRAW: "打开为 Excalidraw 绘图",
   TOGGLE_MODE: "在 Excalidraw 和 Markdown 模式之间切换",
   DUPLICATE_IMAGE: "复制所选图像，并分配一个不同的图像 ID",
@@ -796,16 +791,14 @@ export default {
   ZOOM_AND_PAN_HEAD: "缩放和平移",
   ZOOM_AND_PAN_DESC:
     "配置鼠标、触控、打开、调整大小和缩放范围行为。",
-  PAN_WITH_RIGHT_MOUSE_BUTTON_NAME: "右键拖动平移",
-  PAN_WITH_RIGHT_MOUSE_BUTTON_DESC:
-    "右键点击并拖动来平移绘图（和在线白板工具 Miro 类似）。按 'm' 键打开上下文菜单。",
   DEFAULT_PINCHZOOM_NAME: "允许在触控笔模式下进行双指缩放",
   DEFAULT_PINCHZOOM_DESC:
     "在触控笔模式下使用自由画笔工具时，双指缩放可能造成干扰。<br>" +
     "<b>开启：</b>允许双指缩放。<b>关闭： </b>禁止双指缩放。",
 
-  DEFAULT_WHEELZOOM_NAME: "鼠标滚轮缩放",
-  DEFAULT_WHEELZOOM_DESC: `<b>开启：</b>鼠标滚轮为缩放绘图，${labelCTRL()}+鼠标滚轮为滚动绘图。<br><b>关闭：</b>鼠标滚轮为滚动绘图，${labelCTRL()}+鼠标滚轮为缩放绘图。`,
+  DEFAULT_WHEELZOOM_NAME: "反转绘图的滚轮缩放设置",
+  DEFAULT_WHEELZOOM_DESC:
+    "应用于所有绘图，并反转绘图中的<b>输入设备</b>设置（鼠标滚轮用于缩放还是滚动）。绘图中的设置仅适用于当前绘图，也可以保存到模板中。",
 
   ZOOM_TO_FIT_NAME: "调整面板尺寸后自动缩放",
   ZOOM_TO_FIT_DESC:
@@ -1580,7 +1573,7 @@ export default {
 
   //Utils.ts
   UPDATE_AVAILABLE: `Excalidraw 的新版本已在社区插件中可用。\n\n您正在使用 ${PLUGIN_VERSION}。\n最新版本是`,
-  SCRIPT_UPDATES_AVAILABLE: `脚本更新可用 - 请检查脚本存储。\n\n${DEVICE.isDesktop ? `此消息可在控制台日志中查看 (${DEVICE.isMacOS ? "CMD+OPT+i" : "CTRL+SHIFT+i"})\n\n` : ""}如果您已将脚本组织到脚本存储文件夹下的子文件夹中，并且存在同一脚本的多个副本，可能需要清理未使用的版本以消除此警报。对于无需更新的私人脚本副本，请将它们存储在脚本存储文件夹之外。`,
+  SCRIPT_UPDATES_AVAILABLE: `脚本更新可用 - 请检查脚本存储。\n\n${DEVICE.isDesktop ? `此消息可在控制台日志中查看 (${DEVICE.isMacOS ? "CMD+OPT+i" : "CTRL+SHIFT+i"})\n\n` : ""}只检查 Downloaded 文件夹下的社区脚本更新。脚本文件夹中其他位置的副本会被忽略。`,
   ERROR_PNG_TOO_LARGE: "导出 PNG 时出错 - PNG 文件过大，请尝试较小的分辨率",
 
   //modifierkeyHelper.ts
@@ -1823,4 +1816,60 @@ Obsidian 的 Excalidraw 插件远不只是画图工具。由于它与 Obsidian �
 
   //carveout.ts
   NEW_DRAWING_TIMEOUT: "未找到文件。新建 Excalidraw 绘图耗时过长。请重试。",
+  SCRIPT_INSTALLED_NOTICE: "已安装",
+  SCRIPT_INSTALL_ERROR_NOTICE: "脚本安装失败",
+  SCRIPT_STORE_TITLE: "社区脚本",
+  SCRIPT_STORE_LOADING: "正在加载社区脚本...",
+  SCRIPT_STORE_MASTERY_TITLE: "Excalidraw Mastery",
+  SCRIPT_STORE_MASTERY_DESC: "掌握 Excalidraw 与 Visual PKM",
+  SCRIPT_STORE_COFFEE_TITLE: "请我喝杯咖啡",
+  SCRIPT_STORE_COFFEE_DESC: "支持 Excalidraw 持续开发",
+  SCRIPT_STORE_SCRIPTING_BANNER_ALT: "用 Excalidraw 脚本自动化任何事情",
+  SCRIPT_STORE_SCRIPTING_BANNER_CAPTION: "创建你自己的 Excalidraw 脚本。点击这里了解更多。",
+  SCRIPT_STORE_UPDATES_TITLE: "有可用更新",
+  SCRIPT_STORE_UPDATES_DESC: "无需在目录中逐个查找，即可更新已安装的社区脚本。",
+  SCRIPT_STORE_UPDATE_ALL: "全部更新",
+  SCRIPT_STORE_UPDATING: "正在更新...",
+  SCRIPT_STORE_UPDATE_ALL_DONE: "所有社区脚本均已是最新版本。",
+  SCRIPT_STORE_UPDATE_ALL_PARTIAL: "部分脚本无法更新。失败数量：",
+  SCRIPT_STORE_BROWSE_TITLE: "浏览脚本",
+  SCRIPT_STORE_BROWSE_DESC: "可按名称、作者、描述或分类搜索。",
+  SCRIPT_STORE_SEARCH_PLACEHOLDER: "搜索社区脚本",
+  SCRIPT_STORE_CATEGORY_LABEL: "脚本分类",
+  SCRIPT_STORE_ALL_CATEGORIES: "全部分类",
+  SCRIPT_STORE_ALL_SCRIPTS: "全部",
+  SCRIPT_STORE_INSTALLED_SCRIPTS: "已安装",
+  SCRIPT_STORE_RESULTS: "个脚本",
+  SCRIPT_STORE_NO_RESULTS: "未找到脚本",
+  SCRIPT_STORE_NO_RESULTS_DESC: "请尝试其他搜索词或分类。",
+  SCRIPT_STORE_DETAILS: "脚本详情",
+  SCRIPT_STORE_FEATURED: "精选",
+  SCRIPT_STORE_BY: "作者",
+  SCRIPT_STORE_UPDATE_BADGE: "更新",
+  SCRIPT_STORE_INSTALLED_BADGE: "已安装",
+  SCRIPT_STORE_CHECK_FAILED: "检查失败",
+  SCRIPT_STORE_INSTALL: "安装",
+  SCRIPT_STORE_UPDATE: "更新",
+  SCRIPT_STORE_REINSTALL: "重新安装",
+  SCRIPT_STORE_BACK: "返回脚本列表",
+  SCRIPT_STORE_VIEW_SOURCE: "查看源代码",
+  SCRIPT_STORE_LOCAL_TITLE: "已安装脚本",
+  SCRIPT_STORE_MULTIPLE_COPIES:
+    "发现多个受管理的副本。更新检查使用下面的第一个副本。你可以分别打开、移动或卸载每个副本。",
+  SCRIPT_STORE_PRIMARY_COPY: "用于更新检查",
+  SCRIPT_STORE_ADDITIONAL_COPY: "其他副本",
+  SCRIPT_STORE_LOCAL_FILE: "本地文件",
+  SCRIPT_STORE_OPEN_LOCAL: "打开本地文件",
+  SCRIPT_STORE_OPEN_LOCAL_FAILED: "无法打开本地脚本文件。",
+  SCRIPT_STORE_JS_OPEN_NOTE:
+    "Obsidian 默认不支持编辑 JavaScript 文件。如果没有插件提供 .js 编辑器，打开文件时可能会交给外部应用。",
+  SCRIPT_STORE_UNINSTALL: "卸载",
+  SCRIPT_STORE_UNINSTALLED: "已卸载",
+  SCRIPT_STORE_UNINSTALL_FAILED: "无法卸载",
+  SCRIPT_STORE_GROUP_LABEL: "脚本分组",
+  SCRIPT_STORE_GROUP_ROOT: "不分组（Downloaded）",
+  SCRIPT_STORE_NEW_GROUP_PLACEHOLDER: "新分组名称",
+  SCRIPT_STORE_MOVE_TO_GROUP: "移动",
+  SCRIPT_STORE_MOVED_TO_GROUP: "脚本已移动",
+  SCRIPT_STORE_MOVE_FAILED: "无法移动脚本",
 };

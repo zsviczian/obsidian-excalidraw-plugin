@@ -42,6 +42,47 @@ export function buildSafeUrl(
   return `https://${domain}${path}`;
 }
 
+// Replaced by Rollup from the checked-out Git repository and branch.
+declare const __PLUGIN_REPOSITORY_OWNER__: string;
+declare const __PLUGIN_REPOSITORY_NAME__: string;
+declare const __PLUGIN_REPOSITORY_REF__: string;
+
+export const PLUGIN_REPOSITORY_OWNER = __PLUGIN_REPOSITORY_OWNER__;
+export const PLUGIN_REPOSITORY_NAME = __PLUGIN_REPOSITORY_NAME__;
+export const PLUGIN_REPOSITORY_REF = __PLUGIN_REPOSITORY_REF__;
+
+const PLUGIN_REPOSITORY_PATH = [
+  PLUGIN_REPOSITORY_OWNER,
+  PLUGIN_REPOSITORY_NAME,
+] as const;
+
+const pathParts = (value: string): string[] =>
+  value
+    .split("/")
+    .filter(Boolean)
+    .map((part) => encodeURIComponent(part));
+
+export const getPluginRepositoryRawUrl = (repositoryPath: string): string =>
+  buildSafeUrl(
+    ["raw", "githubusercontent", "com"],
+    [
+      ...PLUGIN_REPOSITORY_PATH,
+      ...pathParts(PLUGIN_REPOSITORY_REF),
+      ...pathParts(repositoryPath),
+    ],
+  );
+
+export const getPluginRepositoryBlobUrl = (repositoryPath: string): string =>
+  buildSafeUrl(
+    ["github", "com"],
+    [
+      ...PLUGIN_REPOSITORY_PATH,
+      "blob",
+      ...pathParts(PLUGIN_REPOSITORY_REF),
+      ...pathParts(repositoryPath),
+    ],
+  );
+
 // Helper to enforce type structure in the registry
 const defineUrl = (url: string, purpose: string) => ({ url, purpose });
 
@@ -51,7 +92,22 @@ const defineUrl = (url: string, purpose: string) => ({ url, purpose });
 export const URL_REGISTRY = {
   RAW_GITHUBUSERCONTENT_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_MASTER_EA_SCRIPTS_DIRECTORY_INFO_JSON:
     defineUrl(
-      "https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/directory-info.json",
+      getPluginRepositoryRawUrl("ea-scripts/directory-info.json"),
+      UrlPurpose.APP_LOGIC,
+    ),
+  RAW_GITHUBUSERCONTENT_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_MASTER_EA_SCRIPTS_SCRIPT_STORE_JSON:
+    defineUrl(
+      getPluginRepositoryRawUrl("ea-scripts/script-store.json"),
+      UrlPurpose.APP_LOGIC,
+    ),
+  GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_BLOB_MASTER_DOCS_EA_SCRIPTING_MD:
+    defineUrl(
+      getPluginRepositoryBlobUrl("docs/ea-scripting.md"),
+      UrlPurpose.DOCS,
+    ),
+  RAW_GITHUBUSERCONTENT_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_MASTER_IMAGE_BANNER_AUTOMATE_ANYTHING_PNG:
+    defineUrl(
+      getPluginRepositoryRawUrl("images/banner-automate-anything.png"),
       UrlPurpose.APP_LOGIC,
     ),
   API_GITHUB_COM_REPOS_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES: defineUrl(
@@ -273,11 +329,6 @@ export const URL_REGISTRY = {
     "https://community.sketch-your-mind.com/vtw",
     UrlPurpose.SUPPORT,
   ),
-  RAW_GITHUBUSERCONTENT_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_MASTER_EA_SCRIPTS_INDEX_NEW_MD:
-    defineUrl(
-      "https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/index-new.md",
-      UrlPurpose.APP_LOGIC,
-    ),
   WWW_W3SCHOOLS_COM_COLORS_DEFAULT_ASP: defineUrl(
     "https://www.w3schools.com/colors/default.asp",
     UrlPurpose.DOCS,

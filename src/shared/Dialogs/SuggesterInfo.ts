@@ -390,6 +390,12 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field: "addStickyNote",
+    code: 'addStickyNote(topX: number, topY: number, text: string, formatting?: {width?: number; height?: number; fontSize?: number; fontFamily?: number; textAlign?: "left" | "center" | "right"; textVerticalAlign?: "top" | "middle" | "bottom";}, id?: string): string;',
+    desc: "Adds a sticky note using the current EA colors and styles. The optional label is fitted automatically, and the function returns the note container ID.",
+    after: "",
+  },
+  {
     field: "addDiamond",
     code: "addDiamond(topX: number, topY: number, width: number, height: number, id?:string): string;",
     desc: null,
@@ -434,7 +440,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     desc:
       "Adds an arrow element.\n" +
       'Arrowheads: "arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null.\n' +
-      'Bindings: "inside" | "outside" Sets startObjectId/endObjectId to bind the arrow ends to shapes. Bind mode: "orbit" (default) or "inside".\n' +
+      'Set startObjectId/endObjectId to bind the corresponding arrow end to a shape; omit an object ID to leave that end unbound. Bind mode: "orbit" (default) or "inside".\n' +
       "Fixed point: [xRatio,yRatio] in 0..1 (percentage of bound element width/height) to bind to a specific point on the element. In case of orbit mode, the orbit will happen around this immaginary point.\n" +
       "Elbowed: true will create an elbowed arrow.",
     after: "",
@@ -653,6 +659,24 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     field: "viewToggleFullScreen",
     code: "viewToggleFullScreen(forceViewMode?: boolean): void;",
     desc: null,
+    after: "",
+  },
+  {
+    field: "clearViewDirty",
+    code: "clearViewDirty(): void;",
+    desc: "Clears the target view's current dirty marker without saving. Intended for generated/transient scene integrations that update a view with save=false. Calls racing view teardown are ignored.",
+    after: "",
+  },
+  {
+    field: "registerThisAsViewEA",
+    code: "registerThisAsViewEA(): boolean;",
+    desc: "Registers this EA instance as the hook server for its target view.",
+    after: "",
+  },
+  {
+    field: "deregisterThisAsViewEA",
+    code: "deregisterThisAsViewEA(): boolean;",
+    desc: "Restores the target view's default plugin-global EA hook server. Safe to call during view teardown.",
     after: "",
   },
   {

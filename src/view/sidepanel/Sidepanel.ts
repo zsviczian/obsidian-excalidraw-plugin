@@ -108,6 +108,8 @@ export class ExcalidrawSidepanelView extends ItemView {
   private tabHosts = new Map<string, ExcalidrawAutomate>();
   private tabOptions = new Map<string, HTMLOptionElement>();
   private persistedScripts = new Map<string, { title: string }>();
+  private restoringScriptNames = new Set<string>();
+  private backgroundRestoredTabIds = new Set<string>();
   private activeTabId: string | null = null;
   private selectEl: HTMLSelectElement | null = null;
   private closeButtonEl: HTMLButtonElement | null = null;
@@ -239,6 +241,8 @@ export class ExcalidrawSidepanelView extends ItemView {
     this.scriptTabs.clear();
     this.tabOptions.clear();
     this.tabHosts.clear();
+    this.restoringScriptNames.clear();
+    this.backgroundRestoredTabIds.clear();
     this.activeTabId = null;
     this.selectEl = null;
     this.closeButtonEl = null;
@@ -263,18 +267,30 @@ export class ExcalidrawSidepanelView extends ItemView {
     await this.waitUntilReady();
     const scriptName = config.scriptName;
     const reuse = config.reuseExisting !== false;
+    const isBackgroundRestore = Boolean(
+      scriptName && this.restoringScriptNames.has(scriptName),
+    );
     if (scriptName && reuse) {
       const existing = this.scriptTabs.get(scriptName);
       if (existing) {
         existing.reset(config.title);
-        this.setActiveTab(existing);
+        if (isBackgroundRestore) {
+          this.activateBackgroundRestoredTab(existing);
+        } else {
+          this.setActiveTab(existing);
+        }
         if (config.hostEA) {
           this.tabHosts.set(existing.id, config.hostEA);
         }
         return existing;
       }
     }
-    const tab = this.createTabInternal(config.title, config.hostEA, scriptName);
+    const tab = this.createTabInternal(
+      config.title,
+      config.hostEA,
+      scriptName,
+      isBackgroundRestore,
+    );
     if (config.hostEA) {
       this.tabHosts.set(tab.id, config.hostEA);
     }
@@ -316,6 +332,7 @@ export class ExcalidrawSidepanelView extends ItemView {
   public removeTab(tab: ExcalidrawSidepanelTab) {
     tab.notifyWillClose();
     this.tabs.delete(tab.id);
+    this.backgroundRestoredTabIds.delete(tab.id);
     this.removeTabOption(tab);
     const scriptName = tab.scriptName;
     if (scriptName && this.scriptTabs.get(scriptName) === tab) {
@@ -343,7 +360,13 @@ export class ExcalidrawSidepanelView extends ItemView {
   /**
    * Activates the given tab (or clears active selection) and syncs UI controls.
    */
-  public setActiveTab(tab: ExcalidrawSidepanelTab | null) {
+  public setActiveTab(
+    tab: ExcalidrawSidepanelTab | null,
+    isBackgroundRestore: boolean = false,
+  ) {
+    if (tab && !isBackgroundRestore) {
+      this.backgroundRestoredTabIds.delete(tab.id);
+    }
     this.activeTabId = tab?.id ?? null;
     this.tabs.forEach((candidate) => candidate.setActive(candidate === tab));
     if (this.selectEl) {
@@ -393,6 +416,7 @@ export class ExcalidrawSidepanelView extends ItemView {
     title: string,
     ea: ExcalidrawAutomate,
     scriptName?: string,
+    isBackgroundRestore: boolean = false,
   ): ExcalidrawSidepanelTab {
     if (!this.bodyEl) {
       throw new Error("Sidepanel DOM is not ready");
@@ -401,6 +425,10 @@ export class ExcalidrawSidepanelView extends ItemView {
       title,
       {
         activate: (target, reveal) => {
+          if (scriptName && this.restoringScriptNames.has(scriptName)) {
+            this.activateBackgroundRestoredTab(target);
+            return;
+          }
           this.setActiveTab(target);
           if (reveal) {
             this.reveal();
@@ -421,8 +449,27 @@ export class ExcalidrawSidepanelView extends ItemView {
     }
     this.tabs.set(tab.id, tab);
     this.addTabOption(tab);
-    this.setActiveTab(tab);
+    if (isBackgroundRestore) {
+      this.backgroundRestoredTabIds.add(tab.id);
+      this.activateBackgroundRestoredTab(tab);
+    } else {
+      this.setActiveTab(tab);
+    }
     return tab;
+  }
+
+  /**
+   * Lets silent restoration establish a default tab without replacing a tab
+   * activated by a foreground feature while the restore script was loading.
+   */
+  private activateBackgroundRestoredTab(tab: ExcalidrawSidepanelTab): void {
+    if (
+      this.activeTabId &&
+      !this.backgroundRestoredTabIds.has(this.activeTabId)
+    ) {
+      return;
+    }
+    this.setActiveTab(tab, true);
   }
 
   /**
@@ -456,12 +503,23 @@ export class ExcalidrawSidepanelView extends ItemView {
             if (this.getTabByScript(scriptName)) {
               continue;
             }
-            await this.runScriptByName(scriptName, meta.title);
+            this.restoringScriptNames.add(scriptName);
+            try {
+              await this.runScriptByName(scriptName, meta.title);
+              // Some existing scripts intentionally start createSidepanelTab()
+              // without returning its promise and finish setup in .then(). Keep
+              // the background-restore ownership through those microtasks.
+              await this.waitForDeferredRestoreSetup();
+            } finally {
+              this.restoringScriptNames.delete(scriptName);
+            }
           }
         } finally {
           ExcalidrawSidepanelView.restoreSilent = false;
         }
       } finally {
+        this.restoringScriptNames.clear();
+        this.backgroundRestoredTabIds.clear();
         this.emptyStateEl?.setText(
           "Excalidraw sidepanel is empty. Run a panel-enabled Excalidraw script to add a panel.",
         );
@@ -469,6 +527,17 @@ export class ExcalidrawSidepanelView extends ItemView {
       }
     })();
     return this.restorePromise;
+  }
+
+  private async waitForDeferredRestoreSetup(): Promise<void> {
+    await new Promise<void>((resolve) => {
+      const ownerWindow = this.containerEl.ownerDocument.defaultView;
+      if (!ownerWindow) {
+        resolve();
+        return;
+      }
+      ownerWindow.setTimeout(resolve, 0);
+    });
   }
 
   /**

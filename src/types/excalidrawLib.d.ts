@@ -81,7 +81,7 @@ type EmbeddedLink =
     ))
   | null;
 
-declare namespace ExcalidrawLib {
+export declare namespace ExcalidrawLib {
   type ObsidianCommonHostUIMode = "full" | "compact" | "tray" | "mobile";
 
   type ObsidianCommonHostAdapter = Readonly<{
@@ -114,7 +114,6 @@ declare namespace ExcalidrawLib {
   type ObsidianExcalidrawHostAdapter = Readonly<{
     protocolVersion: 2;
     isDoubleTapEraserEnabled: () => boolean;
-    isRightClickPanEnabled: () => boolean;
     getZoomToFitMaxLevel: () => number;
     isPenModeCrosshairVisible: () => boolean;
     isSingleFingerPanningEnabled: () => boolean;
@@ -303,6 +302,7 @@ declare namespace ExcalidrawLib {
   } | undefined>;*/
 
   let hashElementsVersion: typeof import("@zsviczian/excalidraw/types/excalidraw").hashElementsVersion;
+  let convertToExcalidrawElements: typeof import("@zsviczian/excalidraw").convertToExcalidrawElements;
   let Excalidraw: typeof import("@zsviczian/excalidraw").Excalidraw;
   let MainMenu: typeof import("@zsviczian/excalidraw").MainMenu;
   let WelcomeScreen: typeof import("@zsviczian/excalidraw").WelcomeScreen;

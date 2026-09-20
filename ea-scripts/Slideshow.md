@@ -1,12 +1,19 @@
 /*
 # Slideshow
 
-Converts the active Excalidraw drawing into a slideshow presentation. The built
-script is emitted to `build/slideshow/slideshow.md`.
+Converts the active Excalidraw drawing into a slideshow presentation.
 
-[Watch the Slideshow 3.0 walkthrough](https://www.youtube.com/watch?v=JwgtCrIVeEU) and the [Excalidraw 2.27.0 update video](https://youtu.be/am2HOlbYsxI?si=4UPdmFMJcpM6j9oR&t=272)
+[![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/logo-slideshow-v4.png)](https://community.sketch-your-mind.com/slideshow)
+
+To get the most out of the Slideshow script check out the [Slideshow mini-course](https://community.sketch-your-mind.com/slideshow) on the Sketch Your Mind Community.
+
+![](https://youtu.be/7DDY8rRDzdU)
+
+[Also watch the Excalidraw 2.27.0 update video](https://youtu.be/am2HOlbYsxI?t=272)
 
 ![Slideshow example](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-slideshow-2.jpg)
+
+[Slideshow mini-course](https://community.sketch-your-mind.com/slideshow)
 
 ## Launch behavior
 
@@ -18,8 +25,10 @@ script is emitted to `build/slideshow/slideshow.md`.
   hotkey starts that view's presentation. A normal invocation starts fullscreen; whether presenter
   notes open follows the persisted sidepanel setting. Shift resumes saved progress, Alt/Option
   starts windowed, and Cmd/Ctrl opens/focuses the Slideshow sidepanel instead of presenting.
-  Invoking the script again while a presentation is active advances the existing controller unless
-  Cmd/Ctrl is held, in which case the presentation ends and the sidepanel opens.
+  A selected frame or line/arrow overrides the saved source; with no relevant selection, the exact
+  presentation source last chosen in the sidepanel for that drawing is used. A normal invocation
+  while a presentation is active advances the existing controller. Shift re-resolves the selected or
+  saved source and resumes that source's own continuation point.
 - Slideshow uses `utils.executionSource` so autostart remains registration-only while the very
   first manual toolbar, command, or hotkey invocation can start presenting immediately.
 - The presentation toolbar's settings button ends the active presentation and opens the sidepanel.
@@ -33,11 +42,11 @@ script is emitted to `build/slideshow/slideshow.md`.
 A drawing can contain one frame presentation plus any number of independent line/arrow presentations. The sidepanel keeps an explicit presentation-source selection; selecting ordinary canvas elements never changes which deck the sorter is editing.
 
 - Frames form one presentation source when the drawing contains frames.
-- A line/arrow becomes a presentation source only after slideshow metadata is created for it. Selecting an ordinary line does **not** implicitly turn it into a slideshow or replace the sidepanel deck.
+- A line/arrow becomes a presentation source only after slideshow metadata is created for it. Merely selecting an ordinary line does not replace the sidepanel deck, but manually launching Slideshow with that line selected creates the presentation metadata and uses that line for the launch.
 - When an ordinary line/arrow with at least one complete point pair is selected, the sidepanel shows a contextual **Create line presentation** action in the top toolbar.
 - Every persisted line presentation has its own optional name. Use its ellipsis/settings action beside the deck summary to rename it or remove only its slideshow metadata. Removing presentation metadata never deletes the line itself and restores its original styling if the path had been persistently hidden.
 - If presentation names collide, the selector disambiguates them only in the UI as `Name (1)`, `Name (2)`, and so on; element ids remain the stable identity. Unnamed paths use `Line presentation` with the same duplicate-numbering rule.
-- When multiple sources exist, the presentation selector lists `Frames` plus every named line presentation independently. Manual script launch prefers a selected **persisted** line presentation; otherwise frames are the default when available, then the first persisted line presentation.
+- When multiple sources exist, the presentation selector lists `Frames` plus every named line presentation independently. The selected source is persisted per drawing and becomes the manual-launch default whenever no frame or line/arrow is selected on the canvas. A selected frame or line/arrow overrides that default for the invocation.
 - Frames without slideshow metadata retain alphabetical ordering.
 - The first sorter mutation writes explicit normalized `order` metadata; after that, frame renames do not change presentation order.
 - Excluded frame and line slides remain visible and editable in the sorter, but are omitted from presentation and PDF output.
@@ -123,11 +132,12 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
 - **Normal script invocation:** start fullscreen. Slides-only vs presenter notes follows the sidepanel setting.
 - **Run in a window:** Hold Alt/Option while launching the script.
 - **Resume from the last slide:** Hold Shift while launching the script. Progress is held only in
-  temporary runtime memory and is tracked independently for each concrete Excalidraw view, even
-  when two views show the same file. It can be combined with Alt/Option.
+  temporary runtime memory and is tracked independently for each presentation source in each
+  concrete Excalidraw view, even when two views show the same file. It can be combined with
+  Alt/Option.
 - **Open the Slideshow sidepanel:** Hold Cmd on macOS or Ctrl on Windows/Linux while invoking the script.
 
-Build version: 2026-09-05T16:40:26.928Z
+Build version: 2026-09-15T13:48:51.367Z
 
 ```javascript
 */
@@ -205,8 +215,12 @@ Build version: 2026-09-05T16:40:26.928Z
     quickGuideFrameSlides: "Frame slides use the drawing's frames. Reorder slides, exclude frames, and edit slide content from the sorter.",
     quickGuideLineSlides: "Line slides follow consecutive point pairs on a configured presentation line, which is useful for free-form camera paths.",
     quickGuideMarkerFrames: "Marker frames are ideal slideshow markers: they define a slide without changing the visual grouping of the drawing.",
-    quickGuideAnimations: "Frame slides can reveal elements or groups in a sequence using appear, fade, slide-in, zoom-in, and timed animation steps.",
+    quickGuideAnimations: "Slides can reveal elements or groups in a sequence using appear, fade, slide-in, zoom-in, and timed animation steps.",
     quickGuideNotes: "Add presenter notes per slide. With a second display, presenter mode shows notes and the next slide separately from the audience view.",
+    quickGuideLearnMoreTitle: "Learn more",
+    quickGuideVideo: "Getting Started with Obsidian Excalidraw Slideshow v4",
+    quickGuideVideoThumbnailAlt: "Slideshow v4 video thumbnail",
+    quickGuideCourse: "Slideshow mini-course",
     startPresentation: "Start presentation",
     startFromBeginning: "From beginning",
     presentationStartOptions: "Presentation start options",
@@ -236,6 +250,26 @@ Build version: 2026-09-05T16:40:26.928Z
     noActiveDrawing: "Focus an Excalidraw drawing to edit its slideshow.",
     noEligibleSlides: "No eligible slides selected.",
     frameDeck: "Frame slideshow",
+    framePresentationSettings: "Frame presentation settings",
+    framePresentationName: "Presentation name",
+    convertFrameToLine: "Create line slideshow",
+    convertFrameToLinePrompt: "Create a line slideshow from this frame presentation.",
+    convertLineToFrame: "Create frame slideshow",
+    convertLineToFramePrompt: "Create a frame slideshow from this line presentation.",
+    conversionDeleteFrames: "Delete source frames",
+    conversionVisibleSlidesOnly: "Create slideshow only from visible slides",
+    conversionDeleteLine: "Delete source line",
+    conversionCreate: "Create slideshow",
+    convertLineToFrameKind: "Frame type",
+    convertLineToFrameMarker: "Marker frames",
+    convertLineToFrameNormal: "Normal frames",
+    convertLineToFrameGeometryTitle: "Frame geometry",
+    convertLineToFrameGeometryPrompt: "Should the frames match the line slide rectangles exactly, or expand to the presentation aspect ratio?",
+    convertLineToFrameExact: "Match line points",
+    convertLineToFrameAspect: "Correct aspect ratio",
+    conversionFailed: "Could not convert the slideshow.",
+    fitFrameToPresentationAspect: "Fit frame to presentation aspect ratio",
+    resizeFrameFailed: "Could not resize the presentation frame.",
     lineDeck: "Line slideshow",
     linePresentationDefaultName: "Line presentation",
     createLinePresentation: "Create a presentation from the selected line",
@@ -260,8 +294,9 @@ Build version: 2026-09-05T16:40:26.928Z
     closeAnimationEditor: "Close animation editor",
     animationSelectionHint: "Select elements or groups in the drawing, then configure and add them as a build step.",
     animationOutsideFrameIgnored: "Ignored {count} selected item(s) outside this frame.",
+    animationOutsideSlideIgnored: "Ignored {count} selected item(s) outside this slide.",
     animationTargets: "Targets",
-    animationNoTargets: "Select elements or groups in this frame.",
+    animationNoTargets: "Select elements or groups in this slide.",
     animationGroupTarget: "Group {id}",
     animationElementTarget: "{type} {id}",
     removeAnimationTarget: "Remove target",
@@ -270,6 +305,10 @@ Build version: 2026-09-05T16:40:26.928Z
     animationEffectFade: "Fade",
     animationEffectSlide: "Slide in",
     animationEffectZoom: "Zoom in",
+    animationEffectDisappear: "Disappear",
+    animationEffectFadeOut: "Fade out",
+    animationEffectSlideOut: "Slide out",
+    animationEffectZoomOut: "Zoom out",
     animationTrigger: "Trigger",
     animationTriggerAdvance: "On advance",
     animationTriggerDelay: "After delay",
@@ -280,6 +319,10 @@ Build version: 2026-09-05T16:40:26.928Z
     animationDirectionRight: "From right",
     animationDirectionUp: "From top",
     animationDirectionDown: "From bottom",
+    animationDirectionOutLeft: "To left",
+    animationDirectionOutRight: "To right",
+    animationDirectionOutUp: "To top",
+    animationDirectionOutDown: "To bottom",
     addAnimationStep: "Add step",
     updateAnimationStep: "Update step",
     newAnimationStep: "New step",
@@ -324,6 +367,11 @@ Build version: 2026-09-05T16:40:26.928Z
     keepPresentationPathVisible: "Keep presentation path visible after presentation",
     keepPresentationPathHidden: "Keep presentation path hidden after presentation",
     editSlide: "Edit slide",
+    editSlideName: "Edit slide name",
+    slideName: "Slide name",
+    presenterNotesFontSize: "Notes size",
+    sorterThumbnailSize: "Thumbnail size",
+    declareFrameSlideshow: "Create frame slideshow",
     printPdf: "Print to PDF\nClick to print slides at {width}x{height}\nHold SHIFT to print the presentation as displayed",
     endPresentation: "End presentation",
     pathWillRemainHidden: "The presentation path will remain hidden after the presentation. Next time, start the slideshow without selecting the line.",
@@ -762,6 +810,26 @@ Build version: 2026-09-05T16:40:26.928Z
   }
 
   // src/sharedUtils/presentationGeometry.ts
+  function expandSlideRectToAspectRatio(slide, dimensions) {
+    const left = Math.min(slide.x1, slide.x2);
+    const right = Math.max(slide.x1, slide.x2);
+    const top = Math.min(slide.y1, slide.y2);
+    const bottom = Math.max(slide.y1, slide.y2);
+    const width = Math.max(right - left, Number.EPSILON);
+    const height = Math.max(bottom - top, Number.EPSILON);
+    const targetRatio = dimensions.width / dimensions.height;
+    const currentRatio = width / height;
+    const expandedWidth = currentRatio < targetRatio ? height * targetRatio : width;
+    const expandedHeight = currentRatio > targetRatio ? width / targetRatio : height;
+    const centerX = (left + right) / 2;
+    const centerY = (top + bottom) / 2;
+    return {
+      x1: centerX - expandedWidth / 2,
+      y1: centerY - expandedHeight / 2,
+      x2: centerX + expandedWidth / 2,
+      y2: centerY + expandedHeight / 2
+    };
+  }
   function getPresentationFrameName(name, index) {
     return name ?? `Frame ${(index + 1).toString().padStart(2, "0")}`;
   }
@@ -790,7 +858,16 @@ Build version: 2026-09-05T16:40:26.928Z
   // src/scripts/slideshow/slideshowMetadata.ts
   var FRAME_SCHEMA_VERSION = 2;
   var LINE_SCHEMA_VERSION = 2;
-  var animationEffects = /* @__PURE__ */ new Set(["appear", "fade", "slide", "zoom"]);
+  var animationEffects = /* @__PURE__ */ new Set([
+    "appear",
+    "fade",
+    "slide",
+    "zoom",
+    "disappear",
+    "fade-out",
+    "slide-out",
+    "zoom-out"
+  ]);
   var animationTriggers = /* @__PURE__ */ new Set(["advance", "after-delay"]);
   var animationDirections = /* @__PURE__ */ new Set(["left", "right", "up", "down"]);
   function isRecord(value) {
@@ -826,7 +903,11 @@ Build version: 2026-09-05T16:40:26.928Z
       return null;
     }
     if (value.type === "element" || value.type === "group") {
-      return { type: value.type, id: value.id };
+      return {
+        type: value.type,
+        id: value.id,
+        ...value.scope === "viewport" ? { scope: "viewport" } : {}
+      };
     }
     return null;
   }
@@ -874,6 +955,17 @@ Build version: 2026-09-05T16:40:26.928Z
     }
     return { steps };
   }
+  function readLineSlidePair(value) {
+    if (value === void 0) return void 0;
+    if (!Array.isArray(value) || value.length !== 2) return null;
+    const points = value.map((point) => {
+      if (!Array.isArray(point) || point.length !== 2 || typeof point[0] !== "number" || !Number.isFinite(point[0]) || typeof point[1] !== "number" || !Number.isFinite(point[1])) {
+        return null;
+      }
+      return [point[0], point[1]];
+    });
+    return points.some((point) => point === null) ? null : points;
+  }
   function getRawSlideshowMetadata(customData) {
     return isRecord(customData) ? customData.slideshow : void 0;
   }
@@ -899,6 +991,9 @@ Build version: 2026-09-05T16:40:26.928Z
     if (value.notes !== void 0 && typeof value.notes !== "string") {
       return null;
     }
+    if (value.deckName !== void 0 && typeof value.deckName !== "string") {
+      return null;
+    }
     const animation = readAnimation(value.animation);
     if (animation === null) {
       return null;
@@ -908,6 +1003,8 @@ Build version: 2026-09-05T16:40:26.928Z
       kind: "frame",
       order: value.order
     };
+    const deckName = normalizeNotes(value.deckName);
+    if (deckName !== void 0) result.deckName = deckName;
     if (value.excluded !== void 0) result.excluded = value.excluded;
     const notes = normalizeNotes(value.notes);
     if (notes !== void 0) result.notes = notes;
@@ -935,10 +1032,21 @@ Build version: 2026-09-05T16:40:26.928Z
     if (value.excluded !== void 0 && typeof value.excluded !== "boolean") {
       return null;
     }
+    if (value.title !== void 0 && typeof value.title !== "string") {
+      return null;
+    }
+    const pair = readLineSlidePair(value.pair);
+    if (pair === null) return null;
+    const animation = readAnimation(value.animation);
+    if (animation === null) return null;
     const result = { id: value.id };
+    const title = normalizeNotes(value.title);
+    if (title !== void 0) result.title = title;
     const notes = normalizeNotes(value.notes);
     if (notes !== void 0) result.notes = notes;
     if (value.excluded !== void 0) result.excluded = value.excluded;
+    if (pair !== void 0) result.pair = pair;
+    if (animation !== void 0) result.animation = animation;
     return result;
   }
   function readLineSlideshowDataV2(customData) {
@@ -975,24 +1083,77 @@ Build version: 2026-09-05T16:40:26.928Z
     }
     return candidate;
   }
-  function reconcileLineSlideRecords(records, pairCount, pathId) {
+  function getAbsoluteLinePoints(x, y, points) {
+    return points.map((point) => [x + point[0], y + point[1]]);
+  }
+  function samePoint(left, right) {
+    return Math.abs(left[0] - right[0]) < 1e-3 && Math.abs(left[1] - right[1]) < 1e-3;
+  }
+  function samePair(left, right) {
+    return samePoint(left[0], right[0]) && samePoint(left[1], right[1]);
+  }
+  function getCurrentLinePairs(points, pairCount) {
+    return Array.from({ length: pairCount }, (_, index) => {
+      const first = points?.[index * 2];
+      const second = points?.[index * 2 + 1];
+      return first && second ? [
+        [first[0], first[1]],
+        [second[0], second[1]]
+      ] : void 0;
+    });
+  }
+  function copyLineSlideRecord(existing, id, pair) {
+    const record = { id };
+    const title = normalizeNotes(existing?.title);
+    if (title !== void 0) record.title = title;
+    const notes = normalizeNotes(existing?.notes);
+    if (notes !== void 0) record.notes = notes;
+    if (existing?.excluded === true) record.excluded = true;
+    if (existing?.animation !== void 0) {
+      record.animation = { steps: existing.animation.steps.map((step) => structuredClone(step)) };
+    }
+    if (pair) record.pair = pair;
+    else if (existing?.pair) record.pair = structuredClone(existing.pair);
+    return record;
+  }
+  function reconcileLineSlideRecords(records, pairCount, pathId, points) {
     const count = Math.max(0, Math.floor(pairCount));
     const result = [];
     const usedIds = /* @__PURE__ */ new Set();
+    const usedRecordIndices = /* @__PURE__ */ new Set();
+    const currentPairs = getCurrentLinePairs(points, count);
+    const matchedRecordByPairIndex = /* @__PURE__ */ new Map();
+    if (points) {
+      currentPairs.forEach((pair, pairIndex) => {
+        if (!pair) return;
+        const recordIndex = records.findIndex(
+          (record, index) => !usedRecordIndices.has(index) && Boolean(record.pair && samePair(record.pair, pair))
+        );
+        if (recordIndex >= 0) {
+          matchedRecordByPairIndex.set(pairIndex, recordIndex);
+          usedRecordIndices.add(recordIndex);
+        }
+      });
+    }
     for (let index = 0; index < count; index += 1) {
-      const existing = records[index];
+      let recordIndex = matchedRecordByPairIndex.get(index);
+      if (recordIndex === void 0) {
+        const indexed = records[index];
+        const canFallbackByIndex = Boolean(indexed) && !usedRecordIndices.has(index) && (!points || records.length === count || indexed?.pair === void 0);
+        if (canFallbackByIndex) {
+          recordIndex = index;
+          usedRecordIndices.add(index);
+        }
+      }
+      const existing = recordIndex === void 0 ? void 0 : records[recordIndex];
       const id = existing && isNonEmptyString(existing.id) && !usedIds.has(existing.id) ? existing.id : makeGeneratedLineSlideId(pathId, index, usedIds);
       usedIds.add(id);
-      const record = { id };
-      const notes = normalizeNotes(existing?.notes);
-      if (notes !== void 0) record.notes = notes;
-      if (existing?.excluded === true) record.excluded = true;
-      result.push(record);
+      result.push(copyLineSlideRecord(existing, id, currentPairs[index]));
     }
     return result;
   }
-  function reorderLineSlideRecords(records, pairCount, pathId, fromPairIndex, toPairIndex) {
-    const reconciled = reconcileLineSlideRecords(records, pairCount, pathId);
+  function reorderLineSlideRecords(records, pairCount, pathId, fromPairIndex, toPairIndex, points) {
+    const reconciled = reconcileLineSlideRecords(records, pairCount, pathId, points);
     if (!Number.isInteger(fromPairIndex) || !Number.isInteger(toPairIndex) || fromPairIndex < 0 || toPairIndex < 0 || fromPairIndex >= reconciled.length || toPairIndex >= reconciled.length) {
       throw new RangeError("Line-slide metadata index is outside the presentation path.");
     }
@@ -1003,12 +1164,12 @@ Build version: 2026-09-05T16:40:26.928Z
     reconciled.splice(toPairIndex, 0, record);
     return reconciled;
   }
-  function readLineSlideshowData(customData, pathId, pairCount) {
+  function readLineSlideshowData(customData, pathId, pairCount, points) {
     const v2 = readLineSlideshowDataV2(customData);
     if (v2) {
       return {
         source: "v2",
-        data: { ...v2, slides: reconcileLineSlideRecords(v2.slides, pairCount, pathId) }
+        data: { ...v2, slides: reconcileLineSlideRecords(v2.slides, pairCount, pathId, points) }
       };
     }
     const legacy = readLegacyLineSlideshowData(customData);
@@ -1022,12 +1183,12 @@ Build version: 2026-09-05T16:40:26.928Z
         kind: "path",
         hidden: legacy.hidden,
         originalProps: legacy.originalProps,
-        slides: reconcileLineSlideRecords([], pairCount, pathId)
+        slides: reconcileLineSlideRecords([], pairCount, pathId, points)
       }
     };
   }
-  function upgradeLineSlideshowData(customData, pathId, pairCount, fallbackOriginalProps) {
-    const existing = readLineSlideshowData(customData, pathId, pairCount);
+  function upgradeLineSlideshowData(customData, pathId, pairCount, fallbackOriginalProps, points) {
+    const existing = readLineSlideshowData(customData, pathId, pairCount, points);
     if (existing) {
       return existing.data;
     }
@@ -1036,7 +1197,7 @@ Build version: 2026-09-05T16:40:26.928Z
       kind: "path",
       hidden: false,
       originalProps: fallbackOriginalProps,
-      slides: reconcileLineSlideRecords([], pairCount, pathId)
+      slides: reconcileLineSlideRecords([], pairCount, pathId, points)
     };
   }
   function withNormalizedFrameOrder(customData, order) {
@@ -1047,6 +1208,7 @@ Build version: 2026-09-05T16:40:26.928Z
       order
     };
     if (existing?.excluded !== void 0) result.excluded = existing.excluded;
+    if (existing?.deckName !== void 0) result.deckName = existing.deckName;
     if (existing?.notes !== void 0) result.notes = existing.notes;
     if (existing?.animation !== void 0) result.animation = existing.animation;
     return result;
@@ -1090,6 +1252,7 @@ Build version: 2026-09-05T16:40:26.928Z
   }
   function buildFrameSlideDeck(frames) {
     const { ordered, explicit } = orderFrames(toIndexedFrames(frames));
+    const name = ordered.find((frame) => frame.metadata?.deckName)?.metadata?.deckName ?? null;
     const slides = ordered.map((frame, index) => {
       const { source, metadata } = frame;
       const slide = {
@@ -1107,6 +1270,7 @@ Build version: 2026-09-05T16:40:26.928Z
     });
     return {
       kind: "frame",
+      name,
       slides,
       visibleSlides: slides.filter((slide) => !slide.excluded),
       hasExplicitFrameOrder: explicit
@@ -1114,7 +1278,12 @@ Build version: 2026-09-05T16:40:26.928Z
   }
   function buildLineSlideDeck(path) {
     const pairCount = Math.floor(path.points.length / 2);
-    const metadata = readLineSlideshowData(path.customData, path.id, pairCount);
+    const metadata = readLineSlideshowData(
+      path.customData,
+      path.id,
+      pairCount,
+      getAbsoluteLinePoints(path.x, path.y, path.points)
+    );
     const records = metadata?.data.slides ?? [];
     const slides = [];
     for (let pairIndex = 0; pairIndex < pairCount; pairIndex += 1) {
@@ -1127,20 +1296,22 @@ Build version: 2026-09-05T16:40:26.928Z
         kind: "path",
         pathId: path.id,
         pairIndex,
-        title: `Slide ${pairIndex + 1}`,
+        title: record?.title ?? `Slide ${pairIndex + 1}`,
         rect: {
           x1: path.x + pointA[0],
           y1: path.y + pointA[1],
           x2: path.x + pointB[0],
           y2: path.y + pointB[1]
         },
-        excluded: record?.excluded ?? false
+        excluded: record?.excluded ?? false,
+        animationSteps: record?.animation?.steps ?? []
       };
       if (record?.notes !== void 0) slide.notes = record.notes;
       slides.push(slide);
     }
     return {
       kind: "path",
+      name: metadata?.data.name?.trim() || null,
       slides,
       visibleSlides: slides.filter((slide) => !slide.excluded),
       hasExplicitFrameOrder: false
@@ -1177,6 +1348,12 @@ Build version: 2026-09-05T16:40:26.928Z
   }
 
   // src/scripts/slideshow/types.ts
+  function isExitAnimationEffect(effect) {
+    return effect === "disappear" || effect === "fade-out" || effect === "slide-out" || effect === "zoom-out";
+  }
+  function isInstantAnimationEffect(effect) {
+    return effect === "appear" || effect === "disappear";
+  }
   function isLinearPathElement(element) {
     return element?.type === "line" || element?.type === "arrow";
   }
@@ -1199,7 +1376,8 @@ Build version: 2026-09-05T16:40:26.928Z
     const metadata = readLineSlideshowData(
       pathElement.customData,
       pathElement.id,
-      Math.floor(pathElement.points.length / 2)
+      Math.floor(pathElement.points.length / 2),
+      getAbsoluteLinePoints(pathElement.x, pathElement.y, pathElement.points)
     );
     if (!metadata) return null;
     return {
@@ -1223,7 +1401,12 @@ Build version: 2026-09-05T16:40:26.928Z
     return result;
   }
   function isPresentationPathHidden(path) {
-    return readLineSlideshowData(path.customData, path.id, Math.floor(path.points.length / 2))?.data.hidden ?? false;
+    return readLineSlideshowData(
+      path.customData,
+      path.id,
+      Math.floor(path.points.length / 2),
+      getAbsoluteLinePoints(path.x, path.y, path.points)
+    )?.data.hidden ?? false;
   }
   function hasPresentationSource(choices, sourceKey) {
     if (!sourceKey) return false;
@@ -1243,7 +1426,8 @@ Build version: 2026-09-05T16:40:26.928Z
     const metadata = readLineSlideshowData(
       element.customData,
       element.id,
-      Math.floor(element.points.length / 2)
+      Math.floor(element.points.length / 2),
+      getAbsoluteLinePoints(element.x, element.y, element.points)
     );
     return metadata ? `line:${element.id}` : null;
   }
@@ -1310,7 +1494,8 @@ Build version: 2026-09-05T16:40:26.928Z
     const metadata = readLineSlideshowData(
       pathElement.customData,
       pathElement.id,
-      Math.floor(pathElement.points.length / 2)
+      Math.floor(pathElement.points.length / 2),
+      getAbsoluteLinePoints(pathElement.x, pathElement.y, pathElement.points)
     );
     if (!metadata) return null;
     const originalPathProperties = metadata.data.hidden ? metadata.data.originalProps : {
@@ -1337,8 +1522,28 @@ Build version: 2026-09-05T16:40:26.928Z
   }
 
   // src/scripts/slideshow/AnimationRuntime.ts
+  var ANIMATION_ELIGIBILITY_MARGIN_RATIO = 0.1;
   function asAnimationShape(element) {
     return element;
+  }
+  var animationElementContextCache = /* @__PURE__ */ new WeakMap();
+  function getAnimationElementContext(elements) {
+    const cacheKey = elements;
+    const cached = animationElementContextCache.get(cacheKey);
+    if (cached) return cached;
+    const byId = /* @__PURE__ */ new Map();
+    const groupMembers = /* @__PURE__ */ new Map();
+    for (const element of elements) {
+      byId.set(element.id, element);
+      for (const groupId of asAnimationShape(element).groupIds ?? []) {
+        const members = groupMembers.get(groupId);
+        if (members) members.push(element);
+        else groupMembers.set(groupId, [element]);
+      }
+    }
+    const context = { byId, groupMembers };
+    animationElementContextCache.set(cacheKey, context);
+    return context;
   }
   function getAnimationOverlayPlacement(bounds, state, hostViewportOrigin) {
     const zoom = state.zoom.value;
@@ -1385,11 +1590,64 @@ Build version: 2026-09-05T16:40:26.928Z
   function rectsOverlap2(left, right) {
     return left.left <= right.right && left.right >= right.left && left.top <= right.bottom && left.bottom >= right.top;
   }
-  function elementOverlapsFrame(element, frame) {
-    return element.id !== frame.id && rectsOverlap2(getElementRect(element), getElementRect(frame));
+  function rectFromSlideRect(rect) {
+    return {
+      left: Math.min(rect.x1, rect.x2),
+      top: Math.min(rect.y1, rect.y2),
+      right: Math.max(rect.x1, rect.x2),
+      bottom: Math.max(rect.y1, rect.y2)
+    };
+  }
+  function getAnimationSlideScope(slide, config, viewportDimensions) {
+    if (!config) {
+      return {
+        rect: slide.rect,
+        ownerElementId: slide.kind === "frame" ? slide.frameId : slide.pathId
+      };
+    }
+    const configuredViewport = getNavigationRect(
+      slide.rect,
+      { width: config.printSlideWidth, height: config.printSlideHeight },
+      config.maxZoom
+    );
+    const liveViewport = viewportDimensions ? getNavigationRect(slide.rect, viewportDimensions, config.maxZoom) : configuredViewport;
+    const left = Math.min(configuredViewport.left, liveViewport.left);
+    const top = Math.min(configuredViewport.top, liveViewport.top);
+    const right = Math.max(configuredViewport.right, liveViewport.right);
+    const bottom = Math.max(configuredViewport.bottom, liveViewport.bottom);
+    const width = Math.max(right - left, Number.EPSILON);
+    const height = Math.max(bottom - top, Number.EPSILON);
+    const marginX = width * ANIMATION_ELIGIBILITY_MARGIN_RATIO;
+    const marginY = height * ANIMATION_ELIGIBILITY_MARGIN_RATIO;
+    return {
+      rect: {
+        x1: left - marginX,
+        y1: top - marginY,
+        x2: right + marginX,
+        y2: bottom + marginY
+      },
+      legacyRect: slide.rect,
+      ownerElementId: slide.kind === "frame" ? slide.frameId : slide.pathId
+    };
+  }
+  function resolveAnimationScope(scope, elements) {
+    if (typeof scope !== "string") return scope;
+    const frame = getElementById(elements, scope);
+    if (!frame) return null;
+    return {
+      rect: { x1: frame.x, y1: frame.y, x2: frame.x + frame.width, y2: frame.y + frame.height },
+      ownerElementId: frame.id
+    };
+  }
+  function elementOverlapsScope(element, scope, useViewportScope = false) {
+    const rect = useViewportScope ? scope.rect : scope.legacyRect ?? scope.rect;
+    return element.id !== scope.ownerElementId && rectsOverlap2(getElementRect(element), rectFromSlideRect(rect));
   }
   function getElementById(elements, id) {
-    return elements.find((element) => element.id === id);
+    return getAnimationElementContext(elements).byId.get(id);
+  }
+  function getGroupMembers(elements, groupId) {
+    return getAnimationElementContext(elements).groupMembers.get(groupId) ?? [];
   }
   function canonicalElementTargetId(element, elements) {
     const shape = asAnimationShape(element);
@@ -1417,27 +1675,28 @@ Build version: 2026-09-05T16:40:26.928Z
     }
     return [...result];
   }
-  function visualUnitOverlapsFrame(element, frame, elements) {
+  function visualUnitOverlapsScope(element, scope, elements, useViewportScope = false) {
     return expandBoundVisualUnit([element.id], elements).some((id) => {
       const candidate = getElementById(elements, id);
-      return candidate ? elementOverlapsFrame(candidate, frame) : false;
+      return candidate ? elementOverlapsScope(candidate, scope, useViewportScope) : false;
     });
   }
-  function resolveAnimationTargetElementIds(frameId, targets, elements) {
-    const frame = getElementById(elements, frameId);
-    if (!frame) return [];
+  function resolveAnimationTargetElementIds(slideScope, targets, elements) {
+    const scope = resolveAnimationScope(slideScope, elements);
+    if (!scope) return [];
     const baseIds = /* @__PURE__ */ new Set();
     for (const target of targets) {
+      const useViewportScope = target.scope === "viewport";
       if (target.type === "element") {
         const element = getElementById(elements, target.id);
-        if (element && visualUnitOverlapsFrame(element, frame, elements)) {
+        if (element && visualUnitOverlapsScope(element, scope, elements, useViewportScope)) {
           baseIds.add(canonicalElementTargetId(element, elements));
         }
         continue;
       }
-      for (const element of elements) {
+      for (const element of getGroupMembers(elements, target.id)) {
         const shape = asAnimationShape(element);
-        if (shape.groupIds?.includes(target.id) && elementOverlapsFrame(element, frame)) {
+        if (shape.groupIds?.includes(target.id) && elementOverlapsScope(element, scope, useViewportScope)) {
           baseIds.add(element.id);
         }
       }
@@ -1446,9 +1705,9 @@ Build version: 2026-09-05T16:40:26.928Z
   }
   function animationTargetExists(target, elements) {
     if (target.type === "element") {
-      return elements.some((element) => element.id === target.id);
+      return getElementById(elements, target.id) !== void 0;
     }
-    return elements.some((element) => asAnimationShape(element).groupIds?.includes(target.id));
+    return getGroupMembers(elements, target.id).length > 0;
   }
   function recycleMissingAnimationTargets(steps, elements) {
     return steps.flatMap((step) => {
@@ -1456,33 +1715,40 @@ Build version: 2026-09-05T16:40:26.928Z
       return targets.length === 0 ? [] : [{ ...structuredClone(step), targets }];
     });
   }
-  function captureAnimationTargets(frameId, elements, selectedElementIds, selectedGroupIds) {
-    const frame = getElementById(elements, frameId);
-    if (!frame) return { targets: [], ignoredSelectionCount: Object.keys(selectedElementIds).length };
+  function captureAnimationTargets(slideScope, elements, selectedElementIds, selectedGroupIds) {
+    const scope = resolveAnimationScope(slideScope, elements);
+    if (!scope) return { targets: [], ignoredSelectionCount: Object.keys(selectedElementIds).length };
     const targets = [];
     const seen = /* @__PURE__ */ new Set();
     let ignoredSelectionCount = 0;
     const selectedGroups = Object.entries(selectedGroupIds).filter(([, selected]) => selected).map(([groupId]) => groupId);
     for (const groupId of selectedGroups) {
-      const members = elements.filter((element) => asAnimationShape(element).groupIds?.includes(groupId));
-      const inFrame = members.filter((element) => elementOverlapsFrame(element, frame));
+      const members = getGroupMembers(elements, groupId);
+      const inViewport = members.filter((element) => elementOverlapsScope(element, scope, true));
       const selectedOutside = members.some(
-        (element) => selectedElementIds[element.id] && !elementOverlapsFrame(element, frame)
+        (element) => selectedElementIds[element.id] && !elementOverlapsScope(element, scope, true)
       );
-      if (inFrame.length > 0) {
+      if (inViewport.length > 0) {
         const key = `group:${groupId}`;
         if (!seen.has(key)) {
           seen.add(key);
-          targets.push({ type: "group", id: groupId });
+          const needsViewportScope = inViewport.some(
+            (element) => !elementOverlapsScope(element, scope)
+          );
+          targets.push({
+            type: "group",
+            id: groupId,
+            ...needsViewportScope ? { scope: "viewport" } : {}
+          });
         }
       }
       if (selectedOutside) ignoredSelectionCount += 1;
     }
     for (const element of elements) {
-      if (!selectedElementIds[element.id] || element.id === frameId) continue;
+      if (!selectedElementIds[element.id] || element.id === scope.ownerElementId) continue;
       const shape = asAnimationShape(element);
       if (selectedGroups.some((groupId) => shape.groupIds?.includes(groupId))) continue;
-      if (!visualUnitOverlapsFrame(element, frame, elements)) {
+      if (!visualUnitOverlapsScope(element, scope, elements, true)) {
         ignoredSelectionCount += 1;
         continue;
       }
@@ -1490,20 +1756,27 @@ Build version: 2026-09-05T16:40:26.928Z
       const key = `element:${id}`;
       if (!seen.has(key)) {
         seen.add(key);
-        targets.push({ type: "element", id });
+        targets.push({
+          type: "element",
+          id,
+          ...!visualUnitOverlapsScope(element, scope, elements) ? { scope: "viewport" } : {}
+        });
       }
     }
     return { targets, ignoredSelectionCount };
   }
-  function targetsOverlap(frameId, left, right, elements) {
-    const leftIds = new Set(resolveAnimationTargetElementIds(frameId, [left], elements));
-    return resolveAnimationTargetElementIds(frameId, [right], elements).some((id) => leftIds.has(id));
+  function targetsOverlap(slideScope, left, right, elements) {
+    const leftIds = new Set(resolveAnimationTargetElementIds(slideScope, [left], elements));
+    return resolveAnimationTargetElementIds(slideScope, [right], elements).some((id) => leftIds.has(id));
   }
-  function removeAnimationTargetConflicts(frameId, steps, incomingTargets, elements, editedStepId) {
+  function removeAnimationTargetConflicts(slideScope, steps, incomingTargets, elements, editedStepId, incomingEffect) {
     return steps.flatMap((step) => {
       if (step.id === editedStepId) return [structuredClone(step)];
+      if (incomingEffect !== void 0 && isExitAnimationEffect(step.effect) !== isExitAnimationEffect(incomingEffect)) {
+        return [structuredClone(step)];
+      }
       const targets = step.targets.filter(
-        (target) => !incomingTargets.some((incoming) => targetsOverlap(frameId, target, incoming, elements))
+        (target) => !incomingTargets.some((incoming) => targetsOverlap(slideScope, target, incoming, elements))
       );
       return targets.length === 0 ? [] : [{ ...structuredClone(step), targets }];
     });
@@ -1511,17 +1784,18 @@ Build version: 2026-09-05T16:40:26.928Z
   function getOpacity(element) {
     return asAnimationShape(element).opacity;
   }
-  function resolveRuntimeSteps(frameId, steps, elements) {
+  function resolveRuntimeSteps(slideScope, steps, elements) {
     const resolved = steps.map((step) => ({
       step: structuredClone(step),
-      elementIds: resolveAnimationTargetElementIds(frameId, step.targets, elements)
+      elementIds: resolveAnimationTargetElementIds(slideScope, step.targets, elements)
     }));
     const claimedByLaterStep = /* @__PURE__ */ new Set();
     for (let index = resolved.length - 1; index >= 0; index -= 1) {
       const current = resolved[index];
       if (!current) continue;
-      current.elementIds = current.elementIds.filter((id) => !claimedByLaterStep.has(id));
-      for (const id of current.elementIds) claimedByLaterStep.add(id);
+      const phase = isExitAnimationEffect(current.step.effect) ? "exit" : "enter";
+      current.elementIds = current.elementIds.filter((id) => !claimedByLaterStep.has(`${phase}:${id}`));
+      for (const id of current.elementIds) claimedByLaterStep.add(`${phase}:${id}`);
     }
     return resolved.filter((step) => step.elementIds.length > 0);
   }
@@ -1531,16 +1805,19 @@ Build version: 2026-09-05T16:40:26.928Z
     hostView;
     ownerWindow;
     onStateChange;
+    config;
     active = null;
     timer = 0;
     generation = 0;
     overlays = /* @__PURE__ */ new Set();
+    overlayMarkupCache = /* @__PURE__ */ new Map();
     buildQueue = Promise.resolve();
     constructor(options) {
       this.ea = options.ea;
       this.api = options.api;
       this.hostView = options.hostView;
       this.ownerWindow = options.hostView.ownerWindow;
+      this.config = options.config;
       this.onStateChange = options.onStateChange;
     }
     /** Returns current build progress for presentation-state consumers. */
@@ -1560,21 +1837,27 @@ Build version: 2026-09-05T16:40:26.928Z
     async enterSlide(slide, fullyBuilt, startTimedSteps = true) {
       await this.leaveSlide();
       const elements = this.api.getSceneElements();
-      const steps = resolveRuntimeSteps(slide.frameId, slide.animationSteps, elements);
+      const appState = this.config ? this.api.getAppState() : null;
+      const scope = getAnimationSlideScope(
+        slide,
+        this.config,
+        appState ? { width: appState.width, height: appState.height } : void 0
+      );
+      const steps = resolveRuntimeSteps(scope, slide.animationSteps, elements);
       const allIds = new Set(steps.flatMap((step) => step.elementIds));
       const originals = /* @__PURE__ */ new Map();
       for (const element of elements) {
         if (allIds.has(element.id)) originals.set(element.id, element);
       }
       this.active = {
-        frameId: slide.frameId,
+        scope,
         steps,
         originals,
         completedSteps: fullyBuilt ? steps.length : 0
       };
       const generation = this.generation;
       try {
-        if (!fullyBuilt) this.applyBuildState();
+        this.applyBuildState();
         this.emitState();
         if (startTimedSteps) this.schedulePendingTimedStep();
       } catch (error) {
@@ -1652,11 +1935,19 @@ Build version: 2026-09-05T16:40:26.928Z
         throw error;
       }
     }
+    /** Drops transient animation state without touching the current scene. */
+    abandonActiveSlide() {
+      this.invalidateAsyncWork();
+      this.active = null;
+      this.overlayMarkupCache.clear();
+      this.emitState();
+    }
     /** Restores every animation target to its final/original visibility and invalidates callbacks. */
     async finishActiveSlide() {
       this.invalidateAsyncWork();
       if (this.active) this.restoreOriginalOpacities();
       this.active = null;
+      this.overlayMarkupCache.clear();
       this.emitState();
     }
     /** Leaves a slide with every animation target restored to its final/original visibility. */
@@ -1664,16 +1955,18 @@ Build version: 2026-09-05T16:40:26.928Z
       await this.finishActiveSlide();
     }
     /** Runs one animation from the sidepanel and restores the drawing when the preview completes. */
-    async previewStep(frameId, step) {
+    async previewStep(slideScope, step) {
       await this.leaveSlide();
       const elements = this.api.getSceneElements();
-      const elementIds = resolveAnimationTargetElementIds(frameId, step.targets, elements);
+      const scope = resolveAnimationScope(slideScope, elements);
+      if (!scope) return;
+      const elementIds = resolveAnimationTargetElementIds(scope, step.targets, elements);
       const originals = /* @__PURE__ */ new Map();
       for (const element of elements) {
         if (elementIds.includes(element.id)) originals.set(element.id, element);
       }
       this.active = {
-        frameId,
+        scope,
         steps: elementIds.length > 0 ? [{ step: structuredClone(step), elementIds }] : [],
         originals,
         completedSteps: 0
@@ -1696,7 +1989,8 @@ Build version: 2026-09-05T16:40:26.928Z
       if (!active) return task();
       const completedSteps = active.completedSteps;
       this.invalidateAsyncWork();
-      this.restoreOriginalOpacities();
+      active.completedSteps = active.steps.length;
+      this.applyBuildState();
       try {
         return await task();
       } finally {
@@ -1728,12 +2022,26 @@ Build version: 2026-09-05T16:40:26.928Z
     applyBuildState() {
       const active = this.active;
       if (!active) return;
-      const visibleIds = new Set(
-        active.steps.slice(0, active.completedSteps).flatMap((resolved) => resolved.elementIds)
-      );
+      const hiddenIds = /* @__PURE__ */ new Set();
+      const initialized = /* @__PURE__ */ new Set();
+      for (const resolved of active.steps) {
+        const exits = isExitAnimationEffect(resolved.step.effect);
+        for (const id of resolved.elementIds) {
+          if (initialized.has(id)) continue;
+          initialized.add(id);
+          if (!exits) hiddenIds.add(id);
+        }
+      }
+      for (const resolved of active.steps.slice(0, active.completedSteps)) {
+        const exits = isExitAnimationEffect(resolved.step.effect);
+        for (const id of resolved.elementIds) {
+          if (exits) hiddenIds.add(id);
+          else hiddenIds.delete(id);
+        }
+      }
       const opacities = /* @__PURE__ */ new Map();
       for (const [id, original] of active.originals) {
-        opacities.set(id, visibleIds.has(id) ? getOpacity(original) : 0);
+        opacities.set(id, hiddenIds.has(id) ? 0 : getOpacity(original));
       }
       this.applyOpacities(opacities);
     }
@@ -1747,19 +2055,24 @@ Build version: 2026-09-05T16:40:26.928Z
     applyOpacities(opacities) {
       if (opacities.size === 0) return;
       const current = this.api.getSceneElements();
+      let changed = false;
       const elements = current.map((element) => {
         const opacity = opacities.get(element.id);
-        return opacity === void 0 ? element : { ...element, opacity };
+        if (opacity === void 0 || getOpacity(element) === opacity) return element;
+        changed = true;
+        return { ...element, opacity };
       });
+      if (!changed) return;
       this.api.updateScene({ elements, captureUpdate: "NEVER" });
     }
     async runStepEffect(resolved, reverse, generation) {
-      const { step, elementIds } = resolved;
-      if (step.effect === "appear") {
-        this.applyResolvedOpacity(resolved, reverse ? 0 : null);
+      const { step } = resolved;
+      const endsHidden = isExitAnimationEffect(step.effect) !== reverse;
+      if (step.effect === "appear" || step.effect === "disappear") {
+        this.applyResolvedOpacity(resolved, endsHidden ? 0 : null);
         return;
       }
-      if (step.effect === "fade") {
+      if (step.effect === "fade" || step.effect === "fade-out") {
         await this.animateFade(resolved, reverse, generation);
         return;
       }
@@ -1778,6 +2091,7 @@ Build version: 2026-09-05T16:40:26.928Z
     async animateFade(resolved, reverse, generation) {
       const active = this.active;
       if (!active) return;
+      const endsHidden = isExitAnimationEffect(resolved.step.effect) !== reverse;
       const duration = resolved.step.durationMs ?? 350;
       const started = this.ownerWindow.performance.now();
       while (generation === this.generation) {
@@ -1788,7 +2102,7 @@ Build version: 2026-09-05T16:40:26.928Z
           const original = active.originals.get(id);
           if (!original) continue;
           const originalOpacity = getOpacity(original);
-          opacities.set(id, reverse ? originalOpacity * (1 - progress) : originalOpacity * progress);
+          opacities.set(id, originalOpacity * (endsHidden ? 1 - progress : progress));
         }
         this.applyOpacities(opacities);
         if (progress >= 1) break;
@@ -1803,24 +2117,29 @@ Build version: 2026-09-05T16:40:26.928Z
       }
       this.overlays.add(overlay);
       const duration = resolved.step.durationMs ?? 350;
+      const endsHidden = isExitAnimationEffect(resolved.step.effect) !== reverse;
       const motion = this.getOverlayMotion(resolved.step, overlay);
       overlay.style.transition = "none";
       overlay.style.opacity = "1";
-      overlay.style.transform = reverse ? motion.end : motion.start;
-      if (reverse) this.applyResolvedOpacity(resolved, 0);
+      overlay.style.transform = endsHidden ? motion.end : motion.start;
+      this.applyResolvedOpacity(resolved, 0);
       await this.nextFrame(generation);
       await this.nextFrame(generation);
       if (generation !== this.generation) return;
       overlay.style.transition = `transform ${duration}ms ease, opacity ${duration}ms ease`;
-      overlay.style.transform = reverse ? motion.start : motion.end;
-      if (reverse && resolved.step.effect === "zoom") overlay.style.opacity = "0";
+      overlay.style.transform = endsHidden ? motion.start : motion.end;
+      if (endsHidden && (resolved.step.effect === "zoom" || resolved.step.effect === "zoom-out")) {
+        overlay.style.opacity = "0";
+      }
       await this.wait(duration + 24, generation);
-      if (!reverse && generation === this.generation) this.applyResolvedOpacity(resolved, null);
+      if (generation === this.generation) this.applyResolvedOpacity(resolved, endsHidden ? 0 : null);
       overlay.remove();
       this.overlays.delete(overlay);
     }
     getOverlayMotion(step, overlay) {
-      if (step.effect === "zoom") return { start: "scale(0.05)", end: "scale(1)" };
+      if (step.effect === "zoom" || step.effect === "zoom-out") {
+        return { start: "scale(0.05)", end: "scale(1)" };
+      }
       const rect = overlay.getBoundingClientRect();
       const appState = this.api.getAppState();
       const horizontal = Math.max(rect.width, appState.width * 0.2, 80);
@@ -1834,20 +2153,26 @@ Build version: 2026-09-05T16:40:26.928Z
       const originals = elementIds.map((id) => active.originals.get(id)).filter((element) => Boolean(element));
       if (originals.length === 0) return null;
       this.ea.setView(this.hostView);
-      const svg = await this.ea.createViewSVG({
-        withBackground: false,
-        theme: this.api.getAppState().theme,
-        frameRendering: { enabled: false, name: false, outline: false, clip: false },
-        padding: 0,
-        selectedOnly: false,
-        skipInliningFonts: false,
-        embedScene: false,
-        elementsOverride: originals
-      });
+      const state = this.api.getAppState();
+      const overlayCacheKey = `${state.theme}|${elementIds.join(",")}`;
+      let svgMarkup = this.overlayMarkupCache.get(overlayCacheKey);
+      if (!svgMarkup) {
+        const svg = await this.ea.createViewSVG({
+          withBackground: false,
+          theme: state.theme,
+          frameRendering: { enabled: false, name: false, outline: false, clip: false },
+          padding: 0,
+          selectedOnly: false,
+          skipInliningFonts: false,
+          embedScene: false,
+          elementsOverride: originals
+        });
+        svgMarkup = svg.outerHTML;
+        this.overlayMarkupCache.set(overlayCacheKey, svgMarkup);
+      }
       const excalidraw = this.hostView.contentEl.querySelector(".excalidraw");
       if (!excalidraw) return null;
       const bounds = this.ea.getBoundingBox(originals);
-      const state = this.api.getAppState();
       const hostRect = excalidraw.getBoundingClientRect();
       const placement = getAnimationOverlayPlacement(bounds, state, {
         left: hostRect.left + excalidraw.clientLeft,
@@ -1863,7 +2188,7 @@ Build version: 2026-09-05T16:40:26.928Z
       overlay.style.width = `${placement.width}px`;
       overlay.style.height = `${placement.height}px`;
       overlay.style.transformOrigin = "center center";
-      overlay.innerHTML = svg.outerHTML;
+      overlay.innerHTML = svgMarkup;
       const child = overlay.firstElementChild;
       if (child) {
         child.setAttribute("width", "100%");
@@ -2241,34 +2566,83 @@ Build version: 2026-09-05T16:40:26.928Z
 
   // src/sharedUtils/AsyncTaskQueue.ts
   var AsyncTaskQueue = class {
-    tail = Promise.resolve();
+    constructor(concurrency = 1) {
+      this.concurrency = concurrency;
+      if (!Number.isInteger(concurrency) || concurrency < 1) {
+        throw new RangeError("AsyncTaskQueue concurrency must be a positive integer.");
+      }
+    }
     generation = 0;
+    activeCount = 0;
     pending = /* @__PURE__ */ new Map();
+    waiting = [];
+    idleResolvers = /* @__PURE__ */ new Set();
     enqueue(key, task, isRelevant = () => true) {
       const existing = this.pending.get(key);
       if (existing) return existing;
       const generation = this.generation;
-      const result = this.tail.then(async () => {
-        if (generation !== this.generation || !isRelevant()) return void 0;
-        return await task();
+      let resolveResult = () => void 0;
+      let rejectResult = () => void 0;
+      const result = new Promise((resolve, reject) => {
+        resolveResult = resolve;
+        rejectResult = reject;
       });
       this.pending.set(key, result);
-      this.tail = result.then(
-        () => void 0,
-        () => void 0
-      );
+      this.waiting.push({
+        generation,
+        isRelevant,
+        task,
+        resolve: resolveResult,
+        reject: rejectResult
+      });
       const removePending = () => {
         if (this.pending.get(key) === result) this.pending.delete(key);
+        this.resolveIdleIfNeeded();
       };
       void result.then(removePending, removePending);
+      this.pump();
       return result;
     }
     clear() {
       this.generation += 1;
       this.pending.clear();
+      for (const waiting of this.waiting.splice(0)) waiting.resolve(void 0);
+      this.resolveIdleIfNeeded();
     }
     async idle() {
-      await this.tail;
+      if (this.activeCount === 0 && this.waiting.length === 0) return;
+      await new Promise((resolve) => this.idleResolvers.add(resolve));
+    }
+    pump() {
+      while (this.activeCount < this.concurrency && this.waiting.length > 0) {
+        const next = this.waiting.shift();
+        if (!next) break;
+        if (next.generation !== this.generation) {
+          next.resolve(void 0);
+          continue;
+        }
+        try {
+          if (!next.isRelevant()) {
+            next.resolve(void 0);
+            continue;
+          }
+        } catch (error) {
+          next.reject(error);
+          continue;
+        }
+        this.activeCount += 1;
+        void Promise.resolve().then(next.task).then(next.resolve, next.reject).finally(() => {
+          this.activeCount -= 1;
+          this.pump();
+          this.resolveIdleIfNeeded();
+        });
+      }
+      this.resolveIdleIfNeeded();
+    }
+    resolveIdleIfNeeded() {
+      if (this.activeCount !== 0 || this.waiting.length !== 0) return;
+      for (const resolve of this.idleResolvers) resolve();
+      this.idleResolvers.clear();
     }
   };
 
@@ -2321,22 +2695,8 @@ Build version: 2026-09-05T16:40:26.928Z
   var PREVIEW_CACHE_BYTES = 64 * 1024 * 1024;
   var DEFAULT_PREVIEW_WIDTH = 960;
   var MAX_PREVIEW_SCALE = 2;
-  var EA_EXPORT_QUEUES = /* @__PURE__ */ new WeakMap();
-  async function withEaExportLock(ea2, task) {
-    const key = ea2;
-    const previous = EA_EXPORT_QUEUES.get(key) ?? Promise.resolve();
-    let release;
-    const gate = new Promise((resolve) => {
-      release = resolve;
-    });
-    EA_EXPORT_QUEUES.set(key, previous.catch(() => void 0).then(() => gate));
-    await previous.catch(() => void 0);
-    try {
-      return await task();
-    } finally {
-      release?.();
-    }
-  }
+  var PREVIEW_EXPORT_CONCURRENCY = 2;
+  var elementFingerprintCache = /* @__PURE__ */ new WeakMap();
   function getPreviewNavigationRect(slide, maxZoom, printSlideWidth = 1920, printSlideHeight = 1080) {
     return getNavigationRect(
       slide.rect,
@@ -2356,27 +2716,80 @@ Build version: 2026-09-05T16:40:26.928Z
     delete copy.version;
     delete copy.versionNonce;
     delete copy.updated;
+    if (copy.type === "frame") delete copy.name;
     return copy;
   }
   function getSceneVisualFingerprint(elements) {
-    return JSON.stringify(elements.map(cloneWithoutMetadata));
+    return `[${elements.map((element) => {
+      const raw = element;
+      const cacheKey = element;
+      if (raw.version === void 0 && raw.versionNonce === void 0) {
+        return JSON.stringify(cloneWithoutMetadata(element));
+      }
+      const cached = elementFingerprintCache.get(cacheKey);
+      if (cached && cached.version === raw.version && cached.versionNonce === raw.versionNonce) {
+        return cached.value;
+      }
+      const value = JSON.stringify(cloneWithoutMetadata(element));
+      elementFingerprintCache.set(cacheKey, {
+        version: raw.version,
+        versionNonce: raw.versionNonce,
+        value
+      });
+      return value;
+    }).join(",")}]`;
+  }
+  function getSlideVisualFingerprint(elements, slide) {
+    return getSceneVisualFingerprint(
+      slide.kind === "path" ? elements.filter((element) => element.id !== slide.pathId) : elements
+    );
   }
   function readBackgroundColor(appState) {
     return typeof appState.viewBackgroundColor === "string" ? appState.viewBackgroundColor : FALLBACK_BACKGROUND;
   }
-  function getHiddenBuildElementIds(slide, completedAnimationSteps, elements) {
-    if (completedAnimationSteps === void 0) return [];
+  function getHiddenBuildElementIds(slide, completedAnimationSteps, elements, config) {
+    if (slide.animationSteps.length === 0) return [];
+    if (completedAnimationSteps === void 0 && !slide.animationSteps.some((step) => isExitAnimationEffect(step.effect))) {
+      return [];
+    }
     const completed = Math.min(
-      Math.max(Math.trunc(completedAnimationSteps), 0),
+      Math.max(
+        Math.trunc(completedAnimationSteps ?? slide.animationSteps.length),
+        0
+      ),
       slide.animationSteps.length
     );
-    const ids = /* @__PURE__ */ new Set();
-    for (const step of slide.animationSteps.slice(completed)) {
-      for (const id of resolveAnimationTargetElementIds(slide.frameId, step.targets, elements)) {
-        ids.add(id);
+    const scope = getAnimationSlideScope(slide, config);
+    const resolved = slide.animationSteps.map((step) => ({
+      step,
+      ids: resolveAnimationTargetElementIds(scope, step.targets, elements)
+    }));
+    const claimedByLaterStep = /* @__PURE__ */ new Set();
+    for (let index = resolved.length - 1; index >= 0; index -= 1) {
+      const current = resolved[index];
+      if (!current) continue;
+      const phase = isExitAnimationEffect(current.step.effect) ? "exit" : "enter";
+      current.ids = current.ids.filter((id) => !claimedByLaterStep.has(`${phase}:${id}`));
+      for (const id of current.ids) claimedByLaterStep.add(`${phase}:${id}`);
+    }
+    const hiddenIds = /* @__PURE__ */ new Set();
+    const initialized = /* @__PURE__ */ new Set();
+    for (const current of resolved) {
+      const exits = isExitAnimationEffect(current.step.effect);
+      for (const id of current.ids) {
+        if (initialized.has(id)) continue;
+        initialized.add(id);
+        if (!exits) hiddenIds.add(id);
       }
     }
-    return [...ids].sort();
+    for (const current of resolved.slice(0, completed)) {
+      const exits = isExitAnimationEffect(current.step.effect);
+      for (const id of current.ids) {
+        if (exits) hiddenIds.add(id);
+        else hiddenIds.delete(id);
+      }
+    }
+    return [...hiddenIds].sort();
   }
   var SlidePreviewService = class {
     constructor(ea2, api, config) {
@@ -2384,14 +2797,12 @@ Build version: 2026-09-05T16:40:26.928Z
       this.api = api;
       this.config = config;
     }
-    queue = new AsyncTaskQueue();
+    queue = new AsyncTaskQueue(PREVIEW_EXPORT_CONCURRENCY);
     cached = new ByteBudgetLruCache(
       PREVIEW_CACHE_BYTES,
       (preview) => URL.revokeObjectURL(preview.objectUrl)
     );
     generation = 0;
-    lastElements = null;
-    lastFingerprint = "";
     /** Returns the drawing background used behind previews. */
     getBackgroundColor() {
       return readBackgroundColor(this.api.getAppState());
@@ -2400,19 +2811,15 @@ Build version: 2026-09-05T16:40:26.928Z
     getAspectRatio() {
       return `${this.config.printSlideWidth} / ${this.config.printSlideHeight}`;
     }
-    /** Drops cached previews and invalidates queued work, for example after switching drawings. */
-    clear() {
+    /** Invalidates queued preview work while retaining already-rendered bitmaps. */
+    cancelPending() {
       this.generation += 1;
       this.queue.clear();
-      this.cached.clear();
-      this.lastElements = null;
-      this.lastFingerprint = "";
     }
-    getFingerprint(elements) {
-      if (elements === this.lastElements) return this.lastFingerprint;
-      this.lastElements = elements;
-      this.lastFingerprint = getSceneVisualFingerprint(elements);
-      return this.lastFingerprint;
+    /** Drops cached previews and invalidates queued work, for example after switching drawings. */
+    clear() {
+      this.cancelPending();
+      this.cached.clear();
     }
     createPreviewElement(cached, ownerDocument) {
       const image = ownerDocument.createElement("img");
@@ -2427,8 +2834,72 @@ Build version: 2026-09-05T16:40:26.928Z
       image.style.backgroundColor = cached.backgroundColor;
       return image;
     }
-    async exportPreview(elements, slide, hiddenElementIds, originalOpacities, targetWidth, generation, cacheKey) {
+    async exportPreview(localElements, slide, hiddenElementIds, originalOpacities, targetWidth, generation, cacheKey) {
       const appState = this.api.getAppState();
+      const rect = getPreviewNavigationRect(
+        slide,
+        this.config.maxZoom,
+        this.config.printSlideWidth,
+        this.config.printSlideHeight
+      );
+      const exportArea = {
+        x: Math.min(rect.left, rect.right),
+        y: Math.min(rect.top, rect.bottom),
+        width: Math.abs(rect.right - rect.left),
+        height: Math.abs(rect.bottom - rect.top)
+      };
+      if (generation !== this.generation) return void 0;
+      const hiddenIds = new Set(hiddenElementIds);
+      const exportElements = localElements.map((element) => {
+        let opacity = element.opacity;
+        if (slide.kind === "path" && element.id === slide.pathId) opacity = 0;
+        const originalOpacity = originalOpacities?.get(element.id);
+        if (originalOpacity !== void 0) opacity = originalOpacity;
+        if (hiddenIds.has(element.id)) opacity = 0;
+        if (opacity === element.opacity) return element;
+        return { ...element, opacity };
+      });
+      const scale = Math.min(
+        MAX_PREVIEW_SCALE,
+        Math.max(targetWidth / Math.max(exportArea.width, 1), 0.01)
+      );
+      const blob = await this.ea.createViewPNG({
+        withBackground: true,
+        theme: appState.theme,
+        frameRendering: {
+          enabled: true,
+          name: false,
+          outline: false,
+          clip: false
+        },
+        padding: 0,
+        selectedOnly: false,
+        embedScene: false,
+        elementsOverride: exportElements,
+        exportArea,
+        scale
+      });
+      if (generation !== this.generation) return void 0;
+      const cached = {
+        objectUrl: URL.createObjectURL(blob),
+        backgroundColor: readBackgroundColor(appState)
+      };
+      this.cached.set(cacheKey, cached, blob.size);
+      return cached;
+    }
+    /** Creates a bounded raster preview in the caller's owner document. */
+    async createPreview(slide, ownerDocument, state = {}) {
+      const elements = this.ea.getViewElements();
+      if (elements.length === 0) return null;
+      const hiddenElementIds = getHiddenBuildElementIds(
+        slide,
+        state.completedAnimationSteps,
+        elements,
+        this.config
+      );
+      const appState = this.api.getAppState();
+      const targetWidth = Math.max(Math.trunc(state.targetWidth ?? DEFAULT_PREVIEW_WIDTH), 1);
+      const opacityKey = state.originalOpacities ? [...state.originalOpacities.entries()].sort(([left], [right]) => left.localeCompare(right)).map(([id, opacity]) => `${id}:${opacity}`).join(",") : "none";
       const rect = getPreviewNavigationRect(
         slide,
         this.config.maxZoom,
@@ -2444,69 +2915,6 @@ Build version: 2026-09-05T16:40:26.928Z
       const localElements = this.ea.getElementsIntersectionArea(elements, exportArea, {
         includeBoundElements: true
       });
-      return await withEaExportLock(this.ea, async () => {
-        if (generation !== this.generation) return void 0;
-        this.ea.clear();
-        try {
-          this.ea.copyViewElementsToEAforEditing(localElements);
-          if (slide.kind === "path") {
-            const hiddenPath = this.ea.getElement(slide.pathId);
-            if (hiddenPath) hiddenPath.opacity = 0;
-          }
-          for (const [id, opacity] of originalOpacities ?? []) {
-            const element = this.ea.getElement(id);
-            if (element) element.opacity = opacity;
-          }
-          for (const id of hiddenElementIds) {
-            const element = this.ea.getElement(id);
-            if (element) element.opacity = 0;
-          }
-          const scale = Math.min(
-            MAX_PREVIEW_SCALE,
-            Math.max(targetWidth / Math.max(exportArea.width, 1), 0.01)
-          );
-          const blob = await this.ea.createViewPNG({
-            withBackground: true,
-            theme: appState.theme,
-            frameRendering: {
-              enabled: true,
-              name: false,
-              outline: false,
-              clip: false
-            },
-            padding: 0,
-            selectedOnly: false,
-            embedScene: false,
-            elementsOverride: this.ea.getElements(),
-            exportArea,
-            scale
-          });
-          if (generation !== this.generation) return void 0;
-          const cached = {
-            objectUrl: URL.createObjectURL(blob),
-            backgroundColor: readBackgroundColor(appState)
-          };
-          this.cached.set(cacheKey, cached, blob.size);
-          return cached;
-        } finally {
-          this.ea.clear();
-        }
-      });
-    }
-    /** Creates a bounded raster preview in the caller's owner document. */
-    async createPreview(slide, ownerDocument, state = {}) {
-      const elements = this.ea.getViewElements();
-      if (elements.length === 0) return null;
-      const hiddenElementIds = slide.kind === "frame" ? getHiddenBuildElementIds(slide, state.completedAnimationSteps, elements) : [];
-      const appState = this.api.getAppState();
-      const targetWidth = Math.max(Math.trunc(state.targetWidth ?? DEFAULT_PREVIEW_WIDTH), 1);
-      const opacityKey = state.originalOpacities ? [...state.originalOpacities.entries()].sort(([left], [right]) => left.localeCompare(right)).map(([id, opacity]) => `${id}:${opacity}`).join(",") : "none";
-      const rect = getPreviewNavigationRect(
-        slide,
-        this.config.maxZoom,
-        this.config.printSlideWidth,
-        this.config.printSlideHeight
-      );
       const cacheKey = [
         appState.theme,
         readBackgroundColor(appState),
@@ -2515,7 +2923,7 @@ Build version: 2026-09-05T16:40:26.928Z
         `opacity:${opacityKey}`,
         `area:${rect.left},${rect.top},${rect.right},${rect.bottom}`,
         `width:${targetWidth}`,
-        this.getFingerprint(elements)
+        getSlideVisualFingerprint(localElements, slide)
       ].join("|");
       const existing = this.cached.get(cacheKey);
       if (existing) return this.createPreviewElement(existing, ownerDocument);
@@ -2523,7 +2931,7 @@ Build version: 2026-09-05T16:40:26.928Z
       const cached = await this.queue.enqueue(
         cacheKey,
         () => this.exportPreview(
-          elements,
+          localElements,
           slide,
           hiddenElementIds,
           state.originalOpacities,
@@ -2553,9 +2961,11 @@ Build version: 2026-09-05T16:40:26.928Z
   var WINDOW_MODE_SETTING = "slideshowWindowMode";
   var NOTES_MODE_SETTING = "slideshowNotesMode";
   var PRESENTATION_TYPE_SETTING = "slideshowPresentationType";
+  var PRESENTATION_SOURCE_BY_DRAWING_SETTING = "slideshowPresentationSourceByDrawing";
   var DISPLAY_TARGETS_SETTING = "slideshowDisplayTargetsByDevice";
   var DISPLAY_TARGETS_BY_CONFIGURATION_SETTING = "slideshowDisplayTargetsByDeviceConfiguration";
   var PRESENTER_NOTES_FONT_SIZE_SETTING = "slideshowPresenterNotesFontSize";
+  var PRESENTER_NOTES_FONT_SIZE_BY_DISPLAY_SETTING = "slideshowPresenterNotesFontSizeByDeviceConfigurationDisplay";
   var SORTER_THUMBNAIL_MAX_WIDTH_SETTING = "slideshowSorterThumbnailMaxWidth";
   var LEGACY_LAUNCH_MODE_SETTING = "slideshowLaunchMode";
   var LEGACY_START_FULLSCREEN_SETTING = "slideshowStartFullscreen";
@@ -2591,6 +3001,25 @@ Build version: 2026-09-05T16:40:26.928Z
       [WINDOW_MODE_SETTING]: preferences.windowMode,
       [NOTES_MODE_SETTING]: preferences.notesMode,
       ...preferences.presentationType ? { [PRESENTATION_TYPE_SETTING]: preferences.presentationType } : {}
+    });
+  }
+  function loadSlideshowPresentationSource(ea2, drawingPath) {
+    const raw = readSettings(ea2)[PRESENTATION_SOURCE_BY_DRAWING_SETTING];
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return void 0;
+    const source = raw[drawingPath];
+    if (source === "frame") return "frame";
+    return typeof source === "string" && source.startsWith("line:") ? source : void 0;
+  }
+  async function saveSlideshowPresentationSource(ea2, drawingPath, source) {
+    const settings = ea2.getScriptSettings();
+    const raw = settings[PRESENTATION_SOURCE_BY_DRAWING_SETTING];
+    const byDrawing = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+    await ea2.setScriptSettings({
+      ...settings,
+      [PRESENTATION_SOURCE_BY_DRAWING_SETTING]: {
+        ...byDrawing,
+        [drawingPath]: source
+      }
     });
   }
   function asDisplayPreferences(value) {
@@ -2663,16 +3092,47 @@ Build version: 2026-09-05T16:40:26.928Z
       }
     });
   }
-  function loadPresenterNotesFontSize(ea2) {
-    const raw = readSettings(ea2)[PRESENTER_NOTES_FONT_SIZE_SETTING];
+  function loadPresenterNotesFontSize(ea2, deviceKey, configurationKey, displayIdentity) {
+    const settings = readSettings(ea2);
+    let raw;
+    if (deviceKey && configurationKey && displayIdentity) {
+      const byDevice = settings[PRESENTER_NOTES_FONT_SIZE_BY_DISPLAY_SETTING];
+      if (byDevice && typeof byDevice === "object" && !Array.isArray(byDevice)) {
+        const device = byDevice[deviceKey];
+        if (device && typeof device === "object" && !Array.isArray(device)) {
+          const configuration = device[configurationKey];
+          if (configuration && typeof configuration === "object" && !Array.isArray(configuration)) {
+            raw = configuration[displayIdentity];
+          }
+        }
+      }
+    }
+    if (raw === void 0) raw = settings[PRESENTER_NOTES_FONT_SIZE_SETTING];
     const value = typeof raw === "number" && Number.isFinite(raw) ? raw : DEFAULT_PRESENTER_NOTES_FONT_SIZE;
     return Math.min(48, Math.max(12, Math.round(value)));
   }
-  async function savePresenterNotesFontSize(ea2, fontSize) {
+  async function savePresenterNotesFontSize(ea2, fontSize, deviceKey, configurationKey, displayIdentity) {
     const value = Math.min(48, Math.max(12, Math.round(fontSize)));
+    const settings = ea2.getScriptSettings();
+    if (!deviceKey || !configurationKey || !displayIdentity) {
+      await ea2.setScriptSettings({ ...settings, [PRESENTER_NOTES_FONT_SIZE_SETTING]: value });
+      return;
+    }
+    const raw = settings[PRESENTER_NOTES_FONT_SIZE_BY_DISPLAY_SETTING];
+    const byDevice = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+    const rawDevice = byDevice[deviceKey];
+    const device = rawDevice && typeof rawDevice === "object" && !Array.isArray(rawDevice) ? rawDevice : {};
+    const rawConfiguration = device[configurationKey];
+    const configuration = rawConfiguration && typeof rawConfiguration === "object" && !Array.isArray(rawConfiguration) ? rawConfiguration : {};
     await ea2.setScriptSettings({
-      ...ea2.getScriptSettings(),
-      [PRESENTER_NOTES_FONT_SIZE_SETTING]: value
+      ...settings,
+      [PRESENTER_NOTES_FONT_SIZE_BY_DISPLAY_SETTING]: {
+        ...byDevice,
+        [deviceKey]: {
+          ...device,
+          [configurationKey]: { ...configuration, [displayIdentity]: value }
+        }
+      }
     });
   }
   function loadSorterThumbnailMaxWidth(ea2) {
@@ -2830,6 +3290,7 @@ Build version: 2026-09-05T16:40:26.928Z
         }
       );
       const actions = contentEl.createDiv({ cls: "modal-button-container" });
+      actions.style.justifyContent = "flex-end";
       const resetButton = actions.createEl("button", { text: t("settingsResetDefaults") });
       resetButton.addEventListener("click", () => {
         resetSlideshowConfigToDefaults(draft);
@@ -2899,7 +3360,7 @@ Build version: 2026-09-05T16:40:26.928Z
 .slideshow-sorter__row.is-drop-before::before { top:-13px; }
 .slideshow-sorter__row.is-drop-after::after { bottom:-13px; }
 .slideshow-sorter__top { display:flex; flex-direction:column; gap:5px; align-items:stretch; padding:6px 8px; border-radius:6px; background:var(--background-secondary); }
-.slideshow-sorter__top.is-draggable { cursor:grab; user-select:none; background-color:var(--background-secondary); background-image:radial-gradient(circle, var(--background-modifier-border-hover) .8px, transparent .9px); background-size:5px 5px; }
+.slideshow-sorter__top.is-draggable { cursor:grab; user-select:none; background-color:var(--background-secondary); background-image:radial-gradient(circle, var(--color-base-30) .8px, transparent .9px); background-size:5px 5px; }
 .slideshow-sorter__top.is-draggable:active { cursor:grabbing; }
 .slideshow-sorter__title-row { display:flex; align-items:center; gap:5px; width:100%; min-width:0; }
 .slideshow-sorter__title { flex:1 1 auto; min-width:0; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; line-height:1.35; }
@@ -2971,6 +3432,12 @@ Build version: 2026-09-05T16:40:26.928Z
 .slideshow-sorter:not(.has-expanded-editor) .slideshow-sorter__row.is-drop-after::after { top:8px; bottom:8px; width:0; border-top:0; border-left:2px dashed var(--interactive-accent); }
 .slideshow-sorter:not(.has-expanded-editor) .slideshow-sorter__row.is-drop-before::before { left:-6px; right:auto; }
 .slideshow-sorter:not(.has-expanded-editor) .slideshow-sorter__row.is-drop-after::after { right:-6px; left:auto; }
+.slideshow-sorter:not(.has-expanded-editor).is-single-column .slideshow-sorter__row.is-drop-before { margin-top:22px; }
+.slideshow-sorter:not(.has-expanded-editor).is-single-column .slideshow-sorter__row.is-drop-after { margin-bottom:22px; }
+.slideshow-sorter:not(.has-expanded-editor).is-single-column .slideshow-sorter__row.is-drop-before::before,
+.slideshow-sorter:not(.has-expanded-editor).is-single-column .slideshow-sorter__row.is-drop-after::after { left:8px; right:8px; width:auto; border-left:0; border-top:2px dashed var(--interactive-accent); }
+.slideshow-sorter:not(.has-expanded-editor).is-single-column .slideshow-sorter__row.is-drop-before::before { top:-13px; bottom:auto; }
+.slideshow-sorter:not(.has-expanded-editor).is-single-column .slideshow-sorter__row.is-drop-after::after { top:auto; bottom:-13px; }
 .slideshow-sorter.has-expanded-editor .slideshow-sorter__row { width:min(100%,820px); box-sizing:border-box; }
 
 @container slideshow-panel (max-width: 300px) {
@@ -2992,7 +3459,7 @@ Build version: 2026-09-05T16:40:26.928Z
 .slideshow-presenter__title { font-size:var(--font-ui-large); font-weight:700; line-height:1.25; overflow-wrap:anywhere; }
 .slideshow-presenter__counter { color:var(--text-muted); font-size:var(--font-ui-small); }
 .slideshow-presenter__header-actions { display:flex; gap:6px; flex:0 0 auto; }
-.slideshow-presenter__font-size-control { display:none; align-items:center; gap:6px; color:var(--text-muted); font-size:var(--font-ui-smaller); white-space:nowrap; }
+.slideshow-presenter__font-size-control { display:flex; align-items:center; gap:6px; color:var(--text-muted); font-size:var(--font-ui-smaller); white-space:nowrap; }
 .slideshow-presenter__font-size-control input { width:120px; }
 .slideshow-presenter__close, .slideshow-presenter__layout-toggle { flex:0 0 auto; width:38px; height:38px; display:flex; align-items:center; justify-content:center; }
 .slideshow-presenter__layout-toggle.is-active { color:var(--interactive-accent); background:var(--background-modifier-hover); }
@@ -3007,16 +3474,16 @@ Build version: 2026-09-05T16:40:26.928Z
 .slideshow-presenter__current-preview { max-width:520px; }
 .slideshow-presenter__next-preview { width:100%; }
 .slideshow-presenter__end { display:flex; align-items:center; justify-content:center; min-height:180px; color:var(--text-muted); font-size:var(--font-ui-medium); border:1px dashed var(--background-modifier-border); border-radius:8px; }
-.slideshow-presenter__notes { flex:1 1 auto; min-height:120px; padding:12px; border-radius:8px; background:var(--background-secondary); border:1px solid var(--background-modifier-border); overflow-wrap:anywhere; overflow:auto; }
+.slideshow-presenter__notes { flex:1 1 auto; min-height:120px; font-size:var(--slideshow-presenter-notes-font-size, 18px); padding:12px; border-radius:8px; background:var(--background-secondary); border:1px solid var(--background-modifier-border); overflow-wrap:anywhere; overflow:auto; }
 .slideshow-presenter__notes.is-empty { color:var(--text-muted); font-style:italic; }
 .slideshow-presenter__progress { display:flex; align-items:center; gap:8px; color:var(--text-muted); font-size:var(--font-ui-small); }
 .slideshow-presenter__controls { display:flex; flex-wrap:wrap; gap:8px; margin-top:auto; padding-top:4px; }
+.slideshow-presenter:not(.is-notes-focused) .slideshow-presenter__controls { align-self:flex-end; }
 .slideshow-presenter__controls button { min-width:44px; min-height:40px; display:inline-flex; align-items:center; justify-content:center; gap:6px; }
 .slideshow-presenter__controls svg, .slideshow-presenter__close svg, .slideshow-presenter__layout-toggle svg { width:18px; height:18px; }
 .slideshow-presenter.is-notes-focused { overflow:hidden; }
 .slideshow-presenter.is-notes-focused .slideshow-presenter__grid { flex:1; grid-template-columns:minmax(0,17fr) minmax(150px,3fr); grid-template-rows:minmax(0,1fr) minmax(0,1fr); grid-template-areas:"notes current" "notes next"; align-items:stretch; }
 .slideshow-presenter.is-notes-focused .slideshow-presenter__notes-column { min-height:0; }
-.slideshow-presenter.is-notes-focused .slideshow-presenter__font-size-control { display:flex; }
 .slideshow-presenter.is-notes-focused .slideshow-presenter__notes { flex:1; min-height:0; font-size:var(--slideshow-presenter-notes-font-size, 18px); }
 .slideshow-presenter.is-notes-focused .slideshow-presenter__current-preview { max-width:none; }
 .slideshow-presenter.is-notes-focused .slideshow-presenter__column:nth-child(1), .slideshow-presenter.is-notes-focused .slideshow-presenter__column:nth-child(2) { min-height:0; overflow:hidden; }
@@ -3063,7 +3530,24 @@ Build version: 2026-09-05T16:40:26.928Z
     constructor(options) {
       this.options = options;
       this.previewService = new SlidePreviewService(options.ea, options.api, options.config);
-      this.notesFontSize = loadPresenterNotesFontSize(options.ea);
+      const displays = getAvailableDisplays(options.hostView.ownerWindow);
+      const targetDisplayId = options.targetDisplayId ?? getCurrentDisplayId(options.hostView.ownerWindow);
+      const targetDisplay = displays.find((display) => display.id === targetDisplayId);
+      this.notesPreference = targetDisplay ? {
+        deviceKey: getSlideshowDeviceKey(options.hostView.ownerWindow),
+        configurationKey: getSlideshowDisplayConfigurationKey(displays),
+        displayIdentity: JSON.stringify([
+          getSlideshowDisplayIdentity(targetDisplay),
+          targetDisplay.bounds.x,
+          targetDisplay.bounds.y
+        ])
+      } : null;
+      this.notesFontSize = this.notesPreference ? loadPresenterNotesFontSize(
+        options.ea,
+        this.notesPreference.deviceKey,
+        this.notesPreference.configurationKey,
+        this.notesPreference.displayIdentity
+      ) : loadPresenterNotesFontSize(options.ea);
     }
     leaf = null;
     ownerWindow = null;
@@ -3085,6 +3569,7 @@ Build version: 2026-09-05T16:40:26.928Z
     closed = false;
     destroying = false;
     previewService;
+    notesPreference;
     /** Opens the popout, waits for real window migration, and renders its initial state. */
     async open(initialState) {
       if (this.leaf) {
@@ -3250,7 +3735,14 @@ Build version: 2026-09-05T16:40:26.928Z
         root.style.setProperty("--slideshow-presenter-notes-font-size", `${this.notesFontSize}px`);
       });
       fontSizeSlider.addEventListener("change", () => {
-        void savePresenterNotesFontSize(this.options.ea, this.notesFontSize).catch((error) => {
+        const preference = this.notesPreference;
+        void savePresenterNotesFontSize(
+          this.options.ea,
+          this.notesFontSize,
+          preference?.deviceKey,
+          preference?.configurationKey,
+          preference?.displayIdentity
+        ).catch((error) => {
           console.error("Slideshow presenter notes font-size save failed", error);
         });
       });
@@ -3371,20 +3863,20 @@ Build version: 2026-09-05T16:40:26.928Z
       const currentPreview = currentSlide ? await this.previewService.createPreview(
         currentSlide,
         doc,
-        currentSlide.kind === "frame" ? {
+        {
           completedAnimationSteps: state.completedAnimationSteps,
           ...originalOpacities ? { originalOpacities } : {},
           targetWidth: 1280
-        } : { targetWidth: 1280 }
+        }
       ) : null;
       const nextPreview = nextSlide ? await this.previewService.createPreview(
         nextSlide,
         doc,
-        nextSlide.kind === "frame" ? {
+        {
           completedAnimationSteps: state.nextCompletedAnimationSteps ?? 0,
           ...originalOpacities ? { originalOpacities } : {},
           targetWidth: 1280
-        } : { targetWidth: 1280 }
+        }
       ) : null;
       if (generation !== this.updateGeneration || this.closed) return;
       currentHost.replaceChildren();
@@ -3590,12 +4082,13 @@ Build version: 2026-09-05T16:40:26.928Z
       this.onSlideChange = options.onSlideChange;
       this.onExit = options.onExit;
       this.openSidepanel = options.openSidepanel;
-      this.animationRuntime = options.setup.pathType === "frame" ? new AnimationRuntime({
+      this.animationRuntime = new AnimationRuntime({
         ea: options.ea,
         api: options.api,
         hostView: options.hostView,
+        config: options.config,
         onStateChange: () => this.emitPresentationState()
-      }) : null;
+      });
     }
     /** Starts the presentation and installs all temporary UI and handlers. */
     async start() {
@@ -3689,9 +4182,9 @@ Build version: 2026-09-05T16:40:26.928Z
     /** Returns the authoritative state shared by floating controls and presenter view. */
     getPresentationState() {
       let animationState = this.animationRuntime?.getState() ?? { completedSteps: 0, stepCount: 0 };
-      if (this.setup.pathType === "frame" && animationState.stepCount === 0 && this.setup.deck.visibleSlides[this.slide]?.kind === "frame") {
+      if (animationState.stepCount === 0) {
         const current = this.setup.deck.visibleSlides[this.slide];
-        animationState = { completedSteps: 0, stepCount: current.animationSteps.length };
+        if (current) animationState = { completedSteps: 0, stepCount: current.animationSteps.length };
       }
       return buildPresentationState(this.setup.deck, this.slide, animationState);
     }
@@ -3847,7 +4340,8 @@ Build version: 2026-09-05T16:40:26.928Z
           element.customData,
           element.id,
           Math.floor(element.points.length / 2),
-          originalProps
+          originalProps,
+          getAbsoluteLinePoints(element.x, element.y, element.points)
         );
         metadata.hidden = shouldRemainHidden;
         writeSlideshowMetadata(this.ea, element.id, metadata);
@@ -3876,7 +4370,7 @@ Build version: 2026-09-05T16:40:26.928Z
     }
     async enterSlide(index, fullyBuilt) {
       const deckSlide = this.setup.deck.visibleSlides[index];
-      if (deckSlide?.kind === "frame" && this.animationRuntime) {
+      if (deckSlide && this.animationRuntime) {
         await this.animationRuntime.enterSlide(deckSlide, fullyBuilt, false);
       } else {
         await this.animationRuntime?.leaveSlide();
@@ -3885,37 +4379,54 @@ Build version: 2026-09-05T16:40:26.928Z
       this.animationRuntime?.startPendingTimer();
     }
     async scrollToRect(rect, steps = this.config.transitionStepCount) {
-      const startTimer = Date.now();
       let watchdog = 0;
       while (this.busy && watchdog++ < 15) await sleepInWindow(this.ownerWindow, 100);
       if (this.busy && watchdog >= 15) return;
       this.busy = true;
       try {
-        this.api.updateScene({ appState: { shouldCacheIgnoreZoom: true } });
+        this.api.updateScene({
+          appState: { shouldCacheIgnoreZoom: true },
+          captureUpdate: "NEVER"
+        });
         const { scrollX, scrollY, zoom } = this.api.getAppState();
-        const zoomStep = (zoom.value - rect.nextZoom) / steps;
-        const xStep = (rect.left + scrollX) / steps;
-        const yStep = (rect.top + scrollY) / steps;
-        let index = 1;
-        while (index <= steps) {
+        const stepCount = Math.max(1, Math.trunc(steps));
+        const zoomStep = (zoom.value - rect.nextZoom) / stepCount;
+        const xStep = (rect.left + scrollX) / stepCount;
+        const yStep = (rect.top + scrollY) / stepCount;
+        const startTimer = Date.now();
+        let renderedStep = 0;
+        while (renderedStep < stepCount) {
+          const elapsed = Date.now() - startTimer;
+          const nextStep = this.config.transitionDelay <= 0 || elapsed >= this.config.transitionDelay ? stepCount : Math.max(
+            1,
+            Math.min(
+              Math.round(stepCount * (elapsed / this.config.transitionDelay)),
+              stepCount
+            )
+          );
+          if (nextStep <= renderedStep) {
+            await sleepInWindow(this.ownerWindow, this.config.frameSleep);
+            continue;
+          }
+          renderedStep = nextStep;
           this.api.updateScene({
             appState: {
-              scrollX: scrollX - xStep * index,
-              scrollY: scrollY - yStep * index,
-              zoom: { value: zoom.value - zoomStep * index }
-            }
+              scrollX: scrollX - xStep * renderedStep,
+              scrollY: scrollY - yStep * renderedStep,
+              zoom: { value: zoom.value - zoomStep * renderedStep }
+            },
+            captureUpdate: "NEVER"
           });
-          const elapsed = Date.now() - startTimer;
-          if (elapsed > this.config.transitionDelay) index = index < steps ? steps : steps + 1;
-          else {
-            const timeProgress = elapsed / this.config.transitionDelay;
-            index = Math.min(Math.round(steps * timeProgress), steps);
+          if (renderedStep < stepCount) {
             await sleepInWindow(this.ownerWindow, this.config.frameSleep);
           }
         }
-        this.api.updateScene({ appState: { shouldCacheIgnoreZoom: false } });
         if (this.isLaserOn) this.api.setActiveTool({ type: "laser" });
       } finally {
+        this.api.updateScene({
+          appState: { shouldCacheIgnoreZoom: false },
+          captureUpdate: "NEVER"
+        });
         this.busy = false;
       }
     }
@@ -3928,7 +4439,6 @@ Build version: 2026-09-05T16:40:26.928Z
         }
         this.stateEmissionPauseDepth += 1;
         try {
-          await this.animationRuntime?.leaveSlide();
           this.slide += 1;
           this.controls?.setSelectedSlide(this.slide + 1);
           await this.enterSlide(this.slide, false);
@@ -3946,7 +4456,6 @@ Build version: 2026-09-05T16:40:26.928Z
       }
       this.stateEmissionPauseDepth += 1;
       try {
-        await this.animationRuntime?.leaveSlide();
         this.slide -= 1;
         this.controls?.setSelectedSlide(this.slide + 1);
         await this.enterSlide(this.slide, true);
@@ -3960,7 +4469,6 @@ Build version: 2026-09-05T16:40:26.928Z
       const bounded = Math.min(Math.max(index, 0), this.setup.slides.length - 1);
       this.stateEmissionPauseDepth += 1;
       try {
-        await this.animationRuntime?.leaveSlide();
         this.slide = bounded;
         this.controls?.setSelectedSlide(this.slide + 1);
         await this.enterSlide(this.slide, false);
@@ -4164,6 +4672,37 @@ Build version: 2026-09-05T16:40:26.928Z
     }
   };
 
+  // src/sharedUtils/confirmationModal.ts
+  function openConfirmationModal(ea2, app2, options) {
+    return new Promise((resolve) => {
+      const modal = new ea2.obsidian.Modal(app2);
+      let settled = false;
+      const finish = (confirmed) => {
+        if (settled) return;
+        settled = true;
+        resolve(confirmed);
+        modal.close();
+      };
+      if (options.title) modal.titleEl.setText(options.title);
+      modal.contentEl.createEl("p", { text: options.message });
+      const actions = modal.contentEl.createDiv({ cls: "modal-button-container" });
+      actions.style.display = "flex";
+      actions.style.justifyContent = "flex-end";
+      actions.style.gap = "var(--size-4-2)";
+      new ea2.obsidian.ButtonComponent(actions).setButtonText(options.cancelText).onClick(() => finish(false));
+      const confirmButton = new ea2.obsidian.ButtonComponent(actions).setButtonText(options.confirmText).setCta().onClick(() => finish(true));
+      modal.onClose = () => {
+        if (!settled) {
+          settled = true;
+          resolve(false);
+        }
+        modal.contentEl.empty();
+      };
+      modal.open();
+      confirmButton.buttonEl.focus();
+    });
+  }
+
   // src/scripts/slideshow/slideDeckMutations.ts
   function normalizeNotes2(notes) {
     return notes.trim().length === 0 ? void 0 : notes;
@@ -4189,12 +4728,14 @@ Build version: 2026-09-05T16:40:26.928Z
     if (orderedIds.length !== frames.length || orderedIds.some((id) => !byId.has(id))) {
       throw new Error("The frame deck changed before the slideshow metadata could be saved.");
     }
+    const deckName = frames.map((frame) => readFrameSlideshowData(frame.customData)?.deckName).find((name) => typeof name === "string" && name.trim().length > 0);
     ea2.clear();
     ea2.copyViewElementsToEAforEditing(frames);
     orderedIds.forEach((frameId, order) => {
       const source = byId.get(frameId);
       if (!source) return;
       const data = withNormalizedFrameOrder(source.customData, order);
+      if (deckName && !data.deckName) data.deckName = deckName;
       if (frameId === targetId) mutateTarget?.(data);
       writeSlideshowMetadata(ea2, frameId, data);
     });
@@ -4283,7 +4824,8 @@ Build version: 2026-09-05T16:40:26.928Z
       element.customData,
       element.id,
       Math.floor(element.points.length / 2),
-      fallbackPathProperties(source)
+      fallbackPathProperties(source),
+      getAbsoluteLinePoints(element.x, element.y, element.points)
     );
     const normalizedName = normalizeNotes2(name ?? "");
     if (normalizedName === void 0) delete metadata.name;
@@ -4302,7 +4844,8 @@ Build version: 2026-09-05T16:40:26.928Z
       element.customData,
       element.id,
       Math.floor(element.points.length / 2),
-      fallbackPathProperties(source)
+      fallbackPathProperties(source),
+      getAbsoluteLinePoints(element.x, element.y, element.points)
     );
     const normalizedName = normalizeNotes2(name);
     if (normalizedName === void 0) delete metadata.name;
@@ -4321,7 +4864,8 @@ Build version: 2026-09-05T16:40:26.928Z
       element.customData,
       element.id,
       Math.floor(element.points.length / 2),
-      fallbackPathProperties(source)
+      fallbackPathProperties(source),
+      getAbsoluteLinePoints(element.x, element.y, element.points)
     );
     if (existing.hidden) {
       element.strokeColor = existing.originalProps.strokeColor;
@@ -4353,15 +4897,27 @@ Build version: 2026-09-05T16:40:26.928Z
       element.customData,
       element.id,
       pairCount,
-      fallbackPathProperties(source)
+      fallbackPathProperties(source),
+      getAbsoluteLinePoints(element.x, element.y, element.points)
     );
     metadata.slides = reorderLineSlideRecords(
       metadata.slides,
       pairCount,
       element.id,
       fromPairIndex,
-      toPairIndex
+      toPairIndex,
+      getAbsoluteLinePoints(element.x, element.y, element.points)
     );
+    metadata.slides.forEach((record, index) => {
+      const first = reordered.points[index * 2];
+      const second = reordered.points[index * 2 + 1];
+      if (first && second) {
+        record.pair = [
+          [reordered.x + first[0], reordered.y + first[1]],
+          [reordered.x + second[0], reordered.y + second[1]]
+        ];
+      }
+    });
     element.x = reordered.x;
     element.y = reordered.y;
     element.points = reordered.points;
@@ -4379,7 +4935,8 @@ Build version: 2026-09-05T16:40:26.928Z
       element.customData,
       element.id,
       Math.floor(element.points.length / 2),
-      fallbackPathProperties(source)
+      fallbackPathProperties(source),
+      getAbsoluteLinePoints(element.x, element.y, element.points)
     );
     const record = metadata.slides.find((candidate) => candidate.id === slideId);
     if (!record) throw new Error("The selected line slide no longer exists.");
@@ -4400,7 +4957,8 @@ Build version: 2026-09-05T16:40:26.928Z
       element.customData,
       element.id,
       Math.floor(element.points.length / 2),
-      fallbackPathProperties(source)
+      fallbackPathProperties(source),
+      getAbsoluteLinePoints(element.x, element.y, element.points)
     );
     const record = metadata.slides.find((candidate) => candidate.id === slideId);
     if (!record) throw new Error("The selected line slide no longer exists.");
@@ -4420,7 +4978,8 @@ Build version: 2026-09-05T16:40:26.928Z
       element.customData,
       element.id,
       Math.floor(element.points.length / 2),
-      fallbackPathProperties(source)
+      fallbackPathProperties(source),
+      getAbsoluteLinePoints(element.x, element.y, element.points)
     );
     metadata.hidden = hidden;
     if (hidden) {
@@ -4435,10 +4994,226 @@ Build version: 2026-09-05T16:40:26.928Z
     writeSlideshowMetadata(ea2, element.id, metadata);
     await commitWorkbench(ea2);
   }
+  async function renameLineSlide(ea2, pathId, slideId, name) {
+    const source = ea2.getViewElements().find((element2) => element2.id === pathId);
+    if (!isLinearPathElement(source)) throw new Error("The presentation path no longer exists.");
+    ea2.clear();
+    ea2.copyViewElementsToEAforEditing([source]);
+    const element = ea2.getElement(pathId);
+    if (!element) throw new Error("The presentation path could not be edited.");
+    const metadata = upgradeLineSlideshowData(
+      element.customData,
+      element.id,
+      Math.floor(element.points.length / 2),
+      fallbackPathProperties(source),
+      getAbsoluteLinePoints(element.x, element.y, element.points)
+    );
+    const record = metadata.slides.find((candidate) => candidate.id === slideId);
+    if (!record) throw new Error("The selected line slide no longer exists.");
+    const normalized = normalizeNotes2(name);
+    if (normalized === void 0) delete record.title;
+    else record.title = normalized;
+    writeSlideshowMetadata(ea2, element.id, metadata);
+    await commitWorkbench(ea2);
+  }
+  async function saveLineAnimationSteps(ea2, pathId, slideId, steps) {
+    const source = ea2.getViewElements().find((element2) => element2.id === pathId);
+    if (!isLinearPathElement(source)) throw new Error("The presentation path no longer exists.");
+    ea2.clear();
+    ea2.copyViewElementsToEAforEditing([source]);
+    const element = ea2.getElement(pathId);
+    if (!element) throw new Error("The presentation path could not be edited.");
+    const metadata = upgradeLineSlideshowData(
+      element.customData,
+      element.id,
+      Math.floor(element.points.length / 2),
+      fallbackPathProperties(source),
+      getAbsoluteLinePoints(element.x, element.y, element.points)
+    );
+    const record = metadata.slides.find((candidate) => candidate.id === slideId);
+    if (!record) throw new Error("The selected line slide no longer exists.");
+    if (steps.length === 0) delete record.animation;
+    else record.animation = { steps: steps.map((step) => structuredClone(step)) };
+    writeSlideshowMetadata(ea2, element.id, metadata);
+    await commitWorkbench(ea2);
+  }
+  async function renameFramePresentation(ea2, name) {
+    const frames = getFrameElements(ea2);
+    const orderedIds = buildFrameSlideDeck(frames).slides.map((slide) => slide.id);
+    const normalized = normalizeNotes2(name);
+    ea2.clear();
+    ea2.copyViewElementsToEAforEditing(frames);
+    orderedIds.forEach((frameId, order) => {
+      const source = frames.find((frame) => frame.id === frameId);
+      if (!source) return;
+      const data = withNormalizedFrameOrder(source.customData, order);
+      if (normalized === void 0) delete data.deckName;
+      else data.deckName = normalized;
+      writeSlideshowMetadata(ea2, frameId, data);
+    });
+    await commitWorkbench(ea2);
+  }
+  async function resizeFrameToPresentationAspect(ea2, frameId, config) {
+    const source = ea2.getViewElements().find((element) => element.id === frameId);
+    if (!isFrameElement(source)) throw new Error("The selected frame no longer exists.");
+    const rect = expandSlideRectToAspectRatio(
+      { x1: source.x, y1: source.y, x2: source.x + source.width, y2: source.y + source.height },
+      { width: config.printSlideWidth, height: config.printSlideHeight }
+    );
+    ea2.clear();
+    ea2.copyViewElementsToEAforEditing([source]);
+    const frame = ea2.getElement(frameId);
+    if (!frame) throw new Error("The selected frame could not be edited.");
+    frame.x = Math.min(rect.x1, rect.x2);
+    frame.y = Math.min(rect.y1, rect.y2);
+    frame.width = Math.abs(rect.x2 - rect.x1);
+    frame.height = Math.abs(rect.y2 - rect.y1);
+    await commitWorkbench(ea2);
+  }
+  function convertedDeckName(name, sourceRetained, suffix) {
+    if (!name) return null;
+    return sourceRetained ? `${name} (${suffix})` : name;
+  }
+  async function convertLinePresentationToFrames(ea2, pathId, config, options) {
+    if (getFrameElements(ea2).length > 0) throw new Error("FRAME_SLIDESHOW_EXISTS");
+    const source = ea2.getViewElements().find((element) => element.id === pathId);
+    if (!isLinearPathElement(source)) throw new Error("The presentation path no longer exists.");
+    const deck = buildLineSlideDeck(source);
+    if (deck.slides.length === 0) throw new Error("The line slideshow has no slides.");
+    const normalizedOptions = typeof options === "boolean" ? { correctAspectRatio: options, deleteLine: false, frameKind: "marker" } : {
+      correctAspectRatio: options.correctAspectRatio,
+      deleteLine: options.deleteLine ?? false,
+      frameKind: options.frameKind ?? "marker"
+    };
+    const sceneElements = ea2.getViewElements();
+    const frameSpecs = deck.slides.map((slide) => {
+      const rect = normalizedOptions.correctAspectRatio ? expandSlideRectToAspectRatio(slide.rect, {
+        width: config.printSlideWidth,
+        height: config.printSlideHeight
+      }) : slide.rect;
+      return {
+        slide,
+        left: Math.min(rect.x1, rect.x2),
+        top: Math.min(rect.y1, rect.y2),
+        width: Math.abs(rect.x2 - rect.x1),
+        height: Math.abs(rect.y2 - rect.y1)
+      };
+    });
+    const memberIdsByFrame = normalizedOptions.frameKind === "normal" ? frameSpecs.map(
+      (spec) => ea2.getElementsInArea(
+        sceneElements,
+        { x: spec.left, y: spec.top, width: spec.width, height: spec.height },
+        { includeMarkerFrames: false, includeBoundElements: true }
+      ).filter(
+        (element) => element.id !== source.id && !isFrameElement(element) && !element.isDeleted && element.frameId === null
+      ).map((element) => element.id)
+    ) : frameSpecs.map(() => []);
+    const memberIds = new Set(memberIdsByFrame.flat());
+    const members = sceneElements.filter((element) => memberIds.has(element.id));
+    ea2.clear();
+    if (members.length > 0 || normalizedOptions.deleteLine) {
+      ea2.copyViewElementsToEAforEditing(
+        normalizedOptions.deleteLine ? [source, ...members] : members
+      );
+    }
+    const assignedIds = /* @__PURE__ */ new Set();
+    const deckName = convertedDeckName(deck.name, !normalizedOptions.deleteLine, "frames");
+    frameSpecs.forEach((spec, order) => {
+      const id = ea2.addFrame(spec.left, spec.top, spec.width, spec.height, spec.slide.title);
+      const frame = ea2.getElement(id);
+      if (!frame) throw new Error("The converted frame could not be created.");
+      if (normalizedOptions.frameKind === "marker") frame.frameRole = "marker";
+      else delete frame.frameRole;
+      const data = withNormalizedFrameOrder(void 0, order);
+      if (deckName) data.deckName = deckName;
+      if (spec.slide.notes) data.notes = spec.slide.notes;
+      if (spec.slide.excluded) data.excluded = true;
+      if (spec.slide.animationSteps.length > 0) {
+        data.animation = {
+          steps: spec.slide.animationSteps.map((step) => structuredClone(step))
+        };
+      }
+      writeSlideshowMetadata(ea2, id, data);
+      if (normalizedOptions.frameKind === "normal") {
+        for (const memberId of memberIdsByFrame[order] ?? []) {
+          if (assignedIds.has(memberId)) continue;
+          const member = ea2.getElement(memberId);
+          if (!member || member.frameId !== null) continue;
+          member.frameId = id;
+          assignedIds.add(memberId);
+        }
+      }
+    });
+    if (normalizedOptions.deleteLine) {
+      const path = ea2.getElement(source.id);
+      if (path) path.isDeleted = true;
+    }
+    await commitWorkbench(ea2);
+  }
+  async function convertFramePresentationToLine(ea2, options = {}) {
+    const frames = getFrameElements(ea2);
+    const deck = buildFrameSlideDeck(frames);
+    if (deck.slides.length === 0) throw new Error("The frame slideshow has no slides.");
+    const slides = options.visibleSlidesOnly ? deck.visibleSlides : deck.slides;
+    if (slides.length === 0) throw new Error("The frame slideshow has no visible slides.");
+    const frameIds = new Set(deck.slides.map((slide) => slide.id));
+    const framedElements = ea2.getViewElements().filter((element) => element.frameId !== null && frameIds.has(element.frameId));
+    const points = [];
+    for (const slide of slides) {
+      points.push(
+        [Math.min(slide.rect.x1, slide.rect.x2), Math.min(slide.rect.y1, slide.rect.y2)],
+        [Math.max(slide.rect.x1, slide.rect.x2), Math.max(slide.rect.y1, slide.rect.y2)]
+      );
+    }
+    ea2.clear();
+    const editableSources = options.deleteFrames ? [...framedElements, ...frames] : framedElements;
+    if (editableSources.length > 0) ea2.copyViewElementsToEAforEditing(editableSources);
+    for (const source of framedElements) {
+      const element = ea2.getElement(source.id);
+      if (element) element.frameId = null;
+    }
+    if (options.deleteFrames) {
+      for (const frame of frames) {
+        const element = ea2.getElement(frame.id);
+        if (element) element.isDeleted = true;
+      }
+    }
+    const lineId = ea2.addLine(points);
+    const line = ea2.getElement(lineId);
+    if (!line) throw new Error("The line slideshow could not be created.");
+    const metadata = {
+      schemaVersion: 2,
+      kind: "path",
+      hidden: false,
+      originalProps: fallbackPathProperties(line),
+      slides: slides.map((slide, index) => {
+        const first = line.points[index * 2];
+        const second = line.points[index * 2 + 1];
+        return {
+          id: `slideshow-${lineId}-${index + 1}`,
+          title: slide.title,
+          ...slide.notes ? { notes: slide.notes } : {},
+          ...!options.visibleSlidesOnly && slide.excluded ? { excluded: true } : {},
+          ...slide.animationSteps.length > 0 ? { animation: { steps: slide.animationSteps.map((step) => structuredClone(step)) } } : {},
+          ...first && second ? {
+            pair: [
+              [line.x + first[0], line.y + first[1]],
+              [line.x + second[0], line.y + second[1]]
+            ]
+          } : {}
+        };
+      })
+    };
+    const name = convertedDeckName(deck.name, !options.deleteFrames, "line");
+    if (name) metadata.name = name;
+    writeSlideshowMetadata(ea2, lineId, metadata);
+    await commitWorkbench(ea2);
+    return lineId;
+  }
 
   // src/scripts/slideshow/AnimationEditor.ts
   function targetKey(target) {
-    return `${target.type}:${target.id}`;
+    return `${target.type}:${target.id}:${target.scope ?? "slide"}`;
   }
   function sameTargets(left, right) {
     if (left.length !== right.length) return false;
@@ -4464,10 +5239,12 @@ Build version: 2026-09-05T16:40:26.928Z
     constructor(options) {
       this.options = options;
       this.steps = options.slide.animationSteps.map((step) => structuredClone(step));
+      this.drawingFile = options.hostView.file;
       this.previewRuntime = new AnimationRuntime({
         ea: options.ea,
         api: options.api,
-        hostView: options.hostView
+        hostView: options.hostView,
+        config: options.config
       });
     }
     steps;
@@ -4485,6 +5262,7 @@ Build version: 2026-09-05T16:40:26.928Z
     recycleTimer = 0;
     pendingRecycleElements = null;
     previewRuntime;
+    drawingFile;
     /** Renders the editor into its current sidepanel container. */
     render() {
       if (this.destroyed) return;
@@ -4499,7 +5277,7 @@ Build version: 2026-09-05T16:40:26.928Z
       if (this.ignoredSelectionCount > 0) {
         const warning = doc.createElement("div");
         warning.className = "slideshow-warning";
-        warning.textContent = t("animationOutsideFrameIgnored", { count: this.ignoredSelectionCount });
+        warning.textContent = t("animationOutsideSlideIgnored", { count: this.ignoredSelectionCount });
         container.appendChild(warning);
       }
       const targetSection = doc.createElement("div");
@@ -4538,7 +5316,11 @@ Build version: 2026-09-05T16:40:26.928Z
         ["appear", t("animationEffectAppear")],
         ["fade", t("animationEffectFade")],
         ["slide", t("animationEffectSlide")],
-        ["zoom", t("animationEffectZoom")]
+        ["zoom", t("animationEffectZoom")],
+        ["disappear", t("animationEffectDisappear")],
+        ["fade-out", t("animationEffectFadeOut")],
+        ["slide-out", t("animationEffectSlideOut")],
+        ["zoom-out", t("animationEffectZoomOut")]
       ], this.effect, (value) => {
         this.effect = value;
         this.render();
@@ -4559,21 +5341,27 @@ Build version: 2026-09-05T16:40:26.928Z
           })
         );
       }
-      if (this.effect !== "appear") {
+      if (!isInstantAnimationEffect(this.effect)) {
         form.appendChild(
           this.numberField(doc, t("animationDurationMs"), this.durationMs, 0, (value) => {
             this.durationMs = value;
           })
         );
       }
-      if (this.effect === "slide") {
+      if (this.effect === "slide" || this.effect === "slide-out") {
+        const directionOptions = isExitAnimationEffect(this.effect) ? [
+          ["left", t("animationDirectionOutLeft")],
+          ["right", t("animationDirectionOutRight")],
+          ["up", t("animationDirectionOutUp")],
+          ["down", t("animationDirectionOutDown")]
+        ] : [
+          ["left", t("animationDirectionLeft")],
+          ["right", t("animationDirectionRight")],
+          ["up", t("animationDirectionUp")],
+          ["down", t("animationDirectionDown")]
+        ];
         form.appendChild(
-          this.createSelect(doc, t("animationDirection"), [
-            ["left", t("animationDirectionLeft")],
-            ["right", t("animationDirectionRight")],
-            ["up", t("animationDirectionUp")],
-            ["down", t("animationDirectionDown")]
-          ], this.direction, (value) => {
+          this.createSelect(doc, t("animationDirection"), directionOptions, this.direction, (value) => {
             this.direction = value;
           })
         );
@@ -4599,9 +5387,7 @@ Build version: 2026-09-05T16:40:26.928Z
         cancelButton.type = "button";
         cancelButton.textContent = t("newAnimationStep");
         cancelButton.addEventListener("click", () => {
-          this.selectedStepId = null;
-          this.targets = [];
-          this.resetFormDefaults();
+          this.startNewStep();
           this.render();
         });
         formActions.appendChild(cancelButton);
@@ -4629,9 +5415,11 @@ Build version: 2026-09-05T16:40:26.928Z
     }
     /** Captures the live canvas selection while animation editing is active. */
     captureSelection(elements, appState) {
-      if (this.destroyed || Date.now() < this.ignoreSelectionUntil) return;
+      if (this.destroyed || !this.isCurrentDrawing() || Date.now() < this.ignoreSelectionUntil) {
+        return;
+      }
       const captured = captureAnimationTargets(
-        this.options.slide.frameId,
+        this.getSlideScope(),
         elements,
         appState.selectedElementIds,
         appState.selectedGroupIds
@@ -4650,10 +5438,11 @@ Build version: 2026-09-05T16:40:26.928Z
       if (this.recycleTimer) this.options.hostView.ownerWindow.clearTimeout(this.recycleTimer);
       this.recycleTimer = 0;
       this.pendingRecycleElements = null;
-      await this.previewRuntime.leaveSlide();
+      if (this.isCurrentDrawing()) await this.previewRuntime.leaveSlide();
+      else this.previewRuntime.abandonActiveSlide();
     }
     scheduleMissingTargetRecycle(elements) {
-      if (this.destroyed) return;
+      if (this.destroyed || !this.isCurrentDrawing()) return;
       this.pendingRecycleElements = elements;
       const ownerWindow = this.options.hostView.ownerWindow;
       if (this.recycleTimer) ownerWindow.clearTimeout(this.recycleTimer);
@@ -4663,7 +5452,7 @@ Build version: 2026-09-05T16:40:26.928Z
       }, 160);
     }
     async recycleMissingTargets() {
-      if (this.destroyed) return;
+      if (this.destroyed || !this.isCurrentDrawing()) return;
       const elements = this.pendingRecycleElements ?? this.options.ea.getViewElements();
       this.pendingRecycleElements = null;
       if (this.saving) {
@@ -4674,7 +5463,8 @@ Build version: 2026-09-05T16:40:26.928Z
       if (JSON.stringify(steps) === JSON.stringify(this.steps)) return;
       this.saving = true;
       try {
-        await saveFrameAnimationSteps(this.options.ea, this.options.slide.frameId, steps);
+        await this.saveAnimationSteps(steps);
+        if (!this.isCurrentDrawing()) return;
         this.steps = steps;
         if (this.selectedStepId) {
           const selectedStep = steps.find((step) => step.id === this.selectedStepId);
@@ -4686,7 +5476,7 @@ Build version: 2026-09-05T16:40:26.928Z
             this.resetFormDefaults();
           }
         }
-        this.options.onSaved();
+        this.options.onSaved(this.steps);
       } catch (error) {
         console.error("Slideshow stale animation cleanup failed", error);
         new Notice(this.options.t("animationSaveFailed"));
@@ -4730,7 +5520,7 @@ Build version: 2026-09-05T16:40:26.928Z
       );
       actions.appendChild(
         this.iconButton(doc, icons.play, t("previewAnimationStep"), false, () => {
-          void this.previewRuntime.previewStep(this.options.slide.frameId, step);
+          void this.previewRuntime.previewStep(this.getSlideScope(), step);
         })
       );
       actions.appendChild(
@@ -4772,7 +5562,7 @@ Build version: 2026-09-05T16:40:26.928Z
       this.direction = step.direction ?? "left";
       this.ignoredSelectionCount = 0;
       const ids = resolveAnimationTargetElementIds(
-        this.options.slide.frameId,
+        this.getSlideScope(),
         step.targets,
         this.options.ea.getViewElements()
       );
@@ -4782,18 +5572,19 @@ Build version: 2026-09-05T16:40:26.928Z
       this.render();
     }
     async saveCurrentStep() {
-      if (this.saving || this.targets.length === 0) return;
+      if (this.saving || this.targets.length === 0 || !this.isCurrentDrawing()) return;
       this.saving = true;
       this.render();
       try {
         const elements = this.options.ea.getViewElements();
         const selectedId = this.selectedStepId;
         let steps = removeAnimationTargetConflicts(
-          this.options.slide.frameId,
+          this.getSlideScope(),
           this.steps,
           this.targets,
           elements,
-          selectedId ?? void 0
+          selectedId ?? void 0,
+          this.effect
         );
         const step = this.buildFormStep(selectedId ?? uniqueStepId(steps));
         if (selectedId) {
@@ -4803,11 +5594,12 @@ Build version: 2026-09-05T16:40:26.928Z
         } else {
           steps.push(step);
         }
-        await saveFrameAnimationSteps(this.options.ea, this.options.slide.frameId, steps);
+        await this.saveAnimationSteps(steps);
+        if (!this.isCurrentDrawing()) return;
         this.steps = steps;
         this.selectedStepId = step.id;
         this.targets = step.targets.map((target) => structuredClone(target));
-        this.options.onSaved();
+        this.options.onSaved(this.steps);
       } catch (error) {
         console.error("Slideshow animation metadata save failed", error);
         new Notice(this.options.t("animationSaveFailed"));
@@ -4834,11 +5626,13 @@ Build version: 2026-09-05T16:40:26.928Z
       this.render();
     }
     async persistSteps(steps) {
+      if (!this.isCurrentDrawing()) return;
       this.saving = true;
       try {
-        await saveFrameAnimationSteps(this.options.ea, this.options.slide.frameId, steps);
+        await this.saveAnimationSteps(steps);
+        if (!this.isCurrentDrawing()) return;
         this.steps = steps;
-        this.options.onSaved();
+        this.options.onSaved(this.steps);
       } catch (error) {
         console.error("Slideshow animation sequence save failed", error);
         new Notice(this.options.t("animationSaveFailed"));
@@ -4848,11 +5642,16 @@ Build version: 2026-09-05T16:40:26.928Z
       }
     }
     async previewCurrentStep() {
-      if (this.targets.length === 0) return;
+      if (this.targets.length === 0 || !this.isCurrentDrawing()) return;
       await this.previewRuntime.previewStep(
-        this.options.slide.frameId,
+        this.getSlideScope(),
         this.buildFormStep(this.selectedStepId ?? "preview")
       );
+    }
+    saveAnimationSteps(steps) {
+      if (!this.isCurrentDrawing()) return Promise.resolve();
+      const { slide, ea: ea2 } = this.options;
+      return slide.kind === "frame" ? saveFrameAnimationSteps(ea2, slide.frameId, steps) : saveLineAnimationSteps(ea2, slide.pathId, slide.id, steps);
     }
     buildFormStep(id) {
       const step = {
@@ -4862,9 +5661,23 @@ Build version: 2026-09-05T16:40:26.928Z
         trigger: this.trigger
       };
       if (this.trigger === "after-delay") step.delayMs = this.delayMs;
-      if (this.effect !== "appear") step.durationMs = this.durationMs;
-      if (this.effect === "slide") step.direction = this.direction;
+      if (!isInstantAnimationEffect(this.effect)) step.durationMs = this.durationMs;
+      if (this.effect === "slide" || this.effect === "slide-out") step.direction = this.direction;
       return step;
+    }
+    startNewStep() {
+      this.selectedStepId = null;
+      this.resetFormDefaults();
+    }
+    getSlideScope() {
+      const appState = this.options.api.getAppState();
+      return getAnimationSlideScope(this.options.slide, this.options.config, {
+        width: appState.width,
+        height: appState.height
+      });
+    }
+    isCurrentDrawing() {
+      return this.options.hostView.file === this.drawingFile;
     }
     resetFormDefaults() {
       this.effect = "appear";
@@ -4892,6 +5705,14 @@ Build version: 2026-09-05T16:40:26.928Z
           return t("animationEffectSlide");
         case "zoom":
           return t("animationEffectZoom");
+        case "disappear":
+          return t("animationEffectDisappear");
+        case "fade-out":
+          return t("animationEffectFadeOut");
+        case "slide-out":
+          return t("animationEffectSlideOut");
+        case "zoom-out":
+          return t("animationEffectZoomOut");
         default:
           return t("animationEffectAppear");
       }
@@ -4942,6 +5763,28 @@ Build version: 2026-09-05T16:40:26.928Z
   };
 
   // src/scripts/slideshow/SlideSorter.ts
+  function isSingleColumnSorterLayout(rowRects) {
+    if (rowRects.length <= 1) return true;
+    const firstLeft = rowRects[0]?.left ?? 0;
+    return rowRects.every((rect) => Math.abs(rect.left - firstLeft) <= 8);
+  }
+  function getDropIndicatorPlacement(rowRects, insertionIndex) {
+    const singleColumn = isSingleColumnSorterLayout(rowRects);
+    if (rowRects.length === 0) {
+      return { beforeIndex: null, afterIndex: null, singleColumn };
+    }
+    if (insertionIndex >= rowRects.length) {
+      return { beforeIndex: null, afterIndex: rowRects.length - 1, singleColumn };
+    }
+    const wrapsRow = !singleColumn && insertionIndex > 0 && Math.abs(
+      (rowRects[insertionIndex - 1]?.top ?? 0) - (rowRects[insertionIndex]?.top ?? 0)
+    ) > 8;
+    return {
+      beforeIndex: insertionIndex,
+      afterIndex: wrapsRow ? insertionIndex - 1 : null,
+      singleColumn
+    };
+  }
   function getDropInsertionIndexFromRects(rowRects, pointerX, pointerY) {
     if (rowRects.length === 0) return 0;
     const groups = [];
@@ -4984,10 +5827,20 @@ Build version: 2026-09-05T16:40:26.928Z
     }
     return 0;
   }
+  function getFinalPreviewAnimationFingerprint(steps) {
+    if (!steps.some((step) => isExitAnimationEffect(step.effect))) return "all-visible";
+    return JSON.stringify(
+      steps.map((step) => ({
+        phase: isExitAnimationEffect(step.effect) ? "exit" : "enter",
+        targets: step.targets
+      }))
+    );
+  }
   var SlideSorter = class {
     constructor(options) {
       this.options = options;
       this.ownerWindow = options.container.ownerDocument.defaultView ?? window;
+      this.previewRenderingEnabled = options.previewRenderingEnabled ?? true;
       this.selectedSlideId = options.deck.slides[0]?.id ?? null;
       options.container.addEventListener?.("dragover", this.handleContainerDragOver);
       options.container.addEventListener?.("dragleave", this.handleContainerDragLeave);
@@ -5001,12 +5854,14 @@ Build version: 2026-09-05T16:40:26.928Z
     renderGeneration = 0;
     draggedIndex = null;
     dropTargetIndex = null;
+    dropIndicatorKey = null;
     dragPointerX = null;
     dragPointerY = null;
     autoScrollVelocity = 0;
     autoScrollFrame = 0;
     notesSaveInFlight = null;
     previewObserver = null;
+    previewRenderingEnabled;
     /** Rebinds timer behavior after the sidepanel DOM migrates between windows. */
     onWindowMigrated(ownerWindow) {
       if (this.notesTimer) {
@@ -5019,6 +5874,254 @@ Build version: 2026-09-05T16:40:26.928Z
       this.previewObserver = null;
       this.ownerWindow = ownerWindow;
       this.render();
+    }
+    /** Enables or suspends sorter thumbnail work without rebuilding slide rows. */
+    setPreviewRenderingEnabled(enabled) {
+      if (enabled === this.previewRenderingEnabled) return;
+      this.previewRenderingEnabled = enabled;
+      this.renderGeneration += 1;
+      this.previewObserver?.disconnect();
+      this.previewObserver = null;
+    }
+    /** Refreshes visible/nearby thumbnails when preview rendering is enabled. */
+    refreshPreviews() {
+      if (!this.previewRenderingEnabled) return;
+      this.renderGeneration += 1;
+      const generation = this.renderGeneration;
+      this.previewObserver?.disconnect();
+      this.previewObserver = this.createPreviewObserver(generation);
+      const hosts = Array.from(
+        this.options.container.querySelectorAll(".slideshow-sorter__preview")
+      );
+      for (const host of hosts) {
+        const slide = this.options.deck.slides.find(
+          (candidate) => candidate.id === host.dataset.slideId
+        );
+        if (!slide) continue;
+        if (this.previewObserver) this.previewObserver.observe(host);
+        else this.renderPreview(host, slide, generation);
+      }
+    }
+    /** Re-establishes lazy loading after focus returns, without touching already-populated thumbnails. */
+    resumePreviewRendering() {
+      if (!this.previewRenderingEnabled) return;
+      this.renderGeneration += 1;
+      const generation = this.renderGeneration;
+      this.previewObserver?.disconnect();
+      this.previewObserver = this.createPreviewObserver(generation);
+      const hosts = Array.from(
+        this.options.container.querySelectorAll(".slideshow-sorter__preview")
+      ).filter(
+        (host) => !host.firstElementChild || host.dataset.previewDirty === "true"
+      );
+      for (const host of hosts) {
+        const slide = this.options.deck.slides.find(
+          (candidate) => candidate.id === host.dataset.slideId
+        );
+        if (!slide) continue;
+        if (this.previewObserver) this.previewObserver.observe(host);
+        else this.renderPreview(host, slide, generation);
+      }
+    }
+    /**
+     * Reconciles deck metadata/ordering into the existing rows when slide identity is unchanged.
+     * Returns false when the sorter must be rebuilt because slides were added, removed, or changed kind.
+     */
+    syncDeck(nextDeck, refreshChangedPreviews = true) {
+      const deck = this.options.deck;
+      if (deck.kind !== nextDeck.kind || deck.slides.length !== nextDeck.slides.length) return false;
+      const currentById = new Map(deck.slides.map((slide) => [slide.id, slide]));
+      if (nextDeck.slides.some((slide) => {
+        const current = currentById.get(slide.id);
+        return !current || current.kind !== slide.kind;
+      })) {
+        return false;
+      }
+      const previousOrder = deck.slides.map((slide) => slide.id).join("\0");
+      const nextOrder = nextDeck.slides.map((slide) => slide.id).join("\0");
+      const previewRefreshIds = /* @__PURE__ */ new Set();
+      const nextSlides = [];
+      for (const incoming of nextDeck.slides) {
+        const current = currentById.get(incoming.id);
+        if (!current) return false;
+        const rectChanged = current.rect.x1 !== incoming.rect.x1 || current.rect.y1 !== incoming.rect.y1 || current.rect.x2 !== incoming.rect.x2 || current.rect.y2 !== incoming.rect.y2;
+        const animationChanged = getFinalPreviewAnimationFingerprint(current.animationSteps) !== getFinalPreviewAnimationFingerprint(incoming.animationSteps);
+        if (rectChanged || animationChanged) previewRefreshIds.add(current.id);
+        Object.assign(current, {
+          ...incoming,
+          rect: { ...incoming.rect },
+          animationSteps: incoming.animationSteps.map((step) => structuredClone(step))
+        });
+        nextSlides.push(current);
+      }
+      deck.name = nextDeck.name;
+      deck.slides = nextSlides;
+      deck.visibleSlides = nextSlides.filter((slide) => !slide.excluded);
+      deck.hasExplicitFrameOrder = nextDeck.hasExplicitFrameOrder;
+      const rowsById = new Map(
+        Array.from(this.options.container.querySelectorAll(".slideshow-sorter__row")).map(
+          (row) => [row.dataset.slideId ?? "", row]
+        )
+      );
+      if (previousOrder !== nextOrder) {
+        for (const slide of deck.slides) {
+          const row = rowsById.get(slide.id);
+          if (row) this.options.container.appendChild(row);
+        }
+      }
+      deck.slides.forEach((slide, index) => {
+        const row = rowsById.get(slide.id);
+        if (!row) return;
+        this.updateRowOrderState(row, slide, index);
+        this.updateRowInclusion(row, slide);
+        this.updateNotesBadge(row, slide);
+        this.updateAnimationBadge(row, slide);
+      });
+      if (this.expandedNotesSlideId && this.notesTextarea && this.notesTextarea.ownerDocument.activeElement !== this.notesTextarea) {
+        const slide = deck.slides.find((candidate) => candidate.id === this.expandedNotesSlideId);
+        if (slide) this.notesTextarea.value = slide.notes ?? "";
+      }
+      if (this.selectedSlideId && !currentById.has(this.selectedSlideId)) {
+        this.selectedSlideId = deck.slides[0]?.id ?? null;
+        this.updateSelectedRows();
+      }
+      if (refreshChangedPreviews) {
+        for (const slideId of previewRefreshIds) this.refreshSlidePreview(slideId);
+      }
+      return true;
+    }
+    /** Captures mounted preview nodes so a rare full sidepanel rebuild can reuse them without blinking. */
+    capturePreviewContents() {
+      const result = /* @__PURE__ */ new Map();
+      this.options.container.querySelectorAll(".slideshow-sorter__preview").forEach((host) => {
+        const slideId = host.dataset.slideId;
+        if (slideId && host.childNodes.length > 0) result.set(slideId, Array.from(host.childNodes));
+      });
+      return result;
+    }
+    /** Restores previously mounted preview nodes into matching slide hosts after a full UI rebuild. */
+    restorePreviewContents(contents, refreshRestored = true) {
+      this.options.container.querySelectorAll(".slideshow-sorter__preview").forEach((host) => {
+        const slideId = host.dataset.slideId;
+        const nodes = slideId ? contents.get(slideId) : void 0;
+        if (!nodes || nodes.length === 0) return;
+        host.replaceChildren(...nodes);
+        if (!refreshRestored) this.previewObserver?.unobserve(host);
+      });
+    }
+    /** Performs one lazy preview pass without enabling background thumbnail refreshes. */
+    refreshPreviewsOnce() {
+      this.renderGeneration += 1;
+      const generation = this.renderGeneration;
+      const hosts = Array.from(
+        this.options.container.querySelectorAll(".slideshow-sorter__preview")
+      ).filter(
+        (host) => !host.firstElementChild || host.dataset.previewDirty === "true"
+      );
+      if (hosts.length === 0) return;
+      const observer = this.createPreviewObserver(generation, true, true);
+      if (observer) {
+        for (const host of hosts) observer.observe(host);
+        return;
+      }
+      const selectedHost = hosts.find((host) => host.dataset.slideId === this.selectedSlideId);
+      const fallbackHosts = Array.from(
+        /* @__PURE__ */ new Set([...selectedHost ? [selectedHost] : [], ...hosts.slice(0, 8)])
+      );
+      for (const host of fallbackHosts) {
+        const slide = this.options.deck.slides.find(
+          (candidate) => candidate.id === host.dataset.slideId
+        );
+        if (slide) this.renderPreview(host, slide, generation, true);
+      }
+    }
+    /** Expands or collapses one animation editor without rebuilding unaffected slide rows. */
+    setAnimationEditingSlideId(slideId) {
+      const previousSlideId = this.options.animationEditingSlideId ?? null;
+      if (previousSlideId === slideId) return;
+      const affected = /* @__PURE__ */ new Set();
+      if (previousSlideId) affected.add(previousSlideId);
+      if (slideId) {
+        affected.add(slideId);
+        this.selectedSlideId = slideId;
+        if (this.expandedNotesSlideId && this.expandedNotesSlideId !== slideId) {
+          affected.add(this.expandedNotesSlideId);
+          this.expandedNotesSlideId = null;
+          this.notesTextarea = null;
+        }
+      }
+      this.options.animationEditingSlideId = slideId;
+      this.options.container.classList.toggle(
+        "has-expanded-editor",
+        Boolean(this.expandedNotesSlideId || slideId)
+      );
+      this.updateSelectedRows();
+      for (const affectedSlideId of affected) this.replaceRowPreservingPreview(affectedSlideId);
+    }
+    /** Applies one include/exclude change in place; preview pixels are deliberately untouched. */
+    applyInclusion(slideId, excluded) {
+      const slide = this.options.deck.slides.find((candidate) => candidate.id === slideId);
+      if (!slide) return;
+      slide.excluded = excluded;
+      this.options.deck.visibleSlides = this.options.deck.slides.filter((candidate) => !candidate.excluded);
+      if (this.options.deck.kind === "frame") this.options.deck.hasExplicitFrameOrder = true;
+      const row = this.getRow(slideId);
+      if (row) this.updateRowInclusion(row, slide);
+    }
+    /** Applies a persisted reorder by moving existing row nodes rather than recreating them. */
+    applyReorder(fromIndex, toIndex) {
+      const { deck, container } = this.options;
+      if (fromIndex < 0 || toIndex < 0 || fromIndex >= deck.slides.length || toIndex >= deck.slides.length || fromIndex === toIndex) {
+        return;
+      }
+      const [moved] = deck.slides.splice(fromIndex, 1);
+      if (!moved) return;
+      deck.slides.splice(toIndex, 0, moved);
+      deck.slides.forEach((slide, index) => {
+        if (slide.kind === "frame") slide.order = index;
+        else slide.pairIndex = index;
+      });
+      deck.visibleSlides = deck.slides.filter((slide) => !slide.excluded);
+      if (deck.kind === "frame") deck.hasExplicitFrameOrder = true;
+      const rowsById = new Map(
+        Array.from(container.querySelectorAll(".slideshow-sorter__row")).map((row) => [
+          row.dataset.slideId ?? "",
+          row
+        ])
+      );
+      const movedRow = rowsById.get(moved.id);
+      const nextSlide = deck.slides[toIndex + 1];
+      const nextRow = nextSlide ? rowsById.get(nextSlide.id) : void 0;
+      if (movedRow) {
+        if (nextRow) container.insertBefore(movedRow, nextRow);
+        else container.appendChild(movedRow);
+      }
+      deck.slides.forEach((slide, index) => {
+        const row = rowsById.get(slide.id);
+        if (row) this.updateRowOrderState(row, slide, index);
+      });
+    }
+    /** Updates one slide's animation badge/model and refreshes only that preview when requested. */
+    updateAnimationSteps(slideId, steps, refreshPreview = true) {
+      const slide = this.options.deck.slides.find((candidate) => candidate.id === slideId);
+      if (!slide) return;
+      const previewChanged = getFinalPreviewAnimationFingerprint(slide.animationSteps) !== getFinalPreviewAnimationFingerprint(steps);
+      Object.assign(slide, { animationSteps: steps.map((step) => structuredClone(step)) });
+      const row = this.getRow(slideId);
+      if (row) this.updateAnimationBadge(row, slide);
+      if (refreshPreview && previewChanged) this.refreshSlidePreview(slideId);
+    }
+    /** Refreshes only one slide image, retaining the existing bitmap until its replacement is ready. */
+    refreshSlidePreview(slideId) {
+      const row = this.getRow(slideId);
+      const host = row?.querySelector(".slideshow-sorter__preview") ?? null;
+      const slide = this.options.deck.slides.find((candidate) => candidate.id === slideId);
+      if (!host || !slide) return;
+      if (!this.previewRenderingEnabled) {
+        host.dataset.previewDirty = "true";
+        return;
+      }
+      this.renderPreview(host, slide, this.renderGeneration);
     }
     /** Returns the currently selected stable slide id. */
     getSelectedSlideId() {
@@ -5058,9 +6161,16 @@ Build version: 2026-09-05T16:40:26.928Z
       if (!this.options.deck.slides.some((slide) => slide.id === slideId)) return;
       if (slideId !== this.selectedSlideId) {
         await this.flushNotes();
+        const previousNotesSlideId = this.expandedNotesSlideId;
         this.selectedSlideId = slideId;
         this.expandedNotesSlideId = null;
-        this.render(slideId);
+        this.notesTextarea = null;
+        this.options.container.classList.toggle(
+          "has-expanded-editor",
+          Boolean(this.options.animationEditingSlideId)
+        );
+        this.updateSelectedRows();
+        if (previousNotesSlideId) this.replaceRowPreservingPreview(previousNotesSlideId);
       }
       this.scrollToSlide(slideId, false);
     }
@@ -5071,7 +6181,7 @@ Build version: 2026-09-05T16:40:26.928Z
       const { container, deck } = this.options;
       const scrollTop = container.scrollTop;
       this.previewObserver?.disconnect();
-      this.previewObserver = this.createPreviewObserver(generation);
+      this.previewObserver = this.previewRenderingEnabled ? this.createPreviewObserver(generation) : null;
       container.replaceChildren();
       this.notesTextarea = null;
       if (deck.slides.length === 0) return;
@@ -5087,13 +6197,15 @@ Build version: 2026-09-05T16:40:26.928Z
         const previewHost = row.querySelector(".slideshow-sorter__preview");
         if (previewHost) {
           previewHost.dataset.slideId = slide.id;
-          if (this.previewObserver) this.previewObserver.observe(previewHost);
-          else this.renderPreview(previewHost, slide, generation);
+          if (this.previewRenderingEnabled) {
+            if (this.previewObserver) this.previewObserver.observe(previewHost);
+            else this.renderPreview(previewHost, slide, generation);
+          }
         }
       });
       container.scrollTop = scrollTop;
     }
-    createPreviewObserver(generation) {
+    createPreviewObserver(generation, allowWhileSuspended = false, disconnectAfterCallback = false) {
       const Observer = this.ownerWindow.IntersectionObserver;
       if (typeof Observer !== "function") return null;
       return new Observer(
@@ -5105,17 +6217,105 @@ Build version: 2026-09-05T16:40:26.928Z
             const slide = this.options.deck.slides.find(
               (candidate) => candidate.id === host.dataset.slideId
             );
-            if (slide) this.renderPreview(host, slide, generation);
+            if (slide) this.renderPreview(host, slide, generation, allowWhileSuspended);
           }
+          if (disconnectAfterCallback) observer.disconnect();
         },
         { root: this.options.container, rootMargin: "240px 0px" }
       );
     }
-    renderPreview(previewHost, slide, generation) {
+    renderPreview(previewHost, slide, generation, allowWhileSuspended = false) {
+      if (!this.previewRenderingEnabled && !allowWhileSuspended) return;
       void this.options.previewService.createPreview(slide, previewHost.ownerDocument, { targetWidth: 480 }).then((preview) => {
-        if (!preview || generation !== this.renderGeneration || !previewHost.isConnected) return;
+        if (!preview || !this.previewRenderingEnabled && !allowWhileSuspended || generation !== this.renderGeneration || !previewHost.isConnected)
+          return;
+        const current = previewHost.querySelector("img");
+        delete previewHost.dataset.previewDirty;
+        if (current?.src === preview.src) return;
         previewHost.replaceChildren(preview);
       }).catch(() => void 0);
+    }
+    getRow(slideId) {
+      return Array.from(
+        this.options.container.querySelectorAll(".slideshow-sorter__row")
+      ).find((row) => row.dataset.slideId === slideId) ?? null;
+    }
+    getSlideIndex(slideId) {
+      return this.options.deck.slides.findIndex((slide) => slide.id === slideId);
+    }
+    updateSelectedRows() {
+      this.options.container.querySelectorAll(".slideshow-sorter__row").forEach((row) => row.classList.toggle("is-selected", row.dataset.slideId === this.selectedSlideId));
+    }
+    replaceRowPreservingPreview(slideId) {
+      const row = this.getRow(slideId);
+      const index = this.getSlideIndex(slideId);
+      const slide = this.options.deck.slides[index];
+      if (!row || !slide || index < 0) return;
+      const existingPreview = row.querySelector(".slideshow-sorter__preview");
+      if (existingPreview) this.previewObserver?.unobserve(existingPreview);
+      const previewChildren = existingPreview ? Array.from(existingPreview.childNodes) : [];
+      const replacement = this.createRow(slide, index);
+      const replacementPreview = replacement.querySelector(".slideshow-sorter__preview");
+      if (replacementPreview && previewChildren.length > 0) {
+        replacementPreview.replaceChildren(...previewChildren);
+      }
+      row.replaceWith(replacement);
+      if (replacementPreview && previewChildren.length === 0 && this.previewRenderingEnabled) {
+        if (this.previewObserver) this.previewObserver.observe(replacementPreview);
+        else this.renderPreview(replacementPreview, slide, this.renderGeneration);
+      }
+    }
+    updateRowInclusion(row, slide) {
+      row.classList.toggle("is-excluded", slide.excluded);
+      const button = row.querySelector(".slideshow-sorter__toggle-inclusion");
+      if (!button) return;
+      const label = this.options.t(slide.excluded ? "includeSlide" : "excludeSlide");
+      button.innerHTML = slide.excluded ? this.options.icons.eyeOff : this.options.icons.eye;
+      button.setAttribute("aria-label", label);
+    }
+    updateRowOrderState(row, slide, index) {
+      const title = row.querySelector(".slideshow-sorter__title");
+      if (title) {
+        const titleText = this.options.t("slideNumberAndTitle", {
+          number: index + 1,
+          title: slide.title
+        });
+        title.textContent = titleText;
+        title.title = titleText;
+      }
+      const up = row.querySelector(".slideshow-sorter__move-up");
+      const down = row.querySelector(".slideshow-sorter__move-down");
+      if (up) up.disabled = !this.options.reorderEnabled || index === 0;
+      if (down) {
+        down.disabled = !this.options.reorderEnabled || index === this.options.deck.slides.length - 1;
+      }
+    }
+    updateAnimationBadge(row, slide) {
+      const badges = row.querySelector(".slideshow-sorter__badges");
+      if (!badges) return;
+      badges.querySelector(".slideshow-sorter__badge--animation")?.remove();
+      if (slide.animationSteps.length === 0) return;
+      const badge = row.ownerDocument.createElement("span");
+      const count = slide.animationSteps.length;
+      const label = this.options.t("animationCount", { count });
+      badge.className = "slideshow-sorter__badge slideshow-sorter__badge--animation";
+      badge.title = label;
+      badge.setAttribute("aria-label", label);
+      badge.innerHTML = `${this.options.icons.sparkles}<span class="slideshow-sorter__badge-compact-count" aria-hidden="true">${count}</span><span class="slideshow-sorter__badge-text">${label}</span>`;
+      badges.appendChild(badge);
+    }
+    updateNotesBadge(row, slide) {
+      const badges = row.querySelector(".slideshow-sorter__badges");
+      if (!badges) return;
+      badges.querySelector(".slideshow-sorter__badge--notes")?.remove();
+      if (!slide.notes) return;
+      const badge = row.ownerDocument.createElement("span");
+      const label = this.options.t("notesPresent");
+      badge.className = "slideshow-sorter__badge slideshow-sorter__badge--notes";
+      badge.title = label;
+      badge.setAttribute("aria-label", label);
+      badge.innerHTML = `${this.options.icons.notebookPen}<span class="slideshow-sorter__badge-text">${label}</span>`;
+      badges.prepend(badge);
     }
     createIconButton(ownerDocument, icon, label, disabled, onClick) {
       const button = ownerDocument.createElement("button");
@@ -5141,7 +6341,7 @@ Build version: 2026-09-05T16:40:26.928Z
       row.setAttribute("role", "listitem");
       row.addEventListener("click", () => void this.selectSlide(slide.id));
       row.addEventListener("dblclick", () => this.options.callbacks.zoomToSlide(slide));
-      row.addEventListener("keydown", (event) => this.handleRowKeydown(event, slide, index));
+      row.addEventListener("keydown", (event) => this.handleRowKeydown(event, slide));
       const top = doc.createElement("div");
       top.className = "slideshow-sorter__top";
       const titleRow = doc.createElement("div");
@@ -5152,19 +6352,17 @@ Build version: 2026-09-05T16:40:26.928Z
       title.textContent = titleText;
       title.title = titleText;
       titleRow.appendChild(title);
-      if (slide.kind === "frame") {
-        const editTitleButton = this.createIconButton(
-          doc,
-          icons.edit,
-          t("editFrameSlideName"),
-          false,
-          () => this.options.callbacks.editFrameSlideName?.(slide)
-        );
-        editTitleButton.className = "slideshow-sorter__title-edit";
-        editTitleButton.draggable = false;
-        editTitleButton.addEventListener("dragstart", (event) => event.preventDefault());
-        titleRow.appendChild(editTitleButton);
-      }
+      const editTitleButton = this.createIconButton(
+        doc,
+        icons.edit,
+        t("editSlideName"),
+        false,
+        () => this.options.callbacks.editSlideName?.(slide)
+      );
+      editTitleButton.className = "slideshow-sorter__title-edit";
+      editTitleButton.draggable = false;
+      editTitleButton.addEventListener("dragstart", (event) => event.preventDefault());
+      titleRow.appendChild(editTitleButton);
       top.appendChild(titleRow);
       const badges = doc.createElement("div");
       badges.className = "slideshow-sorter__badges";
@@ -5177,7 +6375,7 @@ Build version: 2026-09-05T16:40:26.928Z
         badge.innerHTML = `${icons.notebookPen}<span class="slideshow-sorter__badge-text">${label}</span>`;
         badges.appendChild(badge);
       }
-      if (slide.kind === "frame" && slide.animationSteps.length > 0) {
+      if (slide.animationSteps.length > 0) {
         const badge = doc.createElement("span");
         const count = slide.animationSteps.length;
         const label = t("animationCount", { count });
@@ -5197,7 +6395,7 @@ Build version: 2026-09-05T16:40:26.928Z
           this.selectedSlideId = slide.id;
           this.options.container.querySelectorAll(".slideshow-sorter__row.is-selected").forEach((selectedRow) => selectedRow.classList.remove("is-selected"));
           row.classList.add("is-selected");
-          this.draggedIndex = index;
+          this.draggedIndex = this.getSlideIndex(slide.id);
           row.classList.add("is-dragging");
           event.dataTransfer?.setData("text/plain", String(index));
           if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
@@ -5216,53 +6414,57 @@ Build version: 2026-09-05T16:40:26.928Z
       content.appendChild(preview);
       const actions = doc.createElement("div");
       actions.className = "slideshow-sorter__actions";
-      actions.appendChild(
-        this.createIconButton(
-          doc,
-          icons.chevronUp,
-          t("moveSlideUp"),
-          !reorderEnabled || index === 0,
-          () => {
-            void this.options.callbacks.move(index, index - 1);
+      const moveUpButton = this.createIconButton(
+        doc,
+        icons.chevronUp,
+        t("moveSlideUp"),
+        !reorderEnabled || index === 0,
+        () => {
+          const currentIndex = this.getSlideIndex(slide.id);
+          if (currentIndex > 0) void this.options.callbacks.move(currentIndex, currentIndex - 1);
+        }
+      );
+      moveUpButton.classList.add("slideshow-sorter__move-up");
+      actions.appendChild(moveUpButton);
+      const moveDownButton = this.createIconButton(
+        doc,
+        icons.chevronDown,
+        t("moveSlideDown"),
+        !reorderEnabled || index === deck.slides.length - 1,
+        () => {
+          const currentIndex = this.getSlideIndex(slide.id);
+          if (currentIndex >= 0 && currentIndex < this.options.deck.slides.length - 1) {
+            void this.options.callbacks.move(currentIndex, currentIndex + 1);
           }
-        )
+        }
       );
-      actions.appendChild(
-        this.createIconButton(
-          doc,
-          icons.chevronDown,
-          t("moveSlideDown"),
-          !reorderEnabled || index === deck.slides.length - 1,
-          () => {
-            void this.options.callbacks.move(index, index + 1);
-          }
-        )
+      moveDownButton.classList.add("slideshow-sorter__move-down");
+      actions.appendChild(moveDownButton);
+      const inclusionButton = this.createIconButton(
+        doc,
+        slide.excluded ? icons.eyeOff : icons.eye,
+        slide.excluded ? t("includeSlide") : t("excludeSlide"),
+        false,
+        () => void this.options.callbacks.toggleInclusion(slide, !slide.excluded)
       );
-      actions.appendChild(
-        this.createIconButton(
-          doc,
-          slide.excluded ? icons.eyeOff : icons.eye,
-          slide.excluded ? t("includeSlide") : t("excludeSlide"),
-          false,
-          () => void this.options.callbacks.toggleInclusion(slide, !slide.excluded)
-        )
+      inclusionButton.classList.add("slideshow-sorter__toggle-inclusion");
+      actions.appendChild(inclusionButton);
+      const animationExpanded = this.options.animationEditingSlideId === slide.id;
+      const animationButton = this.createIconButton(
+        doc,
+        icons.sparkles,
+        t("editAnimations"),
+        false,
+        () => this.options.callbacks.requestAnimationEditor(slide)
       );
-      if (slide.kind === "frame") {
-        const animationExpanded = this.options.animationEditingSlideId === slide.id;
-        const animationButton = this.createIconButton(
-          doc,
-          icons.sparkles,
-          t("editAnimations"),
-          false,
-          () => this.options.callbacks.requestAnimationEditor(slide)
-        );
-        animationButton.classList.toggle("is-active", animationExpanded);
-        animationButton.setAttribute("aria-expanded", String(animationExpanded));
-        actions.appendChild(animationButton);
-      } else {
+      animationButton.classList.toggle("is-active", animationExpanded);
+      animationButton.setAttribute("aria-expanded", String(animationExpanded));
+      actions.appendChild(animationButton);
+      if (slide.kind === "path") {
         actions.appendChild(
           this.createIconButton(doc, icons.edit, t("editLineSlide"), false, () => {
-            void this.options.callbacks.editLineSlide(slide, index);
+            const currentIndex = this.getSlideIndex(slide.id);
+            if (currentIndex >= 0) void this.options.callbacks.editLineSlide(slide, currentIndex);
           })
         );
       }
@@ -5279,7 +6481,7 @@ Build version: 2026-09-05T16:40:26.928Z
       actions.appendChild(notesButton);
       content.appendChild(actions);
       if (notesExpanded) this.renderNotesEditor(slide, row);
-      if (slide.kind === "frame" && this.options.animationEditingSlideId === slide.id) {
+      if (this.options.animationEditingSlideId === slide.id) {
         const animationHost = doc.createElement("div");
         animationHost.className = "slideshow-sorter__animation";
         row.appendChild(animationHost);
@@ -5287,7 +6489,9 @@ Build version: 2026-09-05T16:40:26.928Z
       }
       return row;
     }
-    handleRowKeydown(event, slide, index) {
+    handleRowKeydown(event, slide) {
+      const index = this.getSlideIndex(slide.id);
+      if (index < 0) return;
       const rows = Array.from(
         this.options.container.querySelectorAll(".slideshow-sorter__row")
       );
@@ -5332,24 +6536,43 @@ Build version: 2026-09-05T16:40:26.928Z
     async selectSlide(slideId) {
       if (slideId === this.selectedSlideId) return;
       await this.flushNotes();
+      const previousNotesSlideId = this.expandedNotesSlideId;
       this.selectedSlideId = slideId;
       this.expandedNotesSlideId = null;
-      this.render(slideId);
+      this.notesTextarea = null;
+      this.options.container.classList.toggle(
+        "has-expanded-editor",
+        Boolean(this.options.animationEditingSlideId)
+      );
+      this.updateSelectedRows();
+      if (previousNotesSlideId) this.replaceRowPreservingPreview(previousNotesSlideId);
     }
     async toggleNotes(slideId) {
       if (this.expandedNotesSlideId === slideId) {
         await this.flushNotes();
         this.expandedNotesSlideId = null;
-        this.render(this.selectedSlideId);
+        this.notesTextarea = null;
+        this.options.container.classList.toggle(
+          "has-expanded-editor",
+          Boolean(this.options.animationEditingSlideId)
+        );
+        this.replaceRowPreservingPreview(slideId);
         return;
       }
       await this.openNotes(slideId, false);
     }
     async openNotes(slideId, focusNotes) {
       await this.flushNotes();
+      const previousNotesSlideId = this.expandedNotesSlideId;
       this.selectedSlideId = slideId;
       this.expandedNotesSlideId = slideId;
-      this.render(slideId, slideId);
+      this.notesTextarea = null;
+      this.options.container.classList.add("has-expanded-editor");
+      this.updateSelectedRows();
+      if (previousNotesSlideId && previousNotesSlideId !== slideId) {
+        this.replaceRowPreservingPreview(previousNotesSlideId);
+      }
+      this.replaceRowPreservingPreview(slideId);
       this.scrollToSlide(slideId, false, "start");
       if (focusNotes) this.notesTextarea?.focus();
     }
@@ -5419,21 +6642,32 @@ Build version: 2026-09-05T16:40:26.928Z
       const rows = Array.from(
         this.options.container.querySelectorAll(".slideshow-sorter__row")
       );
-      const insertionIndex = getDropInsertionIndexFromRects(
-        rows.map((row) => row.getBoundingClientRect()),
-        pointerX,
-        pointerY
-      );
-      if (insertionIndex === this.dropTargetIndex) return;
+      const rowRects = rows.map((row) => row.getBoundingClientRect());
+      const insertionIndex = getDropInsertionIndexFromRects(rowRects, pointerX, pointerY);
+      const placement = getDropIndicatorPlacement(rowRects, insertionIndex);
+      const indicatorKey = [
+        insertionIndex,
+        placement.beforeIndex ?? "none",
+        placement.afterIndex ?? "none",
+        placement.singleColumn ? 1 : 0
+      ].join(":");
+      this.options.container.classList.toggle("is-single-column", placement.singleColumn);
+      if (indicatorKey === this.dropIndicatorKey) return;
       this.clearDropIndicator();
       this.dropTargetIndex = insertionIndex;
-      if (insertionIndex < rows.length) rows[insertionIndex]?.classList.add("is-drop-before");
-      else rows[rows.length - 1]?.classList.add("is-drop-after");
+      this.dropIndicatorKey = indicatorKey;
+      if (placement.beforeIndex !== null) {
+        rows[placement.beforeIndex]?.classList.add("is-drop-before");
+      }
+      if (placement.afterIndex !== null) {
+        rows[placement.afterIndex]?.classList.add("is-drop-after");
+      }
     }
     clearDropIndicator() {
       const rows = this.options.container.querySelectorAll?.(".is-drop-before, .is-drop-after") ?? [];
       rows.forEach((row) => row.classList.remove("is-drop-before", "is-drop-after"));
       this.dropTargetIndex = null;
+      this.dropIndicatorKey = null;
     }
     updateAutoScroll(pointerY) {
       const rect = this.options.container.getBoundingClientRect();
@@ -5501,6 +6735,8 @@ Build version: 2026-09-05T16:40:26.928Z
         await this.options.callbacks.saveNotes(slide, current);
         if (current.trim().length === 0) delete slide.notes;
         else slide.notes = current;
+        const row = this.getRow(slideId);
+        if (row) this.updateNotesBadge(row, slide);
       })();
       this.notesSaveInFlight = save;
       try {
@@ -5525,6 +6761,10 @@ Build version: 2026-09-05T16:40:26.928Z
   };
 
   // src/scripts/slideshow/slideshowQuickGuide.ts
+  var SLIDESHOW_VIDEO_URL = "https://youtu.be/7DDY8rRDzdU";
+  var SLIDESHOW_VIDEO_THUMBNAIL_URL = "https://img.youtube.com/vi/7DDY8rRDzdU/maxresdefault.jpg";
+  var SLIDESHOW_COURSE_THUMBNAIL_URL = "https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/logo-slideshow-v4.png";
+  var SLIDESHOW_COURSE_URL = "https://community.sketch-your-mind.com/slideshow";
   function openSlideshowQuickGuideModal(ea2, t) {
     const modal = new ea2.obsidian.Modal(app);
     modal.titleEl.setText(t("quickGuideTitle"));
@@ -5549,6 +6789,42 @@ Build version: 2026-09-05T16:40:26.928Z
     ]) {
       modal.contentEl.createEl("p", { text: t(key) });
     }
+    modal.contentEl.createEl("h3", { text: t("quickGuideLearnMoreTitle") });
+    const videoLink = modal.contentEl.createEl("a");
+    videoLink.href = SLIDESHOW_VIDEO_URL;
+    videoLink.target = "_blank";
+    videoLink.rel = "noopener noreferrer";
+    videoLink.style.display = "inline-flex";
+    videoLink.style.alignItems = "center";
+    videoLink.style.gap = "10px";
+    videoLink.style.marginBottom = "8px";
+    const videoThumbnail = videoLink.createEl("img");
+    videoThumbnail.src = SLIDESHOW_VIDEO_THUMBNAIL_URL;
+    videoThumbnail.alt = t("quickGuideVideoThumbnailAlt");
+    videoThumbnail.width = 112;
+    videoThumbnail.style.width = "112px";
+    videoThumbnail.style.height = "63px";
+    videoThumbnail.style.objectFit = "cover";
+    videoThumbnail.style.borderRadius = "6px";
+    videoThumbnail.style.flex = "0 0 auto";
+    videoLink.createSpan({ text: t("quickGuideVideo") });
+    modal.contentEl.createEl("br");
+    const courseLink = modal.contentEl.createEl("a");
+    courseLink.href = SLIDESHOW_COURSE_URL;
+    courseLink.target = "_blank";
+    courseLink.rel = "noopener noreferrer";
+    courseLink.style.display = "inline-flex";
+    courseLink.style.alignItems = "center";
+    courseLink.style.gap = "10px";
+    const courseThumbnail = courseLink.createEl("img");
+    courseThumbnail.src = SLIDESHOW_COURSE_THUMBNAIL_URL;
+    courseThumbnail.alt = t("quickGuideCourse");
+    courseThumbnail.width = 112;
+    courseThumbnail.style.width = "112px";
+    courseThumbnail.style.objectFit = "cover";
+    courseThumbnail.style.borderRadius = "6px";
+    courseThumbnail.style.flex = "0 0 auto";
+    courseLink.createSpan({ text: t("quickGuideCourse") });
     modal.open();
   }
 
@@ -5561,6 +6837,7 @@ Build version: 2026-09-05T16:40:26.928Z
       progress: /* @__PURE__ */ new WeakMap(),
       progressType: /* @__PURE__ */ new WeakMap(),
       progressSource: /* @__PURE__ */ new WeakMap(),
+      progressBySource: /* @__PURE__ */ new WeakMap(),
       presentations: /* @__PURE__ */ new WeakMap(),
       sidepanel: null
     };
@@ -5573,6 +6850,11 @@ Build version: 2026-09-05T16:40:26.928Z
     if (!("progressSource" in runtime) || !runtime.progressSource) {
       Object.assign(runtime, {
         progressSource: /* @__PURE__ */ new WeakMap()
+      });
+    }
+    if (!("progressBySource" in runtime) || !runtime.progressBySource) {
+      Object.assign(runtime, {
+        progressBySource: /* @__PURE__ */ new WeakMap()
       });
     }
     return runtime;
@@ -5593,7 +6875,14 @@ Build version: 2026-09-05T16:40:26.928Z
       const type = presentationSource === "frame" ? "frame" : "line";
       runtime.progressType.set(view, type);
       if (presentationSource === "frame" || presentationSource.startsWith("line:")) {
-        runtime.progressSource.set(view, presentationSource);
+        const source = presentationSource;
+        runtime.progressSource.set(view, source);
+        let bySource = runtime.progressBySource.get(view);
+        if (!bySource) {
+          bySource = /* @__PURE__ */ new Map();
+          runtime.progressBySource.set(view, bySource);
+        }
+        bySource.set(source, slide);
       }
     }
   }
@@ -5606,12 +6895,19 @@ Build version: 2026-09-05T16:40:26.928Z
   function getSlideshowProgressSource(view) {
     return getSlideshowRuntime().progressSource.get(view);
   }
+  function getSlideshowProgressForSource(view, source) {
+    const runtime = getSlideshowRuntime();
+    const exact = runtime.progressBySource.get(view)?.get(source);
+    if (exact !== void 0) return exact;
+    return runtime.progressSource.get(view) === source ? runtime.progress.get(view) : void 0;
+  }
 
   // src/scripts/slideshow/SlideshowSidepanel.ts
   function getDeckFingerprint(resolved) {
     if (!resolved) return "none";
     return JSON.stringify({
       kind: resolved.deck.kind,
+      name: resolved.deck.name,
       pathId: resolved.pathElement?.id ?? null,
       slides: resolved.deck.slides.map((slide) => ({
         id: slide.id,
@@ -5619,9 +6915,30 @@ Build version: 2026-09-05T16:40:26.928Z
         rect: slide.rect,
         notes: slide.notes ?? null,
         excluded: slide.excluded,
-        animationCount: slide.kind === "frame" ? slide.animationSteps.length : 0
+        animationSteps: slide.animationSteps
       }))
     });
+  }
+  function getSidepanelChromeFingerprint(choices, presentationSourceKey) {
+    return JSON.stringify({
+      sources: [
+        ...choices.frame ? ["frame"] : [],
+        ...choices.lines.map((line) => line.key)
+      ],
+      presentationSourceKey
+    });
+  }
+  function getPreviewFingerprint(appState, sceneVisualFingerprint, elements, resolved) {
+    const previewSceneFingerprint = resolved?.pathElement ? getSceneVisualFingerprint(
+      elements.filter((element) => element.id !== resolved.pathElement?.id)
+    ) : sceneVisualFingerprint;
+    return `${appState.theme}|${appState.viewBackgroundColor}|${previewSceneFingerprint}`;
+  }
+  function getSidepanelFingerprint(ea2, choices, presentationSourceKey, appState, sceneVisualFingerprint = getSceneVisualFingerprint(ea2.getViewElements())) {
+    const lineFingerprint = choices.lines.map((line) => `${line.key}:${line.name ?? ""}:${getDeckFingerprint(line.resolved)}`).join("|");
+    const convertibleId = getConvertibleSelectedLine(ea2)?.id ?? "none";
+    const declarableFrameId = getDeclarableSelectedFrame(ea2)?.id ?? "none";
+    return `${presentationSourceKey ?? "none"}|${getDeckFingerprint(choices.frame)}|${lineFingerprint}|candidate=${convertibleId}|frameCandidate=${declarableFrameId}|${appState.theme}|${appState.viewBackgroundColor}|${sceneVisualFingerprint}`;
   }
   function chooseSidepanelPresentationSourceKey(choices, storedSource, preferredType) {
     if (storedSource && hasPresentationSource(choices, storedSource)) return storedSource;
@@ -5642,7 +6959,7 @@ Build version: 2026-09-05T16:40:26.928Z
   }
   function getPresentationSourceLabels(choices, frameLabel, defaultLineLabel) {
     const result = [];
-    if (choices.frame) result.push({ key: "frame", label: frameLabel });
+    if (choices.frame) result.push({ key: "frame", label: choices.frame.deck.name?.trim() || frameLabel });
     const bases = choices.lines.map((line) => line.name?.trim() || defaultLineLabel);
     const totals = /* @__PURE__ */ new Map();
     for (const base of bases) totals.set(base, (totals.get(base) ?? 0) + 1);
@@ -5703,6 +7020,55 @@ Build version: 2026-09-05T16:40:26.928Z
       openPresenterView: !isMobile && notesMode === "presenter" && hasSecondaryDisplay
     };
   }
+  function styleModalActions(actions) {
+    actions.style.display = "flex";
+    actions.style.justifyContent = "flex-end";
+    actions.style.gap = "0.5rem";
+    actions.style.flexWrap = "wrap";
+  }
+  function bindEnterToSave(input, saveButton) {
+    input.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" || event.isComposing) return;
+      event.preventDefault();
+      saveButton.click();
+    });
+  }
+  function addCheckboxOption(container, label) {
+    const doc = container.ownerDocument;
+    const row = doc.createElement("label");
+    row.style.display = "flex";
+    row.style.alignItems = "center";
+    row.style.gap = "0.5rem";
+    row.style.marginBottom = "0.5rem";
+    const input = doc.createElement("input");
+    input.type = "checkbox";
+    const text = doc.createElement("span");
+    text.textContent = label;
+    row.append(input, text);
+    container.appendChild(row);
+    return input;
+  }
+  function addSelectOption(container, label, options) {
+    const doc = container.ownerDocument;
+    const row = doc.createElement("label");
+    row.style.display = "flex";
+    row.style.alignItems = "center";
+    row.style.justifyContent = "space-between";
+    row.style.gap = "1rem";
+    row.style.marginBottom = "0.5rem";
+    const text = doc.createElement("span");
+    text.textContent = label;
+    const select = doc.createElement("select");
+    for (const [value, optionText] of options) {
+      const option = doc.createElement("option");
+      option.value = value;
+      option.textContent = optionText;
+      select.appendChild(option);
+    }
+    row.append(text, select);
+    container.appendChild(row);
+    return select;
+  }
   var SlideshowSidepanel = class {
     constructor(options) {
       this.options = options;
@@ -5731,13 +7097,17 @@ Build version: 2026-09-05T16:40:26.928Z
     refreshTimer = 0;
     ownerWindow;
     lastFingerprint = "";
+    lastPreviewFingerprint = "";
+    lastChromeFingerprint = "";
     pendingRefresh = false;
+    sorterMutationDepth = 0;
     sceneSelectionSignature = null;
     pendingSceneSlideId = null;
     closed = false;
     bindGeneration = 0;
     activeLeafChangeRef = null;
     boundView;
+    boundDrawingFile = null;
     requestedSlideId = null;
     animationEditor = null;
     animationEditingSlideId = null;
@@ -5754,10 +7124,47 @@ Build version: 2026-09-05T16:40:26.928Z
     settingsWriteQueue = Promise.resolve();
     removeDisplayChangeListener = null;
     displayRefreshTimer = 0;
+    previewOnceScheduled = false;
     sorterThumbnailMaxWidth;
     /** Returns the drawing currently edited by this sidepanel. */
     getBoundView() {
       return this.boundView;
+    }
+    isSidepanelFocused() {
+      const sidepanelLeaf = this.options.ea.getSidepanelLeaf();
+      const { tab } = this.options;
+      const activeElement = tab.contentEl.ownerDocument.activeElement;
+      const hasDomFocus = Boolean(activeElement && tab.contentEl.contains?.(activeElement));
+      return Boolean(
+        sidepanelLeaf && (app.workspace.activeLeaf === sidepanelLeaf || hasDomFocus) && tab.isVisible() && tab.isActiveTab()
+      );
+    }
+    syncPreviewFocusState() {
+      const focused = this.isSidepanelFocused();
+      this.sorter?.setPreviewRenderingEnabled(focused);
+      if (!focused) {
+        this.previewService?.cancelPending();
+        return;
+      }
+      if (this.pendingRefresh) {
+        void this.refresh();
+        return;
+      }
+      this.sorter?.resumePreviewRendering();
+    }
+    /** Loads the currently visible thumbnails once without enabling background refreshes. */
+    refreshPreviewsOnce() {
+      if (this.closed || this.previewOnceScheduled) return;
+      this.previewOnceScheduled = true;
+      const run = () => {
+        this.previewOnceScheduled = false;
+        if (!this.closed) this.sorter?.refreshPreviewsOnce();
+      };
+      if (typeof this.ownerWindow.requestAnimationFrame === "function") {
+        this.ownerWindow.requestAnimationFrame(() => run());
+      } else {
+        this.ownerWindow.setTimeout(run, 0);
+      }
     }
     /** Focuses and reveals the slide requested by an element action after the tab is visible. */
     revealRequestedSlide() {
@@ -5776,20 +7183,25 @@ Build version: 2026-09-05T16:40:26.928Z
         else this.preferredPresentationType = "line";
       }
       if (preferredSlideId) this.requestedSlideId = preferredSlideId;
-      if (view === this.boundView) {
+      const drawingChanged = view === this.boundView && view.file !== this.boundDrawingFile;
+      if (view === this.boundView && !drawingChanged) {
         this.options.ea.setView(view);
-        this.lastFingerprint = "";
-        await this.refresh(true);
+        await this.refresh();
         return;
       }
       const generation = ++this.bindGeneration;
-      await this.applyViewBinding(view, generation);
+      await this.applyViewBinding(view, generation, drawingChanged);
     }
     /** Installs lifecycle hooks, workspace focus tracking, and scene-change tracking. */
     initialize() {
       const { ea: ea2, tab } = this.options;
-      tab.onOpen = () => void this.refresh(true);
-      tab.onFocus = (view) => this.bindView(view);
+      tab.onOpen = () => {
+        void this.refresh(true).then(() => this.refreshPreviewsOnce());
+      };
+      tab.onFocus = (view) => {
+        this.bindView(view);
+        this.ownerWindow.setTimeout(() => this.syncPreviewFocusState(), 0);
+      };
       tab.onWindowMigrated = (win) => {
         if (this.displayRefreshTimer) this.ownerWindow.clearTimeout(this.displayRefreshTimer);
         this.displayRefreshTimer = 0;
@@ -5803,6 +7215,7 @@ Build version: 2026-09-05T16:40:26.928Z
         this.animationEditingSlideId = null;
         this.previewService?.clear();
         this.lastFingerprint = "";
+        this.lastPreviewFingerprint = "";
         void this.refresh(true);
       };
       tab.onExcalidrawViewClosed = () => this.bindView(null);
@@ -5832,7 +7245,12 @@ Build version: 2026-09-05T16:40:26.928Z
       this.activeLeafChangeRef = app.workspace.on(
         "active-leaf-change",
         (leaf) => {
-          if (this.closed || leaf === ea2.getSidepanelLeaf()) return;
+          if (this.closed) return;
+          if (leaf === ea2.getSidepanelLeaf()) {
+            this.syncPreviewFocusState();
+            return;
+          }
+          this.syncPreviewFocusState();
           if (leaf && ea2.isExcalidrawView(leaf.view)) {
             this.bindView(leaf.view);
             return;
@@ -5853,6 +7271,14 @@ Build version: 2026-09-05T16:40:26.928Z
         triggerWhenInvisible: false,
         callback: (elements, appState, _files, view) => {
           if (!this.boundView || view !== this.boundView) return;
+          if (view.file !== this.boundDrawingFile) {
+            this.bindView(view);
+            return;
+          }
+          if (this.sorterMutationDepth > 0) {
+            this.pendingRefresh = true;
+            return;
+          }
           if (this.sorter?.isEditingNotes()) {
             this.pendingRefresh = true;
             return;
@@ -5877,23 +7303,34 @@ Build version: 2026-09-05T16:40:26.928Z
     }
     bindView(view) {
       if (this.closed) return;
-      if (view === this.boundView) {
+      const drawingChanged = view !== null && view === this.boundView && view.file !== this.boundDrawingFile;
+      if (view === this.boundView && !drawingChanged) {
         if (view) void this.refresh();
         else this.renderUnavailable();
         return;
       }
       const generation = ++this.bindGeneration;
-      void this.applyViewBinding(view, generation);
+      void this.applyViewBinding(view, generation, drawingChanged);
     }
-    async applyViewBinding(view, generation) {
+    async applyViewBinding(view, generation, discardUnsaved = false) {
       const previousSorter = this.sorter;
-      await previousSorter?.flushNotes();
+      const previousEditor = this.animationEditor;
+      if (discardUnsaved) {
+        previousSorter?.destroy();
+        if (this.sorter === previousSorter) this.sorter = null;
+        this.animationEditor = null;
+        this.animationEditingSlideId = null;
+        await previousEditor?.destroy();
+      } else {
+        await previousSorter?.flushNotes();
+        if (this.closed || generation !== this.bindGeneration) return;
+        previousSorter?.destroy();
+        if (this.sorter === previousSorter) this.sorter = null;
+        await previousEditor?.destroy();
+        if (this.animationEditor === previousEditor) this.animationEditor = null;
+        this.animationEditingSlideId = null;
+      }
       if (this.closed || generation !== this.bindGeneration) return;
-      previousSorter?.destroy();
-      if (this.sorter === previousSorter) this.sorter = null;
-      await this.animationEditor?.destroy();
-      this.animationEditor = null;
-      this.animationEditingSlideId = null;
       this.previewService?.clear();
       this.previewService = null;
       this.resolved = null;
@@ -5908,7 +7345,10 @@ Build version: 2026-09-05T16:40:26.928Z
       this.sceneSelectionSignature = null;
       this.pendingSceneSlideId = null;
       this.lastFingerprint = "";
+      this.lastPreviewFingerprint = "";
+      this.lastChromeFingerprint = "";
       this.boundView = view;
+      this.boundDrawingFile = view?.file ?? null;
       this.options.ea.setView(view);
       this.options.ea.clear();
       if (!view) {
@@ -5956,17 +7396,66 @@ Build version: 2026-09-05T16:40:26.928Z
           openSlideshowSettingsModal(ea2, this.options.config, t, () => {
             this.previewService?.clear();
             this.lastFingerprint = "";
+            this.lastPreviewFingerprint = "";
             void this.refresh(true);
           });
         })();
       });
       header.appendChild(settingsButton);
     }
+    /** Builds the selection/source-specific header action without rebuilding the sidepanel. */
+    createHeaderContextAction(doc) {
+      const { ea: ea2, icons, t } = this.options;
+      const button = doc.createElement("button");
+      button.type = "button";
+      button.className = "slideshow-sidepanel__icon-button slideshow-sidepanel__source-action";
+      if (getDeclarableSelectedFrame(ea2)) {
+        button.setAttribute("aria-label", t("declareFrameSlideshow"));
+        button.innerHTML = icons.plus;
+        button.addEventListener("click", () => void this.declareSelectedFrameSlideshow());
+        return button;
+      }
+      if (getConvertibleSelectedLine(ea2)) {
+        button.setAttribute("aria-label", t("createLinePresentation"));
+        button.innerHTML = icons.plus;
+        button.addEventListener("click", () => void this.convertSelectedLineToPresentation());
+        return button;
+      }
+      if (this.presentationSourceKey !== "frame" && this.resolved?.pathElement) {
+        const pathHidden = isPresentationPathHidden(this.resolved.pathElement);
+        button.setAttribute(
+          "aria-label",
+          t(pathHidden ? "showPresentationPath" : "hidePresentationPath")
+        );
+        button.innerHTML = pathHidden ? icons.eyeOff : icons.eye;
+        button.addEventListener("click", () => void this.togglePresentationPathVisibility());
+        return button;
+      }
+      return null;
+    }
+    /** Reconciles only the selection/source-specific header action. */
+    updateHeaderContextAction() {
+      const header = this.options.tab.contentEl.querySelector(".slideshow-sidepanel__header");
+      if (!header) return;
+      const current = header.querySelector(".slideshow-sidepanel__source-action");
+      const next = this.createHeaderContextAction(header.ownerDocument);
+      if (current && next) {
+        current.replaceWith(next);
+        return;
+      }
+      if (current) {
+        current.remove();
+        return;
+      }
+      if (!next) return;
+      const anchor = header.querySelector(".slideshow-sidepanel__info-button");
+      header.insertBefore(next, anchor);
+    }
     appendInfoButton(header, doc) {
       const { ea: ea2, icons, t } = this.options;
       const infoButton = doc.createElement("button");
       infoButton.type = "button";
-      infoButton.className = "slideshow-sidepanel__icon-button";
+      infoButton.className = "slideshow-sidepanel__icon-button slideshow-sidepanel__info-button";
       infoButton.setAttribute("aria-label", t("quickGuideButton"));
       infoButton.innerHTML = icons.info;
       infoButton.addEventListener("click", () => openSlideshowQuickGuideModal(ea2, t));
@@ -6014,7 +7503,18 @@ Build version: 2026-09-05T16:40:26.928Z
         this.renderUnavailable();
         return;
       }
+      if (view.file !== this.boundDrawingFile) {
+        const generation = ++this.bindGeneration;
+        await this.applyViewBinding(view, generation, true);
+        return;
+      }
       if (this.sorter?.isEditingNotes()) {
+        this.pendingRefresh = true;
+        return;
+      }
+      const previewFocused = this.isSidepanelFocused();
+      this.sorter?.setPreviewRenderingEnabled(previewFocused);
+      if (!force && !previewFocused && !this.animationEditor) {
         this.pendingRefresh = true;
         return;
       }
@@ -6026,7 +7526,7 @@ Build version: 2026-09-05T16:40:26.928Z
       }
       const choices = resolveSlideDeckChoices(ea2);
       const drawingKey = view.file.path;
-      const storedSource = this.presentationSourceByDrawing.get(drawingKey);
+      const storedSource = this.presentationSourceByDrawing.get(drawingKey) ?? loadSlideshowPresentationSource(ea2, drawingKey);
       const presentationSourceKey = chooseSidepanelPresentationSourceKey(
         choices,
         storedSource,
@@ -6036,11 +7536,38 @@ Build version: 2026-09-05T16:40:26.928Z
         this.presentationSourceByDrawing.set(drawingKey, presentationSourceKey);
       const resolved = resolvePresentationSource(choices, presentationSourceKey);
       const appState = api.getAppState();
-      const lineFingerprint = choices.lines.map((line) => `${line.key}:${line.name ?? ""}:${getDeckFingerprint(line.resolved)}`).join("|");
-      const convertibleId = getConvertibleSelectedLine(ea2)?.id ?? "none";
-      const declarableFrameId = getDeclarableSelectedFrame(ea2)?.id ?? "none";
-      const compositeFingerprint = `${presentationSourceKey ?? "none"}|${getDeckFingerprint(choices.frame)}|${lineFingerprint}|candidate=${convertibleId}|frameCandidate=${declarableFrameId}|${appState.theme}|${appState.viewBackgroundColor}|${getSceneVisualFingerprint(ea2.getViewElements())}`;
+      const elements = ea2.getViewElements();
+      const sceneVisualFingerprint = getSceneVisualFingerprint(elements);
+      const previewFingerprint = getPreviewFingerprint(
+        appState,
+        sceneVisualFingerprint,
+        elements,
+        resolved
+      );
+      const chromeFingerprint = getSidepanelChromeFingerprint(choices, presentationSourceKey);
+      const compositeFingerprint = getSidepanelFingerprint(
+        ea2,
+        choices,
+        presentationSourceKey,
+        appState,
+        sceneVisualFingerprint
+      );
       if (!force && compositeFingerprint === this.lastFingerprint) return;
+      const previewContentChanged = previewFingerprint !== this.lastPreviewFingerprint;
+      const canPatchExistingUi = !force && Boolean(this.sorter && this.resolved && resolved) && presentationSourceKey === this.presentationSourceKey && chromeFingerprint === this.lastChromeFingerprint;
+      if (canPatchExistingUi && resolved && this.sorter?.syncDeck(resolved.deck, !previewContentChanged)) {
+        this.choices = choices;
+        this.presentationSourceKey = presentationSourceKey;
+        this.resolved = resolved;
+        this.lastFingerprint = compositeFingerprint;
+        this.lastPreviewFingerprint = previewFingerprint;
+        this.lastChromeFingerprint = chromeFingerprint;
+        this.pendingRefresh = false;
+        this.updatePresentationSourceUi();
+        if (previewContentChanged) this.sorter.refreshPreviews();
+        this.pendingSceneSlideId = null;
+        return;
+      }
       const requestedSlideId = this.requestedSlideId;
       if (this.sceneSelectionSignature === null) {
         this.sceneSelectionSignature = getSorterSceneSelectionSignature(appState);
@@ -6049,21 +7576,54 @@ Build version: 2026-09-05T16:40:26.928Z
       const selectedId = this.animationEditingSlideId ?? requestedSlideId ?? this.pendingSceneSlideId ?? this.sorter?.getSelectedSlideId() ?? null;
       const expandedNotesId = this.sorter?.getExpandedNotesSlideId() ?? null;
       const sorterScrollTop = this.sorter?.getScrollTop() ?? 0;
+      const preservedPreviews = presentationSourceKey === this.presentationSourceKey ? this.sorter?.capturePreviewContents() : void 0;
+      this.previewService?.cancelPending();
       this.sorter?.destroy();
       this.sorter = null;
       this.choices = choices;
       this.presentationSourceKey = presentationSourceKey;
       this.resolved = resolved;
       this.lastFingerprint = compositeFingerprint;
+      this.lastPreviewFingerprint = previewFingerprint;
+      this.lastChromeFingerprint = chromeFingerprint;
       this.pendingRefresh = false;
       this.previewService ??= new SlidePreviewService(ea2, api, this.options.config);
       const renderedSorter = this.render(selectedId, expandedNotesId);
+      if (preservedPreviews) {
+        renderedSorter?.restorePreviewContents(preservedPreviews, previewContentChanged);
+      }
       this.pendingSceneSlideId = null;
       if (requestedSlideId) {
         renderedSorter?.scrollToSlide(requestedSlideId);
       } else {
         renderedSorter?.restoreScrollTop(sorterScrollTop);
       }
+    }
+    /** Updates presentation labels/counts without rebuilding sorter rows or thumbnail hosts. */
+    updatePresentationSourceUi() {
+      const deck = this.resolved?.deck;
+      if (!deck) return;
+      const sourceOptions = getPresentationSourceLabels(
+        this.choices,
+        this.options.t("frameDeck"),
+        this.options.t("linePresentationDefaultName")
+      );
+      const sourceSelect = this.options.tab.contentEl.querySelector(
+        ".slideshow-sidepanel__presentation-source-select"
+      );
+      if (sourceSelect && sourceSelect.options.length === sourceOptions.length) {
+        sourceOptions.forEach((definition, index) => {
+          const option = sourceSelect.options.item(index);
+          if (option && option.value === definition.key) option.textContent = definition.label;
+        });
+      }
+      const summary = this.options.tab.contentEl.querySelector(".slideshow-sidepanel__summary");
+      if (summary) {
+        const activeSourceLabel = sourceOptions.find((option) => option.key === this.presentationSourceKey)?.label ?? (deck.kind === "frame" ? this.options.t("frameDeck") : this.options.t("linePresentationDefaultName"));
+        summary.dataset.sourceLabel = activeSourceLabel;
+      }
+      this.updateHeaderContextAction();
+      this.updateDeckSummaryAndAvailability();
     }
     render(preferredSlideId, preferredNotesSlideId) {
       const { tab, t, icons, ea: ea2 } = this.options;
@@ -6085,12 +7645,13 @@ Build version: 2026-09-05T16:40:26.928Z
       header.className = "slideshow-sidepanel__header";
       root.appendChild(header);
       const noVisibleSlides = Boolean(this.resolved && this.resolved.deck.visibleSlides.length === 0);
+      const exactResumeProgress = this.boundView && this.presentationSourceKey ? getSlideshowProgressForSource(this.boundView, this.presentationSourceKey) : void 0;
       const resumeSlide = this.boundView && this.resolved ? getResumeSlideForPresentation(
-        getSlideshowProgress(this.boundView),
-        getSlideshowProgressType(this.boundView),
+        exactResumeProgress ?? getSlideshowProgress(this.boundView),
+        exactResumeProgress !== void 0 && this.presentationSourceKey ? getPresentationSourceType(this.presentationSourceKey) : getSlideshowProgressType(this.boundView),
         this.presentationSourceKey ? getPresentationSourceType(this.presentationSourceKey) : null,
         this.resolved.deck.visibleSlides.length,
-        getSlideshowProgressSource(this.boundView),
+        exactResumeProgress !== void 0 ? this.presentationSourceKey ?? void 0 : getSlideshowProgressSource(this.boundView),
         this.presentationSourceKey
       ) : null;
       const selectedSlideId = this.sorter?.getSelectedSlideId() ?? preferredSlideId ?? this.resolved?.deck.slides[0]?.id ?? null;
@@ -6106,7 +7667,7 @@ Build version: 2026-09-05T16:40:26.928Z
       startButton.addEventListener("click", () => void this.launchPresentation());
       const printButton = doc.createElement("button");
       printButton.type = "button";
-      printButton.className = "slideshow-sidepanel__icon-button";
+      printButton.className = "slideshow-sidepanel__icon-button slideshow-sidepanel__print-button";
       const printLabel = t("printPdf", {
         width: this.options.config.printSlideWidth,
         height: this.options.config.printSlideHeight
@@ -6118,40 +7679,8 @@ Build version: 2026-09-05T16:40:26.928Z
       printButton.addEventListener("click", (event) => {
         void this.printPresentation(event);
       });
-      const declarableFrame = getDeclarableSelectedFrame(ea2);
-      const convertibleLine = getConvertibleSelectedLine(ea2);
-      if (declarableFrame) {
-        const createFrameButton = doc.createElement("button");
-        createFrameButton.type = "button";
-        createFrameButton.className = "slideshow-sidepanel__icon-button";
-        createFrameButton.setAttribute("aria-label", t("declareFrameSlideshow"));
-        createFrameButton.innerHTML = icons.plus;
-        createFrameButton.addEventListener("click", () => void this.declareSelectedFrameSlideshow());
-        header.appendChild(createFrameButton);
-      } else if (convertibleLine) {
-        const createPathButton = doc.createElement("button");
-        createPathButton.type = "button";
-        createPathButton.className = "slideshow-sidepanel__icon-button";
-        createPathButton.setAttribute("aria-label", t("createLinePresentation"));
-        createPathButton.innerHTML = icons.plus;
-        createPathButton.addEventListener(
-          "click",
-          () => void this.convertSelectedLineToPresentation()
-        );
-        header.appendChild(createPathButton);
-      } else if (this.presentationSourceKey !== "frame" && this.resolved?.pathElement) {
-        const pathHidden = isPresentationPathHidden(this.resolved.pathElement);
-        const pathButton = doc.createElement("button");
-        pathButton.type = "button";
-        pathButton.className = "slideshow-sidepanel__icon-button";
-        pathButton.setAttribute(
-          "aria-label",
-          t(pathHidden ? "showPresentationPath" : "hidePresentationPath")
-        );
-        pathButton.innerHTML = pathHidden ? icons.eyeOff : icons.eye;
-        pathButton.addEventListener("click", () => void this.togglePresentationPathVisibility());
-        header.appendChild(pathButton);
-      }
+      const contextAction = this.createHeaderContextAction(doc);
+      if (contextAction) header.appendChild(contextAction);
       this.appendInfoButton(header, doc);
       this.appendSettingsButton(header, doc);
       if (!this.resolved || !this.previewService) {
@@ -6199,12 +7728,13 @@ Build version: 2026-09-05T16:40:26.928Z
         t("linePresentationDefaultName")
       );
       if (sourceOptions.length > 1 && this.presentationSourceKey) {
-        appendSelect(
+        const sourceSelect = appendSelect(
           t("presentationType"),
           this.presentationSourceKey,
           sourceOptions.map((option) => ({ value: option.key, label: option.label })),
           (nextSource) => void this.selectPresentationSource(nextSource)
         );
+        sourceSelect.classList.add("slideshow-sidepanel__presentation-source-select");
       }
       const effectiveStartMode = this.startMode === "resume" && resumeSlide === null ? "beginning" : this.startMode === "current" && selectedVisibleIndex === null ? "beginning" : this.startMode;
       appendSelect(
@@ -6296,6 +7826,7 @@ Build version: 2026-09-05T16:40:26.928Z
       summary.className = "slideshow-sidepanel__summary";
       summaryRow.appendChild(summary);
       const activeSourceLabel = sourceOptions.find((option) => option.key === this.presentationSourceKey)?.label ?? (deck.kind === "frame" ? t("frameDeck") : t("linePresentationDefaultName"));
+      summary.dataset.sourceLabel = activeSourceLabel;
       summary.textContent = `${activeSourceLabel} \xB7 ${t("visibleSlideCount", { visible: deck.visibleSlides.length, total: deck.slides.length })}`;
       const thumbnailSizeControl = doc.createElement("label");
       thumbnailSizeControl.className = "slideshow-sidepanel__thumbnail-size-control";
@@ -6320,29 +7851,24 @@ Build version: 2026-09-05T16:40:26.928Z
       });
       thumbnailSizeControl.appendChild(thumbnailSizeSlider);
       summaryRow.appendChild(thumbnailSizeControl);
-      if (deck.kind === "path") {
-        const presentationSettingsButton = doc.createElement("button");
-        presentationSettingsButton.type = "button";
-        presentationSettingsButton.className = "slideshow-sidepanel__icon-button slideshow-sidepanel__presentation-settings";
-        presentationSettingsButton.setAttribute("aria-label", t("linePresentationSettings"));
-        presentationSettingsButton.innerHTML = icons.moreHorizontal;
-        presentationSettingsButton.addEventListener(
-          "click",
-          () => this.openLinePresentationSettings()
-        );
-        summaryRow.appendChild(presentationSettingsButton);
-      }
+      const presentationSettingsButton = doc.createElement("button");
+      presentationSettingsButton.type = "button";
+      presentationSettingsButton.className = "slideshow-sidepanel__icon-button slideshow-sidepanel__presentation-settings";
+      presentationSettingsButton.setAttribute(
+        "aria-label",
+        t(deck.kind === "frame" ? "framePresentationSettings" : "linePresentationSettings")
+      );
+      presentationSettingsButton.innerHTML = icons.moreHorizontal;
+      presentationSettingsButton.addEventListener(
+        "click",
+        () => deck.kind === "frame" ? this.openFramePresentationSettings() : this.openLinePresentationSettings()
+      );
+      summaryRow.appendChild(presentationSettingsButton);
       const reorderEnabled = !this.resolved.pathElement || !hasBoundLineEndpoint(this.resolved.pathElement);
       if (!reorderEnabled) {
         const warning = doc.createElement("div");
         warning.className = "slideshow-warning";
         warning.textContent = t("lineReorderBound");
-        root.appendChild(warning);
-      }
-      if (deck.kind === "path") {
-        const warning = doc.createElement("div");
-        warning.className = "slideshow-warning";
-        warning.textContent = t("lineAnimationUnsupported");
         root.appendChild(warning);
       }
       const sorterContainer = doc.createElement("div");
@@ -6358,6 +7884,7 @@ Build version: 2026-09-05T16:40:26.928Z
         t,
         reorderEnabled,
         animationEditingSlideId: this.animationEditingSlideId,
+        previewRenderingEnabled: this.isSidepanelFocused(),
         callbacks: {
           move: (fromIndex, toIndex) => this.moveSlide(fromIndex, toIndex),
           toggleInclusion: (slide, excluded) => this.toggleInclusion(slide, excluded),
@@ -6365,7 +7892,7 @@ Build version: 2026-09-05T16:40:26.928Z
           saveNotes: (slide, notes) => this.saveNotes(slide, notes),
           requestAnimationEditor: (slide) => this.requestAnimationEditor(slide),
           mountAnimationEditor: (slide, container) => this.mountAnimationEditor(slide, container),
-          editFrameSlideName: (slide) => this.openFrameSlideNameEditor(slide),
+          editSlideName: (slide) => this.openSlideNameEditor(slide),
           editLineSlide: (slide, index) => this.editLineSlide(slide, index),
           notesBlurred: () => {
             if (this.pendingRefresh) this.scheduleRefresh();
@@ -6426,13 +7953,20 @@ Build version: 2026-09-05T16:40:26.928Z
       return `${name} \xB7 ${resolution}${primary}`;
     }
     persistLaunchPreferences() {
+      const source = this.presentationSourceKey;
+      const drawingPath = this.boundView?.file.path;
       const preferences = {
         startMode: this.startMode,
         windowMode: this.windowMode,
         notesMode: this.notesMode,
-        ...this.presentationSourceKey ? { presentationType: getPresentationSourceType(this.presentationSourceKey) } : {}
+        ...source ? { presentationType: getPresentationSourceType(source) } : {}
       };
-      this.settingsWriteQueue = this.settingsWriteQueue.then(() => saveSlideshowLaunchPreferences(this.options.ea, preferences)).catch((error) => console.error("Slideshow launch preference save failed", error));
+      this.settingsWriteQueue = this.settingsWriteQueue.then(async () => {
+        await saveSlideshowLaunchPreferences(this.options.ea, preferences);
+        if (source && drawingPath) {
+          await saveSlideshowPresentationSource(this.options.ea, drawingPath, source);
+        }
+      }).catch((error) => console.error("Slideshow launch preference save failed", error));
       return this.settingsWriteQueue;
     }
     persistDisplayPreferences() {
@@ -6465,13 +7999,28 @@ Build version: 2026-09-05T16:40:26.928Z
       this.settingsWriteQueue = this.settingsWriteQueue.then(() => saveSorterThumbnailMaxWidth(this.options.ea, width)).catch((error) => console.error("Slideshow thumbnail-size save failed", error));
       return this.settingsWriteQueue;
     }
-    hideSidepanelForWindowedPresentation() {
+    async prepareWindowedPresentation(view) {
       const sidepanelLeaf = this.options.ea.getSidepanelLeaf();
       const container = sidepanelLeaf?.view.containerEl;
-      if (!container) return;
-      const rect = container.getBoundingClientRect();
-      const visible = container.isConnected && rect.width > 1 && rect.height > 1 && this.ownerWindow.getComputedStyle(container).display !== "none";
-      if (visible) this.options.ea.toggleSidepanelView();
+      const sidepanelWindow = container?.ownerDocument.defaultView ?? null;
+      const requestFrame = view.ownerWindow.requestAnimationFrame?.bind(view.ownerWindow);
+      const nextFrame = () => requestFrame ? new Promise((resolve) => requestFrame(() => resolve())) : new Promise((resolve) => view.ownerWindow.setTimeout(resolve, 0));
+      if (sidepanelWindow && sidepanelWindow !== view.ownerWindow) {
+        await app.workspace.setActiveLeaf(view.leaf, { focus: true });
+        return;
+      }
+      if (container) {
+        const isVisible = () => {
+          const rect = container.getBoundingClientRect();
+          return container.isConnected && rect.width > 1 && rect.height > 1 && view.ownerWindow.getComputedStyle(container).display !== "none";
+        };
+        if (isVisible()) {
+          this.options.ea.toggleSidepanelView();
+          for (let frame = 0; frame < 20 && isVisible(); frame += 1) await nextFrame();
+        }
+      }
+      await app.workspace.setActiveLeaf(view.leaf, { focus: true });
+      await nextFrame();
     }
     async launchPresentation() {
       const view = this.boundView;
@@ -6481,12 +8030,13 @@ Build version: 2026-09-05T16:40:26.928Z
         return;
       const presentationType = getPresentationSourceType(presentationSourceKey);
       await this.persistLaunchPreferences();
+      const exactResumeProgress = getSlideshowProgressForSource(view, presentationSourceKey);
       const resume = getResumeSlideForPresentation(
-        getSlideshowProgress(view),
-        getSlideshowProgressType(view),
+        exactResumeProgress ?? getSlideshowProgress(view),
+        exactResumeProgress !== void 0 ? presentationType : getSlideshowProgressType(view),
         presentationType,
         resolved.deck.visibleSlides.length,
-        getSlideshowProgressSource(view),
+        exactResumeProgress !== void 0 ? presentationSourceKey : getSlideshowProgressSource(view),
         presentationSourceKey
       );
       const selectedId = this.sorter?.getSelectedSlideId() ?? null;
@@ -6523,18 +8073,12 @@ Build version: 2026-09-05T16:40:26.928Z
         ...openPresenterView && this.presentationDisplayId !== null ? { presentationDisplayId: this.presentationDisplayId } : {},
         ...openPresenterView && this.presenterDisplayId !== null ? { presenterDisplayId: this.presenterDisplayId } : {}
       };
-      if (!startFullscreen) this.hideSidepanelForWindowedPresentation();
+      if (!startFullscreen) await this.prepareWindowedPresentation(view);
       await this.options.startPresentation(presentationSourceKey, launchOptions);
     }
     async printPresentation(event) {
       await this.sorter?.flushNotes();
-      if (this.animationEditor) {
-        await this.animationEditor.destroy();
-        this.animationEditor = null;
-        this.animationEditingSlideId = null;
-        this.lastFingerprint = "";
-        await this.refresh(true);
-      }
+      if (this.animationEditor) await this.closeAnimationEditor();
       if (this.presentationSourceKey) {
         await this.options.printPresentation(this.presentationSourceKey, event);
       }
@@ -6598,41 +8142,186 @@ Build version: 2026-09-05T16:40:26.928Z
         new Notice(this.options.t("metadataSaveFailed"));
       }
     }
-    openFrameSlideNameEditor(slide) {
+    openSlideNameEditor(slide) {
       const view = this.boundView;
       if (!view) return;
-      const frame = this.options.ea.getViewElements().find(
-        (element) => element.id === slide.frameId && isFrameElement(element)
-      );
-      if (!frame) return;
       const { ea: ea2, t } = this.options;
       const modal = new ea2.obsidian.Modal(app);
-      modal.titleEl.setText(t("editFrameSlideName"));
+      modal.titleEl.setText(t("editSlideName"));
       const input = modal.contentEl.createEl("input", {
         type: "text",
-        value: frame.name ?? "",
-        attr: { "aria-label": t("frameSlideName") }
+        value: slide.title,
+        attr: { "aria-label": t("slideName") }
       });
       input.style.width = "100%";
       input.style.marginBottom = "1rem";
       const actions = modal.contentEl.createDiv({ cls: "modal-button-container" });
+      styleModalActions(actions);
       const cancel = actions.createEl("button", { text: t("settingsCancel") });
       cancel.addEventListener("click", () => modal.close());
       const save = actions.createEl("button", { text: t("settingsSave"), cls: "mod-cta" });
       save.addEventListener("click", () => {
         void (async () => {
           try {
-            await renameFrameSlide(ea2, slide.frameId, input.value);
+            if (slide.kind === "frame") await renameFrameSlide(ea2, slide.frameId, input.value);
+            else await renameLineSlide(ea2, slide.pathId, slide.id, input.value);
             await view.forceSave(true);
             modal.close();
-            this.lastFingerprint = "";
-            await this.refresh(true);
+            await this.refresh();
           } catch (error) {
-            console.error("Slideshow frame rename failed", error);
+            console.error("Slideshow slide rename failed", error);
             new Notice(t("metadataSaveFailed"));
           }
         })();
       });
+      bindEnterToSave(input, save);
+      modal.open();
+      input.focus();
+      input.select();
+    }
+    chooseFrameToLineOptions() {
+      const { ea: ea2, t } = this.options;
+      return new Promise((resolve) => {
+        const modal = new ea2.obsidian.Modal(app);
+        let settled = false;
+        const finish = (choice) => {
+          if (settled) return;
+          settled = true;
+          resolve(choice);
+          modal.close();
+        };
+        modal.titleEl.setText(t("convertFrameToLine"));
+        modal.contentEl.createEl("p", { text: t("convertFrameToLinePrompt") });
+        const deleteFrames = addCheckboxOption(modal.contentEl, t("conversionDeleteFrames"));
+        const visibleSlidesOnly = addCheckboxOption(
+          modal.contentEl,
+          t("conversionVisibleSlidesOnly")
+        );
+        const actions = modal.contentEl.createDiv({ cls: "modal-button-container" });
+        styleModalActions(actions);
+        const cancel = actions.createEl("button", { text: t("settingsCancel") });
+        cancel.addEventListener("click", () => finish(null));
+        const create = actions.createEl("button", {
+          text: t("conversionCreate"),
+          cls: "mod-cta"
+        });
+        create.addEventListener(
+          "click",
+          () => finish({
+            deleteFrames: deleteFrames.checked,
+            visibleSlidesOnly: visibleSlidesOnly.checked
+          })
+        );
+        modal.onClose = () => {
+          if (!settled) {
+            settled = true;
+            resolve(null);
+          }
+        };
+        modal.open();
+      });
+    }
+    chooseLineToFrameOptions() {
+      const { ea: ea2, t } = this.options;
+      return new Promise((resolve) => {
+        const modal = new ea2.obsidian.Modal(app);
+        let settled = false;
+        const finish = (choice) => {
+          if (settled) return;
+          settled = true;
+          resolve(choice);
+          modal.close();
+        };
+        modal.titleEl.setText(t("convertLineToFrame"));
+        modal.contentEl.createEl("p", { text: t("convertLineToFramePrompt") });
+        const deleteLine = addCheckboxOption(modal.contentEl, t("conversionDeleteLine"));
+        const frameKind = addSelectOption(modal.contentEl, t("convertLineToFrameKind"), [
+          ["marker", t("convertLineToFrameMarker")],
+          ["normal", t("convertLineToFrameNormal")]
+        ]);
+        const geometry = addSelectOption(modal.contentEl, t("convertLineToFrameGeometryTitle"), [
+          ["aspect", t("convertLineToFrameAspect")],
+          ["exact", t("convertLineToFrameExact")]
+        ]);
+        const actions = modal.contentEl.createDiv({ cls: "modal-button-container" });
+        styleModalActions(actions);
+        const cancel = actions.createEl("button", { text: t("settingsCancel") });
+        cancel.addEventListener("click", () => finish(null));
+        const create = actions.createEl("button", {
+          text: t("conversionCreate"),
+          cls: "mod-cta"
+        });
+        create.addEventListener(
+          "click",
+          () => finish({
+            deleteLine: deleteLine.checked,
+            frameKind: frameKind.value === "normal" ? "normal" : "marker",
+            correctAspectRatio: geometry.value === "aspect"
+          })
+        );
+        modal.onClose = () => {
+          if (!settled) {
+            settled = true;
+            resolve(null);
+          }
+        };
+        modal.open();
+      });
+    }
+    openFramePresentationSettings() {
+      const view = this.boundView;
+      const deck = this.choices.frame?.deck;
+      if (!view || !deck) return;
+      const { ea: ea2, t } = this.options;
+      const modal = new ea2.obsidian.Modal(app);
+      modal.titleEl.setText(t("framePresentationSettings"));
+      const input = modal.contentEl.createEl("input", {
+        type: "text",
+        value: deck.name ?? "",
+        attr: { "aria-label": t("framePresentationName") }
+      });
+      input.style.width = "100%";
+      input.style.marginBottom = "1rem";
+      const actions = modal.contentEl.createDiv({ cls: "modal-button-container" });
+      styleModalActions(actions);
+      const save = actions.createEl("button", { text: t("settingsSave"), cls: "mod-cta" });
+      save.addEventListener("click", () => {
+        void (async () => {
+          try {
+            await renameFramePresentation(ea2, input.value);
+            await view.forceSave(true);
+            modal.close();
+            await this.refresh();
+          } catch (error) {
+            console.error("Slideshow frame presentation rename failed", error);
+            new Notice(t("metadataSaveFailed"));
+          }
+        })();
+      });
+      const convert = actions.createEl("button", { text: t("convertFrameToLine") });
+      convert.addEventListener("click", () => {
+        void (async () => {
+          const conversionOptions = await this.chooseFrameToLineOptions();
+          if (!conversionOptions) return;
+          try {
+            await this.sorter?.flushNotes();
+            const pathId = await convertFramePresentationToLine(ea2, conversionOptions);
+            await view.forceSave(true);
+            modal.close();
+            const sourceKey = `line:${pathId}`;
+            this.presentationSourceKey = sourceKey;
+            this.presentationSourceByDrawing.set(view.file.path, sourceKey);
+            this.preferredPresentationType = "line";
+            await this.persistLaunchPreferences();
+            this.lastFingerprint = "";
+            await this.refresh(true);
+          } catch (error) {
+            console.error("Slideshow frame-to-line conversion failed", error);
+            new Notice(t("conversionFailed"));
+          }
+        })();
+      });
+      bindEnterToSave(input, save);
       modal.open();
       input.focus();
       input.select();
@@ -6652,20 +8341,17 @@ Build version: 2026-09-05T16:40:26.928Z
       input.style.width = "100%";
       input.style.marginBottom = "1rem";
       const actions = modal.contentEl.createDiv({
-        cls: "slideshow-line-presentation-settings__actions"
+        cls: "modal-button-container slideshow-line-presentation-settings__actions"
       });
-      actions.style.display = "flex";
-      actions.style.gap = "0.5rem";
-      actions.style.flexWrap = "wrap";
-      const save = actions.createEl("button", { text: t("settingsSave") });
+      styleModalActions(actions);
+      const save = actions.createEl("button", { text: t("settingsSave"), cls: "mod-cta" });
       save.addEventListener("click", () => {
         void (async () => {
           try {
             await renameLinePresentation(ea2, source.pathId, input.value);
             await view.forceSave(true);
             modal.close();
-            this.lastFingerprint = "";
-            await this.refresh(true);
+            await this.refresh();
           } catch (error) {
             console.error("Slideshow line presentation rename failed", error);
             new Notice(t("metadataSaveFailed"));
@@ -6675,9 +8361,14 @@ Build version: 2026-09-05T16:40:26.928Z
       const remove = actions.createEl("button", { text: t("removeLinePresentation") });
       remove.style.color = "var(--text-error)";
       remove.addEventListener("click", () => {
-        const confirmed = this.ownerWindow.confirm(t("removeLinePresentationConfirm"));
-        if (!confirmed) return;
         void (async () => {
+          const confirmed = await openConfirmationModal(ea2, app, {
+            title: t("removeLinePresentation"),
+            message: t("removeLinePresentationConfirm"),
+            confirmText: t("removeLinePresentation"),
+            cancelText: t("settingsCancel")
+          });
+          if (!confirmed) return;
           try {
             await removeLinePresentation(ea2, source.pathId);
             await view.forceSave(true);
@@ -6692,6 +8383,36 @@ Build version: 2026-09-05T16:40:26.928Z
           }
         })();
       });
+      if (!this.choices.frame) {
+        const convert = actions.createEl("button", { text: t("convertLineToFrame") });
+        convert.addEventListener("click", () => {
+          void (async () => {
+            const conversionOptions = await this.chooseLineToFrameOptions();
+            if (!conversionOptions) return;
+            try {
+              await this.sorter?.flushNotes();
+              await convertLinePresentationToFrames(
+                ea2,
+                source.pathId,
+                this.options.config,
+                conversionOptions
+              );
+              await view.forceSave(true);
+              modal.close();
+              this.presentationSourceKey = "frame";
+              this.presentationSourceByDrawing.set(view.file.path, "frame");
+              this.preferredPresentationType = "frame";
+              await this.persistLaunchPreferences();
+              this.lastFingerprint = "";
+              await this.refresh(true);
+            } catch (error) {
+              console.error("Slideshow line-to-frame conversion failed", error);
+              new Notice(t("conversionFailed"));
+            }
+          })();
+        });
+      }
+      bindEnterToSave(input, save);
       modal.open();
       input.focus();
       input.select();
@@ -6706,15 +8427,74 @@ Build version: 2026-09-05T16:40:26.928Z
           path.id,
           !isPresentationPathHidden(path)
         );
-        this.lastFingerprint = "";
-        await this.refresh(true);
+        await this.refresh();
       } catch (error) {
         console.error("Slideshow presentation path visibility update failed", error);
         new Notice(this.options.t("metadataSaveFailed"));
       }
     }
+    updateDeckSummaryAndAvailability() {
+      const deck = this.resolved?.deck;
+      if (!deck) return;
+      const summary = this.options.tab.contentEl.querySelector(".slideshow-sidepanel__summary");
+      if (summary) {
+        const sourceLabel = summary.dataset.sourceLabel ?? "";
+        summary.textContent = `${sourceLabel} \xB7 ${this.options.t("visibleSlideCount", {
+          visible: deck.visibleSlides.length,
+          total: deck.slides.length
+        })}`;
+      }
+      const disabled = deck.visibleSlides.length === 0;
+      const startButton = this.options.tab.contentEl.querySelector(
+        ".slideshow-sidepanel__launch-main"
+      );
+      const printButton = this.options.tab.contentEl.querySelector(
+        ".slideshow-sidepanel__print-button"
+      );
+      if (startButton) startButton.disabled = disabled;
+      if (printButton) printButton.disabled = disabled;
+    }
+    updateLastFingerprintFromCurrentState() {
+      const view = this.boundView;
+      if (!view || view.file !== this.boundDrawingFile) {
+        this.lastFingerprint = "";
+        this.lastPreviewFingerprint = "";
+        this.lastChromeFingerprint = "";
+        return;
+      }
+      if (this.options.ea.targetView !== view) this.options.ea.setView(view);
+      const api = this.options.ea.getExcalidrawAPI();
+      if (!api) {
+        this.lastFingerprint = "";
+        this.lastPreviewFingerprint = "";
+        this.lastChromeFingerprint = "";
+        return;
+      }
+      const appState = api.getAppState();
+      const elements = this.options.ea.getViewElements();
+      const sceneVisualFingerprint = getSceneVisualFingerprint(elements);
+      this.lastFingerprint = getSidepanelFingerprint(
+        this.options.ea,
+        this.choices,
+        this.presentationSourceKey,
+        appState,
+        sceneVisualFingerprint
+      );
+      this.lastPreviewFingerprint = getPreviewFingerprint(
+        appState,
+        sceneVisualFingerprint,
+        elements,
+        this.resolved
+      );
+      this.lastChromeFingerprint = getSidepanelChromeFingerprint(
+        this.choices,
+        this.presentationSourceKey
+      );
+      this.pendingRefresh = false;
+    }
     async moveSlide(fromIndex, toIndex) {
       if (!this.resolved) return;
+      this.sorterMutationDepth += 1;
       try {
         await this.sorter?.flushNotes();
         if (this.resolved.deck.kind === "frame") {
@@ -6722,8 +8502,8 @@ Build version: 2026-09-05T16:40:26.928Z
         } else if (this.resolved.pathElement) {
           await reorderLineSlides(this.options.ea, this.resolved.pathElement.id, fromIndex, toIndex);
         }
-        this.lastFingerprint = "";
-        await this.refresh(true);
+        this.sorter?.applyReorder(fromIndex, toIndex);
+        this.updateLastFingerprintFromCurrentState();
       } catch (error) {
         if (error instanceof Error && error.message === "BOUND_PRESENTATION_PATH") {
           new Notice(this.options.t("lineReorderBound"));
@@ -6731,9 +8511,13 @@ Build version: 2026-09-05T16:40:26.928Z
           console.error("Slideshow sorter reorder failed", error);
           new Notice(this.options.t("reorderFailed"));
         }
+      } finally {
+        this.sorterMutationDepth = Math.max(this.sorterMutationDepth - 1, 0);
+        if (this.sorterMutationDepth === 0 && this.pendingRefresh) this.scheduleRefresh();
       }
     }
     async toggleInclusion(slide, excluded) {
+      this.sorterMutationDepth += 1;
       try {
         await this.sorter?.flushNotes();
         if (slide.kind === "frame") {
@@ -6741,11 +8525,15 @@ Build version: 2026-09-05T16:40:26.928Z
         } else {
           await setLineSlideExcluded(this.options.ea, slide.pathId, slide.id, excluded);
         }
-        this.lastFingerprint = "";
-        await this.refresh(true);
+        this.sorter?.applyInclusion(slide.id, excluded);
+        this.updateDeckSummaryAndAvailability();
+        this.updateLastFingerprintFromCurrentState();
       } catch (error) {
         console.error("Slideshow inclusion update failed", error);
         new Notice(this.options.t("metadataSaveFailed"));
+      } finally {
+        this.sorterMutationDepth = Math.max(this.sorterMutationDepth - 1, 0);
+        if (this.sorterMutationDepth === 0 && this.pendingRefresh) this.scheduleRefresh();
       }
     }
     async saveNotes(slide, notes) {
@@ -6759,8 +8547,9 @@ Build version: 2026-09-05T16:40:26.928Z
           await saveLineNotes(this.options.ea, slide.pathId, slide.id, notes);
         }
         await view.forceSave(true);
-        this.lastFingerprint = "";
-        if (!this.sorter?.isEditingNotes() && this.pendingRefresh) this.scheduleRefresh();
+        if (notes.trim().length === 0) delete slide.notes;
+        else slide.notes = notes;
+        this.updateLastFingerprintFromCurrentState();
       } catch (error) {
         console.error("Slideshow notes update failed", error);
         new Notice(this.options.t("metadataSaveFailed"));
@@ -6834,10 +8623,6 @@ Build version: 2026-09-05T16:40:26.928Z
       }
     }
     requestAnimationEditor(slide) {
-      if (slide.kind !== "frame") {
-        new Notice(this.options.t("lineAnimationUnsupported"));
-        return;
-      }
       void (async () => {
         await this.sorter?.flushNotes();
         if (this.animationEditingSlideId === slide.id) {
@@ -6847,12 +8632,11 @@ Build version: 2026-09-05T16:40:26.928Z
         await this.animationEditor?.destroy();
         this.animationEditor = null;
         this.animationEditingSlideId = slide.id;
-        const expandedNotesId = this.sorter?.getExpandedNotesSlideId() ?? null;
-        this.sorter?.destroy();
-        this.sorter = null;
-        const sorter = this.render(slide.id, expandedNotesId);
-        this.selectAndZoomAnimationFrame(slide);
-        sorter?.scrollToSlide(slide.id, false, "start");
+        if (this.sorter) this.sorter.setAnimationEditingSlideId(slide.id);
+        else this.render(slide.id, null);
+        this.selectAndZoomAnimationSlide(slide);
+        this.sorter?.scrollToSlide(slide.id, false, "start");
+        this.refreshPreviewsOnce();
       })();
     }
     mountAnimationEditor(slide, container) {
@@ -6868,21 +8652,27 @@ Build version: 2026-09-05T16:40:26.928Z
         hostView: view,
         container,
         slide,
+        config: this.options.config,
         icons: this.options.icons,
         t: this.options.t,
-        onSaved: () => {
-          this.lastFingerprint = "";
+        onSaved: (steps) => {
+          this.sorter?.updateAnimationSteps(slide.id, steps);
+          this.updateLastFingerprintFromCurrentState();
         }
       });
       this.animationEditor.render();
       this.animationEditor.handleSceneChange(this.options.ea.getViewElements(), api.getAppState());
     }
-    selectAndZoomAnimationFrame(slide) {
+    selectAndZoomAnimationSlide(slide) {
       const view = this.boundView;
       if (!view) return;
-      const frame = this.options.ea.getViewElements().find((element) => element.id === slide.frameId);
-      if (!frame) return;
-      this.options.ea.selectElementsInView([frame]);
+      if (slide.kind === "frame") {
+        const frame = this.options.ea.getViewElements().find((element) => element.id === slide.frameId);
+        if (frame) this.options.ea.selectElementsInView([frame]);
+      } else {
+        const path = this.options.ea.getViewElements().find((element) => element.id === slide.pathId);
+        if (path) this.options.ea.selectElementsInView([path]);
+      }
       this.zoomToSlide(slide);
       app.workspace.setActiveLeaf(view.leaf, { focus: true });
     }
@@ -6891,9 +8681,10 @@ Build version: 2026-09-05T16:40:26.928Z
       this.animationEditor = null;
       const slideId = this.animationEditingSlideId;
       this.animationEditingSlideId = null;
-      this.lastFingerprint = "";
-      await this.refresh(true);
+      this.sorter?.setAnimationEditingSlideId(null);
+      this.updateLastFingerprintFromCurrentState();
       if (slideId) this.sorter?.scrollToSlide(slideId);
+      this.refreshPreviewsOnce();
     }
   };
 
@@ -6909,14 +8700,12 @@ Build version: 2026-09-05T16:40:26.928Z
         await createLinePresentation(ea2, selected.id);
         return `line:${selected.id}`;
       }
+      return void 0;
     }
+    if (!isFrameElement(selected)) return void 0;
     const frames = ea2.getViewElements().filter(isFrameElement);
-    if (frames.length === 0) return void 0;
     const alreadyDeclared = frames.some((frame) => hasFrameSlideshowDeclaration(frame.customData));
-    if (!alreadyDeclared) {
-      const declarationFrame = isFrameElement(selected) ? selected : frames[0];
-      if (declarationFrame) await declareFrameSlideshow(ea2, declarationFrame.id);
-    }
+    if (!alreadyDeclared) await declareFrameSlideshow(ea2, selected.id);
     return "frame";
   }
   function resolveManualInvocationIntent(modifiers) {
@@ -6925,6 +8714,13 @@ Build version: 2026-09-05T16:40:26.928Z
       resume: modifiers.shiftKey,
       startFullscreen: !modifiers.altKey
     };
+  }
+  function chooseManualPresentationSourceKey(choices, selectedSource, savedSource, preferredType) {
+    if (selectedSource && resolvePresentationSource(choices, selectedSource)) return selectedSource;
+    if (savedSource && resolvePresentationSource(choices, savedSource)) return savedSource;
+    if (preferredType === "frame" && choices.frame) return "frame";
+    if (preferredType === "line" && choices.lines[0]) return choices.lines[0].key;
+    return choices.defaultSourceKey ?? void 0;
   }
   function resolveLaunchModifiers(view) {
     return { startFullscreen: !view.modifierKeyDown.altKey };
@@ -6941,21 +8737,41 @@ Build version: 2026-09-05T16:40:26.928Z
         (candidate) => isFrameElement(candidate) && hasFrameSlideshowDeclaration(candidate.customData)
       ) ? "frame" : null);
       if (!presentationSourceKey) return [];
-      return [
+      const actions = [
         {
           id: "edit-slideshow",
           title: latestContext.t("editSlideshow"),
-          icon: "presentation",
+          icon: "pencil",
           action: () => {
             latestContext.ea.setView(latestContext.view);
             void openSlideshowSidepanel(
               latestContext,
               presentationSourceKey,
-              presentationSourceKey === "frame" ? element.id : void 0
+              presentationSourceKey === "frame" ? element.id : void 0,
+              true
             );
           }
         }
       ];
+      if (presentationSourceKey === "frame" && isFrameElement(element)) {
+        actions.push({
+          id: "fit-frame-to-slideshow-aspect",
+          title: latestContext.t("fitFrameToPresentationAspect"),
+          icon: "ratio",
+          action: () => {
+            latestContext.ea.setView(latestContext.view);
+            void resizeFrameToPresentationAspect(
+              latestContext.ea,
+              element.id,
+              loadSlideshowConfig(latestContext.ea)
+            ).catch((error) => {
+              console.error("Slideshow frame aspect-ratio resize failed", error);
+              new Notice(latestContext.t("resizeFrameFailed"));
+            });
+          }
+        });
+      }
+      return actions;
     });
   }
   async function startSlideshowPresentation(context, launch = {}) {
@@ -6978,7 +8794,8 @@ Build version: 2026-09-05T16:40:26.928Z
     const modifierDefaults = resolveLaunchModifiers(view);
     const savedProgressType = getSlideshowProgressType(view);
     const savedProgressSource = getSlideshowProgressSource(view);
-    const resumedSlide = launch.resume && (!savedProgressType || savedProgressType === setup.pathType) && (!savedProgressSource || savedProgressSource === setup.sourceKey) ? getSlideshowProgress(view) : void 0;
+    const exactProgress = getSlideshowProgressForSource(view, setup.sourceKey);
+    const resumedSlide = launch.resume && (exactProgress !== void 0 || (!savedProgressType || savedProgressType === setup.pathType) && (!savedProgressSource || savedProgressSource === setup.sourceKey)) ? exactProgress ?? getSlideshowProgress(view) : void 0;
     const initialSlide = launch.initialSlide ?? resumedSlide ?? 0;
     const controller = new SlideshowController({
       ea: ea2,
@@ -7039,11 +8856,16 @@ Build version: 2026-09-05T16:40:26.928Z
       t
     });
   }
-  async function openSlideshowSidepanel(context, preferredSource, preferredSlideId) {
+  async function openSlideshowSidepanel(context, preferredSource, preferredSlideId, reassertActiveTab = false) {
     const runtime = getSlideshowRuntime();
     await runtime.presentations.get(context.view)?.exit();
     if (runtime.sidepanel) {
-      await runtime.sidepanel.activate(context.view, preferredSource, preferredSlideId);
+      await runtime.sidepanel.activate(
+        context.view,
+        preferredSource,
+        preferredSlideId,
+        reassertActiveTab
+      );
       return;
     }
     const existing = context.ea.checkForActiveSidepanelTabForScript();
@@ -7083,30 +8905,49 @@ Build version: 2026-09-05T16:40:26.928Z
       }
     });
     const handle = {
-      activate: async (view, source, slideId) => {
+      activate: async (view, source, slideId, shouldReassertActiveTab = false) => {
         await sidepanel.activate(view, source, slideId);
         tab.open();
+        sidepanel.revealRequestedSlide();
+        sidepanel.refreshPreviewsOnce();
+        if (!shouldReassertActiveTab) return;
+        await sleepInWindow(view.ownerWindow, 250);
+        if (runtime.sidepanel?.activate !== handle.activate || tab.isActiveTab()) return;
+        tab.focus();
         sidepanel.revealRequestedSlide();
       }
     };
     runtime.sidepanel = handle;
     sidepanel.initialize();
-    await handle.activate(context.view, preferredSource, preferredSlideId);
+    await handle.activate(
+      context.view,
+      preferredSource,
+      preferredSlideId,
+      reassertActiveTab
+    );
   }
-  async function runManualSlideshowInvocation(context) {
+  async function runManualSlideshowInvocation(context, modifiers = context.view.modifierKeyDown) {
     const active = getSlideshowRuntime().presentations.get(context.view);
-    const preferredSourceKey = active ? void 0 : await ensureManualSlideshowDeclaration(context);
-    const intent = resolveManualInvocationIntent(context.view.modifierKeyDown);
-    if (intent.openSidepanel) {
-      await openSlideshowSidepanel(context, preferredSourceKey);
+    const intent = resolveManualInvocationIntent(modifiers);
+    if (active && !intent.resume && !intent.openSidepanel) {
+      active.advance();
       return;
     }
-    if (active) {
-      active.advance();
+    const selectedSourceKey = await ensureManualSlideshowDeclaration(context);
+    if (intent.openSidepanel) {
+      await openSlideshowSidepanel(context, selectedSourceKey);
       return;
     }
     context.ea.setView(context.view);
     const preferences = loadSlideshowLaunchPreferences(context.ea);
+    const choices = resolveSlideDeckChoices(context.ea);
+    const savedSource = loadSlideshowPresentationSource(context.ea, context.view.file.path);
+    const preferredSourceKey = chooseManualPresentationSourceKey(
+      choices,
+      selectedSourceKey,
+      savedSource,
+      preferences.presentationType
+    );
     const ownerWindow = context.view.ownerWindow;
     const displays = context.ea.DEVICE.isMobile ? [] : getAvailableDisplays(ownerWindow);
     const openPresenterView = !context.ea.DEVICE.isMobile && preferences.notesMode === "presenter" && displays.length > 1;
@@ -7150,6 +8991,7 @@ Build version: 2026-09-05T16:40:26.928Z
     }
     const targetView = scriptEa.targetView;
     if (!targetView) return;
+    const manualModifiers = scriptUtils.executionSource === "manual" ? { ...targetView.modifierKeyDown } : void 0;
     const context = {
       ea: scriptEa,
       utils: scriptUtils,
@@ -7161,7 +9003,7 @@ Build version: 2026-09-05T16:40:26.928Z
     if (!wasKnown) registerSlideshowElementActionProvider(context);
     await scriptEa.registerAutostart(t("autostartExplanation"));
     if (scriptUtils.executionSource !== "manual") return;
-    await runManualSlideshowInvocation(context);
+    await runManualSlideshowInvocation(context, manualModifiers);
   }
 
   // src/scripts/slideshow/main.ts

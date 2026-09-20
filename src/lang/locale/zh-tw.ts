@@ -37,11 +37,6 @@ export default {
   EMBEDDABLE_PROPERTIES: "Embeddable 元素設定",
   EMBEDDABLE_RELATIVE_ZOOM: "使元素的縮放級別等於當前繪圖的縮放級別",
   OPEN_IMAGE_SOURCE: "開啟 Excalidraw 繪圖",
-  INSTALL_SCRIPT: "安裝此指令碼",
-  UPDATE_SCRIPT: "有可用更新 - 點選安裝",
-  CHECKING_SCRIPT: "檢查更新中 - 點選重新安裝",
-  UNABLETOCHECK_SCRIPT: "檢查更新失敗 - 點選重新安裝",
-  UPTODATE_SCRIPT: "指令碼已是最新 - 點選重新安裝",
   OPEN_AS_EXCALIDRAW: "開啟為 Excalidraw 繪圖",
   TOGGLE_MODE: "在 Excalidraw 和 Markdown 模式之間切換",
   DUPLICATE_IMAGE: "複製所選影像，並分配一個不同的影像 ID",
@@ -796,16 +791,14 @@ export default {
   ZOOM_AND_PAN_HEAD: "縮放和平移",
   ZOOM_AND_PAN_DESC:
     "設定滑鼠、觸控、開啟、調整大小和縮放範圍行為。",
-  PAN_WITH_RIGHT_MOUSE_BUTTON_NAME: "右鍵拖動平移",
-  PAN_WITH_RIGHT_MOUSE_BUTTON_DESC:
-    "右鍵點選並拖動來平移繪圖（和線上白板工具 Miro 類似）。按 'm' 鍵開啟上下文選單。",
   DEFAULT_PINCHZOOM_NAME: "允許在觸控筆模式下進行雙指縮放",
   DEFAULT_PINCHZOOM_DESC:
     "在觸控筆模式下使用自由畫筆工具時，雙指縮放可能造成干擾。<br>" +
     "<b>開啟：</b>允許雙指縮放。<b>關閉： </b>禁止雙指縮放。",
 
-  DEFAULT_WHEELZOOM_NAME: "滑鼠滾輪縮放",
-  DEFAULT_WHEELZOOM_DESC: `<b>開啟：</b>滑鼠滾輪為縮放繪圖，${labelCTRL()}+滑鼠滾輪為滾動繪圖。<br><b>關閉：</b>滑鼠滾輪為滾動繪圖，${labelCTRL()}+滑鼠滾輪為縮放繪圖。`,
+  DEFAULT_WHEELZOOM_NAME: "反轉繪圖的滾輪縮放設定",
+  DEFAULT_WHEELZOOM_DESC:
+    "套用於所有繪圖，並反轉繪圖中的<b>輸入裝置</b>設定（滑鼠滾輪用於縮放還是捲動）。繪圖中的設定僅適用於目前繪圖，也可以儲存到範本中。",
 
   ZOOM_TO_FIT_NAME: "調整面板尺寸後自動縮放",
   ZOOM_TO_FIT_DESC:
@@ -1580,7 +1573,7 @@ export default {
 
   //Utils.ts
   UPDATE_AVAILABLE: `Excalidraw 的新版本已在社群外掛中可用。\n\n您正在使用 ${PLUGIN_VERSION}。\n最新版本是`,
-  SCRIPT_UPDATES_AVAILABLE: `指令碼更新可用 - 請檢查指令碼儲存。\n\n${DEVICE.isDesktop ? `此訊息可在控制台日誌中檢視 (${DEVICE.isMacOS ? "CMD+OPT+i" : "CTRL+SHIFT+i"})\n\n` : ""}如果您已將指令碼組織到指令碼儲存資料夾下的子資料夾中，並且存在同一指令碼的多個副本，可能需要清理未使用的版本以消除此警報。對於無需更新的私人指令碼副本，請將它們儲存在指令碼儲存資料夾之外。`,
+  SCRIPT_UPDATES_AVAILABLE: `指令碼更新可用 - 請檢查指令碼儲存。\n\n${DEVICE.isDesktop ? `此訊息可在控制台日誌中檢視 (${DEVICE.isMacOS ? "CMD+OPT+i" : "CTRL+SHIFT+i"})\n\n` : ""}只檢查 Downloaded 資料夾下的社群指令碼更新。指令碼資料夾中其他位置的副本會被忽略。`,
   ERROR_PNG_TOO_LARGE: "匯出 PNG 時出錯 - PNG 檔案過大，請嘗試較小的解析度",
 
   //modifierkeyHelper.ts
@@ -1823,4 +1816,60 @@ Obsidian 的 Excalidraw 外掛遠不只是畫圖工具。由於它與 Obsidian �
 
   //carveout.ts
   NEW_DRAWING_TIMEOUT: "找不到檔案。建立新的 Excalidraw 繪圖耗時過長。請重試。",
+  SCRIPT_INSTALLED_NOTICE: "已安裝",
+  SCRIPT_INSTALL_ERROR_NOTICE: "指令碼安裝失敗",
+  SCRIPT_STORE_TITLE: "社群指令碼",
+  SCRIPT_STORE_LOADING: "正在載入社群指令碼...",
+  SCRIPT_STORE_MASTERY_TITLE: "Excalidraw Mastery",
+  SCRIPT_STORE_MASTERY_DESC: "掌握 Excalidraw 與 Visual PKM",
+  SCRIPT_STORE_COFFEE_TITLE: "請我喝杯咖啡",
+  SCRIPT_STORE_COFFEE_DESC: "支持 Excalidraw 持續開發",
+  SCRIPT_STORE_SCRIPTING_BANNER_ALT: "用 Excalidraw 指令碼自動化任何事情",
+  SCRIPT_STORE_SCRIPTING_BANNER_CAPTION: "建立你自己的 Excalidraw 指令碼。點擊這裡了解更多。",
+  SCRIPT_STORE_UPDATES_TITLE: "有可用更新",
+  SCRIPT_STORE_UPDATES_DESC: "不必逐一翻找目錄，就能更新已安裝的社群指令碼。",
+  SCRIPT_STORE_UPDATE_ALL: "全部更新",
+  SCRIPT_STORE_UPDATING: "正在更新...",
+  SCRIPT_STORE_UPDATE_ALL_DONE: "所有社群指令碼都已是最新版本。",
+  SCRIPT_STORE_UPDATE_ALL_PARTIAL: "部分指令碼無法更新。失敗數量：",
+  SCRIPT_STORE_BROWSE_TITLE: "瀏覽指令碼",
+  SCRIPT_STORE_BROWSE_DESC: "可依名稱、作者、描述或分類搜尋。",
+  SCRIPT_STORE_SEARCH_PLACEHOLDER: "搜尋社群指令碼",
+  SCRIPT_STORE_CATEGORY_LABEL: "指令碼分類",
+  SCRIPT_STORE_ALL_CATEGORIES: "全部分類",
+  SCRIPT_STORE_ALL_SCRIPTS: "全部",
+  SCRIPT_STORE_INSTALLED_SCRIPTS: "已安裝",
+  SCRIPT_STORE_RESULTS: "個指令碼",
+  SCRIPT_STORE_NO_RESULTS: "找不到指令碼",
+  SCRIPT_STORE_NO_RESULTS_DESC: "請嘗試其他搜尋詞或分類。",
+  SCRIPT_STORE_DETAILS: "指令碼詳細資料",
+  SCRIPT_STORE_FEATURED: "精選",
+  SCRIPT_STORE_BY: "作者",
+  SCRIPT_STORE_UPDATE_BADGE: "更新",
+  SCRIPT_STORE_INSTALLED_BADGE: "已安裝",
+  SCRIPT_STORE_CHECK_FAILED: "檢查失敗",
+  SCRIPT_STORE_INSTALL: "安裝",
+  SCRIPT_STORE_UPDATE: "更新",
+  SCRIPT_STORE_REINSTALL: "重新安裝",
+  SCRIPT_STORE_BACK: "返回指令碼列表",
+  SCRIPT_STORE_VIEW_SOURCE: "檢視原始碼",
+  SCRIPT_STORE_LOCAL_TITLE: "已安裝指令碼",
+  SCRIPT_STORE_MULTIPLE_COPIES:
+    "找到多個受管理的副本。更新檢查使用下方第一個副本。你可以分別開啟、移動或解除安裝每個副本。",
+  SCRIPT_STORE_PRIMARY_COPY: "用於更新檢查",
+  SCRIPT_STORE_ADDITIONAL_COPY: "其他副本",
+  SCRIPT_STORE_LOCAL_FILE: "本機檔案",
+  SCRIPT_STORE_OPEN_LOCAL: "開啟本機檔案",
+  SCRIPT_STORE_OPEN_LOCAL_FAILED: "無法開啟本機指令碼檔案。",
+  SCRIPT_STORE_JS_OPEN_NOTE:
+    "Obsidian 預設不支援編輯 JavaScript 檔案。如果沒有外掛提供 .js 編輯器，開啟檔案時可能會交給外部應用程式。",
+  SCRIPT_STORE_UNINSTALL: "解除安裝",
+  SCRIPT_STORE_UNINSTALLED: "已解除安裝",
+  SCRIPT_STORE_UNINSTALL_FAILED: "無法解除安裝",
+  SCRIPT_STORE_GROUP_LABEL: "指令碼群組",
+  SCRIPT_STORE_GROUP_ROOT: "不分組（Downloaded）",
+  SCRIPT_STORE_NEW_GROUP_PLACEHOLDER: "新群組名稱",
+  SCRIPT_STORE_MOVE_TO_GROUP: "移動",
+  SCRIPT_STORE_MOVED_TO_GROUP: "指令碼已移動",
+  SCRIPT_STORE_MOVE_FAILED: "無法移動指令碼",
 };

@@ -119,6 +119,7 @@ export let {
   loadMermaid,
   syncInvalidIndices,
   getDefaultColorPalette,
+  convertToExcalidrawElements,
 } = excalidrawLib;
 
 export function updateExcalidrawLib() {
@@ -138,6 +139,7 @@ export function updateExcalidrawLib() {
       "getLineHeight",
       "restoreElements",
       "restoreLibraryItems",
+      "convertToExcalidrawElements",
     ];
 
     for (const fnName of requiredFunctions) {
@@ -178,6 +180,7 @@ export function updateExcalidrawLib() {
       loadMermaid,
       syncInvalidIndices,
       getDefaultColorPalette,
+      convertToExcalidrawElements,
     } = excalidrawLib);
   } catch (error) {
     if (error instanceof Error || typeof error === "string") {
@@ -244,7 +247,6 @@ export const ROUNDNESS = {
 export const THEME_FILTER = "invert(93%) hue-rotate(180deg) saturate(1.25)";
 export const URLFETCHTIMEOUT = 3000;
 export const PLUGIN_ID = "obsidian-excalidraw-plugin";
-export const SCRIPT_INSTALL_CODEBLOCK = "excalidraw-script-install";
 export const SCRIPT_INSTALL_FOLDER = "Downloaded";
 export const fileid = customAlphabet("1234567890abcdef", 40);
 export const REG_LINKINDEX_INVALIDCHARS = /[<>:"\\|?*#]/g;

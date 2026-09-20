@@ -38,13 +38,6 @@ export default {
   EMBEDDABLE_RELATIVE_ZOOM:
     "Масштабирование выбранных встраиваемых элементов до 100% относительно текущего масштаба холста",
   OPEN_IMAGE_SOURCE: "Открыть чертеж Excalidraw",
-  INSTALL_SCRIPT: "Установите скрипт",
-  UPDATE_SCRIPT: "Доступно обновление - нажмите для установки",
-  CHECKING_SCRIPT:
-    "Проверка на наличие новой версии - Нажмите для переустановки",
-  UNABLETOCHECK_SCRIPT:
-    "Проверка обновления не удалась - Нажмите, чтобы переустановить",
-  UPTODATE_SCRIPT: "Скрипт обновлен - Нажмите для переустановки",
   OPEN_AS_EXCALIDRAW: "Открыть как рисунок Excalidraw",
   TOGGLE_MODE: "Переключение между режимами Excalidraw и Markdown",
   CONVERT_NOTE_TO_EXCALIDRAW:
@@ -762,17 +755,14 @@ export default {
   ZOOM_AND_PAN_HEAD: "Масштаб и панорамирование",
   ZOOM_AND_PAN_DESC:
     "Настройте поведение мыши, сенсорного ввода, открытия, изменения размера и диапазона масштаба.",
-  PAN_WITH_RIGHT_MOUSE_BUTTON_NAME:
-    "Перемещение холста правой кнопкой мыши (открыть меню с 'm')",
-  PAN_WITH_RIGHT_MOUSE_BUTTON_DESC:
-    "Когда этот параметр включен, вы можете перемещать холст, нажимая правую кнопку мыши и перетаскивая. Контекстное меню откроется с помощью клавиши 'm', если только вы не редактируете текст.",
   DEFAULT_PINCHZOOM_NAME: "Разрешить масштабирование в режиме пера",
   DEFAULT_PINCHZOOM_DESC:
     "По умолчанию зуммирование в режиме пера при использовании инструмента «Свободное рисование» отключено, чтобы предотвратить нежелательное случайное масштабирование с помощью ладони.<br>" +
     "<b><u>Переключатель ВКЛ:</u></b>Включение щипкового масштабирования в режиме пера<br><b><u>Переключатель ВЫКЛ:</u></b>Выключение щипкового масштабирования в режиме пера",
 
-  DEFAULT_WHEELZOOM_NAME: "Колесо мыши для масштабирования по умолчанию",
-  DEFAULT_WHEELZOOM_DESC: `<b><u>Переключатель ВКЛ:</u></b> Колесо мыши для масштабирования; ${labelCTRL()} + Колесо мыши для прокрутки</br><b><u>Переключатель ВЫКЛ:</u></b>${labelCTRL()} + Колесико мыши для масштабирования; Колесико мыши для прокрутки`,
+  DEFAULT_WHEELZOOM_NAME: "Инвертировать настройку масштабирования колёсиком",
+  DEFAULT_WHEELZOOM_DESC:
+    "Применяется ко всем рисункам и инвертирует настройку <b>Устройство ввода</b> в рисунке (масштабирование или прокрутка колёсиком мыши). Настройка рисунка действует только для текущего рисунка и может быть сохранена в шаблоне.",
 
   ZOOM_TO_FIT_NAME: "Изменение масштаба при изменении размера просмотра",
   ZOOM_TO_FIT_DESC:
@@ -1513,4 +1503,61 @@ export default {
   //carveout.ts
   NEW_DRAWING_TIMEOUT:
     "Файл не найден. Создание нового рисунка Excalidraw занимает слишком много времени. Пожалуйста, попробуйте снова.",
+  SCRIPT_INSTALLED_NOTICE: "Установлено",
+  SCRIPT_INSTALL_ERROR_NOTICE: "Ошибка установки скрипта",
+  SCRIPT_STORE_TITLE: "Скрипты сообщества",
+  SCRIPT_STORE_LOADING: "Загрузка скриптов сообщества...",
+  SCRIPT_STORE_MASTERY_TITLE: "Excalidraw Mastery",
+  SCRIPT_STORE_MASTERY_DESC: "Освойте Excalidraw и Visual PKM",
+  SCRIPT_STORE_COFFEE_TITLE: "Купить мне кофе",
+  SCRIPT_STORE_COFFEE_DESC: "Поддержать дальнейшую разработку Excalidraw",
+  SCRIPT_STORE_SCRIPTING_BANNER_ALT: "Автоматизируйте что угодно с помощью скриптов Excalidraw",
+  SCRIPT_STORE_SCRIPTING_BANNER_CAPTION: "Создавайте собственные скрипты Excalidraw. Нажмите, чтобы узнать больше.",
+  SCRIPT_STORE_UPDATES_TITLE: "Доступны обновления",
+  SCRIPT_STORE_UPDATES_DESC: "Обновляйте установленные скрипты без поиска по каталогу.",
+  SCRIPT_STORE_UPDATE_ALL: "Обновить все",
+  SCRIPT_STORE_UPDATING: "Обновление...",
+  SCRIPT_STORE_UPDATE_ALL_DONE: "Все скрипты сообщества обновлены.",
+  SCRIPT_STORE_UPDATE_ALL_PARTIAL: "Некоторые скрипты не удалось обновить. Ошибок:",
+  SCRIPT_STORE_BROWSE_TITLE: "Обзор скриптов",
+  SCRIPT_STORE_BROWSE_DESC: "Ищите по названию, автору, описанию или категории.",
+  SCRIPT_STORE_SEARCH_PLACEHOLDER: "Поиск скриптов сообщества",
+  SCRIPT_STORE_CATEGORY_LABEL: "Категория скрипта",
+  SCRIPT_STORE_ALL_CATEGORIES: "Все категории",
+  SCRIPT_STORE_ALL_SCRIPTS: "Все",
+  SCRIPT_STORE_INSTALLED_SCRIPTS: "Установленные",
+  SCRIPT_STORE_RESULTS: "скриптов",
+  SCRIPT_STORE_NO_RESULTS: "Скрипты не найдены",
+  SCRIPT_STORE_NO_RESULTS_DESC: "Попробуйте другой запрос или категорию.",
+  SCRIPT_STORE_DETAILS: "Сведения о скрипте",
+  SCRIPT_STORE_FEATURED: "Избранное",
+  SCRIPT_STORE_BY: "Автор",
+  SCRIPT_STORE_UPDATE_BADGE: "Обновление",
+  SCRIPT_STORE_INSTALLED_BADGE: "Установлен",
+  SCRIPT_STORE_CHECK_FAILED: "Проверка не удалась",
+  SCRIPT_STORE_INSTALL: "Установить",
+  SCRIPT_STORE_UPDATE: "Обновить",
+  SCRIPT_STORE_REINSTALL: "Переустановить",
+  SCRIPT_STORE_BACK: "Назад к скриптам",
+  SCRIPT_STORE_VIEW_SOURCE: "Открыть исходник",
+  SCRIPT_STORE_LOCAL_TITLE: "Установленный скрипт",
+  SCRIPT_STORE_MULTIPLE_COPIES:
+    "Найдено несколько управляемых копий. Для проверки обновлений используется первая копия. Каждую копию можно открыть, переместить или удалить отдельно.",
+  SCRIPT_STORE_PRIMARY_COPY: "Используется для проверки обновлений",
+  SCRIPT_STORE_ADDITIONAL_COPY: "Дополнительная копия",
+  SCRIPT_STORE_LOCAL_FILE: "Локальный файл",
+  SCRIPT_STORE_OPEN_LOCAL: "Открыть локальный файл",
+  SCRIPT_STORE_OPEN_LOCAL_FAILED: "Не удалось открыть локальный файл скрипта.",
+  SCRIPT_STORE_JS_OPEN_NOTE:
+    "По умолчанию Obsidian не редактирует JavaScript-файлы. Если ни один плагин не предоставляет редактор .js, файл может открыться во внешнем приложении.",
+  SCRIPT_STORE_UNINSTALL: "Удалить",
+  SCRIPT_STORE_UNINSTALLED: "Удалено",
+  SCRIPT_STORE_UNINSTALL_FAILED: "Не удалось удалить",
+  SCRIPT_STORE_GROUP_LABEL: "Группа скриптов",
+  SCRIPT_STORE_GROUP_ROOT: "Без группы (Downloaded)",
+  SCRIPT_STORE_NEW_GROUP_PLACEHOLDER: "Имя новой группы",
+  SCRIPT_STORE_MOVE_TO_GROUP: "Переместить",
+  SCRIPT_STORE_MOVED_TO_GROUP: "Скрипт перемещён",
+  SCRIPT_STORE_MOVE_FAILED: "Не удалось переместить скрипт",
+  SCRIPT_UPDATES_AVAILABLE: `Доступны обновления скриптов — проверьте магазин скриптов.\n\n${DEVICE.isDesktop ? `Это сообщение доступно в console.log (${DEVICE.isMacOS ? "CMD+OPT+i" : "CTRL+SHIFT+i"})\n\n` : ""}Проверяются только скрипты сообщества, находящиеся в папке Downloaded. Копии в других местах папки скриптов игнорируются.`,
 };

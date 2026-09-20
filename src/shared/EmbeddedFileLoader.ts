@@ -32,6 +32,7 @@ import {
   getPDFDoc,
   getURLImageExtension,
   hasExcalidrawEmbeddedImagesTreeChanged,
+  createNestedFileDependencyGraphContext,
   readLocalFileBinary,
 } from "../utils/fileUtils";
 import { blobToDataURL, errorlog, getDataURL } from "../utils/coreUtils";
@@ -97,6 +98,39 @@ declare const deliberateFetch: (
 ) => Promise<Response>;
 declare const deliberateCreateElement: (document: Document, tagName: string) => HTMLElement;
 declare const mainDocument: Document;
+
+/** Minimal drawing-owned data required to resolve export/scene assets. */
+export interface EmbeddedFilesDataSource {
+  file: ExcalidrawData["file"];
+  scene: ExcalidrawData["scene"];
+  getFileEntries: ExcalidrawData["getFileEntries"];
+  getFile: ExcalidrawData["getFile"];
+  getMarkdownImage: ExcalidrawData["getMarkdownImage"];
+  getEquationEntries: ExcalidrawData["getEquationEntries"];
+  getEquation: ExcalidrawData["getEquation"];
+}
+
+/** View-independent state needed to recreate one embedded-file descriptor. */
+export interface EmbeddedFileExportState {
+  readonly filePath: string | null;
+  readonly isSVGwithBitmap: boolean;
+  readonly img: string;
+  readonly imgInverted: string;
+  readonly mtime: number;
+  readonly mimeType: MimeType;
+  readonly size: Size;
+  readonly linkParts: LinkParts | null;
+  readonly filenameparts: FILENAMEPARTS | null;
+  readonly hostPath: string;
+  readonly attemptCounter: number;
+  readonly isHyperLink: boolean;
+  readonly isLocalLink: boolean;
+  readonly isMarkdownSection: boolean;
+  readonly hyperlink: DataURL | null;
+  readonly colorMap: ColorMap | null;
+  readonly pdfPageViewProps: PDFPageViewProps | null;
+  readonly renderScale: number;
+}
 //An ugly workaround for the following situation.
 //File A is a markdown file that has an embedded Excalidraw file B
 //Later file A is embedded into file B as a Markdown embed
@@ -136,6 +170,7 @@ type LoadImageOptions = {
   onExcalidrawGenerationDeferred?: () => void;
   markdownTransclusionRender?: MarkdownImageRenderSettings;
   fileId?: FileId;
+  pdfScale?: number;
 };
 
 type MarkdownRenderOverrides = {
@@ -373,6 +408,14 @@ export type MarkdownSVGRenderResult = {
   size: Size;
 };
 
+const emptyMarkdownSVGRenderResult = (
+  width: number,
+): MarkdownSVGRenderResult => ({
+  dataURL: "" as DataURL,
+  hasSVGwithBitmap: false,
+  size: { width, height: 0 },
+});
+
 const getPDFCacheId = (linkParts: LinkParts, pageNum: number): string => {
   // Different crops of the same PDF page must not overwrite each other in cache,
   // so the cache key uses the full PDF page/reference fragment when present.
@@ -478,6 +521,66 @@ export class EmbeddedFile {
   public colorMap: ColorMap | null = null;
   public pdfPageViewProps: PDFPageViewProps;
   public renderScale: number = 0;
+
+  /** Captures loader inputs and reusable data URLs without retaining a view. */
+  public exportPreparedSaveState(): EmbeddedFileExportState {
+    return {
+      filePath: this.file?.path ?? null,
+      isSVGwithBitmap: this.isSVGwithBitmap,
+      img: this.img,
+      imgInverted: this.imgInverted,
+      mtime: this.mtime,
+      mimeType: this.mimeType,
+      size: { ...this.size },
+      linkParts: this.linkParts ? { ...this.linkParts } : null,
+      filenameparts: this.filenameparts ? { ...this.filenameparts } : null,
+      hostPath: this.hostPath,
+      attemptCounter: this.attemptCounter,
+      isHyperLink: this.isHyperLink,
+      isLocalLink: this.isLocalLink,
+      isMarkdownSection: this.isMarkdownSection,
+      hyperlink: this.hyperlink ?? null,
+      colorMap: this.colorMap ? { ...this.colorMap } : null,
+      pdfPageViewProps: this.pdfPageViewProps
+        ? { ...this.pdfPageViewProps }
+        : null,
+      renderScale: this.renderScale,
+    };
+  }
+
+  /** Recreates a mutable loader descriptor from detached prepared-save data. */
+  public static fromPreparedSaveState(
+    plugin: ExcalidrawPlugin,
+    state: EmbeddedFileExportState,
+  ): EmbeddedFile {
+    const descriptor = Object.create(EmbeddedFile.prototype) as EmbeddedFile;
+    descriptor.plugin = plugin;
+    descriptor.file = state.filePath
+      ? plugin.app.vault.getFileByPath(state.filePath)
+      : null;
+    descriptor.isSVGwithBitmap = state.isSVGwithBitmap;
+    descriptor.img = state.img;
+    descriptor.imgInverted = state.imgInverted;
+    descriptor.mtime = state.mtime;
+    descriptor.mimeType = state.mimeType;
+    descriptor.size = { ...state.size };
+    descriptor.linkParts = state.linkParts ? { ...state.linkParts } : null;
+    descriptor.filenameparts = state.filenameparts
+      ? { ...state.filenameparts }
+      : null;
+    descriptor.hostPath = state.hostPath;
+    descriptor.attemptCounter = state.attemptCounter;
+    descriptor.isHyperLink = state.isHyperLink;
+    descriptor.isLocalLink = state.isLocalLink;
+    descriptor.isMarkdownSection = state.isMarkdownSection;
+    descriptor.hyperlink = state.hyperlink;
+    descriptor.colorMap = state.colorMap ? { ...state.colorMap } : null;
+    descriptor.pdfPageViewProps = state.pdfPageViewProps
+      ? { ...state.pdfPageViewProps }
+      : null;
+    descriptor.renderScale = state.renderScale;
+    return descriptor;
+  }
 
   constructor(
     plugin: ExcalidrawPlugin,
@@ -629,7 +732,10 @@ export class EmbeddedFile {
     }
   }
 
-  public isLoaded(isDark: boolean): boolean {
+  public isLoaded(
+    isDark: boolean,
+    minimumPdfRenderScale: number = this.plugin.settings.pdfScale,
+  ): boolean {
     if (!this.isHyperLink && !this.isLocalLink) {
       if (!this.file) {
         this.file = this.plugin.app.metadataCache.getFirstLinkpathDest(
@@ -653,7 +759,7 @@ export class EmbeddedFile {
             ? this.imgInverted !== ""
             : this.img !== "";
         return (
-          hasImageForTheme && this.renderScale >= this.plugin.settings.pdfScale
+          hasImageForTheme && this.renderScale >= minimumPdfRenderScale
         );
       }
     }
@@ -749,12 +855,7 @@ export class EmbeddedFilesLoader {
         linkParts,
         { markdown, render, fullHeight: true },
       );
-      return {
-        ...result,
-        size: result.dataURL
-          ? await getImageSize(result.dataURL)
-          : { width: render.width, height: 0 },
-      };
+      return result;
     } finally {
       this.emptyPDFDocsMap();
     }
@@ -1180,6 +1281,7 @@ export class EmbeddedFilesLoader {
             : file?.extension === "md"
               ? null
               : await getDataURL(ab, mimeType)));
+      let renderedMarkdownSize: Size | null = null;
       if (this.terminate) {
         return null;
       }
@@ -1206,9 +1308,11 @@ export class EmbeddedFilesLoader {
                   isTransclusion: true,
                 }
               : undefined,
+            options?.pdfScale,
           );
           dataURL = result.dataURL;
           hasSVGwithBitmap = result.hasSVGwithBitmap;
+          renderedMarkdownSize = result.size;
         } finally {
           markdownRendererRecursionWatcthdog.delete(file);
         }
@@ -1216,7 +1320,9 @@ export class EmbeddedFilesLoader {
 
       const size = isPDF
         ? pdfSize
-        : (excalidrawSize ?? (await getImageSize(dataURL)));
+        : (excalidrawSize ??
+          renderedMarkdownSize ??
+          (await getImageSize(dataURL)));
 
       if (this.terminate) {
         return null;
@@ -1281,8 +1387,10 @@ export class EmbeddedFilesLoader {
     prioritizedFileIds,
     markdownImageRenderCache,
     loadedMarkdownImageFileIds,
+    markdownImageRenderDefaults,
+    pdfScale,
   }: {
-    excalidrawData: ExcalidrawData;
+    excalidrawData: EmbeddedFilesDataSource;
     addFiles: (files: FileData[], isDark: boolean, final?: boolean) => void;
     depth: number;
     isThemeChange?: boolean;
@@ -1300,6 +1408,8 @@ export class EmbeddedFilesLoader {
     prioritizedFileIds?: ReadonlySet<FileId>;
     markdownImageRenderCache?: Map<FileId, MarkdownImageRenderCacheEntry>;
     loadedMarkdownImageFileIds?: ReadonlySet<FileId>;
+    markdownImageRenderDefaults?: MarkdownImageRenderSettings;
+    pdfScale?: number;
   }) {
     this.terminalState = "running";
     if (this.isDark === undefined) {
@@ -1338,6 +1448,21 @@ export class EmbeddedFilesLoader {
     const markdownImageFileIds = new Set(
       markdownImageElements.map((element) => element.fileId),
     );
+    // Ordinary copies of a local Markdown image intentionally share one
+    // fileId. Render and publish that shared binary once while retaining all
+    // elements for per-element metadata normalization below.
+    const markdownImageElementsByFileId = new Map<
+      FileId,
+      ExcalidrawImageElement[]
+    >();
+    for (const element of markdownImageElements) {
+      const elements = markdownImageElementsByFileId.get(element.fileId);
+      if (elements) {
+        elements.push(element);
+      } else {
+        markdownImageElementsByFileId.set(element.fileId, [element]);
+      }
+    }
     if (markdownImageRenderCache) {
       for (const fileId of markdownImageRenderCache.keys()) {
         if (!markdownImageFileIds.has(fileId)) {
@@ -1374,11 +1499,52 @@ export class EmbeddedFilesLoader {
       FileId,
       DeferredCacheValidation
     >();
+    // Deferred candidates frequently share most of the same nested graph.
+    // Scope this cache to one load so metadata is parsed once without retaining
+    // dependency state across synchronization operations.
+    const deferredDependencyGraphContext =
+      createNestedFileDependencyGraphContext(true);
     const deferredGenerationEntries: typeof entries = [];
     const renderedMarkdownImageCacheEntries = new Map<
       FileId,
       MarkdownImageRenderCacheEntry
     >();
+    const normalizeMarkdownImageElement = (
+      element: ExcalidrawImageElement,
+    ) => {
+      const customData = element.customData?.[
+        MARKDOWN_IMAGE_CUSTOM_DATA_KEY
+      ] as MarkdownImageCustomData | undefined;
+      if (!customData) {
+        return null;
+      }
+      const render = resolveMarkdownImageRenderSettings(
+        markdownImageRenderDefaults ??
+          this.plugin.settings.markdownImageSettings.defaults,
+        customData.render,
+      );
+      const legacyRender = customData.render as MarkdownImageRenderSettings & {
+        theme?: unknown;
+      };
+      if ("theme" in legacyRender) {
+        const migratedRender = { ...legacyRender };
+        delete migratedRender.theme;
+        addAppendUpdateCustomData(element, {
+          [MARKDOWN_IMAGE_CUSTOM_DATA_KEY]: {
+            ...customData,
+            render: migratedRender as MarkdownImageRenderSettings,
+          },
+        });
+      }
+      if (
+        typeof element.customData?.doNotInvertSVGInDarkMode !== "boolean"
+      ) {
+        addAppendUpdateCustomData(element, {
+          doNotInvertSVGInDarkMode: false,
+        });
+      }
+      return { customData, render };
+    };
 
     function* loadIterator(
       loader: EmbeddedFilesLoader,
@@ -1416,13 +1582,17 @@ export class EmbeddedFilesLoader {
                   file,
                   deferredValidation.cacheMtime,
                   loader.plugin,
+                  deferredDependencyGraphContext,
                 ),
               );
               if (cacheIsValid) {
                 return;
               }
             }
-            if (shouldForceReload || !embeddedFile.isLoaded(loader.isDark)) {
+            if (
+              shouldForceReload ||
+              !embeddedFile.isLoaded(loader.isDark, pdfScale)
+            ) {
               //debug({where:"EmbeddedFileLoader.loadSceneFiles",uid:this.uid,status:"embedded Files are not loaded"});
               let excalidrawGenerationDeferred = false;
               const data = await loader._getObsidianImage(embeddedFile, depth, {
@@ -1438,6 +1608,7 @@ export class EmbeddedFilesLoader {
                     ? (validation) =>
                         deferredValidationCandidates.set(id, validation)
                     : undefined,
+                pdfScale,
               });
               if (loader.terminate) {
                 return null;
@@ -1495,46 +1666,25 @@ export class EmbeddedFilesLoader {
         return;
       }
 
-      for (const element of markdownImageElements) {
-        const id = element.fileId;
+      for (const [id, elements] of markdownImageElementsByFileId) {
         if (fileIDWhiteList && !fileIDWhiteList.has(id)) {
           continue;
         }
+        const element = elements[0];
         yield createSafeLoadTask(
           async () => {
             if (loader.terminate) {
               return;
             }
-            const customData = element.customData?.[
-              MARKDOWN_IMAGE_CUSTOM_DATA_KEY
-            ] as MarkdownImageCustomData | undefined;
-            if (!customData) {
+            const normalized = normalizeMarkdownImageElement(element);
+            if (!normalized) {
               return;
             }
-            const render = resolveMarkdownImageRenderSettings(
-              loader.plugin.settings.markdownImageSettings.defaults,
-              customData.render,
-            );
-            const legacyRender = customData.render as MarkdownImageRenderSettings & {
-              theme?: unknown;
-            };
-            if ("theme" in legacyRender) {
-              const migratedRender = { ...legacyRender };
-              delete migratedRender.theme;
-              addAppendUpdateCustomData(element, {
-                [MARKDOWN_IMAGE_CUSTOM_DATA_KEY]: {
-                  ...customData,
-                  render: migratedRender as MarkdownImageRenderSettings,
-                },
-              });
-            }
-            if (
-              typeof element.customData?.doNotInvertSVGInDarkMode !== "boolean"
-            ) {
-              addAppendUpdateCustomData(
-                element,
-                { doNotInvertSVGInDarkMode: false },
-              );
+            const { customData, render } = normalized;
+            // Copies sharing this fileId need the same legacy metadata
+            // normalization even though only one SVG is generated.
+            for (const copy of elements.slice(1)) {
+              normalizeMarkdownImageElement(copy);
             }
             let sourceFile = excalidrawData.file;
             let markdown: string | undefined;
@@ -1965,7 +2115,8 @@ export class EmbeddedFilesLoader {
       let width = 0;
       let height = 0;
       const pageNum = isNaN(linkParts.page) ? 1 : (linkParts.page ?? 1);
-      const requestedScale = this.plugin.settings.pdfScale;
+      const requestedScale =
+        options?.pdfScale ?? this.plugin.settings.pdfScale;
       const shouldUseCache =
         !options?.bypassCache &&
         getImageCache().isReady() &&
@@ -2228,9 +2379,10 @@ export class EmbeddedFilesLoader {
     file: TFile,
     linkParts: LinkParts,
     overrides?: MarkdownRenderOverrides,
-  ): Promise<{ dataURL: DataURL; hasSVGwithBitmap: boolean }> {
+    pdfScale?: number,
+  ): Promise<MarkdownSVGRenderResult> {
     if (this.terminate) {
-      return { dataURL: "" as DataURL, hasSVGwithBitmap: false };
+      return emptyMarkdownSVGRenderResult(linkParts.width);
     }
     //1.
     //get the markdown text
@@ -2239,7 +2391,7 @@ export class EmbeddedFilesLoader {
       ? null
       : await getTransclusion(linkParts, plugin.app, file);
     if (this.terminate) {
-      return { dataURL: "" as DataURL, hasSVGwithBitmap: false };
+      return emptyMarkdownSVGRenderResult(linkParts.width);
     }
     let text = overrides
       ? overrides.markdown
@@ -2459,7 +2611,7 @@ export class EmbeddedFilesLoader {
     }
     appendMarkdownBottomSpacer(mdDIV, markdownImagePaddingBottom);
     if (this.terminate) {
-      return { dataURL: "" as DataURL, hasSVGwithBitmap: false };
+      return emptyMarkdownSVGRenderResult(linkParts.width);
     }
 
     // MathJax typesetting may complete asynchronously after MarkdownRenderer.render() resolves.
@@ -2497,14 +2649,14 @@ export class EmbeddedFilesLoader {
 
     await replaceBlobWithBase64(mdDIV); //because image cache returns a blob
     if (this.terminate) {
-      return { dataURL: "" as DataURL, hasSVGwithBitmap: false };
+      return emptyMarkdownSVGRenderResult(linkParts.width);
     }
     const internalEmbeds = Array.from(
       mdDIV.querySelectorAll<HTMLElement>("span.internal-embed[src]"),
     );
     for (let i = 0; i < internalEmbeds.length; i++) {
       if (this.terminate) {
-        return { dataURL: "" as DataURL, hasSVGwithBitmap: false };
+        return emptyMarkdownSVGRenderResult(linkParts.width);
       }
       const el = internalEmbeds[i];
       const src = el.getAttribute("src");
@@ -2542,11 +2694,14 @@ export class EmbeddedFilesLoader {
               markdownTransclusionRender: getTransclusionRenderSettings(
                 overrides.render,
               ),
+              pdfScale,
             }
-          : undefined,
+          : pdfScale === undefined
+            ? undefined
+            : { pdfScale },
       );
       if (this.terminate) {
-        return { dataURL: "" as DataURL, hasSVGwithBitmap: false };
+        return emptyMarkdownSVGRenderResult(linkParts.width);
       }
       if (!embeddedFile?.dataURL) {
         continue;
@@ -2597,7 +2752,7 @@ export class EmbeddedFilesLoader {
     }
     await replaceBlobWithBase64(mdDIV);
     if (this.terminate) {
-      return { dataURL: "" as DataURL, hasSVGwithBitmap: false };
+      return emptyMarkdownSVGRenderResult(linkParts.width);
     }
 
     //5.1
@@ -2785,6 +2940,7 @@ export class EmbeddedFilesLoader {
     return {
       dataURL: svgToBase64(finalSVG) as DataURL,
       hasSVGwithBitmap,
+      size: { width: linkParts.width, height: svgHeight },
     };
   }
 }

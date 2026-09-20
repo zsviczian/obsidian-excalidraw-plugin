@@ -79,6 +79,7 @@ export function createExElement(): ExcalidrawElementBase {
     updated: Date.now(),
     link: null,
     locked: false,
+    created: Date.now(),
   };
 }
 

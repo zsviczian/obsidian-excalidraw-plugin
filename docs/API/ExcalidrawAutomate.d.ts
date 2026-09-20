@@ -477,6 +477,30 @@ export declare class ExcalidrawAutomate {
      */
     addRect(topX: number, topY: number, width: number, height: number, id?: string): string;
     /**
+     * Adds a sticky note and its optional fitted label to the ExcalidrawAutomate
+     * instance. Width and height default to Excalidraw's sticky-note size.
+     * @param {number} topX - The x-coordinate of the top-left corner.
+     * @param {number} topY - The y-coordinate of the top-left corner.
+     * @param {string} text - The sticky-note text. An empty string creates an unlabeled note.
+     * @param {Object} [formatting] - Sticky-note size and label formatting.
+     * @param {number} [formatting.width] - The initial width of the note.
+     * @param {number} [formatting.height] - The initial height of the note.
+     * @param {number} [formatting.fontSize] - The label's maximum font size.
+     * @param {number} [formatting.fontFamily] - The label font family.
+     * @param {"left" | "center" | "right"} [formatting.textAlign] - The label's horizontal alignment.
+     * @param {"top" | "middle" | "bottom"} [formatting.textVerticalAlign] - The label's vertical alignment.
+     * @param {string} [id] - The ID of the sticky-note element.
+     * @returns {string} The ID of the added sticky note.
+     */
+    addStickyNote(topX: number, topY: number, text: string, formatting?: {
+        width?: number;
+        height?: number;
+        fontSize?: number;
+        fontFamily?: number;
+        textAlign?: "left" | "center" | "right";
+        textVerticalAlign?: "top" | "middle" | "bottom";
+    }, id?: string): string;
+    /**
      * Adds a diamond element to the ExcalidrawAutomate instance.
      * @param {number} topX - The x-coordinate of the top-left corner.
      * @param {number} topY - The y-coordinate of the top-left corner.
