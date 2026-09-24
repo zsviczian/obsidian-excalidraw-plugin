@@ -8,7 +8,8 @@ const IMAGE_REFERENCE_PREFIXES = new Set([
   "frame=",
   "clippedframe=",
 ]);
-const PADDING_PARAMETER_REGEX = /,padding=(\d+(?:\.\d+)?|\.\d+)$/;
+/** Matches a trailing `,padding=<number>` parameter (integer or decimal) at the end of a reference. */
+export const PADDING_PARAMETER_REGEX = /,padding=(\d+(?:\.\d+)?|\.\d+)$/;
 
 /**
  * Splits an embedded-file link into its path, reference, alias, and image-reference metadata.
