@@ -17,6 +17,7 @@ import {
 import { getTransclusion, REGEX_LINK } from "src/shared/ExcalidrawData";
 import {
   addAppendUpdateCustomData,
+  setMarkdownImageRenderedSize,
 } from "src/utils/elementCustomDataUtils";
 import {
   MARKDOWN_IMAGE_CUSTOM_DATA_KEY,
@@ -25,7 +26,10 @@ import {
   type MarkdownImageRenderSettings,
   type MarkdownImageSource,
 } from "src/types/markdownImageTypes";
-import { resolveMarkdownImageRenderSettings } from "src/utils/markdownImageUtils";
+import {
+  getMarkdownImageDisplayGeometry,
+  resolveMarkdownImageRenderSettings,
+} from "src/utils/markdownImageUtils";
 import { cleanSectionHeading } from "src/utils/pathUtils";
 import { errorlog } from "src/utils/coreUtils";
 
@@ -339,6 +343,10 @@ export async function convertEmbeddableElementToMarkdownImage(
     sourceData.source,
     render,
   );
+  setMarkdownImageRenderedSize(
+    editable as unknown as Mutable<ExcalidrawImageElement>,
+    rendered.size,
+  );
   setRenderedMarkdownImageFile(ea, fileId, rendered);
   setMarkdownImageSource(view, fileId, sourceData);
   let committed = false;
@@ -491,6 +499,7 @@ export async function insertMarkdownImage(
   element.height = rendered.size.height;
   element.crop = null;
   setMarkdownImageCustomData(element, sourceData.source, render);
+  setMarkdownImageRenderedSize(element, rendered.size);
   setRenderedMarkdownImageFile(ea, fileId, rendered);
   setMarkdownImageSource(view, fileId, sourceData);
   let committed = false;
@@ -552,6 +561,7 @@ export async function duplicateLocalMarkdownImageElement(
   duplicate.groupIds = [];
   duplicate.boundElements = null;
   setMarkdownImageCustomData(duplicate, "local", render);
+  setMarkdownImageRenderedSize(duplicate, rendered.size);
   ea.elementsDict[duplicate.id] = duplicate;
   setRenderedMarkdownImageFile(ea, fileId, rendered);
   view.excalidrawData.setMarkdownImage(fileId, {
@@ -616,22 +626,47 @@ export async function updateMarkdownImage(
   ) {
     return false;
   }
-  const currentElement = view
+  const currentElements = view
     .getViewElements()
-    .find((candidate) => candidate.id === element.id);
-  if (
-    currentElement?.type !== "image" ||
-    currentElement.fileId !== element.fileId
-  ) {
+    .filter(
+      (candidate): candidate is ExcalidrawImageElement =>
+        candidate.type === "image" &&
+        !candidate.isDeleted &&
+        candidate.fileId === element.fileId,
+    );
+  if (!currentElements.some((candidate) => candidate.id === element.id)) {
     return false;
   }
   const ea = getEA(view);
-  ea.copyViewElementsToEAforEditing([element]);
-  const editable = ea.getElement(element.id) as Mutable<ExcalidrawImageElement>;
-  editable.width = render.width;
-  editable.height = rendered.size.height;
-  editable.crop = null;
-  setMarkdownImageCustomData(editable, source, render);
+  // One file ID has one SVG but can have several independently resized
+  // canvas elements. Use live elements because rendering is asynchronous.
+  ea.copyViewElementsToEAforEditing(currentElements);
+  for (const current of currentElements) {
+    const editable = ea.getElement(current.id) as Mutable<ExcalidrawImageElement>;
+    const previous = getMarkdownImageCustomData(current);
+    const previousFlowWidth = getMarkdownImageRenderSettings(
+      view.plugin,
+      current,
+    ).width;
+    const geometry = getMarkdownImageDisplayGeometry({
+      current,
+      previousIntrinsic: previous?.renderedSize,
+      nextIntrinsic: rendered.size,
+      previousFlowWidth,
+      nextFlowWidth: render.width,
+      preserveBounds:
+        current.id !== element.id && previousFlowWidth !== render.width,
+    });
+    editable.x = geometry.x;
+    editable.y = geometry.y;
+    editable.width = geometry.width;
+    editable.height = geometry.height;
+    if (current.id === element.id) {
+      editable.crop = null;
+    }
+    setMarkdownImageCustomData(editable, source, render);
+    setMarkdownImageRenderedSize(editable, rendered.size);
+  }
   setRenderedMarkdownImageFile(ea, element.fileId, rendered);
   if (source === "local") {
     view.excalidrawData.setMarkdownImage(element.fileId, { markdown });
