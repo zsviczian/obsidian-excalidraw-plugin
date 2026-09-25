@@ -27,6 +27,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 - Right click panning (without enabling a specific "Miro-style" setting) is now supported. [#12110](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/12110)
 
 ## Fixed / Refactored
+- Editing a resized Markdown image now keeps its canvas size. Images that have not been resized still grow with their content.
 - Lasso tool was not available in the More Tools menu in Tray Mode [#2937](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2937)
 - \`.excalidraw\` drawings with embedded binary images now render those images when opened into an already-used Excalidraw tab. [#2929](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2929)
 - Descriptions in settings no longer disappear when you revisit a settings page from search results. [#2935](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2935)

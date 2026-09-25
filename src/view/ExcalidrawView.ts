@@ -393,6 +393,9 @@ export const addFiles = async (
       appState: s.scene.appState,
       captureUpdate: CaptureUpdateAction.NEVER,
     });
+    if (s.markdownImageChanged) {
+      view.setDirty();
+    }
   }
   for (const f of files) {
     if (view.excalidrawData.hasFile(f.id)) {
