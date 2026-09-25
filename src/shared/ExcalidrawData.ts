@@ -207,7 +207,8 @@ export const REGEX_LINK = {
   //      1   2    3           4             5         67         8  9
   //EXPR: /(!)?(\[\[([^|\]]+)\|?([^\]]+)?]]|\[([^\]]*)]\(([^)]*)\))(\{(\d+)\})?/g, //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/187
   //      1   2    3           4             5         67                             8  9
-  EXPR: /(!)?(\[\[([^|\]]+)\|?([^\]]+)?]]|\[([^\]]*)]\(((?:[^()]|\([^()]*\))*)\))(\{(\d+)\})?/g, //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1963
+  // The final pair of a closing-bracket run ends the wikilink.
+  EXPR: /(!)?(\[\[([^|]+?)(?:\|([^\]]*?))?]](?!])|\[([^\]]*)]\(((?:[^()]|\([^()]*\))*)\))(\{(\d+)\})?/g, // #1963, #2945
 
   getResList: (text: string): RegExpMatchIteratorResult[] => {
     const res = text.matchAll(REGEX_LINK.EXPR);
