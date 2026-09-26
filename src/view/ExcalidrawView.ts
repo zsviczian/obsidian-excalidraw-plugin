@@ -5320,6 +5320,7 @@ export default class ExcalidrawView
         gridColor: st.gridColor,
         colorPalette: st.colorPalette,
         colorTopPicks: st.colorTopPicks,
+        fontTopPicks: st.fontTopPicks,
         currentStrokeOptions: st.currentStrokeOptions,
         frameRendering: st.frameRendering,
         objectsSnapModeEnabled: st.objectsSnapModeEnabled,
