@@ -145,41 +145,44 @@ export class ExportDialog extends Modal {
   }
 
   createForm() {
-    if (DEVICE.isDesktop) {
-      // Create tab container
-      const tabContainer = this.contentEl.createDiv("nav-buttons-container");
-      const imageTab = tabContainer.createEl("button", {
-        text: t("EXPORTDIALOG_TAB_IMAGE"),
-        cls: `nav-button ${this.activeTab === "image" ? "is-active" : ""}`,
-      });
+    // Create tab container. Image and PDF export work on every platform;
+    // the screenshot tab needs Electron and stays desktop only.
+    const tabContainer = this.contentEl.createDiv("nav-buttons-container");
+    const imageTab = tabContainer.createEl("button", {
+      text: t("EXPORTDIALOG_TAB_IMAGE"),
+      cls: `nav-button ${this.activeTab === "image" ? "is-active" : ""}`,
+    });
 
-      const pdfTab = tabContainer.createEl("button", {
-        text: t("EXPORTDIALOG_TAB_PDF"),
-        cls: `nav-button ${this.activeTab === "pdf" ? "is-active" : ""}`,
-      });
+    const pdfTab = tabContainer.createEl("button", {
+      text: t("EXPORTDIALOG_TAB_PDF"),
+      cls: `nav-button ${this.activeTab === "pdf" ? "is-active" : ""}`,
+    });
 
-      const screenshotTab = tabContainer.createEl("button", {
-        text: t("EXPORTDIALOG_TAB_SCREENSHOT"),
-        cls: `nav-button ${this.activeTab === "screenshot" ? "is-active" : ""}`,
-      });
+    const screenshotTab = DEVICE.isDesktop
+      ? tabContainer.createEl("button", {
+          text: t("EXPORTDIALOG_TAB_SCREENSHOT"),
+          cls: `nav-button ${this.activeTab === "screenshot" ? "is-active" : ""}`,
+        })
+      : null;
 
-      // Tab click handlers
-      imageTab.onclick = () => {
-        this.activeTab = "image";
-        imageTab.addClass("is-active");
-        pdfTab.removeClass("is-active");
-        screenshotTab.removeClass("is-active");
-        this.renderContent();
-      };
+    // Tab click handlers
+    imageTab.onclick = () => {
+      this.activeTab = "image";
+      imageTab.addClass("is-active");
+      pdfTab.removeClass("is-active");
+      screenshotTab?.removeClass("is-active");
+      this.renderContent();
+    };
 
-      pdfTab.onclick = () => {
-        this.activeTab = "pdf";
-        pdfTab.addClass("is-active");
-        imageTab.removeClass("is-active");
-        screenshotTab.removeClass("is-active");
-        this.renderContent();
-      };
+    pdfTab.onclick = () => {
+      this.activeTab = "pdf";
+      pdfTab.addClass("is-active");
+      imageTab.removeClass("is-active");
+      screenshotTab?.removeClass("is-active");
+      this.renderContent();
+    };
 
+    if (screenshotTab) {
       screenshotTab.onclick = () => {
         this.activeTab = "screenshot";
         screenshotTab.addClass("is-active");
@@ -389,10 +392,6 @@ export class ExportDialog extends Modal {
   }
 
   private createPDFSettings() {
-    if (!DEVICE.isDesktop) {
-      return;
-    }
-
     this.contentContainer.createEl("h1", {
       text: t("EXPORTDIALOG_PDF_SETTINGS"),
     });
@@ -576,9 +575,6 @@ export class ExportDialog extends Modal {
       new Notice(t("EXPORTDIALOG_SAVE_CONFIRMATION"));
     };
 
-    if (!DEVICE.isDesktop) {
-      return;
-    }
     const bPDFExport = this.buttonContainerRow1.createEl("button", {
       text: t("EXPORTDIALOG_PDF"),
       cls: "excalidraw-export-button",
