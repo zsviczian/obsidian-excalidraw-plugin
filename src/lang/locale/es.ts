@@ -1778,10 +1778,6 @@ export default {
   SCREENSHOT_ERROR:
     "Error al capturar la pantalla - consulta el console log(registro de la consola)",
 
-  //exportUtils.ts
-  PDF_EXPORT_DESKTOP_ONLY:
-    "La exportación a PDF solo está disponible en escritorio.",
-
   //UniversalInsertFileModal.ts
   UIFM_TITLE: "Insertar archivo desde la bóveda",
   UIFM_SECTION_HEAD: "Seleccionar encabezado de sección",
