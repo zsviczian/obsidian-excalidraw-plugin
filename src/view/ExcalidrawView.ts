@@ -583,6 +583,17 @@ export default class ExcalidrawView
   private isSynchronizing = false;
   private pendingExternalSyncPath: string | null = null;
   private externalSyncLoopPromise: Promise<void> | null = null;
+  /**
+   * Set by save(suppressReloadFromOwnWrite=false). Such a save expects its own
+   * Vault modify echo to be synchronized back into the live scene, because
+   * that is how freshly parsed link/alias text replaces the raw markdown of
+   * newly pasted or dropped text elements. Without this the echo would be
+   * classified as redundant and the scene would keep showing the raw link.
+   */
+  private ownWriteSynchronizationRequest: {
+    filePath: string;
+    targetGeneration: number;
+  } | null = null;
   private readonly ownWriteReloadGuard: OwnWriteReloadGuard;
 
   constructor(leaf: WorkspaceLeaf, plugin: ExcalidrawPlugin) {
@@ -1282,6 +1293,12 @@ export default class ExcalidrawView
         // suppression only for the actual write so an unrelated modification
         // received while preparing the text remains eligible to synchronize.
         this.ownWriteReloadGuard.setForWrite(suppressReloadFromOwnWrite);
+        this.ownWriteSynchronizationRequest = suppressReloadFromOwnWrite
+          ? null
+          : {
+              filePath: preparedSave.filePath,
+              targetGeneration: preparedSave.targetGeneration,
+            };
         try {
           await this.withPersistenceWriteLease(
             preparedSave.filePath,
@@ -1307,6 +1324,7 @@ export default class ExcalidrawView
           );
         } catch (error: unknown) {
           this.clearOwnWriteReloadSuppression();
+          this.ownWriteSynchronizationRequest = null;
           throw error;
         }
         if (suppressReloadFromOwnWrite) {
@@ -3604,6 +3622,30 @@ export default class ExcalidrawView
     }
   }
 
+  /**
+   * Whether observed Vault content may be the echo of a save made with
+   * suppressReloadFromOwnWrite=false. Such an echo is otherwise classified as
+   * redundant, but it must still be loaded and merged so parsed text reaches
+   * the scene. A request for another file or load generation is stale.
+   */
+  private matchesOwnWriteSynchronizationRequest(
+    filePath: string,
+    targetGeneration: number,
+  ): boolean {
+    const request = this.ownWriteSynchronizationRequest;
+    if (!request) {
+      return false;
+    }
+    if (
+      request.filePath !== filePath ||
+      request.targetGeneration !== targetGeneration
+    ) {
+      this.ownWriteSynchronizationRequest = null;
+      return false;
+    }
+    return true;
+  }
+
   /** Queues one latest-state synchronization for a same-file Vault modify. */
   public requestExternalSynchronization(file: TFile): void {
     if (!this.isSynchronizationTargetCurrent(file.path)) {
@@ -3686,7 +3728,16 @@ export default class ExcalidrawView
           synchronizationTargetGeneration,
           data,
         );
-        if (isRedundantObservedSaveContent(classification)) {
+        const isRequestedOwnWriteEcho =
+          isRedundantObservedSaveContent(classification) &&
+          this.matchesOwnWriteSynchronizationRequest(
+            filePath,
+            synchronizationTargetGeneration,
+          );
+        if (
+          isRedundantObservedSaveContent(classification) &&
+          !isRequestedOwnWriteEcho
+        ) {
           continue;
         }
         await incomingData.loadData(data, file, getTextMode(data));
@@ -3699,6 +3750,9 @@ export default class ExcalidrawView
             incomingData,
             filePath,
           );
+          if (applied && isRequestedOwnWriteEcho) {
+            this.ownWriteSynchronizationRequest = null;
+          }
           if (applied) {
             this.saveCoordinator.observeAcceptedContent(
               filePath,
