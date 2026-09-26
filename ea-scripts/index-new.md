@@ -2,13 +2,13 @@
 <a href="https://community.sketch-your-mind.com/em" target="_blank"><img src="https://sketch-your-mind.com/images/logo-EM.png" style="width:50%; max-width: 200px;"></a>
 </div>
 
-**It looks like you want to get more out of Excalidraw!** 
+**It looks like you want to get more out of Excalidraw!**
 
 Scripts are a true superpower in Excalidraw. If you are ready to eliminate tool friction and build heavy-duty workflows, join [Excalidraw Mastery](https://community.sketch-your-mind.com/em). Master Excalidraw and Visual PKM alongside a supportive community of fellow visual thinkers in the [Sketch Your Mind Community](https://community.sketch-your-mind.com)!
 
 ---
 
-If you are enjoying the Excalidraw plugin then please support my work and enthusiasm by buying me a coffee on [https://ko-fi/zsolt](https://ko-fi.com/zsolt). [<img src="https://user-images.githubusercontent.com/14358394/115450238-f39e8100-a21b-11eb-89d0-fa4b82cdbce8.png" class="coffee">](https://ko-fi.com/zsolt) 
+If you are enjoying the Excalidraw plugin then please support my work and enthusiasm by buying me a coffee on [https://ko-fi/zsolt](https://ko-fi.com/zsolt). [<img src="https://user-images.githubusercontent.com/14358394/115450238-f39e8100-a21b-11eb-89d0-fa4b82cdbce8.png" class="coffee">](https://ko-fi.com/zsolt)
 
 ---
 
@@ -23,7 +23,7 @@ In the `Command Palette` installed scripts are prefixed with `Downloaded/`, thus
 
 ## Create Your Own Scripts with AI Superpowers
 
-You don't need to know how to code to build custom scripts! In this video, I show how to create powerful, custom Excalidraw scripts from scratch using the power of AI. 
+You don't need to know how to code to build custom scripts! In this video, I show how to create powerful, custom Excalidraw scripts from scratch using the power of AI.
 
 Follow along as I generate a complete Layer Manager script for Excalidraw in Obsidian, allowing you to hide, show, lock, and manage elements on different layers. I'll walk you through the entire process, from using a custom training library for Excalidraw Automate to prompting Google's Gemini AI Studio to write the code for us. Discover how to unlock a true superpower for your Obsidian and Excalidraw workflow by generating any script you can imagine.
 
@@ -190,6 +190,7 @@ These are the scripts I use most often. I tried to order them by importance, but
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Slideshow.svg"/></div>|[[#Slideshow]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Split%20Ellipse.svg"/></div>|[[#Split Ellipse]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Image%20Occlusion.svg"/></div>|[[#Image Occlusion]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Toggle%20Selection.svg"/></div>|[[#Toggle Selection]]|
 
 ## Collaboration and Export
 **Keywords**: Sharing, Teamwork, Exporting, Distribution, Cooperative, Publish
@@ -455,7 +456,7 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 ```
 <table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Golden%20Ratio.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">The script performs two different functions depending on the elements selected in the view.<br>
 1) In case you select text elements, the script will cycle through a set of font scales. First the 2 larger fonts following the Fibonacci sequence (fontsize * φ; fonsize * φ^2), then the 2 smaller fonts (fontsize / φ; fontsize / φ^2), finally the original size, followed again by the 2 larger fonts. If you wait 2 seconds, the sequence clears and starts from which ever font size you are on. So if you want the 3rd larges font, then toggle twice, wait 2 sec, then toggle again.<br>
-2) In case you select a single rectangle, the script will open the "Golden Grid", "Golden Spiral" window, where you can set up the type of grid or spiral you want to insert into the document.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/golden-ratio.jpg'><br><a href="https://www.youtube.com/watch?v=2SHn_ruax-s" target="_blank"><img src ="https://i.ytimg.com/vi/2SHn_ruax-s/maxresdefault.jpg" style="width:400px;"></a></td></tr></table> 
+2) In case you select a single rectangle, the script will open the "Golden Grid", "Golden Spiral" window, where you can set up the type of grid or spiral you want to insert into the document.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/golden-ratio.jpg'><br><a href="https://www.youtube.com/watch?v=2SHn_ruax-s" target="_blank"><img src ="https://i.ytimg.com/vi/2SHn_ruax-s/maxresdefault.jpg" style="width:400px;"></a></td></tr></table>
 
 ## Grid selected images
 ```excalidraw-script-install
@@ -720,6 +721,12 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 ```
 <table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/GColoy'>@GColoy</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Toggle%20Grid.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Toggles the grid on and off.<br> Especially useful when drawing with just a pen without a mouse or keyboard, as toggling the grid by left-clicking with the pen is sometimes quite tedious.</table>
 
+## Toggle Selection
+```excalidraw-script-install
+https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Toggle%20Selection.md
+```
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/dimateos'>@dimateos</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Toggle%20Selection.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Toggles selection tool and mode.<br> Especially useful when binded to a hotkey, as changing selection mode through the menu can be tedious.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-toggle-selection.webp'></td></tr></table>
+
 ## Text to Sticky Notes
 ```excalidraw-script-install
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Text%20to%20Sticky%20Notes.md
@@ -752,7 +759,7 @@ The following parameters can be set in 'Voronoi Settings' window pop-up once the
 
 Setting parameters could be set back to default values by click on button 'Default'.
 
-See background information about [Voronoi diagram](https://en.wikipedia.org/wiki/Voronoi_diagram) at Wikipedia. 
+See background information about [Voronoi diagram](https://en.wikipedia.org/wiki/Voronoi_diagram) at Wikipedia.
 
 Comments and discussion are welcomed in the [Sketch Your Mind Community](https://community.sketch-your-mind.com)<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/Voronoi_diagram_example.svg'></td></tr></table>
 
