@@ -6736,10 +6736,11 @@ export default class ExcalidrawView
       if (!link) {
         return;
       }
-      const linkMatch = link.match(/\[\[(?<link>.*?)\]\]/);
-      if (linkMatch) {
-        const linkText = linkMatch.groups.link;
-        this.showHoverPreview(linkText, element);
+      const wikiLink = REGEX_LINK.getResList(link).find((part) =>
+        REGEX_LINK.isWikiLink(part),
+      );
+      if (wikiLink) {
+        this.showHoverPreview(REGEX_LINK.getLink(wikiLink), element);
       }
     }
   }

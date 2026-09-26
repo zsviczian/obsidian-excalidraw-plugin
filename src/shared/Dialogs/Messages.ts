@@ -28,6 +28,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 - Customize font top picks by drag and drop. To set top picks as your default for all new drawings save the file with your toppick choices as a template. [#12160](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/12160)
 
 ## Fixed / Refactored
+- Wiki links to files whose names contain a closing bracket now keep the full target in drawings and inline link suggestions. [#2945](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2945)
 - Lasso tool was not available in the More Tools menu in Tray Mode [#2937](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2937)
 - \`.excalidraw\` drawings with embedded binary images now render those images when opened into an already-used Excalidraw tab. [#2929](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2929)
 - Descriptions in settings no longer disappear when you revisit a settings page from search results. [#2935](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2935)
