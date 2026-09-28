@@ -140,7 +140,6 @@ const fakeView = ({ loadMs = 0, loadThrows = false } = {}) => ({
     workspace: {
       rootSplit: {},
       floatingSplit: {},
-      createLeafInParent: () => ({}),
     },
   },
 });

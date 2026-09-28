@@ -9,8 +9,11 @@
  * behaviour under test.
  */
 
-/** Only ever constructed and then assigned two getters by the factory. */
-export class WorkspaceSplit {}
+/** Constructed, assigned two getters, and handed the factory's canvas leaf. */
+export class WorkspaceSplit {
+  insertChild() {}
+}
+/** Constructed with the app; the canvas view is built on it by the stubbed plugin. */
 export class WorkspaceLeaf {}
 export class View {}
 export class TFile {}
