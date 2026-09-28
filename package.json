@@ -71,6 +71,7 @@
     "@types/chroma-js": "^3.1.1",
     "@types/js-beautify": "^1.14.0",
     "@types/node": "^22.19.19",
+    "@types/pako": "^2.0.4",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4",
     "@zsviczian/excalidraw-extras-api": "^0.1.1",

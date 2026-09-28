@@ -1699,9 +1699,6 @@ export default {
   SCREENSHOT_DESKTOP_ONLY: "截图功能仅在桌面端可用",
   SCREENSHOT_ERROR: "截图出错 - 请查看控制台日志",
 
-  //exportUtils.ts
-  PDF_EXPORT_DESKTOP_ONLY: "PDF 导出功能仅限桌面端使用",
-
   //UniversalInsertFileModal.ts
   UIFM_TITLE: "从仓库中嵌入文件",
   UIFM_SECTION_HEAD: "选择章节标题",

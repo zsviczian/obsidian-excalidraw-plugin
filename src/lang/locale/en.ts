@@ -1871,7 +1871,7 @@ export default {
   SCREENSHOT_ERROR: "Error capturing screenshot - see console log",
 
   //exportUtils.ts
-  PDF_EXPORT_DESKTOP_ONLY: "PDF export is only available on desktop",
+  PDF_EXPORT_SAVED_TO_VAULT: "PDF saved to {PATH}",
 
   //UniversalInsertFileModal.ts
   UIFM_TITLE: "Insert File From Vault",

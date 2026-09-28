@@ -14,6 +14,8 @@ import {
   STANDARD_PAGE_SIZES,
 } from "src/types/exportUtilTypes";
 import { setStyle } from "./styleUtils";
+import { exportPagesToRasterPDF, RasterPrintPage } from "./rasterPDFExport";
+import type { ExcalidrawExtrasAPI } from "@zsviczian/excalidraw-extras-api";
 
 const DPI = 96;
 
@@ -81,6 +83,7 @@ async function getSavePath(defaultPath: string): Promise<string | undefined> {
 }
 
 async function printPdf(
+  pdf: ExcalidrawExtrasAPI["pdf"],
   elementToPrint: HTMLElement,
   pdfPath: string,
   bgColor: string,
@@ -91,10 +94,6 @@ async function printPdf(
   extraCss: string = "",
   pageRanges?: string | { from: number; to: number }[],
 ): Promise<void> {
-  const pdf = await EXCALIDRAW_PLUGIN.extrasGateway.getExportToPDF();
-  if (!pdf) {
-    return;
-  }
   await pdf.exportToPDF(
     elementToPrint,
     pdfPath,
@@ -341,6 +340,76 @@ function calculatePosition(
   return { x, y };
 }
 
+/**
+ * Lays out the SVGs onto pages exactly like the Electron print path does
+ * (same tiling, fit-to-page, margins and alignment), but returns the pages
+ * as data for the browser-side raster renderer instead of building DOM.
+ *
+ * When `pageProps.dimensions` is unset (or invalid) every SVG becomes its own
+ * page sized to the SVG, mirroring the mixed-size print job.
+ */
+function collectRasterPages(
+  SVG: SVGSVGElement[],
+  scale: PDFExportScale,
+  pageProps: PDFPageProperties,
+): RasterPrintPage[] {
+  const dims = pageProps?.dimensions;
+  const hasFixedSize =
+    dims &&
+    typeof dims.width === "number" &&
+    typeof dims.height === "number" &&
+    dims.width > 0 &&
+    dims.height > 0;
+
+  const pages: RasterPrintPage[] = [];
+  for (const svg of SVG) {
+    const svgWidth = parseFloat(svg.getAttribute("width") || "0");
+    const svgHeight = parseFloat(svg.getAttribute("height") || "0");
+    const pageDimForSvg: PageDimensions = hasFixedSize
+      ? pageProps.dimensions
+      : { width: svgWidth, height: svgHeight };
+
+    const { tiles } = calculateDimensions(
+      svg,
+      svgWidth,
+      svgHeight,
+      pageDimForSvg,
+      pageProps.margin,
+      scale,
+      pageProps.alignment,
+    );
+    const { width: pageWidth, height: pageHeight } = getPageSizePixels(
+      pageDimForSvg,
+      false,
+    );
+    for (const tile of tiles) {
+      pages.push({
+        svg,
+        viewBox: tile.viewBox,
+        pageWidth,
+        pageHeight,
+        x: tile.x,
+        y: tile.y,
+        width: tile.width,
+        height: tile.height,
+      });
+    }
+  }
+  return pages;
+}
+
+/**
+ * Electron print-to-PDF (via Excalidraw Extras) is desktop only. Everywhere
+ * else, and on desktop when the Extras PDF component is unavailable, fall back
+ * to the pure browser raster renderer which saves into the vault.
+ */
+async function getNativePDFEngine(): Promise<ExcalidrawExtrasAPI["pdf"] | null> {
+  if (!DEVICE.isDesktop) {
+    return null;
+  }
+  return await EXCALIDRAW_PLUGIN.extrasGateway.getExportToPDF();
+}
+
 export async function exportToPDF({
   SVG,
   scale = { fitToPage: 1, zoom: 1 },
@@ -352,8 +421,20 @@ export async function exportToPDF({
   pageProps: PDFPageProperties;
   filename: string;
 }): Promise<void> {
-  if (!DEVICE.isDesktop) {
-    new Notice(t("PDF_EXPORT_DESKTOP_ONLY"));
+  const nativePdf = await getNativePDFEngine();
+  if (!nativePdf) {
+    new Notice(t("EXPORTDIALOG_PDF_PROGRESS_NOTICE"));
+    try {
+      await exportPagesToRasterPDF({
+        pages: collectRasterPages(SVG, scale, pageProps),
+        backgroundColor: pageProps.backgroundColor || "#ffffff",
+        filename,
+      });
+    } catch (error) {
+      console.error("Failed to export to PDF: ", error);
+      new Notice(t("EXPORTDIALOG_PDF_PROGRESS_ERROR"));
+    }
+    // The raster exporter already reports the saved vault path.
     return;
   }
 
@@ -433,6 +514,7 @@ export async function exportToPDF({
     new Notice(t("EXPORTDIALOG_PDF_PROGRESS_NOTICE"));
     try {
       await printPdf(
+        nativePdf,
         allPagesDiv,
         savePath,
         pageProps.backgroundColor || "#ffffff",
@@ -582,6 +664,7 @@ export async function exportToPDF({
 
     // Kick a single print job, excluding the first (dummy) page
     await printPdf(
+      nativePdf,
       allPagesDiv,
       savePath,
       pageProps.backgroundColor || "#ffffff",
