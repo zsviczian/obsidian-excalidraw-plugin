@@ -25,6 +25,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 ## New from Excalidraw.com
 - Create sticky notes with the new **Sticky note** tool or the **N** shortcut. Labels automatically fit and grow with their note, with dedicated colors and a creation-date footer. [#12064](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/12064)
 - Right click panning (without enabling a specific "Miro-style" setting) is now supported. [#12110](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/12110)
+- Customize font top picks by drag and drop. To set top picks as your default for all new drawings save the file with your toppick choices as a template. [#12160](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/12160)
 
 ## Fixed / Refactored
 - Lasso tool was not available in the More Tools menu in Tray Mode [#2937](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2937)
@@ -37,6 +38,21 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 - Selection rectangles in popout windows are no longer positioned incorrectly when displays use different DPI settings. [#2940](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2940)
 
 ## New/Fixed in Excalidraw Automate
+- Added a view-targeted representation toggle for integrations. It switches the supplied live Excalidraw-backed view directly between Excalidraw and Markdown without relying on the workspace active leaf or command routing:
+
+\`\`\`ts
+public async toggleViewMode(view: View): Promise<View | null>;
+\`\`\`
+
+- Integrations can now register a link handler on one target view and receive Excalidraw's resolved pane action without replacing the global hook or copying modifier settings. A new zoom helper fits the complete target scene:
+
+\`\`\`ts
+registerViewLinkClickHook(hook: ViewLinkClickHook): () => void;
+viewZoomToFit(): void;
+\`\`\`
+
+- Excalidraw view state accepts one-shot \`mode: "view" | "edit"\` and \`zoomToFit: true\` options. This lets host integrations open a drawing in its intended mode without polling the React canvas.
+- Link-open callbacks now receive a usable native event even when an upstream synthesized event omitted it.
 - Added three view-lifecycle helpers for integrations that use a view-local Excalidraw Automate instance or render generated/transient scene state:
 \`\`\`ts
 clearViewDirty(): void;

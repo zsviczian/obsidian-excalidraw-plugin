@@ -8,7 +8,14 @@ node.render();
 container.appendChild(node.contentEl)
 */
 
-import { Editor, TFile, View, WorkspaceLeaf, WorkspaceSplit } from "obsidian";
+import {
+  type App,
+  Editor,
+  TFile,
+  View,
+  WorkspaceLeaf,
+  WorkspaceSplit,
+} from "obsidian";
 import type ExcalidrawView from "src/view/ExcalidrawView";
 import {
   getContainerForDocument,
@@ -28,6 +35,12 @@ interface ObsidianCanvas {
   }) => ObsidianCanvasNode;
   removeNode: (node: ObsidianCanvasNode) => void;
 }
+
+type DetachedWorkspaceSplit = WorkspaceSplit & {
+  insertChild(index: number, child: WorkspaceLeaf, resize?: boolean): void;
+};
+
+type WorkspaceLeafConstructor = new (app: App) => WorkspaceLeaf;
 
 export interface ObsidianCanvasNodeChild extends View {
   file?: TFile;
@@ -92,7 +105,13 @@ export class CanvasNodeFactory {
       rootSplit.getRoot = () =>
         app.workspace[doc === mainDocument ? "rootSplit" : "floatingSplit"];
       rootSplit.getContainer = () => getContainerForDocument(doc);
-      this.leaf = app.workspace.createLeafInParent(rootSplit, 0);
+      // `workspace.createLeafInParent()` activates its new leaf and schedules a workspace layout
+      // update. That is observable even though this split is detached: on mobile it navigates away
+      // from an open sidebar that hosts an embedded Excalidraw view. Construct and insert the
+      // internal Canvas leaf directly so initialization has no workspace activation side effect.
+      const LeafConstructor = WorkspaceLeaf as unknown as WorkspaceLeafConstructor;
+      this.leaf = new LeafConstructor(app);
+      (rootSplit as DetachedWorkspaceSplit).insertChild(0, this.leaf);
       this.canvas = canvasPlugin.views.canvas(this.leaf)
         .canvas as ObsidianCanvas;
       this.initialized = true;

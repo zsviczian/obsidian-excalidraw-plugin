@@ -1094,7 +1094,7 @@ End Obsidian Sheets Plus support
 
 /* Radix portals the canvas menu under the owning document's body. Keep it on
    Obsidian's menu layer so body-level Obsidian tooltips remain above it. */
-body > [data-radix-portal] .main-menu {
+body>[data-radix-portal] .main-menu {
   z-index: var(--layer-menu);
 }
 
@@ -1723,7 +1723,7 @@ button.excalidraw-font-picker {
   align-items: start;
 }
 
-.excalidraw-filename-information > :first-child {
+.excalidraw-filename-information> :first-child {
   min-width: 0;
 }
 
@@ -1791,7 +1791,7 @@ button.excalidraw-font-picker {
   text-decoration: none;
 }
 
-.excalidraw-script-store__support-item + .excalidraw-script-store__support-item {
+.excalidraw-script-store__support-item+.excalidraw-script-store__support-item {
   border-left: 1px solid var(--background-modifier-border);
 }
 
@@ -1941,7 +1941,7 @@ button.excalidraw-font-picker {
   min-width: 12rem;
 }
 
-.excalidraw-script-store__search > span {
+.excalidraw-script-store__search>span {
   position: absolute;
   left: 0.65rem;
   top: 50%;
@@ -2166,7 +2166,7 @@ button.excalidraw-font-picker {
   background: var(--background-secondary);
 }
 
-.excalidraw-script-store__card-footer > span {
+.excalidraw-script-store__card-footer>span {
   min-width: 0;
   color: var(--text-faint);
   font-size: var(--font-ui-smaller);
@@ -2272,7 +2272,7 @@ button.excalidraw-font-picker {
   font-size: var(--font-ui-medium);
 }
 
-.excalidraw-script-store__local-copy + .excalidraw-script-store__local-copy {
+.excalidraw-script-store__local-copy+.excalidraw-script-store__local-copy {
   margin-top: 1rem;
   padding-top: 1rem;
   border-top: 1px solid var(--background-modifier-border);
@@ -2337,7 +2337,7 @@ button.excalidraw-font-picker {
   border-top: 1px solid var(--background-modifier-border);
 }
 
-.excalidraw-script-store__group-row > label {
+.excalidraw-script-store__group-row>label {
   flex: 0 0 auto;
   font-weight: var(--font-medium);
 }
@@ -2376,7 +2376,7 @@ button.excalidraw-font-picker {
     grid-template-columns: 1fr;
   }
 
-  .excalidraw-script-store__support-item + .excalidraw-script-store__support-item {
+  .excalidraw-script-store__support-item+.excalidraw-script-store__support-item {
     border-left: 0;
     border-top: 1px solid var(--background-modifier-border);
   }
@@ -2403,7 +2403,7 @@ button.excalidraw-font-picker {
     flex: 1 1 12rem;
   }
 
-  .excalidraw-script-store__controls > select,
+  .excalidraw-script-store__controls>select,
   .excalidraw-script-store__view-toggle {
     flex: 1 1 auto;
   }
@@ -2428,8 +2428,12 @@ button.excalidraw-font-picker {
     align-items: stretch;
   }
 
-  .excalidraw-script-store__controls > select,
+  .excalidraw-script-store__controls>select,
   .excalidraw-script-store__view-toggle {
     width: 100%;
   }
+}
+
+.excalidraw .excalidraw-tooltip-wrapper {
+  --no-tooltip: true;
 }

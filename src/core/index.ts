@@ -2,6 +2,12 @@ import "obsidian";
 import type { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import { errorlog } from "src/utils/coreUtils";
 import type ExcalidrawView from "src/view/ExcalidrawView";
+export type {
+  ExcalidrawAutomate,
+  ViewLinkClickContext,
+  ViewLinkClickHook,
+} from "src/shared/ExcalidrawAutomate";
+export type { ExcalidrawEphemeralState } from "src/types/excalidrawViewTypes";
 //import { ExcalidrawAutomate } from "./ExcalidrawAutomate";
 //export ExcalidrawAutomate from "./ExcalidrawAutomate";
 //export {ExcalidrawAutomate} from  "./ExcaildrawAutomate";

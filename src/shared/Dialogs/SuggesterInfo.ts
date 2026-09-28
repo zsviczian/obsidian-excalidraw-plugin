@@ -988,6 +988,14 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field: "toggleViewMode",
+    code: "public async toggleViewMode(view: View): Promise<View | null>",
+    desc:
+      "Toggles the supplied live Excalidraw-backed view between Excalidraw and Markdown without relying on the active workspace leaf. " +
+      "The input may be an ExcalidrawView or a MarkdownView whose file is an Excalidraw drawing. Returns the replacement view after a successful toggle, or null when the supplied view is not eligible.",
+    after: "(view);",
+  },
+  {
     field: "getAttachmentFilepath",
     code: "async getAttachmentFilepath(filename: string): Promise<string>",
     desc:
@@ -1312,6 +1320,12 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field: "registerViewLinkClickHook",
+    code: "registerViewLinkClickHook(hook: ViewLinkClickHook): () => void;",
+    desc: "Registers a link-click hook only for the target view and returns a disposer. The callback receives the resolved pane action, so integrations do not need to inspect Excalidraw settings or reproduce platform modifier rules. Return false to prevent native navigation.",
+    after: "",
+  },
+  {
     field: "splitFolderAndFilename",
     code: "splitFolderAndFilename(filepath: string): { folderpath: string; filename: string; basename: string; extension: string; }",
     desc: "Splits a file path into its components.",
@@ -1329,6 +1343,12 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     field: "viewZoomToElements",
     code: "viewZoomToElements(selectElements: boolean,elements: ExcalidrawElement[], margin: number = 0.05):void",
     desc: "Zoom tarteView to fit elements provided as input. elements === [] will zoom to fit the entire scene. SelectElements toggles whether the elements should be in a selected state at the end of the operation.",
+    after: "",
+  },
+  {
+    field: "viewZoomToFit",
+    code: "viewZoomToFit(): void",
+    desc: "Zooms the target view to fit its complete scene using Excalidraw's normal maximum zoom and safety checks.",
     after: "",
   },
   {

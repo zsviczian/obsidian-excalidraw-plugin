@@ -56,7 +56,11 @@ import {
   sceneCoordsToViewportCoords,
 } from "../constants/constants";
 import ExcalidrawPlugin from "../core/main";
-import { ExcalidrawAutomate } from "../shared/ExcalidrawAutomate";
+import {
+  ExcalidrawAutomate,
+  type ViewLinkClickHook,
+} from "../shared/ExcalidrawAutomate";
+import type { PaneTarget } from "../types/utilTypes";
 import { TextMode, getTextMode } from "../shared/TextMode";
 import { ExcalidrawSidepanelView } from "./sidepanel/Sidepanel";
 import {
@@ -578,6 +582,8 @@ export default class ExcalidrawView
   private lastAppState: AppState | null = null;
   private lastElementsVersion: number = -1;
   private pendingMigrationHandoffToken: string | null = null;
+  private pendingOpenMode: "view" | "edit" | null = null;
+  private pendingOpenZoomToFit = false;
   private pendingMigrationBinaryFiles: BinaryFiles | null = null;
   private migrationBinaryFilePublication: Promise<void> | null = null;
   private isSynchronizing = false;
@@ -1678,8 +1684,22 @@ export default class ExcalidrawView
     element: ExcalidrawElement,
     link: string,
     event: MouseEvent | null,
+    action?: PaneTarget,
   ): boolean {
-    return this.linkNavigationManager.handleLinkHookCall(element, link, event);
+    return this.linkNavigationManager.handleLinkHookCall(
+      element,
+      link,
+      event,
+      action,
+    );
+  }
+
+  /** Registers an integration hook for link clicks originating from this view only. */
+  public registerViewLinkClickHook(
+    hook: ViewLinkClickHook,
+    ea: ExcalidrawAutomate,
+  ): () => void {
+    return this.linkNavigationManager.registerViewLinkClickHook(hook, ea);
   }
 
   private getLinkTextForElement(
@@ -2983,6 +3003,9 @@ export default class ExcalidrawView
       typeof state?.migrationHandoffToken === "string"
         ? state.migrationHandoffToken
         : null;
+    this.pendingOpenMode =
+      state?.mode === "view" || state?.mode === "edit" ? state.mode : null;
+    this.pendingOpenZoomToFit = state?.zoomToFit === true;
     await super.setState(state, result);
   }
 
@@ -4008,16 +4031,21 @@ export default class ExcalidrawView
     this.semaphores.justLoaded = justloaded;
     this.clearDirty();
     const om = this.excalidrawData.getOpenMode();
+    const requestedViewModeEnabled = this.pendingOpenMode === null
+      ? null
+      : this.pendingOpenMode === "view";
     this.clearOwnWriteReloadSuppression();
     const penEnabled = this.plugin.isPenMode();
     const api = this.excalidrawAPI;
     if (api) {
       //isLoaded flags that a new file is being loaded, isLoaded will be true after loadDrawing completes
-      const viewModeEnabled = !this.isLoaded
-        ? excalidrawData.elements.length > 0
-          ? om.viewModeEnabled
-          : false
-        : api.getAppState().viewModeEnabled;
+      const viewModeEnabled = requestedViewModeEnabled ?? (
+        !this.isLoaded
+          ? excalidrawData.elements.length > 0
+            ? om.viewModeEnabled
+            : false
+          : api.getAppState().viewModeEnabled
+      );
       const zenModeEnabled = !this.isLoaded
         ? om.zenModeEnabled
         : api.getAppState().zenModeEnabled;
@@ -4104,8 +4132,9 @@ export default class ExcalidrawView
                 }
               : {}),
             zenModeEnabled: om.zenModeEnabled,
-            viewModeEnabled:
-              excalidrawData.elements.length > 0 ? om.viewModeEnabled : false,
+            viewModeEnabled: requestedViewModeEnabled ?? (
+              excalidrawData.elements.length > 0 ? om.viewModeEnabled : false
+            ),
             linkOpacity: this.excalidrawData.getLinkOpacity(),
             penMode: penEnabled,
             penDetected: penEnabled,
@@ -4498,7 +4527,7 @@ export default class ExcalidrawView
     return ICON_NAME;
   }
 
-  async setMarkdownView(eState?: MarkdownViewOpenState) {
+  async setMarkdownView(eState?: MarkdownViewOpenState, active?: boolean) {
     //save before switching to markdown view.
     //this would also happen onClose, but it does not hurt to save it here
     //this way isDirty() will return false in onClose, thus
@@ -4531,7 +4560,11 @@ export default class ExcalidrawView
       }
 
       plugin.excalidrawFileModes[this.id || file.path] = "markdown";
-      await plugin.setMarkdownView(leaf, eState as ViewStateResult | undefined);
+      await plugin.setMarkdownView(
+        leaf,
+        eState as ViewStateResult | undefined,
+        active,
+      );
     } catch (e: unknown) {
       errorlog({
         where: "ExcalidrawView.setMarkdownView",
@@ -4541,7 +4574,7 @@ export default class ExcalidrawView
     }
   }
 
-  public async openAsMarkdown(eState?: MarkdownViewOpenState) {
+  public async openAsMarkdown(eState?: MarkdownViewOpenState, active?: boolean) {
     if (
       this.plugin.settings.compress &&
       this.plugin.settings.decompressForMDView
@@ -4551,7 +4584,7 @@ export default class ExcalidrawView
     } else if (this.isDirty()) {
       await this.save(true, true, true);
     }
-    void this.setMarkdownView(eState);
+    await this.setMarkdownView(eState, active);
   }
 
   public async convertExcalidrawToMD() {
@@ -5320,6 +5353,7 @@ export default class ExcalidrawView
         gridColor: st.gridColor,
         colorPalette: st.colorPalette,
         colorTopPicks: st.colorTopPicks,
+        fontTopPicks: st.fontTopPicks,
         currentStrokeOptions: st.currentStrokeOptions,
         frameRendering: st.frameRendering,
         objectsSnapModeEnabled: st.objectsSnapModeEnabled,
@@ -5943,11 +5977,24 @@ export default class ExcalidrawView
         return;
       }
       this.semaphores.justLoaded = false;
+      const pendingOpenMode = this.pendingOpenMode;
+      const pendingOpenZoomToFit = this.pendingOpenZoomToFit;
+      this.pendingOpenMode = null;
+      this.pendingOpenZoomToFit = false;
+      if (pendingOpenMode) {
+        const viewModeEnabled = pendingOpenMode === "view";
+        this.updateScene({
+          appState: { viewModeEnabled },
+          captureUpdate: CaptureUpdateAction.NEVER,
+        });
+        this.toolsPanelRef?.current?.setExcalidrawViewMode(viewModeEnabled);
+      }
       if (
         !this.semaphores.preventAutozoom &&
-        this.plugin.settings.zoomToFitOnOpen
+        (pendingOpenZoomToFit || this.plugin.settings.zoomToFitOnOpen)
       ) {
         if (
+          pendingOpenZoomToFit ||
           getExcalidraAndMarkdowViewsForFile(this.app, this.file).length === 1
         ) {
           this.zoomToFit(false, true);
@@ -6677,8 +6724,24 @@ export default class ExcalidrawView
     }
     window.setTimeout(() => this.removeLinkTooltip(), 500);
 
-    let event = e?.detail?.nativeEvent;
-    if (this.handleLinkHookCall(element, link, event as MouseEvent)) {
+    const nativeEvent = e?.detail?.nativeEvent;
+    const ownerMouseEvent = (
+      this.ownerWindow as (Window & { MouseEvent?: typeof MouseEvent }) | null
+    )?.MouseEvent;
+    const event = nativeEvent ?? new (ownerMouseEvent ?? MouseEvent)("click", {
+      ...emulateKeysForLinkClick("new-tab"),
+    });
+    const hasModifier =
+      event.shiftKey || event.ctrlKey || event.metaKey || event.altKey;
+    const linkAction = hasModifier ? linkClickModifierType(event) : "new-tab";
+    if (
+      this.handleLinkHookCall(
+        element,
+        link,
+        event as MouseEvent,
+        linkAction,
+      )
+    ) {
       return;
     }
     //if(openExternalLink(element.link, this.app, !isSHIFT(event) && !isWinCTRLorMacCMD(event) && !isWinMETAorMacCTRL(event) && !isWinALTorMacOPT(event) ? element : undefined)) return;
@@ -6686,7 +6749,7 @@ export default class ExcalidrawView
       return;
     }
 
-    if (!event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey) {
+    if (!hasModifier) {
       void this.linkClick(
         null,
         null,
