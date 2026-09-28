@@ -6725,9 +6725,7 @@ export default class ExcalidrawView
     window.setTimeout(() => this.removeLinkTooltip(), 500);
 
     const nativeEvent = e?.detail?.nativeEvent;
-    const ownerMouseEvent = (
-      this.ownerWindow as (Window & { MouseEvent?: typeof MouseEvent }) | null
-    )?.MouseEvent;
+    const ownerMouseEvent = this.ownerWindow?.MouseEvent;
     const event = nativeEvent ?? new (ownerMouseEvent ?? MouseEvent)("click", {
       ...emulateKeysForLinkClick("new-tab"),
     });

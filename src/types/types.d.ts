@@ -202,6 +202,7 @@ export type LocalGraphView = View & {
 
 declare global {
   interface Window {
+    MouseEvent?: typeof MouseEvent;
     ExcalidrawAutomate: ExcalidrawAutomate;
     ExcalidrawLib: typeof ExcalidrawLib;
     pdfjsLib: PdfJsLibrary;
