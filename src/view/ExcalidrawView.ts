@@ -4527,7 +4527,7 @@ export default class ExcalidrawView
     return ICON_NAME;
   }
 
-  async setMarkdownView(eState?: MarkdownViewOpenState) {
+  async setMarkdownView(eState?: MarkdownViewOpenState, active?: boolean) {
     //save before switching to markdown view.
     //this would also happen onClose, but it does not hurt to save it here
     //this way isDirty() will return false in onClose, thus
@@ -4560,7 +4560,11 @@ export default class ExcalidrawView
       }
 
       plugin.excalidrawFileModes[this.id || file.path] = "markdown";
-      await plugin.setMarkdownView(leaf, eState as ViewStateResult | undefined);
+      await plugin.setMarkdownView(
+        leaf,
+        eState as ViewStateResult | undefined,
+        active,
+      );
     } catch (e: unknown) {
       errorlog({
         where: "ExcalidrawView.setMarkdownView",
@@ -4570,7 +4574,7 @@ export default class ExcalidrawView
     }
   }
 
-  public async openAsMarkdown(eState?: MarkdownViewOpenState) {
+  public async openAsMarkdown(eState?: MarkdownViewOpenState, active?: boolean) {
     if (
       this.plugin.settings.compress &&
       this.plugin.settings.decompressForMDView
@@ -4580,7 +4584,7 @@ export default class ExcalidrawView
     } else if (this.isDirty()) {
       await this.save(true, true, true);
     }
-    void this.setMarkdownView(eState);
+    await this.setMarkdownView(eState, active);
   }
 
   public async convertExcalidrawToMD() {

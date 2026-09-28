@@ -12,7 +12,6 @@ import {
   View,
 } from "obsidian";
 import {
-  VIEW_TYPE_EXCALIDRAW,
   ICON_NAME,
   IMAGE_TYPES,
   DEVICE,
@@ -2508,20 +2507,14 @@ export class CommandManager {
         const excalidrawView =
           this.app.workspace.getActiveViewOfType(ExcalidrawView);
         if (excalidrawView) {
-          void excalidrawView.openAsMarkdown();
+          void this.plugin.ea.toggleViewMode(excalidrawView);
           return;
         }
 
         const markdownView =
           this.app.workspace.getActiveViewOfType(MarkdownView);
         if (markdownView && fileIsExcalidraw) {
-          void (async () => {
-            await markdownView.save();
-            const activeLeaf = markdownView.leaf;
-            this.plugin.excalidrawFileModes[activeLeaf.id || activeFile.path] =
-              VIEW_TYPE_EXCALIDRAW;
-            await setExcalidrawView(activeLeaf);
-          })();
+          void this.plugin.ea.toggleViewMode(markdownView);
         }
       },
     });

@@ -1174,7 +1174,11 @@ export default class ExcalidrawPlugin extends Plugin {
     return file.path;
   }
 
-  public async setMarkdownView(leaf: WorkspaceLeaf, eState?: ViewStateResult) {
+  public async setMarkdownView(
+    leaf: WorkspaceLeaf,
+    eState?: ViewStateResult,
+    active?: boolean,
+  ) {
     const state = leaf.view.getState();
 
     //Note v2.0.19: I have absolutely no idea why I thought this is necessary. Removing this.
@@ -1189,6 +1193,7 @@ export default class ExcalidrawPlugin extends Plugin {
         type: "markdown",
         state,
         popstate: true,
+        ...(active === undefined ? {} : { active }),
       } as ViewState,
       eState ? eState : { focus: true },
     );

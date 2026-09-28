@@ -582,12 +582,27 @@ export const foldExcalidrawSection = (view: MarkdownView) => {
   }
 };
 
-export async function setExcalidrawView(leaf: WorkspaceLeaf) {
-  await leaf.setViewState({
-    type: VIEW_TYPE_EXCALIDRAW,
-    state: leaf.view.getState(),
-    popstate: true,
-  } as ViewState);
+export interface ViewTransitionOptions {
+  active?: boolean;
+  focus?: boolean;
+}
+
+/** Replace a leaf with an Excalidraw view while honoring explicit activation and focus policy. */
+export async function setExcalidrawView(
+  leaf: WorkspaceLeaf,
+  options?: ViewTransitionOptions,
+) {
+  await leaf.setViewState(
+    {
+      type: VIEW_TYPE_EXCALIDRAW,
+      state: leaf.view.getState(),
+      popstate: true,
+      ...(options?.active === undefined ? {} : { active: options.active }),
+    } as ViewState,
+    options?.focus === undefined
+      ? undefined
+      : { focus: options.focus },
+  );
 }
 
 export async function closeLeafView(leaf: WorkspaceLeaf) {
