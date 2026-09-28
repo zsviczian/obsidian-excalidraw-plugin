@@ -37,6 +37,12 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 - Selection rectangles in popout windows are no longer positioned incorrectly when displays use different DPI settings. [#2940](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2940)
 
 ## New/Fixed in Excalidraw Automate
+- Added a view-targeted representation toggle for integrations. It switches the supplied live Excalidraw-backed view directly between Excalidraw and Markdown without relying on the workspace active leaf or command routing:
+
+\`\`\`ts
+public async toggleViewMode(view: View): Promise<View | null>;
+\`\`\`
+
 - Integrations can now register a link handler on one target view and receive Excalidraw's resolved pane action without replacing the global hook or copying modifier settings. A new zoom helper fits the complete target scene:
 
 \`\`\`ts

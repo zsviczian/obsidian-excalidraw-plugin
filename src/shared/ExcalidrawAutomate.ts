@@ -23,6 +23,7 @@ import {
 import { ColorMap, MimeType } from "../types/embeddedFileLoaderTypes";
 import {
   Editor,
+  MarkdownView,
   Notice,
   OpenViewState,
   RequestUrlResponse,
@@ -50,6 +51,7 @@ import {
   refreshTextDimensions,
   getFontFamilyString,
   convertToExcalidrawElements,
+  VIEW_TYPE_EXCALIDRAW,
 } from "src/constants/constants";
 import {
   blobToBase64,
@@ -79,6 +81,7 @@ import {
   isObsidianThemeDark,
   mergeMarkdownFiles,
   openLeaf,
+  setExcalidrawView,
 } from "src/utils/obsidianUtils";
 import { getAttachmentsFolderAndFilePath } from "src/utils/pathUtils";
 import {
@@ -5011,6 +5014,65 @@ export class ExcalidrawAutomate {
    */
   isExcalidrawView(view: ExcalidrawView | null | undefined): boolean {
     return view instanceof ExcalidrawView;
+  }
+
+  /**
+   * Toggles an Excalidraw-backed view between the native Excalidraw and Markdown representations.
+   *
+   * The supplied view is the authority for the transition; this method does not depend on the
+   * workspace's currently active leaf or the command palette. Markdown views are accepted only
+   * when their file is an Excalidraw file. Excalidraw compatibility-mode views are left unchanged.
+   *
+   * @param {View} view - The ExcalidrawView or MarkdownView to toggle.
+   * @returns {Promise<View | null>} The replacement view after a successful toggle, or null when
+   * the supplied view is not a live Excalidraw-backed view that can be toggled.
+   */
+  public async toggleViewMode(view: View): Promise<View | null> {
+    if (view instanceof ExcalidrawView) {
+      const file = view.file;
+      const leaf = view.leaf;
+      if (
+        !file ||
+        !leaf ||
+        leaf.view !== view ||
+        view.compatibilityMode ||
+        !this.isExcalidrawFile(file)
+      ) {
+        return null;
+      }
+
+      const preserveInactive = this.plugin.app.workspace.getMostRecentLeaf() !== leaf;
+      await view.openAsMarkdown(
+        preserveInactive ? { focus: false } : undefined,
+        preserveInactive ? false : undefined,
+      );
+      return leaf.view instanceof MarkdownView ? leaf.view : null;
+    }
+
+    if (!(view instanceof MarkdownView)) {
+      return null;
+    }
+
+    const file = view.file;
+    const leaf = view.leaf;
+    if (
+      !file ||
+      !leaf ||
+      leaf.view !== view ||
+      !this.isExcalidrawFile(file)
+    ) {
+      return null;
+    }
+
+    await view.save();
+    this.plugin.excalidrawFileModes[leaf.id || file.path] =
+      VIEW_TYPE_EXCALIDRAW;
+    const preserveInactive = this.plugin.app.workspace.getMostRecentLeaf() !== leaf;
+    await setExcalidrawView(
+      leaf,
+      preserveInactive ? { active: false, focus: false } : undefined,
+    );
+    return leaf.view instanceof ExcalidrawView ? leaf.view : null;
   }
 
   /**

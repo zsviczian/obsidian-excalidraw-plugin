@@ -988,6 +988,14 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field: "toggleViewMode",
+    code: "public async toggleViewMode(view: View): Promise<View | null>",
+    desc:
+      "Toggles the supplied live Excalidraw-backed view between Excalidraw and Markdown without relying on the active workspace leaf. " +
+      "The input may be an ExcalidrawView or a MarkdownView whose file is an Excalidraw drawing. Returns the replacement view after a successful toggle, or null when the supplied view is not eligible.",
+    after: "(view);",
+  },
+  {
     field: "getAttachmentFilepath",
     code: "async getAttachmentFilepath(filename: string): Promise<string>",
     desc:

@@ -57,16 +57,22 @@ export class ExcalidrawLoading extends FileView {
   public async switchToExcalidraw() {
     const prevLeaf = this.app.workspace.getLeaf();
     const state = this.leaf.view.getState();
+    const preserveInactive = this.app.workspace.getMostRecentLeaf() !== this.leaf;
+    const inactiveResult = preserveInactive
+      ? ({ focus: false } as unknown as ViewStateResult)
+      : undefined;
 
     // Force a fresh view instance: switching to the same type can be a no-op.
     await this.leaf.setViewState({
       type: "empty",
       state: {},
-    });
+      ...(preserveInactive ? { active: false } : {}),
+    }, inactiveResult);
     await this.leaf.setViewState({
       type: VIEW_TYPE_EXCALIDRAW,
       state,
-    });
+      ...(preserveInactive ? { active: false } : {}),
+    }, inactiveResult);
     if (DEVICE.isDesktop) {
       return;
     }
