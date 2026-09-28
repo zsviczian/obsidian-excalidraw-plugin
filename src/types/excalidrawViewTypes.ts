@@ -80,6 +80,10 @@ export interface ExcalidrawEphemeralState {
   rename?: string;
   subpath?: string;
   line?: number;
+  /** One-shot view/edit mode requested by an integration opening this drawing. */
+  mode?: "view" | "edit";
+  /** One-shot request to fit the scene after its first complete render. */
+  zoomToFit?: boolean;
   match?: {
     content?: string;
     matches?: [number, number][];

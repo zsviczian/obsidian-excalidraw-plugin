@@ -1,4 +1,4 @@
-import { App, FileView, WorkspaceLeaf } from "obsidian";
+import { App, FileView, WorkspaceLeaf, type ViewStateResult } from "obsidian";
 import { DEVICE, VIEW_TYPE_EXCALIDRAW } from "src/constants/constants";
 import ExcalidrawPlugin from "src/core/main";
 import { t } from "src/lang/helpers";
@@ -18,6 +18,11 @@ export async function switchToExcalidraw(app: App) {
 }
 
 export class ExcalidrawLoading extends FileView {
+  private integrationState: {
+    mode?: "view" | "edit";
+    zoomToFit?: true;
+  } = {};
+
   constructor(
     leaf: WorkspaceLeaf,
     private plugin: ExcalidrawPlugin,
@@ -28,6 +33,25 @@ export class ExcalidrawLoading extends FileView {
   public onload() {
     super.onload();
     this.displayLoadingText();
+  }
+
+  /** Retains one-shot integration options while the loading view owns the leaf. */
+  public async setState(
+    state: Record<string, unknown>,
+    result: ViewStateResult,
+  ): Promise<void> {
+    this.integrationState = {
+      ...(state.mode === "view" || state.mode === "edit"
+        ? { mode: state.mode }
+        : {}),
+      ...(state.zoomToFit === true ? { zoomToFit: true as const } : {}),
+    };
+    await super.setState(state, result);
+  }
+
+  /** Includes retained integration options in the handoff to the real Excalidraw view. */
+  public getState(): Record<string, unknown> {
+    return { ...super.getState(), ...this.integrationState };
   }
 
   public async switchToExcalidraw() {
