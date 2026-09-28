@@ -240,6 +240,19 @@ import { RELEASE_NOTES } from "./Dialogs/Messages";
 
 type ExcalidrawAutomateHelpTarget = ((...args: unknown[]) => unknown) | string;
 
+/** Details supplied to an integration when a link is activated in one Excalidraw view. */
+export interface ViewLinkClickContext {
+  element: ExcalidrawElement;
+  linkText: string;
+  event: MouseEvent | null;
+  action: PaneTarget;
+  view: ExcalidrawView;
+  ea: ExcalidrawAutomate;
+}
+
+/** A view-scoped link hook. Return `false` to prevent Excalidraw's default navigation. */
+export type ViewLinkClickHook = (context: ViewLinkClickContext) => boolean | void;
+
 extendPlugins([
   HarmonyPlugin,
   MixPlugin,
@@ -3926,6 +3939,25 @@ export class ExcalidrawAutomate {
   }
 
   /**
+   * Registers a link-click hook on the target view only.
+   *
+   * The callback receives Excalidraw's resolved pane action, so integrations do not need to read
+   * plugin settings or reproduce platform-specific modifier-key rules. The returned disposer must
+   * be called when the integration unmounts. Returning `false` from the callback prevents native
+   * link navigation.
+   *
+   * @param hook - Callback invoked for links activated in the current target view.
+   * @returns A disposer that unregisters this callback, or a no-op disposer if no view is ready.
+   */
+  registerViewLinkClickHook(hook: ViewLinkClickHook): () => void {
+    const view = this.getReadyTargetView("registerViewLinkClickHook()");
+    if (!view) {
+      return () => undefined;
+    }
+    return view.registerViewLinkClickHook(hook, this);
+  }
+
+  /**
    * Updates the scene in the target view.
    * @param {Object} scene - The scene to load to Excalidraw.
    * @param {ExcalidrawElement[]} [scene.elements] - Array of elements in the scene.
@@ -4035,6 +4067,20 @@ export class ExcalidrawAutomate {
       return;
     }
     view.zoomToElements(selectElements, elements, margin);
+  }
+
+  /**
+   * Zooms the target view to fit its complete scene using Excalidraw's normal safety limits.
+   *
+   * This honors the plugin's maximum zoom setting and skips unsafe automatic zoom work while the
+   * view is closing, editing text, or displaying a modal.
+   */
+  viewZoomToFit(): void {
+    const view = this.getReadyTargetView("viewZoomToFit()");
+    if (!view) {
+      return;
+    }
+    view.zoomToFit(false);
   }
 
   /**
