@@ -10,6 +10,8 @@
   "scripts": {
     "dev": "cross-env NODE_ENV=development rollup --config rollup.config.mjs",
     "build": "cross-env NODE_ENV=production rollup --config rollup.config.mjs",
+    "test:obsidian:runner": "node --test scripts/testing/host/runner.test.mjs",
+    "verify:obsidian": "node scripts/testing/host/verify.mjs",
     "lib": "cross-env NODE_ENV=lib rollup --config rollup.config.mjs",
     "code": "eslint --max-warnings=0 --ext .ts,.tsx ./src",
     "code:fix": "eslint --max-warnings=0 --ext .ts,.tsx ./src --fix",

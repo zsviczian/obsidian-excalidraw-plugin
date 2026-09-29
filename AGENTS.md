@@ -507,6 +507,12 @@ If a task touches any of the above, read adjacent code first and validate more c
 
 There is no standard unit-test suite wired into `package.json`.
 
+### Obsidian CLI runtime lane
+
+Follow [the runtime testing proxy](docs/OBSIDIAN_RUNTIME_TESTING.md) and its linked fork guide for a native check. `npm run test:obsidian:runner` runs the test-vault guard and harness tests without Obsidian. `npm run verify:obsidian` requires the explicitly configured `excalidraw-test` vault, checks the CLI-selected path before deployment, builds the sibling fork's four Obsidian artifacts and this plugin, stages the exact `main.js`/CSS/manifest, and asserts a live drawing and clean JavaScript error buffer. Review its report and cleanup result.
+
+Use this lane after fork behavior or packaging changes when Obsidian is available, then exercise the affected workflow using the fork's V03–V11 validation gates. A blank-drawing smoke does not validate raw text, clipboard, font/image assets, saved scenes, custom pens, popout migration, offline behavior, or physical mobile touch. Record what was tested, artifact/source identity, and any pending or unavailable gates. Never deploy a local build to a personal/default vault as a substitute for the named test vault. Keep CLI eval access to internal plugin instances and temporary test controllers out of production modules.
+
 Repo-wide ESLint currently reports a large backlog of pre-existing issues, so it is not yet a blocking pass/fail gate for every task.
 
 Primary validation commands:
