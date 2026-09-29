@@ -63,7 +63,10 @@ import {
 } from "../utils/mermaidUtils";
 import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import { updateElementIdsInScene } from "../utils/excalidrawSceneUtils";
-import { importFileToVault } from "../utils/fileUtils";
+import {
+  canSaveAsObsidianAttachment,
+  importFileToVault,
+} from "../utils/fileUtils";
 import { t } from "../lang/helpers";
 import { displayFontMessage } from "../utils/excalidrawViewUtils";
 import { getPDFRect } from "../utils/PDFUtils";
@@ -1764,7 +1767,10 @@ export class ExcalidrawData {
     let fname = name;
 
     if (!fname) {
-      fname = `Pasted Image ${window.moment().format("YYYYMMDDHHmmss_SSS")}`;
+      // Saved through app.saveAttachment, a paste is named the way Obsidian names one pasted into a note.
+      fname = canSaveAsObsidianAttachment(this.app, this.file, this.view)
+        ? `Pasted image ${window.moment().format("YYYYMMDDHHmmss")}`
+        : `Pasted Image ${window.moment().format("YYYYMMDDHHmmss_SSS")}`;
 
       switch (mimeType) {
         case "image/png":
