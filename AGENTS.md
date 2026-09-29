@@ -54,6 +54,8 @@ Follow Obsidian's **Developer Policies** and **Plugin Guidelines**. In particula
 
 - Default to local/offline operation. Only make network requests when essential to the feature.
 - No hidden telemetry. If you collect optional analytics or call third-party services, require explicit opt-in and document clearly in `README.md` and in settings.
+- Keep every external origin and every fully static URL as a literal `https://...` string in source so reviewers and security scanners can identify the destination without executing the code. A dynamic resource path may be appended only to a literal base URL, and each untrusted path segment must be validated or encoded.
+- Never conceal a network destination or evade a scanner finding by splitting or joining domain labels, deriving an origin from Git state, environment variables, runtime configuration, or character codes, or by encoding, compressing, encrypting, or otherwise transforming a URL. Do not weaken, suppress, or work around a scanner by making an endpoint less statically visible; fix the underlying behavior or document a genuine false positive transparently.
 - Never execute remote code, fetch and eval scripts, or auto-update plugin code outside of normal releases.
 - Minimize scope: read/write only what's necessary inside the vault. Do not access files outside the vault.
 - Clearly disclose any external services used, data sent, and risks.
@@ -310,11 +312,11 @@ Window ownership for rendering is not the same as ownership for persistent plugi
 - `src/lang/helpers.ts` resolves those tokens at runtime.
 - If you add new runtime-dependent locale patterns, you must keep `rollup.config.mjs` and `src/lang/helpers.ts` in sync.
 
-### Safe URL Tokenization
+### Safe URL Handling
 
 - Safe URLs are centralized in `src/constants/safeUrls.ts`.
-- The build tokenizes URL constants and resolves them at runtime.
-- If you change safe URL handling, rebuild and verify both token emission and token resolution.
+- Preserve literal, statically reviewable origins and complete static URLs. Only repository-relative or resource-relative paths may be constructed dynamically from validated or encoded path segments.
+- If you change safe URL handling, rebuild and verify that the intended literal origins remain visible in both source and `dist/main.js`, and search for domain assembly or endpoint-obfuscation patterns before release.
 
 ### Versioning Nuance
 

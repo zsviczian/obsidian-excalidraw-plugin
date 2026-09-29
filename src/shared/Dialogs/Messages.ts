@@ -17,6 +17,9 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.28.1": `
+Re-released due to a minor deployment hiccup, hopefully fixed now.
+`,
 "2.28.0": `
 **Note to ExcaliBrain users:** Update ExcaliBrain. Excalidraw 2.28.0 breaks compatibility with ExcaliBrain v0.2.18.
 
