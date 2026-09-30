@@ -780,6 +780,23 @@ export async function exportImageToFile(
   return await createOrOverwriteFile(view.app, path, content);
 }
 
+/**
+ * Whether an image imported into `excalidrawFile` can be saved the way Obsidian saves an image pasted or
+ * dropped into a markdown note: through `app.saveAttachment`, which places it relative to the active file.
+ * That holds only while the drawing is the active file, and only when no `onImageFilePathHook` chooses the
+ * path instead.
+ */
+export function canSaveAsObsidianAttachment(
+  app: App,
+  excalidrawFile: TFile,
+  view?: ExcalidrawView,
+): boolean {
+  return (
+    !view?.getHookServer()?.onImageFilePathHook &&
+    app.workspace.getActiveFile()?.path === excalidrawFile.path
+  );
+}
+
 export async function importFileToVault(
   app: App,
   fname: string,
@@ -787,6 +804,16 @@ export async function importFileToVault(
   excalidrawFile: TFile,
   view?: ExcalidrawView,
 ): Promise<TFile> {
+  if (
+    typeof content !== "string" &&
+    canSaveAsObsidianAttachment(app, excalidrawFile, view)
+  ) {
+    const { basename, extension } = splitFolderAndFilename(fname);
+    const data =
+      content instanceof Blob ? await content.arrayBuffer() : content;
+    return await app.saveAttachment(basename, extension, data);
+  }
+
   let hookFilepath: string;
   const ea = view?.getHookServer();
   if (ea?.onImageFilePathHook) {
