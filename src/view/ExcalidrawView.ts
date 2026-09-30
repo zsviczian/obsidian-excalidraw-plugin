@@ -2261,6 +2261,14 @@ export default class ExcalidrawView
       },
       captureUpdate: CaptureUpdateAction.NEVER,
     });
+    // The Excalidraw package calls props.onThemeChange only for its own theme
+    // toggle. A theme change that comes from Obsidian must refresh the same
+    // things: the dynamic styling of the UI panels, the tools panel theme and
+    // the embedded files. Without this, the toolbar, the zoom controls and the
+    // tools panel keep the colors of the old theme until the drawing is reopened.
+    if (st.theme !== theme) {
+      void this.onThemeChange(theme);
+    }
   }
 
   private prevTextMode: TextMode;
