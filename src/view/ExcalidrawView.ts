@@ -2241,6 +2241,12 @@ export default class ExcalidrawView
     }
   }
 
+  /**
+   * Applies an Obsidian theme change to the open drawing. The theme observer
+   * calls this when the Obsidian theme changes and the `matchThemeTrigger`
+   * setting is on. Drawings with an export theme in their frontmatter keep
+   * their own theme.
+   */
   public setTheme(theme: "dark" | "light") {
     const api = this.excalidrawAPI;
     if (!api) {

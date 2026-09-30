@@ -17,6 +17,10 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.28.2": `
+## Fixed
+- When Obsidian switches between light and dark mode, for example because it follows the system theme, open drawings now update the Excalidraw toolbar, the zoom controls and the tools panel as well. Before, only the canvas switched and the panels kept the colors of the old theme until the drawing was reopened. [#2966](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2966)
+`,
 "2.28.1": `
 Re-released due to a minor deployment hiccup, hopefully fixed now.
 `,
