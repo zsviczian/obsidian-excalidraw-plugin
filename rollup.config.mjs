@@ -38,7 +38,7 @@ console.log(`Running: ${process.env.NODE_ENV}; isProd: ${isProd}; isLib: ${isLib
 // Add non-English locales here to embed them as compressed payloads in main.js.
 // When adding a locale file:
 // 1) add its code to this list, 2) build once, 3) if build fails because the locale
-const LANGUAGES = ['ru', 'zh-cn', 'zh-tw', 'es']; //english is not compressed as it is always loaded by default
+const LANGUAGES = ['ru', 'zh-cn', 'zh-tw', 'es', 'pt-br']; //english is not compressed as it is always loaded by default
 
 function trimLastSemicolon(input) {
   if (input.endsWith(";")) {
