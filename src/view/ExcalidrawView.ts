@@ -5121,6 +5121,71 @@ export default class ExcalidrawView
     return id;
   }
 
+  /**
+   * Registers text elements that Excalidraw created from a paste and, in
+   * parsed text mode, shows their parsed text right away.
+   *
+   * Excalidraw inserts pasted text with the raw markdown. Previously the
+   * parsed text only reached the scene through the save and reload cycle,
+   * which is slow for large drawings and does not run when the view is not
+   * yet marked dirty. The view is marked dirty here so the following save
+   * persists the new elements.
+   */
+  private async parsePastedTextElements(
+    newElements: ExcalidrawTextElement[],
+  ): Promise<void> {
+    const api = this.excalidrawAPI;
+    if (!api || newElements.length === 0) {
+      return;
+    }
+    const sceneElements =
+      api.getSceneElementsIncludingDeleted() as ExcalidrawElement[];
+    const elementsMap = arrayToMap(sceneElements) as ElementsMap;
+    const updatedElements = new Map<string, Mutable<ExcalidrawTextElement>>();
+    for (const textElement of newElements) {
+      const raw =
+        textElement.rawText && textElement.rawText !== ""
+          ? textElement.rawText
+          : (textElement.originalText ?? textElement.text);
+      const { parseResult, link } = await this.excalidrawData.addTextElement(
+        textElement.id,
+        textElement.text,
+        raw,
+      );
+      const clone = cloneElement(textElement) as Mutable<ExcalidrawTextElement>;
+      clone.rawText = raw;
+      if (link) {
+        if (this.plugin.settings.syncElementLinkWithText) {
+          clone.link = link;
+        } else {
+          clone.hasTextLink = true;
+        }
+      }
+      if (this.textMode === TextMode.parsed && parseResult !== raw) {
+        const { text, x, y, width, height } = refreshTextDimensions(
+          clone,
+          getContainerElement(clone, elementsMap),
+          elementsMap,
+          parseResult,
+        );
+        clone.text = text;
+        clone.originalText = parseResult;
+        clone.x = x;
+        clone.y = y;
+        clone.width = width;
+        clone.height = height;
+      }
+      updatedElements.set(textElement.id, clone);
+    }
+    this.updateScene({
+      elements: sceneElements.map(
+        (element) => updatedElements.get(element.id) ?? element,
+      ),
+      captureUpdate: CaptureUpdateAction.NEVER,
+    });
+    this.setDirty();
+  }
+
   public async addElements({
     newElements,
     repositionToCursor = false,
@@ -6357,9 +6422,10 @@ export default class ExcalidrawView
             isTextImageTransclusion(el.originalText, this, callback);
           });
 
-          //if there are no image elements, save and return
-          //Save will ensure links and embeds are parsed
+          //if there are no image elements, parse the pasted text in place,
+          //then save and return
           if (imageElementsMap.size === 0) {
+            await this.parsePastedTextElements(newElements);
             await this.save(false); //saving because there still may be text transclusions
             return;
           }
