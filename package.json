@@ -10,6 +10,8 @@
   "scripts": {
     "dev": "cross-env NODE_ENV=development rollup --config rollup.config.mjs",
     "build": "cross-env NODE_ENV=production rollup --config rollup.config.mjs",
+    "test:obsidian:runner": "node --test scripts/testing/host/runner.test.mjs",
+    "verify:obsidian": "node scripts/testing/host/verify.mjs",
     "lib": "cross-env NODE_ENV=lib rollup --config rollup.config.mjs",
     "code": "eslint --max-warnings=0 --ext .ts,.tsx ./src",
     "code:fix": "eslint --max-warnings=0 --ext .ts,.tsx ./src --fix",
@@ -34,7 +36,7 @@
     "@popperjs/core": "^2.11.8",
     "@radix-ui/number": "^1.1.2",
     "@zsviczian/colormaster": "^1.2.2",
-    "@zsviczian/excalidraw": "0.18.137",
+    "@zsviczian/excalidraw": "0.18.140",
     "chroma-js": "^3.1.2",
     "clsx": "^2.0.0",
     "es6-promise-pool": "2.5.0",

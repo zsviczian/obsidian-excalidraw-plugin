@@ -202,6 +202,7 @@ export type LocalGraphView = View & {
 
 declare global {
   interface Window {
+    MouseEvent?: typeof MouseEvent;
     ExcalidrawAutomate: ExcalidrawAutomate;
     ExcalidrawLib: typeof ExcalidrawLib;
     pdfjsLib: PdfJsLibrary;
@@ -241,6 +242,16 @@ declare module "obsidian" {
       enablePlugin(id: string): Promise<void>;
       disablePlugin(id: string): Promise<void>;
     };
+    /**
+     * Saves an attachment where Obsidian saves an image pasted or dropped into the active note, making the
+     * path unique. Internal, present with this signature since Obsidian 0.8.5; attachment-management plugins
+     * patch it to apply their naming and location rules.
+     */
+    saveAttachment(
+      name: string,
+      extension: string,
+      data: ArrayBuffer,
+    ): Promise<TFile>;
     hotkeyManager: {
       addDefaultHotkeys(commandId: string, hotkeys: Hotkey[]): void;
       

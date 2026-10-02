@@ -54,6 +54,8 @@ Follow Obsidian's **Developer Policies** and **Plugin Guidelines**. In particula
 
 - Default to local/offline operation. Only make network requests when essential to the feature.
 - No hidden telemetry. If you collect optional analytics or call third-party services, require explicit opt-in and document clearly in `README.md` and in settings.
+- Keep every external origin and every fully static URL as a literal `https://...` string in source so reviewers and security scanners can identify the destination without executing the code. A dynamic resource path may be appended only to a literal base URL, and each untrusted path segment must be validated or encoded.
+- Never conceal a network destination or evade a scanner finding by splitting or joining domain labels, deriving an origin from Git state, environment variables, runtime configuration, or character codes, or by encoding, compressing, encrypting, or otherwise transforming a URL. Do not weaken, suppress, or work around a scanner by making an endpoint less statically visible; fix the underlying behavior or document a genuine false positive transparently.
 - Never execute remote code, fetch and eval scripts, or auto-update plugin code outside of normal releases.
 - Minimize scope: read/write only what's necessary inside the vault. Do not access files outside the vault.
 - Clearly disclose any external services used, data sent, and risks.
@@ -310,11 +312,11 @@ Window ownership for rendering is not the same as ownership for persistent plugi
 - `src/lang/helpers.ts` resolves those tokens at runtime.
 - If you add new runtime-dependent locale patterns, you must keep `rollup.config.mjs` and `src/lang/helpers.ts` in sync.
 
-### Safe URL Tokenization
+### Safe URL Handling
 
 - Safe URLs are centralized in `src/constants/safeUrls.ts`.
-- The build tokenizes URL constants and resolves them at runtime.
-- If you change safe URL handling, rebuild and verify both token emission and token resolution.
+- Preserve literal, statically reviewable origins and complete static URLs. Only repository-relative or resource-relative paths may be constructed dynamically from validated or encoded path segments.
+- If you change safe URL handling, rebuild and verify that the intended literal origins remain visible in both source and `dist/main.js`, and search for domain assembly or endpoint-obfuscation patterns before release.
 
 ### Versioning Nuance
 
@@ -506,6 +508,12 @@ If a task touches any of the above, read adjacent code first and validate more c
 ## Validation Expectations
 
 There is no standard unit-test suite wired into `package.json`.
+
+### Obsidian CLI runtime lane
+
+Follow [the runtime testing proxy](docs/OBSIDIAN_RUNTIME_TESTING.md) and its linked fork guide for a native check. `npm run test:obsidian:runner` runs the test-vault guard and harness tests without Obsidian. `npm run verify:obsidian` requires the explicitly configured `excalidraw-test` vault, checks the CLI-selected path before deployment, builds the sibling fork's four Obsidian artifacts and this plugin, stages the exact `main.js`/CSS/manifest, and asserts a live drawing and clean JavaScript error buffer. Review its report and cleanup result.
+
+Use this lane after fork behavior or packaging changes when Obsidian is available, then exercise the affected workflow using the fork's V03–V11 validation gates. A blank-drawing smoke does not validate raw text, clipboard, font/image assets, saved scenes, custom pens, popout migration, offline behavior, or physical mobile touch. Record what was tested, artifact/source identity, and any pending or unavailable gates. Never deploy a local build to a personal/default vault as a substitute for the named test vault. Keep CLI eval access to internal plugin instances and temporary test controllers out of production modules.
 
 Repo-wide ESLint currently reports a large backlog of pre-existing issues, so it is not yet a blocking pass/fail gate for every task.
 

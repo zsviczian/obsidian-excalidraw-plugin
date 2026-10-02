@@ -23,6 +23,7 @@ import {
 import { ColorMap, MimeType } from "../types/embeddedFileLoaderTypes";
 import {
   Editor,
+  MarkdownView,
   Notice,
   OpenViewState,
   RequestUrlResponse,
@@ -50,6 +51,7 @@ import {
   refreshTextDimensions,
   getFontFamilyString,
   convertToExcalidrawElements,
+  VIEW_TYPE_EXCALIDRAW,
 } from "src/constants/constants";
 import {
   blobToBase64,
@@ -79,6 +81,7 @@ import {
   isObsidianThemeDark,
   mergeMarkdownFiles,
   openLeaf,
+  setExcalidrawView,
 } from "src/utils/obsidianUtils";
 import { getAttachmentsFolderAndFilePath } from "src/utils/pathUtils";
 import {
@@ -239,6 +242,19 @@ import { cropPNGBlob } from "src/utils/imageExportUtils";
 import { RELEASE_NOTES } from "./Dialogs/Messages";
 
 type ExcalidrawAutomateHelpTarget = ((...args: unknown[]) => unknown) | string;
+
+/** Details supplied to an integration when a link is activated in one Excalidraw view. */
+export interface ViewLinkClickContext {
+  element: ExcalidrawElement;
+  linkText: string;
+  event: MouseEvent | null;
+  action: PaneTarget;
+  view: ExcalidrawView;
+  ea: ExcalidrawAutomate;
+}
+
+/** A view-scoped link hook. Return `false` to prevent Excalidraw's default navigation. */
+export type ViewLinkClickHook = (context: ViewLinkClickContext) => boolean | void;
 
 extendPlugins([
   HarmonyPlugin,
@@ -3926,6 +3942,25 @@ export class ExcalidrawAutomate {
   }
 
   /**
+   * Registers a link-click hook on the target view only.
+   *
+   * The callback receives Excalidraw's resolved pane action, so integrations do not need to read
+   * plugin settings or reproduce platform-specific modifier-key rules. The returned disposer must
+   * be called when the integration unmounts. Returning `false` from the callback prevents native
+   * link navigation.
+   *
+   * @param hook - Callback invoked for links activated in the current target view.
+   * @returns A disposer that unregisters this callback, or a no-op disposer if no view is ready.
+   */
+  registerViewLinkClickHook(hook: ViewLinkClickHook): () => void {
+    const view = this.getReadyTargetView("registerViewLinkClickHook()");
+    if (!view) {
+      return () => undefined;
+    }
+    return view.registerViewLinkClickHook(hook, this);
+  }
+
+  /**
    * Updates the scene in the target view.
    * @param {Object} scene - The scene to load to Excalidraw.
    * @param {ExcalidrawElement[]} [scene.elements] - Array of elements in the scene.
@@ -4035,6 +4070,20 @@ export class ExcalidrawAutomate {
       return;
     }
     view.zoomToElements(selectElements, elements, margin);
+  }
+
+  /**
+   * Zooms the target view to fit its complete scene using Excalidraw's normal safety limits.
+   *
+   * This honors the plugin's maximum zoom setting and skips unsafe automatic zoom work while the
+   * view is closing, editing text, or displaying a modal.
+   */
+  viewZoomToFit(): void {
+    const view = this.getReadyTargetView("viewZoomToFit()");
+    if (!view) {
+      return;
+    }
+    view.zoomToFit(false);
   }
 
   /**
@@ -4965,6 +5014,65 @@ export class ExcalidrawAutomate {
    */
   isExcalidrawView(view: ExcalidrawView | null | undefined): boolean {
     return view instanceof ExcalidrawView;
+  }
+
+  /**
+   * Toggles an Excalidraw-backed view between the native Excalidraw and Markdown representations.
+   *
+   * The supplied view is the authority for the transition; this method does not depend on the
+   * workspace's currently active leaf or the command palette. Markdown views are accepted only
+   * when their file is an Excalidraw file. Excalidraw compatibility-mode views are left unchanged.
+   *
+   * @param {View} view - The ExcalidrawView or MarkdownView to toggle.
+   * @returns {Promise<View | null>} The replacement view after a successful toggle, or null when
+   * the supplied view is not a live Excalidraw-backed view that can be toggled.
+   */
+  public async toggleViewMode(view: View): Promise<View | null> {
+    if (view instanceof ExcalidrawView) {
+      const file = view.file;
+      const leaf = view.leaf;
+      if (
+        !file ||
+        !leaf ||
+        leaf.view !== view ||
+        view.compatibilityMode ||
+        !this.isExcalidrawFile(file)
+      ) {
+        return null;
+      }
+
+      const preserveInactive = this.plugin.app.workspace.getMostRecentLeaf() !== leaf;
+      await view.openAsMarkdown(
+        preserveInactive ? { focus: false } : undefined,
+        preserveInactive ? false : undefined,
+      );
+      return leaf.view instanceof MarkdownView ? leaf.view : null;
+    }
+
+    if (!(view instanceof MarkdownView)) {
+      return null;
+    }
+
+    const file = view.file;
+    const leaf = view.leaf;
+    if (
+      !file ||
+      !leaf ||
+      leaf.view !== view ||
+      !this.isExcalidrawFile(file)
+    ) {
+      return null;
+    }
+
+    await view.save();
+    this.plugin.excalidrawFileModes[leaf.id || file.path] =
+      VIEW_TYPE_EXCALIDRAW;
+    const preserveInactive = this.plugin.app.workspace.getMostRecentLeaf() !== leaf;
+    await setExcalidrawView(
+      leaf,
+      preserveInactive ? { active: false, focus: false } : undefined,
+    );
+    return leaf.view instanceof ExcalidrawView ? leaf.view : null;
   }
 
   /**

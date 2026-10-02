@@ -14,74 +14,24 @@ export const UrlPurpose = {
   TRANSLATION: "One-time support message translation",
 } as const;
 
-/**
- * Constructs URLs at runtime from string arrays to bypass overly aggressive SAST scanners
- * resulting in misleading false positive "High Risk" flags on hardcoded URLs, domains, and API paths.
- * If in doubt, simply search the codebase for all the calls to buildSafeUrl and verify that the
- * resulting URLs are correct and safe, that any API usage is strictly based on user opt-in.
- *
- * Context: Security scanners such as https://plugin.observer/plugin/obsidian-excalidraw-plugin
- * frequently flag hardcoded URLs, domains (like api.openai.com),
- * and API paths as "High Risk". Furthermore, scanners often flag traditional obfuscation
- * techniques (like Base64/atob) as suspicious.
- *
- * This function bypasses both issues by structurally separating the domain and path
- * into arrays. Because the contiguous strings (e.g., "api.openai.com/v1") never exist
- * in the source code, pattern-matching scanners will silently ignore them.
- *
- * @param domainParts - An array of domain segments (e.g., ["api", "openai", "com"])
- * @param pathParts - An optional array of path segments (e.g., ["v1", "models"])
- * @returns The standard, fully qualified URL string.
- */
-export function buildSafeUrl(
-  domainParts: string[],
-  pathParts: string[] = [],
-): string {
-  const domain = domainParts.join(".");
-  const path = pathParts.length > 0 ? `/${pathParts.join("/")}` : "";
-  return `https://${domain}${path}`;
-}
+const PLUGIN_REPOSITORY_RAW_BASE_URL =
+  "https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master";
+const PLUGIN_REPOSITORY_BLOB_BASE_URL =
+  "https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master";
 
-// Replaced by Rollup from the checked-out Git repository and branch.
-declare const __PLUGIN_REPOSITORY_OWNER__: string;
-declare const __PLUGIN_REPOSITORY_NAME__: string;
-declare const __PLUGIN_REPOSITORY_REF__: string;
-
-export const PLUGIN_REPOSITORY_OWNER = __PLUGIN_REPOSITORY_OWNER__;
-export const PLUGIN_REPOSITORY_NAME = __PLUGIN_REPOSITORY_NAME__;
-export const PLUGIN_REPOSITORY_REF = __PLUGIN_REPOSITORY_REF__;
-
-const PLUGIN_REPOSITORY_PATH = [
-  PLUGIN_REPOSITORY_OWNER,
-  PLUGIN_REPOSITORY_NAME,
-] as const;
-
-const pathParts = (value: string): string[] =>
+/** Encodes a repository-relative path while leaving the destination visible in source. */
+const encodeRepositoryPath = (value: string): string =>
   value
     .split("/")
     .filter(Boolean)
-    .map((part) => encodeURIComponent(part));
+    .map((part) => encodeURIComponent(part))
+    .join("/");
 
 export const getPluginRepositoryRawUrl = (repositoryPath: string): string =>
-  buildSafeUrl(
-    ["raw", "githubusercontent", "com"],
-    [
-      ...PLUGIN_REPOSITORY_PATH,
-      ...pathParts(PLUGIN_REPOSITORY_REF),
-      ...pathParts(repositoryPath),
-    ],
-  );
+  `${PLUGIN_REPOSITORY_RAW_BASE_URL}/${encodeRepositoryPath(repositoryPath)}`;
 
 export const getPluginRepositoryBlobUrl = (repositoryPath: string): string =>
-  buildSafeUrl(
-    ["github", "com"],
-    [
-      ...PLUGIN_REPOSITORY_PATH,
-      "blob",
-      ...pathParts(PLUGIN_REPOSITORY_REF),
-      ...pathParts(repositoryPath),
-    ],
-  );
+  `${PLUGIN_REPOSITORY_BLOB_BASE_URL}/${encodeRepositoryPath(repositoryPath)}`;
 
 // Helper to enforce type structure in the registry
 const defineUrl = (url: string, purpose: string) => ({ url, purpose });
@@ -92,22 +42,22 @@ const defineUrl = (url: string, purpose: string) => ({ url, purpose });
 export const URL_REGISTRY = {
   RAW_GITHUBUSERCONTENT_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_MASTER_EA_SCRIPTS_DIRECTORY_INFO_JSON:
     defineUrl(
-      getPluginRepositoryRawUrl("ea-scripts/directory-info.json"),
+      "https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/directory-info.json",
       UrlPurpose.APP_LOGIC,
     ),
   RAW_GITHUBUSERCONTENT_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_MASTER_EA_SCRIPTS_SCRIPT_STORE_JSON:
     defineUrl(
-      getPluginRepositoryRawUrl("ea-scripts/script-store.json"),
+      "https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/script-store.json",
       UrlPurpose.APP_LOGIC,
     ),
   GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_BLOB_MASTER_DOCS_EA_SCRIPTING_MD:
     defineUrl(
-      getPluginRepositoryBlobUrl("docs/ea-scripting.md"),
+      "https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/ea-scripting.md",
       UrlPurpose.DOCS,
     ),
   RAW_GITHUBUSERCONTENT_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_MASTER_IMAGE_BANNER_AUTOMATE_ANYTHING_PNG:
     defineUrl(
-      getPluginRepositoryRawUrl("images/banner-automate-anything.png"),
+      "https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/banner-automate-anything.png",
       UrlPurpose.APP_LOGIC,
     ),
   API_GITHUB_COM_REPOS_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES: defineUrl(

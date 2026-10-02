@@ -16,6 +16,10 @@ import type {
   SelectedImage,
 } from "../../types/excalidrawViewTypes";
 import type { ModifierKeys } from "../../utils/modifierkeyHelper";
+import type {
+  ExcalidrawAutomate,
+  ViewLinkClickHook,
+} from "../../shared/ExcalidrawAutomate";
 import { getMermaidText, shouldRenderMermaid } from "../../utils/mermaidUtils";
 import type ExcalidrawView from "../ExcalidrawView";
 
@@ -57,6 +61,11 @@ export interface ViewLinkNavigationDependencies {
  * this module does not create a runtime import cycle.
  */
 export class ViewLinkNavigationManager {
+  private readonly viewLinkClickHooks = new Set<{
+    hook: ViewLinkClickHook;
+    ea: ExcalidrawAutomate;
+  }>();
+
   public constructor(
     private readonly view: ExcalidrawView,
     private readonly dependencies: ViewLinkNavigationDependencies,
@@ -80,6 +89,9 @@ export class ViewLinkNavigationManager {
     element: ExcalidrawElement,
     link: string,
     event: MouseEvent | null,
+    action = this.dependencies.linkClickModifierType(
+      event ?? this.dependencies.emulateKeysForLinkClick("new-tab"),
+    ),
   ): boolean {
     if (this.view.getHookServer().onLinkClickHook) {
       try {
@@ -102,7 +114,39 @@ export class ViewLinkNavigationManager {
         });
       }
     }
+    for (const registration of this.viewLinkClickHooks) {
+      try {
+        if (
+          registration.hook({
+            element,
+            linkText: link,
+            event,
+            action,
+            view: this.view,
+            ea: registration.ea,
+          }) === false
+        ) {
+          return true;
+        }
+      } catch (e: unknown) {
+        this.dependencies.errorlog({
+          where: "ViewLinkNavigationManager.handleLinkHookCall",
+          fn: "registerViewLinkClickHook callback",
+          error: e,
+        });
+      }
+    }
     return false;
+  }
+
+  /** Registers a link-click hook whose lifetime and dispatch are scoped to this view. */
+  public registerViewLinkClickHook(
+    hook: ViewLinkClickHook,
+    ea: ExcalidrawAutomate,
+  ): () => void {
+    const registration = { hook, ea };
+    this.viewLinkClickHooks.add(registration);
+    return () => this.viewLinkClickHooks.delete(registration);
   }
 
   /** Resolves the effective link and source element for a view selection. */
@@ -550,7 +594,7 @@ export class ViewLinkNavigationManager {
     const sceneElements = this.view.excalidrawAPI.getSceneElements() as readonly
       ExcalidrawElement[];
     const el = sceneElements.filter((element) => element.id === id)[0];
-    if (this.view.handleLinkHookCall(el, linkText, ev)) {
+    if (this.view.handleLinkHookCall(el, linkText, ev, linkClickType)) {
       return;
     }
 
