@@ -19,7 +19,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 `,
 "2.29.0": `
 ## Fixed
-- Back-of-the-note embeds now wait for initialization so they display the linked Markdown section instead of the whole drawing. [#2931](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2931)
+- Back-of-the-note embeds now wait for initialization so they display the linked Markdown section instead of the whole drawing. 🙏[askalf](${URLs.GITHUB_COM}/askalf) [#2931](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2931)
 `,
 "2.28.1": `
 Re-released due to a minor deployment hiccup, hopefully fixed now.
