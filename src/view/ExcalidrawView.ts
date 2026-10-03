@@ -589,6 +589,17 @@ export default class ExcalidrawView
   private isSynchronizing = false;
   private pendingExternalSyncPath: string | null = null;
   private externalSyncLoopPromise: Promise<void> | null = null;
+  /**
+   * Set by save(suppressReloadFromOwnWrite=false). Such a save expects its own
+   * Vault modify echo to be synchronized back into the live scene, because
+   * that is how freshly parsed link/alias text replaces the raw markdown of
+   * newly pasted or dropped text elements. Without this the echo would be
+   * classified as redundant and the scene would keep showing the raw link.
+   */
+  private ownWriteSynchronizationRequest: {
+    filePath: string;
+    targetGeneration: number;
+  } | null = null;
   private readonly ownWriteReloadGuard: OwnWriteReloadGuard;
 
   constructor(leaf: WorkspaceLeaf, plugin: ExcalidrawPlugin) {
@@ -1288,6 +1299,12 @@ export default class ExcalidrawView
         // suppression only for the actual write so an unrelated modification
         // received while preparing the text remains eligible to synchronize.
         this.ownWriteReloadGuard.setForWrite(suppressReloadFromOwnWrite);
+        this.ownWriteSynchronizationRequest = suppressReloadFromOwnWrite
+          ? null
+          : {
+              filePath: preparedSave.filePath,
+              targetGeneration: preparedSave.targetGeneration,
+            };
         try {
           await this.withPersistenceWriteLease(
             preparedSave.filePath,
@@ -1313,6 +1330,7 @@ export default class ExcalidrawView
           );
         } catch (error: unknown) {
           this.clearOwnWriteReloadSuppression();
+          this.ownWriteSynchronizationRequest = null;
           throw error;
         }
         if (suppressReloadFromOwnWrite) {
@@ -3627,6 +3645,30 @@ export default class ExcalidrawView
     }
   }
 
+  /**
+   * Whether observed Vault content may be the echo of a save made with
+   * suppressReloadFromOwnWrite=false. Such an echo is otherwise classified as
+   * redundant, but it must still be loaded and merged so parsed text reaches
+   * the scene. A request for another file or load generation is stale.
+   */
+  private matchesOwnWriteSynchronizationRequest(
+    filePath: string,
+    targetGeneration: number,
+  ): boolean {
+    const request = this.ownWriteSynchronizationRequest;
+    if (!request) {
+      return false;
+    }
+    if (
+      request.filePath !== filePath ||
+      request.targetGeneration !== targetGeneration
+    ) {
+      this.ownWriteSynchronizationRequest = null;
+      return false;
+    }
+    return true;
+  }
+
   /** Queues one latest-state synchronization for a same-file Vault modify. */
   public requestExternalSynchronization(file: TFile): void {
     if (!this.isSynchronizationTargetCurrent(file.path)) {
@@ -3709,7 +3751,16 @@ export default class ExcalidrawView
           synchronizationTargetGeneration,
           data,
         );
-        if (isRedundantObservedSaveContent(classification)) {
+        const isRequestedOwnWriteEcho =
+          isRedundantObservedSaveContent(classification) &&
+          this.matchesOwnWriteSynchronizationRequest(
+            filePath,
+            synchronizationTargetGeneration,
+          );
+        if (
+          isRedundantObservedSaveContent(classification) &&
+          !isRequestedOwnWriteEcho
+        ) {
           continue;
         }
         await incomingData.loadData(data, file, getTextMode(data));
@@ -3722,6 +3773,9 @@ export default class ExcalidrawView
             incomingData,
             filePath,
           );
+          if (applied && isRequestedOwnWriteEcho) {
+            this.ownWriteSynchronizationRequest = null;
+          }
           if (applied) {
             this.saveCoordinator.observeAcceptedContent(
               filePath,
@@ -5100,6 +5154,71 @@ export default class ExcalidrawView
     return id;
   }
 
+  /**
+   * Registers text elements that Excalidraw created from a paste and, in
+   * parsed text mode, shows their parsed text right away.
+   *
+   * Excalidraw inserts pasted text with the raw markdown. Previously the
+   * parsed text only reached the scene through the save and reload cycle,
+   * which is slow for large drawings and does not run when the view is not
+   * yet marked dirty. The view is marked dirty here so the following save
+   * persists the new elements.
+   */
+  private async parsePastedTextElements(
+    newElements: ExcalidrawTextElement[],
+  ): Promise<void> {
+    const api = this.excalidrawAPI;
+    if (!api || newElements.length === 0) {
+      return;
+    }
+    const sceneElements =
+      api.getSceneElementsIncludingDeleted() as ExcalidrawElement[];
+    const elementsMap = arrayToMap(sceneElements) as ElementsMap;
+    const updatedElements = new Map<string, Mutable<ExcalidrawTextElement>>();
+    for (const textElement of newElements) {
+      const raw =
+        textElement.rawText && textElement.rawText !== ""
+          ? textElement.rawText
+          : (textElement.originalText ?? textElement.text);
+      const { parseResult, link } = await this.excalidrawData.addTextElement(
+        textElement.id,
+        textElement.text,
+        raw,
+      );
+      const clone = cloneElement(textElement) as Mutable<ExcalidrawTextElement>;
+      clone.rawText = raw;
+      if (link) {
+        if (this.plugin.settings.syncElementLinkWithText) {
+          clone.link = link;
+        } else {
+          clone.hasTextLink = true;
+        }
+      }
+      if (this.textMode === TextMode.parsed && parseResult !== raw) {
+        const { text, x, y, width, height } = refreshTextDimensions(
+          clone,
+          getContainerElement(clone, elementsMap),
+          elementsMap,
+          parseResult,
+        );
+        clone.text = text;
+        clone.originalText = parseResult;
+        clone.x = x;
+        clone.y = y;
+        clone.width = width;
+        clone.height = height;
+      }
+      updatedElements.set(textElement.id, clone);
+    }
+    this.updateScene({
+      elements: sceneElements.map(
+        (element) => updatedElements.get(element.id) ?? element,
+      ),
+      captureUpdate: CaptureUpdateAction.NEVER,
+    });
+    this.setDirty();
+  }
+
   public async addElements({
     newElements,
     repositionToCursor = false,
@@ -6349,9 +6468,10 @@ export default class ExcalidrawView
             isTextImageTransclusion(el.originalText, this, callback);
           });
 
-          //if there are no image elements, save and return
-          //Save will ensure links and embeds are parsed
+          //if there are no image elements, parse the pasted text in place,
+          //then save and return
           if (imageElementsMap.size === 0) {
+            await this.parsePastedTextElements(newElements);
             await this.save(false); //saving because there still may be text transclusions
             return;
           }
