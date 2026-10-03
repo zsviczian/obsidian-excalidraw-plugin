@@ -576,7 +576,7 @@ export class InlineLinkSuggester
     }
 
     const nextOpen = this.inputEl.value.indexOf("[[", start + 2);
-    const fallbackClose = this.inputEl.value.indexOf("]]", start + 2);
+    const fallbackClose = this.findWikiLinkClose(this.inputEl.value, start + 2);
     const closeBelongsToLink =
       this.activeClose >= 0
         ? true
@@ -910,6 +910,19 @@ export class InlineLinkSuggester
     this.shouldNotOpen = false;
   }
 
+  /** The final pair of a closing-bracket run ends the wikilink. */
+  private findWikiLinkClose(value: string, from: number): number {
+    const first = value.indexOf("]]", from);
+    if (first === -1) {
+      return -1;
+    }
+    let close = first;
+    while (value.charAt(close + 2) === "]") {
+      close++;
+    }
+    return close;
+  }
+
   private findActiveLink(
     value: string,
     pos: number,
@@ -922,7 +935,7 @@ export class InlineLinkSuggester
         break;
       }
       const nextOpen = value.indexOf("[[", open + 2);
-      const closeCandidate = value.indexOf("]]", open + 2);
+      const closeCandidate = this.findWikiLinkClose(value, open + 2);
       const closeBelongsToLink =
         closeCandidate !== -1 && (nextOpen === -1 || closeCandidate < nextOpen);
       const close = closeBelongsToLink ? closeCandidate : -1;
