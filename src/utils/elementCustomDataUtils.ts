@@ -5,6 +5,8 @@ import type {
 } from "@zsviczian/excalidraw/types/element/src/types";
 import type { PDFPageViewProps } from "src/types/embeddedFileLoaderTypes";
 
+export const MARKDOWN_IMAGE_CUSTOM_DATA_KEY = "markdownImage";
+
 export type ExcalidrawCustomDataValue =
   | string
   | number
@@ -34,6 +36,28 @@ export type ExcalidrawImageWithCustomData<
 > = ExcalidrawImageElement & {
   customData?: TCustomData;
 };
+
+/**
+ * Records the SVG intrinsic size independently of an image element's canvas
+ * dimensions. Copies with one file ID each retain their own canvas geometry.
+ */
+export function setMarkdownImageRenderedSize(
+  element: Mutable<ExcalidrawImageElement>,
+  size: { width: number; height: number },
+): void {
+  const markdownImage: unknown = element.customData?.[
+    MARKDOWN_IMAGE_CUSTOM_DATA_KEY
+  ];
+  if (!markdownImage || typeof markdownImage !== "object") {
+    return;
+  }
+  addAppendUpdateCustomData(element, {
+    [MARKDOWN_IMAGE_CUSTOM_DATA_KEY]: {
+      ...markdownImage,
+      renderedSize: { ...size },
+    },
+  });
+}
 
 export function addAppendUpdateCustomData(
   el: Mutable<ExcalidrawElement>,
