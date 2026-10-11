@@ -30,6 +30,7 @@ import {
   ExcalidrawImperativeAPI,
   ExcalidrawInitialDataState,
   Gesture,
+  PointerDownState,
   LibraryItems,
   UIAppState,
 } from "@zsviczian/excalidraw/types/excalidraw/types";
@@ -5698,7 +5699,11 @@ export default class ExcalidrawView
     }
   }
 
-  public onPointerDown(e: PointerEvent) {
+  public onPointerDown(
+    e: PointerEvent,
+    selectionBeforePointerDown?: AppState,
+    pointerDownState?: PointerDownState,
+  ) {
     if (!(isWinCTRLorMacCMD(e) || isWinMETAorMacCTRL(e))) {
       return;
     }
@@ -5712,6 +5717,56 @@ export default class ExcalidrawView
     //Timeout is required for Excalidraw to first complete the selection action before execution
     //of the link click continues
     window.setTimeout(() => {
+      const hitElement = pointerDownState?.hit.element;
+      if (
+        !this.excalidrawAPI?.getAppState().viewModeEnabled &&
+        isWinCTRLorMacCMD(e) &&
+        hitElement?.groupIds.length
+      ) {
+        // Deep selection gets the first click. Group-wide link fallbacks must
+        // never turn an unlinked member into a link to one of its siblings.
+        if (
+          !selectionBeforePointerDown?.selectedElementIds[hitElement.id] ||
+          Object.keys(selectionBeforePointerDown.selectedElementIds).length !==
+            1 ||
+          hitElement.groupIds.some(
+            (id) => selectionBeforePointerDown.selectedGroupIds[id],
+          )
+        ) {
+          return;
+        }
+        const textElement =
+          hitElement.type === "text"
+            ? hitElement
+            : hitElement.type !== "arrow"
+              ? this.excalidrawAPI.getSceneElements().find(
+                  (el) =>
+                    el.type === "text" &&
+                    el.id === getBoundTextElementId(hitElement),
+                )
+              : null;
+        if (
+          textElement?.type !== "text" &&
+          hitElement.type !== "image" &&
+          !hitElement.link
+        ) {
+          return;
+        }
+        this.removeLinkTooltip();
+        void this.linkClick(
+          e,
+          textElement?.type === "text"
+            ? { id: textElement.id, text: textElement.text }
+            : null,
+          hitElement.type === "image"
+            ? { id: hitElement.id, fileId: hitElement.fileId }
+            : null,
+          !textElement && hitElement.type !== "image"
+            ? { id: hitElement.id, text: hitElement.link }
+            : null,
+        );
+        return;
+      }
       if (this.isLinkSelected()) {
         void this.handleLinkClick(e);
         return;
