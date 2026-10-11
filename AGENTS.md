@@ -507,11 +507,15 @@ If a task touches any of the above, read adjacent code first and validate more c
 
 ## Validation Expectations
 
-There is no standard unit-test suite wired into `package.json`.
+There is no comprehensive runtime unit-test suite. The CLI harness has focused tests wired into `package.json`.
 
 ### Obsidian CLI runtime lane
 
-Follow [the runtime testing proxy](docs/OBSIDIAN_RUNTIME_TESTING.md) and its linked fork guide for a native check. `npm run test:obsidian:runner` runs the test-vault guard and harness tests without Obsidian. `npm run verify:obsidian` requires the explicitly configured `excalidraw-test` vault, checks the CLI-selected path before deployment, builds the sibling fork's four Obsidian artifacts and this plugin, stages the exact `main.js`/CSS/manifest, and asserts a live drawing and clean JavaScript error buffer. Review its report and cleanup result.
+Follow [Obsidian runtime testing](docs/OBSIDIAN_RUNTIME_TESTING.md) for macOS and Windows setup, and its linked fork guide for feature gates. `npm run test:obsidian:runner` tests the vault guards and platform launchers without Obsidian. `npm run verify:obsidian:plugin` builds this plugin with the installed component package. `npm run verify:obsidian` first builds and copies the sibling fork's four Obsidian artifacts. Both native lanes require the explicitly configured `excalidraw-test` vault, check the CLI-selected vault and config paths before deployment, stage the exact `main.js`/CSS/manifest, and assert a live drawing and clean JavaScript error buffer. Review the report's build mode, source identity, hashes, and cleanup result. A previous local artifact copy into `node_modules` remains in effect for the plugin-only lane until `npm install` restores the published package.
+
+Look for an existing `excalidraw-test` vault in Obsidian's vault registry and confirm its path and enabled plugin. If absent, ask the user to create it and install/enable Excalidraw from Community plugins before deployment. Do not create or download a replacement vault without consent. Complete any first-open trust prompt and reopen the vault before CLI probes. Never choose a personal/default vault when the test vault is unavailable.
+
+Use the test-only `scripts/testing/host/processTools.mjs` for native launches. Windows captures output through `Obsidian.com`; long or multiline Windows evals use an owned temporary UTF-8 script and are cleaned up after each call. npm and Yarn launch through JavaScript entries using the current Node executable, avoiding Windows `.cmd` shims. Run CLI scenarios serially. If a request times out, check for a pending Obsidian error/trust dialog; ask the user to save and restart when necessary rather than force-closing an application with other vaults open. Record Windows and macOS live validation separately.
 
 Use this lane after fork behavior or packaging changes when Obsidian is available, then exercise the affected workflow using the fork's V03–V11 validation gates. A blank-drawing smoke does not validate raw text, clipboard, font/image assets, saved scenes, custom pens, popout migration, offline behavior, or physical mobile touch. Record what was tested, artifact/source identity, and any pending or unavailable gates. Never deploy a local build to a personal/default vault as a substitute for the named test vault. Keep CLI eval access to internal plugin instances and temporary test controllers out of production modules.
 
