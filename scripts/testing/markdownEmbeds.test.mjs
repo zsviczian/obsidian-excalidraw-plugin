@@ -36,6 +36,7 @@ function fixture() {
       this.classes = new Set(classes.split(" "));
       this.tag = tag; this.attrs = new Map(); this.children = []; this.isConnected = true;
       this.ownerDocument = { defaultView: ownerWindow };
+      this.ownerDocument.body = { querySelectorAll: () => [] };
     }
     hasClass(cls) { return this.classes.has(cls); }
     addClass(cls) { this.classes.add(cls); }
@@ -44,6 +45,13 @@ function fixture() {
     setAttribute(key, value) { this.attrs.set(key, value); }
     removeAttribute(key) { this.attrs.delete(key); }
     hasAttribute(key) { return this.attrs.has(key); }
+    get firstElementChild() { return this.children[0] ?? null; }
+    hasChildNodes() { return this.children.length > 0; }
+    closest(selector) {
+      let el = this;
+      while (el) { if (selector.startsWith(".") && el.hasClass(selector.slice(1))) return el; el = el.parentElement; }
+      return null;
+    }
     empty() { for (const child of this.children) child.parentElement = null; this.children = []; }
     appendChild(child) { this.children.push(child); child.parentElement = this; return child; }
     replaceChild(child, old) {
@@ -51,7 +59,7 @@ function fixture() {
       this.children[index] = child; child.parentElement = this; old.parentElement = null;
     }
     querySelectorAll(selector) {
-      return this.children.flatMap(child => [...(selector === child.tag ? [child] : []), ...child.querySelectorAll(selector)]);
+      return this.children.flatMap(child => [...(selector === child.tag || (selector.startsWith(".") && child.hasClass(selector.slice(1))) ? [child] : []), ...child.querySelectorAll(selector)]);
     }
     querySelector(selector) { return this.querySelectorAll(selector)[0] ?? null; }
   }
@@ -70,14 +78,16 @@ function fixture() {
   const sourceFile = new TFile("source.excalidraw.md"), targetFile = new TFile("target.excalidraw.md");
   const plainFile = new TFile("image.png");
   const files = new Map([sourceFile, targetFile, plainFile].map(file => [file.path, file]));
+  const frontmatters = new Map();
   const plugin = {
     _loaded: true,
     awaitInit: async () => {},
+    awaitSettings: async () => {},
     settings: { width: "400", height: "", renderImageInMarkdownReadingMode: true, renderImageInMarkdownToPDF: true },
     isExcalidrawFile: file => file.path.endsWith("excalidraw.md"),
     app: {
-      vault: { getAbstractFileByPath: path => files.get(path) },
-      metadataCache: { getFirstLinkpathDest: path => files.get(path) },
+      vault: { getAbstractFileByPath: path => files.get(path), getFileByPath: path => files.get(path) },
+      metadataCache: { getFirstLinkpathDest: path => files.get(path), getFileCache: file => ({ frontmatter: frontmatters.get(file.path) }) },
     },
   };
   const queue = { addTask: task => new Promise((resolve, reject) => jobs.push(async () => { try { await task(); resolve(); } catch (e) { reject(e); } })) };
@@ -96,6 +106,7 @@ function fixture() {
     "../../types/utilTypes": { PreviewImageType: { PNG: "PNG", SVGIMG: "SVGIMG", SVG: "SVG" } },
     "../../utils/typechecks": { isInstanceOfHTMLImageElement: el => el.tag === "img" },
     "../../utils/obsidianUtils": { getSafeFrontmatter: fm => fm ?? {}, getParentOfClass: () => null },
+    "src/utils/htmlUtils": { setElementDisplay: (el, display) => { if (display === "none") el.addClass("excalidraw-display-none"); else el.removeClass("excalidraw-display-none"); } },
     "../../utils/utils": {
       hasExportTheme: () => false, getWithBackground: () => false, isMaskFile: () => false,
       getEmbeddedFilenameParts: src => ({ hasBlockref: src.includes("#^"), blockref: src.split("#^")[1] }),
@@ -110,6 +121,7 @@ function fixture() {
     return exports;
   };
   const child = compile(readFileSync(resolve(root, "src/core/managers/MarkdownEmbedRenderChild.ts"), "utf8"), name => mocks[name]);
+  Object.assign(mocks["../../utils/utils"], compile(readFileSync(resolve(root, "src/utils/embeddedFilenameParts.ts"), "utf8"), () => ({})));
   let source = readFileSync(resolve(root, "src/core/managers/MarkdownPostProcessor.ts"), "utf8");
   // Stub only image generation. Routing, cleanup, queueing and lifecycle are production code.
   const tree = ts.createSourceFile("processor.ts", source, ts.ScriptTarget.Latest, true);
@@ -131,7 +143,7 @@ function fixture() {
   const flushTimers = () => { for (const [id, callback] of timers) { timers.delete(id); callback(); } };
   const start = () => { assert.ok(jobs.length); const done = jobs.shift()(); return done; };
   const settle = async (name = "result", request = requests.at(-1)) => { const result = image(name); request.resolve(result); await Promise.resolve(); return result; };
-  return { processor, plugin, container, ctx, el, children, render, jobs, requests, errors, released, observers, timers, intervals, loaders, flushTimers, start, settle, image, Element };
+  return { processor, plugin, container, ctx, el, children, render, jobs, requests, errors, released, observers, timers, intervals, loaders, frontmatters, flushTimers, start, settle, image, Element };
 }
 
 test("ready follows successful insertion; repeated callbacks preserve the image", async () => {
@@ -248,5 +260,54 @@ test("image loader cancellation follows context lifetime and always clears its i
     for (const callback of f.intervals.values()) callback();
     assert.equal(f.loaders[0].terminate, !alive);
     init.resolve(); await result; assert.equal(f.intervals.size, 0);
+  }
+});
+
+test("explicit self-images override Markdown preferences and use the containing drawing", async () => {
+  for (const property of ["excalidraw-open-md", "excalidraw-embed-md"]) {
+    const f = fixture(); f.ctx.frontmatter = { [property]: true }; f.frontmatters.set(f.ctx.sourcePath, f.ctx.frontmatter);
+    f.container.setAttribute("src", "#^as-image");
+    const rendered = f.render(); const job = f.start();
+    assert.equal(f.requests[0].attr.fname, `${f.ctx.sourcePath}#^as-image`);
+    await f.settle(); await job; await rendered;
+    assert.equal(f.container.hasAttribute("ready"), true);
+  }
+});
+
+test("Reading mode resolves explicit self-images, but ignores empty and ordinary text fragments", async () => {
+  for (const src of ["#^as-image", "", "#", "#^", "#Heading", "#^real-block"]) {
+    const f = fixture(); const parent = new f.Element(); const embed = parent.appendChild(new f.Element("internal-embed")); embed.setAttribute("src", src);
+    const rendered = f.processor.processReadingMode([embed], f.ctx);
+    if (src === "#^as-image") {
+      const job = f.start(); assert.equal(f.requests[0].attr.fname, `${f.ctx.sourcePath}#^as-image`);
+      const result = await f.settle(); await job; await rendered; assert.equal(parent.children[0], result);
+    } else { await rendered; assert.equal(f.jobs.length, 0); assert.equal(parent.children[0], embed); }
+  }
+});
+
+test("Reading mode preserves a target's Markdown side unless the link explicitly requests an image", async () => {
+  for (const property of ["excalidraw-open-md", "excalidraw-embed-md"]) {
+    for (const suffix of ["", "#^as-image"]) {
+      const f = fixture(); const parent = new f.Element(); const embed = parent.appendChild(new f.Element("internal-embed")); embed.setAttribute("src", `target.excalidraw.md${suffix}`);
+      f.frontmatters.set("target.excalidraw.md", { [property]: true });
+      const rendered = f.processor.processReadingMode([embed], f.ctx);
+      if (suffix) { const job = f.start(); await f.settle(); await job; await rendered; assert.notEqual(parent.children[0], embed); }
+      else { await rendered; assert.equal(f.jobs.length, 0); assert.equal(parent.children[0], embed); }
+    }
+  }
+});
+
+test("nested Markdown-side drawings and PNGs remain visible; drawing metadata stays hidden", async () => {
+  for (const property of ["excalidraw-open-md", "excalidraw-embed-md", null]) {
+    for (const src of ["target.excalidraw.md", "image.png", "#^as-image"]) {
+      const f = fixture(); f.ctx.frontmatter = { "excalidraw-plugin": "parsed", ...(property ? { [property]: true } : {}) };
+      f.frontmatters.set(f.ctx.sourcePath, f.ctx.frontmatter);
+      const section = new f.Element("el-p excalidraw-display-none"); const embed = section.appendChild(new f.Element("internal-embed")); embed.setAttribute("src", src);
+      const rendered = f.processor.markdownPostProcessor(section, f.ctx); await new Promise(resolve => setImmediate(resolve));
+      if (property && src !== "image.png") { const job = f.start(); await f.settle(); await job; }
+      await rendered;
+      assert.equal(section.hasClass("excalidraw-display-none"), !property);
+      if (property && src === "image.png") assert.equal(section.children[0], embed);
+    }
   }
 });

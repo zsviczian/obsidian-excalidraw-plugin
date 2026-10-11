@@ -815,6 +815,25 @@ const createImageDiv = async (
   return createDiv(attr.imgstyle.join(" "), (el) => el.append(img));
 };
 
+const isExplicitImageEmbed = (src: string): boolean => {
+  const parts = getEmbeddedFilenameParts(src);
+  return isImagePartRef(parts) || (parts.hasBlockref && parts.blockref === "as-image");
+};
+
+const resolveEmbedTarget = (src: string, sourcePath: string): TFile | null => {
+  if (!src) return null;
+  const filename = src.split("#")[0];
+  if (filename) return metadataCache.getFirstLinkpathDest(filename, sourcePath);
+  // Only recognized image fragments may refer to the containing drawing.
+  // The active workspace file can be different in nested notes and popouts.
+  return isExplicitImageEmbed(src) ? vault.getFileByPath(sourcePath) : null;
+};
+
+const embedsMarkdown = (file: TFile): boolean => {
+  const frontmatter = getSafeFrontmatter(metadataCache.getFileCache(file)?.frontmatter);
+  return Boolean(frontmatter["excalidraw-open-md"] || frontmatter["excalidraw-embed-md"]);
+};
+
 const processReadingMode = async (
   embeddedItems: NodeListOf<Element> | [HTMLElement],
   ctx: MarkdownPostProcessorContext,
@@ -834,12 +853,8 @@ const processReadingMode = async (
     }
 
     //check to see if the file in the src attribute exists
-    const fname = maybeDrawing.getAttribute("src")?.split("#")[0];
-    if (!fname) {
-      continue;
-    }
-
-    const file = metadataCache.getFirstLinkpathDest(fname, ctx.sourcePath);
+    const src = maybeDrawing.getAttribute("src");
+    const file = resolveEmbedTarget(src, ctx.sourcePath);
 
     //if the embeddedFile exits and it is an Excalidraw file
     //then lets replace the .internal-embed with the generated PNG or SVG image
@@ -849,6 +864,7 @@ const processReadingMode = async (
         //should be embedded as legacy text
         continue;
       }
+      if (embedsMarkdown(file) && !isExplicitImageEmbed(src)) continue;
 
       promises.push(
         getGlobalTaskQueue(plugin).addTask(async () => {
@@ -1073,10 +1089,6 @@ const tmpObsidianWYSIWYG = async (
   if (!plugin.isExcalidrawFile(file)) {
     return;
   }
-  const safeFrontmatter = getSafeFrontmatter(ctx.frontmatter);
-  if (safeFrontmatter["excalidraw-open-md"]) {
-    return;
-  }
   if (ctx.remainingNestLevel < 4) {
     return;
   }
@@ -1122,6 +1134,14 @@ const tmpObsidianWYSIWYG = async (
     internalEmbedDiv.hasClass("cm-embed-block")
   ) {
     return; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/835
+  }
+
+  const safeFrontmatter = getSafeFrontmatter(ctx.frontmatter);
+  if (
+    (safeFrontmatter["excalidraw-open-md"] || safeFrontmatter["excalidraw-embed-md"] || embedsMarkdown(file)) &&
+    !(internalEmbedDiv.hasClass("internal-embed") && isExplicitImageEmbed(internalEmbedDiv.getAttribute("src")))
+  ) {
+    return;
   }
 
   if (!plugin.settings.renderImageInHoverPreviewForMDNotes) {
@@ -1263,10 +1283,7 @@ const tmpObsidianWYSIWYG = async (
   //over rendering when it is genuinely an Excalidraw drawing; otherwise leave the
   //embed alone so Obsidian's native renderer can display it.
   //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2292
-  const embedSrc = internalEmbedDiv.getAttribute("src")?.split("#")[0];
-  const embedTargetFile = embedSrc
-    ? metadataCache.getFirstLinkpathDest(embedSrc, ctx.sourcePath)
-    : null;
+  const embedTargetFile = resolveEmbedTarget(internalEmbedDiv.getAttribute("src"), ctx.sourcePath);
   if (
     !embedTargetFile ||
     !(embedTargetFile instanceof TFile) ||
@@ -1390,8 +1407,12 @@ export const markdownPostProcessor = async (
   //in reading mode these elements should be hidden
   const excalidrawFile = Boolean(safeFrontmatter["excalidraw-plugin"]);
   if (!(isPreview || isMarkdownReadingMode || isPrinting) && excalidrawFile) {
-    setElementDisplay(el, "none");
-    return;
+    if (!(safeFrontmatter["excalidraw-open-md"] || safeFrontmatter["excalidraw-embed-md"])) {
+      setElementDisplay(el, "none");
+      return;
+    }
+    // Back-of-note Markdown transclusions own real embeds, not drawing metadata.
+    setElementDisplay(el, "");
   }
 
   await processReadingMode(embeddedItems, ctx);

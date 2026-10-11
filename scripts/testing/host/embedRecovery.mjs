@@ -24,13 +24,39 @@ function snapshot(control) {
   const root = c.leaf?.view.contentEl;
   const images = root ? Array.from(root.querySelectorAll("[fileSource]"))
     .filter(el => el.getAttribute("fileSource")?.split("#")[0] === c.drawingPath) : [];
+  const decoded = el => el.tagName === "IMG" ? el.complete && el.naturalWidth > 0 : !!el.querySelector("svg");
+  const visible = el => el.getBoundingClientRect().height > 0 && !el.closest(".excalidraw-display-none");
+  const selfImages = root ? Array.from(root.querySelectorAll("[fileSource]"))
+    .filter(el => el.getAttribute("fileSource") === `${c.paths[2]}#^as-image`) : [];
+  const nativeImages = root ? Array.from(root.querySelectorAll(".internal-embed"))
+    .filter(el => el.getAttribute("src") === c.paths[3]).flatMap(el => Array.from(el.querySelectorAll("img"))) : [];
   return { state: c.state, error: c.error, paused: c.paused, connected: !!root?.isConnected,
     popout: !!root && root.ownerDocument !== app.workspace.containerEl.ownerDocument,
     retiredImages: c.retiredEmbeds?.reduce((count, embed) => count + embed.querySelectorAll("[fileSource]").length, 0) ?? 0,
     mode: c.leaf?.view.getMode?.(), images: images.map(el => ({
       type: el.tagName, width: el.getAttribute("w"), ready: !!el.closest("[ready]"),
-      decoded: el.tagName === "IMG" ? el.complete && el.naturalWidth > 0 : !!el.querySelector("svg"),
-    })), owned: c.owned };
+      decoded: decoded(el), visible: visible(el),
+    })), selfImages: selfImages.map(el => ({ decoded: decoded(el), visible: visible(el) })),
+    nativeImages: nativeImages.map(el => ({ decoded: decoded(el), visible: visible(el) })), owned: c.owned };
+}
+
+async function createHybridFixtures(control) {
+  const c = globalThis[control];
+  const source = await app.vault.read(app.vault.getFileByPath(c.drawingPath));
+  if (!source.startsWith("---") || !source.includes("# Excalidraw Data")) throw Error("hybrid embed regression requires a Markdown drawing");
+  const png = Uint8Array.from(atob("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aL1sAAAAASUVORK5CYII="), ch => ch.charCodeAt(0));
+  await app.vault.createBinary(c.paths[3], png.buffer); c.owned.push(c.paths[3]);
+  const embeds = `![[#^as-image]]\n\n![[${c.drawingPath}|180]]\n\n![[${c.paths[3]}|80]]\n\n`;
+  const hybrid = source.replace(/^---\r?\n/, "---\nexcalidraw-open-md: true\n").replace("# Excalidraw Data", `${embeds}# Excalidraw Data`);
+  await app.vault.create(c.paths[2], hybrid); c.owned.push(c.paths[2]);
+  await app.vault.create(c.paths[4], `![[${c.paths[2]}#^as-image]]\n\n![[${c.paths[2]}]]`); c.owned.push(c.paths[4]);
+}
+
+async function openHybrid(control, mode, nested) {
+  const c = globalThis[control];
+  const path = nested ? c.paths[4] : c.paths[2];
+  await c.leaf.setViewState({ type: "markdown", state: { file: path, mode, source: false } });
+  if (mode === "source") c.leaf.view.editor.setCursor({ line: 0, ch: 0 });
 }
 
 async function createFixtures(control) {
@@ -116,7 +142,8 @@ async function cleanup(control, expectedPaths) {
 }
 
 export async function runEmbedRecoveryScenario({ cli, drawingPath }) {
-  const paths = ["large", "note"].map(kind => `__excalidraw_embed_${randomUUID()}_${kind}.md`);
+  const paths = ["large.md", "note.md", "hybrid.excalidraw.md", "pixel.png", "nested.md"]
+    .map(kind => `__excalidraw_embed_${randomUUID()}_${kind}`);
   const evaluate = code => JSON.parse(cli("eval", `code=${code}`).trim().replace(/^=>\s*/, ""));
   const invoke = (fn, ...args) => evaluate(`JSON.stringify((${fn.toString()})(${[CONTROL, ...args].map(value => JSON.stringify(value)).join(",")}))`);
   const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -181,6 +208,21 @@ export async function runEmbedRecoveryScenario({ cli, drawingPath }) {
     invoke(resize);
     await poll(value => value.images.some(image => image.width === "280" && image.ready && image.decoded), "popout attribute refresh did not finish");
     checks.push("popout: detached context, reattachment and width refresh in the owning document");
+    await act(closeNote);
+    await act(createHybridFixtures);
+    for (const mode of ["source", "preview"]) {
+      for (const nested of [false, true]) {
+        await act(openHybrid, mode, nested);
+        await poll(value => value.selfImages.length === (nested ? 2 : 1) &&
+          value.selfImages.every(image => image.decoded && image.visible) &&
+          value.images.length === 1 && value.images.every(image => image.decoded && image.visible) &&
+          value.nativeImages.filter(image => image.visible).length === 1 &&
+          value.nativeImages.filter(image => image.visible).every(image => image.decoded),
+        `hybrid ${mode}, nested=${nested}: self-image, nested drawing or PNG missing`);
+        checks.push(`hybrid ${mode}, nested=${nested}: self-image, drawing and native PNG visible in popout`);
+        await act(closeNote);
+      }
+    }
   } finally {
     await act(cleanup, paths);
     evaluate(`(()=>{delete globalThis.${CONTROL};return JSON.stringify({clean:true})})()`);
