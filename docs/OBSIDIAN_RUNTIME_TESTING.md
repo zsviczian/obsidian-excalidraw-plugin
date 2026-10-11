@@ -222,6 +222,57 @@ and legacy/empty source handling. The matrix includes plain text, `[[link]]`,
 and JavaScript error checks. The scenario uses the toolbar's stable test IDs, so
 labels may be localized. Physical mobile and popout checks remain separate.
 
+For LaTeX dialog input and window ownership (#2970), run:
+
+```bash
+npm run verify:obsidian:plugin -- --latex-input
+```
+
+Use `npm.cmd` in PowerShell. This option also works with `verify:obsidian`.
+Close any existing LaTeX dialog in the test vault first. The scenario exercises
+the real plugin prompt and CodeMirror in the main window, a direct popout, and
+a tab moved to a popout. Native CDP input checks click placement, arrows,
+Backspace, selection replacement, undo, Mod-Enter, formula save/reopen, cancel
+and editor destruction. Popout input attaches only to the single new page target
+created by the scenario. It restores its temporary gateway override, detaches
+its CDP session, closes its popouts, and removes its controller in `finally`;
+the parent runner owns the disposable drawing and final JavaScript-error check.
+
+This input regression supplies a deterministic local SVG renderer through the
+MathJax gateway. It requires no Extras installation or network access and does
+not test MathJax rendering, its activation flow, or Latex Suite extensions.
+For real Extras formula rendering and Latex Suite preview positioning, install
+and enable both companions in the test vault, enable Extras MathJax-to-SVG and
+Latex Suite math previews, then run:
+
+```bash
+npm run verify:obsidian:plugin -- --latex-preview
+```
+
+Use `npm.cmd` in PowerShell. This gate uses the real renderer without a gateway
+override and repeats the input/save/cancel checks in all three window cases. It
+also requires a visible, successfully rendered preview in each owning window.
+The paired Extras fix registers tooltip positioning in existing and newly opened
+popouts; testing only the main plugin cannot establish that companion gate.
+
+Obsidian 1.14.0's Temml renderer rejects Latex Suite's `\class` cursor and
+bracket markers with “Function \class is not trusted.” This is separate from
+CodeMirror window ownership and Extras tooltip positioning. A vault with a
+pre-existing global MathJax may render successfully despite identical plugin
+versions. [Obsidian 1.14.1 switched to MathJax 4.1.3](https://obsidian.md/changelog/2026-09-08-desktop-v1.14.1/).
+Update Obsidian to 1.14.1 or newer, or temporarily clear Latex Suite's **Cursor
+symbol** and disable **Highlight brackets in preview** when testing 1.14.0.
+Do not weaken renderer trust or install a global MathJax as a test workaround.
+
+On Windows, the real-preview gate passed after upgrading the test host to
+Obsidian 1.14.4 with the original Latex Suite settings. Main-window, direct-popout
+and moved-tab input, rendered previews, save/reopen, cancel, JavaScript error
+checks and fixture cleanup all passed without disabling cursor decorations.
+
+Separately validate modal
+dragging outside the editor, macOS/Linux popouts, restored windows and physical
+mobile input. Windows CDP results do not establish these platform/extension gates.
+
 If CLI access is disabled, enable it in Obsidian first. If the app is running but
 the CLI cannot reach it, check host permissions: a sandbox may lack access to the
 macOS CLI socket or Windows IPC. Retry with authorized host access instead of
