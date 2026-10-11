@@ -19,6 +19,10 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 `,
 "2.29.0": `
 ## Fixed
+- Self-referencing drawing embeds such as \`![[#^as-image]]\` work again. Nested drawings and ordinary images remain visible when embedding a drawing's Markdown side. [#2979](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2979)
+- Drawing embeds no longer stay blank when Obsidian temporarily detaches a Markdown section while rendering. [#2953](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2953)
+- Ctrl/Cmd-click on a grouped element now selects it first. A second click opens its own link without following links on other group members.
+- Editing text after undo or redo now keeps the restored text instead of bringing back the previous edit. [#2976](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2976)
 - Back-of-the-note embeds now wait for initialization so they display the linked Markdown section instead of the whole drawing. 🙏[askalf](${URLs.GITHUB_COM}/askalf) [#2931](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2931)
 `,
 "2.28.1": `

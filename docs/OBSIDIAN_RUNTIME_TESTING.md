@@ -142,10 +142,85 @@ developer error buffer to attribute errors to this run.
 The printed report path is in a unique temporary directory unless you set
 `EXCALIDRAW_TEST_REPORT_DIR`. Reports include source revisions/dirty flags, build
 mode, component version, Node/platform/Obsidian versions, component and deployed
-plugin hashes, bundle size, scenarios, and cleanup. Inspect both `status` and
+plugin hashes, bundle size, scenarios, the exact temporary drawing path, and
+cleanup. The runner awaits an empty view transition before deleting its drawing
+so a pending close/save cannot recreate it. Inspect both `status` and
 `cleanup`; keep reports outside the checkout and review local paths before sharing.
 
 ## Troubleshooting and further coverage
+
+For Markdown embed changes, run the focused tests and the native regression for
+issue #2953:
+
+```bash
+npm run test:markdown-embeds
+npm run verify:obsidian:plugin -- --embed-recovery
+```
+
+Use `npm.cmd` in PowerShell. `--embed-recovery` also works with `verify:obsidian`
+and can be combined with `--text-undo` or `--grouped-link-click`. The offline tests exercise the real
+postprocessor with deferred image generation, including failed renders, temporary
+detachment, overlapping attribute updates, repeated callbacks, loader cancellation,
+and permanent context unload. They require no Obsidian process or extra DOM package.
+
+The native scenario creates four UUID-named Markdown files (including a hybrid
+drawing), one tiny PNG, and adds text to the parent runner's disposable drawing.
+A long embedded note uses a collapsed callout
+so three repeated drawing embeds stay in the viewport. It temporarily defers the
+test plugin's `awaitInit()`, detaches the owned note's content for longer than the
+loader's cancellation interval, and verifies rendering and decoding after
+reattachment. SVG image, PNG, and inline SVG are checked in Live Preview, Reading
+mode, warm reopen, and width updates; an additional popout checks detachment and
+width updates in its own document. Closing a context with a pending render must
+stop insertion. The hybrid fixture uses `excalidraw-open-md: true`, a relative
+`![[#^as-image]]`, a nested drawing, and a native PNG. Live Preview and Reading mode
+must show all three, both directly and inside another note's Markdown transclusion;
+a filename-qualified `#^as-image` must still force the drawing side. These checks
+run in the popout and require a Markdown drawing for the parent smoke fixture.
+The scenario restores the temporary method override and preview
+setting, closes its own leaves, deletes only its recorded fixture paths, and
+removes its controller in `finally`. The parent runner still checks deployed
+hashes, JavaScript errors, and drawing cleanup.
+
+This is a controlled lifecycle regression, not a reproduction of every reported
+layout race. Separately check an expanded long embedded note and scrolling,
+Hybrid Note PDF export, and cold application startup. Record live macOS and
+physical mobile coverage separately; Windows results do not establish those gates.
+
+For grouped Ctrl/Cmd-click selection and link navigation, run:
+
+```bash
+npm run verify:obsidian:plugin -- --grouped-link-click
+```
+
+This regression dispatches synthetic pointer events through the mounted editor.
+It checks first-click selection, unlinked members, second-click navigation with
+Shift/Alt, nested groups, bound labels, and unchanged ungrouped link behavior.
+It observes the real link resolver and intercepts its final navigation hook to
+keep the test in its disposable drawing. Settings and hooks are restored afterward.
+This establishes desktop event routing, not physical mouse/touch input.
+
+For text-edit/history changes, run the repeatable regression for issue #2976:
+
+```bash
+npm run verify:obsidian:plugin -- --text-undo
+```
+
+Use `npm.cmd` in PowerShell. The same `--text-undo` option works with
+`verify:obsidian` for a fork integration build. The complete #2976 fix also needs
+the component's unchanged-text history fix, included in the paired source
+checkpoint but pending package publication. Until the next component package and plugin dependency update,
+use `verify:obsidian` with the matching sibling source to test the complete pair;
+the declared `0.18.140` package does not include that component fix. The scenario
+uses native CDP
+keyboard input and the **Undo**/**Redo** toolbar buttons in the runner's
+temporary drawing. It checks raw and parsed text modes, reopening after undo and
+redo, submitting without changes, editing after undo, Markdown source preservation,
+and legacy/empty source handling. The matrix includes plain text, `[[link]]`,
+`[[link]]]` with an extra closing bracket, and `[[link|alias]]`. It writes a
+`text-undo-2976` result to the report; the parent runner still owns drawing cleanup
+and JavaScript error checks. The scenario uses the toolbar's stable test IDs, so
+labels may be localized. Physical mobile and popout checks remain separate.
 
 If CLI access is disabled, enable it in Obsidian first. If the app is running but
 the CLI cannot reach it, check host permissions: a sandbox may lack access to the
@@ -160,7 +235,7 @@ force-close the application while other vaults are open. After interrupted clean
 review the report/controller's exact drawing path before removing leftovers; never
 delete notes by prefix alone.
 
-This smoke covers one newly created main-window drawing. It does not validate
+The default smoke covers one newly created main-window drawing. It does not validate
 saved scenes, clipboard, text editing, fonts/images, export, custom pens, popout
 migration, offline assets, or physical mobile touch. For affected features, follow
 the fork's [native validation procedure](https://github.com/zsviczian/excalidraw/blob/master/dev-docs/Obsidian/OBSIDIAN_RUNTIME_TESTING.md)

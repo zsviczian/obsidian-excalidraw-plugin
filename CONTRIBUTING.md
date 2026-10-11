@@ -53,6 +53,10 @@ four Obsidian artifacts first. Both native commands require explicit test-vault
 paths and a running Obsidian with CLI access enabled. See the [setup, platform
 commands, reports, and cleanup contract](docs/OBSIDIAN_RUNTIME_TESTING.md).
 
+For Markdown embed changes, also run `npm run test:markdown-embeds` and
+`npm run verify:obsidian:plugin -- --embed-recovery`. See the runtime guide for
+fixture ownership, deferred rendering, popout coverage, and remaining manual checks.
+
 Because Obsidian runs across a variety of environments, please manually test your changes on as many of the following platforms as possible to avoid breaking the plugin for other users:
 - Desktop: Mac, Windows, Linux
 - Mobile: Android, iOS (Test on both Phones and Tablets)

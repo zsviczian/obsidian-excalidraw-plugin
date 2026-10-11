@@ -48,6 +48,7 @@ import { ExportSettings } from "src/types/exportUtilTypes";
 import { setElementDisplay } from "src/utils/htmlUtils";
 import { setStyle } from "src/utils/styleUtils";
 import { getGlobalTaskQueue } from "src/shared/GlobalTaskQueue";
+import { renderMarkdownEmbed } from "./MarkdownEmbedRenderChild";
 
 interface imgElementAttributes {
   file?: TFile;
@@ -460,6 +461,7 @@ const getIMG = async (
   imgAttributes: imgElementAttributes,
   onCanvas: boolean = false,
   embedEl?: Node,
+  isRenderActive?: () => boolean,
 ): Promise<HTMLImageElement | HTMLDivElement> => {
   let file = imgAttributes.file;
   if (!imgAttributes.file) {
@@ -507,7 +509,7 @@ const getIMG = async (
   let terminationTimer: number;
   if (embedEl) {
     terminationTimer = window.setInterval(() => {
-      if (!embedEl.isConnected) {
+      if (!(isRenderActive ? isRenderActive() : embedEl.isConnected)) {
         loader.terminate = true;
         window.clearInterval(terminationTimer);
       }
@@ -622,8 +624,9 @@ const createImgElement = async (
   attr: imgElementAttributes,
   onCanvas: boolean = false,
   embedEl?: Element,
+  isRenderActive?: () => boolean,
 ): Promise<HTMLElement> => {
-  const imgOrDiv = await getIMG(attr, onCanvas, embedEl);
+  const imgOrDiv = await getIMG(attr, onCanvas, embedEl, isRenderActive);
   if (!imgOrDiv) {
     return null;
   }
@@ -803,12 +806,32 @@ const createImageDiv = async (
   attr: imgElementAttributes,
   onCanvas: boolean = false,
   embedEl?: Element,
+  isRenderActive?: () => boolean,
 ): Promise<HTMLDivElement> => {
-  const img = await createImgElement(attr, onCanvas, embedEl);
+  const img = await createImgElement(attr, onCanvas, embedEl, isRenderActive);
   if (!img) {
     return null;
   }
   return createDiv(attr.imgstyle.join(" "), (el) => el.append(img));
+};
+
+const isExplicitImageEmbed = (src: string): boolean => {
+  const parts = getEmbeddedFilenameParts(src);
+  return isImagePartRef(parts) || (parts.hasBlockref && parts.blockref === "as-image");
+};
+
+const resolveEmbedTarget = (src: string, sourcePath: string): TFile | null => {
+  if (!src) return null;
+  const filename = src.split("#")[0];
+  if (filename) return metadataCache.getFirstLinkpathDest(filename, sourcePath);
+  // Only recognized image fragments may refer to the containing drawing.
+  // The active workspace file can be different in nested notes and popouts.
+  return isExplicitImageEmbed(src) ? vault.getFileByPath(sourcePath) : null;
+};
+
+const embedsMarkdown = (file: TFile): boolean => {
+  const frontmatter = getSafeFrontmatter(metadataCache.getFileCache(file)?.frontmatter);
+  return Boolean(frontmatter["excalidraw-open-md"] || frontmatter["excalidraw-embed-md"]);
 };
 
 const processReadingMode = async (
@@ -824,18 +847,14 @@ const processReadingMode = async (
   const promises: Promise<void>[] = [];
 
   for (const maybeDrawing of embeddedItems) {
-    // If the node is detached from the DOM, the user has closed the note or navigated away.
+    // A detached candidate must not suppress later, connected embeds.
     if (!maybeDrawing.isConnected) {
-      break;
-    }
-
-    //check to see if the file in the src attribute exists
-    const fname = maybeDrawing.getAttribute("src")?.split("#")[0];
-    if (!fname) {
       continue;
     }
 
-    const file = metadataCache.getFirstLinkpathDest(fname, ctx.sourcePath);
+    //check to see if the file in the src attribute exists
+    const src = maybeDrawing.getAttribute("src");
+    const file = resolveEmbedTarget(src, ctx.sourcePath);
 
     //if the embeddedFile exits and it is an Excalidraw file
     //then lets replace the .internal-embed with the generated PNG or SVG image
@@ -845,6 +864,7 @@ const processReadingMode = async (
         //should be embedded as legacy text
         continue;
       }
+      if (embedsMarkdown(file) && !isExplicitImageEmbed(src)) continue;
 
       promises.push(
         getGlobalTaskQueue(plugin).addTask(async () => {
@@ -876,6 +896,7 @@ const processReadingMode = async (
 const processInternalEmbed = async (
   internalEmbedEl: Element,
   file: TFile,
+  isRenderActive?: () => boolean,
 ): Promise<HTMLDivElement> => {
   const attr: imgElementAttributes = {
     fname: "",
@@ -911,7 +932,7 @@ const processInternalEmbed = async (
       ? fnameParts.linkpartReference
       : "");
   attr.file = file;
-  return await createImageDiv(attr, false, internalEmbedEl);
+  return await createImageDiv(attr, false, internalEmbedEl, isRenderActive);
 };
 
 function getDimensionsFromAliasString(data: string) {
@@ -1068,10 +1089,6 @@ const tmpObsidianWYSIWYG = async (
   if (!plugin.isExcalidrawFile(file)) {
     return;
   }
-  const safeFrontmatter = getSafeFrontmatter(ctx.frontmatter);
-  if (safeFrontmatter["excalidraw-open-md"]) {
-    return;
-  }
   if (ctx.remainingNestLevel < 4) {
     return;
   }
@@ -1117,6 +1134,14 @@ const tmpObsidianWYSIWYG = async (
     internalEmbedDiv.hasClass("cm-embed-block")
   ) {
     return; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/835
+  }
+
+  const safeFrontmatter = getSafeFrontmatter(ctx.frontmatter);
+  if (
+    (safeFrontmatter["excalidraw-open-md"] || safeFrontmatter["excalidraw-embed-md"] || embedsMarkdown(file)) &&
+    !(internalEmbedDiv.hasClass("internal-embed") && isExplicitImageEmbed(internalEmbedDiv.getAttribute("src")))
+  ) {
+    return;
   }
 
   if (!plugin.settings.renderImageInHoverPreviewForMDNotes) {
@@ -1258,10 +1283,7 @@ const tmpObsidianWYSIWYG = async (
   //over rendering when it is genuinely an Excalidraw drawing; otherwise leave the
   //embed alone so Obsidian's native renderer can display it.
   //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2292
-  const embedSrc = internalEmbedDiv.getAttribute("src")?.split("#")[0];
-  const embedTargetFile = embedSrc
-    ? metadataCache.getFirstLinkpathDest(embedSrc, ctx.sourcePath)
-    : null;
+  const embedTargetFile = resolveEmbedTarget(internalEmbedDiv.getAttribute("src"), ctx.sourcePath);
   if (
     !embedTargetFile ||
     !(embedTargetFile instanceof TFile) ||
@@ -1270,73 +1292,12 @@ const tmpObsidianWYSIWYG = async (
     return;
   }
 
-  el.empty();
-
-  if (internalEmbedDiv.hasAttribute("ready")) {
-    return;
-  }
-  internalEmbedDiv.setAttribute("ready", "");
-
-  internalEmbedDiv.empty();
-
-  await getGlobalTaskQueue(plugin).addTask(async () => {
-    if (!internalEmbedDiv.isConnected) {
-      return;
-    }
-
-    const imgDiv = await processInternalEmbed(internalEmbedDiv, embedTargetFile);
-    if (!imgDiv) {
-      return;
-    }
-
-    // Abort insertion if the container is no longer connected
-    if (!internalEmbedDiv.isConnected) {
-      discardImage(imgDiv);
-      return;
-    }
-
-    internalEmbedDiv.appendChild(imgDiv);
-  });
-
-  //timer to avoid the image flickering when the user is typing
-  let timer: number = null;
-  const markdownObserverFn: MutationCallback = (m) => {
-    if (!["alt", "width", "height"].contains(m[0]?.attributeName)) {
-      return;
-    }
-    if (timer) {
-      window.clearTimeout(timer);
-    }
-    timer = window.setTimeout(() => {
-      timer = null;
-      internalEmbedDiv.empty();
-      void getGlobalTaskQueue(plugin).addTask(async () => {
-        if (!internalEmbedDiv.isConnected) {
-          observer.disconnect();
-          return;
-        }
-
-        const imgDiv = await processInternalEmbed(internalEmbedDiv, file);
-        if (!imgDiv) {
-          return;
-        }
-
-        if (internalEmbedDiv.isConnected) {
-          internalEmbedDiv.appendChild(imgDiv);
-        } else {
-          discardImage(imgDiv);
-        }
-      });
-    }, 500);
-  };
-  const observer = DEBUGGING
-    ? new CustomMutationObserver(
-        markdownObserverFn,
-        "markdowPostProcessorObserverFn",
-      )
-    : new MutationObserver(markdownObserverFn);
-  observer.observe(internalEmbedDiv, {
-    attributes: true, //configure it to listen to attribute changes
+  const currentPlugin = plugin;
+  await renderMarkdownEmbed(el, internalEmbedDiv, ctx, {
+    enqueue: (task) => getGlobalTaskQueue(currentPlugin).addTask(task),
+    createImage: (isCurrent) => processInternalEmbed(internalEmbedDiv, embedTargetFile, isCurrent),
+    discardImage,
+    isPluginLoaded: () => currentPlugin._loaded,
   });
 };
 
@@ -1446,8 +1407,12 @@ export const markdownPostProcessor = async (
   //in reading mode these elements should be hidden
   const excalidrawFile = Boolean(safeFrontmatter["excalidraw-plugin"]);
   if (!(isPreview || isMarkdownReadingMode || isPrinting) && excalidrawFile) {
-    setElementDisplay(el, "none");
-    return;
+    if (!(safeFrontmatter["excalidraw-open-md"] || safeFrontmatter["excalidraw-embed-md"])) {
+      setElementDisplay(el, "none");
+      return;
+    }
+    // Back-of-note Markdown transclusions own real embeds, not drawing metadata.
+    setElementDisplay(el, "");
   }
 
   await processReadingMode(embeddedItems, ctx);
