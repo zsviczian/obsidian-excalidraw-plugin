@@ -48,6 +48,7 @@ import { ExportSettings } from "src/types/exportUtilTypes";
 import { setElementDisplay } from "src/utils/htmlUtils";
 import { setStyle } from "src/utils/styleUtils";
 import { getGlobalTaskQueue } from "src/shared/GlobalTaskQueue";
+import { renderMarkdownEmbed } from "./MarkdownEmbedRenderChild";
 
 interface imgElementAttributes {
   file?: TFile;
@@ -460,6 +461,7 @@ const getIMG = async (
   imgAttributes: imgElementAttributes,
   onCanvas: boolean = false,
   embedEl?: Node,
+  isRenderActive?: () => boolean,
 ): Promise<HTMLImageElement | HTMLDivElement> => {
   let file = imgAttributes.file;
   if (!imgAttributes.file) {
@@ -507,7 +509,7 @@ const getIMG = async (
   let terminationTimer: number;
   if (embedEl) {
     terminationTimer = window.setInterval(() => {
-      if (!embedEl.isConnected) {
+      if (!(isRenderActive ? isRenderActive() : embedEl.isConnected)) {
         loader.terminate = true;
         window.clearInterval(terminationTimer);
       }
@@ -622,8 +624,9 @@ const createImgElement = async (
   attr: imgElementAttributes,
   onCanvas: boolean = false,
   embedEl?: Element,
+  isRenderActive?: () => boolean,
 ): Promise<HTMLElement> => {
-  const imgOrDiv = await getIMG(attr, onCanvas, embedEl);
+  const imgOrDiv = await getIMG(attr, onCanvas, embedEl, isRenderActive);
   if (!imgOrDiv) {
     return null;
   }
@@ -803,8 +806,9 @@ const createImageDiv = async (
   attr: imgElementAttributes,
   onCanvas: boolean = false,
   embedEl?: Element,
+  isRenderActive?: () => boolean,
 ): Promise<HTMLDivElement> => {
-  const img = await createImgElement(attr, onCanvas, embedEl);
+  const img = await createImgElement(attr, onCanvas, embedEl, isRenderActive);
   if (!img) {
     return null;
   }
@@ -824,9 +828,9 @@ const processReadingMode = async (
   const promises: Promise<void>[] = [];
 
   for (const maybeDrawing of embeddedItems) {
-    // If the node is detached from the DOM, the user has closed the note or navigated away.
+    // A detached candidate must not suppress later, connected embeds.
     if (!maybeDrawing.isConnected) {
-      break;
+      continue;
     }
 
     //check to see if the file in the src attribute exists
@@ -876,6 +880,7 @@ const processReadingMode = async (
 const processInternalEmbed = async (
   internalEmbedEl: Element,
   file: TFile,
+  isRenderActive?: () => boolean,
 ): Promise<HTMLDivElement> => {
   const attr: imgElementAttributes = {
     fname: "",
@@ -911,7 +916,7 @@ const processInternalEmbed = async (
       ? fnameParts.linkpartReference
       : "");
   attr.file = file;
-  return await createImageDiv(attr, false, internalEmbedEl);
+  return await createImageDiv(attr, false, internalEmbedEl, isRenderActive);
 };
 
 function getDimensionsFromAliasString(data: string) {
@@ -1270,73 +1275,12 @@ const tmpObsidianWYSIWYG = async (
     return;
   }
 
-  el.empty();
-
-  if (internalEmbedDiv.hasAttribute("ready")) {
-    return;
-  }
-  internalEmbedDiv.setAttribute("ready", "");
-
-  internalEmbedDiv.empty();
-
-  await getGlobalTaskQueue(plugin).addTask(async () => {
-    if (!internalEmbedDiv.isConnected) {
-      return;
-    }
-
-    const imgDiv = await processInternalEmbed(internalEmbedDiv, embedTargetFile);
-    if (!imgDiv) {
-      return;
-    }
-
-    // Abort insertion if the container is no longer connected
-    if (!internalEmbedDiv.isConnected) {
-      discardImage(imgDiv);
-      return;
-    }
-
-    internalEmbedDiv.appendChild(imgDiv);
-  });
-
-  //timer to avoid the image flickering when the user is typing
-  let timer: number = null;
-  const markdownObserverFn: MutationCallback = (m) => {
-    if (!["alt", "width", "height"].contains(m[0]?.attributeName)) {
-      return;
-    }
-    if (timer) {
-      window.clearTimeout(timer);
-    }
-    timer = window.setTimeout(() => {
-      timer = null;
-      internalEmbedDiv.empty();
-      void getGlobalTaskQueue(plugin).addTask(async () => {
-        if (!internalEmbedDiv.isConnected) {
-          observer.disconnect();
-          return;
-        }
-
-        const imgDiv = await processInternalEmbed(internalEmbedDiv, file);
-        if (!imgDiv) {
-          return;
-        }
-
-        if (internalEmbedDiv.isConnected) {
-          internalEmbedDiv.appendChild(imgDiv);
-        } else {
-          discardImage(imgDiv);
-        }
-      });
-    }, 500);
-  };
-  const observer = DEBUGGING
-    ? new CustomMutationObserver(
-        markdownObserverFn,
-        "markdowPostProcessorObserverFn",
-      )
-    : new MutationObserver(markdownObserverFn);
-  observer.observe(internalEmbedDiv, {
-    attributes: true, //configure it to listen to attribute changes
+  const currentPlugin = plugin;
+  await renderMarkdownEmbed(el, internalEmbedDiv, ctx, {
+    enqueue: (task) => getGlobalTaskQueue(currentPlugin).addTask(task),
+    createImage: (isCurrent) => processInternalEmbed(internalEmbedDiv, embedTargetFile, isCurrent),
+    discardImage,
+    isPluginLoaded: () => currentPlugin._loaded,
   });
 };
 

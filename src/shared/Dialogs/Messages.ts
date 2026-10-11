@@ -19,6 +19,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 `,
 "2.29.0": `
 ## Fixed
+- Drawing embeds no longer stay blank when Obsidian temporarily detaches a Markdown section while rendering. [#2953](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2953)
 - Editing text after undo or redo now keeps the restored text instead of bringing back the previous edit. [#2976](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2976)
 - Back-of-the-note embeds now wait for initialization so they display the linked Markdown section instead of the whole drawing. 🙏[askalf](${URLs.GITHUB_COM}/askalf) [#2931](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2931)
 `,
