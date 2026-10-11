@@ -6454,11 +6454,8 @@ export default class ExcalidrawView
     if (this.compatibilityMode) {
       return textElement.originalText ?? textElement.text;
     }
-    const raw = this.excalidrawData.getRawText(textElement.id);
-    if (!raw) {
-      return textElement.rawText;
-    }
-    return raw;
+    // Undo/redo restores the scene source before the Markdown cache is synchronized.
+    return textElement.rawText ?? this.excalidrawData.getRawText(textElement.id);
   }
 
   public onBeforeTextSubmit(
@@ -6582,12 +6579,13 @@ export default class ExcalidrawView
     }
 
     // 5. Check if the user made changes to the text, or
-    //    the text is missing from ExcalidrawData textElements cache (recently copy/pasted)
+    //    the ExcalidrawData cache differs from the submitted source (undo/redo or paste)
+    const textChanged = nextOriginalText !== textElement.originalText;
     if (
-      nextOriginalText !== textElement.originalText ||
-      !this.excalidrawData.getRawText(textElement.id)
+      textChanged ||
+      nextOriginalText !== this.excalidrawData.getRawText(textElement.id)
     ) {
-      //the user made changes to the text or the text is missing from Excalidraw Data (recently copy/pasted)
+      // Refresh stale source as well as new edits before returning parsed display text.
       //setTextElement will attempt a quick parse (without processing transclusions)
       this.setDirty();
 
@@ -6634,7 +6632,9 @@ export default class ExcalidrawView
           }
           this.setDirty();
         }
-        api.history.clear();
+        if (textChanged) {
+          api.history.clear();
+        }
       };
 
       const [parseResultOriginal, link] = this.excalidrawData.setTextElement(
@@ -6666,7 +6666,10 @@ export default class ExcalidrawView
           }
           return { updatedNextOriginalText: null, nextLink: textElement.link };
         } //There were no links to parse, raw text and parsed text are equivalent
-        api.history.clear();
+        // Updating only the cache after undo must not discard the redo stack.
+        if (textChanged) {
+          api.history.clear();
+        }
         return { updatedNextOriginalText: parseResultOriginal, nextLink: link };
       }
       return { updatedNextOriginalText: null, nextLink: textElement.link };

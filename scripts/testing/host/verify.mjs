@@ -7,10 +7,14 @@ import { fileURLToPath } from "node:url";
 import { mkdtempSync } from "node:fs";
 import { runObsidianSmoke } from "./runner.mjs";
 import { obsidianCliExecutable, packageManagerInvocation, spawnNativeSync } from "./processTools.mjs";
+import { runTextUndoScenario } from "./textUndo.mjs";
 
 const pluginRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const pluginOnly = process.argv.includes("--plugin-only");
-if (process.argv.slice(2).some(arg => arg !== "--plugin-only")) throw new Error("Only --plugin-only is supported");
+const textUndo = process.argv.includes("--text-undo");
+if (process.argv.slice(2).some(arg => !["--plugin-only", "--text-undo"].includes(arg))) {
+  throw new Error("Supported options: --plugin-only, --text-undo");
+}
 const forkRoot = resolve(process.env.EXCALIDRAW_FORK_ROOT || join(pluginRoot, "../excalidraw"));
 const reportDir = process.env.EXCALIDRAW_TEST_REPORT_DIR || mkdtempSync(join(tmpdir(), "excalidraw-obsidian-"));
 const FORK_ARTIFACTS = ["excalidraw.production.min.js", "excalidraw.production.min.css",
@@ -44,6 +48,7 @@ const report = await runObsidianSmoke({
   configDir: process.env.EXCALIDRAW_TEST_CONFIG_DIR,
   reportDir,
   source,
+  scenarios: textUndo ? [runTextUndoScenario] : [],
   runCli: (vault, commandName, ...args) => command(obsidianCliExecutable(),
     [`vault=${vault}`, commandName, ...args], pluginRoot),
   runBuild: () => {
