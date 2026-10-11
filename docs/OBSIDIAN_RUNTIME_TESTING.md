@@ -149,6 +149,19 @@ so a pending close/save cannot recreate it. Inspect both `status` and
 
 ## Troubleshooting and further coverage
 
+For grouped Ctrl/Cmd-click selection and link navigation, run:
+
+```bash
+npm run verify:obsidian:plugin -- --grouped-link-click
+```
+
+This regression dispatches synthetic pointer events through the mounted editor.
+It checks first-click selection, unlinked members, second-click navigation with
+Shift/Alt, nested groups, bound labels, and unchanged ungrouped link behavior.
+It observes the real link resolver and intercepts its final navigation hook to
+keep the test in its disposable drawing. Settings and hooks are restored afterward.
+This establishes desktop event routing, not physical mouse/touch input.
+
 For text-edit/history changes, run the repeatable regression for issue #2976:
 
 ```bash
