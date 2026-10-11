@@ -559,7 +559,7 @@ Validation guidance:
 - For host-boundary changes, run the fork's focused adapter tests without Obsidian, then validate plugin registration and teardown through cold startup, plugin reload, the main window, a new and restored popout, and window removal. Confirm adapter methods observe settings changed after registration.
 - After React/package-loading changes, validate cold startup, plugin reload, the main window, new and restored popouts, and moving a leaf between windows. Confirm that no `window.React` or `window.ReactDOM` global was introduced.
 - After Radix/portal changes, validate visibility, positioning, stacking, click-outside, and Escape handling in both the main window and a popout; include mobile when viewport collision behavior can differ.
-- Record `dist/main.js` byte size after packaging changes and report remaining headroom under the release limit.
+- Record `dist/main.js` byte size after packaging changes and report remaining headroom under the 5 MB release target: 5 × 1024 × 1024 = 5,242,880 bytes.
 - Prefer targeted diagnostics for the files you touched when repo-wide lint noise obscures signal.
 - Prefer `npm run build` plus targeted file diagnostics over raw `tsc --noEmit` as the primary gate. Standalone `tsc` can surface large volumes of dependency-typing noise unrelated to touched files.
 - Do not treat `dist/` output edits as source fixes.
