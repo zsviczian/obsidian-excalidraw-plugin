@@ -142,10 +142,34 @@ developer error buffer to attribute errors to this run.
 The printed report path is in a unique temporary directory unless you set
 `EXCALIDRAW_TEST_REPORT_DIR`. Reports include source revisions/dirty flags, build
 mode, component version, Node/platform/Obsidian versions, component and deployed
-plugin hashes, bundle size, scenarios, and cleanup. Inspect both `status` and
+plugin hashes, bundle size, scenarios, the exact temporary drawing path, and
+cleanup. The runner awaits an empty view transition before deleting its drawing
+so a pending close/save cannot recreate it. Inspect both `status` and
 `cleanup`; keep reports outside the checkout and review local paths before sharing.
 
 ## Troubleshooting and further coverage
+
+For text-edit/history changes, run the repeatable regression for issue #2976:
+
+```bash
+npm run verify:obsidian:plugin -- --text-undo
+```
+
+Use `npm.cmd` in PowerShell. The same `--text-undo` option works with
+`verify:obsidian` for a fork integration build. The complete #2976 fix also needs
+the component's unchanged-text history fix, included in the paired source
+checkpoint but pending package publication. Until the next component package and plugin dependency update,
+use `verify:obsidian` with the matching sibling source to test the complete pair;
+the declared `0.18.140` package does not include that component fix. The scenario
+uses native CDP
+keyboard input and the **Undo**/**Redo** toolbar buttons in the runner's
+temporary drawing. It checks raw and parsed text modes, reopening after undo and
+redo, submitting without changes, editing after undo, Markdown source preservation,
+and legacy/empty source handling. The matrix includes plain text, `[[link]]`,
+`[[link]]]` with an extra closing bracket, and `[[link|alias]]`. It writes a
+`text-undo-2976` result to the report; the parent runner still owns drawing cleanup
+and JavaScript error checks. The scenario uses the toolbar's stable test IDs, so
+labels may be localized. Physical mobile and popout checks remain separate.
 
 If CLI access is disabled, enable it in Obsidian first. If the app is running but
 the CLI cannot reach it, check host permissions: a sandbox may lack access to the
@@ -160,7 +184,7 @@ force-close the application while other vaults are open. After interrupted clean
 review the report/controller's exact drawing path before removing leftovers; never
 delete notes by prefix alone.
 
-This smoke covers one newly created main-window drawing. It does not validate
+The default smoke covers one newly created main-window drawing. It does not validate
 saved scenes, clipboard, text editing, fonts/images, export, custom pens, popout
 migration, offline assets, or physical mobile touch. For affected features, follow
 the fork's [native validation procedure](https://github.com/zsviczian/excalidraw/blob/master/dev-docs/Obsidian/OBSIDIAN_RUNTIME_TESTING.md)
