@@ -149,6 +149,57 @@ so a pending close/save cannot recreate it. Inspect both `status` and
 
 ## Troubleshooting and further coverage
 
+For Markdown embed changes, run the focused tests and the native regression for
+issue #2953:
+
+```bash
+npm run test:markdown-embeds
+npm run verify:obsidian:plugin -- --embed-recovery
+```
+
+Use `npm.cmd` in PowerShell. `--embed-recovery` also works with `verify:obsidian`
+and can be combined with `--text-undo` or `--grouped-link-click`. The offline tests exercise the real
+postprocessor with deferred image generation, including failed renders, temporary
+detachment, overlapping attribute updates, repeated callbacks, loader cancellation,
+and permanent context unload. They require no Obsidian process or extra DOM package.
+
+The native scenario creates four UUID-named Markdown files (including a hybrid
+drawing), one tiny PNG, and adds text to the parent runner's disposable drawing.
+A long embedded note uses a collapsed callout
+so three repeated drawing embeds stay in the viewport. It temporarily defers the
+test plugin's `awaitInit()`, detaches the owned note's content for longer than the
+loader's cancellation interval, and verifies rendering and decoding after
+reattachment. SVG image, PNG, and inline SVG are checked in Live Preview, Reading
+mode, warm reopen, and width updates; an additional popout checks detachment and
+width updates in its own document. Closing a context with a pending render must
+stop insertion. The hybrid fixture uses `excalidraw-open-md: true`, a relative
+`![[#^as-image]]`, a nested drawing, and a native PNG. Live Preview and Reading mode
+must show all three, both directly and inside another note's Markdown transclusion;
+a filename-qualified `#^as-image` must still force the drawing side. These checks
+run in the popout and require a Markdown drawing for the parent smoke fixture.
+The scenario restores the temporary method override and preview
+setting, closes its own leaves, deletes only its recorded fixture paths, and
+removes its controller in `finally`. The parent runner still checks deployed
+hashes, JavaScript errors, and drawing cleanup.
+
+This is a controlled lifecycle regression, not a reproduction of every reported
+layout race. Separately check an expanded long embedded note and scrolling,
+Hybrid Note PDF export, and cold application startup. Record live macOS and
+physical mobile coverage separately; Windows results do not establish those gates.
+
+For grouped Ctrl/Cmd-click selection and link navigation, run:
+
+```bash
+npm run verify:obsidian:plugin -- --grouped-link-click
+```
+
+This regression dispatches synthetic pointer events through the mounted editor.
+It checks first-click selection, unlinked members, second-click navigation with
+Shift/Alt, nested groups, bound labels, and unchanged ungrouped link behavior.
+It observes the real link resolver and intercepts its final navigation hook to
+keep the test in its disposable drawing. Settings and hooks are restored afterward.
+This establishes desktop event routing, not physical mouse/touch input.
+
 For text-edit/history changes, run the repeatable regression for issue #2976:
 
 ```bash
@@ -186,6 +237,57 @@ files are restored/deleted in `finally`. It records actual artifact dimensions
 and bytes. The separate text-undo scenario still requires the component fix
 described above. Run one driver at a time; UI/CDP input also needs the intended
 vault window to retain focus.
+
+For LaTeX dialog input and window ownership (#2970), run:
+
+```bash
+npm run verify:obsidian:plugin -- --latex-input
+```
+
+Use `npm.cmd` in PowerShell. This option also works with `verify:obsidian`.
+Close any existing LaTeX dialog in the test vault first. The scenario exercises
+the real plugin prompt and CodeMirror in the main window, a direct popout, and
+a tab moved to a popout. Native CDP input checks click placement, arrows,
+Backspace, selection replacement, undo, Mod-Enter, formula save/reopen, cancel
+and editor destruction. Popout input attaches only to the single new page target
+created by the scenario. It restores its temporary gateway override, detaches
+its CDP session, closes its popouts, and removes its controller in `finally`;
+the parent runner owns the disposable drawing and final JavaScript-error check.
+
+This input regression supplies a deterministic local SVG renderer through the
+MathJax gateway. It requires no Extras installation or network access and does
+not test MathJax rendering, its activation flow, or Latex Suite extensions.
+For real Extras formula rendering and Latex Suite preview positioning, install
+and enable both companions in the test vault, enable Extras MathJax-to-SVG and
+Latex Suite math previews, then run:
+
+```bash
+npm run verify:obsidian:plugin -- --latex-preview
+```
+
+Use `npm.cmd` in PowerShell. This gate uses the real renderer without a gateway
+override and repeats the input/save/cancel checks in all three window cases. It
+also requires a visible, successfully rendered preview in each owning window.
+The paired Extras fix registers tooltip positioning in existing and newly opened
+popouts; testing only the main plugin cannot establish that companion gate.
+
+Obsidian 1.14.0's Temml renderer rejects Latex Suite's `\class` cursor and
+bracket markers with “Function \class is not trusted.” This is separate from
+CodeMirror window ownership and Extras tooltip positioning. A vault with a
+pre-existing global MathJax may render successfully despite identical plugin
+versions. [Obsidian 1.14.1 switched to MathJax 4.1.3](https://obsidian.md/changelog/2026-09-08-desktop-v1.14.1/).
+Update Obsidian to 1.14.1 or newer, or temporarily clear Latex Suite's **Cursor
+symbol** and disable **Highlight brackets in preview** when testing 1.14.0.
+Do not weaken renderer trust or install a global MathJax as a test workaround.
+
+On Windows, the real-preview gate passed after upgrading the test host to
+Obsidian 1.14.4 with the original Latex Suite settings. Main-window, direct-popout
+and moved-tab input, rendered previews, save/reopen, cancel, JavaScript error
+checks and fixture cleanup all passed without disabling cursor decorations.
+
+Separately validate modal
+dragging outside the editor, macOS/Linux popouts, restored windows and physical
+mobile input. Windows CDP results do not establish these platform/extension gates.
 
 If CLI access is disabled, enable it in Obsidian first. If the app is running but
 the CLI cannot reach it, check host permissions: a sandbox may lack access to the
