@@ -222,6 +222,22 @@ and legacy/empty source handling. The matrix includes plain text, `[[link]]`,
 and JavaScript error checks. The scenario uses the toolbar's stable test IDs, so
 labels may be localized. Physical mobile and popout checks remain separate.
 
+For the native Excalidraw authoring protocol, run:
+
+```sh
+node --test scripts/testing/cli.test.mjs
+npm run verify:obsidian:plugin -- --native-cli
+```
+
+The native scenario uses real registered commands and owned fixtures for file
+input, construction, template prose, read/apply/save/reopen, replay/stale/busy
+receipts, delayed text preparation, save failure, SVG/PNG, vault image metadata,
+and trusted script context/source changes/prompt refusal. Its temporary hooks and
+files are restored/deleted in `finally`. It records actual artifact dimensions
+and bytes. The separate text-undo scenario still requires the component fix
+described above. Run one driver at a time; UI/CDP input also needs the intended
+vault window to retain focus.
+
 For LaTeX dialog input and window ownership (#2970), run:
 
 ```bash

@@ -1,6 +1,7 @@
 import type React from "react";
 import ExcalidrawPlugin from "src/core/main";
 import LZString from "lz-string";
+import type { ExcalidrawCLIRequest, ExcalidrawCLIResult } from "src/types/excalidrawCliTypes";
 import {
   FillStyle,
   StrokeStyle,
@@ -1170,6 +1171,16 @@ export class ExcalidrawAutomate {
   }
 
   /**
+   * Executes the native CLI's JSON protocol in-process. Targets must be explicit;
+   * this method does not use this EA's staged elements or target view. Inspect
+   * `schema` for command fields and check `ok` and `persistence` in the result.
+   * Receipts are session-only and expire after 15 minutes or plugin reload.
+   */
+  public executeCLI(request: ExcalidrawCLIRequest): Promise<ExcalidrawCLIResult> {
+    return this.plugin.executeCLI(request);
+  }
+
+  /**
    * Sets the fill style for new elements.
    * @param {number} val - The fill style value (0: "hachure", 1: "cross-hatch", 2: "solid").
    * @returns {"hachure"|"cross-hatch"|"solid"} The fill style string.
@@ -1459,6 +1470,10 @@ export class ExcalidrawAutomate {
   async create(params?: {
     filename?: string;
     foldername?: string;
+    /** Exact new vault path/format, fail on collision, bypass interactive defaults. */
+    exactPath?: string;
+    /** Internal synchronous lifecycle guard for unattended creation. */
+    validateBeforeCreate?: () => void;
     templatePath?: string;
     onNewPane?: boolean;
     silent?: boolean;
@@ -1488,11 +1503,15 @@ export class ExcalidrawAutomate {
       ? await getTemplate(
           this.plugin,
           params.templatePath,
-          true,
+          !params.exactPath,
           new EmbeddedFilesLoader(this.plugin),
           0,
         )
       : null;
+    const templateEmbeddedMetadata = params?.exactPath && params.templatePath
+      ? (await this.plugin.app.vault.read(this.plugin.app.vault.getFileByPath(params.templatePath)))
+        .replaceAll("\r\n", "\n").match(/^##? Embedded Files\s*\n([\s\S]*?)(?=^%%|^##? Drawing\b)/m)?.[1] ?? ""
+      : "";
     if (template?.plaintext) {
       if (params.plaintext) {
         params.plaintext = `${params.plaintext}\n\n${template.plaintext}`;
@@ -1502,6 +1521,7 @@ export class ExcalidrawAutomate {
     }
     let elements = template ? template.elements : [];
     elements = elements.concat(this.getElements());
+    if (params?.exactPath && new Set(elements.map(element => element.id)).size !== elements.length) throw new Error("Exact drawing creation requires unique element IDs");
     let frontmatter: string;
     if (params?.frontmatterKeys) {
       const keys = Object.keys(params.frontmatterKeys);
@@ -1594,15 +1614,16 @@ export class ExcalidrawAutomate {
     };
 
     const generateMD = (): string => {
-      const textElements = this.getElements().filter(
+      const metadataElements = params?.exactPath ? elements : this.getElements();
+      const textElements = metadataElements.filter(
         (el) => el.type === "text",
-      ) as ExcalidrawTextElement[];
+      );
       let outString = `# Excalidraw Data\n\n## Text Elements\n`;
       textElements.forEach((te) => {
         outString += `${te.rawText ?? te.originalText ?? te.text} ^${te.id}\n\n`;
       });
 
-      const elementsWithLinks = this.getElements().filter(
+      const elementsWithLinks = metadataElements.filter(
         (el) => el.type !== "text" && el.link,
       );
       elementsWithLinks.forEach((el) => {
@@ -1610,9 +1631,10 @@ export class ExcalidrawAutomate {
       });
 
       outString +=
-        Object.keys(this.imagesDict).length > 0
+        Object.keys(this.imagesDict).length > 0 || templateEmbeddedMetadata
           ? `\n## Embedded Files\n`
           : "\n";
+      outString += templateEmbeddedMetadata;
 
       const embeddedFile = (
         key: FileId,
@@ -1661,7 +1683,7 @@ export class ExcalidrawAutomate {
     const foldername = params?.foldername
       ? params.foldername
       : this.plugin.settings.folder;
-    const initData = this.plugin.settings.compatibilityMode
+    const initData = (params?.exactPath ? params.exactPath.endsWith(".excalidraw") : this.plugin.settings.compatibilityMode)
       ? JSON.stringify(scene, null, "\t")
       : frontmatter +
         generateMD() +
@@ -1669,6 +1691,12 @@ export class ExcalidrawAutomate {
           JSON.stringify(scene, null, "\t"),
           this.plugin.settings.compress,
         );
+
+    if (params?.exactPath) {
+      return (await this.plugin.createDrawing(filename, foldername, initData, {
+        exactPath: params.exactPath, validateBeforeCreate: params.validateBeforeCreate,
+      })).path;
+    }
 
     if (params.silent) {
       return (await this.plugin.createDrawing(filename, foldername, initData))

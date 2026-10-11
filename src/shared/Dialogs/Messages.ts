@@ -18,6 +18,14 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
 "2.29.0": `
+## New
+- Native Excalidraw CLI for local coding agents: discover, create, read, edit, save, render, and run explicitly trusted local scripts. Requires Obsidian 1.12.2+ with CLI enabled; older Obsidian versions remain supported. Select **Excalidraw: Show CLI and agent instructions** in the command palette. [#2988](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2988)
+- Scripts can use the same CLI protocol through Excalidraw Automate, and create drawings at an exact new path with collision checks:
+  \`\`\`ts
+  executeCLI(request: ExcalidrawCLIRequest): Promise<ExcalidrawCLIResult>;
+  create(params?: { exactPath?: string; /* existing creation options */ }): Promise<string>;
+  \`\`\`
+
 ## Fixed
 - LaTeX formula editing in popout windows now keeps cursor placement and keyboard selection in the correct window. [#2970](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2970)
 - Self-referencing drawing embeds such as \`![[#^as-image]]\` work again. Nested drawings and ordinary images remain visible when embedding a drawing's Markdown side. [#2979](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2979)

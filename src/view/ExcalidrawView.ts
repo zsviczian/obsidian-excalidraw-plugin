@@ -1039,6 +1039,11 @@ export default class ExcalidrawView
     );
   }
 
+  /** Reports persistence acknowledgment without exposing a serialized save snapshot. */
+  public saveWithOutcome() {
+    return this.saveCoordinator.saveWithOutcome();
+  }
+
   private async withPersistenceWriteLease<T>(
     filePath: string,
     operation: () => T | Promise<T>,
@@ -5109,6 +5114,7 @@ export default class ExcalidrawView
     newElementsOnTop = false,
     shouldRestoreElements = false,
     captureUpdate = CaptureUpdateAction.IMMEDIATELY,
+    validateBeforePublish,
   }: {
     newElements: ExcalidrawElement[];
     repositionToCursor?: boolean;
@@ -5117,14 +5123,18 @@ export default class ExcalidrawView
     newElementsOnTop?: boolean;
     shouldRestoreElements?: boolean;
     captureUpdate?: CaptureUpdateActionType;
+    validateBeforePublish?: () => void;
   }): Promise<boolean> {
     const api = this.excalidrawAPI;
     if (!api) {
       return false;
     }
     const sceneElements = api.getSceneElements() as ExcalidrawElement[];
+    // Guarded callers prepare parsed text in a request-local map. A stale
+    // continuation must not leave metadata behind before publishing its scene.
+    const preparedText = validateBeforePublish ? new Map(this.excalidrawData.textElements) : undefined;
     const elementsMap = arrayToMap(sceneElements) as ElementsMap;
-    const textElements = newElements.filter((el) => el.type == "text");
+    const textElements = newElements.filter((el) => el.type == "text" && (!validateBeforePublish || !el.isDeleted));
     let shouldRefreshArrows = false;
     for (let i = 0; i < textElements.length; i++) {
       const textElement = textElements[i] as Mutable<ExcalidrawTextElement>;
@@ -5132,6 +5142,7 @@ export default class ExcalidrawView
         textElement.id,
         textElement.text,
         textElement.rawText, //TODO: implement originalText support in ExcalidrawAutomate
+        preparedText,
       );
       if (link) {
         if (this.plugin.settings.syncElementLinkWithText) {
@@ -5200,6 +5211,11 @@ export default class ExcalidrawView
       );
     }
 
+    validateBeforePublish?.();
+    if (validateBeforePublish) {
+      for (const element of newElements) if (element.isDeleted) preparedText.delete(element.id);
+      this.excalidrawData.textElements = preparedText;
+    }
     const files: BinaryFileData[] = [];
     if (images && Object.keys(images).length > 0) {
       Object.keys(images).forEach((k: FileId) => {
