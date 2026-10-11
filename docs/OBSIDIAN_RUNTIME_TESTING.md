@@ -158,7 +158,7 @@ npm run verify:obsidian:plugin -- --embed-recovery
 ```
 
 Use `npm.cmd` in PowerShell. `--embed-recovery` also works with `verify:obsidian`
-and can be combined with `--text-undo`. The offline tests exercise the real
+and can be combined with `--text-undo` or `--grouped-link-click`. The offline tests exercise the real
 postprocessor with deferred image generation, including failed renders, temporary
 detachment, overlapping attribute updates, repeated callbacks, loader cancellation,
 and permanent context unload. They require no Obsidian process or extra DOM package.
@@ -186,6 +186,19 @@ This is a controlled lifecycle regression, not a reproduction of every reported
 layout race. Separately check an expanded long embedded note and scrolling,
 Hybrid Note PDF export, and cold application startup. Record live macOS and
 physical mobile coverage separately; Windows results do not establish those gates.
+
+For grouped Ctrl/Cmd-click selection and link navigation, run:
+
+```bash
+npm run verify:obsidian:plugin -- --grouped-link-click
+```
+
+This regression dispatches synthetic pointer events through the mounted editor.
+It checks first-click selection, unlinked members, second-click navigation with
+Shift/Alt, nested groups, bound labels, and unchanged ungrouped link behavior.
+It observes the real link resolver and intercepts its final navigation hook to
+keep the test in its disposable drawing. Settings and hooks are restored afterward.
+This establishes desktop event routing, not physical mouse/touch input.
 
 For text-edit/history changes, run the repeatable regression for issue #2976:
 

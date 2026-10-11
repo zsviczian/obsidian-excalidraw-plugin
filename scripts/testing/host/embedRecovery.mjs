@@ -144,6 +144,9 @@ async function cleanup(control, expectedPaths) {
 export async function runEmbedRecoveryScenario({ cli, drawingPath }) {
   const paths = ["large.md", "note.md", "hybrid.excalidraw.md", "pixel.png", "nested.md"]
     .map(kind => `__excalidraw_embed_${randomUUID()}_${kind}`);
+  // Test-only CLI boundary: fn is always a function defined in this module, and
+  // arguments are JSON literals in JavaScript source, never HTML/script markup.
+  // JSON.stringify preserves quotes/backslashes; </script> cannot end this eval.
   const evaluate = code => JSON.parse(cli("eval", `code=${code}`).trim().replace(/^=>\s*/, ""));
   const invoke = (fn, ...args) => evaluate(`JSON.stringify((${fn.toString()})(${[CONTROL, ...args].map(value => JSON.stringify(value)).join(",")}))`);
   const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
