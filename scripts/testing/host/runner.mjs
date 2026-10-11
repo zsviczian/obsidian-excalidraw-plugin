@@ -74,9 +74,9 @@ function artifacts(projectRoot) {
   return { paths, hashes: Object.fromEntries(ARTIFACTS.map((name) => [name, hash(paths[name])])), version: manifest.version };
 }
 
-const startCode = (name) => `(()=>{const p=app.plugins.plugins[${JSON.stringify(PLUGIN_ID)}];if(!p)return JSON.stringify({state:"failed",error:"plugin not loaded"});if(globalThis.${CONTROL})return JSON.stringify({state:"failed",error:"smoke controller already exists"});const c={state:"pending",name:${JSON.stringify(name)},path:null,error:null,cancel:false};globalThis.${CONTROL}=c;const extension=p.settings.compatibilityMode?".excalidraw":p.settings.useExcalidrawExtension?".excalidraw.md":".md";Promise.resolve(p.createAndOpenDrawing(c.name+extension,"new-tab","/")).then(async path=>{c.path=path;c.state="created";if(c.cancel){const file=app.vault.getFileByPath(path);if(file&&file.name.startsWith(${JSON.stringify(PREFIX)})){app.workspace.getLeavesOfType("excalidraw").find(l=>l.view.file?.path===path)?.detach();await app.vault.delete(file)}c.state="clean"}}).catch(error=>{c.error=String(error);c.state="failed"});return JSON.stringify({state:"started"})})()`;
+const startCode = (name) => `(()=>{const p=app.plugins.plugins[${JSON.stringify(PLUGIN_ID)}];if(!p)return JSON.stringify({state:"failed",error:"plugin not loaded"});if(globalThis.${CONTROL})return JSON.stringify({state:"failed",error:"smoke controller already exists"});const c={state:"pending",name:${JSON.stringify(name)},path:null,error:null,cancel:false};globalThis.${CONTROL}=c;const extension=p.settings.compatibilityMode?".excalidraw":p.settings.useExcalidrawExtension?".excalidraw.md":".md";Promise.resolve(p.createAndOpenDrawing(c.name+extension,"new-tab","/")).then(async path=>{c.path=path;c.state="created";if(c.cancel){const file=app.vault.getFileByPath(path);if(file&&file.name.startsWith(${JSON.stringify(PREFIX)})){const leaf=app.workspace.getLeavesOfType("excalidraw").find(l=>l.view.file?.path===path);if(leaf){await leaf.setViewState({type:"empty",state:{}});leaf.detach()}await app.vault.delete(file)}c.state="clean"}}).catch(error=>{c.error=String(error);c.state="failed"});return JSON.stringify({state:"started"})})()`;
 const statusCode = `(()=>{const c=globalThis.${CONTROL};if(!c)return JSON.stringify({state:"missing"});const leaf=c.path&&app.workspace.getLeavesOfType("excalidraw").find(l=>l.view.file?.path===c.path);const view=leaf?.view;return JSON.stringify({state:c.state,path:c.path,error:c.error,ready:!!view?.excalidrawAPI,wrapper:!!view?.containerEl?.querySelector(".excalidraw-wrapper"),ownerMatches:!!view&&view.ownerDocument===view.containerEl.ownerDocument,mainWindow:!!view&&view.ownerDocument===app.workspace.containerEl?.ownerDocument})})()`;
-const cleanupCode = `(()=>{const c=globalThis.${CONTROL};if(!c)return JSON.stringify({state:"clean"});if(c.state==="pending"){c.cancel=true;return JSON.stringify({state:"pending"})}if(c.state==="cleaning")return JSON.stringify({state:"cleaning"});const path=c.path;const file=path&&app.vault.getFileByPath(path);if(!file){delete globalThis.${CONTROL};return JSON.stringify({state:"clean"})}if(!file.name.startsWith(${JSON.stringify(PREFIX)}))return JSON.stringify({state:"failed",error:"refusing to delete a non-smoke drawing"});const leaf=app.workspace.getLeavesOfType("excalidraw").find(l=>l.view.file?.path===path);leaf?.detach();c.state="cleaning";Promise.resolve(app.vault.delete(file)).then(()=>{c.state="clean"},error=>{c.error=String(error);c.state="failed"});return JSON.stringify({state:"cleaning"})})()`;
+const cleanupCode = `(()=>{const c=globalThis.${CONTROL};if(!c)return JSON.stringify({state:"clean"});if(c.state==="pending"){c.cancel=true;return JSON.stringify({state:"pending"})}if(c.state==="cleaning")return JSON.stringify({state:"cleaning"});const path=c.path;const file=path&&app.vault.getFileByPath(path);if(!file){delete globalThis.${CONTROL};return JSON.stringify({state:"clean"})}if(!file.name.startsWith(${JSON.stringify(PREFIX)}))return JSON.stringify({state:"failed",error:"refusing to delete a non-smoke drawing"});const leaf=app.workspace.getLeavesOfType("excalidraw").find(l=>l.view.file?.path===path);c.state="cleaning";(async()=>{if(leaf){await leaf.setViewState({type:"empty",state:{}});leaf.detach()}await app.vault.delete(file);c.state="clean"})().catch(error=>{c.error=String(error);c.state="failed"});return JSON.stringify({state:"cleaning"})})()`;
 
 async function poll(read, acceptable, wait, now, timeoutMs = 20_000) {
   const deadline = now() + timeoutMs;
@@ -91,7 +91,7 @@ async function poll(read, acceptable, wait, now, timeoutMs = 20_000) {
 
 /** Preflight, build, stage and exercise one disposable drawing; always write a report. */
 export async function runObsidianSmoke({ projectRoot, vaultName, vaultPath, configDir, reportDir, runCli, runBuild,
-  wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms)), now = () => Date.now(), source = {}, unique = () => randomUUID() }) {
+  wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms)), now = () => Date.now(), source = {}, unique = () => randomUUID(), scenarios = [] }) {
   const report = { schemaVersion: 1, status: "failed", startedAt: new Date(now()).toISOString(), source,
     target: { vaultName, vaultPath, configDir }, capabilities: {}, artifacts: {}, scenarios: [], cleanup: "not-started" };
   mkdirSync(reportDir, { recursive: true });
@@ -152,7 +152,12 @@ export async function runObsidianSmoke({ projectRoot, vaultName, vaultPath, conf
     const drawing = await poll(() => parseEval(cli("eval", `code=${statusCode}`)),
       (value) => value.state === "created" && value.ready && value.wrapper && value.ownerMatches && value.mainWindow, wait, now);
     if (!drawing.path || !basename(drawing.path).startsWith(PREFIX)) throw new Error("Unexpected smoke drawing path");
+    report.target.drawingPath = drawing.path;
     report.scenarios.push({ id: "drawing-main-window", status: "passed", assertions: ["Excalidraw API ready", "wrapper mounted", "owner document matches", "main application document"] });
+    phase = "feature-scenarios";
+    for (const scenario of scenarios) {
+      report.scenarios.push(await scenario({ cli, drawingPath: drawing.path }));
+    }
     const errors = cli("dev:errors").trim();
     if (errors && !/^No errors captured\.?$/i.test(errors)) throw new Error(`Captured JavaScript errors: ${errors.slice(0, 1000)}`);
     report.scenarios.push({ id: "javascript-errors", status: "passed" });
