@@ -41,6 +41,11 @@ export function validateTarget({ vaultName, vaultPath, configDir }) {
     const file = join(pluginDir, name);
     if (existsSync(file) && lstatSync(file).isSymbolicLink()) throw new Error(`Target artifact cannot be a symlink: ${name}`);
   }
+  const manifestPath = join(pluginDir, "manifest.json");
+  if (!existsSync(manifestPath) || JSON.parse(readFileSync(manifestPath, "utf8")).id !== PLUGIN_ID ||
+    !JSON.parse(readFileSync(join(config, "community-plugins.json"), "utf8")).includes(PLUGIN_ID)) {
+    throw new Error("Install and enable Excalidraw from Community plugins in excalidraw-test first");
+  }
   return { vault, config, pluginDir };
 }
 
@@ -69,7 +74,7 @@ function artifacts(projectRoot) {
   return { paths, hashes: Object.fromEntries(ARTIFACTS.map((name) => [name, hash(paths[name])])), version: manifest.version };
 }
 
-const startCode = (name) => `(()=>{const p=app.plugins.plugins[${JSON.stringify(PLUGIN_ID)}];if(!p)return JSON.stringify({state:"failed",error:"plugin not loaded"});if(globalThis.${CONTROL})return JSON.stringify({state:"failed",error:"smoke controller already exists"});const c={state:"pending",name:${JSON.stringify(name)},path:null,error:null,cancel:false};globalThis.${CONTROL}=c;const extension=p.settings.compatibilityMode?".excalidraw":p.settings.useExcalidrawExtension?".excalidraw.md":".md";Promise.resolve(p.createAndOpenDrawing(c.name+extension,"new-tab")).then(async path=>{c.path=path;c.state="created";if(c.cancel){const file=app.vault.getFileByPath(path);if(file&&file.name.startsWith(${JSON.stringify(PREFIX)})){app.workspace.getLeavesOfType("excalidraw").find(l=>l.view.file?.path===path)?.detach();await app.vault.delete(file)}c.state="clean"}}).catch(error=>{c.error=String(error);c.state="failed"});return JSON.stringify({state:"started"})})()`;
+const startCode = (name) => `(()=>{const p=app.plugins.plugins[${JSON.stringify(PLUGIN_ID)}];if(!p)return JSON.stringify({state:"failed",error:"plugin not loaded"});if(globalThis.${CONTROL})return JSON.stringify({state:"failed",error:"smoke controller already exists"});const c={state:"pending",name:${JSON.stringify(name)},path:null,error:null,cancel:false};globalThis.${CONTROL}=c;const extension=p.settings.compatibilityMode?".excalidraw":p.settings.useExcalidrawExtension?".excalidraw.md":".md";Promise.resolve(p.createAndOpenDrawing(c.name+extension,"new-tab","/")).then(async path=>{c.path=path;c.state="created";if(c.cancel){const file=app.vault.getFileByPath(path);if(file&&file.name.startsWith(${JSON.stringify(PREFIX)})){app.workspace.getLeavesOfType("excalidraw").find(l=>l.view.file?.path===path)?.detach();await app.vault.delete(file)}c.state="clean"}}).catch(error=>{c.error=String(error);c.state="failed"});return JSON.stringify({state:"started"})})()`;
 const statusCode = `(()=>{const c=globalThis.${CONTROL};if(!c)return JSON.stringify({state:"missing"});const leaf=c.path&&app.workspace.getLeavesOfType("excalidraw").find(l=>l.view.file?.path===c.path);const view=leaf?.view;return JSON.stringify({state:c.state,path:c.path,error:c.error,ready:!!view?.excalidrawAPI,wrapper:!!view?.containerEl?.querySelector(".excalidraw-wrapper"),ownerMatches:!!view&&view.ownerDocument===view.containerEl.ownerDocument,mainWindow:!!view&&view.ownerDocument===app.workspace.containerEl?.ownerDocument})})()`;
 const cleanupCode = `(()=>{const c=globalThis.${CONTROL};if(!c)return JSON.stringify({state:"clean"});if(c.state==="pending"){c.cancel=true;return JSON.stringify({state:"pending"})}if(c.state==="cleaning")return JSON.stringify({state:"cleaning"});const path=c.path;const file=path&&app.vault.getFileByPath(path);if(!file){delete globalThis.${CONTROL};return JSON.stringify({state:"clean"})}if(!file.name.startsWith(${JSON.stringify(PREFIX)}))return JSON.stringify({state:"failed",error:"refusing to delete a non-smoke drawing"});const leaf=app.workspace.getLeavesOfType("excalidraw").find(l=>l.view.file?.path===path);leaf?.detach();c.state="cleaning";Promise.resolve(app.vault.delete(file)).then(()=>{c.state="clean"},error=>{c.error=String(error);c.state="failed"});return JSON.stringify({state:"cleaning"})})()`;
 
@@ -109,6 +114,12 @@ export async function runObsidianSmoke({ projectRoot, vaultName, vaultPath, conf
     }
     report.target.vaultPath = target.vault;
     report.target.configDir = target.config;
+    const selectedConfig = parseEval(cli("eval", "code=JSON.stringify({configDir:app.vault.configDir})")).configDir;
+    if (typeof selectedConfig !== "string") throw new Error("CLI did not report its vault config directory");
+    const hostConfig = join(target.vault, selectedConfig);
+    if (!existsSync(hostConfig) || realpathSync(hostConfig) !== target.config) {
+      throw new Error(`CLI config directory differs from ${target.config}`);
+    }
 
     phase = "build";
     const forkArtifacts = await runBuild();
