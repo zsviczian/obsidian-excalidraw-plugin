@@ -147,6 +147,33 @@ actual generated path/content resolved both; neither failure mutated the drawing
 The maintainer approved merging after this test. Cross-platform and physical
 device coverage remains limited to the evidence listed above.
 
+### Verification after integrating current master — 2026-10-11
+
+Merged `origin/master@07dec121` into the implementation branch at `769d58ea`,
+preserving the newly added embed, grouped-link, and LaTeX runner options alongside
+`--native-cli`. Resolved additive conflicts in the runtime guide and runner only.
+The release notes also document the new EA signatures.
+
+Production/library builds and `node --check dist/main.js` passed. All **50 tests**
+across CLI, runner, process launchers, and Markdown embeds passed. Targeted CLI,
+type, dialog, and save-coordinator ESLint passed. The updated production bundle is
+**5,057,617 bytes**, leaving **185,263 bytes** under the **5,242,880-byte** budget;
+SHA-256 `18a27d7455cf57f83840c5053ea28ff7a88bc6b7661516ec0141482f322b95c1`.
+
+The full smoke runner verified matching installed hashes, plugin load, and the
+main-window drawing, then timed out in the feature phase. Fixture cleanup passed;
+report: `/var/folders/b1/2dys0jfs7bq73whkl2qnyyym0000gn/T/excalidraw-obsidian-3FaWmy/report.json`.
+The exact timed-out command was not captured. Native readiness returned healthy
+and the app error buffer was empty afterward.
+
+Reran the complete `runNativeCLIScenario` on uniquely owned fixtures against that
+same installed artifact, with command-level timeout tracing. All assertions
+passed, including save/reopen, live/disk exports, script context, guarded edits,
+failed-save recovery, and owned fixture cleanup. Evidence:
+`/private/tmp/excalidraw-cli-premerge-result.json` and
+`/private/tmp/excalidraw-cli-premerge-trace.json`. This focused rerun does not
+relabel the full runner's timeout as a pass.
+
 **Implementation workspace:** `2026-10-11-obsidian-excalidraw-cli`, initially branched from plugin `master@bf541ca5d460f5773a5547ba4511eba3ff0f2e5b`. Continue on this branch and its draft PR. Recheck its head, current instructions, and related changes before coding. The maintainer requested the detailed plan in this file: retain it through implementation, update decisions and validation here, and do not treat it as the usual disposable one-paragraph planning stub.
 
 ## 1. Recommended design
