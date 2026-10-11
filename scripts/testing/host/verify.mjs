@@ -10,14 +10,17 @@ import { obsidianCliExecutable, packageManagerInvocation, spawnNativeSync } from
 import { runTextUndoScenario } from "./textUndo.mjs";
 import { runEmbedRecoveryScenario } from "./embedRecovery.mjs";
 import { runGroupedLinkClickScenario } from "./groupedLinkClick.mjs";
+import { runLatexInputScenario } from "./latexInput.mjs";
 
 const pluginRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const pluginOnly = process.argv.includes("--plugin-only");
 const textUndo = process.argv.includes("--text-undo");
 const embedRecovery = process.argv.includes("--embed-recovery");
 const groupedLinkClick = process.argv.includes("--grouped-link-click");
-if (process.argv.slice(2).some(arg => !["--plugin-only", "--text-undo", "--embed-recovery", "--grouped-link-click"].includes(arg))) {
-  throw new Error("Supported options: --plugin-only, --text-undo, --embed-recovery, --grouped-link-click");
+const latexInput = process.argv.includes("--latex-input");
+const latexPreview = process.argv.includes("--latex-preview");
+if (process.argv.slice(2).some(arg => !["--plugin-only", "--text-undo", "--embed-recovery", "--grouped-link-click", "--latex-input", "--latex-preview"].includes(arg))) {
+  throw new Error("Supported options: --plugin-only, --text-undo, --embed-recovery, --grouped-link-click, --latex-input, --latex-preview");
 }
 const forkRoot = resolve(process.env.EXCALIDRAW_FORK_ROOT || join(pluginRoot, "../excalidraw"));
 const reportDir = process.env.EXCALIDRAW_TEST_REPORT_DIR || mkdtempSync(join(tmpdir(), "excalidraw-obsidian-"));
@@ -56,6 +59,8 @@ const report = await runObsidianSmoke({
     ...(textUndo ? [runTextUndoScenario] : []),
     ...(embedRecovery ? [runEmbedRecoveryScenario] : []),
     ...(groupedLinkClick ? [runGroupedLinkClickScenario] : []),
+    ...(latexInput ? [runLatexInputScenario] : []),
+    ...(latexPreview ? [context => runLatexInputScenario({ ...context, realRenderer: true })] : []),
   ],
   runCli: (vault, commandName, ...args) => command(obsidianCliExecutable(),
     [`vault=${vault}`, commandName, ...args], pluginRoot),
