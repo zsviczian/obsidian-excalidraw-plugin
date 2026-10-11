@@ -2,7 +2,150 @@
 
 Prepared by **Zsolt's Codex Agent** on **2026-10-11**.
 
-**Status:** Design and implementation plan, not an implemented feature. No build, native CLI probe, or Obsidian runtime test was executed during this research. Proposed command names and examples below are the target contract, not commands available in the current release.
+**Status:** Implemented and validated locally; the maintainer authorized committing, pushing, and merging on 2026-10-11. The original research and proposed contract remain below as the decision record. Actual behavior and validation are recorded in the implementation sections and [CLI reference](../CLI.md).
+
+### Implementation baseline — 2026-10-11
+
+The local implementation investigation continued on this PR branch at
+`44dac3237cdfb9e542a51cc2e83f3f24ec908e4f`, using Node `v22.22.2` and the
+installed `@zsviczian/excalidraw` `0.18.140`. The initial production build
+passed with the existing 32 circular-dependency warnings. `node --check
+dist/main.js` passed, and all 11 offline native-runner tests passed.
+The baseline `npm run code` reports 120 existing errors; no source code
+was changed during this baseline investigation.
+
+The resulting `dist/main.js` is **4,995,829 bytes**, leaving **247,051 bytes**
+under the maintainer's intended **5 MiB (5,242,880-byte)** budget. Its SHA-256 is
+`44d6f37e518c4d2db2de3409a42b1cc1cd538ad336de48ad3cdb25c65263f529`.
+The initial investigation mistakenly interpreted the "5 MB" limit as decimal
+5,000,000 bytes and reported a budget conflict. The maintainer corrected that
+interpretation; implementation continues against the 5 MiB budget without a
+packaging optimization. Final bundle measurements must use the explicit byte
+threshold to avoid repeating this unit error.
+
+Native transport probes used the existing, running `excalidraw-test` vault
+on macOS, Obsidian **1.14.4 (installer 1.14.0)**, launched through
+`scripts/testing/host/processTools.mjs` with explicit `vault=excalidraw-test`
+and captured subprocess stdout. Temporary native handlers on the already
+installed plugin returned valid JSON for a synchronous return, a resolved
+promise, a 30 ms timer, a Vault read, and a real library PNG render
+(1,133-byte in-memory blob). All five returned `ok: true`; each process
+exited zero. The probe removed its own handler registrations and cleanup
+callbacks afterward. It did not deploy the newly built baseline or write
+an exported image to the vault. The installed runtime's skeleton converter
+was present and used in the PNG probe.
+
+These results support ordinary awaited CLI replies on this macOS/Codex
+subprocess combination. They do not establish Windows, Linux, another agent
+host, mobile startup, production command registration/unload, or the full
+authoring workflow. No receipt-mode transport workaround is currently
+justified. The exact canonical CLI declarations were also read from the
+official `obsidianmd/obsidian-api` `obsidian.d.ts`: the registration method
+and `CliData`, `CliFlag`, `CliFlags`, and `CliHandler` are tagged `1.12.2`.
+The maintainer requires both `requireApiVersion("1.12.2")` and method-presence
+validation before registration, with local structural types and no change
+to the Obsidian `1.8.7` dependency or minimum app version.
+
+### Implementation and validation — 2026-10-11
+
+The local implementation now covers all thirteen actions and the native root,
+with the same versioned dispatcher exposed as `ea.executeCLI`. Native
+registration is desktop-only and checks both API 1.12.2 and method presence.
+Canonical CLI types are local; Obsidian 1.8.7, manifests, lockfile, component,
+and Extras dependencies are unchanged. Session IDs use the existing mobile-safe
+`nanoid` helper, avoiding a new `crypto.randomUUID` startup requirement.
+
+| Checkpoint | Implemented behavior | Recorded evidence |
+| --- | --- | --- |
+| 0 | Awaited native transport and baseline | Five captured native probes; 4,995,829-byte baseline |
+| 1 | Descriptors, JSON dispatcher, discovery/schema/API/list/read/open, EA facade | 5,019,055-byte build; native help/status/schema/read registration |
+| 2 | Converter validation, local/label IDs, strict EA creation, templates | 5,028,949-byte build; labels/arrows/frames, root path and collision round-trip |
+| 3 | Guarded request-local text metadata, finite edits, save acknowledgments | Native stale/busy, delayed text, failed-save recovery, relationship edits, replay and saved read-back |
+| 4 | Vault images, optional MathJax preflight, live/disk SVG/PNG and area bounds | Native image metadata round-trip; source-tagged exports; PNG visual inspection; 200×80 crop with zero padding |
+| 5 | Trusted existing scripts, JSON/library utilities, exact source cache check, one-shot cleanup | Native context, replay/source conflict, prompt refusal; production-method tests preserve manual lifetime |
+| 6 | Offline skill, localized help/copy command, README/reference, declarations, release notes, repeatable runner | Production and library build; 19 focused tests and 11 runner tests; full native scenario passed |
+
+Final production `dist/main.js`: **5,053,346 bytes**,
+**57,517 bytes** over baseline, leaving
+**189,534 bytes** under **5,242,880 bytes**.
+SHA-256: `7705eeba5d23a0bf54c2e3ea874d7d0ae0b270186ed4b2e326e6e45f3cfd7a9b`.
+Builds have no TypeScript diagnostics. Existing circular-dependency warnings
+remain. `npm run code` still reports exactly the baseline **120 errors, zero
+warnings**; the new CLI modules, types, dialog, and save-outcome seam lint cleanly.
+`npm run lib` regenerated the ignored public declaration graph, including
+`executeCLI`, its request/result DTOs, and the strict creation parameters.
+No generated build artifacts were hand-edited or added as source changes.
+
+The complete registered-command scenario passed on **macOS / Codex subprocess
+execution / Obsidian 1.14.4 (installer 1.14.0)** with the installed published
+component **0.18.140**:
+
+`npm run verify:obsidian:plugin -- --native-cli`
+
+Final report:
+`/var/folders/b1/2dys0jfs7bq73whkl2qnyyym0000gn/T/excalidraw-obsidian-jQHWu0/report.json`.
+The report pins built/installed artifact hashes and confirms owned fixture
+cleanup. The fixture exercises native file input, discovery, templates, invalid
+construction/collision refusal, stable text IDs, fresh revisions, duplicate
+receipts, competing writes, delayed text preparation, save failure, finite
+relationships/frame guards, core rendering, vault images, scripts, and reopening.
+Separate live/light and disk/dark exports were also checked; a PNG was visually
+inspected to confirm labels, connector and frame placement. The localized help
+dialog and its copy button mounted successfully. All seven manual checkpoint
+fixtures were removed after their inspections; repeatable scenarios clean their
+own temporary files and hooks.
+
+A combined `--text-undo --native-cli` attempt timed out in the existing
+text-undo eval probe before reaching CLI scenarios; its cleanup passed. Report:
+`/var/folders/b1/2dys0jfs7bq73whkl2qnyyym0000gn/T/excalidraw-obsidian-8npk9o/report.json`.
+An independent Kplex runner was active at the time; that observation does not
+establish the timeout's cause. The declared 0.18.140 component also lacks the
+separate unchanged-text history fix, as already documented in the runtime guide.
+The focused CLI scenario runs independently and passed. Driver subprocesses now
+use SIGKILL at timeout, so an ignored SIGTERM cannot leave the runner waiting.
+
+Decisions/limits: schema uses `action` to avoid the native transport's
+`command` name; JSON schemas describe request structure while runtime geometry,
+relationship, and lifecycle guards remain authoritative. Lib help is an explicit
+supported subset of the installed runtime. Save handoffs/unchanged attempts are
+conservatively unacknowledged. Scripts report unknown mutation/persistence and
+cannot promise rollback or timeout cancellation. A legacy destination is rejected
+when a template's linked assets would lose their Obsidian metadata. No agent
+configuration is installed automatically, and no new outbound service is used.
+
+Remaining risk-based maintainer checks (separate environments):
+
+1. Apply text/image edits in an inactive popout, then migrate/unload during
+   preparation; check stale/busy refusal, undo/redo, and absence of duplicate saves.
+2. Load on real Obsidian 1.8.7 and a physical mobile device; native registration
+   should be absent and ordinary editing/help should work. Older API, missing
+   method, and mobile registration guards are covered by automated tests.
+3. Run the full flow from a second terminal-capable agent host and Windows/Linux
+   launcher. Claudian/Agent Client/Copilot, physical devices, and those platforms
+   have not been tested here; conditional compatibility is not runtime evidence.
+
+### Maintainer-requested visual authoring test — 2026-10-11
+
+Recreated the supplied check-in/Q&A reference in `excalidraw-test` entirely
+through native CLI commands: Obsidian `create` staged the trusted EA script,
+Excalidraw `script` constructed the drawing, `read` verified disk persistence,
+`open` opened it, finite `apply` refined capsule geometry with a fresh revision
+and returned `persistence=saved`, and `export` rendered the PNG for inspection.
+No eval transport, direct drawing-file writes, or raster imports were used.
+
+The saved `CLI recreation - Check-in and QA.excalidraw.md` contains **73 editable
+elements**: 9 rectangles, 28 lines, 21 text elements, and 15 ellipses, with zero
+image assets. Its **1692×961** PNG was visually checked after refinement. Both
+outputs remain in the test vault at the maintainer's request; the three temporary
+script/request notes were moved to trash through the native CLI.
+
+Two native Obsidian `create` transport details were handled in the test client:
+escaped newlines in source strings expand during note creation, and an input
+request using a `.json` path is created as a Markdown note. Reading back the
+actual generated path/content resolved both; neither failure mutated the drawing.
+
+The maintainer approved merging after this test. Cross-platform and physical
+device coverage remains limited to the evidence listed above.
 
 **Implementation workspace:** `2026-10-11-obsidian-excalidraw-cli`, initially branched from plugin `master@bf541ca5d460f5773a5547ba4511eba3ff0f2e5b`. Continue on this branch and its draft PR. Recheck its head, current instructions, and related changes before coding. The maintainer requested the detailed plan in this file: retain it through implementation, update decisions and validation here, and do not treat it as the usual disposable one-paragraph planning stub.
 

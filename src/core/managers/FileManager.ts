@@ -1,3 +1,4 @@
+import type { ExactDrawingCreationOptions } from "src/types/drawingCreationTypes";
 import {
   App,
   FrontMatterCache,
@@ -141,12 +142,18 @@ export class PluginFileManager {
     filename: string,
     foldername?: string,
     initData?: string,
+    exact?: ExactDrawingCreationOptions,
   ): Promise<TFile> {
+    if (exact && (initData === undefined || normalizePath(exact.exactPath) !== exact.exactPath || exact.exactPath.split("/").some(part => !part || part === "." || part === ".." || part.startsWith(".")))) {
+      throw new Error("Exact drawing creation requires a visible vault-relative path");
+    }
     const folderpath = normalizePath(
-      foldername ? foldername : this.settings.folder,
+      exact ? exact.exactPath.split("/").slice(0, -1).join("/") : foldername ? foldername : this.settings.folder,
     );
+    exact?.validateBeforeCreate?.();
     await checkAndCreateFolder(folderpath); //create folder if it does not exist
-    const fname = getNewUniqueFilepath(this.app.vault, filename, folderpath);
+    const fname = exact?.exactPath ?? getNewUniqueFilepath(this.app.vault, filename, folderpath);
+    exact?.validateBeforeCreate?.();
     const file = await this.app.vault.create(
       fname,
       initData ?? (await this.plugin.getBlankDrawing()),

@@ -27,7 +27,6 @@ import {
   LibraryItems_anyVersion,
   Zoom,
 } from "@zsviczian/excalidraw/types/excalidraw/types";
-import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import { GlobalPoint } from "@zsviczian/excalidraw/types/math/src/types";
 
 type JsonValue = string | number | boolean | null | JsonObject | JsonValue[];
@@ -138,10 +137,6 @@ export declare namespace ExcalidrawLib {
     }>;
   }>;
 
-  type ElementUpdate<TElement extends ExcalidrawElement> = Omit<
-    Partial<TElement>,
-    "id" | "updated"
-  >;
 
   type ExportOpts = {
     elements: readonly NonDeleted<ExcalidrawElement>[];
@@ -282,11 +277,8 @@ export declare namespace ExcalidrawLib {
     },
   ): Promise<Blob>;
 
-  function mutateElement<TElement extends Mutable<ExcalidrawElement>>(
-    element: TElement,
-    updates: ElementUpdate<TElement>,
-    informMutation?: boolean,
-  ): TElement;
+  const mutateElement: typeof import("@zsviczian/excalidraw/types/element/src/mutateElement").mutateElement;
+  const getCommonBounds: typeof import("@zsviczian/excalidraw/types/element/src/bounds").getCommonBounds;
 
   function getEmbedLink(link: string | null | undefined): EmbeddedLink;
 

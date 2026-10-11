@@ -18,6 +18,14 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
 "2.29.0": `
+## New
+- Native Excalidraw CLI for local coding agents: discover, create, read, edit, save, render, and run explicitly trusted local scripts. Requires Obsidian 1.12.2+ with CLI enabled; older Obsidian versions remain supported. Select **Excalidraw: Show CLI and agent instructions** in the command palette. [#2988](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2988)
+- Scripts can use the same CLI protocol through Excalidraw Automate, and create drawings at an exact new path with collision checks:
+  \`\`\`ts
+  executeCLI(request: ExcalidrawCLIRequest): Promise<ExcalidrawCLIResult>;
+  create(params?: { exactPath?: string; /* existing creation options */ }): Promise<string>;
+  \`\`\`
+
 ## Fixed
 - Editing text after undo or redo now keeps the restored text instead of bringing back the previous edit. [#2976](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2976)
 - Back-of-the-note embeds now wait for initialization so they display the linked Markdown section instead of the whole drawing. 🙏[askalf](${URLs.GITHUB_COM}/askalf) [#2931](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2931)

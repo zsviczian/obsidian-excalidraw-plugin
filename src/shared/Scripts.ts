@@ -34,6 +34,7 @@ export type ScriptIconMap = {
 
 /** Identifies why the script engine invoked a script. */
 export type ScriptExecutionSource =
+  | "cli"
   | "manual"
   | "plugin-startup"
   | "view-autostart"
@@ -50,6 +51,7 @@ type CompiledScript = {
   path: string;
   mtime: number;
   size: number;
+  source: string;
   executable: ScriptExecutable | null;
 };
 
@@ -208,6 +210,7 @@ export class ScriptEngine {
    */
   private async getCompiledScript(
     file: TFile,
+    expectedSource?: string,
   ): Promise<ScriptExecutable | null> {
     while (true) {
       const path = file.path;
@@ -224,7 +227,8 @@ export class ScriptEngine {
           if (
             file.path === cached.path &&
             file.stat.mtime === cached.mtime &&
-            file.stat.size === cached.size
+            file.stat.size === cached.size &&
+            (expectedSource === undefined || cached.source === expectedSource)
           ) {
             return cached.executable;
           }
@@ -240,10 +244,12 @@ export class ScriptEngine {
 
       const compilePromise = (async (): Promise<CompiledScript> => {
         const source = await this.app.vault.read(file);
+        if (expectedSource !== undefined && source !== expectedSource) throw new Error("Script source changed before compilation");
         return {
           path,
           mtime,
           size,
+          source,
           executable: this.compileScript(source),
         };
       })();
@@ -1036,6 +1042,24 @@ export class ScriptEngine {
     );
   }
 
+  /** One-shot CLI context; persistent manual/sidepanel script lifetimes are unchanged. */
+  public async executeScriptFileForCLI(
+    file: TFile,
+    view: ExcalidrawView | undefined,
+    ea: ExcalidrawAutomate,
+    input: unknown,
+    excalidrawLib: NonNullable<import("src/types/types").Packages["excalidrawLib"]>,
+    source: string,
+    validateBeforeExecution: () => void,
+  ): Promise<unknown> {
+    try {
+      const executable = await this.getCompiledScript(file, source);
+      validateBeforeExecution();
+      if (!executable) throw new Error("Script could not be compiled");
+      return await this.executeExecutable(view, executable, file.basename, file, "cli", ea, false, true, { input, excalidrawLib });
+    } finally { ea.destroy(); }
+  }
+
   /**
    * Executes the configured startup file using the plugin-global EA while
    * sharing ScriptEngine's loading, compilation, utilities, and error path.
@@ -1096,6 +1120,7 @@ export class ScriptEngine {
     eaOverride?: ExcalidrawAutomate,
     trackEA: boolean = true,
     setActiveScript: boolean = true,
+    cliUtilities?: Record<string, unknown>,
   ): Promise<unknown> {
     //addresses the situation when after paste text element IDs are not updated to 8 characters
     //linked to onPaste save issue with the false parameter
@@ -1104,7 +1129,7 @@ export class ScriptEngine {
     //execution itself must continue so view-autostart can attach to the new view.
     const scene = view?.getScene();
     if (
-      scene?.elements.some(
+      executionSource !== "cli" && scene?.elements.some(
         (el) => !el.isDeleted && el.type === "text" && el.id.length > 8,
       )
     ) {
@@ -1125,6 +1150,7 @@ export class ScriptEngine {
     }
     try {
       return await executable(ea, {
+        ...cliUtilities,
         inputPrompt: (
           header: string | InputPromptOptions,
           placeholder?: string,
@@ -1137,6 +1163,7 @@ export class ScriptEngine {
           controlsOnTop?: boolean,
           draggable?: boolean,
         ) => {
+          if (executionSource === "cli") throw new Error("INTERACTION_REQUIRED: inputPrompt is unavailable in one-shot CLI scripts");
           if (typeof header === "object") {
             const options = header;
             header = options.header;
@@ -1172,14 +1199,16 @@ export class ScriptEngine {
           items: unknown[],
           hint?: string,
           instructions?: Instruction[],
-        ) =>
-          ScriptEngine.suggester(
+        ) => {
+          if (executionSource === "cli") throw new Error("INTERACTION_REQUIRED: suggester is unavailable in one-shot CLI scripts");
+          return ScriptEngine.suggester(
             this.app,
             displayItems,
             items,
             hint,
             instructions,
-          ),
+          );
+        },
         scriptFile: file,
         executionSource,
       });

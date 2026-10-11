@@ -2175,9 +2175,10 @@ export class ExcalidrawData {
     elementID: string,
     rawText: string,
     rawOriginalText: string,
+    target?: Map<string, TextElementData>,
   ): Promise<{ parseResult: string; link: string }> {
     const parseResult = await this.parse(rawOriginalText);
-    this.textElements.set(elementID, {
+    (target ?? this.textElements).set(elementID, {
       raw: rawOriginalText,
       parsed: parseResult.parsed,
       hasTextLink: !!parseResult.link,
