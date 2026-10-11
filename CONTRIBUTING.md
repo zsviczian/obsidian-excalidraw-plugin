@@ -18,6 +18,26 @@ Before spending your valuable time writing code for a new feature or significant
 
 ## 🛠️ Build and Lint Commands
 
+### Dependency scanner warnings
+
+The published `@zsviczian/excalidraw` 0.18.140 package lists the build-only Sass
+compiler as a runtime dependency. Until a component release moves Sass to
+`devDependencies`, this repository overrides that transitive dependency to
+Sass 1.98.0, which uses Chokidar 4 without `braces`. Remove the Sass override
+after installing a component release with the corrected manifest. The plugin
+consumes prebuilt component JavaScript and CSS; it does not run Sass.
+
+`source-map-js` is overridden to patched version 1.2.2 for both runtime-classified
+and development paths ([advisory](https://github.com/advisories/GHSA-68fv-2mgg-jv7q)).
+The build copies its manifest and top-level declaration files with Node's native
+file APIs instead of `rollup-plugin-copy`, eliminating the other `braces` path.
+The [braces advisory](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm) has no
+patched release as of October 11, 2026; these changes remove it from this plugin's
+dependency graph rather than suppressing the warning. Check with
+`npm ls braces source-map-js sass --all` after `npm install`.
+
+### Commands
+
 - **Build the project:** Run `npm run build`
   *(Note: Our Rollup build is non-trivial as it merges CSS, handles MathjaxToSVG dependencies, and embeds runtime payloads. Run this command frequently to validate your changes).*
 - **Build readable development payloads:** Run `npm run dev`
@@ -25,7 +45,7 @@ Before spending your valuable time writing code for a new feature or significant
 - **Run ESLint:** Run `npm run code`
 - **Fix ESLint Warnings:** Run `node ./scripts/fix-eslint-warnings.mjs`
 
-The shipped plugin is `dist/main.js`, `dist/styles.css`, and `dist/manifest.json`. Keep `main.js` below the release size limit and report its byte size after dependency or packaging changes.
+The shipped plugin is `dist/main.js`, `dist/styles.css`, and `dist/manifest.json`. Keep `main.js` below the **5 MB release target (5 × 1024 × 1024 = 5,242,880 bytes)** and report its byte size and remaining headroom after dependency or packaging changes.
 
 ## Updating the EA script template
 
