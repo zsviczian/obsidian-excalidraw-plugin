@@ -138,6 +138,12 @@ Follow Obsidian's **Developer Policies** and **Plugin Guidelines**. In particula
 - Ship features that require cloud services without clear disclosure and explicit opt-in.
 - Store or transmit vault contents unless essential and consented.
 
+## Issue Investigation And Resolution Templates
+
+- For source-based issue investigations and GitHub issue comments, use [issue assessment](docs/agent-workflows/issue-assessment.md).
+- For implemented fixes and PR handoffs, use [issue resolution](docs/agent-workflows/issue-resolution.md).
+- These templates supplement this guide and `CONTRIBUTING.md`; using them does not itself authorize code changes or publication.
+
 ## References
 
 - Obsidian sample plugin: https://github.com/obsidianmd/obsidian-sample-plugin
