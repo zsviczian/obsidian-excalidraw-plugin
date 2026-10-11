@@ -138,6 +138,12 @@ Follow Obsidian's **Developer Policies** and **Plugin Guidelines**. In particula
 - Ship features that require cloud services without clear disclosure and explicit opt-in.
 - Store or transmit vault contents unless essential and consented.
 
+## Issue Investigation And Resolution Templates
+
+- For source-based issue investigations, GitHub issue comments, and a prioritized shortlist, use [issue assessment](docs/agent-workflows/issue-assessment.md).
+- Only after maintainer approval of specific issues, use [issue implementation handoff and resolution](docs/agent-workflows/issue-resolution.md) to prepare a dedicated branch and plan-only draft PR for the local implementation agent.
+- The issue owns the technical assessment; the draft PR owns the implementation plan; the branch owns the code. Keep draft PRs open through implementation, link cross-repository dependencies, and do not merge without authorization.
+
 ## References
 
 - Obsidian sample plugin: https://github.com/obsidianmd/obsidian-sample-plugin
