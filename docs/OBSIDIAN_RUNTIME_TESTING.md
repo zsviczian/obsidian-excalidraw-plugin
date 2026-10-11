@@ -149,6 +149,44 @@ so a pending close/save cannot recreate it. Inspect both `status` and
 
 ## Troubleshooting and further coverage
 
+For Markdown embed changes, run the focused tests and the native regression for
+issue #2953:
+
+```bash
+npm run test:markdown-embeds
+npm run verify:obsidian:plugin -- --embed-recovery
+```
+
+Use `npm.cmd` in PowerShell. `--embed-recovery` also works with `verify:obsidian`
+and can be combined with `--text-undo` or `--grouped-link-click`. The offline tests exercise the real
+postprocessor with deferred image generation, including failed renders, temporary
+detachment, overlapping attribute updates, repeated callbacks, loader cancellation,
+and permanent context unload. They require no Obsidian process or extra DOM package.
+
+The native scenario creates four UUID-named Markdown files (including a hybrid
+drawing), one tiny PNG, and adds text to the parent runner's disposable drawing.
+A long embedded note uses a collapsed callout
+so three repeated drawing embeds stay in the viewport. It temporarily defers the
+test plugin's `awaitInit()`, detaches the owned note's content for longer than the
+loader's cancellation interval, and verifies rendering and decoding after
+reattachment. SVG image, PNG, and inline SVG are checked in Live Preview, Reading
+mode, warm reopen, and width updates; an additional popout checks detachment and
+width updates in its own document. Closing a context with a pending render must
+stop insertion. The hybrid fixture uses `excalidraw-open-md: true`, a relative
+`![[#^as-image]]`, a nested drawing, and a native PNG. Live Preview and Reading mode
+must show all three, both directly and inside another note's Markdown transclusion;
+a filename-qualified `#^as-image` must still force the drawing side. These checks
+run in the popout and require a Markdown drawing for the parent smoke fixture.
+The scenario restores the temporary method override and preview
+setting, closes its own leaves, deletes only its recorded fixture paths, and
+removes its controller in `finally`. The parent runner still checks deployed
+hashes, JavaScript errors, and drawing cleanup.
+
+This is a controlled lifecycle regression, not a reproduction of every reported
+layout race. Separately check an expanded long embedded note and scrolling,
+Hybrid Note PDF export, and cold application startup. Record live macOS and
+physical mobile coverage separately; Windows results do not establish those gates.
+
 For grouped Ctrl/Cmd-click selection and link navigation, run:
 
 ```bash

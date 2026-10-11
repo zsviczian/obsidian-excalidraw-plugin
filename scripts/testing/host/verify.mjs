@@ -8,14 +8,16 @@ import { mkdtempSync } from "node:fs";
 import { runObsidianSmoke } from "./runner.mjs";
 import { obsidianCliExecutable, packageManagerInvocation, spawnNativeSync } from "./processTools.mjs";
 import { runTextUndoScenario } from "./textUndo.mjs";
+import { runEmbedRecoveryScenario } from "./embedRecovery.mjs";
 import { runGroupedLinkClickScenario } from "./groupedLinkClick.mjs";
 
 const pluginRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const pluginOnly = process.argv.includes("--plugin-only");
 const textUndo = process.argv.includes("--text-undo");
+const embedRecovery = process.argv.includes("--embed-recovery");
 const groupedLinkClick = process.argv.includes("--grouped-link-click");
-if (process.argv.slice(2).some(arg => !["--plugin-only", "--text-undo", "--grouped-link-click"].includes(arg))) {
-  throw new Error("Supported options: --plugin-only, --text-undo, --grouped-link-click");
+if (process.argv.slice(2).some(arg => !["--plugin-only", "--text-undo", "--embed-recovery", "--grouped-link-click"].includes(arg))) {
+  throw new Error("Supported options: --plugin-only, --text-undo, --embed-recovery, --grouped-link-click");
 }
 const forkRoot = resolve(process.env.EXCALIDRAW_FORK_ROOT || join(pluginRoot, "../excalidraw"));
 const reportDir = process.env.EXCALIDRAW_TEST_REPORT_DIR || mkdtempSync(join(tmpdir(), "excalidraw-obsidian-"));
@@ -52,6 +54,7 @@ const report = await runObsidianSmoke({
   source,
   scenarios: [
     ...(textUndo ? [runTextUndoScenario] : []),
+    ...(embedRecovery ? [runEmbedRecoveryScenario] : []),
     ...(groupedLinkClick ? [runGroupedLinkClickScenario] : []),
   ],
   runCli: (vault, commandName, ...args) => command(obsidianCliExecutable(),
