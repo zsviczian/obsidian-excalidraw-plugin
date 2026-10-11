@@ -33,7 +33,7 @@ A broad API does not mean every operation can run unattended: modals, long-lived
 
 The supplied [announcement URL][announcement] could not be read reliably. I located and inspected the official `excalidraw/cli` repository and the Excalidraw+ roadmap instead. This analysis does not infer the tweet's exact wording or announcement date.
 
-At inspected revision `55fe7f494837078781a062c4d3faf29c159ebec5`, the official CLI combines local rendering with Excalidraw+ workspace/scene/collection operations. Local rendering does not require an account. Its command registration, content validation, and browser-side rendering code are useful references. [E1][E2][E3][E4]
+At inspected revision `55fe7f494837078781a062c4d3faf29c159ebec5`, the official CLI combines local rendering with Excalidraw+ workspace/scene/collection operations. Local rendering does not require an account. Its command registration, content validation, and browser-side rendering code are useful references. [E1], [E2], [E3], [E4]
 
 Reuse the **design patterns**: machine-readable output, command-specific help, file-based JSON input, validation before writes, bounded output, and explicit partial-failure reporting. Do not copy its cloud authentication model, server content-reconciliation assumptions, Commander/Zod dependency stack, or separate browser-rendering process into the plugin. Obsidian already hosts the rendering runtime and owns vault persistence.
 
@@ -63,7 +63,7 @@ Command IDs are global, and duplicate registration throws. Use the existing plug
 
 The documented desktop CLI requires the running app, CLI enablement/registration, and a suitable installer. Use an explicit `vault=<name-or-id>` **before the command** in agent instructions. Paths are vault-relative; native parameters use `key=value` and boolean switches are bare flags. This is not Obsidian Headless. [O2]
 
-The plugin currently compiles against Obsidian types `1.8.7`. Keep its existing minimum app compatibility. Add only the canonical missing CLI declarations using the repository's established typing approach, and feature-detect the registration method at runtime. Do not assume a declaration proves runtime support or raise the minimum app version solely for this optional feature. [P1][P2]
+The plugin currently compiles against Obsidian types `1.8.7`. Keep its existing minimum app compatibility. Add only the canonical missing CLI declarations using the repository's established typing approach, and feature-detect the registration method at runtime. Do not assume a declaration proves runtime support or raise the minimum app version solely for this optional feature. [P1], [P2]
 
 ### 2.3 Async CLI delivery is a real test gate
 
@@ -77,9 +77,9 @@ Prefer the ordinary `Promise<string>` return contract. Do not introduce a mandat
 
 | Integration inspected | Relevant behavior | Design implication |
 | --- | --- | --- |
-| **Claudian** | Its README describes local coding-agent execution and vault tools. Its Claude command catalog relies on native SDK discovery of commands/skills rather than independently interpreting every skill directory. | A native CLI plus a standard skill fits its existing terminal/skill model. Do not depend on Claudian-private APIs. [A1][A2] |
-| **Agent Client** | ACP clients expose terminal requests; sessions can use a directory other than the vault, and the README documents native agent skills and permissions. | Always name the vault. Terminal access depends on the selected agent's capabilities and approval, not merely on ACP being present. [A3][A4] |
-| **Copilot for Obsidian** | Current source includes an Obsidian CLI skill for coding-agent backends and platform-specific CLI executable discovery. | Reuse the host's CLI execution and skill support; do not characterize every Copilot mode as shell-capable or add a custom provider bridge. [A5][A6] |
+| **Claudian** | Its README describes local coding-agent execution and vault tools. Its Claude command catalog relies on native SDK discovery of commands/skills rather than independently interpreting every skill directory. | A native CLI plus a standard skill fits its existing terminal/skill model. Do not depend on Claudian-private APIs. [A1], [A2] |
+| **Agent Client** | ACP clients expose terminal requests; sessions can use a directory other than the vault, and the README documents native agent skills and permissions. | Always name the vault. Terminal access depends on the selected agent's capabilities and approval, not merely on ACP being present. [A3], [A4] |
+| **Copilot for Obsidian** | Current source includes an Obsidian CLI skill for coding-agent backends and platform-specific CLI executable discovery. | Reuse the host's CLI execution and skill support; do not characterize every Copilot mode as shell-capable or add a custom provider bridge. [A5], [A6] |
 | **MCP-only or API-only chat clients** | A chat interface does not inherently provide a local terminal. | Expose the same JSON dispatcher in-process for integrations. An external MCP adapter can forward it later; no built-in MCP server is needed for V1. |
 
 Agent Skills provides the portable `SKILL.md` convention and progressive disclosure. Skill availability still depends on the harness's discovery rules and permissions. Do not promise universal automatic discovery or treat a skill's `allowed-tools` metadata as a security boundary. [A7]
@@ -99,16 +99,16 @@ The plugin declares `@zsviczian/excalidraw` **0.18.140**. Its installed artifact
 
 | Source | Verified behavior / implication |
 | --- | --- |
-| `src/core/index.ts`, EA `getAPI(view)` | Existing factory creates a separate EA. Allocate one per operation; never use the mutable global EA workbench for concurrent requests. [P3][P4] |
+| `src/core/index.ts`, EA `getAPI(view)` | Existing factory creates a separate EA. Allocate one per operation; never use the mutable global EA workbench for concurrent requests. [P3], [P4] |
 | EA `elementsDict`, `imagesDict`, `clear`, `setView` | EA stages edits. `clear()` clears the workbench, not the drawing. Automatic `setView()` can select active/last/first; CLI targeting must not use that fallback. [P4] |
-| EA `help`, `SuggesterInfo.ts` | Help uses existing signature/description metadata but prints to the console. A CLI help handler must return metadata, not return `ea.help()` or scrape its logs. [P4][P5] |
-| EA `addElementsToView`, view `addElements` | Existing route handles text parsing, image/equation metadata, runtime file publication, container/arrow refresh, and saving. Reuse it, with narrow guards/receipts where required. [P4][P6] |
+| EA `help`, `SuggesterInfo.ts` | Help uses existing signature/description metadata but prints to the console. A CLI help handler must return metadata, not return `ea.help()` or scrape its logs. [P4], [P5] |
+| EA `addElementsToView`, view `addElements` | Existing route handles text parsing, image/equation metadata, runtime file publication, container/arrow refresh, and saving. Reuse it, with narrow guards/receipts where required. [P4], [P6] |
 | `ViewSaveCoordinator` | Internal save outcomes exist, but public save helpers often return `void`; a resolved call is not a durable-save receipt. [P7] |
-| EA `create`, `FileManager.createDrawing` | Existing serialization handles plugin Markdown, but defaults include global format/folder settings and collision suffixing. An exact-path CLI needs a small explicit per-call option, not temporary global setting changes. [P4][P8] |
+| EA `create`, `FileManager.createDrawing` | Existing serialization handles plugin Markdown, but defaults include global format/folder settings and collision suffixing. An exact-path CLI needs a small explicit per-call option, not temporary global setting changes. [P4], [P8] |
 | EA `getSceneFromFile` | Returns elements/appState, not a complete asset/Markdown metadata round-trip. Do not use it to overwrite a drawing. [P4] |
 | EA `createViewSVG/PNG`, `createSVG/PNG` | Existing live-view and file/template export routes exist. `elementsOverride` is a complete candidate list, not a patch. [P4] |
 | `Scripts.ts` | Script execution already returns a value and supports fresh EAs, but existing scripts intentionally retain lifetime for hooks/sidepanels. Add CLI-only one-shot cleanup rather than changing all scripts. [P9] |
-| Fork `index.tsx`, plugin constants/types | `convertToExcalidrawElements`, restoration, geometry, mutation helpers, and exports are already exposed. No new fork export is required. [F1][P10][P11] |
+| Fork `index.tsx`, plugin constants/types | `convertToExcalidrawElements`, restoration, geometry, mutation helpers, and exports are already exposed. No new fork export is required. [F1], [P10], [P11] |
 
 ## 3. Command surface and discovery contract
 
@@ -130,9 +130,9 @@ All action handlers call the same dispatcher. A proposed public EA method, **`ea
 | `export` | SVG/PNG to an explicit vault-relative `out`; source/selection/area, theme, padding, and bounded scale options. Return artifact metadata. |
 | `script` | Explicit existing script path, target when needed, JSON arguments, and a `trusted` acknowledgment. One-shot execution for advanced EA/Lib use. |
 | `skill` | Return the portable CLI skill; `format=markdown` is useful for saving or attaching it. Default JSON can contain the Markdown string. |
-| `result` | Retrieve a recent mutation receipt by caller-supplied request ID. Session-only; not a persistent job service. |
+| `result` | Retrieve a recent operation receipt by caller-supplied request ID. Session-only; not a persistent job service. |
 
-The root index, schema, and API help should be short and useful without a loaded drawing. A unavailable optional operation must be reported as unavailable with a reason, not silently omitted from documentation or registered as a no-op.
+The root index, schema, and API help should be short and useful without a loaded drawing. An unavailable optional operation must be reported as unavailable with a reason, not silently omitted from documentation or registered as a no-op.
 
 ### Discovery layers
 
@@ -155,7 +155,7 @@ JSON payloads use `apiVersion: 1`. The native action supplies `command`; the in-
 
 For existing drawings, `apply` requires a fresh `expectedRevision` from a live `read`. `view` is required when more than one eligible view shows the same file. A stale or unavailable target returns a useful error and the candidates; do not pick the first or most recently active leaf.
 
-Use one snapshot for each `read` response. Summaries omit base64 asset bodies, include element IDs/types/text/bounds and asset availability as appropriate, and return a revision/source marker. Element pages must share a revision; a changed snapshot invalidates a cursor. An explicit disk read may differ from unsaved live content and must say so.
+`source=auto` uses an unambiguous live view when present, otherwise disk; multiple live candidates require a view choice. `source=live` fails when no ready view exists. `source=disk` does not open or save the drawing. Selection filters require a live source. Use one snapshot for each read response, with a default summary and bounded element pages. Omit base64 asset bodies and return a revision/source marker. A changed snapshot invalidates a pagination cursor. An explicit disk read may differ from unsaved live content and must say so.
 
 ### 4.2 Result envelope
 
@@ -185,7 +185,7 @@ A proposed completed result shape is:
 }
 ```
 
-`status` is `completed`, `failed`, or, only for explicit receipt mode, `pending`. A pending response is **not success**: use `ok: null` and direct the caller to `result`. `persistence` is `not-applicable`, `saved`, `unsaved`, or `unknown`; `saved` means the corresponding mutation was acknowledged durable by the existing save path, not merely queued or visible.
+`status` is `completed`, `failed`, or `pending`. A pending response is **not success**: use `ok: null` and direct the caller to `result`. `persistence` is `not-applicable`, `saved`, `unsaved`, or `unknown`; `saved` means the corresponding mutation was acknowledged durable by the existing save path, not merely queued or visible. A `result` lookup may return pending while an ordinary awaited request is still running.
 
 Errors include a stable code, short explanation, relevant field, and recovery action. Initial codes should cover `INVALID_INPUT`, `UNSUPPORTED_COMMAND`, `NOT_READY`, `NOT_FOUND`, `NOT_EXCALIDRAW`, `AMBIGUOUS_TARGET`, `BUSY`, `STALE_REVISION`, `ALREADY_EXISTS`, `DEPENDENCY_UNAVAILABLE`, `INTERACTION_REQUIRED`, `RENDER_FAILED`, `SAVE_FAILED`, and `OUTCOME_UNKNOWN`. Report whether a mutation was not applied, applied, partial, or unknown when failure follows side effects. Do not expose stack traces or private payloads by default.
 
@@ -202,7 +202,7 @@ obsidian vault="Design Vault" obsidian-excalidraw-plugin:schema command=create
 obsidian vault="Design Vault" obsidian-excalidraw-plugin:create input="Agent IO/create-flow.json"
 obsidian vault="Design Vault" obsidian-excalidraw-plugin:open path="Drawings/Flow.excalidraw.md"
 obsidian vault="Design Vault" obsidian-excalidraw-plugin:read path="Drawings/Flow.excalidraw.md" source=live detail=elements
-obsidian vault="Design Vault" obsidian-excalidraw-plugin:export path="Drawings/Flow.excalidraw.md" source=live format=png out="Agent IO/flow-preview.png"
+obsidian vault="Design Vault" obsidian-excalidraw-plugin:export path="Drawings/Flow.excalidraw.md" source=live format=png out="Agent IO/flow-preview.png" requestId=preview-flow-01
 ```
 
 `Agent IO/create-flow.json`:
@@ -273,9 +273,9 @@ The agent saves that payload to a new input file, calls `:apply`, checks the rec
 
 ### 4.4 Session receipts, not a job framework
 
-Require a caller-supplied request ID for mutations and trusted scripts. Maintain a small bounded in-memory receipt map, scoped to the plugin session, keyed by ID and a request fingerprint. The same ID and same payload returns the existing receipt rather than applying again; the same ID with different content is an error. Include a session identifier and document expiration. Do not evict active entries; reject new work when capacity is exhausted.
+Require a caller-supplied request ID for drawing writes, output-file writes, and trusted scripts. Maintain a small bounded in-memory receipt map, scoped to the plugin session, keyed by ID and a fingerprint of the effective request. Fingerprint parsed input contents, not just an input filename; include the executed script's source identity for scripts. The same ID and same request returns the existing receipt rather than applying again; the same ID with different content is an error. Include a session identifier and document expiration. Do not evict active entries; reject new work when capacity is exhausted.
 
-This permits `:result requestId=...` after lost stdout or a client timeout. It does **not** provide durable exactly-once execution across reloads. After restart/expiration, report unknown outcome and require read-back before a new mutation. Do not silently retry writes. If the async transport issue is reproduced, an explicit `async` flag can return the receipt immediately and let callers poll the same map; no additional queue, database, or HTTP endpoint is necessary.
+This permits `:result requestId=...` after lost stdout or a client timeout. It does **not** provide durable exactly-once execution across reloads. After restart/expiration, report unknown outcome and require read-back before a new mutation. Do not silently retry writes. If the async transport issue is reproduced, an explicit `async` flag can return the receipt immediately and let callers poll the same map. In that mode require `requestId` in the native flags before any awaited input-file read; a matching ID inside the file is allowed. No additional queue, database, or HTTP endpoint is necessary.
 
 ## 5. Element construction and editing
 
@@ -288,7 +288,7 @@ Implementation sequence:
 1. Validate the complete batch before invoking the converter: supported types, finite coordinates/dimensions, unique local IDs, valid references, valid frame children, and bounded size. Preserve intentional zero values rather than applying truthy defaults in the CLI.
 2. Allocate collision-free IDs using the plugin's conventions; map local IDs and all intra-batch references before conversion. Pass `regenerateIds: false` after this mapping so the returned ID map remains useful. Account for the plugin's short text IDs and additional IDs generated for bound labels; verify post-save IDs, not just immediate constructor output.
 3. Call the **installed** library's converter once for the batch. Verify the resulting IDs, references, and supported types before publication. The converter may log/skip duplicates and may throw on invalid references; it is not a substitute for CLI validation.
-4. Put the generated elements into a fresh EA's workbench and use the plugin's insertion path. Do not write the returned array directly into a `.excalidraw.md` file or skip text/asset metadata synchronization.
+4. Put the generated elements into a fresh EA's workbench and use the plugin's insertion or creation path as appropriate. Do not write the returned array directly into a `.excalidraw.md` file or skip text/asset metadata synchronization.
 
 Do not run existing scene elements through the converter just to change their style or text: that risks rebuilding identities and bindings. A new arrow referring to an **existing** scene element cannot rely on the converter's local-ID map. Copy the required live endpoints into EA and use existing `connectObjects`/arrow helpers, then publish the coherent change.
 
@@ -301,7 +301,7 @@ Do not add newly supported fork-only element types to the CLI's advertised schem
 | Operation | Implementation direction |
 | --- | --- |
 | `add` | Skeleton batch as above; ordinary shapes, text, arrows, frames, and other installed supported types. |
-| `update` | Actual element ID plus validated `set` fields. Copy live elements to EA; preserve IDs, versions, bindings, and unknown existing custom data. Route text updates through existing raw/parsed text and measurement behavior. |
+| `update` | Actual element ID plus validated `set` fields. Copy live elements to EA; preserve IDs/bindings/unknown existing custom data, and maintain version/nonce increments through existing mutation helpers. Route text changes through existing raw/parsed text and measurement behavior. |
 | `delete` | Explicit IDs; use deletion/tombstone and binding cleanup behavior, not array omission or attachment deletion. Include bound labels consistently. Require an explicit children option before removing a nonempty frame's contents. |
 | `connect` | Existing/request-created endpoint IDs, optional side/arrow styling. Reuse EA's connection helpers; no new routing engine. |
 | `group` / `ungroup` | Explicit IDs/group, using existing grouping conventions and preserving unaffected groups. |
@@ -324,7 +324,7 @@ Serialize CLI mutations for the same drawing using a small in-flight guard; retu
 
 ### 6.2 Revisions must cover the data actually being edited
 
-A live read returns an opaque revision tied to the current session, file/view/API generation, and authoritative edit state. Reuse existing save revisions and source identities where they cover the operation. The fork's legacy sum-of-element-versions is not sufficient; even its ordered element hash does not describe Markdown-image source, binary mappings, or all document metadata. [F3][P7]
+A live read returns an opaque revision tied to the current session, file/view/API generation, and authoritative edit state. Reuse existing save revisions and source identities where they cover the operation. The fork's legacy sum-of-element-versions is not sufficient; even its ordered element hash does not describe Markdown-image source, binary mappings, or all document metadata. [F3], [P7]
 
 Before publication, confirm that the state used to prepare the edit is still current. Include relevant document/asset metadata in the check or refuse an operation while that state is changing. Do not invent a universal merge policy or overwrite newer user edits.
 
@@ -342,7 +342,7 @@ Publish a coherent edit with the existing capture/update policy so normal undo r
 
 ### 6.4 Strict creation without another serializer
 
-Reuse EA's Markdown/template construction. However, `create()` currently derives format from global compatibility mode, treats an empty folder as the configured default, and delegates to a creator that silently picks a unique filename. Those are good interactive conveniences but poor implicit CLI behavior. [P4][P8]
+Reuse EA's Markdown/template construction. However, `create()` currently derives format from global compatibility mode, treats an empty folder as the configured default, and delegates to a creator that silently picks a unique filename. Those are good interactive conveniences but poor implicit CLI behavior. [P4], [P8]
 
 Add a narrow backward-compatible per-call strict creation option, shared with the existing creator: exact vault path (including root), explicit format, fail-on-existing policy, and noninteractive template choice. Existing callers keep their defaults. Let the final Vault create fail on a race instead of choosing an unexpected suffix. Return the actual created path; never delete a concurrently created file as cleanup.
 
@@ -354,7 +354,7 @@ Template and back-of-note content must survive. Test the serialization of reques
 
 ### 7.1 Preserve Obsidian asset semantics
 
-Use EA for vault images, PDFs, LaTeX, Markdown images, and linked content rather than manufacturing file IDs. Excalidraw binary files and the plugin's `## Embedded Files`, equation, and Markdown-image metadata are related but not interchangeable. Runtime `updateScene` is not the binary-file loading channel; reuse the existing path that also publishes files. [P4][P6]
+Use EA for vault images, PDFs, LaTeX, Markdown images, and linked content rather than manufacturing file IDs. Excalidraw binary files and the plugin's `## Embedded Files`, equation, and Markdown-image metadata are related but not interchangeable. Runtime `updateScene` is not the binary-file loading channel; reuse the existing path that also publishes files. [P4], [P6]
 
 No automatic feature activation. Preflight optional Extras operations through the typed gateway and current user settings. Missing dependencies return an actionable structured result. Core shape/text creation and ordinary SVG/PNG rendering must not require Extras. Read-only inspection should not fetch external assets unnecessarily.
 
@@ -386,7 +386,7 @@ Provide the already-loaded Excalidraw library through a documented CLI script ut
 
 Implement a small `executeScriptFileForCLI` facade or equivalent optional execution configuration that supplies `utils.input`, `utils.executionSource = "cli"`, and the library reference; returns the script result; and destroys the CLI-owned EA in `finally`. Existing manual, startup, and sidepanel script lifetime must remain unchanged. The current engine's finally block does not generally destroy EA because persistent hooks and sidepanels depend on it. [P9]
 
-CLI one-shot scripts must not retain hooks, sidepanels, unawaited writes, or timers after completion. Default `utils.inputPrompt`/`suggester` should fail with `INTERACTION_REQUIRED` rather than leave a terminal waiting for a hidden modal. Arbitrary trusted code can still call other APIs directly; this is not a security sandbox or an enforceable side-effect whitelist.
+CLI one-shot scripts must not retain hooks, sidepanels, unawaited writes, or timers after completion. Default `utils.inputPrompt`/`suggester` should fail with `INTERACTION_REQUIRED` rather than leave a terminal waiting for a hidden modal. Arbitrary trusted code can still call other APIs directly; this is not a security sandbox or an enforceable side-effect whitelist. A client timeout cannot safely preempt arbitrary synchronous JavaScript or undo its prior side effects.
 
 Keep execution restricted to explicit local source with a `trusted` flag; no remote script URL, implicit script found in a drawing, or code execution through `read`/`schema`. Respect the current script-file format policy. Return JSON-serializable values with size limits; convert an undefined return to a documented null result. Do not serialize live views/DOM/plugin objects. If result serialization fails after edits, report that side effects may already have occurred.
 
@@ -486,10 +486,10 @@ Each checkpoint should build independently and update this note with actual evid
 
 Test parsers/dispatch with plain fixtures and mock only external boundaries where possible. Reuse the repository's test conventions; do not introduce a broad test framework just for the CLI.
 
-- **Protocol:** required/unknown flags; mutually exclusive JSON inputs; invalid JSON/version; `true` string handling; numeric finiteness; bounded request/output sizes; harmful object keys; stable errors; same request ID with same/different payload; expired/reloaded receipts.
+- **Protocol:** required/unknown flags; mutually exclusive JSON inputs; invalid JSON/version; `true` string handling; numeric finiteness; bounded request/output sizes; harmful object keys; stable errors; same request ID with same/different effective payload; expired/reloaded receipts.
 - **Path safety:** exact root/nested paths, spaces/Unicode, malformed/traversal/absolute paths, source/input/output collisions, output overwrite consent, drawing classification, two files with the same basename.
 - **Selection and ownership:** two views of one file, inactive popout, missing view, explicit open readiness, file switch/API replacement across an await, same-file Markdown editing, unload and reload.
-- **Authoring:** measured text, raw/parsed links, bound labels, connectors, frame children, ordering, duplicate/dangling skeleton IDs, zero coordinates, existing IDs preserved on updates, deletion/binding cleanup, unrelated custom data preserved.
+- **Authoring:** measured text, raw/parsed links, bound labels, connectors, frame children, ordering, duplicate/dangling skeleton IDs, zero coordinates, existing IDs and version/nonce behavior on updates, deletion/binding cleanup, unrelated custom data preserved.
 - **Persistence:** rejected validation causes no published edit; stale preparation does not leave mutated metadata; accepted scene plus failed save remains recoverable; repeated request does not duplicate; later human edits are not acknowledged as saved by an earlier receipt; save/reopen round-trip.
 - **Assets/export:** binary/source metadata preserved, missing/decode-failed assets explicit, optional Extras disabled, dirty-live versus disk image, area/selection bounds, effective theme, no base64 in default reads, output file bytes and dimensions.
 - **Scripts:** input not interpolated into source; existing engine return/errors propagate; one-shot cleanup on success/failure; persistent manual scripts unchanged; modal helper refusal; nonserializable result after side effects does not claim rollback.
@@ -497,7 +497,7 @@ Test parsers/dispatch with plain fixtures and mock only external boundaries wher
 
 ### Native Obsidian checks
 
-Use the dedicated `excalidraw-test` vault and the existing documented safety/cleanup contract. `npm run test:obsidian:runner` covers the offline host harness; `npm run verify:obsidian:plugin` tests the plugin with its installed component. Add focused native CLI scenarios rather than substituting a blank-drawing smoke for feature coverage. [P13][P14]
+Use the dedicated `excalidraw-test` vault and the existing documented safety/cleanup contract. `npm run test:obsidian:runner` covers the offline host harness; `npm run verify:obsidian:plugin` tests the plugin with its installed component. Add focused native CLI scenarios rather than substituting a blank-drawing smoke for feature coverage. [P13], [P14]
 
 Test macOS and Windows launchers, including `Obsidian.com` on Windows; Linux native execution and a real agent-host invocation need their own evidence. The existing large Windows `eval` temporary-file bridge is test-only and is not a production implementation strategy for these new native commands. Use argument arrays when an agent host exposes process execution, and file input for large payloads. WSL/container/remote agents require access to the actual local Obsidian executable/session; list these as conditional, not universally supported.
 
@@ -538,7 +538,7 @@ Repository links below are pinned to inspected revisions where source behavior m
 [O3]: https://forum.obsidian.md/t/codex-cannot-get-results-from-delayed-handlers-registerd-with-registerclihandler/113184
 [A1]: https://github.com/YishenTu/claudian/blob/main/README.md
 [A2]: https://github.com/YishenTu/claudian/blob/1891ce25c2d83ba92334ab1358466ccd2a4fccf3/src/providers/claude/commands/ClaudeCommandCatalog.ts
-[A3]: https://github.com/RAIT-09/obsidian-agent-client/blob/master/README.md
+[A3]: https://github.com/RAIT-09/obsidian-agent-client/blob/3d069c91636588be4e65d955e670403a9ea642d8/README.md
 [A4]: https://github.com/RAIT-09/obsidian-agent-client/blob/3d069c91636588be4e65d955e670403a9ea642d8/src/acp/acp-client.ts
 [A5]: https://github.com/logancyang/obsidian-copilot/blob/cd873037c357d6a4d60a90ddb9e33705b65f6865/src/builtinSkills/obsidianSkills.ts
 [A6]: https://github.com/logancyang/obsidian-copilot/blob/cd873037c357d6a4d60a90ddb9e33705b65f6865/src/agentMode/backends/shared/obsidianCliPath.ts
