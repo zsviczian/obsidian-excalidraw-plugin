@@ -14,6 +14,7 @@ export default {
   // Native CLI and agent discovery
   CLI_HELP: "显示 CLI 和智能体说明",
   CLI_COPY_SKILL: "复制智能体说明",
+  CLI_AGENT_INSTRUCTIONS: `阅读：${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_CLI}\n\n<<用户指令>>`,
   CLI_DESCRIPTION: "Excalidraw 原生 CLI",
 
   INITIALIZATION_MESSAGE: "等待所有插件就绪…",

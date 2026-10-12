@@ -19,6 +19,7 @@ export default {
   // Native CLI and agent discovery
   CLI_HELP: "Show CLI and agent instructions",
   CLI_COPY_SKILL: "Copy agent instructions",
+  CLI_AGENT_INSTRUCTIONS: `Read: ${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_CLI}\n\n<<user instructions>>`,
   CLI_DESCRIPTION: "Native Excalidraw CLI",
 
   INITIALIZATION_MESSAGE:
