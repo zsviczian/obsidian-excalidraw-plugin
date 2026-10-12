@@ -18,21 +18,29 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
 "2.29.0": `
+${getYouTubeDiv("H64AW1l-ae4")}
+
 ## New
-- Native Excalidraw CLI for local coding agents: discover, create, read, edit, save, render, and run explicitly trusted local scripts. Requires Obsidian 1.12.2+ with CLI enabled; older Obsidian versions remain supported. Select **Excalidraw: Show CLI and agent instructions** in the command palette. [#2988](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2988)
-- Scripts can use the same CLI protocol through Excalidraw Automate, and create drawings at an exact new path with collision checks:
-  \`\`\`ts
-  executeCLI(request: ExcalidrawCLIRequest): Promise<ExcalidrawCLIResult>;
-  create(params?: { exactPath?: string; /* existing creation options */ }): Promise<string>;
-  \`\`\`
+- **Excalidraw CLI for AI agents.** Local AI agents can create, edit, inspect, and export drawings, and run trusted scripts. Requires Obsidian 1.12.2+ with CLI enabled. Select **Excalidraw: Show CLI and agent instructions** to get started. [#2988](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2988)
+- **Better image attachments.** Pasted and dropped images now follow Obsidian attachment rules, including compatible attachment-management plugins. [#2964](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2964)
+
+## New from Excalidraw.com
+- **Wrap or unwrap with W.** Put text inside a shape, detach labels, or wrap selected elements in a frame. Press W again to reverse the action. [#12264](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/12264)
+- **Select overlapping elements.** Alt-click to cycle through stacked objects. [#12237](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/12237)
+- **Smarter duplication.** Duplicated numbered labels and list items automatically advance their numbering. You can also Alt-drag to duplicate text while editing it. [#12189](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/12189) [#12219](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/12219)
+- **Better cropping and resizing.** Shift maintains image crop proportions, Alt crops from the center, and double-clicking a crop handle restores an edge. Corner resizing for text is more intuitive. [#12260](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/12260) [#12262](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/12262)
+- **Improved frames.** Edge-aligned elements are included correctly, clipping is more consistent, and cutting a frame includes its contents (deleting a frame still leaves them behind). [#12270](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/12270)
+- Google Drive videos start playing when you activate their embeds. [#12246](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/12246)
 
 ## Fixed
-- LaTeX formula editing in popout windows now keeps cursor placement and keyboard selection in the correct window. [#2970](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2970)
-- Self-referencing drawing embeds such as \`![[#^as-image]]\` work again. Nested drawings and ordinary images remain visible when embedding a drawing's Markdown side. [#2979](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2979)
-- Drawing embeds no longer stay blank when Obsidian temporarily detaches a Markdown section while rendering. [#2953](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2953)
-- Ctrl/Cmd-click on a grouped element now selects it first. A second click opens its own link without following links on other group members.
-- Editing text after undo or redo now keeps the restored text instead of bringing back the previous edit. [#2976](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2976)
-- Back-of-the-note embeds now wait for initialization so they display the linked Markdown section instead of the whole drawing. 🙏[askalf](${URLs.GITHUB_COM}/askalf) [#2931](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2931)
+- **Text undo/redo.** Editing after undo or redo no longer restores outdated text, and closing an unchanged editor preserves redo history. [#2976](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2976)
+- **Markdown embeds.** Fixed blank or interrupted drawing embeds, nested and self-referencing drawing images, and back-of-the-note embeds showing the full drawing instead of the linked section. [#2953](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2953) [#2979](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2979) [#2931](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2931)
+- **Grouped links.** Ctrl/Cmd-click selects the intended group member first; a second click follows that element's link. [#2989](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2989)
+- **LaTeX in popouts.** Fixed cursor placement and keyboard selection when editing formulas in a separate window. [#2970](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2970)
+- Middle-mouse panning over a text editor no longer ends text editing or multiplies the movement. [#12244](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/12244)
+
+## Excalidraw Automate
+- Scripts can use the new CLI through ea.executeCLI() and create drawings at an exact path with ea.create().
 `,
 "2.28.1": `
 Re-released due to a minor deployment hiccup, hopefully fixed now.
