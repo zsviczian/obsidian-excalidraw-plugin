@@ -1,4 +1,7 @@
 import { ExcalidrawExtrasGateway } from "../utils/ExcalidrawExtrasGateway";
+import { ExcalidrawCLI } from "./managers/ExcalidrawCLI";
+import type { ExcalidrawCLIRequest, ExcalidrawCLIResult } from "src/types/excalidrawCliTypes";
+import type { ExactDrawingCreationOptions } from "src/types/drawingCreationTypes";
 import {
   TFile,
   Plugin,
@@ -164,6 +167,7 @@ const EXCALIDRAW_EXTERNAL_GET_LABEL_KEY_SET = new Set<keyof typeof en>(
 );
 
 export default class ExcalidrawPlugin extends Plugin {
+  private cli: ExcalidrawCLI;
   public extrasGateway: ExcalidrawExtrasGateway;
   private fileManager: PluginFileManager;
   private observerManager: ObserverManager;
@@ -299,6 +303,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
     //isExcalidraw function is used already is already used by MarkdownPostProcessor in onLoad before onLayoutReady
     this.fileManager = new PluginFileManager(this);
+    this.cli = new ExcalidrawCLI(this);
     this.settingsManager = new PluginSettingsManager(this);
     this.footerSafeAreaManager = new FooterSafeAreaManager(this);
     this.fontManager = new FontManager(this, () =>
@@ -309,6 +314,16 @@ export default class ExcalidrawPlugin extends Plugin {
     /*if((process.env.NODE_ENV === 'development')) {
       this.slob = new Array(200 * 1024 * 1024 + 1).join('A'); // Create a 200MB blob
     }*/
+  }
+
+  /** Executes the versioned CLI protocol without selecting an active drawing. */
+  public executeCLI(request: ExcalidrawCLIRequest): Promise<ExcalidrawCLIResult> {
+    return this.cli.execute(request);
+  }
+
+  /** Returns the existing shared runtime for CLI construction and trusted scripts. */
+  public getCLIRuntime(): NonNullable<Packages["excalidrawLib"]> {
+    return this.packageManager.getRuntimePackage().excalidrawLib;
   }
 
   /** Records a startup timing event without changing lifecycle ordering. */
@@ -455,6 +470,7 @@ export default class ExcalidrawPlugin extends Plugin {
       console.error("Error initializing Excalidraw Automate", e);
     }
     this.logStartupEvent("Excalidraw Automate initialized");
+    this.cli.initialize();
 
     try {
       //Licat: Are you registering your post processors in onLayoutReady? You should register them in onload instead
@@ -941,6 +957,7 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   onunload() {
+    this.cli.destroy();
     ExcalidrawSidepanelView.onPluginUnload(this);
     cleanupPaddingUI();
     const excalidrawViews = getExcalidrawViews(this.app);
@@ -1123,12 +1140,16 @@ export default class ExcalidrawPlugin extends Plugin {
     filename: string,
     foldername?: string,
     initData?: string,
+    exact?: ExactDrawingCreationOptions,
   ): Promise<TFile> {
     const file = await this.fileManager.createDrawing(
       filename,
       foldername,
       initData,
+      exact,
     );
+
+    if (exact) return file;
 
     if (Date.now() - this.loadTimestamp > 1) {
       //2000) {

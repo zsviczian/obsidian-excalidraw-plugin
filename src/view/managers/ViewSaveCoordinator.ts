@@ -40,6 +40,14 @@ export interface SaveExecutionResult {
   preparedSave?: PreparedSave;
 }
 
+/** Small durability receipt for callers that need more than an attempted save. */
+export interface SaveAcknowledgment {
+  status: SaveExecutionStatus;
+  requestedRevision: number;
+  acknowledgedRevision: number | null;
+  currentRevision: number;
+}
+
 /** Clean durability baseline transferred with a migrated drawing. */
 export interface ViewSaveMigrationState {
   currentRevision: number;
@@ -190,6 +198,25 @@ export class ViewSaveCoordinator {
       sideEffectPolicy: DIRECT_SAVE_SIDE_EFFECT_POLICY,
       revision: this.currentRevision,
     });
+  }
+
+  /** Uses the existing queue and same-file guard; never acknowledges a handoff. */
+  public async saveWithOutcome(): Promise<SaveAcknowledgment> {
+    const requestedRevision = this.currentRevision;
+    const result = await this.enqueueSave({
+      suppressReloadFromOwnWrite: false,
+      forcePersistence: true,
+      bypassSameFileEditGuard: false,
+      sideEffectPolicy: DIRECT_SAVE_SIDE_EFFECT_POLICY,
+      revision: requestedRevision,
+    });
+    return {
+      status: result.status,
+      requestedRevision,
+      currentRevision: this.currentRevision,
+      acknowledgedRevision: (result.status === "persisted" || result.status === "window-migration-persisted")
+        ? result.preparedSave?.capturedRevision ?? null : null,
+    };
   }
 
   private enqueueSave(request: SaveRequest): Promise<SaveExecutionResult> {

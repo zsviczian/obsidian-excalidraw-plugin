@@ -11,6 +11,11 @@ declare const PLUGIN_VERSION: string;
 
 // 简体中文
 export default {
+  // Native CLI and agent discovery
+  CLI_HELP: "显示 CLI 和智能体说明",
+  CLI_COPY_SKILL: "复制智能体说明",
+  CLI_DESCRIPTION: "Excalidraw 原生 CLI",
+
   INITIALIZATION_MESSAGE: "等待所有插件就绪…",
   // Sugester
   SELECT_FILE_TO_INSERT: "选择要嵌入到当前绘图中的文件",

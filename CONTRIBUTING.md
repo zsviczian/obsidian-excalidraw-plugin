@@ -14,9 +14,29 @@ Before spending your valuable time writing code for a new feature or significant
 2. Use Node.js 22 or newer and verify it with `node --version`. A shell that mixes a different Node binary with another installation's Corepack can fail before a build starts.
 3. Run `npm install` in the root directory to install the main dependencies.
    *(Note: The `MathjaxToSVG` sub-component has its own separate dependencies. You do not need to install them manually; the first time you run `npm run build`, it will take care of this automatically).*
-4. To test your changes locally, we recommend symlinking your cloned repository folder into a test Obsidian vault's `.obsidian/plugins/obsidian-excalidraw-plugin` directory. (Using a community plugin like [Obsidian Hot Reload](https://github.com/pjeby/hot-reload) will make local development much faster).
+4. Create or locate a dedicated `excalidraw-test` vault, install and enable Excalidraw from **Settings → Community plugins**, and follow [Obsidian runtime testing](docs/OBSIDIAN_RUNTIME_TESTING.md). The CLI runner copies the three built files from `dist/` into this vault; it rejects symlinked plugin targets. For an independent manual development setup, [Obsidian Hot Reload](https://github.com/pjeby/hot-reload) can make reloads faster.
 
 ## 🛠️ Build and Lint Commands
+
+### Dependency scanner warnings
+
+The published `@zsviczian/excalidraw` 0.18.140 package lists the build-only Sass
+compiler as a runtime dependency. Until a component release moves Sass to
+`devDependencies`, this repository overrides that transitive dependency to
+Sass 1.98.0, which uses Chokidar 4 without `braces`. Remove the Sass override
+after installing a component release with the corrected manifest. The plugin
+consumes prebuilt component JavaScript and CSS; it does not run Sass.
+
+`source-map-js` is overridden to patched version 1.2.2 for both runtime-classified
+and development paths ([advisory](https://github.com/advisories/GHSA-68fv-2mgg-jv7q)).
+The build copies its manifest and top-level declaration files with Node's native
+file APIs instead of `rollup-plugin-copy`, eliminating the other `braces` path.
+The [braces advisory](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm) has no
+patched release as of October 11, 2026; these changes remove it from this plugin's
+dependency graph rather than suppressing the warning. Check with
+`npm ls braces source-map-js sass --all` after `npm install`.
+
+### Commands
 
 - **Build the project:** Run `npm run build`
   *(Note: Our Rollup build is non-trivial as it merges CSS, handles MathjaxToSVG dependencies, and embeds runtime payloads. Run this command frequently to validate your changes).*
@@ -25,7 +45,7 @@ Before spending your valuable time writing code for a new feature or significant
 - **Run ESLint:** Run `npm run code`
 - **Fix ESLint Warnings:** Run `node ./scripts/fix-eslint-warnings.mjs`
 
-The shipped plugin is `dist/main.js`, `dist/styles.css`, and `dist/manifest.json`. Keep `main.js` below the release size limit and report its byte size after dependency or packaging changes.
+The shipped plugin is `dist/main.js`, `dist/styles.css`, and `dist/manifest.json`. Keep `main.js` below the **5 MB release target (5 × 1024 × 1024 = 5,242,880 bytes)** and report its byte size and remaining headroom after dependency or packaging changes.
 
 ## Updating the EA script template
 
@@ -44,6 +64,18 @@ conflict handling, and the one-time adoption procedure for older workspaces.
 ## 🧪 Testing
 
 At this time, the project **has no comprehensive automated test suite**. As a contributor, you are responsible for testing your changes thoroughly.
+
+The native CLI lane supports macOS and Windows. Run `npm run test:obsidian:runner`
+for the offline harness tests, then `npm run verify:obsidian:plugin` to build and
+smoke-test this plugin with its installed Excalidraw package. For changes in the
+sibling fork, use `npm run verify:obsidian`, which rebuilds and copies the fork's
+four Obsidian artifacts first. Both native commands require explicit test-vault
+paths and a running Obsidian with CLI access enabled. See the [setup, platform
+commands, reports, and cleanup contract](docs/OBSIDIAN_RUNTIME_TESTING.md).
+
+For Markdown embed changes, also run `npm run test:markdown-embeds` and
+`npm run verify:obsidian:plugin -- --embed-recovery`. See the runtime guide for
+fixture ownership, deferred rendering, popout coverage, and remaining manual checks.
 
 Because Obsidian runs across a variety of environments, please manually test your changes on as many of the following platforms as possible to avoid breaking the plugin for other users:
 - Desktop: Mac, Windows, Linux

@@ -4,7 +4,6 @@ import visualizer from 'rollup-plugin-visualizer';
 import commonjs from '@rollup/plugin-commonjs';
 import replace from "@rollup/plugin-replace";
 import terser from "@rollup/plugin-terser";
-import copy from "rollup-plugin-copy";
 import typescript from "@rollup/plugin-typescript";
 import fs from 'fs';
 import path from 'path';
@@ -25,6 +24,20 @@ try {
   const envContent = fs.readFileSync(path.resolve('.env'), 'utf8');
   Object.assign(process.env, parseEnv(envContent));
 } catch (error) {
+}
+
+// These copies need only explicit files, not a glob dependency and its vulnerable braces parser.
+function copyBuildFiles(files, destination) {
+  return {
+    name: 'copy-build-files',
+    writeBundle() {
+      if (!files.length) return;
+      fs.mkdirSync(destination, { recursive: true });
+      for (const file of files) {
+        fs.copyFileSync(file, path.join(destination, path.basename(file)));
+      }
+    },
+  };
 }
 
 const DIST_FOLDER = 'dist';
@@ -153,7 +166,7 @@ if (!isLib) {
 // runtime.
 //
 // The runtime is DEFLATE-compressed primarily to help keep the shipped plugin
-// below the Community Plugin scanner's 5 MB bundle-size limit. Obsidian plugins
+// below the 5 MB bundle-size target (5 * 1024 * 1024 = 5,242,880 bytes). Obsidian plugins
 // currently cannot ship these runtime packages separately, so without this
 // packaging step React/ReactDOM must contribute their normal bundled size to
 // main.js.
@@ -343,10 +356,7 @@ const BUILD_CONFIG = {
     ] : [
       postprocess([[/var React = require\('react'\);/, packageString]]),
     ]),
-    copy({
-      targets: [{ src: 'manifest.json', dest: DIST_FOLDER }],
-      verbose: true,
-    }),
+    copyBuildFiles(['manifest.json'], DIST_FOLDER),
   ),
 };
 
@@ -361,7 +371,10 @@ const LIB_CONFIG = {
   },
   plugins: getRollupPlugins(
     { tsconfig: "tsconfig-lib.json" },
-    copy({ targets: [{ src: "src/*.d.ts", dest: "lib/typings" }] })
+    copyBuildFiles(
+      fs.readdirSync('src').filter(name => name.endsWith('.d.ts')).map(name => path.join('src', name)),
+      'lib/typings',
+    )
   ),
 };
 

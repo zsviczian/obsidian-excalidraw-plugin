@@ -14,6 +14,11 @@ import {
 
 // русский
 export default {
+  // Native CLI and agent discovery
+  CLI_HELP: "Показать инструкции CLI и для агентов",
+  CLI_COPY_SKILL: "Копировать инструкции для агентов",
+  CLI_DESCRIPTION: "Нативный CLI Excalidraw",
+
   // main.ts
   SETTINGS_DATA_INVALID:
     "Excalidraw ожидает корректный файл data.json. Изменения настроек не будут сохранены, пока файл не будет восстановлен или вы не перезапустите Obsidian и не выберете сброс настроек.",

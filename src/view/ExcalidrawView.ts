@@ -30,6 +30,7 @@ import {
   ExcalidrawImperativeAPI,
   ExcalidrawInitialDataState,
   Gesture,
+  PointerDownState,
   LibraryItems,
   UIAppState,
 } from "@zsviczian/excalidraw/types/excalidraw/types";
@@ -1036,6 +1037,11 @@ export default class ExcalidrawView
       forcePersistence,
       bypassSameFileEditGuard,
     );
+  }
+
+  /** Reports persistence acknowledgment without exposing a serialized save snapshot. */
+  public saveWithOutcome() {
+    return this.saveCoordinator.saveWithOutcome();
   }
 
   private async withPersistenceWriteLease<T>(
@@ -5108,6 +5114,7 @@ export default class ExcalidrawView
     newElementsOnTop = false,
     shouldRestoreElements = false,
     captureUpdate = CaptureUpdateAction.IMMEDIATELY,
+    validateBeforePublish,
   }: {
     newElements: ExcalidrawElement[];
     repositionToCursor?: boolean;
@@ -5116,14 +5123,18 @@ export default class ExcalidrawView
     newElementsOnTop?: boolean;
     shouldRestoreElements?: boolean;
     captureUpdate?: CaptureUpdateActionType;
+    validateBeforePublish?: () => void;
   }): Promise<boolean> {
     const api = this.excalidrawAPI;
     if (!api) {
       return false;
     }
     const sceneElements = api.getSceneElements() as ExcalidrawElement[];
+    // Guarded callers prepare parsed text in a request-local map. A stale
+    // continuation must not leave metadata behind before publishing its scene.
+    const preparedText = validateBeforePublish ? new Map(this.excalidrawData.textElements) : undefined;
     const elementsMap = arrayToMap(sceneElements) as ElementsMap;
-    const textElements = newElements.filter((el) => el.type == "text");
+    const textElements = newElements.filter((el) => el.type == "text" && (!validateBeforePublish || !el.isDeleted));
     let shouldRefreshArrows = false;
     for (let i = 0; i < textElements.length; i++) {
       const textElement = textElements[i] as Mutable<ExcalidrawTextElement>;
@@ -5131,6 +5142,7 @@ export default class ExcalidrawView
         textElement.id,
         textElement.text,
         textElement.rawText, //TODO: implement originalText support in ExcalidrawAutomate
+        preparedText,
       );
       if (link) {
         if (this.plugin.settings.syncElementLinkWithText) {
@@ -5199,6 +5211,11 @@ export default class ExcalidrawView
       );
     }
 
+    validateBeforePublish?.();
+    if (validateBeforePublish) {
+      for (const element of newElements) if (element.isDeleted) preparedText.delete(element.id);
+      this.excalidrawData.textElements = preparedText;
+    }
     const files: BinaryFileData[] = [];
     if (images && Object.keys(images).length > 0) {
       Object.keys(images).forEach((k: FileId) => {
@@ -5698,7 +5715,11 @@ export default class ExcalidrawView
     }
   }
 
-  public onPointerDown(e: PointerEvent) {
+  public onPointerDown(
+    e: PointerEvent,
+    selectionBeforePointerDown?: AppState,
+    pointerDownState?: PointerDownState,
+  ) {
     if (!(isWinCTRLorMacCMD(e) || isWinMETAorMacCTRL(e))) {
       return;
     }
@@ -5712,6 +5733,56 @@ export default class ExcalidrawView
     //Timeout is required for Excalidraw to first complete the selection action before execution
     //of the link click continues
     window.setTimeout(() => {
+      const hitElement = pointerDownState?.hit.element;
+      if (
+        !this.excalidrawAPI?.getAppState().viewModeEnabled &&
+        isWinCTRLorMacCMD(e) &&
+        hitElement?.groupIds.length
+      ) {
+        // Deep selection gets the first click. Group-wide link fallbacks must
+        // never turn an unlinked member into a link to one of its siblings.
+        if (
+          !selectionBeforePointerDown?.selectedElementIds[hitElement.id] ||
+          Object.keys(selectionBeforePointerDown.selectedElementIds).length !==
+            1 ||
+          hitElement.groupIds.some(
+            (id) => selectionBeforePointerDown.selectedGroupIds[id],
+          )
+        ) {
+          return;
+        }
+        const textElement =
+          hitElement.type === "text"
+            ? hitElement
+            : hitElement.type !== "arrow"
+              ? this.excalidrawAPI.getSceneElements().find(
+                  (el) =>
+                    el.type === "text" &&
+                    el.id === getBoundTextElementId(hitElement),
+                )
+              : null;
+        if (
+          textElement?.type !== "text" &&
+          hitElement.type !== "image" &&
+          !hitElement.link
+        ) {
+          return;
+        }
+        this.removeLinkTooltip();
+        void this.linkClick(
+          e,
+          textElement?.type === "text"
+            ? { id: textElement.id, text: textElement.text }
+            : null,
+          hitElement.type === "image"
+            ? { id: hitElement.id, fileId: hitElement.fileId }
+            : null,
+          !textElement && hitElement.type !== "image"
+            ? { id: hitElement.id, text: hitElement.link }
+            : null,
+        );
+        return;
+      }
       if (this.isLinkSelected()) {
         void this.handleLinkClick(e);
         return;
@@ -6454,11 +6525,8 @@ export default class ExcalidrawView
     if (this.compatibilityMode) {
       return textElement.originalText ?? textElement.text;
     }
-    const raw = this.excalidrawData.getRawText(textElement.id);
-    if (!raw) {
-      return textElement.rawText;
-    }
-    return raw;
+    // Undo/redo restores the scene source before the Markdown cache is synchronized.
+    return textElement.rawText ?? this.excalidrawData.getRawText(textElement.id);
   }
 
   public onBeforeTextSubmit(
@@ -6582,12 +6650,13 @@ export default class ExcalidrawView
     }
 
     // 5. Check if the user made changes to the text, or
-    //    the text is missing from ExcalidrawData textElements cache (recently copy/pasted)
+    //    the ExcalidrawData cache differs from the submitted source (undo/redo or paste)
+    const textChanged = nextOriginalText !== textElement.originalText;
     if (
-      nextOriginalText !== textElement.originalText ||
-      !this.excalidrawData.getRawText(textElement.id)
+      textChanged ||
+      nextOriginalText !== this.excalidrawData.getRawText(textElement.id)
     ) {
-      //the user made changes to the text or the text is missing from Excalidraw Data (recently copy/pasted)
+      // Refresh stale source as well as new edits before returning parsed display text.
       //setTextElement will attempt a quick parse (without processing transclusions)
       this.setDirty();
 
@@ -6634,7 +6703,9 @@ export default class ExcalidrawView
           }
           this.setDirty();
         }
-        api.history.clear();
+        if (textChanged) {
+          api.history.clear();
+        }
       };
 
       const [parseResultOriginal, link] = this.excalidrawData.setTextElement(
@@ -6666,7 +6737,10 @@ export default class ExcalidrawView
           }
           return { updatedNextOriginalText: null, nextLink: textElement.link };
         } //There were no links to parse, raw text and parsed text are equivalent
-        api.history.clear();
+        // Updating only the cache after undo must not discard the redo stack.
+        if (textChanged) {
+          api.history.clear();
+        }
         return { updatedNextOriginalText: parseResultOriginal, nextLink: link };
       }
       return { updatedNextOriginalText: null, nextLink: textElement.link };

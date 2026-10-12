@@ -16,6 +16,11 @@ declare const PLUGIN_VERSION: string;
 
 // English
 export default {
+  // Native CLI and agent discovery
+  CLI_HELP: "Show CLI and agent instructions",
+  CLI_COPY_SKILL: "Copy agent instructions",
+  CLI_DESCRIPTION: "Native Excalidraw CLI",
+
   INITIALIZATION_MESSAGE:
     "Excalidraw is waiting for Obsidian to initialize all of your plugins...",
   // Sugester

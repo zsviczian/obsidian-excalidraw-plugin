@@ -72,6 +72,14 @@ export class CanvasNodeFactory {
   nodes = new Map<string, ObsidianCanvasNode>();
   initialized: boolean = false;
   public isInitialized = () => this.initialized;
+  private settleInitialized: (initialized: boolean) => void;
+  /**
+   * Settles true once `initialize()` succeeded, false once it failed or the
+   * factory was destroyed.
+   */
+  public readonly whenInitialized = new Promise<boolean>((resolve) => {
+    this.settleInitialized = resolve;
+  });
   private observer: CustomMutationObserver | MutationObserver;
   private readonly pendingEditRequests = new WeakMap<
     ObsidianCanvasNode,
@@ -81,30 +89,44 @@ export class CanvasNodeFactory {
   constructor(private view: ExcalidrawView) {}
 
   public async initialize() {
-    const app = this.view.app;
-    const canvasPlugin = app.internalPlugins.plugins.canvas;
+    try {
+      if (!this.view) {
+        return;
+      }
+      const app = this.view.app;
+      const canvasPlugin = app.internalPlugins.plugins.canvas;
 
-    if (!canvasPlugin._loaded) {
-      await canvasPlugin.load();
+      if (!canvasPlugin._loaded) {
+        await canvasPlugin.load();
+      }
+      // Closing or migrating the view can destroy this factory during loading.
+      if (!this.view) {
+        return;
+      }
+      const doc = this.view.ownerDocument;
+      const rootSplit: WorkspaceSplit =
+        new (WorkspaceSplit as ConstructableWorkspaceSplit)(
+          app.workspace,
+          "vertical",
+        );
+      rootSplit.getRoot = () =>
+        app.workspace[doc === mainDocument ? "rootSplit" : "floatingSplit"];
+      rootSplit.getContainer = () => getContainerForDocument(doc);
+      // `workspace.createLeafInParent()` activates its new leaf and schedules a workspace layout
+      // update. That is observable even though this split is detached: on mobile it navigates away
+      // from an open sidebar that hosts an embedded Excalidraw view. Construct and insert the
+      // internal Canvas leaf directly so initialization has no workspace activation side effect.
+      const LeafConstructor = WorkspaceLeaf as unknown as WorkspaceLeafConstructor;
+      this.leaf = new LeafConstructor(app);
+      (rootSplit as DetachedWorkspaceSplit).insertChild(0, this.leaf);
+      this.canvas = canvasPlugin.views.canvas(this.leaf)
+        .canvas as ObsidianCanvas;
+      this.initialized = true;
+      this.settleInitialized(true);
+    } catch (error) {
+      this.settleInitialized(false);
+      throw error;
     }
-    const doc = this.view.ownerDocument;
-    const rootSplit: WorkspaceSplit =
-      new (WorkspaceSplit as ConstructableWorkspaceSplit)(
-        app.workspace,
-        "vertical",
-      );
-    rootSplit.getRoot = () =>
-      app.workspace[doc === mainDocument ? "rootSplit" : "floatingSplit"];
-    rootSplit.getContainer = () => getContainerForDocument(doc);
-    // `workspace.createLeafInParent()` activates its new leaf and schedules a workspace layout
-    // update. That is observable even though this split is detached: on mobile it navigates away
-    // from an open sidebar that hosts an embedded Excalidraw view. Construct and insert the
-    // internal Canvas leaf directly so initialization has no workspace activation side effect.
-    const LeafConstructor = WorkspaceLeaf as unknown as WorkspaceLeafConstructor;
-    this.leaf = new LeafConstructor(app);
-    (rootSplit as DetachedWorkspaceSplit).insertChild(0, this.leaf);
-    this.canvas = canvasPlugin.views.canvas(this.leaf).canvas as ObsidianCanvas;
-    this.initialized = true;
   }
 
   public createFileNote(
@@ -296,6 +318,7 @@ export class CanvasNodeFactory {
   destroy() {
     this.purgeNodes();
     this.initialized = false; //calling after purgeNodes becaues purge nodes checks for initialized
+    this.settleInitialized(false); //release anyone still waiting to be able to create a node
     this.observer?.disconnect();
     this.view = null;
     this.canvas = null;

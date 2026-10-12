@@ -1,8 +1,10 @@
 import {
   AppState,
   ExcalidrawInitialDataState,
+  PointerDownState,
 } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/src/types";
+import type { PointerEvent as ReactPointerEvent } from "react";
 import { DEVICE, obsidianToExcalidrawMap } from "../../constants/constants";
 import { t } from "../../lang/helpers";
 import { isMarkdownImageElement } from "../../shared/MarkdownImage";
@@ -56,6 +58,8 @@ export function createExcalidrawRootElement(
   const excalidrawWrapperRef = React.useRef<HTMLDivElement>(null);
   const toolsPanelRef = React.useRef<ToolsPanel>(null);
   const embeddableMenuRef = React.useRef<HTMLDivElement>(null);
+  const selectionBeforePointerDown = React.useRef<AppState>(null);
+  const canvasPointerDown = React.useRef<PointerDownState>(null);
   view.toolsPanelRef = toolsPanelRef;
 
   React.useEffect(() => {
@@ -153,7 +157,16 @@ export function createExcalidrawRootElement(
         tabIndex: 0,
         onKeyDown: view.excalidrawDIVonKeyDown.bind(view),
         onKeyUp: view.excalidrawDIVonKeyUp.bind(view),
-        onPointerDown: view.onPointerDown.bind(view),
+        onPointerDownCapture: () => {
+          selectionBeforePointerDown.current = view.excalidrawAPI?.getAppState();
+          canvasPointerDown.current = null;
+        },
+        onPointerDown: (event: ReactPointerEvent<HTMLDivElement>) =>
+          view.onPointerDown(
+            event.nativeEvent,
+            selectionBeforePointerDown.current,
+            canvasPointerDown.current,
+          ),
         onMouseMove: view.onMouseMove.bind(view),
         onMouseOver: view.onMouseOver.bind(view),
         onDragOver: view.dropManager?.onDragOver.bind(view.dropManager),
@@ -163,6 +176,9 @@ export function createExcalidrawRootElement(
         Excalidraw,
         {
           ownerDocument: view.ownerDocument,
+          onPointerDown: (_, pointerDownState) => {
+            canvasPointerDown.current = pointerDownState;
+          },
           onExcalidrawAPI: (api) => view.setExcalidrawAPI(api),
           onInitialize: (api) => view.onExcalidrawInitialize(api),
           UIOptions: {
