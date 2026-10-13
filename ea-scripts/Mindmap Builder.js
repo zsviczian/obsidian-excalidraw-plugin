@@ -1,3 +1,7 @@
 /*
-Because of misleading code scanner results that incorrectly pick up the mindmap MindMap Builder.js script as a potential security risk due to "hard coded" :) URLs - yes, in the comments explaining how to use the script - I have decided to move the script to a separate file. I will not add the link here, becuase it will be picked up by scanners: look for "MindMap Builder.js.md" in the repo. Sorry for the inconvenience, but I want to ensure that false positives do not cause unnecessary alarm, and do not undermine the trust in the plugin that I have built with care and dedication.
+Mindmap Builder's maintained source has moved to the EA Scripts authoring workspace:
+https://github.com/zsviczian/ea-scripts/tree/main/src/scripts/mindmap-builder
+
+Install the executable Markdown script from ea-scripts/Mindmap Builder.md.
+This historical source URL remains as a pointer for existing documentation links.
 */

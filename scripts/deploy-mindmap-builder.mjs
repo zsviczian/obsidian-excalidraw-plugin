@@ -1,142 +1,39 @@
-import path from "path";
-import fs from "fs/promises";
-import { minify } from "terser";
-import LZString from "lz-string";
-import { fileURLToPath } from "url";
+/** Build Mindmap Builder in its authoring workspace and copy the published artifacts. */
+import path from "node:path";
+import fs from "node:fs/promises";
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
+import { packageManagerInvocation } from "./testing/host/processTools.mjs";
 
-// Construct __dirname for ES Modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const workspace = path.resolve(process.argv[2] ?? path.join(root, "..", "ea-scripts"));
+const slug = "mindmap-builder";
 
-const CHUNK_SIZE = 256;
-const NEEDLE = "const removeKeydownHandlers";
+async function deploy() {
+  const major = Number(process.versions.node.split(".")[0]);
+  if (major < 22) throw new Error("Mindmap Builder requires Node.js 22 or newer.");
+  await fs.access(path.join(workspace, "src", "scripts", slug, "main.ts"));
 
-const root = path.resolve(__dirname, "..");
-const sourcePath = path.join(root, "ea-scripts", "Mindmap Builder.js.md");
-const outputPath = path.join(root, "ea-scripts", "Mindmap Builder.md");
+  const invocation = packageManagerInvocation("npm", ["run", "build"]);
+  const result = spawnSync(invocation.file, invocation.args, {
+    cwd: workspace,
+    stdio: "inherit",
+    // Both repositories' scripts must use the same supported Node installation.
+    env: { ...process.env, PATH: `${path.dirname(process.execPath)}${path.delimiter}${process.env.PATH ?? ""}` },
+  });
+  if (result.error) throw result.error;
+  if (result.status !== 0) throw new Error(`EA Scripts build failed (exit ${result.status}).`);
 
-const HEADER = `/*
-
-# Mind Map Builder
-
-![](https://youtu.be/5G9QF-u9w0Q)
-
-## Overview
-**Mind Map Builder** transforms the Obsidian-Excalidraw canvas into a rapid brainstorming environment, allowing users to build complex, structured, and visually organized mind maps using primarily keyboard shortcuts.
-
-The script balances **automation** (auto-layout, recursive grouping, and contrast-aware coloring) with **explicit flexibility** (node pinning and redirection logic), ensuring that the mind map stays organized even as it grows to hundreds of nodes. It leverages the Excalidraw Sidepanel API to provide a persistent control interface utilizing the Obsidian sidepanel, that can also be undocked into a floating modal.
-
-> [!Tip]
-> 🚀 Become a MindMap Builder Pro with the Official [MindMap Builder Course](https://www.visual-thinking-workshop.com/mindmap)!
-
-> [!Info]
-> Mindmap Builder is Minified and compressed to reduce size and improve performance. You can find the source here: [Mindmap Builder.js](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Mindmap%20Builder.js)
-> API documentation: [MindMapBuilderAPI.md](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/ea-script-docs/MindMapBuilderAPI.md)
-
-## Show Your Love!
-
-💖 **If you love MindMap Builder** say thank you, and [Buy me a Coffee](https://ko-fi.com/zsolt) 🍵
-
-## The Script
-
-\`\`\`js*/
-`;
-
-const FOOTER = `
-const VERSION = "v${new Date().toISOString().slice(2, 10).replace(/-/g, ".")}";
-
-if (!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.23.4")) {
-new Notice("Please update the Excalidraw Plugin to version 2.23.4 or higher.");
-return;
+  const outputDir = path.join(workspace, "build", slug);
+  // Read both before replacing either published artifact. Copy the template wrapper intact.
+  const markdown = await fs.readFile(path.join(outputDir, `${slug}.md`));
+  const preview = await fs.readFile(path.join(outputDir, `${slug}.svg`));
+  await fs.writeFile(path.join(root, "ea-scripts", "Mindmap Builder.md"), markdown);
+  await fs.writeFile(path.join(root, "ea-scripts", "Mindmap Builder.svg"), preview);
+  console.log(`Mindmap Builder published artifacts copied from ${workspace}`);
 }
 
-ea.skipSidepanelScriptRestore();
-
-const existingTab = ea.checkForActiveSidepanelTabForScript();
-if (existingTab) {
-	const hostEA = existingTab.getHostEA();
-	if (hostEA && hostEA !== ea) {
-		hostEA.activateMindmap = true;
-		hostEA.setView(ea.targetView);
-		existingTab.open(false);
-		return;
-	}
-};
-
-const mmbSource = \`
-`;
-
-const FOOTER_TAIL = `\`;
-const script = ea.decompressFromBase64(mmbSource.replace(/[\\s\\r\\n]+/g, ""));
-const AsyncFunction = Object.getPrototypeOf(async () => {}).constructor;
-await new AsyncFunction("ea", "utils", "VERSION", script)(ea, utils, VERSION);
-`;
-
-function chunkString(input, size) {
-	const chunks = [];
-	for (let i = 0; i < input.length; i += size) {
-		chunks.push(input.slice(i, i + size));
-	}
-	return chunks;
-}
-
-function stripHeader(source) {
-	const idx = source.indexOf(NEEDLE);
-	if (idx === -1) {
-		throw new Error(`Marker "${NEEDLE}" not found in Mindmap Builder.js`);
-	}
-	return source.slice(idx);
-}
-
-function wrapAsyncIIFE(body) {
-	return `(async()=>{\n${body}\n})()`;
-}
-
-async function minifyCode(source) {
-	const result = await minify(source, {
-		compress: { passes: 3 },
-		mangle: true,
-		output: { ascii_only: true }
-	});
-
-	if (result.error) {
-		throw result.error;
-	}
-
-	return result.code;
-}
-
-function unwrapAsyncIIFE(minified) {
-	const match = minified.match(/^\(async\s*\(\)\s*=>\s*\{([\s\S]*)\}\)\(\);?$/);
-	if (!match) {
-		throw new Error("Unable to strip async IIFE wrapper from minified output:\n" + minified.substring(0, 100) + "...");
-	}
-	return match[1];
-}
-
-function compressBase64(text) {
-	return LZString.compressToBase64(text);
-}
-
-function formatCompressed(compressed) {
-	return chunkString(compressed, CHUNK_SIZE).join("\n\n");
-}
-
-async function generate() {
-	const raw = await fs.readFile(sourcePath, "utf8");
-	const body = stripHeader(raw).trim();
-	const wrapped = wrapAsyncIIFE(body);
-	const minified = await minifyCode(wrapped);
-	const unwrapped = unwrapAsyncIIFE(minified);
-	const compressed = compressBase64(unwrapped);
-	const formatted = formatCompressed(compressed);
-
-	const output = `${HEADER}${FOOTER}${formatted}${FOOTER_TAIL}`;
-	await fs.writeFile(outputPath, output, "utf8");
-	console.log(`Mindmap Builder.md generated at ${outputPath}`);
-}
-
-generate().catch((err) => {
-	console.error(err);
-	process.exitCode = 1;
+deploy().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
 });
