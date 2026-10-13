@@ -323,6 +323,14 @@ export default {
   COMPATIBILITY_MODE:
     "*.excalidraw 是相容舊版的繪圖檔案格式。需要轉換為新格式才能解鎖本外掛的全部功能。",
   CONVERT_FILE: "轉換為新格式",
+  DRAWING_LOAD_ERROR_TITLE: "無法載入繪圖：{filename}",
+  DRAWING_LOAD_ERROR_MESSAGE: "此檔案無法作為 Excalidraw 繪圖載入。",
+  DRAWING_LOAD_ERROR_NO_BACKUP: "此裝置上沒有可用的本機備份。",
+  DRAWING_LOAD_ERROR_CACHE_WAIT: "本機備份快取仍在載入。選取 OK 以再次檢查，或選取取消以繼續。",
+  DRAWING_LOAD_ERROR_BACKUP_AVAILABLE: "有可用的本機備份。是否載入？",
+  DRAWING_LOAD_ERROR_MORE_INFO: "更多資訊",
+  DRAWING_LOAD_ERROR_REPORTED_ERROR: "回報的錯誤",
+  DRAWING_LOAD_ERROR_DETAILS: "包含 excalidraw-plugin 前置屬性的筆記會被視為 Excalidraw 繪圖。如果繪圖資料區段缺失或格式錯誤，就無法載入繪圖。一般 Markdown 筆記也可能因誤操作而包含此屬性。\n\n同步衝突或裝置之間的資料協調遭到中斷，是繪圖 JSON 格式錯誤的一種可能原因。僅憑錯誤訊息無法確定原因。\n\n本機備份可能包含可讀取的較早繪圖版本。備份分別儲存在各裝置上，因此最後編輯繪圖的裝置可能有較新的備份。載入備份會取代繪圖檔案。此資訊視窗不會變更檔案。",
   BACKUP_AVAILABLE:
     "載入繪圖檔案時出錯，可能是由於 Obsidian 在上次儲存時意外退出了（移動裝置上更容易發生這種意外）。<br><br><b>好訊息：</b>這臺裝置上存在備份。您是否想要恢復本裝置上的備份？<br><br>（我建議您先嚐試在最近使用過的其他裝置上開啟該繪圖，以檢查是否有更新的備份。）",
   BACKUP_SAVE_AS_FILE:

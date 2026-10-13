@@ -353,6 +353,14 @@ export default {
   COMPATIBILITY_MODE:
     "Archivo *.excalidraw abierto en modo de compatibilidad. Convierte al nuevo formato para la funcionalidad completa del complemento.",
   CONVERT_FILE: "Convertir a nuevo formato",
+  DRAWING_LOAD_ERROR_TITLE: "No se puede cargar el dibujo: {filename}",
+  DRAWING_LOAD_ERROR_MESSAGE: "Este archivo no se pudo cargar como un dibujo de Excalidraw.",
+  DRAWING_LOAD_ERROR_NO_BACKUP: "No hay una copia de seguridad local disponible en este dispositivo.",
+  DRAWING_LOAD_ERROR_CACHE_WAIT: "La caché de copias de seguridad locales sigue cargándose. Selecciona OK para comprobar de nuevo o Cancelar para continuar.",
+  DRAWING_LOAD_ERROR_BACKUP_AVAILABLE: "Hay una copia de seguridad local disponible. ¿Quieres cargarla?",
+  DRAWING_LOAD_ERROR_MORE_INFO: "Más información",
+  DRAWING_LOAD_ERROR_REPORTED_ERROR: "Error indicado",
+  DRAWING_LOAD_ERROR_DETAILS: "Una nota con la propiedad excalidraw-plugin en el frontmatter se trata como un dibujo de Excalidraw. Si falta su sección de datos de dibujo o está mal formada, no se puede cargar el dibujo. Una nota Markdown normal puede tener esta propiedad por error.\n\nUn conflicto de sincronización o una reconciliación interrumpida entre dispositivos es una posible causa de un JSON de dibujo mal formado. El error por sí solo no permite determinar la causa.\n\nUna copia de seguridad local puede contener una versión anterior legible del dibujo. Las copias se guardan por separado en cada dispositivo, por lo que el dispositivo donde editaste por última vez puede tener una copia más reciente. Cargar una copia de seguridad reemplaza el archivo de dibujo. Esta vista de información no modifica el archivo.",
   BACKUP_AVAILABLE:
     "Encontramos un error al cargar tu bosquejo. Esto pudo haber ocurrido si Obsidian se cerró inesperadamente durante una operación de guardado. Por ejemplo, si cerraste accidentalmente Obsidian en tu dispositivo móvil mientras guardabas.<br><br><b>BUENAS NOTICIAS:</b> Afortunadamente, hay una copia de seguridad local disponible. Sin embargo, ten en cuenta que si modificaste este bosquejo por última vez en un dispositivo diferente (ej. tablet) y ahora estás en tu computadora de escritorio, es probable que ese otro dispositivo tenga una copia de seguridad más reciente.<br><br>Recomiendo intentar abrir el bosquejo en tu otro dispositivo primero y restaurar la copia de seguridad desde su almacenamiento local.<br><br>¿Te gustaría cargar la copia de seguridad?",
   BACKUP_SAVE_AS_FILE:
