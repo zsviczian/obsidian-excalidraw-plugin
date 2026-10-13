@@ -11,16 +11,29 @@ The central issue tracker for Obsidian Excalidraw and its related projects is [o
 - If the appropriate existing label is missing, leave that dimension unlabeled. Do not invent a substitute, apply a misleading label, or create a new one.
 - Labels with such prefixes introduced in earlier triage do not define the desired convention. Do not assign them to additional issues. Any removal or migration of those labels and their existing assignments requires a separate reviewed cleanup.
 
-## How to triage
+## Label dimensions
 
-Use the existing label names and their configured colors/descriptions to classify an issue, where applicable:
+This table retains the label meanings and **suggested color convention**. During issue triage, apply only labels that **already exist** in GitHub with these exact unprefixed names. The table is not permission to create or recolor labels; if a listed label is unavailable, leave that dimension blank.
 
-| Dimension | What to identify | Guidance |
-| --- | --- | --- |
-| Type | Bug, regression, enhancement, feature, documentation, or other existing category | Prefer one primary **existing** type label. Do not infer criticality from the type. |
-| Area | Plugin, customized Excalidraw fork, Extras, EA Scripts/automation, or a more specific area | Use an existing area label only when the repository provides an accurate match. The main plugin need not receive a generic area label. |
-| Status | Confirmed, missing information, cannot reproduce, blocked, or other existing workflow status | Apply only when supported by evidence and when an appropriate label already exists; status is not severity. |
-| Criticality | Credible urgent data-loss, security/privacy, or serious compliance/distribution risk | Use an existing criticality label only for exceptional risks. A bug is not automatically critical. |
+| Dimension | Label | Meaning | Suggested color |
+| --- | --- | --- | --- |
+| Type | `regression` | Previously working behavior broke | `#1D4ED8` |
+| Type | `bug` | Incorrect existing behavior | `#2563EB` |
+| Type | `enhancement` | Improve existing behavior | `#60A5FA` |
+| Type | `feature` | New capability | `#93C5FD` |
+| Type | `documentation` | Documentation change | `#DBEAFE` |
+| Area | `plugin` | Main Obsidian plugin | `#6D28D9` |
+| Area | `fork` | Customized Excalidraw component | `#7C3AED` |
+| Area | `extras` | Excalidraw Extras | `#A78BFA` |
+| Area | `script` | Excalidraw Automate / EA Scripts | `#DDD6FE` |
+| Status | `confirmed` | Behavior verified or sufficiently established | `#15803D` |
+| Status | `blocked` | Waiting on a dependency or decision | `#4D7C0F` |
+| Status | `incomplete` | Report lacks required details, such as Obsidian debug information | `#A3A3A3` |
+| Status | `needs-info` | Specific clarification requested from reporter | `#86EFAC` |
+| Status | `cannot-reproduce` | Reproduction attempted without success | `#D4D4D4` |
+| Criticality | `critical` | Credible urgent risk of data loss, security/privacy exposure, or serious compliance/distribution consequences | `#D1242F` |
+
+Prefer one primary type and one primary area when an accurate existing label is available. Status labels describe evidence or workflow, not severity; they need not be assigned merely to fill a dimension. `confirmed` and `incomplete` may coexist when a verified behavior has an incomplete report. Reserve `critical` for exceptional risks.
 
 A dimension may remain blank. Avoid adding labels merely to fill a table. Keep useful special-purpose/historical labels such as `one day maybe`, `Solved with Excalidraw Script`, or `transfer to excalidraw.com` where relevant and already present. These are not automatically replacements for type, area, or status.
 
