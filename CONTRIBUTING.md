@@ -41,6 +41,7 @@ dependency graph rather than suppressing the warning. Check with
 - **Build the project:** Run `npm run build`
   *(Note: Our Rollup build is non-trivial as it merges CSS, handles MathjaxToSVG dependencies, and embeds runtime payloads. Run this command frequently to validate your changes).*
 - **Build readable development payloads:** Run `npm run dev`
+- **Check production packaging:** Run `npm run test:bundle` after `npm run build` to verify the private React bootstrap, bundled font bytes, compressed locales, and release size target.
 - **Build the public library API:** Run `npm run lib` when changing exports or ExcalidrawAutomate APIs
 - **Run ESLint:** Run `npm run code`
 - **Fix ESLint Warnings:** Run `node ./scripts/fix-eslint-warnings.mjs`

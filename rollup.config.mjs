@@ -336,6 +336,10 @@ const BUILD_CONFIG = {
     ...(isProd ? [
       terser({
         toplevel: false,
+        // Shorten Rollup's module-level bindings without enabling top-level
+        // dead-code elimination or changing public object properties. React's
+        // require binding must retain its name for the bootstrap insertion below.
+        mangle: { toplevel: true, reserved: ['React'] },
         compress: { passes: 2 },
         format: {
           comments: false, // Remove all comments
