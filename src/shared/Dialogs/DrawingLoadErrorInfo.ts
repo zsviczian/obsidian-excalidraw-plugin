@@ -38,7 +38,8 @@ export class DrawingLoadErrorInfo extends Modal {
         typeof this.error.message === "string" ? this.error.message : "";
     if (message) {
       this.contentEl.createEl("p", { text: t("DRAWING_LOAD_ERROR_REPORTED_ERROR") });
-      this.contentEl.createEl("pre").createEl("code", { text: message });
+      this.contentEl.createEl("pre", { cls: "excalidraw-drawing-load-error-message" })
+        .createEl("code", { text: message });
     }
     new ButtonComponent(this.contentEl.createDiv({ cls: "modal-button-container" }))
       .setButtonText(t("PROMPT_BUTTON_CLOSE"))

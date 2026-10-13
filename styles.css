@@ -994,6 +994,12 @@ End Obsidian Sheets Plus support
   border-radius: 4px;
 }
 
+pre.excalidraw-drawing-load-error-message,
+pre.excalidraw-drawing-load-error-message code {
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
 .excalidraw-multiOptionConfirmationPrompt-message {
   margin-bottom: 1em;
 }
