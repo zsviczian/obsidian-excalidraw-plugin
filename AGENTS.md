@@ -140,6 +140,10 @@ Follow Obsidian's **Developer Policies** and **Plugin Guidelines**. In particula
 
 ## Issue Investigation And Resolution Templates
 
+When triaging or updating issues across the plugin, Excalidraw fork, Extras, and EA Scripts, use the central [plugin issue tracker and label guidelines](.github/ISSUE_LABELS.md); this plugin repository is the default issue hub for all four projects.
+
+
+
 - For source-based issue investigations, GitHub issue comments, and a prioritized shortlist, use [issue assessment](docs/agent-workflows/issue-assessment.md).
 - Only after maintainer approval of specific issues, use [issue implementation handoff and resolution](docs/agent-workflows/issue-resolution.md) to prepare a dedicated branch and plan-only draft PR for the local implementation agent.
 - The issue owns the technical assessment; the draft PR owns the implementation plan; the branch owns the code. Keep draft PRs open through implementation, link cross-repository dependencies, and do not merge without authorization.
