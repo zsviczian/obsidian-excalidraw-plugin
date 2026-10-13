@@ -9,7 +9,6 @@ The central issue tracker for Obsidian Excalidraw and its related projects is [o
 - **Do not create, rename, recolor, or delete labels during issue triage.** Repository label administration is a separate, explicitly authorized activity.
 - **Do not use naming prefixes** such as `type:`, `area:`, or `status:`. The repository uses label **colors** to distinguish type, affected area, and status; the label names themselves are short and unprefixed.
 - If the appropriate existing label is missing, leave that dimension unlabeled. Do not invent a substitute, apply a misleading label, or create a new one.
-- Labels with such prefixes introduced in earlier triage do not define the desired convention. Do not assign them to additional issues. Any removal or migration of those labels and their existing assignments requires a separate reviewed cleanup.
 
 ## Label dimensions
 
@@ -31,9 +30,9 @@ This table retains the label meanings and **suggested color convention**. During
 | Status | `incomplete` | Report lacks required details, such as Obsidian debug information | `#A3A3A3` |
 | Status | `needs-info` | Specific clarification requested from reporter | `#86EFAC` |
 | Status | `cannot-reproduce` | Reproduction attempted without success | `#D4D4D4` |
-| Criticality | `critical` | Credible urgent risk of data loss, security/privacy exposure, or serious compliance/distribution consequences | `#D1242F` |
+| Criticality | `critical` | Confirmed bug causing data loss (potentially affecting many users), a serious information-security breach, or a violation of law (e.g. data privacy) | `#D1242F` |
 
-Prefer one primary type and one primary area when an accurate existing label is available. Status labels describe evidence or workflow, not severity; they need not be assigned merely to fill a dimension. `confirmed` and `incomplete` may coexist when a verified behavior has an incomplete report. Reserve `critical` for exceptional risks.
+Prefer one primary type and one primary area when an accurate existing label is available. Status labels describe evidence or workflow, not severity; they need not be assigned merely to fill a dimension. `confirmed` and `incomplete` may coexist when a verified behavior has an incomplete report. Use `critical` only after investigation establishes the impact through testing, code verification, or other substantiated evidence. A reporter's claim alone is not sufficient.
 
 A dimension may remain blank. Avoid adding labels merely to fill a table. Keep useful special-purpose/historical labels such as `one day maybe`, `Solved with Excalidraw Script`, or `transfer to excalidraw.com` where relevant and already present. These are not automatically replacements for type, area, or status.
 
