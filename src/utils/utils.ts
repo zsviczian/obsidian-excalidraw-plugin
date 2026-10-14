@@ -33,7 +33,15 @@ import {
   getFileCSSClasses,
   getSafeFrontmatter,
 } from "./obsidianUtils";
-import { addAppendUpdateCustomData } from "./elementCustomDataUtils";
+import {
+  addAppendUpdateCustomData,
+  setMarkdownImageRenderedSize,
+} from "./elementCustomDataUtils";
+import { getMarkdownImageDisplayGeometry } from "./markdownImageUtils";
+import {
+  MARKDOWN_IMAGE_CUSTOM_DATA_KEY,
+  type MarkdownImageCustomData,
+} from "src/types/markdownImageTypes";
 import { arrayToMap } from "./collectionUtils";
 import { isVersionNewerThanOther } from "./versionUtils";
 import { updateElementLinksToObsidianLinks } from "./excalidrawAutomateUtils";
@@ -395,12 +403,15 @@ export function scaleLoadedImage<T extends SceneWithElements>(
   files: FileData[],
 ): {
   dirty: boolean;
+  markdownImageChanged: boolean;
   scene: Omit<T, "elements"> & { elements: Mutable<ExcalidrawElement>[] };
 } {
   let dirty = false;
+  let markdownImageChanged = false;
   if (!files || !scene) {
     return {
       dirty,
+      markdownImageChanged,
       scene: scene as unknown as Omit<T, "elements"> & {
         elements: Mutable<ExcalidrawElement>[];
       },
@@ -451,6 +462,41 @@ export function scaleLoadedImage<T extends SceneWithElements>(
             img.shouldScale ? { isAnchored: false } : { isAnchored: true },
           );
           dirty = true;
+        }
+
+        const markdownImage = el.customData?.[
+          MARKDOWN_IMAGE_CUSTOM_DATA_KEY
+        ] as MarkdownImageCustomData | undefined;
+        if (markdownImage && !isCropped) {
+          const geometry = getMarkdownImageDisplayGeometry({
+            current: el,
+            previousIntrinsic: markdownImage.renderedSize,
+            nextIntrinsic: img.size,
+            previousFlowWidth: markdownImage.render.width,
+            nextFlowWidth: markdownImage.render.width,
+          });
+          if (
+            el.x !== geometry.x ||
+            el.y !== geometry.y ||
+            el.width !== geometry.width ||
+            el.height !== geometry.height
+          ) {
+            el.x = geometry.x;
+            el.y = geometry.y;
+            el.width = geometry.width;
+            el.height = geometry.height;
+            dirty = true;
+            markdownImageChanged = true;
+          }
+          if (
+            markdownImage.renderedSize?.width !== imgWidth ||
+            markdownImage.renderedSize?.height !== imgHeight
+          ) {
+            setMarkdownImageRenderedSize(el, img.size);
+            dirty = true;
+            markdownImageChanged = true;
+          }
+          return;
         }
 
         if (isCropped) {
@@ -533,10 +579,20 @@ export function scaleLoadedImage<T extends SceneWithElements>(
             el.x += (elWidth - imgWidth) / 2;
           }
         }
+        if (
+          markdownImage &&
+          (markdownImage.renderedSize?.width !== imgWidth ||
+            markdownImage.renderedSize?.height !== imgHeight)
+        ) {
+          setMarkdownImageRenderedSize(el, img.size);
+          dirty = true;
+          markdownImageChanged = true;
+        }
       });
   }
   return {
     dirty,
+    markdownImageChanged,
     scene: scene as unknown as Omit<T, "elements"> & {
       elements: Mutable<ExcalidrawElement>[];
     },
