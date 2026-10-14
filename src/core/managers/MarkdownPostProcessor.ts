@@ -34,6 +34,13 @@ import {
 } from "../../utils/obsidianUtils";
 import { linkClickModifierType } from "../../utils/modifierkeyHelper";
 import { ImageKey, getImageCache } from "../../shared/ImageCache";
+import {
+  getAreaPaddingSize,
+  initPaddingUI,
+  wrapWithPaddingPopup,
+  embedPaddingWrapperMap,
+} from "../../shared/PaddingUI";
+import { PADDING_PARAMETER_REGEX } from "../../utils/embeddedFilenameParts";
 import { FILENAMEPARTS, PreviewImageType } from "../../types/utilTypes";
 import { CustomMutationObserver, DEBUGGING } from "../../utils/debugHelper";
 import { getExcalidrawFileForwardLinks } from "../../utils/excalidrawViewUtils";
@@ -109,6 +116,7 @@ export const initializeMarkdownPostProcessor = (p: ExcalidrawPlugin) => {
   app = plugin.app;
   vault = app.vault;
   metadataCache = app.metadataCache;
+  initPaddingUI(plugin);
 };
 
 const _getPNG = async ({
@@ -846,6 +854,12 @@ const processReadingMode = async (
   //is awaited, otherwise excalidraw images would not display in the Kanban plugin
   const promises: Promise<void>[] = [];
 
+  // The note being rendered owns the `![[...]]` embed markup. The padding
+  // parameter must be written back into this file, not into the embedded
+  // Excalidraw drawing resolved inside the loop below.
+  const renderedFile = app.vault.getAbstractFileByPath(ctx.sourcePath);
+  const paddingSourceFile = renderedFile instanceof TFile ? renderedFile : null;
+
   for (const maybeDrawing of embeddedItems) {
     // A detached candidate must not suppress later, connected embeds.
     if (!maybeDrawing.isConnected) {
@@ -872,7 +886,12 @@ const processReadingMode = async (
             return;
           }
 
-          const imgDiv = await processInternalEmbed(maybeDrawing, file);
+          const imgDiv = await processInternalEmbed(
+            maybeDrawing,
+            file,
+            paddingSourceFile,
+            ctx,
+          );
           if (!imgDiv) {
             return;
           }
@@ -883,7 +902,28 @@ const processReadingMode = async (
             return;
           }
 
-          maybeDrawing.parentElement.replaceChild(imgDiv, maybeDrawing);
+          // Obsidian may re-insert the same `.internal-embed` element after a
+          // previous pass replaced it with a wrapper (e.g. when the note
+          // re-renders). Replace that wrapper in place instead of piling up
+          // orphan wrappers whose zoom icons stay at stale positions. The
+          // wrapper is identified by element identity, so sibling embeds that
+          // share the same area reference are never affected.
+          const parent = maybeDrawing.parentElement;
+          if (parent) {
+            const prevWrapper = embedPaddingWrapperMap.get(maybeDrawing);
+            if (
+              prevWrapper &&
+              prevWrapper.isConnected &&
+              prevWrapper.parentElement === parent
+            ) {
+              discardImage(prevWrapper);
+              prevWrapper.replaceWith(imgDiv);
+              maybeDrawing.remove();
+            } else {
+              parent.replaceChild(imgDiv, maybeDrawing);
+              embedPaddingWrapperMap.set(maybeDrawing, imgDiv);
+            }
+          }
         }),
       );
     }
@@ -896,6 +936,8 @@ const processReadingMode = async (
 const processInternalEmbed = async (
   internalEmbedEl: Element,
   file: TFile,
+  paddingSourceFile: TFile | null,
+  ctx: MarkdownPostProcessorContext,
   isRenderActive?: () => boolean,
 ): Promise<HTMLDivElement> => {
   const attr: imgElementAttributes = {
@@ -932,7 +974,40 @@ const processInternalEmbed = async (
       ? fnameParts.linkpartReference
       : "");
   attr.file = file;
-  return await createImageDiv(attr, false, internalEmbedEl, isRenderActive);
+  const reservedSize = getAreaPaddingSize(src.replace(PADDING_PARAMETER_REGEX, ""));
+  if (reservedSize?.height) {
+    setStyle(internalEmbedEl as HTMLElement, {
+      minHeight: `${reservedSize.height}px`,
+    });
+  }
+  const imgDiv = await createImageDiv(attr, false, internalEmbedEl, isRenderActive);
+  if (!imgDiv) {
+    return null;
+  }
+
+  if (fnameParts.hasArearef) {
+    const reRender = async (newSrc: string): Promise<HTMLDivElement> => {
+      const newParts = getEmbeddedFilenameParts(newSrc);
+      const newAttr = { ...attr };
+      newAttr.fname =
+        file?.path +
+        (newParts.hasBlockref || newParts.hasSectionref
+          ? newParts.linkpartReference
+          : "");
+      return await createImageDiv(newAttr, false, internalEmbedEl, isRenderActive);
+    };
+    return wrapWithPaddingPopup(
+      imgDiv,
+      src,
+      fnameParts,
+      paddingSourceFile,
+      file,
+      reRender,
+      ctx,
+    );
+  }
+
+  return imgDiv;
 };
 
 function getDimensionsFromAliasString(data: string) {
@@ -1295,7 +1370,8 @@ const tmpObsidianWYSIWYG = async (
   const currentPlugin = plugin;
   await renderMarkdownEmbed(el, internalEmbedDiv, ctx, {
     enqueue: (task) => getGlobalTaskQueue(currentPlugin).addTask(task),
-    createImage: (isCurrent) => processInternalEmbed(internalEmbedDiv, embedTargetFile, isCurrent),
+    createImage: (isCurrent) =>
+      processInternalEmbed(internalEmbedDiv, embedTargetFile, null, ctx, isCurrent),
     discardImage,
     isPluginLoaded: () => currentPlugin._loaded,
   });
