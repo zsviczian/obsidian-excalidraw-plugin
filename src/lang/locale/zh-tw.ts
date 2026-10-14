@@ -329,6 +329,7 @@ export default {
   DRAWING_LOAD_ERROR_CACHE_WAIT: "本機備份快取仍在載入。選取 OK 以再次檢查，或選取取消以繼續。",
   DRAWING_LOAD_ERROR_BACKUP_AVAILABLE: "有可用的本機備份。是否載入？",
   DRAWING_LOAD_ERROR_MORE_INFO: "更多資訊",
+  DRAWING_LOAD_ERROR_DISMISS: "關閉",
   DRAWING_LOAD_ERROR_REPORTED_ERROR: "回報的錯誤",
   DRAWING_LOAD_ERROR_DETAILS: "包含 excalidraw-plugin 前置屬性的筆記會被視為 Excalidraw 繪圖。如果繪圖資料區段缺失或格式錯誤，就無法載入繪圖。一般 Markdown 筆記也可能因誤操作而包含此屬性。\n\n同步衝突或裝置之間的資料協調遭到中斷，是繪圖 JSON 格式錯誤的一種可能原因。僅憑錯誤訊息無法確定原因。\n\n本機備份可能包含可讀取的較早繪圖版本。備份分別儲存在各裝置上，因此最後編輯繪圖的裝置可能有較新的備份。載入備份會取代繪圖檔案。此資訊視窗不會變更檔案。",
   BACKUP_AVAILABLE:

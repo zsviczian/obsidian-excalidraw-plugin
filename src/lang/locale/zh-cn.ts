@@ -329,6 +329,7 @@ export default {
   DRAWING_LOAD_ERROR_CACHE_WAIT: "本地备份缓存仍在加载。选择 OK 以再次检查，或选择取消以继续。",
   DRAWING_LOAD_ERROR_BACKUP_AVAILABLE: "有可用的本地备份。是否加载？",
   DRAWING_LOAD_ERROR_MORE_INFO: "更多信息",
+  DRAWING_LOAD_ERROR_DISMISS: "关闭",
   DRAWING_LOAD_ERROR_REPORTED_ERROR: "报告的错误",
   DRAWING_LOAD_ERROR_DETAILS: "包含 excalidraw-plugin 前置属性的笔记会被视为 Excalidraw 绘图。如果绘图数据部分缺失或格式错误，就无法加载绘图。普通 Markdown 笔记也可能因误操作而包含此属性。\n\n同步冲突或设备之间的数据协调被中断，是绘图 JSON 格式错误的一种可能原因。仅凭错误信息无法确定原因。\n\n本地备份可能包含可读取的较早绘图版本。备份分别保存在各设备上，因此最后编辑绘图的设备可能有更新的备份。加载备份会替换绘图文件。此信息窗口不会更改文件。",
   BACKUP_AVAILABLE:

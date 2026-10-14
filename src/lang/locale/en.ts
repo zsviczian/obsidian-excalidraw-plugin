@@ -372,6 +372,7 @@ export default {
   DRAWING_LOAD_ERROR_CACHE_WAIT: "The local backup cache is still loading. Select OK to check again, or Cancel to continue.",
   DRAWING_LOAD_ERROR_BACKUP_AVAILABLE: "A local backup is available. Would you like to load it?",
   DRAWING_LOAD_ERROR_MORE_INFO: "More information",
+  DRAWING_LOAD_ERROR_DISMISS: "Dismiss",
   DRAWING_LOAD_ERROR_REPORTED_ERROR: "Reported error",
   DRAWING_LOAD_ERROR_DETAILS: "A note with the excalidraw-plugin frontmatter property is treated as an Excalidraw drawing. If its drawing-data section is missing or malformed, the drawing cannot be loaded. An ordinary Markdown note may have this property by mistake.\n\nA sync conflict or interrupted reconciliation between devices is one possible cause of malformed drawing JSON. The error alone does not establish the cause.\n\nA local backup may contain a readable earlier version of the drawing. Backups are stored separately on each device, so the device where you last edited may have a newer copy. Loading a backup replaces the drawing file. This information view does not change the file.",
   BACKUP_AVAILABLE:

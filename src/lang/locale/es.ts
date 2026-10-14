@@ -359,6 +359,7 @@ export default {
   DRAWING_LOAD_ERROR_CACHE_WAIT: "La caché de copias de seguridad locales sigue cargándose. Selecciona OK para comprobar de nuevo o Cancelar para continuar.",
   DRAWING_LOAD_ERROR_BACKUP_AVAILABLE: "Hay una copia de seguridad local disponible. ¿Quieres cargarla?",
   DRAWING_LOAD_ERROR_MORE_INFO: "Más información",
+  DRAWING_LOAD_ERROR_DISMISS: "Descartar",
   DRAWING_LOAD_ERROR_REPORTED_ERROR: "Error indicado",
   DRAWING_LOAD_ERROR_DETAILS: "Una nota con la propiedad excalidraw-plugin en el frontmatter se trata como un dibujo de Excalidraw. Si falta su sección de datos de dibujo o está mal formada, no se puede cargar el dibujo. Una nota Markdown normal puede tener esta propiedad por error.\n\nUn conflicto de sincronización o una reconciliación interrumpida entre dispositivos es una posible causa de un JSON de dibujo mal formado. El error por sí solo no permite determinar la causa.\n\nUna copia de seguridad local puede contener una versión anterior legible del dibujo. Las copias se guardan por separado en cada dispositivo, por lo que el dispositivo donde editaste por última vez puede tener una copia más reciente. Cargar una copia de seguridad reemplaza el archivo de dibujo. Esta vista de información no modifica el archivo.",
   BACKUP_AVAILABLE:

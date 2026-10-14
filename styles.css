@@ -1000,6 +1000,12 @@ pre.excalidraw-drawing-load-error-message code {
   overflow-wrap: break-word;
 }
 
+.excalidraw-drawing-load-error-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-4-2);
+}
+
 .excalidraw-multiOptionConfirmationPrompt-message {
   margin-bottom: 1em;
 }

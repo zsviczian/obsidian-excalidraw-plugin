@@ -84,8 +84,12 @@ export function showDrawingLoadErrorNotice(
   content.createEl("strong", { text: warningTitle(target) });
   content.createEl("p", { text: t("DRAWING_LOAD_ERROR_MESSAGE") });
   content.createEl("p", { text: t("DRAWING_LOAD_ERROR_NO_BACKUP") });
-  new ButtonComponent(content.createDiv())
+  const buttons = content.createDiv({ cls: "excalidraw-drawing-load-error-buttons" });
+  new ButtonComponent(buttons)
     .setButtonText(t("DRAWING_LOAD_ERROR_MORE_INFO"))
     .onClick(() => new DrawingLoadErrorInfo(app, target, error).open());
-  new Notice(content, 10000);
+  new ButtonComponent(buttons)
+    .setButtonText(t("DRAWING_LOAD_ERROR_DISMISS"))
+    .onClick(() => notice.hide());
+  const notice = new Notice(content, 10000);
 }
