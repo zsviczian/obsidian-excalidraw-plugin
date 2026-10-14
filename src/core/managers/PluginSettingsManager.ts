@@ -9,6 +9,7 @@ import {
   decryptPersistedAPIKeys,
   encryptPersistedAPIKeys,
 } from "src/utils/settingsKeyObfuscation";
+import { stringifySettingsCanonically } from "src/core/settings/canonicalSettingsSerialization";
 import { SerializedSettingsWriter } from "src/core/settings/SerializedSettingsWriter";
 import { SettingsRecoveryStore } from "src/core/settings/SettingsRecoveryStore";
 import {
@@ -290,8 +291,8 @@ export class PluginSettingsManager {
       this.host.settings as PersistedExcalidrawSettings,
     );
     const shouldPersistEncryptedSettings =
-      JSON.stringify(encryptedPersistedSettings) !==
-      JSON.stringify(persistedSettings);
+      stringifySettingsCanonically(encryptedPersistedSettings) !==
+      stringifySettingsCanonically(persistedSettings);
     if (shouldPersistStartupChoice) {
       await this.persistSnapshot(encryptedPersistedSettings);
       if (recoveredInvalidStartup) {
@@ -304,6 +305,7 @@ export class PluginSettingsManager {
       await this.persistSnapshot(encryptedPersistedSettings);
     } else if (!this.persistenceBlockedByInvalidData) {
       await this.saveRecoverySnapshot(encryptedPersistedSettings);
+      this.writer.rememberPersistedSnapshot(persistedSettings);
     }
     this.hasCompletedInitialLoad = true;
     return !hasInvalidSettings;
