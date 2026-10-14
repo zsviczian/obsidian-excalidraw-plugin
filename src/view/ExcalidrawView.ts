@@ -141,6 +141,10 @@ import {
   linkPrompt,
 } from "../shared/Dialogs/Prompt";
 import {
+  createDrawingLoadErrorPrompt,
+  showDrawingLoadErrorNotice,
+} from "../shared/Dialogs/DrawingLoadErrorInfo";
+import {
   ClipboardData,
   ParsedDataTransferFile,
 } from "@zsviczian/excalidraw/types/excalidraw/clipboard";
@@ -3236,37 +3240,19 @@ export default class ExcalidrawView
             const file = targetFile;
             const leaf = this.leaf;
             let confirmation: boolean | null = true;
-            let counter = 0;
-            const timestamp = Date.now();
             while (
               isCurrentLoad() &&
               !getImageCache().isReady() &&
               confirmation
             ) {
-              const message = `You've been now waiting for <b>${Math.round((Date.now() - timestamp) / 1000)}</b> seconds. `;
               getImageCache().initializationNotice = true;
-              const confirmationPrompt = new MultiOptionConfirmationPrompt(
+              const confirmationPrompt = createDrawingLoadErrorPrompt(
                 plugin,
-                `${
-                  counter > 0
-                    ? counter % 4 === 0
-                      ? `${message}The CACHE is still loading.<br><br>`
-                      : counter % 4 === 1
-                        ? `${
-                            message
-                          }Watch the top right corner for the notification.<br><br>`
-                        : counter % 4 === 2
-                          ? `${
-                              message
-                            }I really, really hope the backup will work for you! <br><br>`
-                          : `${
-                              message
-                            }I am sorry, it is taking a while, there is not much I can do... <br><br>`
-                    : ""
-                }${t("CACHE_NOT_READY")}`,
+                file,
+                t("DRAWING_LOAD_ERROR_CACHE_WAIT"),
+                e,
               );
               confirmation = await confirmationPrompt.waitForClose;
-              counter++;
             }
             if (!isCurrentLoad()) {
               return;
@@ -3279,21 +3265,15 @@ export default class ExcalidrawView
               return;
             }
             if (!drawingBAK) {
-              new Notice(
-                `Error loading drawing:\n${(e as Error).message}${
-                  (e as Error).message ===
-                  "Cannot read property 'index' of undefined"
-                    ? "\n'# Drawing' section is likely missing"
-                    : ""
-                }\n\nTry manually fixing the file or restoring an earlier version from sync history.`,
-                10000,
-              );
+              showDrawingLoadErrorNotice(plugin.app, file, e);
               await this.setMarkdownView();
               return;
             }
-            const confirmationPrompt = new MultiOptionConfirmationPrompt(
+            const confirmationPrompt = createDrawingLoadErrorPrompt(
               plugin,
-              t("BACKUP_AVAILABLE"),
+              file,
+              t("DRAWING_LOAD_ERROR_BACKUP_AVAILABLE"),
+              e,
             );
             const confirmed = await confirmationPrompt.waitForClose;
             if (!isCurrentLoad()) {
