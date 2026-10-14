@@ -488,6 +488,10 @@ export const cloneModelConfigs = <TConfig extends AIModelConfig>(
     ]),
   ) as Record<string, TConfig>;
 
+/** Highest count exposed in settings; existing pen configurations remain stored
+ * when the visible count is lowered. */
+export const MAX_CUSTOM_PENS = 30;
+
 export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   showTabTitlebarButtons: true,
   copyLinkToElemenetAnchorTo100: false,
@@ -1033,4 +1037,36 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
     margin: "normal",
   },
   disableContextMenu: false,
+};
+
+/** Make newly enabled slots editable without replacing any existing presets. */
+export const ensureCustomPenSlots = (
+  settings: Pick<ExcalidrawSettings, "customPens" | "numberOfCustomPens">,
+): boolean => {
+  const count = Number.isFinite(settings.numberOfCustomPens)
+    ? Math.max(0, Math.min(MAX_CUSTOM_PENS, Math.trunc(settings.numberOfCustomPens)))
+    : 0;
+  let changed = false;
+  if (settings.numberOfCustomPens !== count) {
+    settings.numberOfCustomPens = count;
+    changed = true;
+  }
+  if (!Array.isArray(settings.customPens)) {
+    settings.customPens = [...DEFAULT_SETTINGS.customPens];
+    changed = true;
+  }
+  if (
+    settings.customPens === DEFAULT_SETTINGS.customPens &&
+    count > settings.customPens.length
+  ) {
+    settings.customPens = [...settings.customPens];
+    changed = true;
+  }
+  while (settings.customPens.length < count) {
+    settings.customPens.push(
+      JSON.parse(JSON.stringify(PENS.default)) as PenStyle,
+    );
+    changed = true;
+  }
+  return changed;
 };
