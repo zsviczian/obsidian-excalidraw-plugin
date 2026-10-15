@@ -12,6 +12,7 @@
     "build": "cross-env NODE_ENV=production rollup --config rollup.config.mjs",
     "test:bundle": "node --test scripts/testing/bundle.test.mjs",
     "test:obsidian:runner": "node --test scripts/testing/host/runner.test.mjs scripts/testing/host/processTools.test.mjs",
+    "test:settings": "node --experimental-transform-types --test scripts/testing/settings/settingsWriter.test.mjs",
     "test:markdown-embeds": "node --test scripts/testing/markdownEmbeds.test.mjs",
     "test:inline-link-suggester": "node --test scripts/testing/inlineLinkSuggester.test.mjs",
     "verify:obsidian": "node scripts/testing/host/verify.mjs",

@@ -9,8 +9,10 @@ import {
   decryptPersistedAPIKeys,
   encryptPersistedAPIKeys,
 } from "src/utils/settingsKeyObfuscation";
-import { stringifySettingsCanonically } from "src/core/settings/canonicalSettingsSerialization";
-import { SerializedSettingsWriter } from "src/core/settings/SerializedSettingsWriter";
+import {
+  SerializedSettingsWriter,
+  stringifySettingsCanonically,
+} from "src/core/settings/SerializedSettingsWriter";
 import { SettingsRecoveryStore } from "src/core/settings/SettingsRecoveryStore";
 import {
   SettingsRecoveryPrompt,
@@ -122,6 +124,7 @@ export class PluginSettingsManager {
           encryptPersistedAPIKeys(
             this.host.settings as PersistedExcalidrawSettings,
           ),
+          true,
         );
         return false;
       }
@@ -294,7 +297,7 @@ export class PluginSettingsManager {
       stringifySettingsCanonically(encryptedPersistedSettings) !==
       stringifySettingsCanonically(persistedSettings);
     if (shouldPersistStartupChoice) {
-      await this.persistSnapshot(encryptedPersistedSettings);
+      await this.persistSnapshot(encryptedPersistedSettings, true);
       if (recoveredInvalidStartup) {
         new Notice(t("SETTINGS_DATA_RECOVERED"), 12000);
       }
@@ -331,8 +334,9 @@ export class PluginSettingsManager {
 
   private persistSnapshot(
     settings: PersistedExcalidrawSettings,
+    force = false,
   ): Promise<void> {
-    return this.writer.persist(settings);
+    return this.writer.persist(settings, force ? { force: true } : undefined);
   }
 
   /** Closes the device-local recovery database connection. */

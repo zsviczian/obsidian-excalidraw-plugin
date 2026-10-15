@@ -1,7 +1,14 @@
-import { stringifySettingsCanonically } from "./canonicalSettingsSerialization";
-
 /**
  * Serialized stable-snapshot writer for plugin settings.
+ *
+ * Also exports the canonical serialization shared with the settings manager:
+ * JSON object key order carries no meaning, yet the on-disk bytes of
+ * `data.json` depend on it. Multiple persistence paths may serialize the same
+ * settings value with different key orders; an order-sensitive comparison
+ * then classifies every incoming shape as drift and rewrites the file in an
+ * endless loop. Sorting object keys recursively makes the serialized form a
+ * pure function of the settings value, so key order alone can no longer
+ * produce phantom changes.
  */
 
 /** Persistence operation required by the serialized settings writer. */
@@ -9,13 +16,56 @@ export interface SerializedSettingsWriterHost<Snapshot> {
   saveData(data: Snapshot): Promise<void>;
 }
 
+const MAX_CANONICALIZATION_DEPTH = 100;
+
+const canonicalizeValue = (value: unknown, depth: number): unknown => {
+  if (value === null || depth >= MAX_CANONICALIZATION_DEPTH) {
+    return value;
+  }
+  if (typeof value === "object") {
+    // Keep native JSON.stringify value semantics: when toJSON exists, its
+    // result is serialized instead of the original object (Date -> string).
+    const record = value as { toJSON?: () => unknown };
+    if (typeof record.toJSON === "function") {
+      return canonicalizeValue(record.toJSON(), depth);
+    }
+    // Array order is semantically significant and stays untouched.
+    if (Array.isArray(value)) {
+      return value.map((item) => canonicalizeValue(item, depth + 1));
+    }
+    // Null-prototype accumulator: an own "__proto__" key is stored as data
+    // instead of being assigned through Object.prototype's setter.
+    const source = value as Record<string, unknown>;
+    const canonical = Object.create(null) as Record<string, unknown>;
+    for (const key of Object.keys(source).sort()) {
+      canonical[key] = canonicalizeValue(source[key], depth + 1);
+    }
+    return canonical;
+  }
+  return value;
+};
+
+/**
+ * Serializes a settings payload with recursively sorted object keys.
+ *
+ * Values that only differ in key order produce identical strings, so a plain
+ * string comparison becomes a semantically safe equality check.
+ */
+export const stringifySettingsCanonically = (settings: unknown): string =>
+  JSON.stringify(canonicalizeValue(settings, 0));
+
 /**
  * Serializes complete settings writes so an older save cannot finish after a
  * newer one. Each request captures an immutable canonical JSON snapshot
- * (recursively sorted object keys) before waiting for an earlier write, and
- * payloads that are canonically identical to the last persisted one are
- * skipped without touching storage, so key-order variation between writers
- * can no longer churn `data.json` or fire spurious vault change events.
+ * (recursively sorted object keys) before waiting for an earlier write.
+ *
+ * Unchanged saves are suppressed by comparing the canonical snapshot with the
+ * last successfully persisted one *inside* the serialized queue — after all
+ * preceding writes have settled — so an in-flight older write can never make
+ * the writer skip a newer payload (A -> B -> A still persists the final A).
+ * Writes requested with `force` bypass the suppression for repair flows that
+ * must reach disk even when the content matches the last payload this writer
+ * produced, such as replacing externally corrupted data.
  */
 export class SerializedSettingsWriter<
   Snapshot extends Record<string, unknown>,
@@ -36,14 +86,13 @@ export class SerializedSettingsWriter<
   }
 
   /** Queues one stable snapshot and resolves when that snapshot is saved. */
-  public persist(settings: Snapshot): Promise<void> {
-    const canonical = stringifySettingsCanonically(settings);
-    if (canonical === this.lastPersistedCanonical) {
-      return Promise.resolve();
-    }
-    let snapshot: Snapshot;
+  public persist(
+    settings: Snapshot,
+    options?: { force?: boolean },
+  ): Promise<void> {
+    let canonical: string;
     try {
-      snapshot = JSON.parse(canonical) as Snapshot;
+      canonical = stringifySettingsCanonically(settings);
     } catch (error) {
       return Promise.reject(
         error instanceof Error
@@ -51,11 +100,17 @@ export class SerializedSettingsWriter<
           : new Error("Could not serialize settings snapshot"),
       );
     }
+    const force = options?.force === true;
     const persistence = this.persistenceChain
       .catch((): void => undefined)
-      .then(() => this.host.saveData(snapshot))
       .then(() => {
-        this.lastPersistedCanonical = canonical;
+        if (!force && canonical === this.lastPersistedCanonical) {
+          return;
+        }
+        const snapshot = JSON.parse(canonical) as Snapshot;
+        return this.host.saveData(snapshot).then((): void => {
+          this.lastPersistedCanonical = canonical;
+        });
       });
     this.persistenceChain = persistence;
     return persistence;
