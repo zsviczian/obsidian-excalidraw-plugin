@@ -105,6 +105,7 @@ not every later human edit. A handoff is not reported as durable.
 | `connect` | `from`, `to`; optional local `id`, `fromSide`, `toSide` (top/bottom/left/right) |
 | `group` | `ids`; returns a new group ID |
 | `ungroup` | `ids`, `groupId`; preserves other groups |
+| `imageMetadata` | `id`, `label` (1–80 characters or `null` to clear), `tags` (up to 12 unique short strings or `null`) |
 | `image` | `asset`: exact vault PNG/JPEG/GIF/WebP/SVG; optional `id`, `x`, `y`, `scale` (boolean) |
 | `latex` | `text`; optional `id`, `x`, `y`, `scaleX`, `scaleY`; requires compatible enabled Extras MathJax |
 
@@ -119,7 +120,7 @@ tombstones and binding cleanup and does not delete attachment files.
 ## Read, render, and recover
 
 `list` returns exact paths. `read` defaults to a summary without asset bodies;
-`detail=elements` returns at most 50 elements per page (maximum 200). Use
+`detail=elements` returns at most 50 elements per page (maximum 200); `detail=images` inventories placements, media types, loaded sizes (or unknown), existing labels/tags, and load state without base64. The inventory separates `loadedRenditionBytes` (decoded data-URL bytes) from `originalBytes` (known Vault attachment size); unknown values are `null`. It reports natural dimensions only when known from crop metadata. Use
 `nextOffset` and the same `revision` for later pages. A changed snapshot returns
 `STALE_REVISION`. `ids` filters explicit IDs and `selectedOnly` needs a live view.
 
@@ -141,8 +142,32 @@ asset. Source/revision, theme, byte count, and dimensions are returned. Live exp
 does not save the drawing. Optional `theme` is light/dark, `padding` is 0–200
 (default 10), `scale` is 0.1–4 for PNG (default 1), and `area` is an exact
 `{x,y,width,height}` scene rectangle. Inspect the image before another revision.
-Missing/undecoded assets fail explicitly. Existing remote assets use normal
-plugin permissions and may require network access. Core shape/text and SVG/PNG
+Missing originals fail explicitly. A request-only `imagePolicy` opts into per-image preview reduction before image loading and SVG construction; no policy means original fidelity. For example:
+
+```json
+{
+  "apiVersion": 1, "command": "export", "requestId": "overview-1",
+  "path": "Drawings/Flow.excalidraw.md", "source": "live", "out": "Previews/Flow.svg",
+  "imagePolicy": {
+    "default": "placeholder",
+    "rules": [
+      { "ids": ["chosen-element-id"], "mode": "original" },
+      { "tags": ["context"], "mode": "thumbnail" },
+      { "mimeTypes": ["image/svg+xml"], "maxBytes": 65536, "mode": "original" }
+    ],
+    "labels": { "another-element-id": "Context screenshot" },
+    "thumbnailMaxDimension": 512
+  },
+  "maxWidth": 1200, "maxHeight": 900, "maxPixels": 1000000,
+  "maxArtifactBytes": 4194304
+}
+```
+
+Rules use AND across conditions and OR within each ID/tag/MIME list, first match wins. Unknown asset size does not match `maxBytes`; one rule must contain a matching condition. `default` is `original`, `thumbnail`, or `placeholder`. Placeholder labels come from request-only `labels`, then persisted namespaced metadata, then a short element ID. Set persisted `label`/`tags` with the guarded `apply` `imageMetadata` operation. The tool preserves unrelated `customData`, image placement, stacking and rotation, and never edits the source drawing during export.
+
+Thumbnail resolution is distinct from PNG pixel output bounds: thumbnail generation preflights PNG/JPEG/WebP headers before decoding and refuses sources over 24 MiB, images over 16 million pixels, and formats with unknown dimensions. SVG, GIF, animated WebP, and unsupported headers require `original` or `placeholder`. Disk thumbnails require direct PNG/JPEG/WebP sources; use loaded live renditions for composite drawing/PDF/Markdown assets. Conversions run sequentially and release temporary images and canvases. Cropped thumbnails preserve the original crop; placeholder labels rotate and mirror with the image, within its visible footprint. Original images can still exceed the final 32 MiB SVG cap. `maxWidth`, `maxHeight`, and `maxPixels` bound output dimensions (including the intermediate PNG canvas); PNG can derive a scale below 0.1 to fit a requested bound. SVG dimensions change display size but do not reduce embedded image bytes. `maxArtifactBytes` (1 KiB–32 MiB) bounds final bytes, with an early embedded-payload preflight. The export receipt returns `effectiveScale`, representation counts, the first 50 per-element decisions with a total count, output bounds, a scene-to-preview mapping (including frame titles and padding), and a separate `representationId` describing the preview. The source `revision` always describes the full original content. Image annotations are descriptive metadata, not a trust signal.
+
+Missing/undecoded assets fail explicitly when required by the chosen representation. Live previews use currently loaded content. Disk exports re-read consumed Vault attachments and compare content digests before publication, bypass cached drawing/PDF renditions, and refuse intervening Vault edits (including unrelated edits, conservatively). Disk exports refuse required remote or machine-local assets because those cannot participate in a Vault snapshot; use a loaded live source or placeholders. Live remote assets use normal plugin permissions and may require network access. Core shape/text and SVG/PNG
 rendering work without Extras; optional features are never activated automatically.
 
 Every write requires a unique 1–80 character `requestId` (letters, digits, `_`,
@@ -151,7 +176,7 @@ content with the same ID is rejected. Script source is part of that identity.
 `result` can recover lost stdout or report `status: pending, ok: null`. Completed
 receipts expire after 15 minutes; there are at most 128 in one plugin session.
 Reload/expiry/unknown outcomes require read-back before issuing another write.
-Competing CLI operations on the same target return `BUSY`; human editing remains
+Competing CLI operations on the same target return `BUSY`; a refusal known to occur before lock acquisition can be retried with the *identical* requestId. An unexpected internal error is reported as `INTERNAL_ERROR` without leaking payloads or stack traces, and any possibly started write has an unknown outcome; read back before retrying. human editing remains
 possible, so always refresh after `STALE_REVISION`.
 
 Input is limited to 2 MiB and nesting to 30 levels; output to 512 KiB. Use either
