@@ -11,9 +11,10 @@ import { t } from "src/lang/helpers";
 import { CLIWriteCommands } from "src/core/cli/CLIWriteCommands";
 import { prepareScript } from "src/core/cli/cliScripts";
 import { commandSchema } from "src/core/cli/cliSchema";
+import { imageInventory } from "src/core/cli/cliImages";
 import { nanoid } from "src/constants/constants";
 
-type Receipt = { fingerprint: string; result: ExcalidrawCLIResult; finishedAt?: number };
+type Receipt = { fingerprint: string; result: ExcalidrawCLIResult; finishedAt?: number; preExecutionBusy?: boolean };
 
 /** Optional CLI; all registrations use Plugin's own unload cleanup. */
 export class ExcalidrawCLI {
@@ -39,7 +40,7 @@ export class ExcalidrawCLI {
   public destroy(): void {
     this.alive = false;
     for (const cleanup of this.operationCleanups) cleanup();
-    this.operationCleanups.clear(); this.writes.destroy(); this.receipts.clear();
+    this.operationCleanups.clear(); this.writes.destroy(); this.receipts.clear(); this.targets.destroy();
   }
 
   /** Stops request-owned loaders at unload without retaining completed operations. */
@@ -60,8 +61,8 @@ export class ExcalidrawCLI {
         if (["overwrite", "selectedOnly", "trusted"].includes(key)) {
           if (!["true", "false"].includes(value)) throw new CLIError("INVALID_INPUT", "Expected true or false.", key);
           params[key] = value === "true";
-        } else if (["offset", "limit", "scale", "padding"].includes(key)) params[key] = Number(value);
-        else if (["ids", "args", "area", "elements", "operations"].includes(key)) params[key] = JSON.parse(value);
+        } else if (["offset", "limit", "scale", "padding", "maxWidth", "maxHeight", "maxPixels", "maxArtifactBytes"].includes(key)) params[key] = Number(value);
+        else if (["ids", "args", "area", "elements", "operations", "imagePolicy"].includes(key)) params[key] = JSON.parse(value);
         else params[key] = value;
       }
       if (params.input !== undefined && params.json !== undefined) throw new CLIError("INVALID_INPUT", "Choose input or json, not both.");
@@ -88,7 +89,7 @@ export class ExcalidrawCLI {
       if (params.input !== undefined && payload.out === params.input) throw new CLIError("INVALID_INPUT", "Output cannot replace the request file.", "out");
       const result = await this.execute({ ...payload, apiVersion: 1, command });
       return result.ok && command === "skill" && payload.format === "markdown" ? CLI_SKILL : JSON.stringify(result);
-    } catch (error) { return JSON.stringify(this.failure(command, undefined, error)); }
+    } catch (error) { return JSON.stringify(this.failure(command, undefined, error instanceof SyntaxError ? new CLIError("INVALID_INPUT", "Malformed JSON request.") : error)); }
   }
 
   private base(command: string, requestId?: string): ExcalidrawCLIResult {
@@ -96,7 +97,7 @@ export class ExcalidrawCLI {
   }
 
   private failure(command: string, requestId: string | undefined, error: unknown): ExcalidrawCLIResult {
-    const failure = error instanceof CLIError ? error : new CLIError("INVALID_INPUT", "Request could not be completed.");
+    const failure = error instanceof CLIError ? error : new CLIError("INTERNAL_ERROR", "An internal CLI operation failed. Inspect the target before retrying.", undefined, "For writes, read back the target and inspect the receipt before issuing another operation.");
     return { ...this.base(command, requestId), ...failure.outcome, status: "failed", ok: false,
       error: { code: failure.code, message: failure.message, ...(failure.field ? { field: failure.field } : {}), recovery: failure.recovery } };
   }
@@ -130,18 +131,33 @@ export class ExcalidrawCLI {
         const existing = this.receipts.get(requestId);
         if (existing) {
           if (existing.fingerprint !== signature) throw new CLIError("INVALID_INPUT", "requestId was already used for different content.", "requestId");
-          return structuredClone(existing.result);
+          if (!existing.preExecutionBusy) return structuredClone(existing.result);
+          // The previous attempt never acquired a target lock or performed work.
+          // Preserve its canonical signature while allowing the *identical* request to retry.
+          existing.preExecutionBusy = false;
+          existing.finishedAt = undefined;
+          existing.result = { ...this.base(action, requestId), status: "pending", ok: null, persistence: "unknown" };
         }
-        if (this.receipts.size >= 128) throw new CLIError("BUSY", "Session receipt capacity is exhausted.", "requestId", "Wait for completed receipts to expire; do not retry writes with a new ID blindly.");
-        this.receipts.set(requestId, { fingerprint: signature, result: { ...this.base(action, requestId), status: "pending", ok: null, persistence: "unknown" } });
+        if (!existing && this.receipts.size >= 128) throw new CLIError("BUSY", "Session receipt capacity is exhausted.", "requestId", "Wait for completed receipts to expire; do not retry writes with a new ID blindly.");
+        if (!existing) this.receipts.set(requestId, { fingerprint: signature, result: { ...this.base(action, requestId), status: "pending", ok: null, persistence: "unknown" } });
       }
       let result: ExcalidrawCLIResult;
       try {
         const output = descriptor.writes ? await this.writes.execute(action, request, preparedScript) : { data: await this.dispatch(action, request) };
         try { result = { ...this.base(action, requestId), ...output, data: jsonValue(output.data ?? null) }; }
-        catch { throw new CLIError("OUTCOME_UNKNOWN", "Result could not be serialized after execution.", undefined, "Read back the target before another write.", { ...output, data: null }); }
+        catch {
+          if (!descriptor.writes) throw new CLIError("INTERNAL_ERROR", "CLI result could not be serialized.");
+          throw new CLIError("OUTCOME_UNKNOWN", "Result could not be serialized after execution.", undefined, "Read back the target before another write.", { ...output, data: null });
+        }
       }
-      catch (error) { result = this.failure(action, requestId, error); }
+      catch (error) {
+        result = this.failure(action, requestId, error);
+        if (descriptor.writes && !(error instanceof CLIError)) { result.mutation = "unknown"; result.persistence = "unknown"; }
+        if (descriptor.writes && error instanceof CLIError && error.preExecutionBusy) {
+          const receipt = this.receipts.get(requestId);
+          if (receipt) receipt.preExecutionBusy = true;
+        }
+      }
       if (descriptor.writes && this.alive) {
         const receipt = this.receipts.get(requestId);
         receipt.result = result; receipt.finishedAt = Date.now();
@@ -202,7 +218,7 @@ export class ExcalidrawCLI {
     if (source === "live" && !view) throw new CLIError("NOT_READY", "Drawing has no live view.", "path", "Use open first.");
     if (source === "disk" && request.view !== undefined) throw new CLIError("INVALID_INPUT", "A disk read cannot select a view.", "view");
     if (!useLive && boolean(request.selectedOnly, "selectedOnly")) throw new CLIError("INVALID_INPUT", "Selection requires a live source.", "selectedOnly");
-    const snapshot = useLive ? { scene: structuredClone(view.getScene()), revision: this.targets.revision(view) } : await diskSnapshot(plugin, file, this.isCurrent);
+    const snapshot = useLive ? { scene: view.getScene(), revision: this.targets.revision(view), assetSizes: new Map([...view.excalidrawData.getFileEntries()].map(([id, asset]) => [id, asset.file?.stat.size ?? null])) } : await diskSnapshot(plugin, file, this.isCurrent);
     let elements = snapshot.scene.elements.filter(element => !element.isDeleted);
     if (request.ids !== undefined) {
       if (!Array.isArray(request.ids) || request.ids.some(id => typeof id !== "string")) throw new CLIError("INVALID_INPUT", "Expected an ID array.", "ids");
@@ -212,15 +228,22 @@ export class ExcalidrawCLI {
       const selected = view.excalidrawAPI.getAppState().selectedElementIds;
       elements = elements.filter(element => selected[element.id]);
     }
-    if (request.detail !== undefined && !["summary", "elements"].includes(string(request.detail, "detail"))) throw new CLIError("INVALID_INPUT", "Expected summary or elements.", "detail");
+    if (request.detail !== undefined && !["summary", "elements", "images"].includes(string(request.detail, "detail"))) throw new CLIError("INVALID_INPUT", "Expected summary, elements or images.", "detail");
     const data = { path: file.path, source: useLive ? "live" : "disk", ...(useLive ? { viewId: view.id, dirty: view.isDirty() } : {}), revision: snapshot.revision, total: elements.length, assetIds: Object.keys(snapshot.scene.files ?? {}), types: Object.fromEntries([...new Set(elements.map(element => element.type))].map(type => [type, elements.filter(element => element.type === type).length])) };
-    return request.detail === "elements" ? { ...data, ...this.page(JSON.parse(JSON.stringify(elements)) as unknown[], request, snapshot.revision, "elements") } : data;
+    if (request.detail === "images") {
+      const images = elements.filter(element => element.type === "image")
+        .map(element => imageInventory(element, element.fileId ? snapshot.scene.files?.[element.fileId] : undefined, snapshot.assetSizes.get(element.fileId) ?? null));
+      return { ...data, ...this.page(images, request, snapshot.revision, "images") };
+    }
+    return request.detail === "elements"
+      ? { ...data, ...this.page(elements, request, snapshot.revision, "elements", true) }
+      : data;
   }
 
-  private page(values: unknown[], request: Record<string, unknown>, revision: string, field: string) {
+  private page(values: unknown[], request: Record<string, unknown>, revision: string, field: string, clonePage = false) {
     const offset = number(request.offset, "offset", 0, 0, values.length), limit = number(request.limit, "limit", 50, 1, 200);
     if (!Number.isInteger(offset) || !Number.isInteger(limit)) throw new CLIError("INVALID_INPUT", "Pagination requires integers.");
     if ((offset > 0 || request.revision !== undefined) && request.revision !== revision) throw new CLIError("STALE_REVISION", "Pagination snapshot changed.", "revision", "Read the first page again.");
-    return { [field]: values.slice(offset, offset + limit), total: values.length, revision, nextOffset: offset + limit < values.length ? offset + limit : null };
+    return { [field]: clonePage ? JSON.parse(JSON.stringify(values.slice(offset, offset + limit))) as unknown[] : values.slice(offset, offset + limit), total: values.length, revision, nextOffset: offset + limit < values.length ? offset + limit : null };
   }
 }

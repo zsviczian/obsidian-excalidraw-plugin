@@ -238,6 +238,25 @@ and bytes. The separate text-undo scenario still requires the component fix
 described above. Run one driver at a time; UI/CDP input also needs the intended
 vault window to retain focus.
 
+The native CLI lane also saves a light/dark SVG/PNG image-policy matrix in the
+report's `image-previews/` directory before cleaning its Vault fixtures. It covers
+shared-image originals, thumbnails and placeholders, crop/mirroring/rotation,
+transparency, frame title bounds, source/dirty-state preservation, metadata clear
+semantics, and an actual same-size/same-mtime
+attachment replacement after disk asset preparation. No raced output may publish. Set `EXCALIDRAW_CLI_POPOUT=1` to add
+popout inventory/export/teardown. This host currently reports ResizeObserver
+notifications when closing even a blank drawing popout; the runner preserves
+those errors and fails its clean-error gate rather than hiding them.
+
+Set `EXCALIDRAW_CLI_LARGE_IDENTITY=1` for the explicit native identity stress:
+387 synthetic file records hold more aggregate payload characters than V8's
+maximum single-string length, including prepared descriptor payloads. It checks
+stable read/pagination revisions, last-byte replacement, stale-apply refusal and
+placeholder export, recording read timings and sampled JS heap usage. Its strings
+share immutable backing storage; this is not a benchmark of 570 MB of independently
+decoded real images, regenerated-equal payloads, peak memory or UI responsiveness.
+Those measurements still require an image-heavy drawing copy in the test vault.
+
 For LaTeX dialog input and window ownership (#2970), run:
 
 ```bash
