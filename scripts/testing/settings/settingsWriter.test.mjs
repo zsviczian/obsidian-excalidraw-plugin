@@ -48,6 +48,15 @@ test("an own __proto__ key is data, not prototype pollution", () => {
   assert.equal(({}).polluted, undefined);
 });
 
+test("self-returning toJSON terminates via the depth cap", () => {
+  const cyclic = {};
+  cyclic.toJSON = () => cyclic;
+  // Without the depth increment this unwrapped forever (stack overflow).
+  // The cap stops unwrapping and JSON.stringify skips the function
+  // property, matching native semantics for this payload.
+  assert.equal(stringifySettingsCanonically({ a: cyclic }), '{"a":{}}');
+});
+
 test("unchanged reordered save is skipped", async () => {
   const { writes, host } = trackedWrites();
   const writer = new SerializedSettingsWriter(host);

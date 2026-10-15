@@ -27,7 +27,7 @@ const canonicalizeValue = (value: unknown, depth: number): unknown => {
     // result is serialized instead of the original object (Date -> string).
     const record = value as { toJSON?: () => unknown };
     if (typeof record.toJSON === "function") {
-      return canonicalizeValue(record.toJSON(), depth);
+      return canonicalizeValue(record.toJSON(), depth + 1);
     }
     // Array order is semantically significant and stays untouched.
     if (Array.isArray(value)) {
