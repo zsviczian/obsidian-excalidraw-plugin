@@ -78,6 +78,9 @@ For Markdown embed changes, also run `npm run test:markdown-embeds` and
 `npm run verify:obsidian:plugin -- --embed-recovery`. See the runtime guide for
 fixture ownership, deferred rendering, popout coverage, and remaining manual checks.
 
+For drawing-load warning changes, run `npm run test:drawing-load-error` to check
+file identity, read-only details, filename truncation, and unchanged confirmation results.
+
 Because Obsidian runs across a variety of environments, please manually test your changes on as many of the following platforms as possible to avoid breaking the plugin for other users:
 - Desktop: Mac, Windows, Linux
 - Mobile: Android, iOS (Test on both Phones and Tablets)

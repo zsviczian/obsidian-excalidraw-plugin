@@ -18,13 +18,15 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
 "2.29.1": `
+## Fixed
+- Drawing-load warnings now name the affected file. Select **More information** to learn about missing or malformed drawing data and device-local backups, and see the reported error. Warnings without a local backup also include a **Dismiss** button. Existing recovery actions are unchanged. [#2995](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2995)
+- **Settings backup noise.** Settings are now written with canonically sorted keys and unchanged saves are skipped, ending the endless data.json rewrite loop that flooded Obsidian Git vault backups with no-change commits.
+
 ## Excalidraw Automate
 - Mindmap Builder is now distributed as a readable script, with its modular source maintained in the EA Scripts workspace. Closing its sidepanel no longer lets delayed hotkey callbacks affect a newly opened instance.
 - Mindmap Builder's existing Paste action can attach a natively copied branch while preserving its links, images, and grouped notes. [#2996](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2996)
 - Closing or docking a script input with an open link suggester no longer leaves Enter intercepted in Markdown editors. Mindmap Builder also releases hotkey recording and overrides when it closes.
 
-## Fixed
-- **Settings backup noise.** Settings are now written with canonically sorted keys and unchanged saves are skipped, ending the endless data.json rewrite loop that flooded Obsidian Git vault backups with no-change commits.
 `,
 "2.29.0": `
 ${getYouTubeDiv("H64AW1l-ae4")}
