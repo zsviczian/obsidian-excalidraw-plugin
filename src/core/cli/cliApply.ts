@@ -6,11 +6,13 @@ import type { ConnectionPoint } from "src/types/types";
 import { CLIError, boolean, number, object, string, vaultPath } from "./cliProtocol";
 import { CLI_STYLE_FIELDS, constructBatch, fields, validateBatch, validateStyle } from "./cliElements";
 import { drawingFile, drawingView, liveIdentity } from "./cliTarget";
+import { sameCLIIdentity } from "./cliIdentity";
+import { cliImageMetadataPatch } from "src/utils/elementCustomDataUtils";
 
 export const CLI_OPERATION_FIELDS: Record<string, string[]> = {
   add: ["elements"], update: ["id", "set"], delete: ["ids", "children"],
   connect: ["id", "from", "to", "fromSide", "toSide"], group: ["ids"], ungroup: ["ids", "groupId"],
-  image: ["id", "asset", "x", "y", "scale"], latex: ["id", "text", "x", "y", "scaleX", "scaleY"],
+  image: ["id", "asset", "x", "y", "scale"], imageMetadata: ["id", "label", "tags"], latex: ["id", "text", "x", "y", "scaleX", "scaleY"],
 };
 
 function ids(value: unknown): string[] {
@@ -35,6 +37,12 @@ export function validateOperations(input: unknown): Record<string, unknown>[] {
     if (["delete", "group", "ungroup"].includes(op)) ids(operation.ids);
     if (op === "delete" && operation.children !== undefined && !["delete", "detach"].includes(string(operation.children, "children"))) throw new CLIError("INVALID_INPUT", "Expected delete or detach.", "children");
     if (op === "ungroup") string(operation.groupId, "groupId");
+    if (op === "imageMetadata") {
+      string(operation.id, "id");
+      if (operation.label === undefined && operation.tags === undefined) throw new CLIError("INVALID_INPUT", "Supply label or tags to update.", "imageMetadata");
+      if (operation.label !== undefined && operation.label !== null && (typeof operation.label !== "string" || !operation.label.trim() || operation.label.length > 80)) throw new CLIError("INVALID_INPUT", "Image label must be 1–80 characters or null.", "label");
+      if (operation.tags !== undefined && operation.tags !== null && (!Array.isArray(operation.tags) || operation.tags.length > 12 || operation.tags.some(tag => typeof tag !== "string" || !tag.trim() || tag.length > 32) || new Set(operation.tags).size !== operation.tags.length)) throw new CLIError("INVALID_INPUT", "Expected up to 12 unique short tags or null.", "tags");
+    }
     if (op === "connect") { string(operation.from, "from"); string(operation.to, "to"); side(operation.fromSide); side(operation.toSide); }
     if (["image", "latex"].includes(op)) {
       number(operation.x, "x", 0, -1000000, 1000000); number(operation.y, "y", 0, -1000000, 1000000);
@@ -56,7 +64,7 @@ export async function applyDrawing(cli: ExcalidrawCLI, request: Record<string, u
   const check = () => {
     if (!cli.isCurrent() || view.file !== file || view.excalidrawAPI !== api || view.excalidrawData !== model || plugin.app.vault.getFileByPath(file.path) !== file) throw new CLIError("STALE_REVISION", "Target identity changed during preparation.");
     if (view.isSameFileEditingActive() || view.isPersistenceBusy()) throw new CLIError("BUSY", "Drawing is being edited as Markdown or synchronized.");
-    if (liveIdentity(view) !== identity) throw new CLIError("STALE_REVISION", "Drawing changed during preparation.", "expectedRevision", "Read the new scene before retrying.");
+    if (!sameCLIIdentity(liveIdentity(view), identity)) throw new CLIError("STALE_REVISION", "Drawing changed during preparation.", "expectedRevision", "Read the new scene before retrying.");
   };
   check(); ea.setView(view);
   const originalElements = new Map(structuredClone(api.getSceneElements()).map(element => [element.id, element]));
@@ -92,6 +100,10 @@ export async function applyDrawing(cli: ExcalidrawCLI, request: Record<string, u
       if (["arrow", "line", "freedraw"].includes(element.type) && ["width", "height"].some(key => key in set)) throw new CLIError("INVALID_INPUT", "Linear resizing requires a trusted EA script.", "set");
       if ("text" in set) { set.rawText = set.text; set.originalText = set.text; }
       lib.mutateElement(element, elementsMap, set);
+    } else if (op === "imageMetadata") {
+      const element = resolve(operation.id);
+      if (element.type !== "image") throw new CLIError("INVALID_INPUT", "Image annotations require an image element.", "id");
+      lib.mutateElement(element, elementsMap, { customData: cliImageMetadataPatch(element, operation.label, operation.tags) });
     } else if (op === "delete") {
       const removed = new Set(ids(operation.ids).map(id => resolve(id).id));
       for (const id of [...removed]) {

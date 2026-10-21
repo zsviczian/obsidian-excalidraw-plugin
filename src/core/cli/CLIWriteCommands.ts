@@ -27,7 +27,7 @@ export class CLIWriteCommands {
     const path = command === "script" && request.path === undefined ? vaultPath(request.script, "script") : vaultPath(request.path);
     const out = command === "export" ? vaultPath(request.out, "out") : undefined;
     const locks = [...new Set([path, ...(out ? [out] : [])])];
-    if (locks.some(key => this.inFlight.has(key))) throw new CLIError("BUSY", "Another CLI operation is running for this target.", "path");
+    if (locks.some(key => this.inFlight.has(key))) throw new CLIError("BUSY", "Another CLI operation is running for this target.", "path", "Retry the identical requestId when the target is free.", {}, true);
     locks.forEach(key => this.inFlight.add(key));
     try {
       if (command === "create") return await this.create(path, request);

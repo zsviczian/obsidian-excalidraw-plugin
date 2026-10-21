@@ -36,7 +36,7 @@ function harness({ supported = true, desktop = true, native = true } = {}) {
   }
   const protocol = load('src/core/cli/cliProtocol');
   const { ExcalidrawCLI } = load('src/core/managers/ExcalidrawCLI');
-  return { manager: new ExcalidrawCLI(plugin), protocol, elements: load('src/core/cli/cliElements'), apply: load('src/core/cli/cliApply'), exporting: load('src/core/cli/cliExport'), plugin, registrations, versionChecks, files, View };
+  return { manager: new ExcalidrawCLI(plugin), protocol, elements: load('src/core/cli/cliElements'), apply: load('src/core/cli/cliApply'), exporting: load('src/core/cli/cliExport'), images: load('src/core/cli/cliImages'), dimensions: load('src/core/cli/cliImageDimensions'), dependencies: load('src/core/cli/cliDependencies'), customData: load('src/utils/elementCustomDataUtils'), plugin, registrations, versionChecks, files, View, mocks };
 }
 const request = (command, values = {}) => ({ apiVersion: 1, command, ...values });
 
@@ -92,7 +92,7 @@ test('portable skill stays aligned with native output and schema describes finit
   assert.equal((await h.manager.execute(request('api', { name: 'addRect' }))).data.entries[0].description, '');
   const schema = (await h.manager.execute(request('schema', { action: 'apply' }))).data.jsonSchema;
   assert.ok(schema.required.includes('expectedRevision'));
-  assert.deepEqual(schema.$defs.operation.oneOf.map(option => option.properties.op.const), ['add', 'update', 'delete', 'connect', 'group', 'ungroup', 'image', 'latex']);
+  assert.deepEqual(schema.$defs.operation.oneOf.map(option => option.properties.op.const), ['add', 'update', 'delete', 'connect', 'group', 'ungroup', 'image', 'imageMetadata', 'latex']);
 });
 
 test('multiple views require explicit identity; disk ignores ambiguity and refuses view selection', async () => {
@@ -235,4 +235,218 @@ test('CLI compilation checks exact source even when file stat matches a cached m
   assert.equal(await (await getCompiled.call(engine, file))(), 'old source');
   file.content = 'new source'; assert.equal(await (await getCompiled.call(engine, file, 'new source'))(), 'new source');
   await assert.rejects(getCompiled.call(engine, file, 'different'), /source changed/);
+});
+
+test('segmented live revisions retain immutable payloads and catch last-byte or descriptor changes', () => {
+  const h = harness();
+  const dataURL = 'data:image/png;base64,' + 'a'.repeat(2 * 1024 * 1024);
+  const file = { id: 'asset', mimeType: 'image/png', dataURL, created: 1 };
+  const element = { id: 'img', type: 'image', fileId: 'asset', version: 1, isDeleted: false };
+  const embedded = { img: dataURL, imgInverted: dataURL, mtime: 2 };
+  const model = { textElements: new Map(), markdownImages: new Map(), equations: new Map(), mermaids: new Map(),
+    exportPreparedSaveData: () => ({ files: new Map([['asset', embedded]]) }) };
+  const files = { asset: file };
+  const view = new h.View();
+  Object.assign(view, { id: 'view-1', file: h.files[0], excalidrawData: model,
+    excalidrawAPI: { getSceneElementsIncludingDeleted: () => [element], getFiles: () => files },
+    getScene: () => ({ appState: { theme: 'light' } }), data: 'markdown', textMode: 'raw', plugin: { settings: { use: true } },
+    isLoaded: true, isClosingOrMigrating: () => false });
+  const targets = h.manager.targets;
+  const original = targets.revision(view);
+  assert.equal(targets.revision(view), original);
+  file.dataURL = dataURL.slice(0, -1) + 'b';
+  const replaced = targets.revision(view);
+  assert.notEqual(replaced, original);
+  assert.equal(targets.revision(view), replaced);
+  embedded.imgInverted = dataURL.slice(0, -1) + 'c';
+  assert.notEqual(targets.revision(view), replaced);
+  const beforeSettings = targets.revision(view);
+  view.plugin.settings.use = false;
+  assert.notEqual(targets.revision(view), beforeSettings);
+  const beforeApi = targets.revision(view);
+  view.excalidrawAPI = { ...view.excalidrawAPI };
+  assert.notEqual(targets.revision(view), beforeApi);
+  h.manager.destroy();
+});
+
+test('CLI image inventory and policy avoid data URLs, separate shared-symbol representations and reject malformed rules', async () => {
+  const h = harness();
+  const { parseImagePolicy, decideImage, imageInventory, prepareImagePreview } = h.images;
+  const file = { id: 'shared', dataURL: 'data:image/png;base64,QUJDRA==', mimeType: 'image/png', created: 0 };
+  const original = { id: 'original', type: 'image', fileId: 'shared', status: 'saved', x: 10, y: 12, width: 200, height: 100, angle: 0.5, opacity: 80, scale: [-1, 1], crop: null, customData: { excalidrawCLI: { version: 1, tags: ['context'] } } };
+  const copy = { ...original, id: 'placeholder', customData: { excalidrawCLI: { version: 1, label: '<& 安全>' } } };
+  const policy = parseImagePolicy({ default: 'placeholder', rules: [{ ids: ['original'], mode: 'original' }], thumbnailMaxDimension: 512 });
+  const a = decideImage(original, file, policy), b = decideImage(copy, file, policy);
+  assert.equal(a.mode, 'original'); assert.equal(b.mode, 'placeholder');
+  assert.equal(imageInventory(original, file).loadedRenditionBytes, 4);
+  assert.equal(imageInventory(original, file).tags[0], 'context');
+  assert.equal(imageInventory({ ...original, status: undefined }, file).status, null);
+  const preview = await prepareImagePreview([original, copy], { shared: file }, policy, new Map([[a.elementId, a], [b.elementId, b]]));
+  assert.equal(preview.elements[0].fileId, 'shared');
+  assert.notEqual(preview.elements[1].fileId, 'shared');
+  assert.equal(preview.elements[1].crop, null);
+  assert.equal(preview.elements[1].x, copy.x); assert.equal(preview.elements[1].angle, copy.angle);
+  assert.deepEqual(preview.elements[1].scale, copy.scale);
+  const previewPayload = preview.files[preview.elements[1].fileId].dataURL;
+  const xml = atob(previewPayload.split(',')[1]);
+  assert.match(xml, /&#60;&#38;/); assert.doesNotMatch(xml, /<script/);
+  assert.equal(file.dataURL, 'data:image/png;base64,QUJDRA==');
+  assert.throws(() => parseImagePolicy({ default: 'auto' }));
+  assert.throws(() => parseImagePolicy({ rules: [{ mode: 'original' }] }));
+  assert.throws(() => parseImagePolicy({ rules: Array(33).fill({ ids: ['x'], mode: 'original' }) }));
+});
+
+test('schema distinguishes insertion boolean scale from export number scale and validates metadata fields', async () => {
+  const h = harness();
+  const result = await h.manager.execute(request('schema', { action: 'apply' }));
+  const operations = result.data.jsonSchema.$defs.operation.oneOf;
+  assert.equal(operations.find(op => op.properties.op.const === 'image').properties.scale.type, 'boolean');
+  assert.equal(operations.find(op => op.properties.op.const === 'imageMetadata').properties.tags.anyOf[1].maxItems, 12);
+  assert.deepEqual(operations.find(op => op.properties.op.const === 'imageMetadata').anyOf, [{ required: ['label'] }, { required: ['tags'] }]);
+  assert.equal((await h.manager.execute(request('schema', { action: 'create' }))).data.jsonSchema.$defs.skeleton.properties.label.type, 'object');
+  assert.equal((await h.manager.execute(request('schema', { action: 'export' }))).data.jsonSchema.properties.scale.type, 'number');
+  assert.doesNotThrow(() => h.apply.validateOperations([{ op: 'image', asset: 'images/a.png', scale: true }]));
+  assert.throws(() => h.apply.validateOperations([{ op: 'image', asset: 'images/a.png', scale: 1 }]));
+  assert.throws(() => h.apply.validateOperations([{ op: 'imageMetadata', id: 'img', tags: ['x', 'x'] }]));
+});
+
+test('BUSY before lock retries the same canonical ID while pending/failed and mismatched writes never repeat', async () => {
+  const h = harness(); let calls = 0;
+  h.manager.writes.execute = async () => {
+    calls++;
+    if (calls === 1) throw new h.protocol.CLIError('BUSY', 'pre-execution refusal', 'path', 'Retry identical request.', {}, true);
+    return { mutation: 'applied', persistence: 'saved', data: { calls } };
+  };
+  const input = request('create', { requestId: 'busy1', path: 'new.excalidraw.md', elements: [] });
+  const first = await h.manager.execute(input); assert.equal(first.error.code, 'BUSY');
+  assert.equal((await h.manager.execute({ ...input, path: 'different.excalidraw.md' })).error.field, 'requestId');
+  const second = await h.manager.execute(input); assert.equal(second.ok, true);
+  assert.equal(second.data.calls, 2);
+  assert.deepEqual(await h.manager.execute(input), second); assert.equal(calls, 2);
+  h.manager.writes.execute = async () => { throw Error('private: image data; TOKEN-123'); };
+  const err = await h.manager.execute(request('create', { requestId: 'boom1', path: 'new.excalidraw.md', elements: [] }));
+  assert.equal(err.error.code, 'INTERNAL_ERROR'); assert.equal(err.mutation, 'unknown');
+  assert.equal(err.persistence, 'unknown'); assert.doesNotMatch(JSON.stringify(err), /TOKEN-123/);
+});
+
+test('summary, image inventory and paged elements avoid cloning original file payloads', async () => {
+  const h = harness(); const bigURL = 'data:image/png;base64,' + 'A'.repeat(8 * 1024 * 1024);
+  const element = { id: 'img12345', fileId: 'large', type: 'image', status: 'saved', isDeleted: false,
+    x: 0, y: 0, width: 100, height: 80, angle: 0, opacity: 100, scale: [1, 1], crop: null, customData: {} };
+  const files = { large: { id: 'large', dataURL: bigURL, mimeType: 'image/png', created: 0 } };
+  const view = Object.assign(new h.View(), { id: 'view-1', file: h.files[0], isLoaded: true, isClosingOrMigrating: () => false,
+    isDirty: () => false, textMode: 'raw', data: '', plugin: { settings: {} },
+    excalidrawAPI: { getSceneElementsIncludingDeleted: () => [element], getFiles: () => files, getAppState: () => ({ selectedElementIds: {} }) },
+    excalidrawData: { textElements: new Map(), markdownImages: new Map(), equations: new Map(), mermaids: new Map(), getFileEntries: () => [],
+      exportPreparedSaveData: () => ({ files: new Map([['large', { img: bigURL, imgInverted: bigURL }]]) }) },
+    getScene: () => ({ elements: [element], files, appState: {} }) });
+  h.plugin.app.workspace.getLeavesOfType = () => [{ view }];
+  const originalClone = globalThis.structuredClone;
+  globalThis.structuredClone = input => {
+    if (input && (input.files || input.elements)) assert.fail('Unexpected full-scene clone');
+    return originalClone(input);
+  };
+  try {
+    const summary = await h.manager.execute(request('read', { path: view.file.path, source: 'live' }));
+    assert.equal(summary.ok, true); assert.equal(summary.data.total, 1);
+    const images = await h.manager.execute(request('read', { path: view.file.path, source: 'live', detail: 'images' }));
+    assert.equal(images.ok, true); assert.equal(images.data.images[0].loadedRenditionBytes, 6 * 1024 * 1024);
+    assert.equal(JSON.stringify(images).includes(bigURL), false);
+    const page = await h.manager.execute(request('read', { path: view.file.path, source: 'live', detail: 'elements' }));
+    assert.equal(page.ok, true); assert.equal(page.data.elements[0].id, element.id);
+    assert.equal(page.data.revision, summary.data.revision);
+  } finally { globalThis.structuredClone = originalClone; }
+});
+
+test('derived PNG dimensions honor requested caps and existing hard limits', () => {
+  const { exporting: { previewScale, exportBounds } } = harness();
+  assert.equal(previewScale(4000, 2000, 1, 1000, 1000, 2000000), 0.25);
+  assert.ok(previewScale(20000, 20000, 1, 100, 100, 10000) < 0.1);
+  assert.throws(() => previewScale(500, 500, 1, undefined, undefined, 0));
+  assert.throws(() => exportBounds(100000, 100000, 1));
+});
+
+test('disk dependencies detect same-stat replacements, restoration, deletion and unload, and release listeners', async () => {
+  const { dependencies: { CLIDiskDependencies } } = harness();
+  const file = { path: 'image.png', stat: { size: 4, mtime: 1 } };
+  let bytes = Uint8Array.of(1, 2, 3, 4), current = true;
+  const listeners = new Map();
+  const vault = { getFileByPath: () => file, readBinary: async () => bytes.slice().buffer,
+    on: (event, fn) => { listeners.set(event, fn); return event; }, offref: event => listeners.delete(event) };
+  const guard = new CLIDiskDependencies(vault, () => current);
+  await guard.observe(file); await guard.validate();
+  bytes[3] = 5;
+  await assert.rejects(guard.validate(), error => error.code === 'STALE_REVISION');
+  bytes[3] = 4;
+  await guard.validate();
+  listeners.get('modify')(file);
+  await assert.rejects(guard.validate(), error => error.code === 'STALE_REVISION');
+  guard.destroy(); guard.destroy(); assert.equal(listeners.size, 0);
+  const second = new CLIDiskDependencies(vault, () => current);
+  current = false;
+  await assert.rejects(second.observe(file), error => error.code === 'NOT_READY');
+  second.destroy(); assert.equal(listeners.size, 0);
+});
+
+test('thumbnail preflight rejects huge and unknown raster dimensions before creating or decoding an image', async () => {
+  const { dimensions: { thumbnailDimensions }, images } = harness();
+  const png = (width, height) => {
+    const bytes = Buffer.alloc(24);
+    Buffer.from('\x89PNG\r\n\x1a\n', 'latin1').copy(bytes);
+    bytes.write('IHDR', 12); bytes.writeUInt32BE(width, 16); bytes.writeUInt32BE(height, 20);
+    return 'data:image/png;base64,' + bytes.toString('base64');
+  };
+  assert.deepEqual(thumbnailDimensions(png(400, 200)), { width: 400, height: 200 });
+  for (const url of [png(100000, 100000), png(0, 1), 'data:image/svg+xml;base64,' + btoa('<svg/>')]) {
+    assert.throws(() => thumbnailDimensions(url), error => error.code === 'ASSETS_UNAVAILABLE');
+  }
+  const element = { type: 'image', id: 'large', fileId: 'file', width: 100, height: 100 };
+  const file = { id: 'file', dataURL: png(100000, 100000), mimeType: 'image/png' };
+  const policy = images.parseImagePolicy({ default: 'thumbnail' });
+  await assert.rejects(images.prepareImagePreview([element], { file }, policy, new Map()), error => error.code === 'ASSETS_UNAVAILABLE');
+});
+
+test('real export preparation omits replaced payloads and refuses concurrent live edits and omitted attachment collisions', async () => {
+  const h = harness(); let rendered, writes = 0, changeDuringRender = false;
+  const element = { type: 'image', id: 'image001', fileId: 'file001', x: 0, y: 0, width: 80, height: 40, angle: 0, isDeleted: false };
+  const files = { file001: { id: 'file001', mimeType: 'image/png', dataURL: 'data:image/png;base64,QUJDRA==', created: 1 } };
+  const model = { textElements: new Map(), markdownImages: new Map(), equations: new Map(), mermaids: new Map(), exportPreparedSaveData: () => ({ files: [] }), getFileEntries: () => [['file001', { file: { path: 'attachment.svg' } }]] };
+  const view = Object.assign(new h.View(), { id: 'view001', file: h.files[0], isLoaded: true, isClosingOrMigrating: () => false,
+    textMode: 'raw', data: '', plugin: { settings: {} }, excalidrawData: model,
+    excalidrawAPI: { getSceneElementsIncludingDeleted: () => [element], getFiles: () => files },
+    getScene: () => ({ elements: [element], files, appState: {} }), getViewExportTheme: () => 'light' });
+  h.plugin.app.workspace.getLeavesOfType = () => [{ view }];
+  h.plugin.getCLIRuntime = () => ({ getCommonBounds: () => [0, 0, 80, 40] });
+  h.plugin.app.vault.getAbstractFileByPath = () => null;
+  h.plugin.app.vault.createBinary = async () => { writes++; };
+  h.mocks['src/utils/fileUtils'].checkAndCreateFolder = async () => {};
+  h.mocks['src/utils/utils'].getSVG = async scene => {
+    rendered = scene;
+    if (changeDuringRender) element.x++;
+    return { getAttribute: key => key === 'width' ? '100' : '60', setAttribute() {}, outerHTML: '<svg width="100" height="60"/>' };
+  };
+  const request = { path: view.file.path, source: 'live', out: 'preview.svg', imagePolicy: { default: 'placeholder' } };
+  const result = await h.exporting.exportDrawing(h.manager, request, request.out);
+  assert.equal(writes, 1); assert.equal(result.data.imageSummary.placeholder, 1);
+  assert.equal(Object.values(rendered.files).some(file => file.dataURL === files.file001.dataURL), false);
+  assert.notEqual(rendered.elements[0].fileId, element.fileId);
+  assert.equal(element.fileId, 'file001');
+  changeDuringRender = true;
+  await assert.rejects(h.exporting.exportDrawing(h.manager, request, request.out), error => error.code === 'STALE_REVISION');
+  assert.equal(writes, 1);
+  await assert.rejects(h.exporting.exportDrawing(h.manager, { ...request, out: 'attachment.svg' }, 'attachment.svg'), error => error.code === 'INVALID_INPUT');
+  assert.equal(writes, 1);
+});
+
+
+test('image metadata edits preserve namespace extensions and refuse forward versions', () => {
+  const { customData: { cliImageMetadataPatch } } = harness();
+  const element = { type: 'image', customData: { other: { preserved: true }, excalidrawCLI: { version: 1, label: 'Before', tags: ['detail'], future: { preserved: true } } } };
+  const patched = cliImageMetadataPatch(element, null, undefined);
+  assert.equal(patched.excalidrawCLI.label, undefined);
+  assert.deepEqual(patched.excalidrawCLI.tags, ['detail']);
+  assert.deepEqual(patched.excalidrawCLI.future, { preserved: true });
+  assert.deepEqual(patched.other, element.customData.other);
+  assert.equal(element.customData.excalidrawCLI.label, 'Before');
+  assert.throws(() => cliImageMetadataPatch({ ...element, customData: { excalidrawCLI: { version: 2 } } }, 'New', undefined), /Unsupported/);
 });

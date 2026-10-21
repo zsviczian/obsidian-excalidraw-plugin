@@ -4,6 +4,7 @@ import type { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import type { ExcalidrawCLIResult } from "src/types/excalidrawCliTypes";
 import { CLIError, boolean, jsonValue, vaultPath } from "./cliProtocol";
 import { drawingFile, drawingView, liveIdentity } from "./cliTarget";
+import { sameCLIIdentity } from "./cliIdentity";
 
 /** Source content participates in the effective request identity, including cached scripts. */
 export async function prepareScript(cli: ExcalidrawCLI, request: Record<string, unknown>) {
@@ -27,7 +28,7 @@ export async function executeScript(cli: ExcalidrawCLI, request: Record<string, 
   const api = view?.excalidrawAPI, identity = view ? liveIdentity(view) : null;
   const check = () => {
     if (!cli.isCurrent() || plugin.app.vault.getFileByPath(prepared.file.path) !== prepared.file || JSON.stringify(prepared.file.stat) !== prepared.stat) throw new CLIError("STALE_REVISION", "Script or plugin identity changed before execution.");
-    if (view && (view.file !== drawing || view.excalidrawAPI !== api || liveIdentity(view) !== identity)) throw new CLIError("STALE_REVISION", "Drawing changed before script execution.");
+    if (view && (view.file !== drawing || view.excalidrawAPI !== api || !sameCLIIdentity(liveIdentity(view), identity))) throw new CLIError("STALE_REVISION", "Drawing changed before script execution.");
     if (view && (view.isSameFileEditingActive() || view.isPersistenceBusy())) throw new CLIError("BUSY", "Drawing is being edited as Markdown or synchronized.");
   };
   check(); if (view) ea.setView(view);
