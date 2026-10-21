@@ -9,7 +9,10 @@ import {
   decryptPersistedAPIKeys,
   encryptPersistedAPIKeys,
 } from "src/utils/settingsKeyObfuscation";
-import { SerializedSettingsWriter } from "src/core/settings/SerializedSettingsWriter";
+import {
+  SerializedSettingsWriter,
+  stringifySettingsCanonically,
+} from "src/core/settings/SerializedSettingsWriter";
 import { SettingsRecoveryStore } from "src/core/settings/SettingsRecoveryStore";
 import {
   SettingsRecoveryPrompt,
@@ -121,6 +124,7 @@ export class PluginSettingsManager {
           encryptPersistedAPIKeys(
             this.host.settings as PersistedExcalidrawSettings,
           ),
+          true,
         );
         return false;
       }
@@ -290,10 +294,10 @@ export class PluginSettingsManager {
       this.host.settings as PersistedExcalidrawSettings,
     );
     const shouldPersistEncryptedSettings =
-      JSON.stringify(encryptedPersistedSettings) !==
-      JSON.stringify(persistedSettings);
+      stringifySettingsCanonically(encryptedPersistedSettings) !==
+      stringifySettingsCanonically(persistedSettings);
     if (shouldPersistStartupChoice) {
-      await this.persistSnapshot(encryptedPersistedSettings);
+      await this.persistSnapshot(encryptedPersistedSettings, true);
       if (recoveredInvalidStartup) {
         new Notice(t("SETTINGS_DATA_RECOVERED"), 12000);
       }
@@ -304,6 +308,7 @@ export class PluginSettingsManager {
       await this.persistSnapshot(encryptedPersistedSettings);
     } else if (!this.persistenceBlockedByInvalidData) {
       await this.saveRecoverySnapshot(encryptedPersistedSettings);
+      this.writer.rememberPersistedSnapshot(persistedSettings);
     }
     this.hasCompletedInitialLoad = true;
     return !hasInvalidSettings;
@@ -329,8 +334,9 @@ export class PluginSettingsManager {
 
   private persistSnapshot(
     settings: PersistedExcalidrawSettings,
+    force = false,
   ): Promise<void> {
-    return this.writer.persist(settings);
+    return this.writer.persist(settings, force ? { force: true } : undefined);
   }
 
   /** Closes the device-local recovery database connection. */
