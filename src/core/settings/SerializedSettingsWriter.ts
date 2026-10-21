@@ -23,12 +23,6 @@ const canonicalizeValue = (value: unknown, depth: number): unknown => {
     return value;
   }
   if (typeof value === "object") {
-    // Keep native JSON.stringify value semantics: when toJSON exists, its
-    // result is serialized instead of the original object (Date -> string).
-    const record = value as { toJSON?: () => unknown };
-    if (typeof record.toJSON === "function") {
-      return canonicalizeValue(record.toJSON(), depth + 1);
-    }
     // Array order is semantically significant and stays untouched.
     if (Array.isArray(value)) {
       return value.map((item) => canonicalizeValue(item, depth + 1));
@@ -50,9 +44,13 @@ const canonicalizeValue = (value: unknown, depth: number): unknown => {
  *
  * Values that only differ in key order produce identical strings, so a plain
  * string comparison becomes a semantically safe equality check.
+ * Native serialization first preserves property-key-aware toJSON calls,
+ * boxed primitive values, and JSON's omission and array replacement rules.
  */
-export const stringifySettingsCanonically = (settings: unknown): string =>
-  JSON.stringify(canonicalizeValue(settings, 0));
+export const stringifySettingsCanonically = (settings: unknown): string => {
+  const snapshot: unknown = JSON.parse(JSON.stringify(settings));
+  return JSON.stringify(canonicalizeValue(snapshot, 0));
+};
 
 /**
  * Serializes complete settings writes so an older save cannot finish after a

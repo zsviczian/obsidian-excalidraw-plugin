@@ -40,6 +40,70 @@ test("toJSON values keep native JSON semantics (Date)", () => {
   assert.deepEqual(canonical, { a: date.toISOString(), b: 1 });
 });
 
+test("toJSON receives its root, property or array index key exactly once", () => {
+  const keys = [];
+  const value = {
+    toJSON(key) {
+      keys.push(key);
+      return { z: 1, a: key };
+    },
+  };
+  assert.equal(stringifySettingsCanonically(value), '{"a":"","z":1}');
+  assert.equal(
+    stringifySettingsCanonically({ nested: value, array: [value] }),
+    '{"array":[{"a":"0","z":1}],"nested":{"a":"nested","z":1}}',
+  );
+  assert.deepEqual(keys, ["", "nested", "0"]);
+});
+
+test("an object returned by toJSON does not invoke its own toJSON", () => {
+  let returnedCalls = 0;
+  const value = {
+    x: {
+      toJSON() {
+        return {
+          z: 1,
+          a: 2,
+          toJSON() {
+            returnedCalls++;
+            return "must not replace the returned object";
+          },
+        };
+      },
+    },
+  };
+  assert.equal(stringifySettingsCanonically(value), '{"x":{"a":2,"z":1}}');
+  assert.equal(returnedCalls, 0);
+});
+
+test("boxed primitives retain their native JSON values", () => {
+  const value = {
+    number: new Number(7),
+    boolean: new Boolean(false),
+    string: new String("text"),
+  };
+  assert.deepEqual(
+    JSON.parse(stringifySettingsCanonically(value)),
+    JSON.parse(JSON.stringify(value)),
+  );
+});
+
+test("native JSON omission and array replacement semantics are preserved", () => {
+  const value = {
+    omitted: undefined,
+    callable: () => "omitted",
+    array: [undefined, , NaN, Infinity, -Infinity, -0, Symbol("omitted")],
+  };
+  assert.deepEqual(
+    JSON.parse(stringifySettingsCanonically(value)),
+    JSON.parse(JSON.stringify(value)),
+  );
+  assert.throws(() => stringifySettingsCanonically({ bigint: 1n }), TypeError);
+  const cyclic = {};
+  cyclic.self = cyclic;
+  assert.throws(() => stringifySettingsCanonically(cyclic), TypeError);
+});
+
 test("an own __proto__ key is data, not prototype pollution", () => {
   const payload = JSON.parse('{"__proto__":{"polluted":true},"ok":1}');
   const out = JSON.parse(stringifySettingsCanonically(payload));
@@ -48,13 +112,15 @@ test("an own __proto__ key is data, not prototype pollution", () => {
   assert.equal(({}).polluted, undefined);
 });
 
-test("self-returning toJSON terminates via the depth cap", () => {
+test("self-returning toJSON uses native one-call semantics", () => {
   const cyclic = {};
-  cyclic.toJSON = () => cyclic;
-  // Without the depth increment this unwrapped forever (stack overflow).
-  // The cap stops unwrapping and JSON.stringify skips the function
-  // property, matching native semantics for this payload.
+  let calls = 0;
+  cyclic.toJSON = () => {
+    calls++;
+    return cyclic;
+  };
   assert.equal(stringifySettingsCanonically({ a: cyclic }), '{"a":{}}');
+  assert.equal(calls, 1);
 });
 
 test("unchanged reordered save is skipped", async () => {
