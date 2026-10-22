@@ -5,7 +5,7 @@ import {
 } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/src/types";
 import type { PointerEvent as ReactPointerEvent } from "react";
-import { DEVICE, obsidianToExcalidrawMap } from "../../constants/constants";
+import { DEVICE, getExcalidrawLangCode } from "../../constants/constants";
 import { t } from "../../lang/helpers";
 import { isMarkdownImageElement } from "../../shared/MarkdownImage";
 import { shouldRenderMermaid } from "../../utils/mermaidUtils";
@@ -201,7 +201,7 @@ export function createExcalidrawRootElement(
           onPointerUpdate: (p) => view.onPointerUpdate(p),
           libraryReturnUrl: "app://obsidian.md",
           autoFocus: true,
-          langCode: obsidianToExcalidrawMap[view.plugin.locale] ?? "en-EN",
+          langCode: getExcalidrawLangCode(view.plugin.locale),
           aiEnabled: view.plugin.settings.aiEnabled ?? true,
           onChange: (et, st, files) =>
             view.onChange(et as ExcalidrawElement[], st, files),
