@@ -1047,7 +1047,7 @@ pre.excalidraw-drawing-load-error-message code {
   width: 100%;
   height: 100%;
   position: absolute;
-  touch-action: none;
+  touch-action: pan-y;
 }
 
 .excalidraw-toolsPanel-island {
@@ -1069,6 +1069,7 @@ pre.excalidraw-drawing-load-error-message code {
   height: 26px;
   width: 100%;
   cursor: move;
+  touch-action: none;
 }
 
 .excalidraw .Island.App-menu__left {
