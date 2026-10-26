@@ -638,8 +638,8 @@ export async function updateMarkdownImage(
     return false;
   }
   const ea = getEA(view);
-  // One file ID has one SVG but can have several independently resized
-  // canvas elements. Use live elements because rendering is asynchronous.
+  // A shared render-width change applies to every copy of the SVG. Content-only
+  // edits preserve each copy's canvas resize. Read live elements after rendering.
   ea.copyViewElementsToEAforEditing(currentElements);
   for (const current of currentElements) {
     const editable = ea.getElement(current.id) as Mutable<ExcalidrawImageElement>;
@@ -654,8 +654,6 @@ export async function updateMarkdownImage(
       nextIntrinsic: rendered.size,
       previousFlowWidth,
       nextFlowWidth: render.width,
-      preserveBounds:
-        current.id !== element.id && previousFlowWidth !== render.width,
     });
     editable.x = geometry.x;
     editable.y = geometry.y;

@@ -39,7 +39,7 @@ test("each copy sharing one file ID retains its own canvas size", () => {
   assert.deepEqual(display({ x: 900, y: 20, width: 200, height: 60 }, oldSize, nextSize), { x: 900, y: 20, width: 200, height: 60 });
 });
 
-test("flow-width change leaves a shared image copy at its chosen canvas size", () => {
+test("flow-width change applies new geometry to a shared image copy", () => {
   assert.deepEqual(
     geometry.getMarkdownImageDisplayGeometry?.({
       current: { x: 900, y: 20, width: 200, height: 60 },
@@ -47,8 +47,7 @@ test("flow-width change leaves a shared image copy at its chosen canvas size", (
       nextIntrinsic: { width: 600, height: 300 },
       previousFlowWidth: 400,
       nextFlowWidth: 600,
-      preserveBounds: true,
     }),
-    { x: 900, y: 20, width: 200, height: 60 },
+    { x: 900, y: 20, width: 600, height: 300 },
   );
 });

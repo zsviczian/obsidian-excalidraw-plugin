@@ -111,14 +111,49 @@ async function exerciseMarkdown(control, drawingPath) {
   await setContent(Array.from({ length: 12 }, (_, i) => `Line ${i + 1}`).join("\n\n"));
   if (current().width !== expected.width || current().height !== expected.height) throw Error("Markdown editor reset the canvas resize");
   c.results = [{ kind: "markdown-sidepanel", displayed: expected, rendered: current().customData.markdownImage.renderedSize }];
+
+  const ea = view.ownerWindow.ExcalidrawAutomate.getAPI(view);
+  let duplicate;
+  try {
+    duplicate = ea.cloneElement(current());
+    duplicate.x += current().width + 20;
+    ea.elementsDict[duplicate.id] = duplicate;
+    await ea.addElementsToView(false, false, true);
+  } finally { ea.destroy(); }
+  await waitFor(() => view.getViewElements().some(element => element.id === duplicate.id), "shared Markdown duplicate");
+  const sibling = () => view.getViewElements().find(element => element.id === duplicate.id);
+  view.excalidrawAPI.mutateElement(sibling(), { width: sibling().width / 4, height: sibling().height / 4 });
+  const positions = [current(), sibling()].map(element => ({ x: element.x, y: element.y }));
+  const previousWidth = current().customData.markdownImage.render.width;
+  const nextWidth = previousWidth === 700 ? 900 : 700;
+  const widthInput = c.tab.contentEl.querySelector('input[type="number"][max="4000"]');
+  if (!widthInput) throw Error("Markdown appearance width input missing");
+  widthInput.value = String(nextWidth);
+  widthInput.dispatchEvent(new widthInput.ownerDocument.defaultView.Event("input", { bubbles: true }));
+  await waitFor(() => current().customData.markdownImage.render.width === nextWidth && !c.tab.contentEl.querySelector(".excalidraw-markdown-image-editor__status")?.classList.contains("is-updating"), "shared Markdown width render");
+  const checkSharedWidth = () => {
+    const copies = [current(), sibling()];
+    const intrinsic = current().customData.markdownImage.renderedSize;
+    copies.forEach((element, index) => {
+      if (element.fileId !== image.fileId || element.customData.markdownImage.render.width !== nextWidth || element.width !== intrinsic.width || element.height !== intrinsic.height) throw Error("shared Markdown copy missed the width change");
+      if (element.x !== positions[index].x || element.y !== positions[index].y) throw Error("shared width edit moved a Markdown copy");
+    });
+    return { width: intrinsic.width, height: intrinsic.height };
+  };
+  checkSharedWidth();
+  await setContent("Shorter shared content");
+  const sharedBounds = checkSharedWidth();
+  c.results.push({ kind: "markdown-shared-width", copies: 2, previousWidth, nextWidth, displayed: sharedBounds, fileId: image.fileId });
   c.tab.close(); c.tab = null;
   await new Promise(resolve => setTimeout(resolve, 100));
   await view.forceSave(true, true);
   await leaf.setViewState({ type: "empty", state: {} });
   await leaf.setViewState({ type: "excalidraw", state: { file: drawingPath } });
   await waitFor(() => leaf.view.excalidrawAPI && leaf.view.getViewElements().some(el => el.id === image.id), "Markdown image reopen");
-  const reopened = leaf.view.getViewElements().find(el => el.id === image.id);
-  if (reopened.width !== expected.width || reopened.height !== expected.height) throw Error("Markdown resize changed on reopen");
+  for (const id of [image.id, duplicate.id]) {
+    const reopened = leaf.view.getViewElements().find(el => el.id === id);
+    if (!reopened || reopened.fileId !== image.fileId || reopened.width !== sharedBounds.width || reopened.height !== sharedBounds.height || reopened.customData.markdownImage.render.width !== nextWidth) throw Error("shared Markdown width changed on reopen");
+  }
   c.reopen = true;
 }
 
@@ -139,9 +174,9 @@ export async function runImageGeometryScenario({ cli, drawingPath, realRenderer 
   const evaluate = code => JSON.parse(cli("eval", `code=${code}`).trim().replace(/^=>\s*/, ""));
   const cases = [];
   for (const [popout, scenario] of [[false, exercise], [true, exercise], [false, exerciseMarkdown]]) {
+    let result;
     try {
       evaluate(`(()=>{if(globalThis.${CONTROL})throw Error("geometry controller exists");const c=globalThis.${CONTROL}={state:"pending"};(${scenario.toString()})(${JSON.stringify(CONTROL)},${JSON.stringify(drawingPath)},${popout},${realRenderer}).then(()=>c.state="done").catch(e=>{c.error=e.stack;c.state="failed"});return JSON.stringify({started:true})})()`);
-      let result;
       for (let i = 0; i < 200; i++) {
         result = evaluate(`JSON.stringify({state:globalThis.${CONTROL}.state,error:globalThis.${CONTROL}.error,results:globalThis.${CONTROL}.results,reopen:globalThis.${CONTROL}.reopen})`);
         if (result.state !== "pending") break;
@@ -149,6 +184,8 @@ export async function runImageGeometryScenario({ cli, drawingPath, realRenderer 
       }
       assert.equal(result.state, "done", result.error ?? "geometry scenario timed out");
       cases.push({ window: popout ? "popout" : "main", ...result });
+    } catch (error) {
+      throw new Error(`${error.message}; scenario: ${scenario.name}; completed: ${cases.length}; last state: ${JSON.stringify(result)}`, { cause: error });
     } finally {
       cli("eval", `code=(${cleanup.toString()})(${JSON.stringify(CONTROL)})`);
     }

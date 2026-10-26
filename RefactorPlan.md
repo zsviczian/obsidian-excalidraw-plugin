@@ -27,6 +27,7 @@ validated, and what remains uncertain.
 | Phase | Status | Current outcome |
 | --- | --- | --- |
 | Assessment and baseline design | Complete | Initial architecture, risks, sequencing, and validation matrix documented |
+| Shared Markdown editor width in #3015 | Implemented; 21 geometry tests and native duplicate/edit/reopen checks pass | Explicit editor Width changes apply new intrinsic bounds to every element with the same file ID. Content-only renders retain per-element canvas resizes; the sibling-only preservation override is removed |
 | Native provider frame insertion in #2992 | Implemented; 147 source tests and 30 native provider checks pass; known ResizeObserver error gate remains | DropManager forwards an owning-window URL-only DataTransfer to the component. Excalidraw owns provider sizing, insertion and native history; original browser data may expire without losing the selected URL |
 | Internal file-drop eligibility in #2992 | Implemented; 92 source tests and 10 native cases pass; known ResizeObserver error gate remains | A shared action eligibility check keeps tooltip and insertion aligned. Fonts without a registered renderer offer only links; image/Markdown/PDF/media/custom-view actions remain available |
 | Share dropped-file import for #2992 browser fallback | Implemented; 56 source tests and 20 native cases pass; known ResizeObserver error gate remains | Move the existing byte import, duplicate Use/Overwrite/Import choices and animated-file modal dispatch into one private DropManager method. Both OS imports and unsupported browser image URL fallbacks use it; navigation actions retain the page target |
@@ -2555,3 +2556,26 @@ modifier gesture. Check actual Chrome Option-drops of normal YouTube, Shorts and
 Vimeo, one native Undo, and one popout. Physical Windows Ctrl+Shift and mobile
 touch insertion remain separate coverage; desktop synthetic events do not prove
 those gestures.
+
+### 2026-10-26 — Propagate explicit Markdown render width to shared copies (#3015)
+
+The maintainer confirmed that changing the Markdown editor's Width setting only
+resized the edited copy. The update already wrote new render settings to every
+instance with the same file ID, but a sibling-only preservation override kept
+their old scene bounds. Remove that override and its unused geometry option.
+Explicit shared render-width changes now update all copies; content-only edits
+still preserve independent canvas resizes. Unrelated file IDs and positions stay
+unchanged, and live duplicates created during a pending render are included.
+
+All 21 geometry/parser tests and 147 drop tests pass. The native editor-control
+check duplicated a shared image, reduced the copy separately, then changed Width
+from 500 to 700. Both copies adopted the new geometry, retained it through another
+content edit and save/reopen, and kept their positions/file ID. Real MathJax
+main/popout checks and fixture cleanup passed; the overall runner retained the
+known ResizeObserver error gate. An initial CLI timeout cleaned up; the retry
+returned all feature results. Focused source lint is clean.
+
+Remaining manual focus: change Width with the text field and slider on shared
+copies, and compare a copy with its own file ID. Verify ordinary canvas resizes
+survive content-only edits. Popout editing and physical mobile remain separate
+coverage for this width-control follow-up.

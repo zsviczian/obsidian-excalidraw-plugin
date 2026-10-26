@@ -17,18 +17,13 @@ export function getMarkdownImageDisplayGeometry({
   nextIntrinsic,
   previousFlowWidth,
   nextFlowWidth,
-  preserveBounds = false,
 }: {
   current: ImageBounds;
   previousIntrinsic?: ImageSize | null;
   nextIntrinsic: ImageSize;
   previousFlowWidth: number;
   nextFlowWidth: number;
-  preserveBounds?: boolean;
 }): ImageBounds {
-  if (preserveBounds) {
-    return { ...current };
-  }
   if (previousFlowWidth !== nextFlowWidth) {
     return { x: current.x, y: current.y, ...nextIntrinsic };
   }

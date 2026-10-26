@@ -42,7 +42,7 @@ function fixture() {
   return {
     render, view, stored, elements: () => elements, saves: () => saves,
     start: (settings = render, apply = () => true) => exports.updateMarkdownImage(view, elements[0], "new content", settings, "local", apply),
-    finish: () => finish({ dataURL: "data:image/svg+xml;base64,fixture", size: { width: 400, height: 260 }, hasSVGwithBitmap: false }),
+    finish: (size = { width: 400, height: 260 }) => finish({ dataURL: "data:image/svg+xml;base64,fixture", size, hasSVGwithBitmap: false }),
   };
 }
 
@@ -59,6 +59,34 @@ test("a resize during rendering uses the live scene dimensions", async () => {
   f.elements()[0].width = 800; f.elements()[0].height = 240;
   f.finish(); await done;
   assert.deepEqual(f.elements().map(el => [el.width, el.height]), [[800, 240], [200, 60]]);
+});
+
+test("editor width changes resize every copy sharing the file ID", async () => {
+  const f = fixture();
+  f.elements()[1].x = 900; f.elements()[1].y = 50;
+  const unrelated = structuredClone(f.elements()[1]);
+  unrelated.id = "unrelated"; unrelated.fileId = "other-file";
+  f.elements().push(unrelated);
+  const done = f.start({ ...f.render, width: 600 });
+  f.finish({ width: 600, height: 300 });
+  assert.equal(await done, true);
+  assert.deepEqual(f.elements().map(el => [el.x, el.y, el.width, el.height]), [[10, 20, 600, 300], [900, 50, 600, 300], [900, 50, 200, 60]]);
+  for (const element of f.elements().slice(0, 2)) {
+    assert.equal(element.fileId, "shared");
+    assert.equal(element.customData.markdownImage.render.width, 600);
+    assert.deepEqual(element.customData.markdownImage.renderedSize, { width: 600, height: 300 });
+  }
+  assert.equal(f.saves(), 1);
+});
+
+test("a shared copy created during a width render receives the new dimensions", async () => {
+  const f = fixture(), done = f.start({ ...f.render, width: 600 });
+  const duplicate = structuredClone(f.elements()[0]);
+  duplicate.id = "late-copy"; duplicate.x = 800;
+  f.elements().push(duplicate);
+  f.finish({ width: 600, height: 300 });
+  assert.equal(await done, true);
+  assert.deepEqual(f.elements().map(el => [el.width, el.height]), [[600, 300], [600, 300], [600, 300]]);
 });
 
 test("cancelled render and a removed target do not commit or save", async () => {

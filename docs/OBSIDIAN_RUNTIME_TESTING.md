@@ -162,6 +162,12 @@ after rendering and reopen. It waits for the render-complete indicator between
 edits; a metadata update alone does not establish that persistence has finished.
 The temporary gateway, owned panel tab and fixtures are cleaned up.
 
+The Markdown sidepanel case also duplicates an image with the same file ID,
+gives the copy a different canvas size, and changes the editor's Width input.
+Both instances must adopt the new intrinsic dimensions without moving. A later
+content edit and save/reopen must keep their shared width and file ID. Source
+tests also cover unrelated images and a duplicate created during rendering.
+
 With Excalidraw Extras installed and **MathJax-to-SVG** enabled, run
 `npm run verify:obsidian:plugin -- --image-geometry-real`. This uses the actual
 Extras renderer for the #3014 short/long formula edits, cached bounds and
