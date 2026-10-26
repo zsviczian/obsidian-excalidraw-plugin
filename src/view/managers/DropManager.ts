@@ -17,6 +17,7 @@ import {
   localFileDragModifierType,
   modifierKeyTooltipMessages,
   webbrowserDragModifierType,
+  type InternalDragAction,
 } from "src/utils/modifierkeyHelper";
 import {
   errorlog,
@@ -47,6 +48,7 @@ import { setStyle } from "src/utils/styleUtils";
 import { ObsidianDraggable } from "src/types/types";
 import type React from "react";
 import { insertMarkdownImage } from "src/shared/MarkdownImage";
+import { predictViewType } from "src/utils/customEmbeddableUtils";
 
 /*
 static getDropAction(event: DragEvent): string {
@@ -122,6 +124,95 @@ export class DropManager {
     );
   }
 
+  private async importDroppedFile(
+    droppedFile: File,
+    pos: Position,
+    isSingleFile: boolean,
+    extension = getURLImageExtension(droppedFile.name),
+  ): Promise<void> {
+    const droppedFilename = droppedFile.name;
+    const fileToImport =
+      await droppedFile.arrayBuffer();
+    const insertImportedFile = async (file: TFile) => {
+      const isSingleAnimatedRasterImage =
+        isSingleFile &&
+        ANIMATED_IMAGE_TYPES.contains(
+          file.extension.toLowerCase(),
+        ) &&
+        file.extension.toLowerCase() !== "svg";
+      if (isSingleAnimatedRasterImage) {
+        const modal = new UniversalInsertFileModal(
+          this.plugin,
+          this.view,
+        );
+        modal.open(file, pos);
+        return;
+      }
+      const ea = getEA(this.view);
+      await insertImageToView(ea, pos, file);
+      ea.destroy();
+    };
+    const maybeFile = this.app.metadataCache.getFirstLinkpathDest(
+      droppedFilename,
+      this.file.path,
+    );
+    let file = maybeFile instanceof TFile ? maybeFile : null;
+    if (file) {
+      const action = await ScriptEngine.suggester(
+        this.app,
+        [
+          "Use the file already in the Vault instead of importing",
+          "Overwrite existing file in the Vault",
+          "Import the file with a new name",
+        ],
+        ["Use", "Overwrite", "Import"],
+        `A file with the same name/path already exists in the Vault\n${
+          file.path
+        }`,
+      );
+      if (action === "Overwrite") {
+        await this.app.vault.modifyBinary(file, fileToImport);
+      } else if (action === "Import") {
+        file = null;
+      }
+    }
+    file ??= await importFileToVault(
+      this.app,
+      droppedFilename,
+      fileToImport,
+      this.view.file,
+      this.view,
+    );
+    if (IMAGE_TYPES.contains(extension)) {
+      await insertImportedFile(file);
+      return;
+    }
+    const modal = new UniversalInsertFileModal(
+      this.plugin,
+      this.view,
+    );
+    modal.open(file, pos);
+  }
+
+  private getInternalDropActions(draggable: App["dragManager"]["draggable"]): InternalDragAction[] {
+    const droppedFiles = draggable?.type === "files"
+      ? draggable.files ?? []
+      : draggable?.file ? [draggable.file] : undefined;
+    if (!droppedFiles) return ["link", "image", "image-fullsize", "embeddable"];
+    const files = droppedFiles.filter(file => file instanceof TFile);
+
+    const actions: InternalDragAction[] = ["link"];
+    const canInsertImage = files.some(file =>
+      IMAGE_TYPES.contains(file.extension) ||
+      ["md", "pdf"].includes(file.extension.toLowerCase()),
+    );
+    if (canInsertImage) actions.push("image", "image-fullsize");
+    if (canInsertImage || files.some(file => predictViewType(this.app, file) !== "empty")) {
+      actions.push("embeddable");
+    }
+    return actions;
+  }
+
   public onDrop(event: React.DragEvent<HTMLDivElement>): boolean {
     if (this.draginfoDiv) {
       this.ownerDocument.body.removeChild(this.draginfoDiv);
@@ -138,7 +229,9 @@ export class DropManager {
     );
     const draggable = this.app.dragManager
       .draggable as unknown as ObsidianDraggable;
-    const internalDragAction = internalDragModifierType(event);
+    const requestedInternalAction = internalDragModifierType(event);
+    const internalDragAction = this.getInternalDropActions(draggable).includes(requestedInternalAction)
+      ? requestedInternalAction : "link";
     const externalDragAction = webbrowserDragModifierType(event);
     const localFileDragAction = localFileDragModifierType(event);
 
@@ -356,77 +449,25 @@ export class DropManager {
     //---------------------------------------------------------------------------------
     // externalDragAction
     //---------------------------------------------------------------------------------
-    if (event.dataTransfer.types.includes("Files")) {
-      if (event.dataTransfer.types.includes("text/plain")) {
-        const text: string = event.dataTransfer.getData("text");
-        if (text && onDropHook("text", null, text)) {
-          return false;
-        }
-        if (
-          text &&
-          externalDragAction === "image-url" &&
-          hyperlinkIsImage(text)
-        ) {
-          void this.view.addImageWithURL(text);
-          return false;
-        }
-        if (text && externalDragAction === "link") {
-          if (
-            this.plugin.settings.oEmbedAllowed &&
-            text.match(/^https:\/\/\S*$/)
-          ) {
-            void this.view.addTextWithOEmbed(text);
-            return false;
-          }
-          void this.view.addText(text);
-          return false;
-        }
-        if (text && externalDragAction === "embeddable") {
-          const ea = getEA(this.view);
-          void insertEmbeddableToView(
-            ea,
-            this.currentPosition,
-            undefined,
-            text,
-          ).then(() => ea.destroy());
-          return false;
-        }
-      }
-
-      if (event.dataTransfer.types.includes("text/html")) {
-        const html = event.dataTransfer.getData("text/html");
-        const src = html.match(/src=["']([^"']*)["']/);
-        if (
-          src &&
-          externalDragAction === "image-url" &&
-          hyperlinkIsImage(src[1])
-        ) {
-          void this.view.addImageWithURL(src[1]);
-          return false;
-        }
-        if (src && externalDragAction === "link") {
-          if (
-            this.plugin.settings.oEmbedAllowed &&
-            src[1].match(/^https:\/\/\S*$/)
-          ) {
-            void this.view.addTextWithOEmbed(src[1]);
-            return false;
-          }
-          void this.view.addText(src[1]);
-          return false;
-        }
-        if (src && externalDragAction === "embeddable") {
-          const ea = getEA(this.view);
-          void insertEmbeddableToView(
-            ea,
-            this.currentPosition,
-            undefined,
-            src[1],
-          ).then(() => ea.destroy());
-          return false;
-        }
-      }
-
+    const html = event.dataTransfer.getData("text/html");
+    const src = html.match(/src=["']([^"']*)["']/);
+    const href = html.match(/href=["']([^"']*)["']/);
+    const textText = event.dataTransfer.getData("text") || event.dataTransfer.getData("text/plain");
+    const uriText = event.dataTransfer.getData("text/uri-list")
+      .split(/\r?\n/).map(line => line.trim()).find(line => line && !line.startsWith("#")) ?? "";
+    let text = src ? src[1] : textText;
+    if (!text) text = uriText;
+    const hasFiles = event.dataTransfer.types.includes("Files");
+    const isWebURL = (value: string) => /^(blob:)?https?:\/\/\S+$/.test(value);
+    // Browser image drags can carry a temporary file as well as their URL.
+    // Resolve the web action before entering the separate OS-file action map.
+    const webSource = [text, uriText, textText, href?.[1]].find(isWebURL);
+    // Image actions use the image source; navigation actions retain the page.
+    if (externalDragAction === "link" || externalDragAction === "embeddable") {
+      text = [textText, uriText, href?.[1], text].find(isWebURL) ?? text;
+    }
+    if (hasFiles && webSource) text = isWebURL(text) ? text : webSource;
+    if (hasFiles && !webSource) {
       if (
         event.dataTransfer.types.length >= 1 &&
         ["image-url", "image-import", "embeddable"].contains(
@@ -497,70 +538,7 @@ export class DropManager {
               if (extension === "excalidraw") {
                 return true; //excalidraw to continue processing
               } else {
-                void (async () => {
-                  const droppedFilename = event.dataTransfer.files[i].name;
-                  const fileToImport =
-                    await event.dataTransfer.files[i].arrayBuffer();
-                  const insertImportedFile = async (file: TFile) => {
-                    const isSingleAnimatedRasterImage =
-                      files.length === 1 &&
-                      ANIMATED_IMAGE_TYPES.contains(
-                        file.extension.toLowerCase(),
-                      ) &&
-                      file.extension.toLowerCase() !== "svg";
-                    if (isSingleAnimatedRasterImage) {
-                      const modal = new UniversalInsertFileModal(
-                        this.plugin,
-                        this.view,
-                      );
-                      modal.open(file, pos);
-                      return;
-                    }
-                    const ea = getEA(this.view);
-                    await insertImageToView(ea, pos, file);
-                    ea.destroy();
-                  };
-                  const maybeFile = this.app.metadataCache.getFirstLinkpathDest(
-                    droppedFilename,
-                    this.file.path,
-                  );
-                  let file = maybeFile instanceof TFile ? maybeFile : null;
-                  if (file) {
-                    const action = await ScriptEngine.suggester(
-                      this.app,
-                      [
-                        "Use the file already in the Vault instead of importing",
-                        "Overwrite existing file in the Vault",
-                        "Import the file with a new name",
-                      ],
-                      ["Use", "Overwrite", "Import"],
-                      `A file with the same name/path already exists in the Vault\n${
-                        file.path
-                      }`,
-                    );
-                    if (action === "Overwrite") {
-                      await this.app.vault.modifyBinary(file, fileToImport);
-                    } else if (action === "Import") {
-                      file = null;
-                    }
-                  }
-                  file ??= await importFileToVault(
-                    this.app,
-                    droppedFilename,
-                    fileToImport,
-                    this.view.file,
-                    this.view,
-                  );
-                  if (IMAGE_TYPES.contains(extension)) {
-                    await insertImportedFile(file);
-                    return;
-                  }
-                  const modal = new UniversalInsertFileModal(
-                    this.plugin,
-                    this.view,
-                  );
-                  modal.open(file, pos);
-                })();
+                void this.importDroppedFile(files[i], pos, files.length === 1, extension);
               }
             } else if (
               localFileDragAction === "embeddable" ||
@@ -632,16 +610,6 @@ export class DropManager {
       event.dataTransfer.types.includes("text/uri-list") ||
       event.dataTransfer.types.includes("text/html")
     ) {
-      const html = event.dataTransfer.getData("text/html");
-      const src = html.match(/src=["']([^"']*)["']/);
-      const htmlText = src ? src[1] : "";
-      const textText = event.dataTransfer.getData("text");
-      const uriText = event.dataTransfer.getData("text/uri-list");
-
-      let text: string = src ? htmlText : textText;
-      if (!text || text === "") {
-        text = uriText;
-      }
       if (!text || text === "") {
         return true;
       }
@@ -651,7 +619,22 @@ export class DropManager {
           externalDragAction === "embeddable" &&
           /^(blob:)?(http|https):\/\/[^\s/$.?#].[^\s]*$/.test(text)
         ) {
+          // Let the component own provider-specific sizing and insertion. Its
+          // awaited host callback can outlive the browser's drag-data access, so
+          // forward an independent URL-only transfer instead of the original
+          // thumbnail File/HTML payload, which could select image insertion.
+          const ownerWindow = this.view.ownerWindow as Window & { DataTransfer: typeof DataTransfer };
+          const transfer = new ownerWindow.DataTransfer();
+          transfer.setData("text/plain", text);
+          event.dataTransfer = transfer;
           return true;
+        }
+        if (
+          externalDragAction === "image-import" &&
+          (hyperlinkIsYouTubeLink(text) || hyperlinkIsYouTubeLink(uriText))
+        ) {
+          void this.view.addYouTubeThumbnail(hyperlinkIsYouTubeLink(uriText) ? uriText : text, true);
+          return false;
         }
         if (
           text &&
@@ -700,6 +683,19 @@ export class DropManager {
         ) {
           void this.view.addImageSaveToVault(uriText);
           return false;
+        }
+        if (
+          hasFiles &&
+          (externalDragAction === "image-url" || externalDragAction === "image-import")
+        ) {
+          // An extensionless or blob URL cannot be loaded as a persistent image
+          // reference. Preserve the browser's supplied image bytes instead.
+          const files = Array.from(event.dataTransfer.files);
+          const imageFile = files.find(file => IMAGE_TYPES.contains(getURLImageExtension(file.name)));
+          if (imageFile) {
+            void this.importDroppedFile(imageFile, { ...this.currentPosition }, files.length === 1);
+            return false;
+          }
         }
         if (
           this.plugin.settings.oEmbedAllowed &&
@@ -756,15 +752,19 @@ export class DropManager {
         this.ownerDocument.body.appendChild(this.draginfoDiv);
       }
       let msg: string = "";
+      let showModifierHint = true;
       if (this.app.dragManager.draggable) {
         //drag from Obsidian file manager
+        const actions = this.getInternalDropActions(this.app.dragManager.draggable);
+        const requestedAction = internalDragModifierType(e);
+        showModifierHint = actions.length > 1;
         msg =
           modifierKeyTooltipMessages().InternalDragAction[
-            internalDragModifierType(e)
+            actions.includes(requestedAction) ? requestedAction : "link"
           ];
       } else if (
-        e.dataTransfer.types.length === 1 &&
-        e.dataTransfer.types.includes("Files")
+        e.dataTransfer.types.includes("Files") &&
+        !e.dataTransfer.types.some(type => ["text/plain", "text/html", "text/uri-list"].includes(type))
       ) {
         //drag from OS file manager
         msg =
@@ -782,7 +782,7 @@ export class DropManager {
             webbrowserDragModifierType(e)
           ];
       }
-      if (!e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey) {
+      if (showModifierHint && !e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey) {
         msg +=
           DEVICE.isMacOS || DEVICE.isIOS
             ? "\nTry SHIFT, OPT, CTRL combinations for other drop actions"
@@ -829,6 +829,7 @@ export class DropManager {
     if (
       transfer.types?.includes("text/html") ||
       transfer.types?.includes("text/plain") ||
+      transfer.types?.includes("text/uri-list") ||
       transfer.types?.includes("Files")
     ) {
       return "copy";

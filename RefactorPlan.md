@@ -27,6 +27,9 @@ validated, and what remains uncertain.
 | Phase | Status | Current outcome |
 | --- | --- | --- |
 | Assessment and baseline design | Complete | Initial architecture, risks, sequencing, and validation matrix documented |
+| Native provider frame insertion in #2992 | Implemented; 147 source tests and 30 native provider checks pass; known ResizeObserver error gate remains | DropManager forwards an owning-window URL-only DataTransfer to the component. Excalidraw owns provider sizing, insertion and native history; original browser data may expire without losing the selected URL |
+| Internal file-drop eligibility in #2992 | Implemented; 92 source tests and 10 native cases pass; known ResizeObserver error gate remains | A shared action eligibility check keeps tooltip and insertion aligned. Fonts without a registered renderer offer only links; image/Markdown/PDF/media/custom-view actions remain available |
+| Share dropped-file import for #2992 browser fallback | Implemented; 56 source tests and 20 native cases pass; known ResizeObserver error gate remains | Move the existing byte import, duplicate Use/Overwrite/Import choices and animated-file modal dispatch into one private DropManager method. Both OS imports and unsupported browser image URL fallbacks use it; navigation actions retain the page target |
 | Repair PR #472 published Mermaid declarations | Implemented and validated against published 0.18.144 | Replace the consumer's drifting package-host/loader declarations with canonical fork types. A compile-time contract check runs before production builds. Fork runtime, Extras, protocol 2, public loaded/api shape and saved data stay unchanged; real-Extras offline main/popout checks pass on Windows |
 | Attach native clipboard branches through the existing Mindmap Paste action (#2996) | Implemented; macOS main-window/floating/cross-drawing/popout paste and history validated | Script-only graph validation, native clipboard insertion, reference remapping and attachment preserve copied elements. Source-to-pasted markers have EA-owned cleanup across native Undo and reopened script sessions; input Undo stops at the pasted roots rather than assuming a history count. Windows and physical mobile remain manual gates |
 | Release keyboard scopes for retired Mindmap inputs | Complete; native Markdown Enter validated | Inline suggesters now release detached scopes and invalidate pending reopen work. Mindmap Builder closes suggesters before replacing inputs, owns hotkey recording and root registrations per instance, and checks live focus before shadowing shortcuts. All 29 script and five suggester tests pass; native docking/close and Markdown Enter checks pass |
@@ -2474,3 +2477,81 @@ Native completion and gesture/timeout cancellation are operation-owned. Scene su
 Validation: all 46 focused Mindmap tests pass; focused TypeScript/release-note lint and script build/store checks pass. The full workspace check still stops at 365 pre-existing type errors, with none in Mindmap Builder. Native macOS Obsidian 1.14.4 / Excalidraw 2.29.0 passed same-drawing attachment, boundary/fold reference remapping, grouped linked notes, images, cross-drawing/floating paste, disabled layout, grouped input Undo/Redo preserving preceding elements, native history metadata cleanup, and fresh-popout attachment. The final error buffer was empty and exact fixtures/controllers/read overrides were cleaned up. Test-driver iterations required asynchronous sidepanel readiness, correct clipboard realms and boxed-node container selection; failed iterations are not validation results.
 
 Final native report: `/private/tmp/mindmap-branch-live-report.json`. Tested/published script SHA-256: `95937adf36fe21259a143b635e2a10e164d06b9c93a97e6fdf66fa2e00ffb43f`. The current build is installed at `Excalidraw/Scripts/Downloaded/Mindmap Builder.md` in the authorized `excalidraw-test` vault. Highest remaining manual risk: folded destinations with complete folded branches, pins/nested submaps and repeated dock/window migration. Windows modifiers and physical mobile clipboard/focus/touch need separate coverage.
+
+### 2026-10-26 — Share the existing dropped-file import path (#2992)
+
+The expanded source suite reproduced two routing regressions before correction:
+extensionless/blob image URLs became text, and linked images used their image
+source for Link/Embed instead of the page URL. Navigation now selects the page;
+unsupported image references preserve the supplied file bytes as a vault
+attachment. The existing local import body was moved into `importDroppedFile()`
+so browser fallback and genuine OS imports share the same duplicate-file choices,
+Vault writes, image insertion and animated-file modal behavior. No lifecycle,
+settings, fork API or persistent format changed.
+
+All 56 source tests pass using production URL recognition and extension helpers,
+including Use/Overwrite/Import, hook consumption, internal drags and local-file
+actions. Production build and focused DropManager lint pass. The native scenario
+passes all twenty storage/target/save/reopen cases across main and popout windows,
+with full fixture cleanup. The overall runner fails its error gate on the
+previously observed popout ResizeObserver notifications. The first expanded run exceeded the
+old four-case timeout; its exact byte-verified fixtures were removed, and the
+harness now has a larger budget plus cancellation cleanup.
+
+Highest-probability remaining manual risk: browser-specific mixed payloads and
+modifier mappings, followed by real OS duplicate-file choices. Check linked
+images, image-search results and YouTube navigation on macOS and Windows, with
+one main-window/popout comparison. Browser-to-canvas desktop dragging needs no
+mobile emulation claim; physical mobile file insertion remains separate coverage.
+
+### 2026-10-26 — Internal drop tooltip eligibility (#2992)
+
+The maintainer's Shift-drop was a TrueType font rather than an image. Link
+insertion was expected, but the tooltip incorrectly promised Insert image.
+DropManager now derives the available internal actions from image support and
+Obsidian's existing view prediction helper, and uses the same result for tooltip
+selection and drop dispatch. Unsupported files advertise only Insert link and
+omit the other-modifiers hint. Registered custom views retain frame insertion;
+image/Markdown/PDF support and supported media remain available. Non-file
+selections are filtered before inspecting extensions.
+
+All 92 source tests pass, including production modifier mappings on Mac and
+Windows, singular/plural font payloads, actual Shift-image dispatch, supported
+media/documents, custom views, folder selections and the prior browser regressions.
+The dedicated --internal-drop native scenario checks owned font and PNG payloads,
+tooltip/action agreement and save/reopen in the main window and a popout; all ten
+cases and fixture cleanup passed. Its overall error gate still failed on the
+previously observed popout ResizeObserver notifications. Final deployment results
+are recorded in PR #2992. The temporary user-drop
+diagnostic was removed. No setting defaults or persisted formats changed.
+
+Remaining manual risk: physical drag gestures and custom file-view registrations
+on Windows; compare one unsupported font and one normal image in a popout. No
+physical-mobile gesture claim is made.
+
+### 2026-10-26 — Return browser frame insertion to the component (#2992)
+
+The plugin-side frame helper forced square dimensions and bypassed Excalidraw's
+provider sizing, including portrait Shorts. DropManager now synchronously copies
+the resolved URL into an independent DataTransfer created in the owning window,
+assigns it to the React drop event and returns control to the component. Native
+insertion handles provider metadata and history. A URL-only transfer keeps
+browser thumbnail Files from selecting image insertion, and remains readable
+after the original browser drag data expires. No fork or public API change is
+required. Image/import actions and consumed hooks retain their original transfer.
+
+All 147 source tests pass. Thirty native checks validate image/import behavior
+and native frame dimensions for YouTube, Shorts, Vimeo and Twitter, in main and
+popout windows, including mounting and save/reopen after original drag data is
+cleared. Fixture cleanup passed; the overall runner retains the previously
+observed ResizeObserver error-gate failure. An initial CLI timeout cleaned up;
+the retry returned all provider results. All twenty generic browser-drop cases
+also passed against the same artifact, including component insertion of mixed
+payload frames. The deployed hashes match both tested builds; controllers,
+owned fixtures and temporary setting overrides were cleaned up.
+
+Highest-probability remaining manual risk: browser payload differences and the
+modifier gesture. Check actual Chrome Option-drops of normal YouTube, Shorts and
+Vimeo, one native Undo, and one popout. Physical Windows Ctrl+Shift and mobile
+touch insertion remain separate coverage; desktop synthetic events do not prove
+those gestures.

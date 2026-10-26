@@ -197,6 +197,63 @@ cases, and the real Markdown sidepanel resize/edit/reopen case. The earlier
 ResizeObserver failures remain recorded; one clean run does not establish that
 the intermittent teardown issue is fixed.
 
+For browser drag actions (#2967), run `npm run test:drop-actions`, then
+`npm run verify:obsidian:plugin -- --web-drop`. The native scenario serves an
+owned tiny PNG over localhost and supplies mixed Files/URI-list/HTML payloads
+with deliberately conflicting web/local modifier maps. Twenty cases check
+URL-backed versus vault-file references, actual PNG attachment bytes, linked
+image versus page targets, extensionless/blob URL file fallback, and save/reopen
+in the main window and a popout. The source tests also exercise the production
+URL recognition helpers, hook consumption, internal drags, genuine OS-file
+actions, and duplicate-file Use/Overwrite/Import choices. Settings are restored
+and only newly created, owned attachments are removed. No external image service
+is contacted. Cancellation waits for scenario cleanup before the parent removes
+the disposable drawing.
+
+On macOS on 2026-10-26, all twenty native cases and fixture cleanup passed.
+The overall runner failed its clean-error gate on the previously observed
+popout ResizeObserver loop notifications; no unrelated observer fix is claimed.
+
+These synthetic payloads do not establish physical Windows browser drag
+behavior. Before merging #2992, manually check a browser image and linked image
+with all four web actions, a search-result image with an extensionless URL,
+YouTube thumbnail import/navigation, and a real OS-file drag repeated through
+the Use/Overwrite/Import choices. Save/reopen the drawing, and repeat the linked
+image case in a popout. Extensionless/blob image references use the supplied file
+as a vault attachment because they cannot be persisted as a supported image URL.
+
+For internal file eligibility, run `npm run test:drop-actions`, then
+`npm run verify:obsidian:plugin -- --internal-drop`. The native scenario uses
+Obsidian's file-drag payload factory and the live modifier mappings with owned
+font/image fixtures in main and popout windows. Unsupported fonts must advertise
+only Insert link, with no other-modifiers hint, and insert a link regardless of
+the requested image/frame action. A real PNG must still advertise and insert an
+image with Shift. Both workflows survive save/reopen; fixture files, tooltip and
+drag/controller state are cleaned up. Source tests cover default Mac/Windows
+modifiers, singular/plural payloads, Markdown/PDF/media support and registered
+custom views. These synthetic events supplement real drag gestures.
+
+For YouTube thumbnail URL regressions, run `npm run test:drop-actions`, then
+`npm run verify:obsidian:plugin -- --youtube-drop`. This opt-in network scenario
+requests the reported public video's JPEGs from `https://i.ytimg.com`. It checks
+Chrome-style link and mixed thumbnail payloads with both image URL/import
+actions in main/popout windows, real JPEG decoding beyond the missing-image
+placeholder size, retained video navigation, vault storage and save/reopen.
+It also dispatches DOM drop events through the canvas with the live Option frame
+mapping (Ctrl+Shift on Windows), covering plain/URI/HTML-only links and thumbnails
+with and without Files. The original drag data is cleared after synchronous
+dispatch. The plugin must hand off an independent URL-only transfer so Excalidraw
+can parse it asynchronously and own provider-specific insertion and sizing.
+Twenty-two frame cases check native YouTube (560×315), Shorts (315×560), Vimeo
+(560×315) and Twitter (480×480) dimensions, frame mounting and save/reopen. With
+image cases this makes thirty checks across main and popout windows. The provider
+frames use public URLs; their third-party content may load during these checks.
+Only owned drawings and newly created attachments are removed, and modifier
+settings are restored. The source tests cover the actual thumbnail URL resolver
+at every fallback resolution, including the required `/vi/` path and tracking
+parameters. This mode needs network access; the ordinary `--web-drop` scenario
+continues to use localhost only.
+
 For Markdown embed changes, run the focused tests and the native regression for
 issue #2953:
 
