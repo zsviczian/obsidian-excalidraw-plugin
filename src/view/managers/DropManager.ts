@@ -122,6 +122,76 @@ export class DropManager {
     );
   }
 
+  private async importDroppedFile(
+    droppedFile: File,
+    pos: Position,
+    isSingleFile: boolean,
+    extension = getURLImageExtension(droppedFile.name),
+  ): Promise<void> {
+    const droppedFilename = droppedFile.name;
+    const fileToImport =
+      await droppedFile.arrayBuffer();
+    const insertImportedFile = async (file: TFile) => {
+      const isSingleAnimatedRasterImage =
+        isSingleFile &&
+        ANIMATED_IMAGE_TYPES.contains(
+          file.extension.toLowerCase(),
+        ) &&
+        file.extension.toLowerCase() !== "svg";
+      if (isSingleAnimatedRasterImage) {
+        const modal = new UniversalInsertFileModal(
+          this.plugin,
+          this.view,
+        );
+        modal.open(file, pos);
+        return;
+      }
+      const ea = getEA(this.view);
+      await insertImageToView(ea, pos, file);
+      ea.destroy();
+    };
+    const maybeFile = this.app.metadataCache.getFirstLinkpathDest(
+      droppedFilename,
+      this.file.path,
+    );
+    let file = maybeFile instanceof TFile ? maybeFile : null;
+    if (file) {
+      const action = await ScriptEngine.suggester(
+        this.app,
+        [
+          "Use the file already in the Vault instead of importing",
+          "Overwrite existing file in the Vault",
+          "Import the file with a new name",
+        ],
+        ["Use", "Overwrite", "Import"],
+        `A file with the same name/path already exists in the Vault\n${
+          file.path
+        }`,
+      );
+      if (action === "Overwrite") {
+        await this.app.vault.modifyBinary(file, fileToImport);
+      } else if (action === "Import") {
+        file = null;
+      }
+    }
+    file ??= await importFileToVault(
+      this.app,
+      droppedFilename,
+      fileToImport,
+      this.view.file,
+      this.view,
+    );
+    if (IMAGE_TYPES.contains(extension)) {
+      await insertImportedFile(file);
+      return;
+    }
+    const modal = new UniversalInsertFileModal(
+      this.plugin,
+      this.view,
+    );
+    modal.open(file, pos);
+  }
+
   public onDrop(event: React.DragEvent<HTMLDivElement>): boolean {
     if (this.draginfoDiv) {
       this.ownerDocument.body.removeChild(this.draginfoDiv);
@@ -358,6 +428,7 @@ export class DropManager {
     //---------------------------------------------------------------------------------
     const html = event.dataTransfer.getData("text/html");
     const src = html.match(/src=["']([^"']*)["']/);
+    const href = html.match(/href=["']([^"']*)["']/);
     const textText = event.dataTransfer.getData("text") || event.dataTransfer.getData("text/plain");
     const uriText = event.dataTransfer.getData("text/uri-list")
       .split(/\r?\n/).map(line => line.trim()).find(line => line && !line.startsWith("#")) ?? "";
@@ -367,7 +438,11 @@ export class DropManager {
     const isWebURL = (value: string) => /^(blob:)?https?:\/\/\S+$/.test(value);
     // Browser image drags can carry a temporary file as well as their URL.
     // Resolve the web action before entering the separate OS-file action map.
-    const webSource = [text, uriText, textText].find(isWebURL);
+    const webSource = [text, uriText, textText, href?.[1]].find(isWebURL);
+    // Image actions use the image source; navigation actions retain the page.
+    if (externalDragAction === "link" || externalDragAction === "embeddable") {
+      text = [textText, uriText, href?.[1], text].find(isWebURL) ?? text;
+    }
     if (hasFiles && webSource) text = isWebURL(text) ? text : webSource;
     if (hasFiles && !webSource) {
       if (
@@ -440,70 +515,7 @@ export class DropManager {
               if (extension === "excalidraw") {
                 return true; //excalidraw to continue processing
               } else {
-                void (async () => {
-                  const droppedFilename = event.dataTransfer.files[i].name;
-                  const fileToImport =
-                    await event.dataTransfer.files[i].arrayBuffer();
-                  const insertImportedFile = async (file: TFile) => {
-                    const isSingleAnimatedRasterImage =
-                      files.length === 1 &&
-                      ANIMATED_IMAGE_TYPES.contains(
-                        file.extension.toLowerCase(),
-                      ) &&
-                      file.extension.toLowerCase() !== "svg";
-                    if (isSingleAnimatedRasterImage) {
-                      const modal = new UniversalInsertFileModal(
-                        this.plugin,
-                        this.view,
-                      );
-                      modal.open(file, pos);
-                      return;
-                    }
-                    const ea = getEA(this.view);
-                    await insertImageToView(ea, pos, file);
-                    ea.destroy();
-                  };
-                  const maybeFile = this.app.metadataCache.getFirstLinkpathDest(
-                    droppedFilename,
-                    this.file.path,
-                  );
-                  let file = maybeFile instanceof TFile ? maybeFile : null;
-                  if (file) {
-                    const action = await ScriptEngine.suggester(
-                      this.app,
-                      [
-                        "Use the file already in the Vault instead of importing",
-                        "Overwrite existing file in the Vault",
-                        "Import the file with a new name",
-                      ],
-                      ["Use", "Overwrite", "Import"],
-                      `A file with the same name/path already exists in the Vault\n${
-                        file.path
-                      }`,
-                    );
-                    if (action === "Overwrite") {
-                      await this.app.vault.modifyBinary(file, fileToImport);
-                    } else if (action === "Import") {
-                      file = null;
-                    }
-                  }
-                  file ??= await importFileToVault(
-                    this.app,
-                    droppedFilename,
-                    fileToImport,
-                    this.view.file,
-                    this.view,
-                  );
-                  if (IMAGE_TYPES.contains(extension)) {
-                    await insertImportedFile(file);
-                    return;
-                  }
-                  const modal = new UniversalInsertFileModal(
-                    this.plugin,
-                    this.view,
-                  );
-                  modal.open(file, pos);
-                })();
+                void this.importDroppedFile(files[i], pos, files.length === 1, extension);
               }
             } else if (
               localFileDragAction === "embeddable" ||
@@ -646,6 +658,19 @@ export class DropManager {
         ) {
           void this.view.addImageSaveToVault(uriText);
           return false;
+        }
+        if (
+          hasFiles &&
+          (externalDragAction === "image-url" || externalDragAction === "image-import")
+        ) {
+          // An extensionless or blob URL cannot be loaded as a persistent image
+          // reference. Preserve the browser's supplied image bytes instead.
+          const files = Array.from(event.dataTransfer.files);
+          const imageFile = files.find(file => IMAGE_TYPES.contains(getURLImageExtension(file.name)));
+          if (imageFile) {
+            void this.importDroppedFile(imageFile, { ...this.currentPosition }, files.length === 1);
+            return false;
+          }
         }
         if (
           this.plugin.settings.oEmbedAllowed &&

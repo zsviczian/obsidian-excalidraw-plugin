@@ -151,17 +151,28 @@ so a pending close/save cannot recreate it. Inspect both `status` and
 
 For browser drag actions (#2967), run `npm run test:drop-actions`, then
 `npm run verify:obsidian:plugin -- --web-drop`. The native scenario serves an
-owned tiny PNG over localhost and supplies mixed Files/URI-list payloads with
-deliberately conflicting web/local modifier maps. It checks URL-backed versus
-vault-file references, actual PNG attachment bytes, and save/reopen in the main
-window and a popout. Settings are restored and only owned attachments are
-removed. No external image service is contacted.
+owned tiny PNG over localhost and supplies mixed Files/URI-list/HTML payloads
+with deliberately conflicting web/local modifier maps. Twenty cases check
+URL-backed versus vault-file references, actual PNG attachment bytes, linked
+image versus page targets, extensionless/blob URL file fallback, and save/reopen
+in the main window and a popout. The source tests also exercise the production
+URL recognition helpers, hook consumption, internal drags, genuine OS-file
+actions, and duplicate-file Use/Overwrite/Import choices. Settings are restored
+and only newly created, owned attachments are removed. No external image service
+is contacted. Cancellation waits for scenario cleanup before the parent removes
+the disposable drawing.
 
-On macOS, all four native storage/reopen cases and cleanup passed on 2026-10-26.
-The overall runner still failed its clean-error gate on the previously documented
-popout teardown ResizeObserver notifications. These synthetic payloads do not
-establish physical Windows browser drag behavior; check the reporter's browser,
-YouTube thumbnail import/navigation, and a real OS-file drag separately.
+On macOS on 2026-10-26, all twenty native cases and fixture cleanup passed.
+The overall runner failed its clean-error gate on the previously observed
+popout ResizeObserver loop notifications; no unrelated observer fix is claimed.
+
+These synthetic payloads do not establish physical Windows browser drag
+behavior. Before merging #2992, manually check a browser image and linked image
+with all four web actions, a search-result image with an extensionless URL,
+YouTube thumbnail import/navigation, and a real OS-file drag repeated through
+the Use/Overwrite/Import choices. Save/reopen the drawing, and repeat the linked
+image case in a popout. Extensionless/blob image references use the supplied file
+as a vault attachment because they cannot be persisted as a supported image URL.
 
 For Markdown embed changes, run the focused tests and the native regression for
 issue #2953:
