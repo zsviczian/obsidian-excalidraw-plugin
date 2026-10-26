@@ -17,6 +17,7 @@ import {
   DEVICE,
   getContainerElement,
   VIEW_TYPE_EXCALIDRAW,
+  mutateElement,
 } from "../constants/constants";
 import type ExcalidrawPlugin from "../core/main";
 import {
@@ -447,6 +448,21 @@ export function scaleLoadedImage<T extends SceneWithElements>(
       )
       .forEach((el: Mutable<ExcalidrawImageElement>) => {
         const [elWidth, elHeight] = [el.width, el.height];
+        const [elX, elY] = [el.x, el.y];
+        const invalidateGeometry = () => {
+          if (el.width === elWidth && el.height === elHeight && el.x === elX && el.y === elY) {
+            return;
+          }
+          // Sizing below works in place. Explicitly advance the version so
+          // Excalidraw invalidates cached bounds and shapes as well (#3014).
+          mutateElement(el, new Map([[el.id, el]]), {
+            width: el.width,
+            height: el.height,
+            x: el.x,
+            y: el.y,
+            version: el.version + 1,
+          });
+        };
         const maintainArea = img.shouldScale; //true if image should maintain its area, false if image should display at 100% its size
         const elCrop: ImageCrop = el.crop;
         const isCropped = Boolean(elCrop);
@@ -496,6 +512,7 @@ export function scaleLoadedImage<T extends SceneWithElements>(
             dirty = true;
             markdownImageChanged = true;
           }
+          invalidateGeometry();
           return;
         }
 
@@ -588,6 +605,7 @@ export function scaleLoadedImage<T extends SceneWithElements>(
           dirty = true;
           markdownImageChanged = true;
         }
+        invalidateGeometry();
       });
   }
   return {

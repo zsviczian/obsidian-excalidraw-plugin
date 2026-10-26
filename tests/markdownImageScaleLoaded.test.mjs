@@ -19,9 +19,19 @@ function loadScaleLoadedImage(source = readFileSync(utilsPath, "utf8")) {
   });
   const module = { exports: {} };
   const dependencies = {
-    "../constants/constants": { EXCALIDRAW_PLUGIN: null },
+    "../constants/constants": {
+      EXCALIDRAW_PLUGIN: null,
+      // Model Excalidraw's versioned mutation contract; native coverage checks
+      // the real cached bounds after editing a formula.
+      mutateElement: (element, _map, updates) => {
+        const nextVersion = updates.version ?? element.version + 1;
+        Object.assign(element, updates);
+        element.version = nextVersion;
+      },
+    },
     "./elementCustomDataUtils": customData,
     "./markdownImageUtils": geometry,
+    "./collectionUtils": { arrayToMap: elements => new Map(elements.map(el => [el.id, el])) },
     "src/types/markdownImageTypes": {
       MARKDOWN_IMAGE_CUSTOM_DATA_KEY: customData.MARKDOWN_IMAGE_CUSTOM_DATA_KEY,
     },
@@ -41,6 +51,30 @@ function loadScaleLoadedImage(source = readFileSync(utilsPath, "utf8")) {
 }
 
 const scaleLoadedImage = loadScaleLoadedImage();
+
+test("edited LaTeX updates geometry and its cache version, retaining each copy's scale", () => {
+  const make = (id, scaleX, scaleY) => ({
+    id, type: "image", fileId: "equation", x: 10, y: 20,
+    width: 30 * scaleX, height: 30 * scaleY, version: 7,
+    customData: { latexscale: { scaleX, scaleY } },
+  });
+  const elements = [make("one", 1, 1), make("two", 2, 0.5)];
+  const result = scaleLoadedImage({ elements }, [{ id: "equation", size: { width: 300, height: 60 }, shouldScale: true }]);
+  assert.equal(result.dirty, true);
+  assert.deepEqual(elements.map(el => [el.width, el.height, el.version]), [[300, 60, 8], [600, 30, 8]]);
+  assert.ok(elements.every(el => !Object.hasOwn(el.customData, "latexscale")));
+});
+
+test("area-preserving equation refresh invalidates cached bounds; an unchanged refresh does not", () => {
+  const element = { id: "one", type: "image", fileId: "equation", x: 10, y: 20, width: 30, height: 30, version: 4, customData: {} };
+  const file = { id: "equation", size: { width: 300, height: 60 }, shouldScale: true };
+  scaleLoadedImage({ elements: [element] }, [file]);
+  assert.equal(element.version, 5);
+  assert.ok(Math.abs(element.width * element.height - 900) < 0.001);
+  const version = element.version;
+  scaleLoadedImage({ elements: [element] }, [{ ...file, size: { width: element.width, height: element.height } }]);
+  assert.equal(element.version, version);
+});
 
 function markdownImage(fileId, bounds, renderedSize, crop = null) {
   return {

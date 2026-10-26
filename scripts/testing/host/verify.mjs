@@ -12,6 +12,8 @@ import { runNativeCLIScenario } from "./nativeCLI.mjs";
 import { runEmbedRecoveryScenario } from "./embedRecovery.mjs";
 import { runGroupedLinkClickScenario } from "./groupedLinkClick.mjs";
 import { runLatexInputScenario } from "./latexInput.mjs";
+import { runImageGeometryScenario } from "./imageGeometry.mjs";
+import { runWheelZoomScenario } from "./wheelZoom.mjs";
 
 const pluginRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const pluginOnly = process.argv.includes("--plugin-only");
@@ -21,8 +23,10 @@ const embedRecovery = process.argv.includes("--embed-recovery");
 const groupedLinkClick = process.argv.includes("--grouped-link-click");
 const latexInput = process.argv.includes("--latex-input");
 const latexPreview = process.argv.includes("--latex-preview");
-if (process.argv.slice(2).some(arg => !["--plugin-only", "--text-undo", "--native-cli", "--embed-recovery", "--grouped-link-click", "--latex-input", "--latex-preview"].includes(arg))) {
-  throw new Error("Supported options: --plugin-only, --text-undo, --native-cli, --embed-recovery, --grouped-link-click, --latex-input, --latex-preview");
+const imageGeometry = process.argv.includes("--image-geometry");
+const wheelZoom = process.argv.includes("--wheel-zoom");
+if (process.argv.slice(2).some(arg => !["--plugin-only", "--text-undo", "--native-cli", "--embed-recovery", "--grouped-link-click", "--latex-input", "--latex-preview", "--image-geometry", "--wheel-zoom"].includes(arg))) {
+  throw new Error("Supported options: --plugin-only, --text-undo, --native-cli, --embed-recovery, --grouped-link-click, --latex-input, --latex-preview, --image-geometry, --wheel-zoom");
 }
 const forkRoot = resolve(process.env.EXCALIDRAW_FORK_ROOT || join(pluginRoot, "../excalidraw"));
 const reportDir = process.env.EXCALIDRAW_TEST_REPORT_DIR || mkdtempSync(join(tmpdir(), "excalidraw-obsidian-"));
@@ -58,6 +62,8 @@ const report = await runObsidianSmoke({
   reportDir,
   source,
   scenarios: [
+    ...(wheelZoom ? [runWheelZoomScenario] : []),
+    ...(imageGeometry ? [runImageGeometryScenario] : []),
     ...(textUndo ? [runTextUndoScenario] : []),
     ...(nativeCLI ? [runNativeCLIScenario] : []),
     ...(embedRecovery ? [runEmbedRecoveryScenario] : []),

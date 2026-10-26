@@ -149,6 +149,31 @@ so a pending close/save cannot recreate it. Inspect both `status` and
 
 ## Troubleshooting and further coverage
 
+For text separators and editable-image geometry (#3013, #3014, #2947), run
+`npm run test:image-geometry`. These tests cover one/multiple newline separators,
+independent image copies, unresized content growth, a resize during rendering,
+cancelled renders, reload geometry, crops, and versioned LaTeX bounds updates.
+Run `npm run verify:obsidian:plugin -- --image-geometry` for real formula editing,
+cached bounds, and save/reopen in the main window and a popout. Its deterministic
+SVG gateway tests the plugin lifecycle without requiring Extras or claiming to
+test MathJax rendering. The temporary gateway and fixtures are cleaned up.
+
+For wheel zoom limits (#3008), run
+`npm run verify:obsidian -- --wheel-zoom`. It builds/copies the local fork and
+dispatches actual wheel events with deliberately changed live minimum/maximum
+settings, including scroll constraints and zoom above 3000%, in the main window
+and a popout. Test settings are restored without saving them. This option can
+be combined with `--image-geometry`. Use the plugin-only lane only after the
+installed component contains the fix. Unpublished artifact copies remain a
+local integration checkpoint; the declared published dependency is unchanged.
+
+On macOS, both feature scenarios passed on 2026-10-26, including formula
+expansion/shrinkage, matching cached bounds and reopen. Fixture cleanup passed.
+The overall clean-error gate failed on the already documented popout teardown
+`ResizeObserver loop completed with undelivered notifications`; no clean overall
+native pass is claimed. Windows, Linux pen input and physical mobile remain
+separate validation environments.
+
 For Markdown embed changes, run the focused tests and the native regression for
 issue #2953:
 

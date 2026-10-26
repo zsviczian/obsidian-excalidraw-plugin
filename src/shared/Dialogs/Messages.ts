@@ -23,6 +23,9 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 - Added opt-in image inventory, bounded image labels/tags, mixed-fidelity SVG/PNG previews and output limits. Originals remain untouched and full fidelity stays the default. [#3004](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3004)
 
 ## Fixed
+- Text elements keep their full text when a linter removes blank lines between entries. [#3013](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3013)
+- Edited LaTeX formulas immediately respond to clicks across their new size. [#3014](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3014)
+- Editing a resized Markdown image keeps its canvas size. Untouched images still grow with their content. [#2947](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2947)
 - Drawing-load warnings now name the affected file. Select **More information** to learn about missing or malformed drawing data and device-local backups, and see the reported error. Warnings without a local backup also include a **Dismiss** button. Existing recovery actions are unchanged. [#2995](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2995)
 - **Settings backup noise.** Settings are now written with canonically sorted keys and unchanged saves are skipped, ending the endless data.json rewrite loop that flooded Obsidian Git vault backups with no-change commits.
 
@@ -73,7 +76,6 @@ Re-released due to a minor deployment hiccup, hopefully fixed now.
 - Customize font toppicks by drag and drop. To set them as default save your toppick choices as a template. [#12160](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/12160)
 
 ## Fixed / Refactored
-- Editing a resized Markdown image now keeps its canvas size. Images that have not been resized still grow with their content.
 - Lasso tool was not available in the More Tools menu in Tray Mode [#2937](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2937)
 - \`.excalidraw\` drawings with embedded binary images now render those images when opened into an already-used Excalidraw tab. [#2929](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2929)
 - Descriptions in settings no longer disappear when you revisit a settings page from search results. [#2935](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2935)

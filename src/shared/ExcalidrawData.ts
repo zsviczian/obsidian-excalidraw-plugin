@@ -998,7 +998,6 @@ export class ExcalidrawData {
 
     //iterating through all the text elements in .md
     //Text elements always contain the raw value
-    const BLOCKREF_LEN: number = 12; // " ^12345678\n\n".length;
     const RE_TEXT_ELEMENT_LINK =
       /^%%\*\*\*>>>text element-link:(\[\[[^<*\]]*]])<<<\*\*\*%%/gm;
     let res = data.matchAll(/\s\^(.{8})[\n]+/g);
@@ -1050,7 +1049,7 @@ export class ExcalidrawData {
           }
         }
       }
-      position = parts.value.index + BLOCKREF_LEN;
+      position = parts.value.index + parts.value[0].length;
     }
 
     //In theory only non-text elements should be left in the elementLinkMap
