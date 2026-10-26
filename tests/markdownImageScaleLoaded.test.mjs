@@ -159,3 +159,38 @@ test("real scaleLoadedImage retains ordinary-image scaling and the existing crop
   assert.equal(cropped.crop.naturalHeight, 260);
   assert.deepEqual(cropped.customData.markdownImage.renderedSize, { width: 400, height: 260 });
 });
+
+for (const markdown of [false, true]) {
+  for (const crop of [
+    { x: 0, y: 0, width: 400, height: 60, naturalWidth: 400, naturalHeight: 120 },
+    { x: 100, y: 0, width: 300, height: 120, naturalWidth: 400, naturalHeight: 120 },
+  ]) {
+    test(`${markdown ? "Markdown" : "ordinary"} edge-aligned crop stays finite after an intrinsic size change`, () => {
+      const element = markdownImage("shared", { id: "crop", version: 3, x: 10, y: 20, width: crop.width, height: crop.height }, { width: 400, height: 120 }, { ...crop });
+      if (!markdown) element.customData = {};
+      scaleLoadedImage({ elements: [element] }, [{ id: "shared", size: { width: 600, height: 180 }, shouldScale: true }]);
+      assert.ok([element.x, element.y, element.width, element.height, ...Object.values(element.crop ?? {})].every(Number.isFinite));
+      assert.ok(element.crop.x >= 0 && element.crop.y >= 0);
+      assert.ok(element.crop.x + element.crop.width <= 600 && element.crop.y + element.crop.height <= 180);
+    });
+  }
+}
+
+test("a crop-only loader update invalidates the element version once", () => {
+  const element = markdownImage("shared", { id: "crop", version: 3, x: 10, y: 20, width: 600, height: 200 }, { width: 400, height: 120 }, { x: 50, y: 10, width: 300, height: 100, naturalWidth: 400, naturalHeight: 120 });
+  const file = { id: "shared", size: { width: 400, height: 260 }, shouldScale: true };
+  scaleLoadedImage({ elements: [element] }, [file]);
+  assert.equal(element.width, 600); assert.equal(element.height, 200);
+  assert.equal(element.version, 4);
+  scaleLoadedImage({ elements: [element] }, [file]);
+  assert.equal(element.version, 4);
+});
+
+test("repairing a crop offset marks the Markdown drawing for persistence", () => {
+  const element = markdownImage("shared", { id: "crop", version: 3, x: 10, y: 20, width: 400, height: 60 }, { width: 400, height: 120 }, { x: NaN, y: 0, width: 400, height: 60, naturalWidth: 400, naturalHeight: 120 });
+  const result = scaleLoadedImage({ elements: [element] }, [{ id: "shared", size: { width: 400, height: 120 }, shouldScale: true }]);
+  assert.equal(element.crop.x, 0);
+  assert.equal(element.version, 4);
+  assert.equal(result.dirty, true);
+  assert.equal(result.markdownImageChanged, true);
+});

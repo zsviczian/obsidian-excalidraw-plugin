@@ -38,7 +38,7 @@ import {
   addAppendUpdateCustomData,
   setMarkdownImageRenderedSize,
 } from "./elementCustomDataUtils";
-import { getMarkdownImageDisplayGeometry } from "./markdownImageUtils";
+import { getMarkdownImageDisplayGeometry, getMarkdownImageCropGeometry } from "./markdownImageUtils";
 import {
   MARKDOWN_IMAGE_CUSTOM_DATA_KEY,
   type MarkdownImageCustomData,
@@ -449,8 +449,12 @@ export function scaleLoadedImage<T extends SceneWithElements>(
       .forEach((el: Mutable<ExcalidrawImageElement>) => {
         const [elWidth, elHeight] = [el.width, el.height];
         const [elX, elY] = [el.x, el.y];
+        const previousCrop = el.crop ? { ...el.crop } : null;
+        const cropChanged = () => previousCrop
+          ? !el.crop || Object.entries(previousCrop).some(([key, value]) => el.crop?.[key as keyof ImageCrop] !== value)
+          : Boolean(el.crop);
         const invalidateGeometry = () => {
-          if (el.width === elWidth && el.height === elHeight && el.x === elX && el.y === elY) {
+          if (el.width === elWidth && el.height === elHeight && el.x === elX && el.y === elY && !cropChanged()) {
             return;
           }
           // Sizing below works in place. Explicitly advance the version so
@@ -460,6 +464,7 @@ export function scaleLoadedImage<T extends SceneWithElements>(
             height: el.height,
             x: el.x,
             y: el.y,
+            crop: el.crop,
             version: el.version + 1,
           });
         };
@@ -483,8 +488,10 @@ export function scaleLoadedImage<T extends SceneWithElements>(
         const markdownImage = el.customData?.[
           MARKDOWN_IMAGE_CUSTOM_DATA_KEY
         ] as MarkdownImageCustomData | undefined;
-        if (markdownImage && !isCropped) {
-          const geometry = getMarkdownImageDisplayGeometry({
+        if (markdownImage) {
+          const croppedGeometry = isCropped
+            ? getMarkdownImageCropGeometry(el, img.size) : undefined;
+          const geometry = croppedGeometry ?? getMarkdownImageDisplayGeometry({
             current: el,
             previousIntrinsic: markdownImage.renderedSize,
             nextIntrinsic: img.size,
@@ -503,6 +510,13 @@ export function scaleLoadedImage<T extends SceneWithElements>(
             el.height = geometry.height;
             dirty = true;
             markdownImageChanged = true;
+          }
+          if (croppedGeometry) {
+            el.crop = croppedGeometry.crop;
+            if (cropChanged()) {
+              dirty = true;
+              markdownImageChanged = true;
+            }
           }
           if (
             markdownImage.renderedSize?.width !== imgWidth ||
@@ -530,11 +544,10 @@ export function scaleLoadedImage<T extends SceneWithElements>(
               el.crop.width = imgWidth;
               el.width = imgWidth * scaleX;
             } else {
-              const ratioX =
-                elCrop.x / (elCrop.naturalWidth - elCrop.x - elCrop.width);
+              const previousGapX = elCrop.naturalWidth - elCrop.width;
               const gapX = imgWidth - elCrop.width;
-              el.crop.x = (ratioX * gapX) / (1 + ratioX);
-              if (el.crop.x + elCrop.width > imgWidth) {
+              el.crop.x = previousGapX > 0 ? elCrop.x / previousGapX * gapX : gapX / 2;
+              if (!Number.isFinite(el.crop.x) || el.crop.x < 0 || el.crop.x + elCrop.width > imgWidth) {
                 el.crop.x = (imgWidth - elCrop.width) / 2;
               }
             }
@@ -544,11 +557,10 @@ export function scaleLoadedImage<T extends SceneWithElements>(
               el.crop.height = imgHeight;
               el.height = imgHeight * scaleY;
             } else {
-              const ratioY =
-                elCrop.y / (elCrop.naturalHeight - elCrop.y - elCrop.height);
+              const previousGapY = elCrop.naturalHeight - elCrop.height;
               const gapY = imgHeight - elCrop.height;
-              el.crop.y = (ratioY * gapY) / (1 + ratioY);
-              if (el.crop.y + elCrop.height > imgHeight) {
+              el.crop.y = previousGapY > 0 ? elCrop.y / previousGapY * gapY : gapY / 2;
+              if (!Number.isFinite(el.crop.y) || el.crop.y < 0 || el.crop.y + elCrop.height > imgHeight) {
                 el.crop.y = (imgHeight - elCrop.height) / 2;
               }
             }
@@ -595,15 +607,6 @@ export function scaleLoadedImage<T extends SceneWithElements>(
             el.y += (elHeight - imgHeight) / 2;
             el.x += (elWidth - imgWidth) / 2;
           }
-        }
-        if (
-          markdownImage &&
-          (markdownImage.renderedSize?.width !== imgWidth ||
-            markdownImage.renderedSize?.height !== imgHeight)
-        ) {
-          setMarkdownImageRenderedSize(el, img.size);
-          dirty = true;
-          markdownImageChanged = true;
         }
         invalidateGeometry();
       });

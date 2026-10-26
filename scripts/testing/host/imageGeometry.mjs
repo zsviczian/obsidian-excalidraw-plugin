@@ -1,5 +1,6 @@
 /** #3014/#2947: real formula bounds and resized Markdown sidepanel edits. */
 import assert from "node:assert/strict";
+import { exerciseMarkdownCrop } from "./markdownImageCrop.mjs";
 
 const CONTROL = "__excalidrawImageGeometry";
 
@@ -173,11 +174,11 @@ async function cleanup(control) {
 export async function runImageGeometryScenario({ cli, drawingPath, realRenderer = false }) {
   const evaluate = code => JSON.parse(cli("eval", `code=${code}`).trim().replace(/^=>\s*/, ""));
   const cases = [];
-  for (const [popout, scenario] of [[false, exercise], [true, exercise], [false, exerciseMarkdown]]) {
+  for (const [popout, scenario] of [[false, exercise], [true, exercise], [false, exerciseMarkdown], [false, exerciseMarkdownCrop]]) {
     let result;
     try {
       evaluate(`(()=>{if(globalThis.${CONTROL})throw Error("geometry controller exists");const c=globalThis.${CONTROL}={state:"pending"};(${scenario.toString()})(${JSON.stringify(CONTROL)},${JSON.stringify(drawingPath)},${popout},${realRenderer}).then(()=>c.state="done").catch(e=>{c.error=e.stack;c.state="failed"});return JSON.stringify({started:true})})()`);
-      for (let i = 0; i < 200; i++) {
+      for (let i = 0; i < 600; i++) {
         result = evaluate(`JSON.stringify({state:globalThis.${CONTROL}.state,error:globalThis.${CONTROL}.error,results:globalThis.${CONTROL}.results,reopen:globalThis.${CONTROL}.reopen})`);
         if (result.state !== "pending") break;
         await new Promise(resolve => setTimeout(resolve, 100));

@@ -51,3 +51,29 @@ test("flow-width change applies new geometry to a shared image copy", () => {
     { x: 900, y: 20, width: 600, height: 300 },
   );
 });
+
+test("content refresh retains a cropped pixel viewport and its canvas scale", () => {
+  const crop = Object.freeze({ x: 50, y: 10, width: 300, height: 100, naturalWidth: 400, naturalHeight: 120 });
+  const current = Object.freeze({ x: 10, y: 20, width: 600, height: 200, crop });
+  assert.deepEqual(geometry.getMarkdownImageCropGeometry(current, { width: 400, height: 260 }), {
+    x: 10, y: 20, width: 600, height: 200,
+    crop: { x: 50, y: 80, width: 300, height: 100, naturalWidth: 400, naturalHeight: 260 },
+  });
+  assert.equal(crop.y, 10);
+});
+
+test("a crop clamped to a smaller SVG retains its canvas scale", () => {
+  const result = geometry.getMarkdownImageCropGeometry({
+    x: 10, y: 20, width: 600, height: 200,
+    crop: { x: 50, y: 10, width: 300, height: 100, naturalWidth: 400, naturalHeight: 120 },
+  }, { width: 100, height: 50 });
+  assert.deepEqual(result, { x: 10, y: 20, width: 200, height: 100, crop: null });
+});
+
+test("non-finite offsets from an earlier edge-crop failure are repaired", () => {
+  const result = geometry.getMarkdownImageCropGeometry({
+    x: 10, y: 20, width: 400, height: 60,
+    crop: { x: NaN, y: 0, width: 400, height: 60, naturalWidth: 400, naturalHeight: 120 },
+  }, { width: 400, height: 120 });
+  assert.deepEqual(result.crop, { x: 0, y: 0, width: 400, height: 60, naturalWidth: 400, naturalHeight: 120 });
+});

@@ -1826,7 +1826,8 @@ export class ExcalidrawData {
       .filter((el) => el.type === "image" && el.crop && !el.isDeleted)
       .forEach((el: Mutable<ExcalidrawImageElement>) => {
         const ef = this.getFile(el.fileId);
-        if (!ef.file) {
+        // Local Markdown images and equations have no file-backed entry.
+        if (!ef?.file) {
           return;
         }
         if (ef.file.extension !== "pdf") {

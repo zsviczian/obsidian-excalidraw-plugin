@@ -168,16 +168,28 @@ Both instances must adopt the new intrinsic dimensions without moving. A later
 content edit and save/reopen must keep their shared width and file ID. Source
 tests also cover unrelated images and a duplicate created during rendering.
 
+A separate owned Markdown table case creates two cropped siblings (one full-width
+and one aligned to the right edge), then changes the uncropped copy's Width up
+and down through the real sidepanel input. It checks relative crop windows,
+finite geometry and aspect ratios, reads saved geometry back from disk after
+each edit, exports SVG and PNG, edits content, and reopens the drawing. Crop
+geometry is initialized through the scene API with the same fields as the crop
+tool; physical crop gestures and popout/mobile crop editing remain manual checks.
+Source regressions also verify that cropped local Markdown/equation images skip
+PDF-link synchronization during saving while file-backed PDFs retain it.
+
 With Excalidraw Extras installed and **MathJax-to-SVG** enabled, run
 `npm run verify:obsidian:plugin -- --image-geometry-real`. This uses the actual
 Extras renderer for the #3014 short/long formula edits, cached bounds and
-save/reopen checks in the main window and a popout, plus the Markdown sidepanel
-case. Latex Suite is not required; its preview-specific gate remains separate.
+save/reopen checks in the main window and a popout, plus both Markdown sidepanel
+cases. Latex Suite is not required; its preview-specific gate remains separate.
 
 On 2026-10-26, the real Extras renderer passed formula expansion/shrinkage,
 matching cached bounds and save/reopen in both windows. The short formula was
 20×11 and the expanded formula 80×15, with matching runtime bounds. The Markdown
-sidepanel case and fixture cleanup also passed. The overall run failed its
+sidepanel cases, including cropped table Width changes from 500 to 700 to 300,
+disk save/readback, SVG/PNG exports and reopen, and fixture cleanup also passed.
+All four feature cases passed. The overall run failed its
 clean-error gate on the previously recorded ResizeObserver teardown
 notifications; this real-renderer run is not an overall clean pass.
 

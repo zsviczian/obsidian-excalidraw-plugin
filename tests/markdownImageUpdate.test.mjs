@@ -89,6 +89,22 @@ test("a shared copy created during a width render receives the new dimensions", 
   assert.deepEqual(f.elements().map(el => [el.width, el.height]), [[600, 300], [600, 300], [600, 300]]);
 });
 
+test("a shared width change rescales the cropped viewport without stretching its copy", async () => {
+  const f = fixture(), sibling = f.elements()[1];
+  sibling.width = 400; sibling.height = 60;
+  sibling.angle = 0.5; sibling.scale = [-1, 1];
+  sibling.crop = { x: 0, y: 0, width: 400, height: 60, naturalWidth: 400, naturalHeight: 120 };
+  const done = f.start({ ...f.render, width: 600 });
+  f.finish({ width: 600, height: 300 });
+  assert.equal(await done, true);
+  const updated = f.elements()[1];
+  assert.deepEqual([updated.width, updated.height], [600, 150]);
+  assert.deepEqual(updated.crop, { x: 0, y: 0, width: 600, height: 150, naturalWidth: 600, naturalHeight: 300 });
+  assert.equal(updated.angle, 0.5);
+  assert.deepEqual(updated.scale, [-1, 1]);
+  assert.equal(f.saves(), 1);
+});
+
 test("cancelled render and a removed target do not commit or save", async () => {
   for (const remove of [false, true]) {
     const f = fixture(), done = f.start(f.render, () => remove);

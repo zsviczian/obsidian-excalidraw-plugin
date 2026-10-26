@@ -28,6 +28,7 @@ import {
 } from "src/types/markdownImageTypes";
 import {
   getMarkdownImageDisplayGeometry,
+  getMarkdownImageCropGeometry,
   resolveMarkdownImageRenderSettings,
 } from "src/utils/markdownImageUtils";
 import { cleanSectionHeading } from "src/utils/pathUtils";
@@ -648,7 +649,10 @@ export async function updateMarkdownImage(
       view.plugin,
       current,
     ).width;
-    const geometry = getMarkdownImageDisplayGeometry({
+    const croppedGeometry = current.crop && current.id !== element.id
+      ? getMarkdownImageCropGeometry(current, rendered.size, previousFlowWidth !== render.width)
+      : undefined;
+    const geometry = croppedGeometry ?? getMarkdownImageDisplayGeometry({
       current,
       previousIntrinsic: previous?.renderedSize,
       nextIntrinsic: rendered.size,
@@ -661,6 +665,8 @@ export async function updateMarkdownImage(
     editable.height = geometry.height;
     if (current.id === element.id) {
       editable.crop = null;
+    } else if (croppedGeometry) {
+      editable.crop = croppedGeometry.crop;
     }
     setMarkdownImageCustomData(editable, source, render);
     setMarkdownImageRenderedSize(editable, rendered.size);
