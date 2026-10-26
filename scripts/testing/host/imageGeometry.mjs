@@ -1,4 +1,4 @@
-/** #3014: edit actual formula elements and query the runtime's cached bounds. */
+/** #3014/#2947: real formula bounds and resized Markdown sidepanel edits. */
 import assert from "node:assert/strict";
 
 const CONTROL = "__excalidrawImageGeometry";
@@ -93,7 +93,11 @@ async function exerciseMarkdown(control, drawingPath) {
     const version = current().customData.markdownImage.version;
     cm.dispatch({ changes: { from: 0, to: cm.state.doc.length, insert: text } });
     c.tab.contentEl.querySelector(".excalidraw-markdown-image-editor__toolbar button.mod-cta").click();
-    await waitFor(() => current().customData.markdownImage.version > version && view.excalidrawData.getMarkdownImage(image.fileId)?.markdown.trim() === text.trim(), "Markdown render commit");
+    try {
+      await waitFor(() => current().customData.markdownImage.version > version && view.excalidrawData.getMarkdownImage(image.fileId)?.markdown.trim() === text.trim() && !c.tab.contentEl.querySelector(".excalidraw-markdown-image-editor__status")?.classList.contains("is-updating"), "Markdown render commit");
+    } catch (error) {
+      throw Error(`${error.message}: ${JSON.stringify({ version, currentVersion: current()?.customData?.markdownImage?.version, stored: view.excalidrawData.getMarkdownImage(image.fileId)?.markdown, editor: cm.state.doc.toString() })}`);
+    }
   };
   await setContent("Short content");
   const original = current();

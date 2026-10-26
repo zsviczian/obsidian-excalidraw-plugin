@@ -156,7 +156,11 @@ cancelled renders, reload geometry, crops, and versioned LaTeX bounds updates.
 Run `npm run verify:obsidian:plugin -- --image-geometry` for real formula editing,
 cached bounds, and save/reopen in the main window and a popout. Its deterministic
 SVG gateway tests the plugin lifecycle without requiring Extras or claiming to
-test MathJax rendering. The temporary gateway and fixtures are cleaned up.
+test MathJax rendering. The scenario also opens the actual Markdown-image
+sidepanel, edits content after a canvas resize, and checks the displayed size
+after rendering and reopen. It waits for the render-complete indicator between
+edits; a metadata update alone does not establish that persistence has finished.
+The temporary gateway, owned panel tab and fixtures are cleaned up.
 
 For wheel zoom limits (#3008), run
 `npm run verify:obsidian -- --wheel-zoom`. It builds/copies the local fork and
@@ -173,6 +177,12 @@ The overall clean-error gate failed on the already documented popout teardown
 `ResizeObserver loop completed with undelivered notifications`; no clean overall
 native pass is claimed. Windows, Linux pen input and physical mobile remain
 separate validation environments.
+
+A later combined-development-build run of `--image-geometry` passed the entire
+native runner, including its clean-error and cleanup gates, formula main/popout
+cases, and the real Markdown sidepanel resize/edit/reopen case. The earlier
+ResizeObserver failures remain recorded; one clean run does not establish that
+the intermittent teardown issue is fixed.
 
 For Markdown embed changes, run the focused tests and the native regression for
 issue #2953:
