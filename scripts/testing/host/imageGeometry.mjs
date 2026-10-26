@@ -67,12 +67,59 @@ async function exercise(control, drawingPath, popout) {
   c.reopen = true;
 }
 
+async function exerciseMarkdown(control, drawingPath) {
+  const c = globalThis[control], plugin = app.plugins.plugins["obsidian-excalidraw-plugin"];
+  const leaf = app.workspace.getLeavesOfType("excalidraw").find(l => l.view.file?.path === drawingPath);
+  const view = leaf.view, doc = view.ownerDocument;
+  c.previous = app.workspace.activeLeaf;
+  if (doc.querySelector(".excalidraw-markdown-image-editor .cm-content")) throw Error("close the existing Markdown-image editor before testing");
+  const waitFor = async (predicate, label) => {
+    for (let i = 0; i < 300; i++) { if (predicate()) return; await new Promise(resolve => setTimeout(resolve, 50)); }
+    throw Error(`Timed out: ${label}`);
+  };
+  const panel = await plugin.openSidepanel(false), beforeTabs = new Set(panel.tabs.keys());
+  app.workspace.setActiveLeaf(leaf, { focus: true });
+  const beforeIds = new Set(view.getViewElements().map(el => el.id));
+  await view.openMarkdownImageEditor();
+  c.tab = [...panel.tabs.values()].find(tab => !beforeTabs.has(tab.id));
+  if (!c.tab) throw Error("owned Markdown-image tab missing");
+  const image = view.getViewElements().find(el => !beforeIds.has(el.id) && el.customData?.markdownImage);
+  if (!image) throw Error("owned Markdown image missing");
+  const current = () => view.getViewElements().find(el => el.id === image.id);
+  await waitFor(() => c.tab.contentEl.querySelector(".excalidraw-markdown-image-editor__markdown-view .cm-content"), "Markdown source editor");
+  const setContent = async text => {
+    const content = c.tab.contentEl.querySelector(".excalidraw-markdown-image-editor__markdown-view .cm-content");
+    const cm = content.cmTile?.view ?? content.cmView?.rootView?.view;
+    const version = current().customData.markdownImage.version;
+    cm.dispatch({ changes: { from: 0, to: cm.state.doc.length, insert: text } });
+    c.tab.contentEl.querySelector(".excalidraw-markdown-image-editor__toolbar button.mod-cta").click();
+    await waitFor(() => current().customData.markdownImage.version > version && view.excalidrawData.getMarkdownImage(image.fileId)?.markdown.trim() === text.trim(), "Markdown render commit");
+  };
+  await setContent("Short content");
+  const original = current();
+  const expected = { width: original.width * 2, height: original.height * 2 };
+  view.excalidrawAPI.mutateElement(original, expected);
+  await setContent(Array.from({ length: 12 }, (_, i) => `Line ${i + 1}`).join("\n\n"));
+  if (current().width !== expected.width || current().height !== expected.height) throw Error("Markdown editor reset the canvas resize");
+  c.results = [{ kind: "markdown-sidepanel", displayed: expected, rendered: current().customData.markdownImage.renderedSize }];
+  c.tab.close(); c.tab = null;
+  await new Promise(resolve => setTimeout(resolve, 100));
+  await view.forceSave(true, true);
+  await leaf.setViewState({ type: "empty", state: {} });
+  await leaf.setViewState({ type: "excalidraw", state: { file: drawingPath } });
+  await waitFor(() => leaf.view.excalidrawAPI && leaf.view.getViewElements().some(el => el.id === image.id), "Markdown image reopen");
+  const reopened = leaf.view.getViewElements().find(el => el.id === image.id);
+  if (reopened.width !== expected.width || reopened.height !== expected.height) throw Error("Markdown resize changed on reopen");
+  c.reopen = true;
+}
+
 async function cleanup(control) {
   const c = globalThis[control]; if (!c) return;
   if (c.gateway) {
     if (c.hadOwn) c.gateway.getMathJax = c.original;
     else delete c.gateway.getMathJax;
   }
+  c.tab?.close();
   if (c.pop) { await c.pop.setViewState({ type: "empty", state: {} }); c.pop.detach(); }
   if (c.previous && c.previous !== c.pop) app.workspace.setActiveLeaf(c.previous, { focus: true });
   delete globalThis[control];
@@ -82,9 +129,9 @@ async function cleanup(control) {
 export async function runImageGeometryScenario({ cli, drawingPath }) {
   const evaluate = code => JSON.parse(cli("eval", `code=${code}`).trim().replace(/^=>\s*/, ""));
   const cases = [];
-  for (const popout of [false, true]) {
+  for (const [popout, scenario] of [[false, exercise], [true, exercise], [false, exerciseMarkdown]]) {
     try {
-      evaluate(`(()=>{if(globalThis.${CONTROL})throw Error("geometry controller exists");const c=globalThis.${CONTROL}={state:"pending"};(${exercise.toString()})(${JSON.stringify(CONTROL)},${JSON.stringify(drawingPath)},${popout}).then(()=>c.state="done").catch(e=>{c.error=e.stack;c.state="failed"});return JSON.stringify({started:true})})()`);
+      evaluate(`(()=>{if(globalThis.${CONTROL})throw Error("geometry controller exists");const c=globalThis.${CONTROL}={state:"pending"};(${scenario.toString()})(${JSON.stringify(CONTROL)},${JSON.stringify(drawingPath)},${popout}).then(()=>c.state="done").catch(e=>{c.error=e.stack;c.state="failed"});return JSON.stringify({started:true})})()`);
       let result;
       for (let i = 0; i < 200; i++) {
         result = evaluate(`JSON.stringify({state:globalThis.${CONTROL}.state,error:globalThis.${CONTROL}.error,results:globalThis.${CONTROL}.results,reopen:globalThis.${CONTROL}.reopen})`);
