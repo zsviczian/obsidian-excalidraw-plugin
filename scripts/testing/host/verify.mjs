@@ -12,6 +12,8 @@ import { runNativeCLIScenario } from "./nativeCLI.mjs";
 import { runEmbedRecoveryScenario } from "./embedRecovery.mjs";
 import { runGroupedLinkClickScenario } from "./groupedLinkClick.mjs";
 import { runLatexInputScenario } from "./latexInput.mjs";
+import { runImageGeometryScenario } from "./imageGeometry.mjs";
+import { runWheelZoomScenario } from "./wheelZoom.mjs";
 import { runWebDropScenario } from "./webDrop.mjs";
 import { runInternalDropScenario } from "./internalDrop.mjs";
 import { runYouTubeDropScenario } from "./youtubeDrop.mjs";
@@ -24,11 +26,14 @@ const embedRecovery = process.argv.includes("--embed-recovery");
 const groupedLinkClick = process.argv.includes("--grouped-link-click");
 const latexInput = process.argv.includes("--latex-input");
 const latexPreview = process.argv.includes("--latex-preview");
+const imageGeometryReal = process.argv.includes("--image-geometry-real");
+const imageGeometry = process.argv.includes("--image-geometry") || imageGeometryReal;
+const wheelZoom = process.argv.includes("--wheel-zoom");
 const webDrop = process.argv.includes("--web-drop");
 const internalDrop = process.argv.includes("--internal-drop");
 const youtubeDrop = process.argv.includes("--youtube-drop");
-if (process.argv.slice(2).some(arg => !["--plugin-only", "--text-undo", "--native-cli", "--embed-recovery", "--grouped-link-click", "--latex-input", "--latex-preview", "--web-drop", "--internal-drop", "--youtube-drop"].includes(arg))) {
-  throw new Error("Supported options: --plugin-only, --text-undo, --native-cli, --embed-recovery, --grouped-link-click, --latex-input, --latex-preview, --web-drop, --internal-drop, --youtube-drop");
+if (process.argv.slice(2).some(arg => !["--plugin-only", "--text-undo", "--native-cli", "--embed-recovery", "--grouped-link-click", "--latex-input", "--latex-preview", "--image-geometry", "--image-geometry-real", "--wheel-zoom", "--web-drop", "--internal-drop", "--youtube-drop"].includes(arg))) {
+  throw new Error("Supported options: --plugin-only, --text-undo, --native-cli, --embed-recovery, --grouped-link-click, --latex-input, --latex-preview, --image-geometry, --image-geometry-real, --wheel-zoom, --web-drop, --internal-drop, --youtube-drop");
 }
 const forkRoot = resolve(process.env.EXCALIDRAW_FORK_ROOT || join(pluginRoot, "../excalidraw"));
 const reportDir = process.env.EXCALIDRAW_TEST_REPORT_DIR || mkdtempSync(join(tmpdir(), "excalidraw-obsidian-"));
@@ -64,6 +69,8 @@ const report = await runObsidianSmoke({
   reportDir,
   source,
   scenarios: [
+    ...(wheelZoom ? [runWheelZoomScenario] : []),
+    ...(imageGeometry ? [context => runImageGeometryScenario({ ...context, realRenderer: imageGeometryReal })] : []),
     ...(webDrop ? [runWebDropScenario] : []),
     ...(internalDrop ? [runInternalDropScenario] : []),
     ...(youtubeDrop ? [runYouTubeDropScenario] : []),

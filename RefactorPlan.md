@@ -27,6 +27,8 @@ validated, and what remains uncertain.
 | Phase | Status | Current outcome |
 | --- | --- | --- |
 | Assessment and baseline design | Complete | Initial architecture, risks, sequencing, and validation matrix documented |
+| Cropped shared Markdown images in #3015 | Implemented; 32 geometry/parser/save tests and native crop/save/export/reopen checks pass; known ResizeObserver error gate remains | Width changes remap each sibling crop to the new SVG; content refreshes retain its pixel viewport and canvas scale. Edge crops stay finite, crop-only changes invalidate caches, and PDF-link synchronization skips local Markdown/equation images |
+| Shared Markdown editor width in #3015 | Implemented; 21 geometry tests and native duplicate/edit/reopen checks pass | Explicit editor Width changes apply new intrinsic bounds to every element with the same file ID. Content-only renders retain per-element canvas resizes; the sibling-only preservation override is removed |
 | Native provider frame insertion in #2992 | Implemented; 147 source tests and 30 native provider checks pass; known ResizeObserver error gate remains | DropManager forwards an owning-window URL-only DataTransfer to the component. Excalidraw owns provider sizing, insertion and native history; original browser data may expire without losing the selected URL |
 | Internal file-drop eligibility in #2992 | Implemented; 92 source tests and 10 native cases pass; known ResizeObserver error gate remains | A shared action eligibility check keeps tooltip and insertion aligned. Fonts without a registered renderer offer only links; image/Markdown/PDF/media/custom-view actions remain available |
 | Share dropped-file import for #2992 browser fallback | Implemented; 56 source tests and 20 native cases pass; known ResizeObserver error gate remains | Move the existing byte import, duplicate Use/Overwrite/Import choices and animated-file modal dispatch into one private DropManager method. Both OS imports and unsupported browser image URL fallbacks use it; navigation actions retain the page target |
@@ -2555,3 +2557,62 @@ modifier gesture. Check actual Chrome Option-drops of normal YouTube, Shorts and
 Vimeo, one native Undo, and one popout. Physical Windows Ctrl+Shift and mobile
 touch insertion remain separate coverage; desktop synthetic events do not prove
 those gestures.
+
+### 2026-10-26 — Propagate explicit Markdown render width to shared copies (#3015)
+
+The maintainer confirmed that changing the Markdown editor's Width setting only
+resized the edited copy. The update already wrote new render settings to every
+instance with the same file ID, but a sibling-only preservation override kept
+their old scene bounds. Remove that override and its unused geometry option.
+Explicit shared render-width changes now update all copies; content-only edits
+still preserve independent canvas resizes. Unrelated file IDs and positions stay
+unchanged, and live duplicates created during a pending render are included.
+
+All 21 geometry/parser tests and 147 drop tests pass. The native editor-control
+check duplicated a shared image, reduced the copy separately, then changed Width
+from 500 to 700. Both copies adopted the new geometry, retained it through another
+content edit and save/reopen, and kept their positions/file ID. Real MathJax
+main/popout checks and fixture cleanup passed; the overall runner retained the
+known ResizeObserver error gate. An initial CLI timeout cleaned up; the retry
+returned all feature results. Focused source lint is clean.
+
+Remaining manual focus: change Width with the text field and slider on shared
+copies, and compare a copy with its own file ID. Verify ordinary canvas resizes
+survive content-only edits. Popout editing and physical mobile remain separate
+coverage for this width-control follow-up.
+
+### 2026-10-26 — Preserve cropped shared Markdown copies and repair saving (#3015)
+
+The maintainer reproduced distortion and the serious save warning after cropping
+one shared table image and changing Width on its uncropped sibling. The prior
+width fix missed crop geometry. Remap each sibling's crop window proportionally
+when the editor's render width changes; content refreshes retain its pixel
+viewport and canvas scale, clamping to smaller SVGs. Replace the loader's
+edge-crop zero divisions with finite margin fractions. Crop-only changes now
+advance element versions, and repaired Markdown crop offsets mark the drawing
+dirty for persistence. The edited target's existing uncrop behavior is preserved.
+
+The live regression also identified the actual save exception: cropped-image
+PDF synchronization dereferenced a missing file-backed entry for local Markdown
+images. Guard that lookup; a source regression checks local Markdown/equations,
+remote images and ordinary Markdown alongside an actual PDF-link update.
+
+All 32 geometry/parser/save regressions and 147 inherited drop tests pass, as do
+11 offline runner tests. The production and public-library builds pass; lint
+retains its 120 baseline errors. The maintainer reports the broader four-step
+Mermaid/LaTeX/nested-image refresh, history, export and reopen test passed.
+All four native feature cases pass, including real MathJax in main/popout windows
+and the existing shared-width case. The new table case changes Width from 500 to
+700 to 300 with full-width and right-edge crops, validates aspect ratios and
+finite geometry, reads successful saves back from disk after each edit, exports
+SVG/PNG, and preserves geometry through content edits and reopen. Fixture and
+controller cleanup pass. The overall run retains the known ResizeObserver error
+gate; preceding attempts exposed the save bug, an overbroad SVG assertion that
+matched base64 font data, and CLI transport timeouts. The final SVG check inspects
+geometry attributes only. Four production bundle checks pass; main.js is
+4,990,499 bytes, leaving 252,381 bytes below the release target.
+
+Remaining manual focus: repeat the physical crop-tool/uncropped-sibling Width
+sequence, widen and narrow the table, then save/reopen and export. Compare a
+cropped file-backed PDF and a rotated/flipped image. Popout crop editing,
+Windows/Linux and physical mobile require separate coverage.

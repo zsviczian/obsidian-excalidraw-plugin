@@ -17,6 +17,7 @@ import {
   DEVICE,
   getContainerElement,
   VIEW_TYPE_EXCALIDRAW,
+  mutateElement,
 } from "../constants/constants";
 import type ExcalidrawPlugin from "../core/main";
 import {
@@ -33,7 +34,15 @@ import {
   getFileCSSClasses,
   getSafeFrontmatter,
 } from "./obsidianUtils";
-import { addAppendUpdateCustomData } from "./elementCustomDataUtils";
+import {
+  addAppendUpdateCustomData,
+  setMarkdownImageRenderedSize,
+} from "./elementCustomDataUtils";
+import { getMarkdownImageDisplayGeometry, getMarkdownImageCropGeometry } from "./markdownImageUtils";
+import {
+  MARKDOWN_IMAGE_CUSTOM_DATA_KEY,
+  type MarkdownImageCustomData,
+} from "src/types/markdownImageTypes";
 import { arrayToMap } from "./collectionUtils";
 import { isVersionNewerThanOther } from "./versionUtils";
 import { updateElementLinksToObsidianLinks } from "./excalidrawAutomateUtils";
@@ -395,12 +404,15 @@ export function scaleLoadedImage<T extends SceneWithElements>(
   files: FileData[],
 ): {
   dirty: boolean;
+  markdownImageChanged: boolean;
   scene: Omit<T, "elements"> & { elements: Mutable<ExcalidrawElement>[] };
 } {
   let dirty = false;
+  let markdownImageChanged = false;
   if (!files || !scene) {
     return {
       dirty,
+      markdownImageChanged,
       scene: scene as unknown as Omit<T, "elements"> & {
         elements: Mutable<ExcalidrawElement>[];
       },
@@ -436,6 +448,26 @@ export function scaleLoadedImage<T extends SceneWithElements>(
       )
       .forEach((el: Mutable<ExcalidrawImageElement>) => {
         const [elWidth, elHeight] = [el.width, el.height];
+        const [elX, elY] = [el.x, el.y];
+        const previousCrop = el.crop ? { ...el.crop } : null;
+        const cropChanged = () => previousCrop
+          ? !el.crop || Object.entries(previousCrop).some(([key, value]) => el.crop?.[key as keyof ImageCrop] !== value)
+          : Boolean(el.crop);
+        const invalidateGeometry = () => {
+          if (el.width === elWidth && el.height === elHeight && el.x === elX && el.y === elY && !cropChanged()) {
+            return;
+          }
+          // Sizing below works in place. Explicitly advance the version so
+          // Excalidraw invalidates cached bounds and shapes as well (#3014).
+          mutateElement(el, new Map([[el.id, el]]), {
+            width: el.width,
+            height: el.height,
+            x: el.x,
+            y: el.y,
+            crop: el.crop,
+            version: el.version + 1,
+          });
+        };
         const maintainArea = img.shouldScale; //true if image should maintain its area, false if image should display at 100% its size
         const elCrop: ImageCrop = el.crop;
         const isCropped = Boolean(elCrop);
@@ -453,6 +485,51 @@ export function scaleLoadedImage<T extends SceneWithElements>(
           dirty = true;
         }
 
+        const markdownImage = el.customData?.[
+          MARKDOWN_IMAGE_CUSTOM_DATA_KEY
+        ] as MarkdownImageCustomData | undefined;
+        if (markdownImage) {
+          const croppedGeometry = isCropped
+            ? getMarkdownImageCropGeometry(el, img.size) : undefined;
+          const geometry = croppedGeometry ?? getMarkdownImageDisplayGeometry({
+            current: el,
+            previousIntrinsic: markdownImage.renderedSize,
+            nextIntrinsic: img.size,
+            previousFlowWidth: markdownImage.render.width,
+            nextFlowWidth: markdownImage.render.width,
+          });
+          if (
+            el.x !== geometry.x ||
+            el.y !== geometry.y ||
+            el.width !== geometry.width ||
+            el.height !== geometry.height
+          ) {
+            el.x = geometry.x;
+            el.y = geometry.y;
+            el.width = geometry.width;
+            el.height = geometry.height;
+            dirty = true;
+            markdownImageChanged = true;
+          }
+          if (croppedGeometry) {
+            el.crop = croppedGeometry.crop;
+            if (cropChanged()) {
+              dirty = true;
+              markdownImageChanged = true;
+            }
+          }
+          if (
+            markdownImage.renderedSize?.width !== imgWidth ||
+            markdownImage.renderedSize?.height !== imgHeight
+          ) {
+            setMarkdownImageRenderedSize(el, img.size);
+            dirty = true;
+            markdownImageChanged = true;
+          }
+          invalidateGeometry();
+          return;
+        }
+
         if (isCropped) {
           if (
             elCrop.naturalWidth !== imgWidth ||
@@ -467,11 +544,10 @@ export function scaleLoadedImage<T extends SceneWithElements>(
               el.crop.width = imgWidth;
               el.width = imgWidth * scaleX;
             } else {
-              const ratioX =
-                elCrop.x / (elCrop.naturalWidth - elCrop.x - elCrop.width);
+              const previousGapX = elCrop.naturalWidth - elCrop.width;
               const gapX = imgWidth - elCrop.width;
-              el.crop.x = (ratioX * gapX) / (1 + ratioX);
-              if (el.crop.x + elCrop.width > imgWidth) {
+              el.crop.x = previousGapX > 0 ? elCrop.x / previousGapX * gapX : gapX / 2;
+              if (!Number.isFinite(el.crop.x) || el.crop.x < 0 || el.crop.x + elCrop.width > imgWidth) {
                 el.crop.x = (imgWidth - elCrop.width) / 2;
               }
             }
@@ -481,11 +557,10 @@ export function scaleLoadedImage<T extends SceneWithElements>(
               el.crop.height = imgHeight;
               el.height = imgHeight * scaleY;
             } else {
-              const ratioY =
-                elCrop.y / (elCrop.naturalHeight - elCrop.y - elCrop.height);
+              const previousGapY = elCrop.naturalHeight - elCrop.height;
               const gapY = imgHeight - elCrop.height;
-              el.crop.y = (ratioY * gapY) / (1 + ratioY);
-              if (el.crop.y + elCrop.height > imgHeight) {
+              el.crop.y = previousGapY > 0 ? elCrop.y / previousGapY * gapY : gapY / 2;
+              if (!Number.isFinite(el.crop.y) || el.crop.y < 0 || el.crop.y + elCrop.height > imgHeight) {
                 el.crop.y = (imgHeight - elCrop.height) / 2;
               }
             }
@@ -533,10 +608,12 @@ export function scaleLoadedImage<T extends SceneWithElements>(
             el.x += (elWidth - imgWidth) / 2;
           }
         }
+        invalidateGeometry();
       });
   }
   return {
     dirty,
+    markdownImageChanged,
     scene: scene as unknown as Omit<T, "elements"> & {
       elements: Mutable<ExcalidrawElement>[];
     },

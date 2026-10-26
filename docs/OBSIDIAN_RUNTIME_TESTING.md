@@ -149,6 +149,72 @@ so a pending close/save cannot recreate it. Inspect both `status` and
 
 ## Troubleshooting and further coverage
 
+For text separators and editable-image geometry (#3013, #3014, #2947), run
+`npm run test:image-geometry`. These tests cover one/multiple newline separators,
+independent image copies, unresized content growth, a resize during rendering,
+cancelled renders, reload geometry, crops, and versioned LaTeX bounds updates.
+Run `npm run verify:obsidian:plugin -- --image-geometry` for real formula editing,
+cached bounds, and save/reopen in the main window and a popout. Its deterministic
+SVG gateway tests the plugin lifecycle without requiring Extras or claiming to
+test MathJax rendering. The scenario also opens the actual Markdown-image
+sidepanel, edits content after a canvas resize, and checks the displayed size
+after rendering and reopen. It waits for the render-complete indicator between
+edits; a metadata update alone does not establish that persistence has finished.
+The temporary gateway, owned panel tab and fixtures are cleaned up.
+
+The Markdown sidepanel case also duplicates an image with the same file ID,
+gives the copy a different canvas size, and changes the editor's Width input.
+Both instances must adopt the new intrinsic dimensions without moving. A later
+content edit and save/reopen must keep their shared width and file ID. Source
+tests also cover unrelated images and a duplicate created during rendering.
+
+A separate owned Markdown table case creates two cropped siblings (one full-width
+and one aligned to the right edge), then changes the uncropped copy's Width up
+and down through the real sidepanel input. It checks relative crop windows,
+finite geometry and aspect ratios, reads saved geometry back from disk after
+each edit, exports SVG and PNG, edits content, and reopens the drawing. Crop
+geometry is initialized through the scene API with the same fields as the crop
+tool; physical crop gestures and popout/mobile crop editing remain manual checks.
+Source regressions also verify that cropped local Markdown/equation images skip
+PDF-link synchronization during saving while file-backed PDFs retain it.
+
+With Excalidraw Extras installed and **MathJax-to-SVG** enabled, run
+`npm run verify:obsidian:plugin -- --image-geometry-real`. This uses the actual
+Extras renderer for the #3014 short/long formula edits, cached bounds and
+save/reopen checks in the main window and a popout, plus both Markdown sidepanel
+cases. Latex Suite is not required; its preview-specific gate remains separate.
+
+On 2026-10-26, the real Extras renderer passed formula expansion/shrinkage,
+matching cached bounds and save/reopen in both windows. The short formula was
+20×11 and the expanded formula 80×15, with matching runtime bounds. The Markdown
+sidepanel cases, including cropped table Width changes from 500 to 700 to 300,
+disk save/readback, SVG/PNG exports and reopen, and fixture cleanup also passed.
+All four feature cases passed. The overall run failed its
+clean-error gate on the previously recorded ResizeObserver teardown
+notifications; this real-renderer run is not an overall clean pass.
+
+For wheel zoom limits (#3008), run
+`npm run verify:obsidian -- --wheel-zoom`. It builds/copies the local fork and
+dispatches actual wheel events with deliberately changed live minimum/maximum
+settings, including scroll constraints and zoom above 3000%, in the main window
+and a popout. Test settings are restored without saving them. This option can
+be combined with `--image-geometry`. Use the plugin-only lane only after the
+installed component contains the fix. Unpublished artifact copies remain a
+local integration checkpoint; the declared published dependency is unchanged.
+
+On macOS, both feature scenarios passed on 2026-10-26, including formula
+expansion/shrinkage, matching cached bounds and reopen. Fixture cleanup passed.
+The overall clean-error gate failed on the already documented popout teardown
+`ResizeObserver loop completed with undelivered notifications`; no clean overall
+native pass is claimed. Windows, Linux pen input and physical mobile remain
+separate validation environments.
+
+A later combined-development-build run of `--image-geometry` passed the entire
+native runner, including its clean-error and cleanup gates, formula main/popout
+cases, and the real Markdown sidepanel resize/edit/reopen case. The earlier
+ResizeObserver failures remain recorded; one clean run does not establish that
+the intermittent teardown issue is fixed.
+
 For browser drag actions (#2967), run `npm run test:drop-actions`, then
 `npm run verify:obsidian:plugin -- --web-drop`. The native scenario serves an
 owned tiny PNG over localhost and supplies mixed Files/URI-list/HTML payloads
