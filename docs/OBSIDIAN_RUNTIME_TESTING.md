@@ -149,6 +149,20 @@ so a pending close/save cannot recreate it. Inspect both `status` and
 
 ## Troubleshooting and further coverage
 
+For browser drag actions (#2967), run `npm run test:drop-actions`, then
+`npm run verify:obsidian:plugin -- --web-drop`. The native scenario serves an
+owned tiny PNG over localhost and supplies mixed Files/URI-list payloads with
+deliberately conflicting web/local modifier maps. It checks URL-backed versus
+vault-file references, actual PNG attachment bytes, and save/reopen in the main
+window and a popout. Settings are restored and only owned attachments are
+removed. No external image service is contacted.
+
+On macOS, all four native storage/reopen cases and cleanup passed on 2026-10-26.
+The overall runner still failed its clean-error gate on the previously documented
+popout teardown ResizeObserver notifications. These synthetic payloads do not
+establish physical Windows browser drag behavior; check the reporter's browser,
+YouTube thumbnail import/navigation, and a real OS-file drag separately.
+
 For Markdown embed changes, run the focused tests and the native regression for
 issue #2953:
 

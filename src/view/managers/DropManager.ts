@@ -356,77 +356,20 @@ export class DropManager {
     //---------------------------------------------------------------------------------
     // externalDragAction
     //---------------------------------------------------------------------------------
-    if (event.dataTransfer.types.includes("Files")) {
-      if (event.dataTransfer.types.includes("text/plain")) {
-        const text: string = event.dataTransfer.getData("text");
-        if (text && onDropHook("text", null, text)) {
-          return false;
-        }
-        if (
-          text &&
-          externalDragAction === "image-url" &&
-          hyperlinkIsImage(text)
-        ) {
-          void this.view.addImageWithURL(text);
-          return false;
-        }
-        if (text && externalDragAction === "link") {
-          if (
-            this.plugin.settings.oEmbedAllowed &&
-            text.match(/^https:\/\/\S*$/)
-          ) {
-            void this.view.addTextWithOEmbed(text);
-            return false;
-          }
-          void this.view.addText(text);
-          return false;
-        }
-        if (text && externalDragAction === "embeddable") {
-          const ea = getEA(this.view);
-          void insertEmbeddableToView(
-            ea,
-            this.currentPosition,
-            undefined,
-            text,
-          ).then(() => ea.destroy());
-          return false;
-        }
-      }
-
-      if (event.dataTransfer.types.includes("text/html")) {
-        const html = event.dataTransfer.getData("text/html");
-        const src = html.match(/src=["']([^"']*)["']/);
-        if (
-          src &&
-          externalDragAction === "image-url" &&
-          hyperlinkIsImage(src[1])
-        ) {
-          void this.view.addImageWithURL(src[1]);
-          return false;
-        }
-        if (src && externalDragAction === "link") {
-          if (
-            this.plugin.settings.oEmbedAllowed &&
-            src[1].match(/^https:\/\/\S*$/)
-          ) {
-            void this.view.addTextWithOEmbed(src[1]);
-            return false;
-          }
-          void this.view.addText(src[1]);
-          return false;
-        }
-        if (src && externalDragAction === "embeddable") {
-          const ea = getEA(this.view);
-          void insertEmbeddableToView(
-            ea,
-            this.currentPosition,
-            undefined,
-            src[1],
-          ).then(() => ea.destroy());
-          return false;
-        }
-      }
-
+    const html = event.dataTransfer.getData("text/html");
+    const src = html.match(/src=["']([^"']*)["']/);
+    const textText = event.dataTransfer.getData("text") || event.dataTransfer.getData("text/plain");
+    const uriText = event.dataTransfer.getData("text/uri-list")
+      .split(/\r?\n/).map(line => line.trim()).find(line => line && !line.startsWith("#")) ?? "";
+    let text = src ? src[1] : textText;
+    if (!text) text = uriText;
+    const hasFiles = event.dataTransfer.types.includes("Files");
+    const isWebURL = (value: string) => /^(blob:)?https?:\/\/\S+$/.test(value);
+    // Browser image drags can carry a temporary file as well as their URL.
+    // Resolve the web action before entering the separate OS-file action map.
+    const webSource = [text, uriText, textText].find(isWebURL);
+    if (hasFiles && webSource) text = isWebURL(text) ? text : webSource;
+    if (hasFiles && !webSource) {
       if (
         event.dataTransfer.types.length >= 1 &&
         ["image-url", "image-import", "embeddable"].contains(
@@ -632,16 +575,6 @@ export class DropManager {
       event.dataTransfer.types.includes("text/uri-list") ||
       event.dataTransfer.types.includes("text/html")
     ) {
-      const html = event.dataTransfer.getData("text/html");
-      const src = html.match(/src=["']([^"']*)["']/);
-      const htmlText = src ? src[1] : "";
-      const textText = event.dataTransfer.getData("text");
-      const uriText = event.dataTransfer.getData("text/uri-list");
-
-      let text: string = src ? htmlText : textText;
-      if (!text || text === "") {
-        text = uriText;
-      }
       if (!text || text === "") {
         return true;
       }
@@ -651,7 +584,20 @@ export class DropManager {
           externalDragAction === "embeddable" &&
           /^(blob:)?(http|https):\/\/[^\s/$.?#].[^\s]*$/.test(text)
         ) {
+          if (hasFiles) {
+            const ea = getEA(this.view);
+            void insertEmbeddableToView(ea, this.currentPosition, undefined, text)
+              .finally(() => ea.destroy());
+            return false;
+          }
           return true;
+        }
+        if (
+          externalDragAction === "image-import" &&
+          (hyperlinkIsYouTubeLink(text) || hyperlinkIsYouTubeLink(uriText))
+        ) {
+          void this.view.addYouTubeThumbnail(hyperlinkIsYouTubeLink(uriText) ? uriText : text, true);
+          return false;
         }
         if (
           text &&
@@ -763,8 +709,8 @@ export class DropManager {
             internalDragModifierType(e)
           ];
       } else if (
-        e.dataTransfer.types.length === 1 &&
-        e.dataTransfer.types.includes("Files")
+        e.dataTransfer.types.includes("Files") &&
+        !e.dataTransfer.types.some(type => ["text/plain", "text/html", "text/uri-list"].includes(type))
       ) {
         //drag from OS file manager
         msg =
@@ -829,6 +775,7 @@ export class DropManager {
     if (
       transfer.types?.includes("text/html") ||
       transfer.types?.includes("text/plain") ||
+      transfer.types?.includes("text/uri-list") ||
       transfer.types?.includes("Files")
     ) {
       return "copy";

@@ -4677,8 +4677,12 @@ export default class ExcalidrawView
     })();
   }
 
-  async addYouTubeThumbnail(link: string) {
+  async addYouTubeThumbnail(link: string, saveToVault = false) {
     const thumbnailLink = await getYouTubeThumbnailLink(link);
+    if (saveToVault) {
+      await this.addImageSaveToVault(thumbnailLink, link);
+      return;
+    }
     const ea = getEA(this);
     const id = await ea.addImage(0, 0, thumbnailLink);
     ea.getElement(id).link = link;
@@ -4693,7 +4697,7 @@ export default class ExcalidrawView
     ea.destroy();
   }
 
-  async addImageSaveToVault(link: string) {
+  async addImageSaveToVault(link: string, sourceLink?: string) {
     const ea = getEA(this);
     const mimeType = getMimeType(getURLImageExtension(link));
     const dataURL = await getDataURLFromURL(link, mimeType, 3000);
@@ -4710,7 +4714,10 @@ export default class ExcalidrawView
       ea.destroy();
       return;
     }
-    await ea.addImage(0, 0, file);
+    const id = await ea.addImage(0, 0, file);
+    if (sourceLink) {
+      ea.getElement(id).link = sourceLink;
+    }
     await ea.addElementsToView(true, true, true);
     ea.destroy();
   }
