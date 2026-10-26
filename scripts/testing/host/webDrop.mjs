@@ -56,8 +56,15 @@ async function exercise(control, drawingPath, imageURL, pngBase64) {
           transfer.setData("text/html", page ? `<a href="${page}"><img src="${source}"></a>` : `<img src="${source}">`);
           transfer.setData("text/plain", page ?? source);
         }
-        const result = view.dropManager.onDrop({ dataTransfer: transfer, clientX: 300, clientY: 300, shiftKey: false, ctrlKey: false, altKey: false, metaKey: false });
-        if (result !== false) throw Error("mixed drop was not consumed");
+        if (action === "embeddable") {
+          const target = view.containerEl.querySelector(".excalidraw");
+          if (!target) throw Error("canvas drop target missing");
+          target.dispatchEvent(new view.ownerWindow.DragEvent("drop", { dataTransfer: transfer, clientX: 300, clientY: 300, bubbles: true, cancelable: true }));
+          transfer.items.clear();
+        } else {
+          const result = view.dropManager.onDrop({ dataTransfer: transfer, clientX: 300, clientY: 300, shiftKey: false, ctrlKey: false, altKey: false, metaKey: false });
+          if (result !== false) throw Error("mixed drop was not consumed");
+        }
         const navigation = action === "link" || action === "embeddable";
         let element, embedded;
         await waitFor(() => {

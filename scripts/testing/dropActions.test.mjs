@@ -77,9 +77,18 @@ function fixture(payload, web = "image-url", local = "image-import", consume = f
   const app = { dragManager: {}, workspace: { setActiveLeaf() {} }, viewRegistry: { getTypeByExtension: ext => options.viewTypes?.[ext] }, metadataCache: { getFirstLinkpathDest: () => options.duplicate ? new TFile("existing/picture.png") : null, fileToLinktext: file => file.path }, vault: { modifyBinary: async file => calls.push(["overwrite", file.path]) } };
   const record = name => async (...args) => { calls.push([name, ...args]); };
   const div = { innerText: "", style: {}, clientWidth: 10 };
+  class SnapshotDataTransfer {
+    data = new Map();
+    files = [];
+    get types() { return [...this.data.keys()]; }
+    get items() { return [...this.data].map(([type, value]) => ({ kind: "string", type, getAsString: callback => queueMicrotask(() => callback(value)) })); }
+    setData(type, value) { this.data.set(type, value); }
+    getData(type) { return this.data.get(type) ?? ""; }
+  }
   const view = {
     app, plugin: { settings: { oEmbedAllowed: false } }, file: new TFile("drawing.md"), leaf: {},
     ownerDocument: { body: { appendChild() {}, removeChild() {} } },
+    ownerWindow: { DataTransfer: SnapshotDataTransfer },
     excalidrawAPI: { getAppState: () => ({ currentItemFontSize: 20 }) },
     getHookServer: () => ({ onDropHook: e => { hooks.push(e); return consume; } }),
     addImageWithURL: record("url"), addImageSaveToVault: record("import"), addYouTubeThumbnail: record("youtube"), addText: record("text"), save: async () => {},
@@ -164,9 +173,9 @@ for (const sourcePage of [page, video]) {
   for (const action of ["image-url", "image-import", "link", "embeddable"]) {
     test(`linked image ${sourcePage}: ${action} chooses the correct target`, () => {
       const f = fixture({ Files: true, "text/html": `<a href="${sourcePage}"><img src="${image}"></a>`, "text/plain": sourcePage, "text/uri-list": sourcePage }, action);
-      assert.equal(f.manager.onDrop(f.event), false);
+      assert.equal(f.manager.onDrop(f.event), action === "embeddable");
       if (action === "link") assert.deepEqual(f.calls, [["text", sourcePage]]);
-      else if (action === "embeddable") assert.equal(f.calls[0].at(-1), sourcePage);
+      else if (action === "embeddable") { assert.equal(f.calls.length, 0); assert.equal(f.event.dataTransfer.getData("text/plain"), sourcePage); }
       else if (sourcePage === video) assert.deepEqual(f.calls, [["youtube", video, ...(action === "image-import" ? [true] : [])]]);
       else assert.deepEqual(f.calls, [[action === "image-url" ? "url" : "import", image]]);
     });
@@ -176,7 +185,8 @@ for (const action of ["link", "embeddable"]) {
   test(`HTML-only linked image: ${action} retains its anchor target`, () => {
     const f = fixture({ Files: true, "text/html": `<a href="${page}"><img src="${image}"></a>` }, action);
     f.manager.onDrop(f.event);
-    assert.equal(f.calls[0].at(-1), page);
+    if (action === "embeddable") { assert.equal(f.calls.length, 0); assert.equal(f.event.dataTransfer.getData("text/plain"), page); }
+    else assert.equal(f.calls[0].at(-1), page);
   });
 }
 for (const extension of ["jpg", "webp", "svg", "avif"]) {
@@ -229,38 +239,48 @@ for (const action of ["image-url", "image-import"]) {
   });
 }
 
-test("mixed and URL-only embeddables are each handled once by the plugin", async () => {
+test("mixed and URL-only embeddables delegate a URL-only snapshot to the component", async () => {
   const f = fixture({ Files: true, "text/plain": "https://example.com/page" }, "embeddable");
-  assert.equal(f.manager.onDrop(f.event), false);
-  assert.equal(f.calls[0][0], "embed");
+  assert.equal(f.manager.onDrop(f.event), true);
+  assert.equal(f.calls.length, 0);
+  assert.equal(f.event.dataTransfer.getData("text/plain"), "https://example.com/page");
+  assert.equal(f.event.dataTransfer.files.length, 0);
   const plain = fixture({ "text/plain": "https://example.com/page" }, "embeddable");
-  assert.equal(plain.manager.onDrop(plain.event), false);
-  assert.equal(plain.calls[0][0], "embed");
+  assert.equal(plain.manager.onDrop(plain.event), true);
+  assert.equal(plain.calls.length, 0);
 });
 
 for (const platform of ["Mac", "Win"]) {
-  for (const payload of [
-    { "text/plain": reportedVideo },
-    { "text/uri-list": reportedVideo },
-    { "text/html": `<a href="${reportedVideo}">YouTube video</a>` },
-    { "text/plain": reportedVideo, "text/html": `<img src="${image}">` },
-    { Files: true, "text/plain": reportedVideo, "text/html": `<img src="${image}">` },
-  ]) {
-    test(`${platform}: real frame modifier consumes ${Object.keys(payload).join("+")} before drag data expires`, async () => {
-      const f = fixture(payload, "image-url", "image-import", false, { platform });
-      Object.assign(f.event, { shiftKey: platform === "Win", ctrlKey: platform === "Win", altKey: platform === "Mac", metaKey: false });
-      let readable = true;
-      const getData = f.event.dataTransfer.getData;
-      f.event.dataTransfer.getData = type => readable ? getData(type) : "";
-      f.manager.onDragOver(f.event);
-      assert.equal(f.div.innerText, "WEB_DRAG_EMBEDDABLE");
-      assert.equal(f.manager.onDrop(f.event), false);
-      readable = false;
-      await new Promise(resolve => setImmediate(resolve));
-      assert.deepEqual(f.calls.map(call => call[0]), ["embed"]);
-      assert.equal(f.calls[0].at(-1), reportedVideo);
-      assert.equal(f.hooks.length, 1);
-    });
+  for (const source of [reportedVideo, "https://www.youtube.com/shorts/p3Qc3Hho_Lc", "https://vimeo.com/76979871", "https://twitter.com/jack/status/20"]) {
+    for (const payload of [
+      { "text/plain": source },
+      { "text/uri-list": source },
+      { "text/html": `<a href="${source}">Embedded content</a>` },
+      { "text/plain": source, "text/html": `<img src="${image}">` },
+      { Files: true, "text/plain": source, "text/html": `<img src="${image}">` },
+    ]) {
+      test(`${platform}: frame modifier forwards ${source} from ${Object.keys(payload).join("+")} after drag data expires`, async () => {
+        const f = fixture(payload, "image-url", "image-import", false, { platform });
+        Object.assign(f.event, { shiftKey: platform === "Win", ctrlKey: platform === "Win", altKey: platform === "Mac", metaKey: false });
+        let readable = true;
+        const getData = f.event.dataTransfer.getData;
+        f.event.dataTransfer.getData = type => readable ? getData(type) : "";
+        const original = f.event.dataTransfer;
+        f.manager.onDragOver(f.event);
+        assert.equal(f.div.innerText, "WEB_DRAG_EMBEDDABLE");
+        assert.equal(f.manager.onDrop(f.event), true);
+        readable = false;
+        await new Promise(resolve => setImmediate(resolve));
+        assert.notEqual(f.event.dataTransfer, original);
+        assert.equal(original.getData("text/plain"), "");
+        assert.equal(f.event.dataTransfer.getData("text/plain"), source);
+        assert.deepEqual(f.event.dataTransfer.types, ["text/plain"]);
+        assert.equal(f.event.dataTransfer.files.length, 0);
+        assert.equal(await new Promise(resolve => f.event.dataTransfer.items[0].getAsString(resolve)), source);
+        assert.equal(f.calls.length, 0);
+        assert.equal(f.hooks.length, 1);
+      });
+    }
   }
 }
 
@@ -268,6 +288,23 @@ test("hook consumption prevents both insertion and local fallback", () => {
   const f = fixture({ Files: true, "text/plain": image }, "image-import", "image-url", true);
   assert.equal(f.manager.onDrop(f.event), false);
   assert.equal(f.calls.length, 0); assert.equal(f.hooks.length, 1);
+});
+
+test("a consumed frame drop keeps its original event data", () => {
+  const f = fixture({ Files: true, "text/plain": reportedVideo }, "embeddable", "image-import", true);
+  const original = f.event.dataTransfer;
+  assert.equal(f.manager.onDrop(f.event), false);
+  assert.equal(f.event.dataTransfer, original);
+  assert.equal(f.calls.length, 0);
+  assert.equal(f.hooks.length, 1);
+});
+
+test("image actions retain the original transfer", () => {
+  const f = fixture({ Files: true, "text/plain": reportedVideo }, "image-url");
+  const original = f.event.dataTransfer;
+  assert.equal(f.manager.onDrop(f.event), false);
+  assert.equal(f.event.dataTransfer, original);
+  assert.deepEqual(f.calls, [["youtube", reportedVideo]]);
 });
 
 test("pure OS files and mixed payloads without a URL retain the local import path", async () => {

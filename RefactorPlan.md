@@ -27,6 +27,7 @@ validated, and what remains uncertain.
 | Phase | Status | Current outcome |
 | --- | --- | --- |
 | Assessment and baseline design | Complete | Initial architecture, risks, sequencing, and validation matrix documented |
+| Native provider frame insertion in #2992 | Implemented; 147 source tests and 30 native provider checks pass; known ResizeObserver error gate remains | DropManager forwards an owning-window URL-only DataTransfer to the component. Excalidraw owns provider sizing, insertion and native history; original browser data may expire without losing the selected URL |
 | Internal file-drop eligibility in #2992 | Implemented; 92 source tests and 10 native cases pass; known ResizeObserver error gate remains | A shared action eligibility check keeps tooltip and insertion aligned. Fonts without a registered renderer offer only links; image/Markdown/PDF/media/custom-view actions remain available |
 | Share dropped-file import for #2992 browser fallback | Implemented; 56 source tests and 20 native cases pass; known ResizeObserver error gate remains | Move the existing byte import, duplicate Use/Overwrite/Import choices and animated-file modal dispatch into one private DropManager method. Both OS imports and unsupported browser image URL fallbacks use it; navigation actions retain the page target |
 | Repair PR #472 published Mermaid declarations | Implemented and validated against published 0.18.144 | Replace the consumer's drifting package-host/loader declarations with canonical fork types. A compile-time contract check runs before production builds. Fork runtime, Extras, protocol 2, public loaded/api shape and saved data stay unchanged; real-Extras offline main/popout checks pass on Windows |
@@ -2527,3 +2528,30 @@ diagnostic was removed. No setting defaults or persisted formats changed.
 Remaining manual risk: physical drag gestures and custom file-view registrations
 on Windows; compare one unsupported font and one normal image in a popout. No
 physical-mobile gesture claim is made.
+
+### 2026-10-26 — Return browser frame insertion to the component (#2992)
+
+The plugin-side frame helper forced square dimensions and bypassed Excalidraw's
+provider sizing, including portrait Shorts. DropManager now synchronously copies
+the resolved URL into an independent DataTransfer created in the owning window,
+assigns it to the React drop event and returns control to the component. Native
+insertion handles provider metadata and history. A URL-only transfer keeps
+browser thumbnail Files from selecting image insertion, and remains readable
+after the original browser drag data expires. No fork or public API change is
+required. Image/import actions and consumed hooks retain their original transfer.
+
+All 147 source tests pass. Thirty native checks validate image/import behavior
+and native frame dimensions for YouTube, Shorts, Vimeo and Twitter, in main and
+popout windows, including mounting and save/reopen after original drag data is
+cleared. Fixture cleanup passed; the overall runner retains the previously
+observed ResizeObserver error-gate failure. An initial CLI timeout cleaned up;
+the retry returned all provider results. All twenty generic browser-drop cases
+also passed against the same artifact, including component insertion of mixed
+payload frames. The deployed hashes match both tested builds; controllers,
+owned fixtures and temporary setting overrides were cleaned up.
+
+Highest-probability remaining manual risk: browser payload differences and the
+modifier gesture. Check actual Chrome Option-drops of normal YouTube, Shorts and
+Vimeo, one native Undo, and one popout. Physical Windows Ctrl+Shift and mobile
+touch insertion remain separate coverage; desktop synthetic events do not prove
+those gestures.

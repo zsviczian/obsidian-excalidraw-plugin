@@ -29,8 +29,16 @@ async function exercise(control, drawingPath) {
       app.workspace.setActiveLeaf(leaf, { focus: true });
       for (const action of ["image-url", "image-import", "embeddable"]) {
         const frame = action === "embeddable";
-        const payloads = frame ? ["link", "uri-only", "html-only", "fileless-thumbnail", "thumbnail"] : ["link", "thumbnail"];
-        for (const payload of payloads) {
+        const frameSources = [
+          { provider: "youtube", url: video, width: 560, height: 315, payloads: ["link", "uri-only", "html-only", "fileless-thumbnail", "thumbnail"] },
+          { provider: "shorts", url: "https://www.youtube.com/shorts/p3Qc3Hho_Lc", width: 315, height: 560, payloads: ["link", "thumbnail"] },
+          { provider: "vimeo", url: "https://vimeo.com/76979871", width: 560, height: 315, payloads: ["link", "thumbnail"] },
+          { provider: "twitter", url: "https://twitter.com/jack/status/20", width: 480, height: 480, payloads: ["link", "thumbnail"] },
+        ];
+        const cases = frame ? frameSources.flatMap(source => source.payloads.map(payload => ({ ...source, payload })))
+          : ["link", "thumbnail"].map(payload => ({ provider: "youtube", url: video, payload }));
+        for (const scenario of cases) {
+          const { payload, url } = scenario;
           if (frame) {
             // Exercise the live Option mapping, not an embeddable default action.
             plugin.settings.modifierKeyConfig = structuredClone(previous);
@@ -40,9 +48,9 @@ async function exercise(control, drawingPath) {
             }
           }
           const transfer = new view.ownerWindow.DataTransfer();
-          if (payload !== "uri-only" && payload !== "html-only") transfer.setData("text/plain", video);
-          if (payload !== "html-only") transfer.setData("text/uri-list", video);
-          if (payload !== "uri-only") transfer.setData("text/html", `<a href="${video}">${payload.includes("thumbnail") ? `<img src="${thumbnail}">` : "YouTube video"}</a>`);
+          if (payload !== "uri-only" && payload !== "html-only") transfer.setData("text/plain", url);
+          if (payload !== "html-only") transfer.setData("text/uri-list", url);
+          if (payload !== "uri-only") transfer.setData("text/html", `<a href="${url}">${payload.includes("thumbnail") ? `<img src="${thumbnail}">` : "Embedded content"}</a>`);
           // A supplied File exercises browser mixed-payload routing. Thumbnail
           // bytes must come from the real resolver, not this intentionally empty File.
           if (payload === "thumbnail") transfer.items.add(new view.ownerWindow.File([], "browser-thumbnail.jpg", { type: "image/jpeg" }));
@@ -57,13 +65,15 @@ async function exercise(control, drawingPath) {
             view.dropManager.onDragOver(event);
             const target = view.containerEl.querySelector(".excalidraw");
             if (!target) throw Error("canvas drop target missing");
-            // Model the browser's protected drag-data lifetime. The real React
-            // canvas handler must consume the resolved URL before dispatch ends.
+            // Model the browser's protected drag-data lifetime. The host must
+            // snapshot the URL before dispatch ends; the component parses that
+            // independent transfer after awaiting its host callback.
             const getData = transfer.getData.bind(transfer);
             let readable = true;
             Object.defineProperty(transfer, "getData", { value: type => readable ? getData(type) : "" });
             target.dispatchEvent(event);
             readable = false;
+            transfer.items.clear();
           } else if (view.dropManager.onDrop({ dataTransfer: transfer, clientX: 300, clientY: 300, shiftKey: false, ctrlKey: false, altKey: false, metaKey: false }) !== false) throw Error("YouTube drop not consumed");
           let element, embedded, binary;
           await waitFor(() => {
@@ -73,13 +83,17 @@ async function exercise(control, drawingPath) {
             binary = element && view.excalidrawAPI.getFiles()[element.fileId];
             return embedded && binary;
           }, "YouTube thumbnail insertion");
-          if (element.link !== video) throw Error("video navigation URL changed");
+          if (element.link !== url) throw Error("video navigation URL changed");
           let dimensions;
           if (frame) {
+            const expected = view.ownerWindow.ExcalidrawLib.getEmbedLink(url).intrinsicSize;
+            if (element.width !== scenario.width || element.height !== scenario.height || element.width !== expected.w || element.height !== expected.h) {
+              throw Error(`${scenario.provider} did not use component dimensions: ${element.width}x${element.height}`);
+            }
             await waitFor(() => {
-              const nodes = Array.from(view.containerEl.querySelectorAll("webview.excalidraw__embeddable, iframe.excalidraw__embeddable"));
-              return nodes.length === beforeFrames + 1 && nodes.every(node => node.getAttribute("src")?.includes("youtube?v=p3Qc3Hho_Lc") || node.getAttribute("src")?.includes("youtube.com/embed/p3Qc3Hho_Lc"));
-            }, "YouTube video frame mount");
+              return view.containerEl.querySelectorAll(".excalidraw__embeddable-container").length === beforeFrames + 1;
+            }, `${scenario.provider} frame mount`);
+            dimensions = { width: element.width, height: element.height };
           } else {
             if (action === "image-url") {
               if (!embedded.isHyperLink || !embedded.hyperlink.startsWith("https://i.ytimg.com/vi/p3Qc3Hho_Lc/")) throw Error("thumbnail is missing the /vi/ path");
@@ -102,8 +116,9 @@ async function exercise(control, drawingPath) {
           await waitFor(() => leaf.view.excalidrawAPI, "reopen API");
           view = leaf.view;
           const reopened = view.getViewElements().find(element => element.id === id);
-          if (reopened?.link !== video || reopened.type !== (frame ? "embeddable" : "image") || (!frame && !view.excalidrawData.getFile(reopened.fileId))) throw Error("YouTube drop missing after reopen");
-          c.results.push({ window: popout ? "popout" : "main", action, payload, ...dimensions, videoFrameMounted: frame || undefined, reopen: true });
+          if (reopened?.link !== url || reopened.type !== (frame ? "embeddable" : "image") || (!frame && !view.excalidrawData.getFile(reopened.fileId))) throw Error("provider drop missing after reopen");
+          if (frame && (reopened.width !== scenario.width || reopened.height !== scenario.height)) throw Error("provider aspect ratio changed after reopen");
+          c.results.push({ window: popout ? "popout" : "main", action, payload, provider: scenario.provider, ...dimensions, videoFrameMounted: frame || undefined, reopen: true });
         }
       }
       if (c.pop) { await c.pop.setViewState({ type: "empty", state: {} }); c.pop.detach(); c.pop = null; }
@@ -133,10 +148,10 @@ export async function runYouTubeDropScenario({ cli, drawingPath }) {
   const evaluate = code => JSON.parse(cli("eval", `code=${code}`).trim().replace(/^=>\s*/, ""));
   const state = () => evaluate(`JSON.stringify({state:globalThis.${control}?.state,error:globalThis.${control}?.error,results:globalThis.${control}?.results})`);
   let started = false;
+  let result;
   try {
     evaluate(`(()=>{if(globalThis.${control})throw Error("YouTube-drop controller exists");const c=globalThis.${control}={state:"pending"};(${exercise.toString()})(${JSON.stringify(control)},${JSON.stringify(drawingPath)}).then(()=>c.state="done").catch(error=>{c.state="failed";c.error=error.stack});return JSON.stringify({started:true})})()`);
     started = true;
-    let result;
     for (let i = 0; i < 1800; i++) {
       result = state();
       if (result.state !== "pending") break;
@@ -144,6 +159,8 @@ export async function runYouTubeDropScenario({ cli, drawingPath }) {
     }
     assert.equal(result.state, "done", result.error ?? "YouTube-drop scenario timed out");
     return { id: "youtube-drop-thumbnail", status: "passed", cases: result.results };
+  } catch (error) {
+    throw new Error(`${error.message}; last completed case: ${JSON.stringify(result?.results?.at(-1))}`, { cause: error });
   } finally {
     if (started) {
       if (state().state === "pending") {

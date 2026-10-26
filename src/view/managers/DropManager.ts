@@ -619,12 +619,15 @@ export class DropManager {
           externalDragAction === "embeddable" &&
           /^(blob:)?(http|https):\/\/[^\s/$.?#].[^\s]*$/.test(text)
         ) {
-          // Keep the resolved URL: the component awaits this host callback before
-          // reading DataTransfer again, when browser drop data may be unavailable.
-          const ea = getEA(this.view);
-          void insertEmbeddableToView(ea, this.currentPosition, undefined, text)
-            .finally(() => ea.destroy());
-          return false;
+          // Let the component own provider-specific sizing and insertion. Its
+          // awaited host callback can outlive the browser's drag-data access, so
+          // forward an independent URL-only transfer instead of the original
+          // thumbnail File/HTML payload, which could select image insertion.
+          const ownerWindow = this.view.ownerWindow as Window & { DataTransfer: typeof DataTransfer };
+          const transfer = new ownerWindow.DataTransfer();
+          transfer.setData("text/plain", text);
+          event.dataTransfer = transfer;
+          return true;
         }
         if (
           externalDragAction === "image-import" &&
