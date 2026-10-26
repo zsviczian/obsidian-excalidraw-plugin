@@ -12,6 +12,9 @@ import { runNativeCLIScenario } from "./nativeCLI.mjs";
 import { runEmbedRecoveryScenario } from "./embedRecovery.mjs";
 import { runGroupedLinkClickScenario } from "./groupedLinkClick.mjs";
 import { runLatexInputScenario } from "./latexInput.mjs";
+import { runWebDropScenario } from "./webDrop.mjs";
+import { runInternalDropScenario } from "./internalDrop.mjs";
+import { runYouTubeDropScenario } from "./youtubeDrop.mjs";
 
 const pluginRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const pluginOnly = process.argv.includes("--plugin-only");
@@ -21,8 +24,11 @@ const embedRecovery = process.argv.includes("--embed-recovery");
 const groupedLinkClick = process.argv.includes("--grouped-link-click");
 const latexInput = process.argv.includes("--latex-input");
 const latexPreview = process.argv.includes("--latex-preview");
-if (process.argv.slice(2).some(arg => !["--plugin-only", "--text-undo", "--native-cli", "--embed-recovery", "--grouped-link-click", "--latex-input", "--latex-preview"].includes(arg))) {
-  throw new Error("Supported options: --plugin-only, --text-undo, --native-cli, --embed-recovery, --grouped-link-click, --latex-input, --latex-preview");
+const webDrop = process.argv.includes("--web-drop");
+const internalDrop = process.argv.includes("--internal-drop");
+const youtubeDrop = process.argv.includes("--youtube-drop");
+if (process.argv.slice(2).some(arg => !["--plugin-only", "--text-undo", "--native-cli", "--embed-recovery", "--grouped-link-click", "--latex-input", "--latex-preview", "--web-drop", "--internal-drop", "--youtube-drop"].includes(arg))) {
+  throw new Error("Supported options: --plugin-only, --text-undo, --native-cli, --embed-recovery, --grouped-link-click, --latex-input, --latex-preview, --web-drop, --internal-drop, --youtube-drop");
 }
 const forkRoot = resolve(process.env.EXCALIDRAW_FORK_ROOT || join(pluginRoot, "../excalidraw"));
 const reportDir = process.env.EXCALIDRAW_TEST_REPORT_DIR || mkdtempSync(join(tmpdir(), "excalidraw-obsidian-"));
@@ -58,6 +64,9 @@ const report = await runObsidianSmoke({
   reportDir,
   source,
   scenarios: [
+    ...(webDrop ? [runWebDropScenario] : []),
+    ...(internalDrop ? [runInternalDropScenario] : []),
+    ...(youtubeDrop ? [runYouTubeDropScenario] : []),
     ...(textUndo ? [runTextUndoScenario] : []),
     ...(nativeCLI ? [runNativeCLIScenario] : []),
     ...(embedRecovery ? [runEmbedRecoveryScenario] : []),
