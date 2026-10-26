@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 
 const CONTROL = "__excalidrawImageGeometry";
 
-async function exercise(control, drawingPath, popout) {
+async function exercise(control, drawingPath, popout, realRenderer) {
   const plugin = app.plugins.plugins["obsidian-excalidraw-plugin"];
   const main = app.workspace.getLeavesOfType("excalidraw").find(l => l.view.file?.path === drawingPath);
   const c = globalThis[control];
@@ -19,14 +19,19 @@ async function exercise(control, drawingPath, popout) {
     }
     throw Error(`Timed out: ${label}`);
   };
-  // The gateway is the only fake: geometry, editor submission, scene/cache
-  // updates, persistence, and reload all run through the real plugin/runtime.
-  c.gateway.getMathJax = async () => ({ tex2dataURL: async tex => {
+  if (realRenderer) {
+    if (!app.plugins.plugins["excalidraw-extras"]?.settings.enableMathJaxToSVG || !await c.gateway.getMathJax()) {
+      throw Error("Enable Extras MathJax-to-SVG in excalidraw-test before --image-geometry-real");
+    }
+  } else {
+    // Only deterministic mode replaces the gateway; real mode uses Extras.
+    c.gateway.getMathJax = async () => ({ tex2dataURL: async tex => {
     const size = tex === "V" ? { width: 30, height: 30 } : { width: 300, height: 60 };
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size.width}" height="${size.height}"><rect width="100%" height="100%" fill="black"/></svg>`;
     return { mimeType: "image/svg+xml", fileId: "geometry" + tex.length,
       dataURL: "data:image/svg+xml;base64," + btoa(svg), created: Date.now(), size };
-  } });
+    } });
+  }
   let leaf = main;
   if (popout) {
     leaf = app.workspace.openPopoutLeaf(); c.pop = leaf;
@@ -42,7 +47,7 @@ async function exercise(control, drawingPath, popout) {
   const element = () => view.getViewElements().find(el => el.id === id);
   const bounds = () => lib.getCommonBoundingBox([element()]);
   c.results = [];
-  for (const formula of ["long formula", "V"]) {
+  for (const formula of ["V \\in \\mathbb R^{n_{seq} \\times d}", "V"]) {
     const before = { width: element().width, height: element().height, version: element().version, bounds: bounds() };
     await view.openLaTeXEditor(id);
     const doc = view.ownerDocument;
@@ -130,12 +135,12 @@ async function cleanup(control) {
 }
 
 /** Uses only the parent runner's disposable drawing and restores its gateway. */
-export async function runImageGeometryScenario({ cli, drawingPath }) {
+export async function runImageGeometryScenario({ cli, drawingPath, realRenderer = false }) {
   const evaluate = code => JSON.parse(cli("eval", `code=${code}`).trim().replace(/^=>\s*/, ""));
   const cases = [];
   for (const [popout, scenario] of [[false, exercise], [true, exercise], [false, exerciseMarkdown]]) {
     try {
-      evaluate(`(()=>{if(globalThis.${CONTROL})throw Error("geometry controller exists");const c=globalThis.${CONTROL}={state:"pending"};(${scenario.toString()})(${JSON.stringify(CONTROL)},${JSON.stringify(drawingPath)},${popout}).then(()=>c.state="done").catch(e=>{c.error=e.stack;c.state="failed"});return JSON.stringify({started:true})})()`);
+      evaluate(`(()=>{if(globalThis.${CONTROL})throw Error("geometry controller exists");const c=globalThis.${CONTROL}={state:"pending"};(${scenario.toString()})(${JSON.stringify(CONTROL)},${JSON.stringify(drawingPath)},${popout},${realRenderer}).then(()=>c.state="done").catch(e=>{c.error=e.stack;c.state="failed"});return JSON.stringify({started:true})})()`);
       let result;
       for (let i = 0; i < 200; i++) {
         result = evaluate(`JSON.stringify({state:globalThis.${CONTROL}.state,error:globalThis.${CONTROL}.error,results:globalThis.${CONTROL}.results,reopen:globalThis.${CONTROL}.reopen})`);
@@ -148,5 +153,5 @@ export async function runImageGeometryScenario({ cli, drawingPath }) {
       cli("eval", `code=(${cleanup.toString()})(${JSON.stringify(CONTROL)})`);
     }
   }
-  return { id: "image-geometry-3014", status: "passed", cases };
+  return { id: realRenderer ? "image-geometry-real-3014" : "image-geometry-3014", renderer: realRenderer ? "extras-mathjax" : "deterministic-svg", status: "passed", cases };
 }

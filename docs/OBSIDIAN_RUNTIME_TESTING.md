@@ -162,6 +162,19 @@ after rendering and reopen. It waits for the render-complete indicator between
 edits; a metadata update alone does not establish that persistence has finished.
 The temporary gateway, owned panel tab and fixtures are cleaned up.
 
+With Excalidraw Extras installed and **MathJax-to-SVG** enabled, run
+`npm run verify:obsidian:plugin -- --image-geometry-real`. This uses the actual
+Extras renderer for the #3014 short/long formula edits, cached bounds and
+save/reopen checks in the main window and a popout, plus the Markdown sidepanel
+case. Latex Suite is not required; its preview-specific gate remains separate.
+
+On 2026-10-26, the real Extras renderer passed formula expansion/shrinkage,
+matching cached bounds and save/reopen in both windows. The short formula was
+20×11 and the expanded formula 80×15, with matching runtime bounds. The Markdown
+sidepanel case and fixture cleanup also passed. The overall run failed its
+clean-error gate on the previously recorded ResizeObserver teardown
+notifications; this real-renderer run is not an overall clean pass.
+
 For wheel zoom limits (#3008), run
 `npm run verify:obsidian -- --wheel-zoom`. It builds/copies the local fork and
 dispatches actual wheel events with deliberately changed live minimum/maximum
