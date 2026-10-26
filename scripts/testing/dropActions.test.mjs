@@ -112,6 +112,43 @@ function fixture(payload, web = "image-url", local = "image-import", consume = f
 
 const image = "https://example.com/picture.png", video = "https://www.youtube.com/watch?v=abc123";
 const page = "https://example.com/article";
+const reportedVideo = "https://www.youtube.com/watch?v=p3Qc3Hho_Lc&pp=ugUHEgVlbi1HQg%3D%3D";
+const thumbnailFunction = utilsTree.statements.find(node => ts.isFunctionDeclaration(node) && node.name?.text === "getYouTubeThumbnailLink").getText(utilsTree);
+function thumbnailHarness(statuses) {
+  const exports = {}, requests = [];
+  vm.runInNewContext(ts.transpileModule(thumbnailFunction, { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, {
+    exports, URLs: { I_YTIMG_COM: "https://i.ytimg.com" },
+    requestUrl: async options => { requests.push(options); return { status: statuses[requests.length - 1] ?? 404 }; },
+  });
+  return { resolve: exports.getYouTubeThumbnailLink, requests };
+}
+for (const link of [reportedVideo, "https://youtu.be/p3Qc3Hho_Lc?t=42"]) {
+  for (const [statuses, selected] of [[[200], "maxresdefault.jpg"], [[404, 200], "hq720.jpg"], [[404, 404, 200], "mqdefault.jpg"], [[404, 404, 404], "default.jpg"]]) {
+    test(`actual YouTube thumbnail resolver: ${selected} for ${link}`, async () => {
+      const f = thumbnailHarness(statuses);
+      assert.equal(await f.resolve(link), `https://i.ytimg.com/vi/p3Qc3Hho_Lc/${selected}`);
+      assert.deepEqual(f.requests.map(request => request.url), ["maxresdefault.jpg", "hq720.jpg", "mqdefault.jpg"].slice(0, statuses.length).map(name => `https://i.ytimg.com/vi/p3Qc3Hho_Lc/${name}`));
+      assert.ok(f.requests.every(request => request.throw === false && request.contentType === "image/jpeg"));
+    });
+  }
+}
+test("thumbnail resolver does not request an image for an unrecognized video", async () => {
+  const f = thumbnailHarness([]);
+  assert.equal(await f.resolve("https://example.com/page"), null);
+  assert.equal(f.requests.length, 0);
+});
+for (const payload of [
+  { "text/plain": reportedVideo, "text/html": `<a href="${reportedVideo}">YouTube video</a>` },
+  { Files: true, "text/plain": reportedVideo, "text/html": `<a href="${reportedVideo}"><img src="https://i.ytimg.com/vi/p3Qc3Hho_Lc/hqdefault.jpg"></a>`, "text/uri-list": reportedVideo },
+]) {
+  for (const action of ["image-url", "image-import"]) {
+    test(`Chrome YouTube ${payload.Files ? "thumbnail" : "link"}: ${action} preserves tracking URL navigation`, () => {
+      const f = fixture(payload, action);
+      assert.equal(f.manager.onDrop(f.event), false);
+      assert.deepEqual(f.calls, [["youtube", reportedVideo, ...(action === "image-import" ? [true] : [])]]);
+    });
+  }
+}
 for (const source of ["https://example.com/render?id=1", "blob:https://example.com/image-id"]) {
   for (const action of ["image-url", "image-import"]) {
     test(`${source}: ${action} imports the supplied image without an OS path`, async () => {

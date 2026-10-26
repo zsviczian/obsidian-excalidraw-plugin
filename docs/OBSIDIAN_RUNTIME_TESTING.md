@@ -185,6 +185,18 @@ drag/controller state are cleaned up. Source tests cover default Mac/Windows
 modifiers, singular/plural payloads, Markdown/PDF/media support and registered
 custom views. These synthetic events supplement real drag gestures.
 
+For YouTube thumbnail URL regressions, run `npm run test:drop-actions`, then
+`npm run verify:obsidian:plugin -- --youtube-drop`. This opt-in network scenario
+requests the reported public video's JPEGs from `https://i.ytimg.com`. It checks
+Chrome-style link and mixed thumbnail payloads with both image URL/import
+actions in main/popout windows, real JPEG decoding beyond the missing-image
+placeholder size, retained video navigation, vault storage and save/reopen.
+Only owned drawings and newly created attachments are removed, and modifier
+settings are restored. The source tests cover the actual thumbnail URL resolver
+at every fallback resolution, including the required `/vi/` path and tracking
+parameters. This mode needs network access; the ordinary `--web-drop` scenario
+continues to use localhost only.
+
 For Markdown embed changes, run the focused tests and the native regression for
 issue #2953:
 

@@ -900,9 +900,9 @@ export async function getYouTubeThumbnailLink(
   if (!parsed || !parsed[2]) {
     return null;
   }
-  const videoId = parsed[2];
+  const videoId = encodeURIComponent(parsed[2]);
 
-  let url = `${URLs.I_YTIMG_COM}/${videoId}/maxresdefault.jpg`;
+  let url = `${URLs.I_YTIMG_COM}/vi/${videoId}/maxresdefault.jpg`;
   let response = await requestUrl({
     url,
     method: "get",
@@ -913,7 +913,7 @@ export async function getYouTubeThumbnailLink(
     return url;
   }
 
-  url = `${URLs.I_YTIMG_COM}/${videoId}/hq720.jpg`;
+  url = `${URLs.I_YTIMG_COM}/vi/${videoId}/hq720.jpg`;
   response = await requestUrl({
     url,
     method: "get",
@@ -924,7 +924,7 @@ export async function getYouTubeThumbnailLink(
     return url;
   }
 
-  url = `${URLs.I_YTIMG_COM}/${videoId}/mqdefault.jpg`;
+  url = `${URLs.I_YTIMG_COM}/vi/${videoId}/mqdefault.jpg`;
   response = await requestUrl({
     url,
     method: "get",
@@ -935,7 +935,7 @@ export async function getYouTubeThumbnailLink(
     return url;
   }
 
-  return `${URLs.I_YTIMG_COM}/${videoId}/default.jpg`;
+  return `${URLs.I_YTIMG_COM}/vi/${videoId}/default.jpg`;
 }
 
 export function convertSVGStringToElement(svg: string): SVGSVGElement {
