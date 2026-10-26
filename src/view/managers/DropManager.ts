@@ -619,13 +619,12 @@ export class DropManager {
           externalDragAction === "embeddable" &&
           /^(blob:)?(http|https):\/\/[^\s/$.?#].[^\s]*$/.test(text)
         ) {
-          if (hasFiles) {
-            const ea = getEA(this.view);
-            void insertEmbeddableToView(ea, this.currentPosition, undefined, text)
-              .finally(() => ea.destroy());
-            return false;
-          }
-          return true;
+          // Keep the resolved URL: the component awaits this host callback before
+          // reading DataTransfer again, when browser drop data may be unavailable.
+          const ea = getEA(this.view);
+          void insertEmbeddableToView(ea, this.currentPosition, undefined, text)
+            .finally(() => ea.destroy());
+          return false;
         }
         if (
           externalDragAction === "image-import" &&

@@ -229,14 +229,40 @@ for (const action of ["image-url", "image-import"]) {
   });
 }
 
-test("mixed embeddable is handled once; URL-only embeddable delegates to Excalidraw", async () => {
+test("mixed and URL-only embeddables are each handled once by the plugin", async () => {
   const f = fixture({ Files: true, "text/plain": "https://example.com/page" }, "embeddable");
   assert.equal(f.manager.onDrop(f.event), false);
   assert.equal(f.calls[0][0], "embed");
   const plain = fixture({ "text/plain": "https://example.com/page" }, "embeddable");
-  assert.equal(plain.manager.onDrop(plain.event), true);
-  assert.equal(plain.calls.length, 0);
+  assert.equal(plain.manager.onDrop(plain.event), false);
+  assert.equal(plain.calls[0][0], "embed");
 });
+
+for (const platform of ["Mac", "Win"]) {
+  for (const payload of [
+    { "text/plain": reportedVideo },
+    { "text/uri-list": reportedVideo },
+    { "text/html": `<a href="${reportedVideo}">YouTube video</a>` },
+    { "text/plain": reportedVideo, "text/html": `<img src="${image}">` },
+    { Files: true, "text/plain": reportedVideo, "text/html": `<img src="${image}">` },
+  ]) {
+    test(`${platform}: real frame modifier consumes ${Object.keys(payload).join("+")} before drag data expires`, async () => {
+      const f = fixture(payload, "image-url", "image-import", false, { platform });
+      Object.assign(f.event, { shiftKey: platform === "Win", ctrlKey: platform === "Win", altKey: platform === "Mac", metaKey: false });
+      let readable = true;
+      const getData = f.event.dataTransfer.getData;
+      f.event.dataTransfer.getData = type => readable ? getData(type) : "";
+      f.manager.onDragOver(f.event);
+      assert.equal(f.div.innerText, "WEB_DRAG_EMBEDDABLE");
+      assert.equal(f.manager.onDrop(f.event), false);
+      readable = false;
+      await new Promise(resolve => setImmediate(resolve));
+      assert.deepEqual(f.calls.map(call => call[0]), ["embed"]);
+      assert.equal(f.calls[0].at(-1), reportedVideo);
+      assert.equal(f.hooks.length, 1);
+    });
+  }
+}
 
 test("hook consumption prevents both insertion and local fallback", () => {
   const f = fixture({ Files: true, "text/plain": image }, "image-import", "image-url", true);

@@ -191,6 +191,12 @@ requests the reported public video's JPEGs from `https://i.ytimg.com`. It checks
 Chrome-style link and mixed thumbnail payloads with both image URL/import
 actions in main/popout windows, real JPEG decoding beyond the missing-image
 placeholder size, retained video navigation, vault storage and save/reopen.
+It also dispatches DOM drop events through the canvas with the live Option frame mapping
+(Ctrl+Shift on Windows), covering plain/URI/HTML-only links and thumbnails with
+and without Files. Drag data becomes unreadable after synchronous dispatch so
+asynchronous fallback cannot hide a missed drop. All ten frame cases must mount
+a YouTube video frame and survive reopen; together with image cases this makes
+eighteen native checks across main and popout windows.
 Only owned drawings and newly created attachments are removed, and modifier
 settings are restored. The source tests cover the actual thumbnail URL resolver
 at every fallback resolution, including the required `/vi/` path and tracking
