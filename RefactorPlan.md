@@ -27,6 +27,7 @@ validated, and what remains uncertain.
 | Phase | Status | Current outcome |
 | --- | --- | --- |
 | Assessment and baseline design | Complete | Initial architecture, risks, sequencing, and validation matrix documented |
+| Internal file-drop eligibility in #2992 | Implemented; 92 source tests and 10 native cases pass; known ResizeObserver error gate remains | A shared action eligibility check keeps tooltip and insertion aligned. Fonts without a registered renderer offer only links; image/Markdown/PDF/media/custom-view actions remain available |
 | Share dropped-file import for #2992 browser fallback | Implemented; 56 source tests and 20 native cases pass; known ResizeObserver error gate remains | Move the existing byte import, duplicate Use/Overwrite/Import choices and animated-file modal dispatch into one private DropManager method. Both OS imports and unsupported browser image URL fallbacks use it; navigation actions retain the page target |
 | Repair PR #472 published Mermaid declarations | Implemented and validated against published 0.18.144 | Replace the consumer's drifting package-host/loader declarations with canonical fork types. A compile-time contract check runs before production builds. Fork runtime, Extras, protocol 2, public loaded/api shape and saved data stay unchanged; real-Extras offline main/popout checks pass on Windows |
 | Attach native clipboard branches through the existing Mindmap Paste action (#2996) | Implemented; macOS main-window/floating/cross-drawing/popout paste and history validated | Script-only graph validation, native clipboard insertion, reference remapping and attachment preserve copied elements. Source-to-pasted markers have EA-owned cleanup across native Undo and reopened script sessions; input Undo stops at the pasted roots rather than assuming a history count. Windows and physical mobile remain manual gates |
@@ -2501,3 +2502,28 @@ modifier mappings, followed by real OS duplicate-file choices. Check linked
 images, image-search results and YouTube navigation on macOS and Windows, with
 one main-window/popout comparison. Browser-to-canvas desktop dragging needs no
 mobile emulation claim; physical mobile file insertion remains separate coverage.
+
+### 2026-10-26 — Internal drop tooltip eligibility (#2992)
+
+The maintainer's Shift-drop was a TrueType font rather than an image. Link
+insertion was expected, but the tooltip incorrectly promised Insert image.
+DropManager now derives the available internal actions from image support and
+Obsidian's existing view prediction helper, and uses the same result for tooltip
+selection and drop dispatch. Unsupported files advertise only Insert link and
+omit the other-modifiers hint. Registered custom views retain frame insertion;
+image/Markdown/PDF support and supported media remain available. Non-file
+selections are filtered before inspecting extensions.
+
+All 92 source tests pass, including production modifier mappings on Mac and
+Windows, singular/plural font payloads, actual Shift-image dispatch, supported
+media/documents, custom views, folder selections and the prior browser regressions.
+The dedicated --internal-drop native scenario checks owned font and PNG payloads,
+tooltip/action agreement and save/reopen in the main window and a popout; all ten
+cases and fixture cleanup passed. Its overall error gate still failed on the
+previously observed popout ResizeObserver notifications. Final deployment results
+are recorded in PR #2992. The temporary user-drop
+diagnostic was removed. No setting defaults or persisted formats changed.
+
+Remaining manual risk: physical drag gestures and custom file-view registrations
+on Windows; compare one unsupported font and one normal image in a popout. No
+physical-mobile gesture claim is made.

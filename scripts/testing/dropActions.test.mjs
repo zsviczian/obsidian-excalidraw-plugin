@@ -34,13 +34,47 @@ vm.runInNewContext(ts.transpileModule(urlFunctions, { compilerOptions: { module:
   URLs: { YOUTU_BE: "https://youtu.be", WWW_YOUTUBE_COM: "https://www.youtube.com", YOUTUBE_COM: "https://youtube.com" },
 });
 
+const settingsPath = new URL("../../src/core/settingsDefaults.ts", import.meta.url);
+const settingsTree = ts.createSourceFile(settingsPath.pathname, readFileSync(settingsPath, "utf8"), ts.ScriptTarget.Latest, true);
+const defaultsNode = settingsTree.statements.flatMap(node => ts.isVariableStatement(node) ? [...node.declarationList.declarations] : [])
+  .find(node => node.name.getText(settingsTree) === "DEFAULT_SETTINGS");
+const modifierConfigNode = defaultsNode.initializer.properties.find(node => node.name?.getText(settingsTree) === "modifierKeyConfig");
+const modifierSource = ts.transpileModule(readFileSync(new URL("../../src/utils/modifierkeyHelper.ts", import.meta.url), "utf8"), {
+  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+}).outputText;
+function productionModifiers(platform) {
+  const exports = {};
+  const settings = { modifierKeyConfig: vm.runInNewContext(`(${modifierConfigNode.initializer.getText(settingsTree)})`) };
+  vm.runInNewContext(modifierSource, {
+    exports, window: { ExcalidrawAutomate: { plugin: { settings } } },
+    require: name => name === "src/constants/constants" ? { DEVICE: { isMacOS: platform === "Mac" } }
+      : name === "src/lang/helpers" ? { t: key => key } : {},
+  });
+  return exports;
+}
+
+const embeddablePath = new URL("../../src/utils/customEmbeddableUtils.ts", import.meta.url);
+const embeddableTree = ts.createSourceFile(embeddablePath.pathname, readFileSync(embeddablePath, "utf8"), ts.ScriptTarget.Latest, true);
+const predictNode = embeddableTree.statements.find(node => ts.isFunctionDeclaration(node) && node.name?.text === "predictViewType");
+const embeddableHelpers = {};
+const constantArray = name => {
+  const node = constantsTree.statements.flatMap(node => ts.isVariableStatement(node) ? [...node.declarationList.declarations] : [])
+    .find(node => node.name.getText(constantsTree) === name);
+  const values = vm.runInNewContext(node.initializer.getText(constantsTree));
+  values.contains = values.includes;
+  return values;
+};
+vm.runInNewContext(ts.transpileModule(predictNode.getText(embeddableTree), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, {
+  exports: embeddableHelpers, AUDIO_TYPES: constantArray("AUDIO_TYPES"), VIDEO_TYPES: constantArray("VIDEO_TYPES"), log() {},
+});
+
 function fixture(payload, web = "image-url", local = "image-import", consume = false, options = {}) {
   const calls = [], hooks = [];
   const fakeFile = { path: "/outside/picture.png", name: "picture.png", type: "image/png", arrayBuffer: async () => new ArrayBuffer(1), ...options.file };
   const transfer = { types: Object.keys(payload), getData: type => payload[type === "text" ? "text/plain" : type] ?? "", files: payload.Files ? [fakeFile] : [] };
   class TFile { constructor(path) { this.path = path; this.extension = path.split(".").at(-1); } }
-  const ea = { destroy() {}, selectElementsInView() {}, addText: (...args) => { calls.push(["ea-text", ...args]); return "text"; }, getElement: () => ({}), addElementsToView: async () => true };
-  const app = { dragManager: {}, workspace: { setActiveLeaf() {} }, metadataCache: { getFirstLinkpathDest: () => options.duplicate ? new TFile("existing/picture.png") : null, fileToLinktext: file => file.path }, vault: { modifyBinary: async file => calls.push(["overwrite", file.path]) } };
+  const ea = { canvas: {}, destroy() {}, selectElementsInView() {}, addText: (...args) => { calls.push(["ea-text", ...args]); return "text"; }, addImage: async (...args) => { calls.push(["ea-image", ...args]); return "image"; }, getElement: () => ({}), addElementsToView: async () => true };
+  const app = { dragManager: {}, workspace: { setActiveLeaf() {} }, viewRegistry: { getTypeByExtension: ext => options.viewTypes?.[ext] }, metadataCache: { getFirstLinkpathDest: () => options.duplicate ? new TFile("existing/picture.png") : null, fileToLinktext: file => file.path }, vault: { modifyBinary: async file => calls.push(["overwrite", file.path]) } };
   const record = name => async (...args) => { calls.push([name, ...args]); };
   const div = { innerText: "", style: {}, clientWidth: 10 };
   const view = {
@@ -53,11 +87,12 @@ function fixture(payload, web = "image-url", local = "image-import", consume = f
   const dependencies = {
     obsidian: { TFile, Notice: class {} },
     "src/constants/constants": { DEVICE: {}, IMAGE_TYPES: imageTypes, ANIMATED_IMAGE_TYPES: animatedTypes, viewportCoordsToSceneCoords: () => ({ x: 1, y: 2 }), REG_LINKINDEX_INVALIDCHARS: /[?]/ },
-    "src/utils/modifierkeyHelper": {
+    "src/utils/modifierkeyHelper": options.platform ? productionModifiers(options.platform) : {
       internalDragModifierType: () => "link", webbrowserDragModifierType: () => web, localFileDragModifierType: () => local,
       modifierKeyTooltipMessages: () => ({ WebBrowserDragAction: { [web]: `web:${web}` }, LocalFileDragAction: { [local]: `local:${local}` } }),
     },
     "src/utils/utils": productionURLs,
+    "src/utils/customEmbeddableUtils": embeddableHelpers,
     "src/shared/Scripts": { ScriptEngine: { suggester: async () => { calls.push(["duplicate-choice", options.duplicate]); return options.duplicate; } } },
     "src/shared/Dialogs/UniversalInsertFileModal": { UniversalInsertFileModal: class { open(...args) { calls.push(["file-modal", ...args]); } } },
     "src/core": { getEA: () => ea },
@@ -216,6 +251,74 @@ test("internal vault drag wins over browser payload", () => {
   assert.equal(f.hooks[0].type, "file");
   assert.equal(f.calls[0][0], "text");
 });
+
+for (const platform of ["Mac", "Win"]) {
+  for (const extension of ["md", "pdf", "mp3", "mp4", "canvas"]) {
+    test(`${platform}: supported ${extension} retains the interactive-frame tooltip`, () => {
+      const f = fixture({ "text/plain": `supported.${extension}` }, "image-url", "image-import", false, { platform });
+      f.app.dragManager.draggable = { type: "file", file: new f.TFile(`supported.${extension}`) };
+      Object.assign(f.event, { shiftKey: platform === "Win", ctrlKey: true, altKey: false, metaKey: false });
+      f.manager.onDragOver(f.event);
+      assert.equal(f.div.innerText, "INTERNAL_DRAG_EMBEDDABLE");
+    });
+  }
+  test(`${platform}: folder selection does not throw when checking eligible actions`, () => {
+    const f = fixture({ "text/plain": "folder" }, "image-url", "image-import", false, { platform });
+    f.app.dragManager.draggable = { type: "files", files: [{ path: "folder" }] };
+    Object.assign(f.event, { shiftKey: true, ctrlKey: false, altKey: false, metaKey: false });
+    f.manager.onDragOver(f.event);
+    assert.equal(f.div.innerText, "INTERNAL_DRAG_LINK");
+  });
+  for (const plural of [false, true]) {
+    for (const requested of ["link", "image", "image-fullsize", "embeddable"]) {
+      test(`${platform}: unsupported font ${plural ? "files" : "file"} advertises only a link for ${requested}`, async () => {
+        const f = fixture({ "text/plain": "obsidian://open?vault=test&file=EraserDust.ttf" }, "image-url", "image-import", false, { platform });
+        const file = new f.TFile("EraserDust.ttf");
+        f.app.dragManager.draggable = plural ? { type: "files", files: [file] } : { type: "file", file };
+        const config = vm.runInNewContext(`(${modifierConfigNode.initializer.getText(settingsTree)})`);
+        const rule = config[platform].InternalDragAction.rules.find(rule => rule.result === requested);
+        Object.assign(f.event, { shiftKey: rule.shift, ctrlKey: platform === "Mac" ? rule.meta_ctrl : rule.ctrl_cmd, metaKey: platform === "Mac" ? rule.ctrl_cmd : rule.meta_ctrl, altKey: rule.alt_opt });
+        f.manager.onDragOver(f.event);
+        assert.equal(f.div.innerText, "INTERNAL_DRAG_LINK");
+        f.manager.onDrop(f.event);
+        await new Promise(resolve => setImmediate(resolve));
+        assert.deepEqual(f.calls.map(call => call[0]), ["text"]);
+      });
+    }
+  }
+  test(`${platform}: registered custom file view retains the embeddable action`, async () => {
+    const f = fixture({ "text/plain": "custom.filetype" }, "image-url", "image-import", false, { platform, viewTypes: { filetype: "custom-view" } });
+    f.app.dragManager.draggable = { type: "file", file: new f.TFile("custom.filetype") };
+    Object.assign(f.event, { shiftKey: platform === "Win", ctrlKey: true, altKey: false, metaKey: false });
+    f.manager.onDragOver(f.event);
+    assert.equal(f.div.innerText, "INTERNAL_DRAG_EMBEDDABLE");
+    f.manager.onDrop(f.event);
+    await new Promise(resolve => setImmediate(resolve));
+    assert.deepEqual(f.calls.map(call => call[0]), ["embed"]);
+  });
+  test(`${platform}: plural internal file payload uses the real Shift image action`, async () => {
+    const f = fixture({ "text/plain": "obsidian://open?vault=test&file=inside.png" }, "image-url", "image-import", false, { platform });
+    f.app.dragManager.draggable = { type: "files", files: [new f.TFile("inside.png")] };
+    Object.assign(f.event, { shiftKey: true, ctrlKey: false, altKey: false, metaKey: false });
+    assert.equal(f.manager.onDrop(f.event), false);
+    await new Promise(resolve => setImmediate(resolve));
+    assert.deepEqual(f.calls.map(call => call[0]), ["ea-image"]);
+    assert.equal(f.hooks[0].type, "file");
+  });
+  for (const shiftKey of [false, true]) {
+    test(`${platform}: internal image drag resolves real Shift mapping and tooltip`, async () => {
+      const f = fixture({ "text/plain": "obsidian://open?vault=test&file=inside.png" }, "image-url", "image-import", false, { platform });
+      f.app.dragManager.draggable = { type: "file", file: new f.TFile("inside.png") };
+      Object.assign(f.event, { shiftKey, ctrlKey: false, altKey: false, metaKey: false });
+      f.manager.onDragOver(f.event);
+      assert.ok(f.div.innerText.startsWith(shiftKey ? "INTERNAL_DRAG_IMAGE" : "INTERNAL_DRAG_LINK"));
+      assert.equal(f.manager.onDrop(f.event), false);
+      await new Promise(resolve => setImmediate(resolve));
+      assert.deepEqual(f.calls.map(call => call[0]), [shiftKey ? "file-image" : "text"]);
+      assert.equal(f.hooks[0].type, "file");
+    });
+  }
+}
 
 test("YouTube import writes the thumbnail and keeps the video navigation link", async () => {
   const path = new URL("../../src/view/ExcalidrawView.ts", import.meta.url);

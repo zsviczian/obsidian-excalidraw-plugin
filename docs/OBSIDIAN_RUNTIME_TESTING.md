@@ -174,6 +174,17 @@ the Use/Overwrite/Import choices. Save/reopen the drawing, and repeat the linked
 image case in a popout. Extensionless/blob image references use the supplied file
 as a vault attachment because they cannot be persisted as a supported image URL.
 
+For internal file eligibility, run `npm run test:drop-actions`, then
+`npm run verify:obsidian:plugin -- --internal-drop`. The native scenario uses
+Obsidian's file-drag payload factory and the live modifier mappings with owned
+font/image fixtures in main and popout windows. Unsupported fonts must advertise
+only Insert link, with no other-modifiers hint, and insert a link regardless of
+the requested image/frame action. A real PNG must still advertise and insert an
+image with Shift. Both workflows survive save/reopen; fixture files, tooltip and
+drag/controller state are cleaned up. Source tests cover default Mac/Windows
+modifiers, singular/plural payloads, Markdown/PDF/media support and registered
+custom views. These synthetic events supplement real drag gestures.
+
 For Markdown embed changes, run the focused tests and the native regression for
 issue #2953:
 

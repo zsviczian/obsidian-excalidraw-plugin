@@ -17,6 +17,7 @@ import {
   localFileDragModifierType,
   modifierKeyTooltipMessages,
   webbrowserDragModifierType,
+  type InternalDragAction,
 } from "src/utils/modifierkeyHelper";
 import {
   errorlog,
@@ -47,6 +48,7 @@ import { setStyle } from "src/utils/styleUtils";
 import { ObsidianDraggable } from "src/types/types";
 import type React from "react";
 import { insertMarkdownImage } from "src/shared/MarkdownImage";
+import { predictViewType } from "src/utils/customEmbeddableUtils";
 
 /*
 static getDropAction(event: DragEvent): string {
@@ -192,6 +194,25 @@ export class DropManager {
     modal.open(file, pos);
   }
 
+  private getInternalDropActions(draggable: App["dragManager"]["draggable"]): InternalDragAction[] {
+    const droppedFiles = draggable?.type === "files"
+      ? draggable.files ?? []
+      : draggable?.file ? [draggable.file] : undefined;
+    if (!droppedFiles) return ["link", "image", "image-fullsize", "embeddable"];
+    const files = droppedFiles.filter(file => file instanceof TFile);
+
+    const actions: InternalDragAction[] = ["link"];
+    const canInsertImage = files.some(file =>
+      IMAGE_TYPES.contains(file.extension) ||
+      ["md", "pdf"].includes(file.extension.toLowerCase()),
+    );
+    if (canInsertImage) actions.push("image", "image-fullsize");
+    if (canInsertImage || files.some(file => predictViewType(this.app, file) !== "empty")) {
+      actions.push("embeddable");
+    }
+    return actions;
+  }
+
   public onDrop(event: React.DragEvent<HTMLDivElement>): boolean {
     if (this.draginfoDiv) {
       this.ownerDocument.body.removeChild(this.draginfoDiv);
@@ -208,7 +229,9 @@ export class DropManager {
     );
     const draggable = this.app.dragManager
       .draggable as unknown as ObsidianDraggable;
-    const internalDragAction = internalDragModifierType(event);
+    const requestedInternalAction = internalDragModifierType(event);
+    const internalDragAction = this.getInternalDropActions(draggable).includes(requestedInternalAction)
+      ? requestedInternalAction : "link";
     const externalDragAction = webbrowserDragModifierType(event);
     const localFileDragAction = localFileDragModifierType(event);
 
@@ -727,11 +750,15 @@ export class DropManager {
         this.ownerDocument.body.appendChild(this.draginfoDiv);
       }
       let msg: string = "";
+      let showModifierHint = true;
       if (this.app.dragManager.draggable) {
         //drag from Obsidian file manager
+        const actions = this.getInternalDropActions(this.app.dragManager.draggable);
+        const requestedAction = internalDragModifierType(e);
+        showModifierHint = actions.length > 1;
         msg =
           modifierKeyTooltipMessages().InternalDragAction[
-            internalDragModifierType(e)
+            actions.includes(requestedAction) ? requestedAction : "link"
           ];
       } else if (
         e.dataTransfer.types.includes("Files") &&
@@ -753,7 +780,7 @@ export class DropManager {
             webbrowserDragModifierType(e)
           ];
       }
-      if (!e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey) {
+      if (showModifierHint && !e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey) {
         msg +=
           DEVICE.isMacOS || DEVICE.isIOS
             ? "\nTry SHIFT, OPT, CTRL combinations for other drop actions"
