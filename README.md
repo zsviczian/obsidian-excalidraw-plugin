@@ -18,6 +18,10 @@ Excalidraw for Obsidian keeps evolving; it is extremely feature‑rich and can f
 
 If you are curious about the Visual PKM philosophy behind the plugin, consider my book [Sketch Your Mind](https://community.sketch-your-mind.com/sym) and the [Visual Thinking Workshops](https://community.sketch-your-mind.com/vtw). To learn about all the different options available and how they fit together, check out the [Welcome to the Sketch Your Mind Ecosystem](https://community.sketch-your-mind.com/t/welcome-to-the-sketch-your-mind-ecosystem/375) introduction page. Finally, keep the [Excalidraw Plugin Wiki](https://community.sketch-your-mind.com/Wiki) and the [NotebookLM workbook](https://notebooklm.google.com/notebook/42d76a2f-c11d-4002-9286-1683c43d0ab0) at hand, those are essential companions.
 
+## Native CLI for coding agents
+
+With Obsidian 1.12.2+ and CLI enabled, local agents can discover, create, inspect, edit, save, render, and run explicitly trusted local scripts through Excalidraw. Older Obsidian versions remain supported. Select **Excalidraw: Show CLI and agent instructions** in the command palette, or start with `obsidian vault="My vault" obsidian-excalidraw-plugin:help`. See the [CLI reference](docs/CLI.md) and [portable agent skill](docs/AITrainingData/excalidraw-cli/SKILL.md).
+
 ## Disclaimer / Disclosure: Plugin Access and Privileges
 
 I treat privacy as a top priority. Apart from the few technical limitations outlined below, Excalidraw is 100% local and runs without network access. Most of the findings published on sites such as [obsidianpluginaudit.com](https://obsidianpluginaudit.com/), [plugin.observer](https://plugin.observer/), and [community.obsidian.md/plugins](https://community.obsidian.md/plugins) can be misleading without proper context.

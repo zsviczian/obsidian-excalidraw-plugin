@@ -156,7 +156,7 @@ export async function runObsidianSmoke({ projectRoot, vaultName, vaultPath, conf
     report.scenarios.push({ id: "drawing-main-window", status: "passed", assertions: ["Excalidraw API ready", "wrapper mounted", "owner document matches", "main application document"] });
     phase = "feature-scenarios";
     for (const scenario of scenarios) {
-      report.scenarios.push(await scenario({ cli, drawingPath: drawing.path }));
+      report.scenarios.push(await scenario({ cli, drawingPath: drawing.path, reportDir }));
     }
     const errors = cli("dev:errors").trim();
     if (errors && !/^No errors captured\.?$/i.test(errors)) throw new Error(`Captured JavaScript errors: ${errors.slice(0, 1000)}`);

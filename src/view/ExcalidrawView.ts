@@ -141,6 +141,10 @@ import {
   linkPrompt,
 } from "../shared/Dialogs/Prompt";
 import {
+  createDrawingLoadErrorPrompt,
+  showDrawingLoadErrorNotice,
+} from "../shared/Dialogs/DrawingLoadErrorInfo";
+import {
   ClipboardData,
   ParsedDataTransferFile,
 } from "@zsviczian/excalidraw/types/excalidraw/clipboard";
@@ -1037,6 +1041,11 @@ export default class ExcalidrawView
       forcePersistence,
       bypassSameFileEditGuard,
     );
+  }
+
+  /** Reports persistence acknowledgment without exposing a serialized save snapshot. */
+  public saveWithOutcome() {
+    return this.saveCoordinator.saveWithOutcome();
   }
 
   private async withPersistenceWriteLease<T>(
@@ -3231,37 +3240,19 @@ export default class ExcalidrawView
             const file = targetFile;
             const leaf = this.leaf;
             let confirmation: boolean | null = true;
-            let counter = 0;
-            const timestamp = Date.now();
             while (
               isCurrentLoad() &&
               !getImageCache().isReady() &&
               confirmation
             ) {
-              const message = `You've been now waiting for <b>${Math.round((Date.now() - timestamp) / 1000)}</b> seconds. `;
               getImageCache().initializationNotice = true;
-              const confirmationPrompt = new MultiOptionConfirmationPrompt(
+              const confirmationPrompt = createDrawingLoadErrorPrompt(
                 plugin,
-                `${
-                  counter > 0
-                    ? counter % 4 === 0
-                      ? `${message}The CACHE is still loading.<br><br>`
-                      : counter % 4 === 1
-                        ? `${
-                            message
-                          }Watch the top right corner for the notification.<br><br>`
-                        : counter % 4 === 2
-                          ? `${
-                              message
-                            }I really, really hope the backup will work for you! <br><br>`
-                          : `${
-                              message
-                            }I am sorry, it is taking a while, there is not much I can do... <br><br>`
-                    : ""
-                }${t("CACHE_NOT_READY")}`,
+                file,
+                t("DRAWING_LOAD_ERROR_CACHE_WAIT"),
+                e,
               );
               confirmation = await confirmationPrompt.waitForClose;
-              counter++;
             }
             if (!isCurrentLoad()) {
               return;
@@ -3274,21 +3265,15 @@ export default class ExcalidrawView
               return;
             }
             if (!drawingBAK) {
-              new Notice(
-                `Error loading drawing:\n${(e as Error).message}${
-                  (e as Error).message ===
-                  "Cannot read property 'index' of undefined"
-                    ? "\n'# Drawing' section is likely missing"
-                    : ""
-                }\n\nTry manually fixing the file or restoring an earlier version from sync history.`,
-                10000,
-              );
+              showDrawingLoadErrorNotice(plugin.app, file, e);
               await this.setMarkdownView();
               return;
             }
-            const confirmationPrompt = new MultiOptionConfirmationPrompt(
+            const confirmationPrompt = createDrawingLoadErrorPrompt(
               plugin,
-              t("BACKUP_AVAILABLE"),
+              file,
+              t("DRAWING_LOAD_ERROR_BACKUP_AVAILABLE"),
+              e,
             );
             const confirmed = await confirmationPrompt.waitForClose;
             if (!isCurrentLoad()) {
@@ -5109,6 +5094,7 @@ export default class ExcalidrawView
     newElementsOnTop = false,
     shouldRestoreElements = false,
     captureUpdate = CaptureUpdateAction.IMMEDIATELY,
+    validateBeforePublish,
   }: {
     newElements: ExcalidrawElement[];
     repositionToCursor?: boolean;
@@ -5117,14 +5103,18 @@ export default class ExcalidrawView
     newElementsOnTop?: boolean;
     shouldRestoreElements?: boolean;
     captureUpdate?: CaptureUpdateActionType;
+    validateBeforePublish?: () => void;
   }): Promise<boolean> {
     const api = this.excalidrawAPI;
     if (!api) {
       return false;
     }
     const sceneElements = api.getSceneElements() as ExcalidrawElement[];
+    // Guarded callers prepare parsed text in a request-local map. A stale
+    // continuation must not leave metadata behind before publishing its scene.
+    const preparedText = validateBeforePublish ? new Map(this.excalidrawData.textElements) : undefined;
     const elementsMap = arrayToMap(sceneElements) as ElementsMap;
-    const textElements = newElements.filter((el) => el.type == "text");
+    const textElements = newElements.filter((el) => el.type == "text" && (!validateBeforePublish || !el.isDeleted));
     let shouldRefreshArrows = false;
     for (let i = 0; i < textElements.length; i++) {
       const textElement = textElements[i] as Mutable<ExcalidrawTextElement>;
@@ -5132,6 +5122,7 @@ export default class ExcalidrawView
         textElement.id,
         textElement.text,
         textElement.rawText, //TODO: implement originalText support in ExcalidrawAutomate
+        preparedText,
       );
       if (link) {
         if (this.plugin.settings.syncElementLinkWithText) {
@@ -5200,6 +5191,11 @@ export default class ExcalidrawView
       );
     }
 
+    validateBeforePublish?.();
+    if (validateBeforePublish) {
+      for (const element of newElements) if (element.isDeleted) preparedText.delete(element.id);
+      this.excalidrawData.textElements = preparedText;
+    }
     const files: BinaryFileData[] = [];
     if (images && Object.keys(images).length > 0) {
       Object.keys(images).forEach((k: FileId) => {

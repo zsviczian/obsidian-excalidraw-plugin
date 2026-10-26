@@ -49,7 +49,7 @@ A drawing can contain one frame presentation plus any number of independent line
 - When multiple sources exist, the presentation selector lists `Frames` plus every named line presentation independently. The selected source is persisted per drawing and becomes the manual-launch default whenever no frame or line/arrow is selected on the canvas. A selected frame or line/arrow overrides that default for the invocation.
 - Frames without slideshow metadata retain alphabetical ordering.
 - The first sorter mutation writes explicit normalized `order` metadata; after that, frame renames do not change presentation order.
-- Excluded frame and line slides remain visible and editable in the sorter, but are omitted from presentation and PDF output.
+- Excluded frame and line slides remain visible and editable in the sorter. Presentations omit them; PDF setup lets you choose visible slides or all slides.
 
 ## Slide sorter
 
@@ -98,7 +98,7 @@ On desktop, presenter view runs in a script-owned Obsidian popout. The presenter
 
 `SlidePreviewService` calculates each slide's configured `printSlideWidth` × `printSlideHeight` navigation rectangle and exports only elements intersecting that viewport. Sorter and presenter previews are bounded-resolution PNG blobs rather than full-scene SVG clones, so off-slide embedded images are not repeated in every thumbnail. Sorter previews are requested lazily with `IntersectionObserver` and rendered through a serialized queue. A byte-budgeted LRU cache owns object URLs and revokes them on eviction or drawing changes. Slideshow metadata-only changes do not invalidate visual previews.
 
-PDF pages use the same area-selection and exact viewport anchoring through `ea.createViewSVG({ exportArea })`, but remain vector SVGs. Each page is self-contained and includes only image files referenced by elements intersecting that page instead of retaining the complete drawing behind a changed `viewBox`.
+PDF slides use area selection clipped to each slide's own rectangle through `ea.createViewSVG({ exportArea })`, but remain vector SVGs. Each page is self-contained and includes only image files referenced by elements intersecting that page instead of retaining the complete drawing behind a changed `viewBox`.
 
 ## Slideshow settings
 
@@ -108,7 +108,7 @@ The sidepanel also includes a small support link to [Ko-fi](https://ko-fi.com/zs
 
 ## Presentation launch, displays, and PDF behavior
 
-The sidepanel has one compact **Play** button. Launch behavior is configured independently through dropdowns instead of overloading the play action: **Start / Resume / Current**, **Fullscreen / Windowed**, and **Slides only / With Notes**. If multiple presentation sources exist, a separate presentation selector is shown. Changing a dropdown never starts the presentation; pressing Play uses the currently selected combination. These choices are persisted in script settings. The launch/display controls live in a collapsible **Presentation settings** section so the sorter can use most of the panel height. Windowed launches hide the entire Excalidraw sidepanel before presentation so the deck receives the full workspace width.
+The sidepanel has one compact **Play** button. Launch behavior is configured independently through dropdowns instead of overloading the play action: **Start / Resume / Current**, **Fullscreen / Windowed**, and **Slides only / With Notes**. If multiple presentation sources exist, a separate presentation selector is shown. Changing a dropdown never starts the presentation; pressing Play uses the currently selected combination. These choices are persisted in script settings. The launch/display controls live in a collapsible **Presentation settings** section so the sorter can use most of the panel height. Launches hide the docked Excalidraw sidepanel and wait for both the drawing layout and Excalidraw viewport dimensions to settle before framing the first slide. A sidepanel in a separate popout stays open.
 
 On desktop, display selectors are shown only when **With Notes** is selected. The default keeps the presentation on the current/primary display and chooses another display for presenter notes when available. Presentation and notes display selections are persisted in script settings under a stable local device key, allowing different machines that share the script settings to keep independent monitor choices.
 
@@ -118,7 +118,29 @@ Display handling remains best-effort because Obsidian does not expose a first-cl
 On Obsidian Mobile, presentations always use fullscreen mode, presenter view is unavailable, and the docked mobile navbar is hidden for the duration of the presentation. The presentation toolbar is centered and uses a compact slide picker on narrow screens.
 
 
-Presentation navigation, the toolbar slide picker, and PDF export consume the canonical visible deck. Frame order and exclusions therefore match the sorter. The presentation slide picker labels entries as `Title (current/total)`. Starting from the sidepanel returns focus to the drawing leaf before keyboard handlers are installed, so arrow-key navigation is immediately active. PDF pages use the final fully built scene state: all animation targets are restored to their original opacity and no animation overlays are included.
+Presentation navigation and the toolbar slide picker consume the canonical visible deck. The presentation slide picker labels entries as `Title (current/total)`. Starting from the sidepanel returns focus to the drawing leaf before keyboard handlers are installed, so arrow-key navigation is immediately active. PDF pages use the final fully built scene state: all animation targets are restored to their original opacity and no animation overlays are included.
+
+## PDF printing and handouts
+
+Select **Print slideshow to PDF** in the sidepanel or presentation toolbar to open floating print setup. Choose any available frame or named line/arrow slideshow; the current deck is selected initially. Printing preserves the sorter's slide order.
+
+- **Print theme** offers **Light** and **Dark** for slides and handouts. Each time setup opens, it defaults to the drawing's current scene theme.
+- Choose slides only, one slide with notes below it, or two/three slides with notes beside each slide per page.
+- The **Print only visible slides** toggle is on by default. Turn it off to include excluded slides, including decks whose slides are all excluded.
+- Choose the configured slide size, **A4**, **Letter**, **16:9**, or **Custom**, then select **Landscape** or **Portrait**. Width and height are editable in pixels (96 pixels per inch), from 320 to 14400 pixels. Holding Shift while opening setup starts with the current viewport dimensions.
+- Each slide is clipped to its own rectangle and fitted intact inside its page or handout slot. Changing paper aspect ratio never pulls neighboring slides into the printout or splits a slide across pages. Handout slots retain the configured presentation aspect ratio.
+- **Margins** offers **None** (default, edge-to-edge slides), **Minimal** (10 px), and **Normal** (60 px). Margins apply to slides and handouts without adding a second inset in the PDF exporter.
+- Notes use Obsidian's Markdown renderer, preserving headings, emphasis, links, lists, tables, and code as formatted HTML. Long notes continue in another slot with the slide repeated.
+- **Page ranges** accepts output-page selections such as `1-3;5;9-`; leave it blank for all pages. Ranges count final pages, including notes continuation pages, and preserve their original order.
+- Confirmed print preferences (layout, visibility, page size, orientation/dimensions, margins, and page ranges) are saved in script settings and restored the next time print setup opens. The slideshow source initially follows the current drawing.
+
+PDF creation uses Excalidraw's existing desktop PDF export and its normal save dialog.
+
+## Export frame slides to Markdown
+
+For frame decks, select the **Export frame slides to Markdown** file-down button beside Print. Enter a filename to create a note in the drawing's folder and open it in a new tab. Existing notes are never overwritten; cancelling creates nothing.
+
+The note includes every frame slide in sorter order, including excluded slides. Each section contains the frame title, an embed such as `![[Folder/Drawing.excalidraw.md#^frame=Opening]]`, and the slide's original Markdown notes. Duplicate, unnamed, or unlinkable frame names use the frame ID in the same `#^frame=` syntax to keep the reference unambiguous. Line/arrow decks do not offer Markdown export.
 
 ## Keyboard shortcuts and modifier keys during presentation
 
@@ -137,7 +159,7 @@ Presentation navigation, the toolbar slide picker, and PDF export consume the ca
   Alt/Option.
 - **Open the Slideshow sidepanel:** Hold Cmd on macOS or Ctrl on Windows/Linux while invoking the script.
 
-Build version: 2026-09-15T13:48:51.367Z
+Build version: 2026-10-23T04:29:05.275Z
 
 ```javascript
 */
@@ -170,6 +192,48 @@ Build version: 2026-09-15T13:48:51.367Z
 
   // src/scripts/slideshow/lang/en.ts
   var en = {
+    printDialogTitle: "Print slideshow to PDF",
+    printSlideshow: "Slideshow to print",
+    printDialogPrint: "Create PDF",
+    printLayout: "Layout",
+    printTheme: "Print theme",
+    printThemeLight: "Light",
+    printThemeDark: "Dark",
+    printSlidesOnly: "Slides only \u2014 one per page",
+    printNotesPage: "Notes \u2014 one slide per page",
+    printHandout2: "Handout \u2014 two slides with notes per page",
+    printHandout3: "Handout \u2014 three slides with notes per page",
+    printVisibleOnly: "Print only visible slides",
+    printVisibleOnlyHint: "Turn off to include excluded slides.",
+    printPageRanges: "Page ranges",
+    printPageRangesHint: "Leave blank for all pages. Example: 1-3;5;9- (from page 9 to the end). Numbers refer to output pages, including notes continuations.",
+    printInvalidPageRanges: "Enter page numbers or ascending ranges, separated by semicolons: 1-3;5;9-.",
+    printNoPages: "No output pages match the page ranges.",
+    printPreferencesFailed: "Could not save print preferences. Try again.",
+    printPageSize: "Page size",
+    printConfigured: "Configured slide size",
+    printCustom: "Custom",
+    printOrientation: "Orientation",
+    printMargin: "Margins",
+    printMarginNone: "None",
+    printMarginMinimal: "Minimal",
+    printMarginNormal: "Normal",
+    printLandscape: "Landscape",
+    printPortrait: "Portrait",
+    printWidth: "Page width (px)",
+    printHeight: "Page height (px)",
+    printInvalidDimensions: "Enter a width and height between 320 and 14400 pixels.",
+    printNotesHint: "Notes use Markdown formatting. Long notes continue with the slide repeated. Each slide stays inside its page or handout slot.",
+    printContinued: "(continued)",
+    printNoSlides: "No slides match the print selection. Turn off visible slides only to print all.",
+    printFailed: "Could not export the slideshow to PDF.",
+    printViewChanged: "The drawing changed. Open print setup again.",
+    exportMarkdown: "Export frame slides to Markdown",
+    exportMarkdownFilename: "Filename for slide notes (in the drawing's folder)",
+    exportMarkdownDefaultFilename: "{name} slides",
+    exportMarkdownInvalidFilename: "Enter a filename without folder separators or special filename characters.",
+    exportMarkdownExists: "A note with that filename already exists. Choose another filename.",
+    exportMarkdownFailed: "Could not export the slideshow to Markdown.",
     requiresNewerVersion: "This script requires a newer version of Excalidraw. Please install the latest version.",
     autostartExplanation: 'Autostart is required for registering the "Edit Slide" button. Autostart does not mean slideshows will autostart when opening a drawing.',
     noActiveView: "Open an Excalidraw drawing before starting the slideshow.",
@@ -787,6 +851,7 @@ Build version: 2026-09-15T13:48:51.367Z
       laserOn: iconMarkup(ea2, "lucide-hand"),
       laserOff: iconMarkup(ea2, "lucide-wand"),
       printer: iconMarkup(ea2, "lucide-printer"),
+      fileDown: iconMarkup(ea2, "lucide-file-down"),
       refocus: iconMarkup(ea2, "lucide-scan-eye"),
       gripVertical: iconMarkup(ea2, "lucide-grip-vertical"),
       chevronUp: iconMarkup(ea2, "lucide-chevron-up"),
@@ -2228,6 +2293,7 @@ Build version: 2026-09-15T13:48:51.367Z
     constructor(options) {
       this.options = options;
     }
+    options;
     panel = null;
     select = null;
     fullscreenButton = null;
@@ -2245,8 +2311,6 @@ Build version: 2026-09-15T13:48:51.367Z
         slideTitles,
         shouldOfferPathVisibility,
         isPathHidden,
-        printSlideWidth,
-        printSlideHeight,
         ea: ea2,
         callbacks,
         icons,
@@ -2449,7 +2513,7 @@ Build version: 2026-09-15T13:48:51.367Z
               {
                 attr: {
                   style: "margin-right: calc(var(--default-button-size)*0.25);",
-                  "aria-label": t("printPdf", { width: printSlideWidth, height: printSlideHeight })
+                  "aria-label": t("printDialogTitle")
                 }
               },
               (button) => {
@@ -2572,6 +2636,7 @@ Build version: 2026-09-15T13:48:51.367Z
         throw new RangeError("AsyncTaskQueue concurrency must be a positive integer.");
       }
     }
+    concurrency;
     generation = 0;
     activeCount = 0;
     pending = /* @__PURE__ */ new Map();
@@ -2652,6 +2717,8 @@ Build version: 2026-09-15T13:48:51.367Z
       this.maximumSize = maximumSize;
       this.dispose = dispose;
     }
+    maximumSize;
+    dispose;
     values = /* @__PURE__ */ new Map();
     totalSize = 0;
     get size() {
@@ -2797,6 +2864,9 @@ Build version: 2026-09-15T13:48:51.367Z
       this.api = api;
       this.config = config;
     }
+    ea;
+    api;
+    config;
     queue = new AsyncTaskQueue(PREVIEW_EXPORT_CONCURRENCY);
     cached = new ByteBudgetLruCache(
       PREVIEW_CACHE_BYTES,
@@ -3549,6 +3619,7 @@ Build version: 2026-09-15T13:48:51.367Z
         this.notesPreference.displayIdentity
       ) : loadPresenterNotesFontSize(options.ea);
     }
+    options;
     leaf = null;
     ownerWindow = null;
     root = null;
@@ -3961,64 +4032,676 @@ Build version: 2026-09-15T13:48:51.367Z
     }
   };
 
+  // src/scripts/slideshow/printLayout.ts
+  function getPrintContentBox(settings) {
+    const margin = { none: 0, minimal: 10, normal: 60 }[settings.margin];
+    return {
+      x: margin,
+      y: margin,
+      width: settings.width - margin * 2,
+      height: settings.height - margin * 2
+    };
+  }
+  function fitPrintBox(box, aspect) {
+    const width = Math.min(box.width, box.height * aspect);
+    return { ...box, width, height: width / aspect };
+  }
+  function validPrintDimensions(width, height) {
+    return [width, height].every((value) => Number.isFinite(value) && value >= 320 && value <= 14400);
+  }
+  function getHandoutBoxes(settings) {
+    const rows = settings.layout === "handout-3" ? 3 : settings.layout === "handout-2" ? 2 : 1;
+    const content = getPrintContentBox(settings);
+    const margin = content.x;
+    const rowHeight = content.height / rows;
+    const width = content.width;
+    const contentHeight = rowHeight - 44;
+    const below = settings.layout === "notes";
+    return {
+      rows,
+      rowHeight,
+      slide: {
+        x: margin,
+        y: margin + 24,
+        width: below ? width : width * 0.46,
+        height: below ? contentHeight * 0.48 : contentHeight
+      },
+      notes: {
+        x: below ? margin : margin + width * 0.5,
+        y: below ? margin + 36 + contentHeight * 0.48 : margin + 24,
+        width: below ? width : width * 0.5,
+        height: below ? contentHeight * 0.52 - 12 : contentHeight
+      }
+    };
+  }
+  function wrapPrintText(text, width, measure) {
+    const result = [];
+    for (const paragraph of text.replace(/\r\n?/g, "\n").split("\n")) {
+      let line = "";
+      for (const character of paragraph) {
+        const candidate = line + character;
+        if (line && measure(candidate) > width) {
+          const space = line.lastIndexOf(" ");
+          if (space > 0) {
+            result.push(line.slice(0, space));
+            line = line.slice(space + 1) + character;
+          } else {
+            result.push(line);
+            line = character;
+          }
+        } else line = candidate;
+      }
+      result.push(line);
+    }
+    return result;
+  }
+  function getPrintColors(theme) {
+    return theme === "dark" ? { background: "#121212", foreground: "#e0e0e0", border: "#666666" } : { background: "#ffffff", foreground: "#202020", border: "#aaaaaa" };
+  }
+
+  // src/scripts/slideshow/MarkdownPrintNotes.ts
+  function getBoundaries(root) {
+    const boundaries = [];
+    const visit = (node) => {
+      if (node.nodeType === 3) {
+        let offset = 0;
+        for (const character of node.textContent ?? "") {
+          offset += character.length;
+          boundaries.push({ node, offset });
+        }
+      } else if (node.nodeType === 1 && node.matches("img, svg, canvas, video, iframe, hr, br, input")) {
+        const parent = node.parentNode;
+        boundaries.push({
+          node: parent,
+          offset: Array.from(parent.childNodes).indexOf(node) + 1
+        });
+      } else {
+        for (const child of Array.from(node.childNodes)) visit(child);
+      }
+    };
+    visit(root);
+    boundaries.push({ node: root, offset: root.childNodes.length });
+    return boundaries;
+  }
+  function styleNotes(root, box, theme) {
+    const colors = getPrintColors(theme);
+    root.classList.add(theme === "dark" ? "theme-dark" : "theme-light");
+    root.setCssStyles({
+      width: `${box.width}px`,
+      margin: "0",
+      padding: "0",
+      border: "0",
+      font: "14px/20px Arial, sans-serif",
+      color: colors.foreground,
+      backgroundColor: colors.background,
+      overflowWrap: "anywhere",
+      boxSizing: "border-box",
+      minHeight: "0"
+    });
+    for (const element of Array.from(root.querySelectorAll("*"))) {
+      element.setCssStyles({ maxWidth: "100%", boxSizing: "border-box", color: colors.foreground });
+      if (element.matches("p, ul, ol, blockquote, pre, table"))
+        element.setCssStyles({ marginTop: "0", marginBottom: "6px" });
+      if (element.matches("h1, h2, h3, h4, h5, h6"))
+        element.setCssStyles({
+          fontSize: `${Math.min(22, box.height / 2)}px`,
+          lineHeight: "1.2",
+          margin: "0 0 6px"
+        });
+      if (element.matches("ul, ol")) element.setCssStyles({ paddingLeft: "24px" });
+      if (element.matches("pre, code"))
+        element.setCssStyles({ whiteSpace: "pre-wrap", overflowWrap: "anywhere", fontSize: "12px" });
+      if (element.matches("img, svg, canvas, video, iframe"))
+        element.setCssStyles({ maxHeight: `${box.height}px`, objectFit: "contain" });
+      if (element.matches("table"))
+        element.setCssStyles({ width: "100%", tableLayout: "fixed", borderCollapse: "collapse" });
+      if (element.matches("th, td"))
+        element.setCssStyles({
+          border: `1px solid ${colors.border}`,
+          padding: "3px",
+          whiteSpace: "normal"
+        });
+    }
+  }
+  async function renderPrintNotes(ea2, notes, sourcePath, box, ownerDocument, theme = "light") {
+    const host = ownerDocument.body.createDiv();
+    host.setCssStyles({
+      position: "fixed",
+      left: "-100000px",
+      top: "0",
+      visibility: "hidden",
+      width: `${box.width}px`,
+      pointerEvents: "none"
+    });
+    const root = host.createDiv({ cls: "markdown-rendered" });
+    const component = new ea2.obsidian.Component();
+    component.load();
+    try {
+      await ea2.obsidian.MarkdownRenderer.render(app, notes, root, sourcePath, component);
+      await Promise.all(
+        Array.from(root.querySelectorAll("img"), async (image) => {
+          const win = ownerDocument.defaultView;
+          let timer = 0;
+          try {
+            await Promise.race([
+              image.decode().catch(() => void 0),
+              new Promise((resolve) => {
+                timer = win.setTimeout(resolve, 3e3);
+              })
+            ]);
+          } finally {
+            win.clearTimeout(timer);
+          }
+        })
+      );
+      styleNotes(root, box, theme);
+      const boundaries = getBoundaries(root);
+      const pages = [];
+      let start = { node: root, offset: 0 };
+      let first = 0;
+      while (first < boundaries.length) {
+        const slice = (end) => {
+          const range = ownerDocument.createRange();
+          range.setStart(start.node, start.offset);
+          range.setEnd(end.node, end.offset);
+          const clone = root.cloneNode(false);
+          clone.appendChild(range.cloneContents());
+          return clone;
+        };
+        const fits = (end) => {
+          const candidate = slice(boundaries[end]);
+          host.appendChild(candidate);
+          const height2 = candidate.getBoundingClientRect().height;
+          candidate.remove();
+          return height2 <= box.height;
+        };
+        let low = first;
+        let high = boundaries.length - 1;
+        let last = first - 1;
+        while (low <= high) {
+          const middle = Math.floor((low + high) / 2);
+          if (fits(middle)) {
+            last = middle;
+            low = middle + 1;
+          } else high = middle - 1;
+        }
+        let wordEnd = last;
+        while (wordEnd > first) {
+          const boundary = boundaries[wordEnd];
+          const text = boundary.node.textContent ?? "";
+          if (boundary.node.nodeType !== 3 || boundary.offset === text.length || /\s/.test(text[boundary.offset - 1] ?? "") || /\s/.test(text[boundary.offset] ?? ""))
+            break;
+          wordEnd -= 1;
+        }
+        if (wordEnd > first) last = wordEnd;
+        last = Math.max(first, last);
+        const chunk = slice(boundaries[last]);
+        host.appendChild(chunk);
+        const height = chunk.getBoundingClientRect().height;
+        chunk.remove();
+        if (height > box.height) {
+          chunk.setCssStyles({
+            transform: `scale(${box.height / height})`,
+            transformOrigin: "top left"
+          });
+        }
+        pages.push(chunk);
+        start = boundaries[last];
+        first = last + 1;
+      }
+      return pages;
+    } finally {
+      component.unload();
+      host.remove();
+    }
+  }
+  function appendPrintNotes(page, notes, box) {
+    const foreignObject = page.createSvg("foreignObject", {
+      attr: {
+        x: box.x,
+        y: box.y,
+        width: box.width,
+        height: box.height
+      }
+    });
+    notes.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
+    foreignObject.appendChild(notes);
+  }
+
+  // src/scripts/slideshow/printRanges.ts
+  function parsePrintRanges(value) {
+    if (!value.trim()) return [];
+    return value.split(/[;,]/).map((part) => {
+      const match = /^\s*(\d+)\s*(?:-\s*(\d*)\s*)?$/.exec(part);
+      if (!match) throw new Error("INVALID_PRINT_RANGE");
+      const first = Number(match[1]);
+      const last = match[2] === void 0 ? first : match[2] === "" ? Infinity : Number(match[2]);
+      if (!Number.isSafeInteger(first) || first < 1 || last !== Infinity && !Number.isSafeInteger(last) || last < first)
+        throw new Error("INVALID_PRINT_RANGE");
+      return { first, last };
+    });
+  }
+  function selectPrintPages(pages, range) {
+    const ranges = parsePrintRanges(range);
+    return ranges.length === 0 ? pages : pages.filter(
+      (_, index) => ranges.some(({ first, last }) => index + 1 >= first && index + 1 <= last)
+    );
+  }
+
+  // src/scripts/slideshow/printPreferences.ts
+  var PRINT_SETTING = "slideshowPrintPreferences";
+  function loadPrintPreferences(ea2, width, height) {
+    const defaults = {
+      layout: "slides",
+      visibleOnly: true,
+      margin: "none",
+      width,
+      height,
+      pageRanges: "",
+      preset: "configured"
+    };
+    const settings = ea2.getScriptSettings();
+    const raw = settings[PRINT_SETTING];
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return defaults;
+    const saved = raw;
+    if (["slides", "notes", "handout-2", "handout-3"].includes(String(saved.layout)))
+      defaults.layout = saved.layout;
+    if (typeof saved.visibleOnly === "boolean") defaults.visibleOnly = saved.visibleOnly;
+    if (["none", "minimal", "normal"].includes(String(saved.margin)))
+      defaults.margin = saved.margin;
+    if (["configured", "A4", "Letter", "16:9", "custom"].includes(String(saved.preset)))
+      defaults.preset = saved.preset;
+    if (typeof saved.width === "number" && typeof saved.height === "number" && validPrintDimensions(saved.width, saved.height)) {
+      defaults.width = saved.width;
+      defaults.height = saved.height;
+    }
+    if (typeof saved.pageRanges === "string") {
+      try {
+        parsePrintRanges(saved.pageRanges);
+        defaults.pageRanges = saved.pageRanges;
+      } catch {
+      }
+    }
+    return defaults;
+  }
+  async function savePrintPreferences(ea2, preferences) {
+    await ea2.setScriptSettings({ ...ea2.getScriptSettings(), [PRINT_SETTING]: preferences });
+  }
+
+  // src/scripts/slideshow/presentationSources.ts
+  function getPresentationSourceLabels(choices, frameLabel, defaultLineLabel) {
+    const result = [];
+    if (choices.frame)
+      result.push({ key: "frame", label: choices.frame.deck.name?.trim() || frameLabel });
+    const bases = choices.lines.map((line) => line.name?.trim() || defaultLineLabel);
+    const totals = /* @__PURE__ */ new Map();
+    for (const base of bases) totals.set(base, (totals.get(base) ?? 0) + 1);
+    const seen = /* @__PURE__ */ new Map();
+    choices.lines.forEach((line, index) => {
+      const base = bases[index] ?? defaultLineLabel;
+      const ordinal = (seen.get(base) ?? 0) + 1;
+      seen.set(base, ordinal);
+      result.push({
+        key: line.key,
+        label: (totals.get(base) ?? 0) > 1 ? `${base} (${ordinal})` : base
+      });
+    });
+    return result;
+  }
+
+  // src/scripts/slideshow/PrintDialog.ts
+  function openSlideshowPrintDialog(ea2, defaults, t) {
+    return new Promise((resolve) => {
+      const preferences = loadPrintPreferences(ea2, defaults.width, defaults.height);
+      if (defaults.viewportSize) {
+        preferences.width = defaults.width;
+        preferences.height = defaults.height;
+        preferences.preset = "custom";
+      }
+      const modal = new ea2.FloatingModal(app);
+      modal.titleEl.setText(t("printDialogTitle"));
+      let settled = false;
+      const finish = (result) => {
+        if (settled) return;
+        settled = true;
+        resolve(result);
+        modal.close();
+      };
+      const select = (label, entries) => {
+        const row = new ea2.obsidian.Setting(modal.contentEl).setName(label);
+        row.controlEl.setCssStyles({ minWidth: "0", flexShrink: "1" });
+        const input = row.controlEl.createEl("select", { attr: { "aria-label": label } });
+        input.setCssStyles({ maxWidth: "100%" });
+        for (const [value, text] of entries) input.createEl("option", { value, text });
+        return input;
+      };
+      const source = select(
+        t("printSlideshow"),
+        getPresentationSourceLabels(
+          defaults.choices,
+          t("frameDeck"),
+          t("linePresentationDefaultName")
+        ).map((item) => {
+          const kind = item.key === "frame" ? t("frameDeck") : t("linePresentationDefaultName");
+          return [item.key, item.label === kind ? kind : `${kind}: ${item.label}`];
+        })
+      );
+      source.value = defaults.sourceKey;
+      if (!source.value) source.selectedIndex = 0;
+      const layout = select(t("printLayout"), [
+        ["slides", t("printSlidesOnly")],
+        ["notes", t("printNotesPage")],
+        ["handout-2", t("printHandout2")],
+        ["handout-3", t("printHandout3")]
+      ]);
+      layout.value = preferences.layout;
+      const theme = select(t("printTheme"), [
+        ["light", t("printThemeLight")],
+        ["dark", t("printThemeDark")]
+      ]);
+      theme.value = ea2.getExcalidrawAPI().getAppState().theme === "dark" ? "dark" : "light";
+      let visibleOnly = preferences.visibleOnly;
+      new ea2.obsidian.Setting(modal.contentEl).setName(t("printVisibleOnly")).setDesc(t("printVisibleOnlyHint")).addToggle(
+        (toggle) => toggle.setValue(visibleOnly).onChange((value) => {
+          visibleOnly = value;
+        })
+      );
+      const rangeRow = new ea2.obsidian.Setting(modal.contentEl).setName(t("printPageRanges")).setDesc(t("printPageRangesHint"));
+      const ranges = rangeRow.controlEl.createEl("input", {
+        type: "text",
+        value: preferences.pageRanges ?? "",
+        attr: { "aria-label": t("printPageRanges"), placeholder: "1-3;5;9-" }
+      });
+      const preset = select(t("printPageSize"), [
+        ["configured", t("printConfigured")],
+        ["A4", "A4"],
+        ["Letter", "Letter"],
+        ["16:9", "16:9"],
+        ["custom", t("printCustom")]
+      ]);
+      const orientation = select(t("printOrientation"), [
+        ["landscape", t("printLandscape")],
+        ["portrait", t("printPortrait")]
+      ]);
+      const margin = select(t("printMargin"), [
+        ["none", t("printMarginNone")],
+        ["minimal", t("printMarginMinimal")],
+        ["normal", t("printMarginNormal")]
+      ]);
+      preset.value = preferences.preset;
+      margin.value = preferences.margin;
+      orientation.value = preferences.width >= preferences.height ? "landscape" : "portrait";
+      const dimension = (label, value) => {
+        const row = new ea2.obsidian.Setting(modal.contentEl).setName(label);
+        return row.controlEl.createEl("input", {
+          type: "number",
+          value: String(value),
+          attr: { min: "320", max: "14400", step: "any", "aria-label": label }
+        });
+      };
+      const width = dimension(t("printWidth"), preferences.width);
+      const height = dimension(t("printHeight"), preferences.height);
+      const applyPreset = () => {
+        let size = { width: Number(width.value), height: Number(height.value) };
+        if (preset.value === "A4" || preset.value === "Letter") {
+          size = ea2.getPagePDFDimensions(preset.value, "landscape");
+        } else if (preset.value === "16:9") size = { width: 1920, height: 1080 };
+        else if (preset.value === "configured") size = defaults;
+        const long = Math.max(size.width, size.height);
+        const short = Math.min(size.width, size.height);
+        width.value = String(orientation.value === "landscape" ? long : short);
+        height.value = String(orientation.value === "landscape" ? short : long);
+      };
+      preset.addEventListener("change", applyPreset);
+      orientation.addEventListener("change", applyPreset);
+      for (const input of [width, height])
+        input.addEventListener("input", () => {
+          preset.value = "custom";
+          orientation.value = Number(width.value) >= Number(height.value) ? "landscape" : "portrait";
+        });
+      modal.contentEl.createEl("p", { text: t("printNotesHint"), cls: "setting-item-description" });
+      const error = modal.contentEl.createEl("p", { cls: "mod-warning", attr: { role: "alert" } });
+      const actions = modal.contentEl.createDiv({ cls: "modal-button-container" });
+      actions.createEl("button", { text: t("settingsCancel") }).addEventListener("click", () => finish(null));
+      actions.createEl("button", { text: t("printDialogPrint"), cls: "mod-cta" }).addEventListener("click", () => {
+        const size = { width: Number(width.value), height: Number(height.value) };
+        if (!validPrintDimensions(size.width, size.height)) {
+          error.setText(t("printInvalidDimensions"));
+          return;
+        }
+        try {
+          parsePrintRanges(ranges.value);
+        } catch {
+          error.setText(t("printInvalidPageRanges"));
+          ranges.focus();
+          return;
+        }
+        const result = {
+          ...size,
+          sourceKey: source.value,
+          layout: layout.value,
+          visibleOnly,
+          theme: theme.value,
+          pageRanges: ranges.value.trim(),
+          margin: margin.value
+        };
+        void savePrintPreferences(ea2, {
+          layout: result.layout,
+          visibleOnly,
+          margin: result.margin,
+          width: result.width,
+          height: result.height,
+          pageRanges: result.pageRanges,
+          preset: preset.value
+        }).then(() => finish(result)).catch((reason) => {
+          console.error("Slideshow print preferences save failed", reason);
+          error.setText(t("printPreferencesFailed"));
+        });
+      });
+      modal.onClose = () => finish(null);
+      modal.open();
+    });
+  }
+
   // src/scripts/slideshow/printToPdf.ts
   async function printSlideshowToPdf(options) {
-    const { event, ea: ea2, api, slides, printSlideWidth, printSlideHeight, maxZoom, t } = options;
-    const appState = api.getAppState();
-    const slideWidth = event.shiftKey ? appState.width : printSlideWidth;
-    const slideHeight = event.shiftKey ? appState.height : printSlideHeight;
-    const shouldClipFrames = false;
-    const notice = new SingleNotice();
-    notice.setMessage(t("generatingImage"));
-    const pages = [];
-    for (const [index, slide] of slides.entries()) {
-      notice.setMessage(t("generatingSlide", { number: index + 1 }));
-      const rect = getNavigationRect(
-        slide,
-        { width: slideWidth, height: slideHeight },
-        maxZoom
-      );
-      const width = Math.abs(rect.left - rect.right);
-      const height = Math.abs(rect.top - rect.bottom);
-      const page = await ea2.createViewSVG({
-        withBackground: true,
-        theme: appState.theme,
-        frameRendering: {
-          enabled: shouldClipFrames,
-          name: false,
-          outline: false,
-          clip: shouldClipFrames
-        },
-        padding: 0,
-        selectedOnly: false,
-        skipInliningFonts: false,
-        embedScene: false,
-        exportArea: {
-          x: Math.min(rect.left, rect.right),
-          y: Math.min(rect.top, rect.bottom),
-          width,
-          height
-        }
-      });
-      page.setAttribute("width", `${width}`);
-      page.setAttribute("height", `${height}`);
-      pages.push(page);
+    const view = options.ea.targetView;
+    const file = view?.file;
+    const state = options.api.getAppState();
+    const settings = await openSlideshowPrintDialog(
+      options.ea,
+      {
+        width: options.event.shiftKey ? state.width : options.printSlideWidth,
+        height: options.event.shiftKey ? state.height : options.printSlideHeight,
+        choices: options.choices,
+        sourceKey: options.sourceKey,
+        viewportSize: options.event.shiftKey
+      },
+      options.t
+    );
+    if (!settings) return;
+    if (options.ea.targetView !== view || view?.file !== file || options.ea.getExcalidrawAPI() !== options.api) {
+      new options.ea.obsidian.Notice(options.t("printViewChanged"));
+      return;
     }
-    notice.setMessage(t("creatingPdf"));
+    await generateSlideshowPdf(options, settings);
+  }
+  async function exportSlide(options, slide, box, theme) {
+    const left = Math.min(slide.rect.x1, slide.rect.x2);
+    const top = Math.min(slide.rect.y1, slide.rect.y2);
+    const width = Math.max(Math.abs(slide.rect.x2 - slide.rect.x1), 1);
+    const height = Math.max(Math.abs(slide.rect.y2 - slide.rect.y1), 1);
+    const svg = await options.ea.createViewSVG({
+      withBackground: true,
+      theme,
+      frameRendering: { enabled: false, name: false, outline: false, clip: false },
+      padding: 0,
+      selectedOnly: false,
+      skipInliningFonts: false,
+      embedScene: false,
+      exportArea: { x: left, y: top, width, height }
+    });
+    svg.setAttribute("width", String(box.width));
+    svg.setAttribute("height", String(box.height));
+    svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+    svg.setCssStyles({ overflow: "hidden" });
+    return svg;
+  }
+  function createPrintPage(settings, backgroundColor) {
+    const page = createFragment().createSvg("svg", {
+      attr: {
+        xmlns: "http://www.w3.org/2000/svg",
+        width: settings.width,
+        height: settings.height,
+        viewBox: `0 0 ${settings.width} ${settings.height}`
+      }
+    });
+    page.createSvg("rect", {
+      attr: { width: settings.width, height: settings.height, fill: backgroundColor }
+    });
+    return page;
+  }
+  function addText(page, text, x, y, color) {
+    const element = page.createSvg("text", {
+      attr: {
+        x,
+        y,
+        fill: color,
+        "font-family": "Arial, sans-serif",
+        "font-size": 14,
+        "font-weight": "bold",
+        "xml:space": "preserve"
+      }
+    });
+    element.textContent = text;
+  }
+  async function generateSlideshowPdf(options, settings) {
+    if (!validPrintDimensions(settings.width, settings.height))
+      throw new Error("INVALID_PRINT_DIMENSIONS");
+    const { ea: ea2, t } = options;
+    const targetView = ea2.targetView;
+    const targetFile = targetView?.file;
+    const theme = settings.theme ?? (options.api.getAppState().theme === "dark" ? "dark" : "light");
+    const colors = getPrintColors(theme);
+    const pageBackground = settings.layout === "slides" && theme === "light" ? options.api.getAppState().viewBackgroundColor : colors.background;
+    const assertTarget = () => {
+      if (ea2.targetView !== targetView || targetView?.file !== targetFile || ea2.getExcalidrawAPI() !== options.api)
+        throw new Error("PRINT_VIEW_CHANGED");
+    };
+    const exportCurrentSlide = async (slide, box) => {
+      assertTarget();
+      const image = await exportSlide(options, slide, box, theme);
+      assertTarget();
+      return image;
+    };
+    const deck = resolvePresentationSource(options.choices, settings.sourceKey)?.deck;
+    const slides = deck?.slides.filter((slide) => !settings.visibleOnly || !slide.excluded) ?? [];
+    if (slides.length === 0) {
+      new ea2.obsidian.Notice(t("printNoSlides"));
+      return;
+    }
+    const notice = new SingleNotice();
+    const pages = [];
     try {
+      notice.setMessage(t("generatingImage"));
+      if (settings.layout === "slides") {
+        for (const [index, slide] of slides.entries()) {
+          notice.setMessage(t("generatingSlide", { number: index + 1 }));
+          const box = getPrintContentBox(settings);
+          const image = await exportCurrentSlide(slide, box);
+          image.setAttribute("x", String(box.x));
+          image.setAttribute("y", String(box.y));
+          const page = createPrintPage(settings, pageBackground);
+          page.appendChild(image);
+          pages.push(page);
+        }
+      } else {
+        const view = ea2.targetView;
+        if (!view) throw new Error("MISSING_PRINT_VIEW");
+        const canvas = createFragment().createEl("canvas");
+        const context = canvas.getContext("2d");
+        if (!context) throw new Error("MISSING_TEXT_MEASUREMENT");
+        context.font = "14px Arial";
+        const measure = (text) => context.measureText(text).width;
+        const boxes = getHandoutBoxes(settings);
+        const slideBox = fitPrintBox(boxes.slide, options.printSlideWidth / options.printSlideHeight);
+        let slot = 0;
+        let page;
+        for (const [index, slide] of slides.entries()) {
+          notice.setMessage(t("generatingSlide", { number: index + 1 }));
+          const image = await exportCurrentSlide(slide, slideBox);
+          const chunks = await renderPrintNotes(
+            ea2,
+            slide.notes ?? "",
+            targetFile.path,
+            boxes.notes,
+            view.ownerDocument,
+            theme
+          );
+          assertTarget();
+          for (const [offset, notes] of chunks.entries()) {
+            if (slot % boxes.rows === 0) {
+              page = createPrintPage(settings, pageBackground);
+              pages.push(page);
+            }
+            const y = slot % boxes.rows * boxes.rowHeight;
+            const continuation = offset > 0 ? ` ${t("printContinued")}` : "";
+            const title = `${index + 1}. ${slide.title.replace(/[\r\n]/g, " ")}${continuation}`;
+            const content = getPrintContentBox(settings);
+            const titleLines = wrapPrintText(title, content.width, measure);
+            addText(
+              page,
+              (titleLines[0] ?? "") + (titleLines.length > 1 ? "\u2026" : ""),
+              content.x,
+              content.y + 16 + y,
+              colors.foreground
+            );
+            const clone = image.cloneNode(true);
+            clone.setAttribute("x", String(boxes.slide.x));
+            clone.setAttribute("y", String(boxes.slide.y + y));
+            page.appendChild(clone);
+            appendPrintNotes(page, notes, { ...boxes.notes, y: boxes.notes.y + y });
+            slot += 1;
+          }
+        }
+      }
+      const selectedPages = selectPrintPages(pages, settings.pageRanges ?? "");
+      if (selectedPages.length === 0) {
+        new ea2.obsidian.Notice(t("printNoPages"));
+        return;
+      }
+      notice.setMessage(t("creatingPdf"));
+      assertTarget();
       await ea2.createPDF({
-        SVG: pages,
-        scale: { fitToPage: true },
+        SVG: selectedPages,
+        scale: { fitToPage: 0, zoom: 1 },
         pageProps: {
-          dimensions: { width: slideWidth, height: slideHeight },
-          backgroundColor: api.getAppState().viewBackgroundColor,
+          dimensions: { width: settings.width, height: settings.height },
+          backgroundColor: pageBackground,
           margin: { left: 0, right: 0, top: 0, bottom: 0 },
           alignment: "center"
         },
-        filename: `${ea2.targetView?.file.basename ?? "slideshow"}.pdf`
+        filename: `${targetFile?.basename ?? "slideshow"}.pdf`
       });
     } finally {
       notice.hide();
+    }
+  }
+
+  // src/scripts/slideshow/presentationViewport.ts
+  async function waitForPresentationViewport(view, api) {
+    const container = view.excalidrawContainer ?? view.contentEl;
+    let previous = "";
+    let stableSamples = 0;
+    for (let sample = 0; sample < 40; sample += 1) {
+      await sleepInWindow(view.ownerWindow, 50);
+      const { width, height } = container.getBoundingClientRect();
+      const state = api.getAppState();
+      const size = `${width}:${height}`;
+      const matches = width > 0 && height > 0 && Math.abs(width - state.width) <= 2 && Math.abs(height - state.height) <= 2;
+      stableSamples = matches && size === previous ? stableSamples + 1 : 0;
+      if (stableSamples >= 3) return;
+      previous = size;
     }
   }
 
@@ -4115,6 +4798,8 @@ Build version: 2026-09-15T13:48:51.367Z
       if (this.shouldStartFullscreen) await this.gotoFullscreen(false);
       else this.controls?.resetPosition(false);
       if (this.setup.pathType === "line") await this.togglePathVisibility(this.setup.isHidden);
+      await waitForPresentationViewport(this.hostView, this.api);
+      this.controls?.resetPosition(false);
       this.stateEmissionPauseDepth += 1;
       try {
         await this.enterSlide(this.slide, false);
@@ -4661,14 +5346,20 @@ Build version: 2026-09-15T13:48:51.367Z
         event,
         ea: this.ea,
         api: this.api,
-        slides: this.setup.slides,
+        choices: resolveSlideDeckChoices(this.ea),
+        sourceKey: this.setup.sourceKey,
         printSlideWidth: this.config.printSlideWidth,
         printSlideHeight: this.config.printSlideHeight,
         maxZoom: this.config.maxZoom,
         t: this.t
       });
-      if (this.animationRuntime) await this.animationRuntime.withFinalState(task);
-      else await task();
+      try {
+        if (this.animationRuntime) await this.animationRuntime.withFinalState(task);
+        else await task();
+      } catch (error) {
+        console.error("Slideshow PDF export failed", error);
+        new this.ea.obsidian.Notice(this.t("printFailed"));
+      }
     }
   };
 
@@ -5247,6 +5938,7 @@ Build version: 2026-09-15T13:48:51.367Z
         config: options.config
       });
     }
+    options;
     steps;
     selectedStepId = null;
     targets = [];
@@ -5846,6 +6538,7 @@ Build version: 2026-09-15T13:48:51.367Z
       options.container.addEventListener?.("dragleave", this.handleContainerDragLeave);
       options.container.addEventListener?.("drop", this.handleContainerDrop);
     }
+    options;
     selectedSlideId = null;
     expandedNotesSlideId = null;
     notesTextarea = null;
@@ -6957,24 +7650,6 @@ Build version: 2026-09-15T13:48:51.367Z
     const alreadyDeclared = ea2.getViewElements().some((element) => isFrameElement(element) && hasFrameSlideshowDeclaration(element.customData));
     return alreadyDeclared ? null : selected;
   }
-  function getPresentationSourceLabels(choices, frameLabel, defaultLineLabel) {
-    const result = [];
-    if (choices.frame) result.push({ key: "frame", label: choices.frame.deck.name?.trim() || frameLabel });
-    const bases = choices.lines.map((line) => line.name?.trim() || defaultLineLabel);
-    const totals = /* @__PURE__ */ new Map();
-    for (const base of bases) totals.set(base, (totals.get(base) ?? 0) + 1);
-    const seen = /* @__PURE__ */ new Map();
-    choices.lines.forEach((line, index) => {
-      const base = bases[index] ?? defaultLineLabel;
-      const ordinal = (seen.get(base) ?? 0) + 1;
-      seen.set(base, ordinal);
-      result.push({
-        key: line.key,
-        label: (totals.get(base) ?? 0) > 1 ? `${base} (${ordinal})` : base
-      });
-    });
-    return result;
-  }
   function getLineSourceByKey(choices, sourceKey) {
     if (!sourceKey || sourceKey === "frame") return null;
     return choices.lines.find((line) => line.key === sourceKey) ?? null;
@@ -7082,6 +7757,7 @@ Build version: 2026-09-15T13:48:51.367Z
       this.sorterThumbnailMaxWidth = loadSorterThumbnailMaxWidth(options.ea);
       this.deviceKey = getSlideshowDeviceKey(this.ownerWindow);
     }
+    options;
     sorter = null;
     previewService = null;
     resolved = null;
@@ -7668,17 +8344,24 @@ Build version: 2026-09-15T13:48:51.367Z
       const printButton = doc.createElement("button");
       printButton.type = "button";
       printButton.className = "slideshow-sidepanel__icon-button slideshow-sidepanel__print-button";
-      const printLabel = t("printPdf", {
-        width: this.options.config.printSlideWidth,
-        height: this.options.config.printSlideHeight
-      });
+      const printLabel = t("printDialogTitle");
       printButton.setAttribute("aria-label", printLabel);
       printButton.innerHTML = icons.printer;
-      printButton.disabled = !this.resolved || noVisibleSlides;
+      printButton.disabled = !this.resolved;
       header.appendChild(printButton);
       printButton.addEventListener("click", (event) => {
         void this.printPresentation(event);
       });
+      if (this.resolved?.deck.kind === "frame") {
+        const exportButton = header.createEl("button", {
+          cls: "slideshow-sidepanel__icon-button slideshow-sidepanel__export-markdown",
+          attr: { type: "button", "aria-label": t("exportMarkdown") }
+        });
+        exportButton.innerHTML = icons.fileDown;
+        exportButton.addEventListener("click", () => {
+          void this.exportMarkdown();
+        });
+      }
       const contextAction = this.createHeaderContextAction(doc);
       if (contextAction) header.appendChild(contextAction);
       this.appendInfoButton(header, doc);
@@ -8073,14 +8756,29 @@ Build version: 2026-09-15T13:48:51.367Z
         ...openPresenterView && this.presentationDisplayId !== null ? { presentationDisplayId: this.presentationDisplayId } : {},
         ...openPresenterView && this.presenterDisplayId !== null ? { presenterDisplayId: this.presenterDisplayId } : {}
       };
-      if (!startFullscreen) await this.prepareWindowedPresentation(view);
+      await this.prepareWindowedPresentation(view);
       await this.options.startPresentation(presentationSourceKey, launchOptions);
     }
     async printPresentation(event) {
-      await this.sorter?.flushNotes();
-      if (this.animationEditor) await this.closeAnimationEditor();
-      if (this.presentationSourceKey) {
-        await this.options.printPresentation(this.presentationSourceKey, event);
+      try {
+        await this.sorter?.flushNotes();
+        if (this.animationEditor) await this.closeAnimationEditor();
+        if (this.presentationSourceKey) {
+          await this.options.printPresentation(this.presentationSourceKey, event);
+        }
+      } catch (error) {
+        console.error("Slideshow PDF export failed", error);
+        new this.options.ea.obsidian.Notice(this.options.t("printFailed"));
+      }
+    }
+    async exportMarkdown() {
+      try {
+        await this.sorter?.flushNotes();
+        if (this.animationEditor) await this.closeAnimationEditor();
+        await this.options.exportMarkdown();
+      } catch (error) {
+        console.error("Slideshow Markdown export failed", error);
+        new this.options.ea.obsidian.Notice(this.options.t("exportMarkdownFailed"));
       }
     }
     async selectPresentationSource(sourceKey) {
@@ -8452,7 +9150,7 @@ Build version: 2026-09-15T13:48:51.367Z
         ".slideshow-sidepanel__print-button"
       );
       if (startButton) startButton.disabled = disabled;
-      if (printButton) printButton.disabled = disabled;
+      if (printButton) printButton.disabled = false;
     }
     updateLastFingerprintFromCurrentState() {
       const view = this.boundView;
@@ -8688,6 +9386,57 @@ Build version: 2026-09-15T13:48:51.367Z
     }
   };
 
+  // src/scripts/slideshow/exportMarkdown.ts
+  function getMarkdownExportPath(drawingPath, filename) {
+    const name = filename.trim().replace(/\.md$/i, "");
+    if (!name || /^\.+$/.test(name) || /[\\/:*?"<>|#\[\]\r\n]/.test(name) || /[. ]$/.test(name))
+      return null;
+    const folder = drawingPath.slice(0, Math.max(0, drawingPath.lastIndexOf("/") + 1));
+    return `${folder}${name}.md`;
+  }
+  function buildSlideshowMarkdown(drawingPath, deck, frames) {
+    return deck.slides.filter((slide) => slide.kind === "frame").map((slide) => {
+      const frame = frames.find((candidate) => candidate.id === slide.frameId);
+      const name = frame?.name;
+      const unique = name && frames.filter((candidate) => candidate.name === name || candidate.id === name).length === 1;
+      const target = unique && !/[|#\^\[\]\r\n]/.test(name) && !/,padding=\d/.test(name) ? name : slide.frameId;
+      const heading = slide.title.replace(/[\r\n]+/g, " ").replace(/([\\`*_{}\[\]<>#])/g, "\\$1");
+      return `## ${heading}
+
+![[${drawingPath}#^frame=${target}]]
+
+${slide.notes ?? ""}`.trimEnd();
+    }).join("\n\n") + "\n";
+  }
+  async function exportSlideshowMarkdown(context, deck) {
+    const { ea: ea2, view, utils: utils2, t } = context;
+    const drawing = view.file;
+    if (view.isDirty()) await view.forceSave(true);
+    if (view.file !== drawing) return;
+    const frames = ea2.getViewElements().filter((element) => element.type === "frame");
+    const markdown = buildSlideshowMarkdown(drawing.path, deck, frames);
+    const filename = await utils2.inputPrompt(
+      t("exportMarkdownFilename"),
+      "",
+      t("exportMarkdownDefaultFilename", { name: drawing.basename })
+    ).catch((error) => {
+      if (error === "No input given.") return void 0;
+      throw error;
+    });
+    if (filename === void 0) return;
+    const path = getMarkdownExportPath(drawing.path, filename);
+    if (!path) {
+      new ea2.obsidian.Notice(t("exportMarkdownInvalidFilename"));
+      return;
+    }
+    if (app.vault.getFileByPath(path)) {
+      new ea2.obsidian.Notice(t("exportMarkdownExists"));
+      return;
+    }
+    const file = await app.vault.create(path, markdown);
+    await app.workspace.getLeaf("tab").openFile(file);
+  }
+
   // src/scripts/slideshow/slideshowLauncher.ts
   async function ensureManualSlideshowDeclaration(context) {
     const { ea: ea2, view } = context;
@@ -8841,7 +9590,7 @@ Build version: 2026-09-15T13:48:51.367Z
     }
     const choices = resolveSlideDeckChoices(ea2);
     const resolved = presentationSource === "line" ? choices.line : presentationSource === "frame" ? choices.frame : resolvePresentationSource(choices, presentationSource);
-    if (!resolved || resolved.deck.visibleSlides.length === 0) {
+    if (!resolved) {
       new Notice(t("allSlidesExcluded"));
       return;
     }
@@ -8849,7 +9598,8 @@ Build version: 2026-09-15T13:48:51.367Z
       event,
       ea: ea2,
       api,
-      slides: resolved.deck.visibleSlides.map((slide) => slide.rect),
+      choices,
+      sourceKey: presentationSource === "line" ? choices.lines[0].key : presentationSource,
       printSlideWidth: config.printSlideWidth,
       printSlideHeight: config.printSlideHeight,
       maxZoom: config.maxZoom,
@@ -8902,6 +9652,15 @@ Build version: 2026-09-15T13:48:51.367Z
         if (!boundContext) return;
         Object.assign(boundContext.config, context.config);
         await printSlideshowPresentation(boundContext, presentationSourceKey, event);
+      },
+      exportMarkdown: async () => {
+        const boundView = sidepanel.getBoundView();
+        if (!boundView) return;
+        const boundContext = getSlideshowViewContext(boundView);
+        if (!boundContext) return;
+        boundContext.ea.setView(boundView);
+        const deck = resolveSlideDeckChoices(boundContext.ea).frame?.deck;
+        if (deck) await exportSlideshowMarkdown(boundContext, deck);
       }
     });
     const handle = {

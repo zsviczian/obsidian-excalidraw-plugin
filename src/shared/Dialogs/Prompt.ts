@@ -280,6 +280,9 @@ export class LaTexPrompt extends FloatingModal {
 
   onOpen(): void {
     super.onOpen();
+    // zsviczian #2970: Obsidian adopts the prebuilt modal into the popout document.
+    // Rebind CodeMirror's selection observer and styles before focusing it.
+    this.editorView.setRoot(this.contentEl.ownerDocument);
     this.editorView.focus();
   }
 

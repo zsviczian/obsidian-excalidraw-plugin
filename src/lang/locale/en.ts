@@ -16,6 +16,12 @@ declare const PLUGIN_VERSION: string;
 
 // English
 export default {
+  // Native CLI and agent discovery
+  CLI_HELP: "Show CLI and agent instructions",
+  CLI_COPY_SKILL: "Copy agent instructions",
+  CLI_AGENT_INSTRUCTIONS: `Read: ${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_CLI}\n\n<<user instructions>>`,
+  CLI_DESCRIPTION: "Native Excalidraw CLI",
+
   INITIALIZATION_MESSAGE:
     "Excalidraw is waiting for Obsidian to initialize all of your plugins...",
   // Sugester
@@ -360,6 +366,15 @@ export default {
   COMPATIBILITY_MODE:
     "*.excalidraw file opened in compatibility mode. Convert to new format for full plugin functionality.",
   CONVERT_FILE: "Convert to new format",
+  DRAWING_LOAD_ERROR_TITLE: "Cannot load drawing: {filename}",
+  DRAWING_LOAD_ERROR_MESSAGE: "This file could not be loaded as an Excalidraw drawing.",
+  DRAWING_LOAD_ERROR_NO_BACKUP: "No local backup is available on this device.",
+  DRAWING_LOAD_ERROR_CACHE_WAIT: "The local backup cache is still loading. Select OK to check again, or Cancel to continue.",
+  DRAWING_LOAD_ERROR_BACKUP_AVAILABLE: "A local backup is available. Would you like to load it?",
+  DRAWING_LOAD_ERROR_MORE_INFO: "More information",
+  DRAWING_LOAD_ERROR_DISMISS: "Dismiss",
+  DRAWING_LOAD_ERROR_REPORTED_ERROR: "Reported error",
+  DRAWING_LOAD_ERROR_DETAILS: "A note with the excalidraw-plugin frontmatter property is treated as an Excalidraw drawing. If its drawing-data section is missing or malformed, the drawing cannot be loaded. An ordinary Markdown note may have this property by mistake.\n\nA sync conflict or interrupted reconciliation between devices is one possible cause of malformed drawing JSON. The error alone does not establish the cause.\n\nA local backup may contain a readable earlier version of the drawing. Backups are stored separately on each device, so the device where you last edited may have a newer copy. Loading a backup replaces the drawing file. This information view does not change the file.",
   BACKUP_AVAILABLE:
     "We encountered an error while loading your drawing. This might have occurred if Obsidian unexpectedly closed during a save operation. For example, if you accidentally closed Obsidian on your mobile device while saving.<br><br><b>GOOD NEWS:</b> Fortunately, a local backup is available. However, please note that if you last modified this drawing on a different device (e.g., tablet) and you are now on your desktop, that other device likely has a more recent backup.<br><br>I recommend trying to open the drawing on your other device first and restore the backup from its local storage.<br><br>Would you like to load the backup?",
   BACKUP_SAVE_AS_FILE:

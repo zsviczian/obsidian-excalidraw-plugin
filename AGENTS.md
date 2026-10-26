@@ -140,6 +140,10 @@ Follow Obsidian's **Developer Policies** and **Plugin Guidelines**. In particula
 
 ## Issue Investigation And Resolution Templates
 
+When triaging or updating issues across the plugin, Excalidraw fork, Extras, and EA Scripts, use the central [plugin issue tracker and label guidelines](.github/ISSUE_LABELS.md); this plugin repository is the default issue hub for all four projects.
+
+
+
 - For source-based issue investigations, GitHub issue comments, and a prioritized shortlist, use [issue assessment](docs/agent-workflows/issue-assessment.md).
 - Only after maintainer approval of specific issues, use [issue implementation handoff and resolution](docs/agent-workflows/issue-resolution.md) to prepare a dedicated branch and plan-only draft PR for the local implementation agent.
 - The issue owns the technical assessment; the draft PR owns the implementation plan; the branch owns the code. Keep draft PRs open through implementation, link cross-repository dependencies, and do not merge without authorization.
@@ -559,7 +563,7 @@ Validation guidance:
 - For host-boundary changes, run the fork's focused adapter tests without Obsidian, then validate plugin registration and teardown through cold startup, plugin reload, the main window, a new and restored popout, and window removal. Confirm adapter methods observe settings changed after registration.
 - After React/package-loading changes, validate cold startup, plugin reload, the main window, new and restored popouts, and moving a leaf between windows. Confirm that no `window.React` or `window.ReactDOM` global was introduced.
 - After Radix/portal changes, validate visibility, positioning, stacking, click-outside, and Escape handling in both the main window and a popout; include mobile when viewport collision behavior can differ.
-- Record `dist/main.js` byte size after packaging changes and report remaining headroom under the release limit.
+- Record `dist/main.js` byte size after packaging changes and report remaining headroom under the 5 MB release target: 5 × 1024 × 1024 = 5,242,880 bytes.
 - Prefer targeted diagnostics for the files you touched when repo-wide lint noise obscures signal.
 - Prefer `npm run build` plus targeted file diagnostics over raw `tsc --noEmit` as the primary gate. Standalone `tsc` can surface large volumes of dependency-typing noise unrelated to touched files.
 - Do not treat `dist/` output edits as source fixes.

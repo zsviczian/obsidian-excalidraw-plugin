@@ -21,6 +21,7 @@ export type {
 } from "@zsviczian/excalidraw/types/element/src/types";
 export type { Point } from "src/types/types";
 export type { MathJaxRenderOptions } from "src/types/mathJaxTypes";
+export type { ExcalidrawCLIRequest, ExcalidrawCLIResult, CLICommand, CLIJSON } from "src/types/excalidrawCliTypes";
 export const getEA = (view?: ExcalidrawView): ExcalidrawAutomate | null => {
   try {
     return window.ExcalidrawAutomate.getAPI(view);

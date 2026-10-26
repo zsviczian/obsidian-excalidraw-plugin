@@ -8,16 +8,21 @@ import { mkdtempSync } from "node:fs";
 import { runObsidianSmoke } from "./runner.mjs";
 import { obsidianCliExecutable, packageManagerInvocation, spawnNativeSync } from "./processTools.mjs";
 import { runTextUndoScenario } from "./textUndo.mjs";
+import { runNativeCLIScenario } from "./nativeCLI.mjs";
 import { runEmbedRecoveryScenario } from "./embedRecovery.mjs";
 import { runGroupedLinkClickScenario } from "./groupedLinkClick.mjs";
+import { runLatexInputScenario } from "./latexInput.mjs";
 
 const pluginRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const pluginOnly = process.argv.includes("--plugin-only");
 const textUndo = process.argv.includes("--text-undo");
+const nativeCLI = process.argv.includes("--native-cli");
 const embedRecovery = process.argv.includes("--embed-recovery");
 const groupedLinkClick = process.argv.includes("--grouped-link-click");
-if (process.argv.slice(2).some(arg => !["--plugin-only", "--text-undo", "--embed-recovery", "--grouped-link-click"].includes(arg))) {
-  throw new Error("Supported options: --plugin-only, --text-undo, --embed-recovery, --grouped-link-click");
+const latexInput = process.argv.includes("--latex-input");
+const latexPreview = process.argv.includes("--latex-preview");
+if (process.argv.slice(2).some(arg => !["--plugin-only", "--text-undo", "--native-cli", "--embed-recovery", "--grouped-link-click", "--latex-input", "--latex-preview"].includes(arg))) {
+  throw new Error("Supported options: --plugin-only, --text-undo, --native-cli, --embed-recovery, --grouped-link-click, --latex-input, --latex-preview");
 }
 const forkRoot = resolve(process.env.EXCALIDRAW_FORK_ROOT || join(pluginRoot, "../excalidraw"));
 const reportDir = process.env.EXCALIDRAW_TEST_REPORT_DIR || mkdtempSync(join(tmpdir(), "excalidraw-obsidian-"));
@@ -25,7 +30,7 @@ const FORK_ARTIFACTS = ["excalidraw.production.min.js", "excalidraw.production.m
   "excalidraw.development.js", "excalidraw.development.css"];
 
 function command(file, args, cwd, timeout = 60_000, inherit = false) {
-  const result = spawnNativeSync(file, args, { cwd, encoding: "utf8", timeout, maxBuffer: 4 * 1024 * 1024,
+  const result = spawnNativeSync(file, args, { cwd, encoding: "utf8", timeout, killSignal: "SIGKILL", maxBuffer: 4 * 1024 * 1024,
     stdio: inherit ? "inherit" : "pipe" });
   if (result.error) throw new Error(`${file}: ${result.error.message}`);
   if (result.status !== 0) throw new Error(`${file} ${args.join(" ")} failed (${result.status}): ${(result.stderr || result.stdout || "").trim().slice(0, 1000)}`);
@@ -54,8 +59,11 @@ const report = await runObsidianSmoke({
   source,
   scenarios: [
     ...(textUndo ? [runTextUndoScenario] : []),
+    ...(nativeCLI ? [runNativeCLIScenario] : []),
     ...(embedRecovery ? [runEmbedRecoveryScenario] : []),
     ...(groupedLinkClick ? [runGroupedLinkClickScenario] : []),
+    ...(latexInput ? [runLatexInputScenario] : []),
+    ...(latexPreview ? [context => runLatexInputScenario({ ...context, realRenderer: true })] : []),
   ],
   runCli: (vault, commandName, ...args) => command(obsidianCliExecutable(),
     [`vault=${vault}`, commandName, ...args], pluginRoot),
