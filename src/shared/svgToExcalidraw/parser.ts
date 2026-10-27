@@ -1,66 +1,65 @@
-import { ExcalidrawGenericElement } from "./elements/ExcalidrawElement";
-import ExcalidrawScene from "./elements/ExcalidrawScene";
-import Group from "./elements/Group";
-import { createTreeWalker, walk } from "./walker";
-import { log } from "../../utils/debugHelper";
+import type { ExcalidrawGenericElement } from "./elements/ExcalidrawElement";
+import type {
+  SVGConversionState,
+  SVGWarning,
+} from "src/types/svgConversionTypes";
+import { walkSVG } from "./walker";
 
 export type ConversionResult = {
   hasErrors: boolean;
   errors: string;
   content: ExcalidrawGenericElement[];
+  warnings: SVGWarning[];
 };
 
+/** Synchronously stages a bounded conversion; failure never publishes partial elements. */
 export const svgToExcalidraw = (svgString: string): ConversionResult => {
   try {
-    const parser = new DOMParser();
-    const svgDOM = parser.parseFromString(svgString, "image/svg+xml");
-
-    // was there a parsing error?
-    const errorsElements = svgDOM.querySelectorAll("parsererror");
-    const hasErrors = errorsElements.length > 0;
-    let content: ExcalidrawGenericElement[] = [];
-
-    if (hasErrors) {
-      console.error(
-        "There were errors while parsing the given SVG: ",
-        [...errorsElements].map((el) => el.innerHTML),
-      );
-    } else {
-      const tw = createTreeWalker(svgDOM);
-      const scene = new ExcalidrawScene();
-      const groups: Group[] = [];
-
-      walk({ tw, scene, groups, root: svgDOM }, tw.nextNode());
-
-      const hasVisibleElements = Boolean(
-        scene.elements.find((el) => el.opacity !== 0),
-      );
-      if (!hasVisibleElements) {
-        scene.elements.forEach((el) => {
-          el.opacity = 100;
-        });
-      }
-      scene.elements.forEach((el) => {
-        if (el.opacity <= 1) {
-          el.opacity = 100;
-        }
-      });
-      content = scene.elements; //scene.toExJSON();
-    }
-
-    return {
-      hasErrors,
-      errors: hasErrors
-        ? `${[...errorsElements].map((el) => el.innerHTML)}`
-        : "",
-      content,
+    if (typeof svgString !== "string" || svgString.length > 2000000)
+      throw Error("SVG input size limit exceeded");
+    let tags = 0;
+    const tagPattern = /<[A-Za-z_]/g;
+    while (tagPattern.exec(svgString))
+      if (++tags > 20000) throw Error("SVG input element limit exceeded");
+    if (/<!DOCTYPE|<!ENTITY/i.test(svgString))
+      throw Error("SVG document types and entities are not supported");
+    const doc = new DOMParser().parseFromString(svgString, "image/svg+xml");
+    const root = doc.documentElement;
+    if (
+      doc.getElementsByTagName("parsererror").length ||
+      root?.localName !== "svg" ||
+      (root.namespaceURI && root.namespaceURI !== "http://www.w3.org/2000/svg")
+    )
+      throw Error("Invalid SVG XML document");
+    const state: SVGConversionState = {
+      elements: [],
+      warnings: new Set(),
+      nodes: 0,
+      points: 0,
+      operations: 0,
+      references: new Set(),
+      ids: new Map(),
+      rules: [],
     };
-  } catch (error) {
-    log(error);
+    if (/<\?xml-stylesheet/i.test(svgString)) state.warnings.add("css");
+    walkSVG(root, state);
+    return {
+      hasErrors: false,
+      errors: "",
+      content: state.elements,
+      warnings: [...state.warnings],
+    };
+  } catch (error: unknown) {
     return {
       hasErrors: true,
-      errors: `${error}`,
+      errors:
+        error instanceof Error
+          ? error.message
+          : typeof error === "string"
+            ? error
+            : "SVG conversion failed",
       content: [],
+      warnings: [],
     };
   }
 };

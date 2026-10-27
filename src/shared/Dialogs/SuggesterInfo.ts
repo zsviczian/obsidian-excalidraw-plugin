@@ -15,6 +15,12 @@ const EMBEDDABLE_MDCUSTOMPROPS = `type EmbeddableMDCustomProps = {<br>useObsidia
 
 export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
+    field: "importSVG",
+    code: "importSVG(svgString: string): boolean;",
+    desc: "Synchronously appends editable SVG geometry to this EA workbench. Does not insert, save or clear existing elements. Returns false without appending on malformed, unsafe or excessive input. Some SVG features import with approximation/omission notices: see src/shared/svgToExcalidraw/readme.md. Call addElementsToView() separately to insert.",
+    after: "",
+  },
+  {
     field: "executeCLI",
     code: "executeCLI(request: ExcalidrawCLIRequest): Promise<ExcalidrawCLIResult>;",
     desc: "Runs the versioned native CLI protocol in-process with explicit targets. Does not use this EA's workbench or target view. Check ok, mutation and persistence. Use schema for fields; receipts expire after 15 minutes or plugin reload.",

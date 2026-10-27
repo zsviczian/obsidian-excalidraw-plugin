@@ -5459,19 +5459,31 @@ export class ExcalidrawAutomate {
   }
 
   /**
-   * Imports an SVG string into ExcalidrawAutomate elements.
+   * Appends editable SVG geometry to this workbench synchronously. Does not insert
+   * into a view or save. Fatal errors leave existing workbench elements untouched;
+   * supported portions of limited SVG features import with a diagnostic notice.
    * @param {string} svgString - The SVG string to import.
-   * @returns {boolean} True if the import was successful, false otherwise.
+   * @returns True for a completed conversion (including a transparent/empty SVG),
+   * false for malformed, unsafe or excessive input. See the SVG converter support
+   * matrix for approximations and deliberately omitted unsupported features.
    */
   importSVG(svgString: string): boolean {
     const res: ConversionResult = svgToExcalidraw(svgString);
     if (res.hasErrors) {
-      new Notice(
-        `There were errors while parsing the given SVG:\n${res.errors}`,
-      );
+      new Notice(`${t("SVG_IMPORT_ERROR")}\n${res.errors}`);
       return false;
     }
     this.copyViewElementsToEAforEditing(res.content);
+    if (res.warnings.length) {
+      const messages = {
+        compositing: "SVG_IMPORT_COMPOSITING",
+        stroke: "SVG_IMPORT_STROKE",
+        unsupported: "SVG_IMPORT_UNSUPPORTED",
+        css: "SVG_IMPORT_CSS",
+        viewport: "SVG_IMPORT_VIEWPORT",
+      } as const;
+      new Notice(`${t("SVG_IMPORT_WARNING")}\n${res.warnings.map(warning => t(messages[warning])).join("\n")}`, 10000);
+    }
     return true;
   }
 

@@ -141,6 +141,13 @@ export default {
   INSERT_LINK: "Insert link to file",
   INSERT_COMMAND: "Insert Obsidian Command as a link",
   INSERT_IMAGE: "Insert image or Excalidraw drawing from your vault",
+  SVG_IMPORT_ERROR: "Could not convert SVG",
+  SVG_IMPORT_WARNING: "SVG imported with limitations:",
+  SVG_IMPORT_COMPOSITING: "Overlapping object/group opacity is approximated.",
+  SVG_IMPORT_STROKE: "Some stroke caps, joins, scaling or dash patterns are approximated.",
+  SVG_IMPORT_UNSUPPORTED: "Unsupported features (such as text, gradients or clipping) were omitted.",
+  SVG_IMPORT_CSS: "Advanced CSS or external stylesheets are not supported.",
+  SVG_IMPORT_VIEWPORT: "Viewport clipping is not reproduced.",
   IMPORT_SVG:
     "Import an SVG file as Excalidraw strokes (limited SVG support, TEXT currently not supported)",
   IMPORT_SVG_CONTEXTMENU: "Convert SVG to strokes - with limitations",

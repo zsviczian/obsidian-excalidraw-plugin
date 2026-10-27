@@ -143,6 +143,13 @@ export default {
   INSERT_LINK: "Insertar enlace al archivo",
   INSERT_COMMAND: "Insertar comando de Obsidian como enlace",
   INSERT_IMAGE: "Insertar imagen o bosquejo de Excalidraw desde tu bóveda",
+  SVG_IMPORT_ERROR: "No se pudo convertir el SVG",
+  SVG_IMPORT_WARNING: "SVG importado con limitaciones:",
+  SVG_IMPORT_COMPOSITING: "La opacidad de objetos y grupos superpuestos es aproximada.",
+  SVG_IMPORT_STROKE: "Algunos extremos, uniones, escalados o patrones de trazos son aproximados.",
+  SVG_IMPORT_UNSUPPORTED: "Se omitieron funciones no compatibles, como texto, degradados o recortes.",
+  SVG_IMPORT_CSS: "No se admiten CSS avanzado ni hojas de estilo externas.",
+  SVG_IMPORT_VIEWPORT: "No se reproduce el recorte del área de visualización.",
   IMPORT_SVG:
     "Importar un archivo SVG como trazos de Excalidraw (soporte SVG limitado, TEXTO no es compatible actualmente)",
   IMPORT_SVG_CONTEXTMENU: "Convertir SVG a trazos - con limitaciones",
