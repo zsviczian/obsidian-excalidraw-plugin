@@ -1,466 +1,226 @@
-import { mat4 } from "gl-matrix";
-import { dimensionsFromPoints } from "./utils";
-import ExcalidrawScene from "./elements/ExcalidrawScene";
-import Group, { getGroupAttrs } from "./elements/Group";
+/** Rendering-tree traversal: source paint order, isolated use instances and bounded work. */
+import type {
+  SVGContext,
+  SVGConversionState,
+} from "src/types/svgConversionTypes";
+import { initialStyle, resolveStyle, alpha, readStyleRules } from "./paint";
 import {
-  ExcalidrawElementBase,
-  ExcalidrawRectangle,
-  ExcalidrawEllipse,
-  ExcalidrawLine,
-  createExRect,
-  createExEllipse,
-  createExLine,
-  Point,
-} from "./elements/ExcalidrawElement";
-import {
-  presAttrsToElementValues,
-  filterAttrsToElementValues,
-  pointsAttrToPoints,
-  has,
-  get,
-  getNum,
-} from "./attributes";
-import { getTransformMatrix, transformPoints } from "./transform";
-import { pointsOnPath } from "points-on-path";
-import { randomId, getWindingOrder } from "./utils";
-import { ROUNDNESS } from "../../constants/constants";
+  identity,
+  multiply,
+  parseTransform,
+  length,
+  numbers,
+  viewportMatrix,
+} from "./transform";
+import { emitGeometry } from "./emitGeometry";
+import { randomId } from "./utils";
+import { exceedsViewport } from "./viewportBounds";
 
-declare const mainDocument: Document;
-
-const SUPPORTED_TAGS = [
-  "svg",
+const shapes = new Set([
   "path",
-  "g",
-  "use",
-  "circle",
-  "ellipse",
-  "rect",
+  "line",
   "polyline",
   "polygon",
-  "switch",
-];
+  "rect",
+  "circle",
+  "ellipse",
+]);
+const definitions = new Set([
+  "defs",
+  "symbol",
+  "clipPath",
+  "mask",
+  "pattern",
+  "marker",
+  "linearGradient",
+  "radialGradient",
+]);
+const omitted = new Set([
+  "text",
+  "image",
+  "foreignObject",
+  "script",
+  "animate",
+  "animateTransform",
+  "set",
+]);
+const metadata = new Set(["title", "desc", "metadata", "style"]);
+const children = (el: Element) =>
+  Array.from(el.childNodes).filter(
+    (node): node is Element => node.nodeType === 1,
+  );
 
-const nodeValidator = (node: Element): number => {
-  if (SUPPORTED_TAGS.includes(node.tagName)) {
-    return NodeFilter.FILTER_ACCEPT;
-  }
-
-  return NodeFilter.FILTER_REJECT;
-};
-
-export function createTreeWalker(dom: Node): TreeWalker {
-  return mainDocument.createTreeWalker(dom, NodeFilter.SHOW_ALL, {
-    acceptNode: nodeValidator,
-  });
+function collect(el: Element, state: SVGConversionState, depth = 0): void {
+  if (depth > 128 || ++state.nodes > 20000)
+    throw Error("SVG document complexity limit exceeded");
+  const id = el.getAttribute("id");
+  if (id && !state.ids.has(id)) state.ids.set(id, el);
+  for (const child of children(el)) collect(child, state, depth + 1);
 }
 
-type WalkerArgs = {
-  root: Document;
-  tw: TreeWalker;
-  scene: ExcalidrawScene;
-  groups: Group[];
-};
-
-const presAttrs = (
+function visit(
   el: Element,
-  groups: Group[],
-): Partial<ExcalidrawElementBase> => {
-  return {
-    ...getGroupAttrs(groups),
-    ...presAttrsToElementValues(el),
-    ...filterAttrsToElementValues(el),
-  };
-};
-
-const skippedUseAttrs = ["id"];
-const allwaysPassedUseAttrs = [
-  "x",
-  "y",
-  "width",
-  "height",
-  "href",
-  "xlink:href",
-];
-
-/*
-  "Most attributes on use do not override those already on the element
-  referenced by use. (This differs from how CSS style attributes override
-  those set 'earlier' in the cascade). Only the attributes x, y, width,
-  height and href on the use element will override those set on the
-  referenced element. However, any other attributes not set on the referenced
-  element will be applied to the use element."
-
-  Situation 1: Attr is set on defEl, NOT on useEl
-    - result: use defEl attr
-  Situation 2: Attr is on useEl, NOT on defEl
-    - result: use the useEl attr
-  Situation 3: Attr is on both useEl and defEl
-    - result: use the defEl attr (Unless x, y, width, height, href, xlink:href)
-*/
-const getDefElWithCorrectAttrs = (defEl: Element, useEl: Element): Element => {
-  const finalEl = [...useEl.attributes].reduce((el, attr) => {
-    if (skippedUseAttrs.includes(attr.value)) {
-      return el;
-    }
-
-    // Does defEl have the attr? If so, use it, else use the useEl attr
-    if (
-      !defEl.hasAttribute(attr.name) ||
-      allwaysPassedUseAttrs.includes(attr.name)
-    ) {
-      el.setAttribute(attr.name, useEl.getAttribute(attr.name) || "");
-    }
-    return el;
-  }, defEl.cloneNode() as Element);
-
-  return finalEl;
-};
-
-const walkers = {
-  svg: (args: WalkerArgs) => {
-    walk(args, args.tw.nextNode());
-  },
-
-  switch: (args: WalkerArgs) => {
-    const nextArgs = {
-      ...args,
-      tw: createTreeWalker(args.tw.currentNode),
-      groups: [...args.groups, new Group(args.tw.currentNode as Element)],
-    };
-
-    walk(nextArgs, nextArgs.tw.nextNode());
-
-    walk(args, args.tw.nextSibling());
-  },
-
-  g: (args: WalkerArgs) => {
-    const nextArgs = {
-      ...args,
-      tw: createTreeWalker(args.tw.currentNode),
-      groups: [...args.groups, new Group(args.tw.currentNode as Element)],
-    };
-
-    walk(nextArgs, nextArgs.tw.nextNode());
-
-    walk(args, args.tw.nextSibling());
-  },
-
-  use: (args: WalkerArgs) => {
-    const { root, tw, scene } = args;
-    const useEl = tw.currentNode as Element;
-
-    const id = useEl.getAttribute("href") || useEl.getAttribute("xlink:href");
-
-    if (!id) {
-      throw new Error("unable to get id of use element");
-    }
-
-    const defEl = root.querySelector(id);
-
-    if (!defEl) {
-      throw new Error(`unable to find def element with id: ${id}`);
-    }
-
-    const tempScene = new ExcalidrawScene();
-
-    const finalEl = getDefElWithCorrectAttrs(defEl, useEl);
-
-    walk(
-      {
-        ...args,
-        scene: tempScene,
-        tw: createTreeWalker(finalEl),
-      },
-      finalEl,
-    );
-
-    const exEl = tempScene.elements.pop();
-
-    if (exEl) {
-      scene.elements.push(exEl);
-      //throw new Error("Unable to create ex element");
-    }
-
-    walk(args, args.tw.nextNode());
-  },
-
-  circle: (args: WalkerArgs): void => {
-    const { tw, scene, groups } = args;
-    const el = tw.currentNode as Element;
-
-    const r = getNum(el, "r", 0);
-    const d = r * 2;
-    const x = getNum(el, "x", 0) + getNum(el, "cx", 0) - r;
-    const y = getNum(el, "y", 0) + getNum(el, "cy", 0) - r;
-
-    const mat = getTransformMatrix(el, groups);
-    const m = mat4.fromValues(d, 0, 0, 0, 0, d, 0, 0, 0, 0, 1, 0, x, y, 0, 1);
-
-    const result = mat4.multiply(mat4.create(), mat, m);
-
-    const circle: ExcalidrawEllipse = {
-      ...createExEllipse(),
-      ...presAttrs(el, groups),
-      x: result[12],
-      y: result[13],
-      width: result[0],
-      height: result[5],
-      groupIds: groups.map((g) => g.id),
-    };
-
-    scene.elements.push(circle);
-
-    walk(args, tw.nextNode());
-  },
-
-  ellipse: (args: WalkerArgs): void => {
-    const { tw, scene, groups } = args;
-    const el = tw.currentNode as Element;
-
-    const rx = getNum(el, "rx", 0);
-    const ry = getNum(el, "ry", 0);
-    const cx = getNum(el, "cx", 0);
-    const cy = getNum(el, "cy", 0);
-    const x = getNum(el, "x", 0) + cx - rx;
-    const y = getNum(el, "y", 0) + cy - ry;
-    const w = rx * 2;
-    const h = ry * 2;
-
-    const mat = getTransformMatrix(el, groups);
-
-    const m = mat4.fromValues(w, 0, 0, 0, 0, h, 0, 0, 0, 0, 1, 0, x, y, 0, 1);
-
-    const result = mat4.multiply(mat4.create(), mat, m);
-
-    const ellipse: ExcalidrawEllipse = {
-      ...createExEllipse(),
-      ...presAttrs(el, groups),
-      x: result[12],
-      y: result[13],
-      width: result[0],
-      height: result[5],
-      groupIds: groups.map((g) => g.id),
-    };
-
-    scene.elements.push(ellipse);
-
-    walk(args, tw.nextNode());
-  },
-
-  line: (args: WalkerArgs) => {
-    // unimplemented
-    walk(args, args.tw.nextNode());
-  },
-
-  polygon: (args: WalkerArgs) => {
-    const { tw, scene, groups } = args;
-    const el = tw.currentNode as Element;
-
-    const points = pointsAttrToPoints(el);
-
-    const mat = getTransformMatrix(el, groups);
-
-    const transformedPoints = transformPoints(points, mat);
-
-    // The first point needs to be 0, 0, and all following points
-    // are relative to the first point.
-    const x = transformedPoints[0][0];
-    const y = transformedPoints[0][1];
-
-    const relativePoints = transformedPoints.map(
-      ([_x, _y]): Point => [_x - x, _y - y],
-    );
-
-    const [width, height] = dimensionsFromPoints(relativePoints);
-
-    const line: ExcalidrawLine = {
-      ...createExLine(relativePoints.concat([[0, 0]])),
-      ...getGroupAttrs(groups),
-      ...presAttrsToElementValues(el),
-      x,
-      y,
-      width,
-      height,
-    };
-
-    scene.elements.push(line);
-
-    walk(args, args.tw.nextNode());
-  },
-
-  polyline: (args: WalkerArgs) => {
-    const { tw, scene, groups } = args;
-    const el = tw.currentNode as Element;
-
-    const mat = getTransformMatrix(el, groups);
-
-    const points = pointsAttrToPoints(el);
-    const transformedPoints = transformPoints(points, mat);
-
-    // The first point needs to be 0, 0, and all following points
-    // are relative to the first point.
-    const x = transformedPoints[0][0];
-    const y = transformedPoints[0][1];
-
-    const relativePoints = transformedPoints.map(
-      ([_x, _y]): Point => [_x - x, _y - y],
-    );
-
-    const [width, height] = dimensionsFromPoints(relativePoints);
-
-    const hasFill = has(el, "fill");
-    const fill = get(el, "fill");
-
-    const shouldFill = !hasFill || (hasFill && fill !== "none");
-
-    const line: ExcalidrawLine = {
-      ...createExLine(relativePoints.concat(shouldFill ? [[0, 0]] : [])),
-      ...getGroupAttrs(groups),
-      ...presAttrsToElementValues(el),
-      x,
-      y,
-      width,
-      height,
-    };
-
-    scene.elements.push(line);
-
-    walk(args, args.tw.nextNode());
-  },
-
-  rect: (args: WalkerArgs) => {
-    const { tw, scene, groups } = args;
-    const el = tw.currentNode as Element;
-
-    const x = getNum(el, "x", 0);
-    const y = getNum(el, "y", 0);
-    const w = getNum(el, "width", 0);
-    const h = getNum(el, "height", 0);
-
-    const mat = getTransformMatrix(el, groups);
-    const m = mat4.fromValues(w, 0, 0, 0, 0, h, 0, 0, 0, 0, 1, 0, x, y, 0, 1);
-
-    const result = mat4.multiply(mat4.create(), mat, m);
-
-    /*
-    NOTE: Currently there doesn't seem to be a way to specify the border
-          radius of a rect within Excalidraw. This means that attributes
-          rx and ry can't be used.
-    */
-    const isRound = el.hasAttribute("rx") || el.hasAttribute("ry");
-
-    const rect: ExcalidrawRectangle = {
-      ...createExRect(),
-      ...presAttrs(el, groups),
-      x: result[12],
-      y: result[13],
-      width: result[0],
-      height: result[5],
-      roundness: isRound ? { type: ROUNDNESS.LEGACY } : null,
-    };
-
-    scene.elements.push(rect);
-
-    walk(args, args.tw.nextNode());
-  },
-
-  path: (args: WalkerArgs) => {
-    const { tw, scene, groups } = args;
-    const el = tw.currentNode as Element;
-
-    const mat = getTransformMatrix(el, groups);
-
-    const points = pointsOnPath(get(el, "d"));
-
-    const fillColor = get(el, "fill", "black");
-    const fillRule = get(el, "fill-rule", "nonzero");
-
-    let elements: ExcalidrawLine[] = [];
-    let localGroup = randomId();
-
-    switch (fillRule) {
-      case "nonzero": {
-        let initialWindingOrder = "clockwise";
-
-        elements = points.map((pointArr, idx): ExcalidrawLine => {
-          const tPoints: Point[] = transformPoints(pointArr, mat4.clone(mat));
-          const x = tPoints[0][0];
-          const y = tPoints[0][1];
-
-          const [width, height] = dimensionsFromPoints(tPoints);
-
-          const relativePoints = tPoints.map(
-            ([_x, _y]): Point => [_x - x, _y - y],
-          );
-
-          const windingOrder = getWindingOrder(relativePoints);
-          if (idx === 0) {
-            initialWindingOrder = windingOrder;
-            localGroup = randomId();
-          }
-
-          let backgroundColor = fillColor;
-          if (initialWindingOrder !== windingOrder) {
-            backgroundColor = "#FFFFFF";
-          }
-
-          return {
-            ...createExLine(relativePoints),
-            strokeWidth: 0,
-            strokeColor: "#00000000",
-            ...presAttrs(el, groups),
-            backgroundColor,
-            width,
-            height,
-            x: x + getNum(el, "x", 0),
-            y: y + getNum(el, "y", 0),
-            groupIds: [localGroup],
-          };
-        });
-        break;
-      }
-      case "evenodd":
-        elements = points.map((pointArr, idx): ExcalidrawLine => {
-          const tPoints: Point[] = transformPoints(pointArr, mat4.clone(mat));
-          const x = tPoints[0][0];
-          const y = tPoints[0][1];
-
-          const [width, height] = dimensionsFromPoints(tPoints);
-
-          const relativePoints = tPoints.map(
-            ([_x, _y]): Point => [_x - x, _y - y],
-          );
-
-          if (idx === 0) {
-            localGroup = randomId();
-          }
-
-          return {
-            ...createExLine(relativePoints),
-            ...presAttrs(el, groups),
-            width,
-            height,
-            x: x + getNum(el, "x", 0),
-            y: y + getNum(el, "y", 0),
-          };
-        });
-        break;
-      default:
-    }
-
-    scene.elements = scene.elements.concat(elements);
-
-    walk(args, tw.nextNode());
-  },
-};
-
-export function walk(args: WalkerArgs, nextNode: Node | null): void {
-  if (!nextNode) {
+  parent: SVGContext,
+  state: SVGConversionState,
+  depth: number,
+  referenced = false,
+  instanceSize?: { width: number; height: number },
+): void {
+  if (depth > 128 || ++state.nodes > 20000)
+    throw Error("SVG expansion limit exceeded");
+  const tag = el.localName;
+  if (metadata.has(tag) || (definitions.has(tag) && !referenced)) return;
+  if (omitted.has(tag)) {
+    state.warnings.add("unsupported");
     return;
   }
-
-  const nodeName = nextNode.nodeName as keyof typeof walkers;
-  if (walkers[nodeName]) {
-    walkers[nodeName](args);
+  const style = resolveStyle(el, parent.style, state);
+  if (style.display === "none") return;
+  const ownOpacity = alpha(style.opacity);
+  const context: SVGContext = {
+    ...parent,
+    style,
+    opacity: parent.opacity * ownOpacity,
+    matrix: multiply(parent.matrix, parseTransform(style.transform ?? "")),
+  };
+  if (tag === "svg" || tag === "symbol") {
+    const box = el.hasAttribute("viewBox")
+      ? numbers(el.getAttribute("viewBox"))
+      : null;
+    if (box && (box.length !== 4 || box[2] <= 0 || box[3] <= 0))
+      throw Error("Invalid SVG viewBox");
+    const isRoot = depth === 0;
+    const width =
+      instanceSize?.width ??
+      length(
+        el.getAttribute("width"),
+        box?.[2] ?? (isRoot ? 300 : parent.viewport.width),
+        parent.viewport.width,
+      );
+    const height =
+      instanceSize?.height ??
+      length(
+        el.getAttribute("height"),
+        box?.[3] ?? (isRoot ? 150 : parent.viewport.height),
+        parent.viewport.height,
+      );
+    if (width < 0 || height < 0) throw Error("Negative SVG viewport size");
+    if (!width || !height) return;
+    const x = isRoot
+        ? 0
+        : length(el.getAttribute("x"), 0, parent.viewport.width),
+      y = isRoot ? 0 : length(el.getAttribute("y"), 0, parent.viewport.height);
+    context.matrix = multiply(context.matrix, [1, 0, 0, 1, x, y]);
+    if (box)
+      context.matrix = multiply(
+        context.matrix,
+        viewportMatrix(
+          box,
+          width,
+          height,
+          el.getAttribute("preserveAspectRatio") ?? "xMidYMid meet",
+        ),
+      );
+    context.viewport = { width: box?.[2] ?? width, height: box?.[3] ?? height };
+    if (
+      (!isRoot && style.overflow !== "visible") ||
+      (el.getAttribute("preserveAspectRatio") ?? "").includes("slice")
+    )
+      state.warnings.add("viewport");
   }
+  if (tag === "use") {
+    const href = el.getAttribute("href") ?? el.getAttribute("xlink:href");
+    if (!href || !href.startsWith("#") || href.length < 2)
+      throw Error("Only document-local SVG use references are supported");
+    const target = state.ids.get(decodeURIComponent(href.slice(1)));
+    if (!target) throw Error("Missing SVG use reference");
+    if (state.references.has(target)) throw Error("Cyclic SVG use reference");
+    context.matrix = multiply(context.matrix, [
+      1,
+      0,
+      0,
+      1,
+      length(el.getAttribute("x"), 0, parent.viewport.width),
+      length(el.getAttribute("y"), 0, parent.viewport.height),
+    ]);
+    context.groups = [randomId(), ...context.groups];
+    const size = ["symbol", "svg"].includes(target.localName)
+      ? {
+          width: length(
+            el.getAttribute("width"),
+            length(
+              target.getAttribute("width"),
+              parent.viewport.width,
+              parent.viewport.width,
+            ),
+            parent.viewport.width,
+          ),
+          height: length(
+            el.getAttribute("height"),
+            length(
+              target.getAttribute("height"),
+              parent.viewport.height,
+              parent.viewport.height,
+            ),
+            parent.viewport.height,
+          ),
+        }
+      : undefined;
+    state.references.add(target);
+    try {
+      visit(target, context, state, depth + 1, true, size);
+    } finally {
+      state.references.delete(target);
+    }
+    return;
+  }
+  if (shapes.has(tag)) {
+    if (style.visibility !== "hidden" && style.visibility !== "collapse")
+      emitGeometry(el, context, state);
+    return;
+  }
+  if (!["svg", "symbol", "g", "a", "switch"].includes(tag))
+    state.warnings.add("unsupported");
+  if (tag !== "svg") context.groups = [randomId(), ...context.groups];
+  const start = state.elements.length;
+  let descendants = children(el);
+  if (tag === "switch") {
+    descendants = descendants
+      .filter(
+        (child) =>
+          !child.hasAttribute("requiredExtensions") &&
+          !child.hasAttribute("requiredFeatures") &&
+          !child.hasAttribute("systemLanguage"),
+      )
+      .slice(0, 1);
+    state.warnings.add("unsupported");
+  }
+  for (const child of descendants) visit(child, context, state, depth + 1);
+  if (ownOpacity < 1 && state.elements.length - start > 1)
+    state.warnings.add("compositing");
+}
+
+/** Converts one parsed SVG document without publishing anything to EA or the scene. */
+export function walkSVG(root: Element, state: SVGConversionState): void {
+  collect(root, state);
+  readStyleRules(root, state);
+  visit(
+    root,
+    {
+      matrix: identity,
+      style: initialStyle,
+      opacity: 1,
+      groups: [],
+      viewport: { width: 300, height: 150 },
+    },
+    state,
+    0,
+  );
+  const box = root.hasAttribute("viewBox")
+    ? numbers(root.getAttribute("viewBox"))
+    : null;
+  const width = length(root.getAttribute("width"), box?.[2] ?? 300, 300),
+    height = length(root.getAttribute("height"), box?.[3] ?? 150, 150);
+  if (exceedsViewport(state.elements, width, height))
+    state.warnings.add("viewport");
 }

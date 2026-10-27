@@ -23,6 +23,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 - Added opt-in image inventory, bounded image labels/tags, mixed-fidelity SVG/PNG previews and output limits. Originals remain untouched and full fidelity stays the default. [#3004](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3004)
 
 ## Fixed
+- SVG-to-stroke imports preserve inherited colors, transparency, open lines, transparent holes and SVG transforms more faithfully. Unsupported features and approximations produce a notice; failed imports leave the drawing untouched. [#3018](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3018)
 - Text elements keep their full text when a linter removes blank lines between entries. [#3013](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3013)
 - Edited LaTeX formulas immediately respond to clicks across their new size. [#3014](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3014)
 - Editing a resized Markdown image keeps its canvas size. Untouched images still grow with their content. Changing the editor's **Width** setting updates every copy sharing that image, preserving cropped copies without distortion. Cropped Markdown images save correctly. [#2947](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2947)

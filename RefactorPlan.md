@@ -27,6 +27,7 @@ validated, and what remains uncertain.
 | Phase | Status | Current outcome |
 | --- | --- | --- |
 | Assessment and baseline design | Complete | Initial architecture, risks, sequencing, and validation matrix documented |
+| SVG import fidelity (#3018) | Implemented; 51 source tests and macOS native feature checks pass; strict error gate fails on unattributed ResizeObserver notifications | Native paint/inheritance/alpha, compound fill topology with real holes, adaptive transformed curves, viewports and local reuse replace the partial traversal. Actual Obsidian catalog: 1,935 Lucide-prefixed IDs and 47 other registered IDs; five supplied SVGs remain unchanged. Main/popout command and EA insertion, edits, history, clipboard, exports, save/reopen and plugin reload pass. Group compositing, stroke approximations, unsupported content and measured geometry costs are explicit in the support matrix and validation report |
 | Cropped shared Markdown images in #3015 | Implemented; 32 geometry/parser/save tests and native crop/save/export/reopen checks pass; known ResizeObserver error gate remains | Width changes remap each sibling crop to the new SVG; content refreshes retain its pixel viewport and canvas scale. Edge crops stay finite, crop-only changes invalidate caches, and PDF-link synchronization skips local Markdown/equation images |
 | Shared Markdown editor width in #3015 | Implemented; 21 geometry tests and native duplicate/edit/reopen checks pass | Explicit editor Width changes apply new intrinsic bounds to every element with the same file ID. Content-only renders retain per-element canvas resizes; the sibling-only preservation override is removed |
 | Native provider frame insertion in #2992 | Implemented; 147 source tests and 30 native provider checks pass; known ResizeObserver error gate remains | DropManager forwards an owning-window URL-only DataTransfer to the component. Excalidraw owns provider sizing, insertion and native history; original browser data may expire without losing the selected URL |
@@ -2616,3 +2617,44 @@ Remaining manual focus: repeat the physical crop-tool/uncropped-sibling Width
 sequence, widen and narrow the table, then save/reopen and export. Compare a
 cropped file-backed PDF and a rotated/flipped image. Popout crop editing,
 Windows/Linux and physical mobile require separate coverage.
+
+### 2026-10-27 — Improve SVG-to-native conversion fidelity (#3018)
+
+Replaced the old partial traversal with bounded rendering-tree, style, affine
+geometry and compound-fill stages. Inheritance and independent paint alpha now
+retain SVG defaults and genuine zero opacity. Open strokes stay open; native
+compound fills expose underlying content through real holes rather than white
+patches. Adaptive transformed curves preserve endpoints/details. Local reuse
+retains entire referenced groups and fresh identities. Fatal errors stage no
+workbench changes, and the dialog checks conversion/editor identity and always
+releases its temporary EA. The synchronous boolean public API and SVG-as-image
+path remain intact. No fork change, new scene contract or icon product API.
+
+The pinned baseline was captured before edits. All 51 source regressions pass,
+including independent winding checks and dense outlines. The native macOS lane
+imports all 1,982 actual registered Obsidian SVGs (1,935 Lucide-prefixed IDs),
+verifies five supplied originals remain unchanged, and compares 19 cases on five
+backgrounds. Main/popout command/EA insertion, edit/group/history/clipboard,
+SVG/PNG export, save/reopen, SVG-as-image and plugin reload checks pass. The
+strict error gate still fails on previously observed, unattributed ResizeObserver
+notifications; no claim of harmlessness or origin is made. The full report keeps
+those errors. Production/library builds, four bundle checks, 32 inherited image,
+147 drop and 11 runner tests pass. Focused lint is clean; full lint retains 119
+errors versus 120 at baseline. Madge is unavailable because the binary is absent.
+
+The support matrix explicitly documents unsupported text/effects, group/object
+compositing, stroke and viewport approximations. Curve fidelity increases point
+counts and some import/export costs; the colored brain grew from 2,367 to 5,723
+points and native element JSON from 122,810 to 250,725 bytes. Measured API time
+grew from 32.4 to 113.2 ms in one run; this is not a paint/interaction benchmark.
+The tested production main.js is 5,006,500 bytes, leaving 236,380 bytes below
+the release target. Detailed corpus/hashes and measurements are recorded in
+`docs/SVG_IMPORT_VALIDATION.md`; private samples/previews stay local.
+
+Highest-probability remaining manual risks: native editing of decomposed complex
+fills and cost when importing many curved files. Compare a supplied rocket and
+brain on dark/transparent backgrounds, recolor fill/outline pieces, then resize,
+rotate, Undo, save/reopen and export in main and popout windows. Adding a visible
+stroke to a holed fill can expose bridge edges; edit the separate outline pieces.
+Overlapping group opacity remains approximate. Windows/Linux, restored popouts,
+cold application startup and physical mobile gestures require separate coverage.

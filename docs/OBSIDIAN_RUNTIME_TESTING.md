@@ -380,6 +380,31 @@ share immutable backing storage; this is not a benchmark of 570 MB of independen
 decoded real images, regenerated-equal payloads, peak memory or UI responsiveness.
 Those measurements still require an image-heavy drawing copy in the test vault.
 
+For SVG-to-native conversion fidelity (#3018), run:
+
+```bash
+npm run test:svg-import
+npm run verify:obsidian:plugin -- --svg-import
+```
+
+Use `npm.cmd` in PowerShell. This lane reads the test vault's `TestAssets/*.svg`
+without changing them, verifies before/after hashes, and imports every actual
+installed Obsidian `getIconIds()`/`getIcon()` SVG. Its temporary owned module is
+unloaded/deleted afterward; no icon catalog or native CLI operation is added to
+the product. Original samples and generated previews remain local.
+
+The runner reconstructs the old converter from pinned Git source and compares
+source-browser rendering, old native output and new native output on five
+backgrounds. Self-authored fixtures cover holes, overlaps, opacity and known-good
+primitives. Main/popout checks exercise command and EA insertion, scripted edits,
+grouping, native public history actions, clipboard between disposable drawings,
+SVG-as-image insertion, exports, save/reopen and plugin reload. Scripted transforms
+do not establish physical pointer/touch behavior. Approximate group compositing
+and unsupported text are reported separately from fidelity passes. See
+[the measured corpus, costs and remaining limits](SVG_IMPORT_VALIDATION.md).
+The runner continues to fail its strict JavaScript-error gate if it captures the
+previously observed, unattributed ResizeObserver notification; it does not hide it.
+
 For LaTeX dialog input and window ownership (#2970), run:
 
 ```bash

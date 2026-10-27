@@ -97,14 +97,12 @@ export function createExEllipse(): ExcalidrawEllipse {
   };
 }
 
-/** SVG shapes converted to a "line" element are always closed, fillable
- * regions (the polygon feature didn't exist yet when this module was
- * written; every caller wants `polygon: true`). */
-export function createExLine(points: readonly Point[] = []): ExcalidrawLine {
+/** Creates an open stroke or an explicitly closed, fillable native polygon. */
+export function createExLine(points: readonly Point[] = [], polygon = false): ExcalidrawLine {
   return {
     ...createExElement(),
     type: "line",
-    polygon: true,
+    polygon,
     points: points.map(toLocalPoint),
     startBinding: null,
     endBinding: null,
