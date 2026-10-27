@@ -3,19 +3,41 @@
  * runtime-only artifact copy must not conceal drift in the published types.
  */
 import assert from "node:assert/strict";
+import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import test from "node:test";
 import ts from "typescript";
 
 const root = resolve(import.meta.dirname, "../..");
 
-test("plugin host and public Mermaid declarations match the installed fork", () => {
+const typesSource = process.env.EXCALIDRAW_TEST_FORK_TYPES_ROOT ? "generated local" : "installed";
+test(`plugin host and public Mermaid declarations match the ${typesSource} fork`, () => {
   const configPath = resolve(root, "tsconfig.json");
   const config = ts.readConfigFile(configPath, ts.sys.readFile);
   assert.equal(config.error, undefined);
   const parsed = ts.parseJsonConfigFileContent(config.config, ts.sys, root);
   assert.deepEqual(parsed.errors, []);
   const options = { ...parsed.options, noEmit: true, skipLibCheck: true };
+  // Local artifact handoffs must check the matching generated declarations,
+  // rather than accidentally validating only the older installed package.
+  if (process.env.EXCALIDRAW_TEST_FORK_TYPES_ROOT) {
+    const fork = resolve(process.env.EXCALIDRAW_TEST_FORK_TYPES_ROOT);
+    const pkg = resolve(fork, "packages/excalidraw");
+    const types = resolve(pkg, "types");
+    assert.ok(existsSync(resolve(types, "excalidraw/obsidianExcalidrawHost.d.ts")), "Build the fork declarations first");
+    options.paths = { ...options.paths,
+      "@zsviczian/excalidraw": [resolve(types, "excalidraw/index.d.ts")],
+      "@zsviczian/excalidraw/*": [resolve(pkg, "*")],
+      "@excalidraw/excalidraw/*": [resolve(types, "excalidraw/*")],
+      "@excalidraw/excalidraw/element/*": [resolve(types, "element/src/*")],
+      "@excalidraw/mermaid-to-excalidraw": [resolve(fork, "node_modules/@excalidraw/mermaid-to-excalidraw/dist/index.d.ts")],
+      "@excalidraw/mermaid-to-excalidraw/*": [resolve(fork, "node_modules/@excalidraw/mermaid-to-excalidraw/*")],
+    };
+    for (const name of ["common", "element", "math", "utils"]) {
+      options.paths[`@excalidraw/${name}`] = [resolve(types, `${name}/src/index.d.ts`)];
+      options.paths[`@excalidraw/${name}/*`] = [resolve(types, `${name}/src/*`)];
+    }
+  }
   const fixturePath = resolve(root, "scripts/testing/hostContracts.fixture.ts");
   const source = `
     import type ExcalidrawPlugin from "../../src/core/main";

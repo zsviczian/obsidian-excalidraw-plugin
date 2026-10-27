@@ -15,7 +15,7 @@ const REQUIRED_EXTRAS_VERSIONS: Record<
 > = {
   plugin: { min: "0.0.15" },
   mathjax: { min: "1.1.0" },
-  mermaid: { exact: "2.2.2" },
+  mermaid: { exact: "3.0.0" },
   pdf: { min: "1.0.0" },
   filesystem: { min: "1.0.0" },
 };

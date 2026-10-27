@@ -103,6 +103,14 @@ const report = await runObsidianSmoke({
       for (const name of FORK_ARTIFACTS) {
         if (!existsSync(join(sourceDir, name))) throw new Error(`Fork build did not produce ${name}`);
       }
+      const contracts = spawnNativeSync(process.execPath,
+        [join(pluginRoot, "scripts/testing/hostContracts.test.mjs")], {
+          cwd: pluginRoot, encoding: "utf8", timeout: 120_000,
+          env: { ...process.env, EXCALIDRAW_TEST_FORK_TYPES_ROOT: forkRoot },
+        });
+      if (contracts.error || contracts.status !== 0) {
+        throw new Error(`Local fork declaration contract failed: ${contracts.error?.message || contracts.stderr || contracts.stdout}`);
+      }
       mkdirSync(installedDir, { recursive: true });
     }
     const hashes = {};

@@ -27,6 +27,7 @@ validated, and what remains uncertain.
 | Phase | Status | Current outcome |
 | --- | --- | --- |
 | Assessment and baseline design | Complete | Initial architecture, risks, sequencing, and validation matrix documented |
+| Coordinate PR #475 Mermaid 3/Pele | Implemented; local paired builds and Windows native main/popout/offline checks pass | Extras supplies converter/component 3.0.0; the plugin enforces that exact version. Preserve protocol-2 loaded/api and editable image source, and check generated local declarations before artifact copying. Published-package release, physical mobile and other platform/cold-start gates remain |
 | SVG import fidelity (#3018) | Implemented; 51 source tests and macOS native feature checks pass; strict error gate fails on unattributed ResizeObserver notifications | Native paint/inheritance/alpha, compound fill topology with real holes, adaptive transformed curves, viewports and local reuse replace the partial traversal. Actual Obsidian catalog: 1,935 Lucide-prefixed IDs and 47 other registered IDs; five supplied SVGs remain unchanged. Main/popout command and EA insertion, edits, history, clipboard, exports, save/reopen and plugin reload pass. Group compositing, stroke approximations, unsupported content and measured geometry costs are explicit in the support matrix and validation report |
 | Cropped shared Markdown images in #3015 | Implemented; 32 geometry/parser/save tests and native crop/save/export/reopen checks pass; known ResizeObserver error gate remains | Width changes remap each sibling crop to the new SVG; content refreshes retain its pixel viewport and canvas scale. Edge crops stay finite, crop-only changes invalidate caches, and PDF-link synchronization skips local Markdown/equation images |
 | Shared Markdown editor width in #3015 | Implemented; 21 geometry tests and native duplicate/edit/reopen checks pass | Explicit editor Width changes apply new intrinsic bounds to every element with the same file ID. Content-only renders retain per-element canvas resizes; the sibling-only preservation override is removed |
@@ -2658,3 +2659,59 @@ rotate, Undo, save/reopen and export in main and popout windows. Adding a visibl
 stroke to a holed fill can expose bridge edges; edit the separate outline pieces.
 Overlapping group opacity remains approximate. Windows/Linux, restored popouts,
 cold application startup and physical mobile gestures require separate coverage.
+
+
+### 2026-10-27 - Coordinate upstream PR #475 Mermaid 3/Pele
+
+Fork merge `c63957aececa4886f75c4861bb9054251b0a09a5` (PR #475) adopts
+converter 3/Pele, upstream bound-label metrics and CPU PNG export. The existing Extras Mermaid module now pins and advertises 3.0.0;
+the plugin's exact-version gateway requires it. Remove Extras' obsolete Mermaid
+engine override. Pele remains Extras-provided; no Obsidian 1.15 API is used.
+Release versions and the plugin's exact fork dependency remain unchanged.
+
+Preserve the host/public loaded/api contract and protocol 2. The fork copies
+readonly image skeletons while retaining editable customData.mermaidText and
+moves refreshAllArrows' midpoint flag to upstream's transient option argument.
+The first declaration build caught both integration issues. The native local
+handoff now checks real plugin producer/adapter/bridge types against generated
+fork declarations, in addition to the installed-package prebuild check; this
+prevents runtime-only copying from hiding another #472 declaration mismatch.
+
+Seventy-three focused fork tests, the CPU canvas test, nineteen plugin
+contract/bundle/runner tests, four actual Extras converter tests, and both
+installed/local type-contract modes pass. Production and public-library builds
+pass; development retains the same five existing CLI/view type warnings.
+Extras production and API builds pass. Focused lint is clean. Production
+main.js is 5,012,218 bytes, leaving 230,662 bytes below 5 MiB; the final rebuild
+matches the native-tested SHA-256
+343b6b7f28afac462d97731cca90e30e0ed04ab6dc7d24af36778b3941aff07d.
+
+Windows Obsidian 1.14.5 in excalidraw-test passes core authoring/history/wheel/
+grouped-link checks, the extended main/popout decoded-image and SVG/PNG export
+matrix, and forty-one real-Extras Mermaid checks with the main renderer forced
+offline. All twelve baseline diagram kinds convert; seven still emit images,
+so source metadata remains required. Selected-source preview in both windows,
+EA insertion, public loader shape and byte-preserving save/reopen pass. Error
+collection and owned-fixture cleanup pass. Local reports are tmp/pr475-native-core,
+tmp/pr475-native-popout and tmp/pr475-mermaid-native in this repository.
+
+Full fork typecheck retains three baseline test diagnostics. Required
+snapshot-update testing reports 81 passing/80 failing suites, 1,242 passing/
+1,476 failing tests, 47 skipped, one todo and three errors. Generated snapshot
+changes were restored from the merge index. The eight transform snapshot
+failures reproduce on the exact pre-merge parent. No broad green suite is
+claimed. The unrelated SVG corpus scenario could not run without TestAssets;
+relevant image/export checks were rerun separately and passed.
+
+Highest-probability remaining risk: complex existing Mermaid syntax/config and
+label layout after changing engines. Edit saved native/image diagrams, submit
+and cancel, retry invalid syntax, Undo/Redo, export and save/reopen in main and
+restored popouts. Repeat bound-label align/resize/rebind with Markdown source.
+Physical mobile, macOS/Linux and cold application restart remain separate
+validation environments. The fork review dev-docs/Obsidian/pr-475-merge-review.md
+records all 72 incoming paths, fingerprints, decisions and limitations.
+
+This is an unpublished local-artifact integration checkpoint. Publish the next
+fork and Extras releases, install the plugin's updated exact fork dependency,
+and repeat published-byte verification before release. Companion source is
+left local; no companion commit or package publication is performed.

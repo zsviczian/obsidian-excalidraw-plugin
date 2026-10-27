@@ -18,6 +18,9 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
 "2.29.1": `
+## Mermaid diagrams
+- Mermaid conversion now uses Pele through Excalidraw Extras. Update Extras to a build providing Mermaid component 3.0.0. Existing Mermaid image source remains editable.
+
 ## Excalidraw CLI
 - Fixed image-heavy drawing revisions without concatenating image data, and corrected image-insertion scale validation. Refused operations can retry the same request ID only when no work started. [#3004](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3004)
 - Added opt-in image inventory, bounded image labels/tags, mixed-fidelity SVG/PNG previews and output limits. Originals remain untouched and full fidelity stays the default. [#3004](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3004)
