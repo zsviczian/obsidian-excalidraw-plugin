@@ -15,6 +15,12 @@ const EMBEDDABLE_MDCUSTOMPROPS = `type EmbeddableMDCustomProps = {<br>useObsidia
 
 export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
+    field: "addLucideIcon",
+    after: "",
+    code: "addLucideIcon(options: LucideIconOptions): LucideIconResult;",
+    desc: "Synchronously appends one installed Lucide icon (database or lucide-database) to this workbench as a fresh outer group. Options: icon, x/y (nominal viewport origin, default 0), size (longest side, default 96), strokeColor/roughness/opacity (EA style defaults), strokeWidth (optional final scene units). Returns canonical icon, groupId, elementIds, warnings and viewport. Throws atomically for invalid/unknown/empty/omitted geometry. Does not insert, save, clear, change style or create image assets; call addElementsToView separately. Later resizing follows normal group behavior.",
+  },
+  {
     field: "importSVG",
     code: "importSVG(svgString: string): boolean;",
     desc: "Synchronously appends editable SVG geometry to this EA workbench. Does not insert, save or clear existing elements. Returns false without appending on malformed, unsafe or excessive input. Some SVG features import with approximation/omission notices: see src/shared/svgToExcalidraw/readme.md. Call addElementsToView() separately to insert.",

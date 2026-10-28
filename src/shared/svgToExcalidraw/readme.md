@@ -40,7 +40,7 @@ picker, icon catalog API, new CLI operation, or insertion preset.
 | Local references | `<defs>` and `<use>` including referenced groups/SVG/symbol viewports, instance dimensions and inherited styling. Repeated instances have fresh identities. Missing, cyclic and external references fail conversion. |
 | Group/object compositing | **Approximation with a notice.** Native groups do not isolate paint into an offscreen compositing layer. Child opacity multiplication cannot reproduce overlapping group opacity; separately emitted fill/stroke or subpath strokes can also differ under object opacity. These are not counted as exact fidelity passes. |
 | Stroke semantics | Native round caps/joins and preset dashed styles. Other cap/join/dash patterns and nonuniform stroke scaling are approximations with a notice. `non-scaling-stroke` retains its constant width; zero-length round-cap strokes become editable dots. |
-| Local CSS limits | Simple tag/class/ID compounds and descendant selectors. Advanced selectors, at-rules, `!important`, CSS variables and geometric CSS properties are diagnosed. Variables/unsupported rules are not evaluated against the host document. No external stylesheet is loaded. |
+| Local CSS limits | Simple tag/class/ID compounds and descendant selectors, with lexicographic ID/class/type specificity and source order for ties. Repeated selectors cannot carry into a higher specificity component. Advanced selectors, at-rules, `!important`, CSS variables and geometric CSS properties are diagnosed. Variables/unsupported rules are not evaluated against the host document. No external stylesheet is loaded. |
 | Clipping, gradients, patterns, filters, blending, markers | Unsupported effects/paint are diagnosed and omitted. Viewport clipping is not destructively applied to native geometry; nested/slice viewports and painted bounds outside the outer viewport produce a notice. |
 | Text and embedded images | Omitted with a notice. Import the SVG as an image when preserving these unsupported features matters more than native editability. |
 
@@ -49,6 +49,10 @@ stroke colors recolor original outline pieces. Roughness, grouping, ungrouping,
 duplication, ordinary transforms, native Undo/Redo, clipboard, and exports operate
 on standard elements. Adding a new visible stroke to a holed fill polygon can
 expose its bridge edges; use its separate outline pieces for stroke editing.
+
+Opacity notices also cover `<use>` instances, including nested references, when
+their own opacity affects multiple emitted pieces. This diagnoses the existing
+per-piece approximation; it does not introduce isolated group compositing.
 
 ## Input and resource limits
 

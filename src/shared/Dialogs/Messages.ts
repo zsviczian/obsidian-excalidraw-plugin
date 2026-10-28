@@ -18,15 +18,19 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
 "2.29.1": `
+## New
+- **Insert Lucide icon** opens a searchable sidepanel from the command palette or image menu. Insert editable grouped strokes at the visible canvas center in small, medium or large sizes, using the drawing's current color, roughness and opacity. [#3019](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/3019)
+
 ## Mermaid diagrams
 - Mermaid conversion now uses Pele through Excalidraw Extras. Update Extras to a build providing Mermaid component 3.0.0. Existing Mermaid image source remains editable.
 
 ## Excalidraw CLI
+- Discover installed Lucide names with \`icons\`, then insert native groups through \`create.icons\` or \`apply\`'s \`lucide\` operation. Returned \`groupMap\` handles include every member ID; ordinary icon insertion needs no trusted script. [#3019](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/3019)
 - Fixed image-heavy drawing revisions without concatenating image data, and corrected image-insertion scale validation. Refused operations can retry the same request ID only when no work started. [#3004](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3004)
 - Added opt-in image inventory, bounded image labels/tags, mixed-fidelity SVG/PNG previews and output limits. Originals remain untouched and full fidelity stays the default. [#3004](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3004)
 
 ## Fixed
-- SVG-to-stroke imports preserve inherited colors, transparency, open lines, transparent holes and SVG transforms more faithfully. Unsupported features and approximations produce a notice; failed imports leave the drawing untouched. [#3018](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3018)
+- SVG-to-stroke imports preserve inherited colors, transparency, open lines, transparent holes and SVG transforms more faithfully. Local CSS keeps ID/class/tag precedence even with repeated selectors; opacity approximation notices include reused SVG groups. Unsupported features and approximations produce a notice; failed imports leave the drawing untouched. [#3018](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3018)
 - Text elements keep their full text when a linter removes blank lines between entries. [#3013](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3013)
 - Edited LaTeX formulas immediately respond to clicks across their new size. [#3014](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3014)
 - Editing a resized Markdown image keeps its canvas size. Untouched images still grow with their content. Changing the editor's **Width** setting updates every copy sharing that image, preserving cropped copies without distortion. Cropped Markdown images save correctly. [#2947](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2947)
@@ -35,6 +39,10 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 - **Settings backup noise.** Settings are now written with canonically sorted keys and unchanged saves are skipped, ending the endless data.json rewrite loop that flooded Obsidian Git vault backups with no-change commits.
 
 ## Excalidraw Automate
+- Construct a grouped editable Lucide icon in the EA workbench without opening or saving a drawing. Defaults use the EA style; size is the longest nominal viewport side and strokeWidth is an optional final scene width. Returns group/member IDs and approximation warnings; call addElementsToView separately. [#3019](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/3019)
+\`\`\`ts
+addLucideIcon(options: LucideIconOptions): LucideIconResult;
+\`\`\`
 - Mindmap Builder is now distributed as a readable script, with its modular source maintained in the EA Scripts workspace. Closing its sidepanel no longer lets delayed hotkey callbacks affect a newly opened instance.
 - Mindmap Builder's existing Paste action can attach a natively copied branch while preserving its links, images, and grouped notes. [#2996](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2996)
 - Closing or docking a script input with an open link suggester no longer leaves Enter intercepted in Markdown editors. Mindmap Builder also releases hotkey recording and overrides when it closes.

@@ -73,6 +73,37 @@ types are rectangle, ellipse, diamond, text, arrow, line, frame, and stickynote.
 Arrow `start`/`end` bindings and frame `children` reference IDs in their batch.
 Frames require children and cannot nest. Use `connect` for existing endpoints.
 
+## Native Lucide icons
+
+Check `status` for `lucideIcons`, then use `icons query=database limit=50` to
+discover the installed Obsidian catalog. Discovery is read-only and paginated;
+reuse its `revision` for later pages. Custom registered icons are excluded.
+Inspect `schema action=create` and `schema action=apply` before authoring.
+
+`create` accepts an `icons` array alongside `elements`. Each entry requires a
+unique request-local `id` and an installed `icon` name, for example:
+
+```json
+{"id":"storage","icon":"database","x":240,"y":0,"size":96,"roughness":0}
+```
+
+`apply` accepts the same fields with `"op":"lucide"`, using the usual live
+revision guard and save receipt. Defaults are x/y 0, size 96, stroke color
+`#1e1e1e`, roughness 1 and opacity 100. `size` is the longest nominal viewport
+dimension in scene units; 48/96/192 match the picker presets. The installed SVG
+stroke scales with size (normally 4/8/16); optional `strokeWidth` overrides the
+final scene width. Aspect ratio and internal padding are preserved.
+
+Each icon expands to editable native elements in a fresh outer group. The
+response `data.groupMap[id]` contains `icon`, `groupId`, `elementIds`, `warnings`
+and nominal `viewport`; `createdIds` includes every member. `idMap` retains
+single-element aliases. Group aliases cannot be used as a single binding or
+update target: use returned member IDs. Aliases must be unique across shapes,
+icons and existing element IDs. All icons stage before publication; an unknown,
+empty or incompletely convertible icon rejects the request. No image or vault
+attachment is created. Expanded scene limits are 5,000 elements and 100,000
+linear points, including existing/template content.
+
 To edit, copy the current live `data.revision` and actual IDs into a new request:
 
 ```json
@@ -108,6 +139,7 @@ not every later human edit. A handoff is not reported as durable.
 | `imageMetadata` | `id`, `label` (1–80 characters or `null` to clear), `tags` (up to 12 unique short strings or `null`) |
 | `image` | `asset`: exact vault PNG/JPEG/GIF/WebP/SVG; optional `id`, `x`, `y`, `scale` (boolean) |
 | `latex` | `text`; optional `id`, `x`, `y`, `scaleX`, `scaleY`; requires compatible enabled Extras MathJax |
+| `lucide` | `id`, `icon`; optional `x`, `y`, `size`, `strokeColor`, `strokeWidth`, `roughness`, `opacity`; returns `groupMap` |
 
 `update` accepts x/y/width/height/angle, strokeColor/backgroundColor/fillStyle,
 strokeWidth/strokeStyle/roughness/opacity, locked/link, and text/fontSize/fontFamily/

@@ -257,6 +257,19 @@ export default {
   UNIVERSAL_ADD_FILE: "Insertar CUALQUIER archivo",
   // Compatibility keys consumed by upstream Excalidraw via ExcalidrawPlugin.getLabel().
   // Keep this group in sync across maintained locales.
+  // Lucide icon picker
+  INSERT_LUCIDE_ICON: "Insertar icono de Lucide",
+  LUCIDE_SEARCH: "Buscar iconos",
+  LUCIDE_SIZE: "Tamaño del icono",
+  LUCIDE_SMALL: "Pequeño (48)",
+  LUCIDE_MEDIUM: "Mediano (96)",
+  LUCIDE_LARGE: "Grande (192)",
+  LUCIDE_PREVIOUS: "Anterior",
+  LUCIDE_NEXT: "Siguiente",
+  LUCIDE_EMPTY: "No hay iconos coincidentes.",
+  LUCIDE_NO_DRAWING: "Selecciona un dibujo editable de Excalidraw para insertar un icono.",
+  LUCIDE_APPROXIMATION: "El icono usa una representación nativa aproximada del trazo o la opacidad.",
+  LUCIDE_INSERT_FAILED: "No se pudo completar la inserción del icono. Revisa el dibujo y guarda los cambios pendientes antes de reintentar.",
   INSERT_CARD: "Agregar tarjeta al reverso-de-la-nota",
   COMP_IMG: "Imágenes y archivos",
   COMP_IMG_FROM_SYSTEM: "Importar desde el sistema",

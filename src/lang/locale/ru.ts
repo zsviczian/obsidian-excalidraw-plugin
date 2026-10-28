@@ -246,6 +246,19 @@ export default {
   UNIVERSAL_ADD_FILE: "Вставка ЛЮБОГО файла",
   // Compatibility keys consumed by upstream Excalidraw via ExcalidrawPlugin.getLabel().
   // Keep this group in sync across maintained locales.
+  // Lucide icon picker
+  INSERT_LUCIDE_ICON: "Вставить значок Lucide",
+  LUCIDE_SEARCH: "Поиск значков",
+  LUCIDE_SIZE: "Размер значка",
+  LUCIDE_SMALL: "Маленький (48)",
+  LUCIDE_MEDIUM: "Средний (96)",
+  LUCIDE_LARGE: "Большой (192)",
+  LUCIDE_PREVIOUS: "Назад",
+  LUCIDE_NEXT: "Далее",
+  LUCIDE_EMPTY: "Подходящих значков нет.",
+  LUCIDE_NO_DRAWING: "Выберите редактируемый рисунок Excalidraw для вставки значка.",
+  LUCIDE_APPROXIMATION: "Значок использует приближённое представление обводки или прозрачности.",
+  LUCIDE_INSERT_FAILED: "Не удалось завершить вставку значка. Проверьте рисунок и сохраните изменения перед повторной попыткой.",
   INSERT_CARD: "Добавить сноски",
   CONVERT_CARD_TO_FILE: "Переместить сноску в файл",
   ERROR_TRY_AGAIN: "Пожалуйста, попробуйте еще раз.",

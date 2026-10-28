@@ -548,6 +548,12 @@ export class CommandManager {
     });
 
     this.addCommand({
+      id: "insert-lucide-icon",
+      name: t("INSERT_LUCIDE_ICON"),
+      callback: () => { void this.plugin.lucidePicker.open(this.plugin.activeExcalidrawView); },
+    });
+
+    this.addCommand({
       id: "excalidraw-open",
       name: t("OPEN_EXISTING_NEW_PANE"),
       callback: () => {

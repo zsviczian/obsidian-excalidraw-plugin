@@ -160,10 +160,11 @@ export class PackageManager {
     if (
       !lib ||
       typeof lib.configureObsidianExcalidrawHost !== "function" ||
-      typeof lib.OBSIDIAN_EXCALIDRAW_HOST_PROTOCOL_VERSION !== "number"
+      typeof lib.OBSIDIAN_EXCALIDRAW_HOST_PROTOCOL_VERSION !== "number" ||
+      Number(lib.OBSIDIAN_EXCALIDRAW_HOST_PROTOCOL_VERSION) !== 3
     ) {
       throw new Error(
-        "Excalidraw package is missing the package host boundary",
+        "Excalidraw package requires Obsidian host protocol 3",
       );
     }
 

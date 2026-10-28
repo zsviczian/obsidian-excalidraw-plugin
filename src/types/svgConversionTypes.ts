@@ -37,7 +37,7 @@ export type SVGConversionState = {
   rules: {
     selector: string;
     declarations: SVGStyle;
-    specificity: number;
+    specificity: readonly [ids: number, classes: number, types: number];
     order: number;
   }[];
 };

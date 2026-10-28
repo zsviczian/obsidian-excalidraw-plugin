@@ -257,6 +257,19 @@ export default {
   // Compatibility keys consumed by upstream Excalidraw via ExcalidrawPlugin.getLabel().
   // Keep this group in sync across maintained locales.
   ABOUT_LIBRARIES: "How to load libraries",
+  // Lucide icon picker
+  INSERT_LUCIDE_ICON: "Insert Lucide icon",
+  LUCIDE_SEARCH: "Search icons",
+  LUCIDE_SIZE: "Icon size",
+  LUCIDE_SMALL: "Small (48)",
+  LUCIDE_MEDIUM: "Medium (96)",
+  LUCIDE_LARGE: "Large (192)",
+  LUCIDE_PREVIOUS: "Previous",
+  LUCIDE_NEXT: "Next",
+  LUCIDE_EMPTY: "No matching icons.",
+  LUCIDE_NO_DRAWING: "Select an editable Excalidraw drawing to insert an icon.",
+  LUCIDE_APPROXIMATION: "The icon uses an approximate native stroke or opacity representation.",
+  LUCIDE_INSERT_FAILED: "Could not complete icon insertion. Inspect the drawing and save any unsaved changes before retrying.",
   INSERT_CARD: "Add back-of-note card",
   COMP_IMG: "Image & Files",
   COMP_IMG_FROM_SYSTEM: "Import from system",

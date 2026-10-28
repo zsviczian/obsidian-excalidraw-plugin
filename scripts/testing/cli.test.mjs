@@ -18,6 +18,7 @@ function harness({ supported = true, desktop = true, native = true } = {}) {
     ...(native ? { registerCliHandler: (name, desc, flags, fn) => { assert.ok(desc); assert.ok(flags); registrations.set(name, fn); } } : {}),
   };
   const mocks = {
+    'src/shared/lucideIcons': { getLucideIcons: query => ['lucide-database', 'lucide-dot', 'lucide-zap'].filter(icon => icon.includes(query.toLowerCase())).map(icon => ({ icon, name: icon.slice(7) })) },
     obsidian: { Platform: { isDesktop: desktop }, TFile: File, requireApiVersion: version => { versionChecks.push(version); return supported; } },
     'src/core/main': {}, 'src/view/ExcalidrawView': { default: View }, 'src/shared/ExcalidrawData': { ExcalidrawData: class {} },
     'src/shared/TextMode': { getTextMode() {} }, 'src/constants/constants': { VIEW_TYPE_EXCALIDRAW: 'excalidraw', nanoid: () => String(++nextId).padStart(8, '0') },
@@ -36,7 +37,7 @@ function harness({ supported = true, desktop = true, native = true } = {}) {
   }
   const protocol = load('src/core/cli/cliProtocol');
   const { ExcalidrawCLI } = load('src/core/managers/ExcalidrawCLI');
-  return { manager: new ExcalidrawCLI(plugin), protocol, elements: load('src/core/cli/cliElements'), apply: load('src/core/cli/cliApply'), exporting: load('src/core/cli/cliExport'), images: load('src/core/cli/cliImages'), dimensions: load('src/core/cli/cliImageDimensions'), dependencies: load('src/core/cli/cliDependencies'), customData: load('src/utils/elementCustomDataUtils'), plugin, registrations, versionChecks, files, View, mocks };
+  return { manager: new ExcalidrawCLI(plugin), protocol, icons: load('src/core/cli/cliIcons'), elements: load('src/core/cli/cliElements'), apply: load('src/core/cli/cliApply'), exporting: load('src/core/cli/cliExport'), images: load('src/core/cli/cliImages'), dimensions: load('src/core/cli/cliImageDimensions'), dependencies: load('src/core/cli/cliDependencies'), customData: load('src/utils/elementCustomDataUtils'), plugin, registrations, versionChecks, files, View, mocks };
 }
 const request = (command, values = {}) => ({ apiVersion: 1, command, ...values });
 
@@ -44,8 +45,39 @@ test('registration validates minimum API, optional method and desktop without bu
   for (const options of [{ supported: false }, { native: false }, { desktop: false }]) {
     const h = harness(options); h.manager.initialize(); assert.equal(h.registrations.size, 0);
   }
-  const h = harness(); h.manager.initialize(); assert.equal(h.registrations.size, 14);
+  const h = harness(); h.manager.initialize(); assert.equal(h.registrations.size, 15);
   assert.deepEqual(h.versionChecks, ['1.12.2']);
+});
+
+test('icon discovery is read-only, bounded and snapshot-paginated', async () => {
+  const h=harness();
+  const first=await h.manager.execute(request('icons',{limit:1}));
+  assert.equal(first.ok,true); assert.equal(first.mutation,'not-applied');
+  assert.equal(first.data.total,3); assert.equal(first.data.nextOffset,1);
+  const second=await h.manager.execute(request('icons',{limit:1,offset:1,revision:first.data.revision}));
+  assert.equal(second.data.icons[0].icon,'lucide-dot');
+  assert.equal((await h.manager.execute(request('icons',{limit:201}))).error.code,'INVALID_INPUT');
+  assert.equal((await h.manager.execute(request('icons',{query:'database',offset:1,revision:first.data.revision}))).error.code,'STALE_REVISION');
+  assert.equal((await h.manager.execute(request('schema',{action:'create'}))).data.jsonSchema.properties.icons.maxItems,100);
+});
+
+test('icon staging retains single-element aliases and validates aggregate expanded geometry',()=>{
+  const h=harness(), {stageCLIIcon,checkIconBudget}=h.icons;
+  const elements=[]; let sequence=0;
+  const ea={ getElements:()=>elements,addLucideIcon: options=>{
+    assert.equal(options.roughness,1); assert.equal(options.strokeColor,'#1e1e1e');
+    const id=`member-${++sequence}`;elements.push({id,type:'line',points:[[0,0],[2,2]]});
+    return {icon:'lucide-database',groupId:`group-${sequence}`,elementIds:[id],warnings:[],viewport:{x:0,y:0,width:96,height:96}};
+  }};
+  const idMap={shape:'actual-shape'},groupMap={};
+  const result=stageCLIIcon(ea,{id:'db',icon:'database'},idMap,groupMap);
+  assert.equal(groupMap.db,result); assert.deepEqual(idMap,{shape:'actual-shape'});
+  for(const id of ['db','shape','__proto__','constructor','prototype'])assert.throws(()=>stageCLIIcon(ea,{id,icon:'database'},idMap,groupMap));
+  assert.throws(()=>stageCLIIcon(ea,{id:'actual-shape',icon:'database'},idMap,groupMap,['actual-shape']));
+  assert.equal(sequence,1);
+  assert.throws(()=>checkIconBudget(Array.from({length:5001},()=>({type:'rectangle'}))));
+  assert.throws(()=>checkIconBudget([{type:'line',points:Array(100001).fill([0,0])}]));
+  assert.throws(()=>h.apply.validateOperations([{op:'lucide',icon:'database'}]));
 });
 
 test('plain JSON guards reject executable values, prototype keys, nonfinite values and excessive depth', () => {
@@ -92,7 +124,7 @@ test('portable skill stays aligned with native output and schema describes finit
   assert.equal((await h.manager.execute(request('api', { name: 'addRect' }))).data.entries[0].description, '');
   const schema = (await h.manager.execute(request('schema', { action: 'apply' }))).data.jsonSchema;
   assert.ok(schema.required.includes('expectedRevision'));
-  assert.deepEqual(schema.$defs.operation.oneOf.map(option => option.properties.op.const), ['add', 'update', 'delete', 'connect', 'group', 'ungroup', 'image', 'imageMetadata', 'latex']);
+  assert.deepEqual(schema.$defs.operation.oneOf.map(option => option.properties.op.const), ['lucide', 'add', 'update', 'delete', 'connect', 'group', 'ungroup', 'image', 'imageMetadata', 'latex']);
 });
 
 test('multiple views require explicit identity; disk ignores ambiguity and refuses view selection', async () => {

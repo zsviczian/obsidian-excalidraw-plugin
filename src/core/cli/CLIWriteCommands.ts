@@ -8,6 +8,8 @@ import { diskSnapshot, drawingFile } from "./cliTarget";
 import { applyDrawing } from "./cliApply";
 import { exportDrawing } from "./cliExport";
 import { executeScript, type PreparedCLIScript } from "./cliScripts";
+import { checkIconBudget, stageCLIIcon } from "./cliIcons";
+import type { LucideIconResult } from "src/types/lucideTypes";
 
 /** Write-specific lifecycle and exclusion, without another save queue or serializer. */
 export class CLIWriteCommands {
@@ -55,12 +57,19 @@ export class CLIWriteCommands {
     const occupied = templateSnapshot?.scene.elements.map(element => element.id) ?? [];
     check();
     const { elements, idMap } = constructBatch(request.elements ?? [], plugin.getCLIRuntime(), occupied);
-    const createdIds = elements.map(element => element.id);
+    const icons = request.icons ?? [];
+    if (!Array.isArray(icons) || icons.length > 100) throw new CLIError("INVALID_INPUT", "Expected at most 100 icons.", "icons");
+    const groupMap: Record<string, LucideIconResult> = {};
     const ea = plugin.ea.getAPI(); this.activeEAs.add(ea);
     try {
       ea.copyViewElementsToEAforEditing(elements);
+      for (const icon of icons) {
+        stageCLIIcon(ea, icon, idMap, groupMap, [...occupied, ...Object.keys(ea.elementsDict)]);
+        checkIconBudget([...(templateSnapshot?.scene.elements ?? []), ...ea.getElements()]);
+      }
+      const createdIds = ea.getElements().map(element => element.id);
       const created = await ea.create({ exactPath: path, ...(templatePath ? { templatePath } : {}), validateBeforeCreate: check, silent: true });
-      return { target: { vault: plugin.app.vault.getName(), path: created }, persistence: "saved", mutation: "applied", data: { path: created, createdIds, idMap }, warnings: this.cli.isCurrent() ? [] : ["Plugin session ended after creation; read the file back before further edits."] };
+      return { target: { vault: plugin.app.vault.getName(), path: created }, persistence: "saved", mutation: "applied", data: { path: created, createdIds, idMap, groupMap }, warnings: [...new Set(Object.values(groupMap).flatMap(icon => icon.warnings)), ...(this.cli.isCurrent() ? [] : ["Plugin session ended after creation; read the file back before further edits."])] };
     } catch (error) {
       if (error instanceof CLIError) throw error;
       if (plugin.app.vault.getAbstractFileByPath(path)) throw new CLIError("OUTCOME_UNKNOWN", "A target exists after an interrupted create.", "path", "Read back this exact path; do not create another drawing blindly.", { target: { vault: plugin.app.vault.getName(), path }, data: { path }, mutation: "unknown", persistence: "unknown" });

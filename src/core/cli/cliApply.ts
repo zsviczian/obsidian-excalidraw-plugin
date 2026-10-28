@@ -8,8 +8,11 @@ import { CLI_STYLE_FIELDS, constructBatch, fields, validateBatch, validateStyle 
 import { drawingFile, drawingView, liveIdentity } from "./cliTarget";
 import { sameCLIIdentity } from "./cliIdentity";
 import { cliImageMetadataPatch } from "src/utils/elementCustomDataUtils";
+import { checkIconBudget, CLI_ICON_FIELDS, stageCLIIcon, validateCLIIcon } from "./cliIcons";
+import type { LucideIconResult } from "src/types/lucideTypes";
 
 export const CLI_OPERATION_FIELDS: Record<string, string[]> = {
+  lucide: CLI_ICON_FIELDS,
   add: ["elements"], update: ["id", "set"], delete: ["ids", "children"],
   connect: ["id", "from", "to", "fromSide", "toSide"], group: ["ids"], ungroup: ["ids", "groupId"],
   image: ["id", "asset", "x", "y", "scale"], imageMetadata: ["id", "label", "tags"], latex: ["id", "text", "x", "y", "scaleX", "scaleY"],
@@ -32,6 +35,10 @@ export function validateOperations(input: unknown): Record<string, unknown>[] {
     const operation = object(value), op = string(operation.op, "op");
     if (!Object.hasOwn(CLI_OPERATION_FIELDS, op)) throw new CLIError("INVALID_INPUT", "Unsupported operation.", "op");
     fields(operation, ["op", ...CLI_OPERATION_FIELDS[op]]);
+    if (op === "lucide") {
+      const { op: _op, ...icon } = operation;
+      validateCLIIcon(icon);
+    }
     if (op === "add") validateBatch(operation.elements);
     if (op === "update") { string(operation.id, "id"); const set = object(operation.set, "set"); fields(set, CLI_STYLE_FIELDS); validateStyle(set); }
     if (["delete", "group", "ungroup"].includes(op)) ids(operation.ids);
@@ -71,8 +78,10 @@ export async function applyDrawing(cli: ExcalidrawCLI, request: Record<string, u
   ea.copyViewElementsToEAforEditing([...originalElements.values()]);
   if (ea.getElements().length > 5000) throw new CLIError("INVALID_INPUT", "Structured edits are limited to 5000 scene elements.");
   const lib = plugin.getCLIRuntime(), elementsMap = new Map(ea.getElements().map(element => [element.id, element])), idMap: Record<string, string> = {}, groupIds: string[] = [];
+  const groupMap: Record<string, LucideIconResult> = {};
   const resolve = (value: unknown) => {
     const id = string(value, "id"), actual = Object.hasOwn(idMap, id) ? idMap[id] : id;
+    if (Object.hasOwn(groupMap, id)) throw new CLIError("INVALID_INPUT", "Icon aliases identify groups; use returned member IDs for element operations.", "id");
     const element = Object.hasOwn(ea.elementsDict, actual) ? ea.elementsDict[actual] : null;
     if (!element || element.isDeleted) throw new CLIError("NOT_FOUND", "Operation references a missing or deleted element.", "id");
     return element;
@@ -82,14 +91,18 @@ export async function applyDrawing(cli: ExcalidrawCLI, request: Record<string, u
     if (local !== undefined) {
       const key = string(local, "id");
       if (["__proto__", "constructor", "prototype"].includes(key)) throw new CLIError("INVALID_INPUT", "Reserved local ID.", "id");
-      if (Object.hasOwn(idMap, key) || (Object.hasOwn(ea.elementsDict, key) && key !== actual)) throw new CLIError("INVALID_INPUT", "Local ID conflicts with another ID.", "id");
+      if (Object.hasOwn(idMap, key) || Object.hasOwn(groupMap, key) || (Object.hasOwn(ea.elementsDict, key) && key !== actual)) throw new CLIError("INVALID_INPUT", "Local ID conflicts with another ID.", "id");
       idMap[key] = actual;
     }
   };
   for (const operation of operations) {
     check();
     const op = operation.op;
-    if (op === "add") {
+    if (op === "lucide") {
+      const { op: _op, ...icon } = operation;
+      const result = stageCLIIcon(ea, icon, idMap, groupMap, Object.keys(ea.elementsDict));
+      for (const id of result.elementIds) elementsMap.set(id, ea.elementsDict[id]);
+    } else if (op === "add") {
       const batch = constructBatch(operation.elements, lib, Object.keys(ea.elementsDict));
       for (const [local, actual] of Object.entries(batch.idMap)) recordId(local, actual);
       ea.copyViewElementsToEAforEditing(batch.elements);
@@ -163,6 +176,7 @@ export async function applyDrawing(cli: ExcalidrawCLI, request: Record<string, u
   }
   check();
   if (ea.getElements().length > 5000) throw new CLIError("INVALID_INPUT", "Result exceeds 5000 scene elements.");
+  if (Object.keys(groupMap).length) checkIconBudget(ea.getElements());
   for (const element of ea.getElements()) {
     const original = originalElements.get(element.id);
     // EA grouping/connection helpers also edit relationships directly. Ensure
@@ -179,7 +193,7 @@ export async function applyDrawing(cli: ExcalidrawCLI, request: Record<string, u
     const durable = sameTarget && saved.acknowledgedRevision !== null && saved.acknowledgedRevision >= saved.requestedRevision;
     outcome.persistence = durable ? "saved" : ["failed", "skipped"].includes(saved.status) ? "unsaved" : "unknown";
     if (!durable) throw new CLIError("SAVE_FAILED", "Edit was published but its save was not acknowledged.", undefined, "Keep the drawing open and save/read back before further edits.", outcome);
-    return { ...outcome, revision: sameTarget ? cli.targets.revision(view) : acceptedRevision, data: { idMap, groupIds, acceptedRevision, saveStatus: saved.status }, warnings: saved.currentRevision > saved.acknowledgedRevision ? ["A later edit is still unsaved; this receipt acknowledges the applied edit only. Read a fresh revision before continuing."] : [] };
+    return { ...outcome, revision: sameTarget ? cli.targets.revision(view) : acceptedRevision, data: { idMap, groupIds, groupMap, createdIds: ea.getElements().filter(element => !originalElements.has(element.id)).map(element => element.id), acceptedRevision, saveStatus: saved.status }, warnings: [...new Set(Object.values(groupMap).flatMap(icon => icon.warnings)), ...(saved.currentRevision > saved.acknowledgedRevision ? ["A later edit is still unsaved; this receipt acknowledges the applied edit only. Read a fresh revision before continuing."] : [])] };
   } catch (error) {
     if (error instanceof CLIError && outcome.mutation === "not-applied") throw error;
     throw new CLIError(error instanceof CLIError ? error.code : "SAVE_FAILED", error instanceof CLIError ? error.message : "Edit may have been published before an interrupted save.", undefined, "Read back the drawing; preserve unsaved work before retrying.", outcome);

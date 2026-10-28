@@ -99,6 +99,8 @@ import { MonkeyPatchManager } from "./managers/MonkeyPatchManager";
 import ExcalidrawView from "../view/ExcalidrawView";
 import { ExcalidrawSidepanelView } from "../view/sidepanel/Sidepanel";
 import { CommandManager } from "./managers/CommandManager";
+import { LucideIconPicker } from "src/view/sidepanel/LucideIconPicker";
+import type { ObsidianExcalidrawHostAdapter } from "@zsviczian/excalidraw/types/excalidraw/obsidianExcalidrawHost";
 import { EventManager } from "./managers/EventManager";
 import { UniversalInsertFileModal } from "src/shared/Dialogs/UniversalInsertFileModal";
 import en from "src/lang/locale/en";
@@ -173,6 +175,7 @@ export default class ExcalidrawPlugin extends Plugin {
   private packageManager: PackageManager;
   private monkeyPatchManager: MonkeyPatchManager;
   private commandManager: CommandManager;
+  public lucidePicker: LucideIconPicker;
   private eventManager: EventManager;
   private settingsManager: PluginSettingsManager;
   private settingsTab: ExcalidrawSettingTab;
@@ -513,6 +516,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.observerManager = new ObserverManager(this);
     this.monkeyPatchManager = new MonkeyPatchManager(this);
     this.commandManager = new CommandManager(this);
+    this.lucidePicker = new LucideIconPicker(this);
     this.stencilLibraryManager = new StencilLibraryManager(this);
 
     try {
@@ -1426,7 +1430,8 @@ export default class ExcalidrawPlugin extends Plugin {
 
   //used by obsidianUtils in the Excalidraw Pacakge
   //aweful coding, but does the job
-  public runAction(action: "anyFile" | "LaTeX" | "card") {
+  public runAction(action: Parameters<ObsidianExcalidrawHostAdapter["runAction"]>[0], editorId?: string) {
+    if (action === "lucide") { this.lucidePicker.openForEditor(editorId); return; }
     if (!this.activeExcalidrawView) {
       return;
     }
