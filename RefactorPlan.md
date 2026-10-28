@@ -29,7 +29,7 @@ validated, and what remains uncertain.
 | Assessment and baseline design | Complete | Initial architecture, risks, sequencing, and validation matrix documented |
 | Template selection and cancellation (#2649, PR #3020) | Implemented; source and native selection/cancellation checks pass | A dedicated chooser returns template/blank/cancel, displays paths relative to the configured root, and initially selects explicit blank. Interactive callers resolve before folder/file/editor/leaf side effects. Public getBlankDrawing/createDrawing and EA/CLI contracts retain string/file returns and deterministic initData behavior |
 | Nested-split fullscreen (#2743, PR #3020) | Implemented; seven source tests and native lower-right split pass | Keep the complete ancestor path visible; hide surrounding siblings and restore only owned classes. Native 958x641 drawing expands to 2560x1438 and returns to identical bounds. Existing inline styles remain untouched; controls are optional and cleanup retains the entry document across migration |
-| Canvas preview scaling investigation (#2729, PR #3020) | Not reproduced on Windows Obsidian 1.14.5; no rendering change | Two nodes sharing a drawing scale independently in SVG, SVG-as-image and PNG with immersive mode on/off. Doubling one node width scales its preview by 2.0063; the other remains unchanged. Keep the issue open and preserve the measurements rather than applying the unverified proposed patch |
+| Canvas preview scaling investigation (#2729, PR #3020) | Original SVG-only behavior not reproduced on Windows Obsidian 1.14.5; unresolved | Two nodes sharing a drawing scale independently in SVG, SVG-as-image and PNG with immersive mode on/off. Doubling one node width scales its preview by 2.0063; the other remains unchanged. Tall previews clip in all modes. No speculative rendering/cache change; retain measurements and keep the issue open |
 | Native Lucide insertion (#3019) | Implemented; reviewed/simplified 2026-10-28; maintainer approved intermediate source merge | Shared atomic installed-icon conversion, grouped workbench API, reusable scoped sidepanel and native CLI discovery/create/apply; CLI skill remains on cli-image-efficiency. Grid click delegation replaces per-page components/listeners. Protocol-3 fork publication and exact dependency installation are deferred by the maintainer and remain required before plugin release. See docs/LUCIDE_ICON_VALIDATION.md |
 | SVG import follow-ups (#3018) | Implemented; 55 source tests and full Windows native SVG lane pass | CSS specificity compares ID/class/type counts without carrying; direct/nested translucent use instances now report the existing compositing approximation. Windows Obsidian 1.14.5, installed component 0.18.145 artifacts: 1,992 nonempty icon conversions, five unchanged supplied SVGs, 95 appearance comparisons, main/popout editor checks, reload, clean JavaScript-error gate and cleanup. CLI skill updated on its existing cli-image-efficiency branch |
 | Coordinate PR #475 Mermaid 3/Pele | Implemented; local paired builds and Windows native main/popout/offline checks pass | Extras supplies converter/component 3.0.0; the plugin enforces that exact version. Preserve protocol-2 loaded/api and editable image source, and check generated local declarations before artifact copying. Published-package release, physical mobile and other platform/cold-start gates remain |
@@ -2876,3 +2876,27 @@ five maintained locales. Highest-probability remaining risk: uncommon callers
 that open nested dialogs; repeat annotation/NewFileActions interactively and
 check physical mobile focus/touch. Final combined native evidence is recorded in
 docs/WORKFLOW_FIXES_VALIDATION.md; no scene/dependency/version changes are needed.
+
+### 2026-10-28 - Combined workflow validation and Canvas disposition (#3020)
+
+Final Windows report excalidraw-obsidian-uhyar0 passes workflow-specific checks,
+native CLI authoring, 18 embed-recovery assertions, the strict JavaScript-error
+gate and fixture cleanup. Quarter/eighth/main/popout fullscreen, repeated toggles,
+ownership transfer and close-time restoration pass. Actual folder-menu action,
+filtered duplicate template selection, explicit blank, Escape/outside dismissal,
+embed/convert cancellation, zero/single templates, legacy and explicit initData
+pass. Twelve focused workflow, 20 Markdown embed, four drawing-load, 11 runner
+and four bundle tests pass. Focused lint is clean; full lint retains 119 baseline
+errors. Production/library output and generated paired-fork contracts pass with
+the inherited installed-type warning. main.js is 5,029,444 bytes.
+
+Investigated #2729 without altering MarkdownPostProcessor or image caching. All
+six preview/immersive combinations scale wide nodes correctly and independently;
+a tall preview clips in SVG/SVG-as-image/PNG alike. This does not reproduce the
+reported SVG-only failure. Per the handoff, leave that item unconfirmed and keep
+the issue open instead of applying the suggested unverified patch. Local review
+screenshots and the report are in tmp/pr3020-validation. Early probe failures
+and readiness/menu corrections are recorded in docs/WORKFLOW_FIXES_VALIDATION.md;
+no broad lifecycle fix or error suppression was added. Cold/restored popouts,
+annotation/NewFileActions, physical mobile, macOS/Linux and hosted CodeScanner
+remain manual gates. PR stays draft; no issue closure or external-repo changes.
