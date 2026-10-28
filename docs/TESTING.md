@@ -128,6 +128,21 @@ failure and its fix in 43.5.0; that is a likely explanation requiring confirmati
 on a fixed host. Keep the errors visible, without wildcard suppression.
 See [Electron's fix/release record](https://releases.electronjs.org/pr/53041).
 
+Final tested code is `eb616f363e7da356e3e848d26b4ded859948451b`, paired with
+fork `d04bc1a6` and Extras `e37c06fe`. All 18 native functional scenarios and
+40 device cases pass; the native run still fails on 12 teardown exceptions.
+The exact-source 25-cycle soak and real-error negative control pass cleanly.
+The audit has 3,341 canonical cases with no missing inputs or source mismatch,
+and correctly remains failed. Follow-up documentation-only commits do not
+change that tested runtime or the recorded code checkpoint.
+
+Device error capture is attached after CLI/plugin readiness in each profile;
+it does not establish a continuous pre-initialization stream across emulation
+reloads. The host's emulator retains its phone device flag at tablet geometry;
+those cases establish measured tablet-size layouts/input. Actual tablet
+preference branches also have source tests; physical-device behavior remains
+separate evidence.
+
 The fork's additive owned gate and inherited compatibility diagnostic are
 independent. The latter currently fails; it must not become a skipped or
 `continue-on-error` green gate. The three repositories' workflows upload reports

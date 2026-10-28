@@ -97,3 +97,21 @@ The full committed 680e8a54 native run passes all 15 functional scenarios and ow
 Hosted Linux Plugin tests at 680e8a54 pass installation, frozen producer builds, library, fixture/inventory/feature, fast, source-coverage and bundle-syntax gates. Extras e37c06fe remote validation/build/CodeQL pass. Fork remote workflow execution is not claimed. Its refreshed d04bc1a6 owned source/ratchets pass (43.2% lines, 61.09% branches, 40.52% functions); its refreshed inherited lane remains failed with the same 380 cases and 37 console-reported unhandled errors. Both clean packed consumers pass and now have explicit coordinator schema-2 evidence adapters.
 
 The acceptance audit requires all declared suites, unique canonical cases, exact matching source identities and frozen producers, separate overlapping coverage/soak gates, clean cleanup and remaining obligations. JUnit preserves suite/error failures even when another suite already has failing assertions. Missing reports and blocked cold start cannot produce green acceptance. Final verification results will identify the exact tested code commit.
+
+## Final recorded results
+
+Exact tested code: eb616f363e7da356e3e848d26b4ded859948451b; fork d04bc1a6211a15394a1cc7036e7a7532608bf421; Extras e37c06feff9fef48877f565328762433a676afcc. All producer identities are clean and match the acceptance input reports. Later documentation-only changes leave this tested runtime unchanged.
+
+- Plugin: 424 fast tests/45 files pass; 59 whole-module source tests/10 files and ratchets pass. That source layer lists 235 unexecuted runtime modules rather than inferring complete coverage.
+- Native full: all 18 functional scenarios and cleanup pass. Twelve primitive illegal-access teardown exceptions make the overall gate fail. No ENOENT deletion error remains.
+- Native devices: all 40 cases and cleanup pass, including current/normal window bounds restoration. Runtime versions, fixture hash and installed artifact hashes are recorded.
+- Native soak: all 25 large-scene cycles pass, zero unexpected errors, clean cleanup and stable source identities.
+- Native error oracle: the real intentional unhandled error is captured and rejected by the ordinary clean-error oracle; owned cleanup passes.
+- Native cold: blocked before any CLI mutation because this is a shared application session; driver isolation/reload/PID guards pass. A genuine cold-start positive run is still required.
+- Fork: 93 owned source/coverage and 12 built-browser cases pass at the pushed commit. The inherited run remains 2264 pass/380 fail/47 pending/one todo, with 37 unhandled errors in its console output.
+- Extras: 30 source/coverage and four actual-bundle browser cases pass at the pushed commit. Both isolated packed API consumers pass.
+- Hosted Linux Plugin tests at eb616f36 pass all install/build/library/package/fixture/inventory/feature/fast/source/syntax steps. Extras remote validation/build/CodeQL pass. No fork remote run or self-hosted native run is claimed.
+
+The final audit contains 3341 canonical cases: 2912 passed, 380 failed and 49 blocked. It has zero missing required cases, suites, gates or source-provenance mismatches. Required remaining obligations, inherited failures and native error gates keep acceptance failed; overlapping coverage/soak evidence is attached without double-counting. Machine-specific raw evidence is in .test-work/reports/final-* and tmp/pr3022-baseline/final-*.
+
+Desktop emulation is not physical-device acceptance. The emulator retains a phone host flag at tablet geometry, so tablet cases establish measured layouts/input and source tests separately exercise tablet preference branches. Per-case debugger capture starts after readiness and does not prove a continuous startup stream across reloads. Legacy/minimum hosts, other OSes, OS clipboard/drag transports and physical Android/iOS remain explicit registry/release limits. The plan-only handoff is retired in favor of maintained TESTING.md, testing-contracts.md, features.json and this evidence record.
