@@ -1259,8 +1259,8 @@ export class ExcalidrawData {
           hasTextLink: !!parseRes.link,
         });
       }
-      //console.log("parsed",this.textElements.get(id).parsed);
-      return text.parsed;
+      //re-read the map entry: the parse above may have just filled it
+      return this.textElements.get(id)?.parsed ?? null;
     }
     //console.log("raw",this.textElements.get(id).raw);
     return text.raw;
