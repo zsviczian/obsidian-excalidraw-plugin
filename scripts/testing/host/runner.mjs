@@ -3,7 +3,9 @@ import { createHash, randomUUID } from "node:crypto";
 import { copyFileSync, existsSync, lstatSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { basename, isAbsolute, join, relative, sep } from "node:path";
 import { validateOwnedVault } from "../provision.mjs";
-import { ownedPath } from "../contracts.mjs";
+import { adaptSmokeReport, ownedPath } from "../contracts.mjs";
+import { acquireDebuggerSession, unexpectedConsoleErrors } from "./debuggerSession.mjs";
+import { writeReportFiles } from "../reportFiles.mjs";
 
 export const PLUGIN_ID = "obsidian-excalidraw-plugin";
 export const ARTIFACTS = ["main.js", "manifest.json", "styles.css"];
@@ -99,12 +101,15 @@ async function poll(read, acceptable, wait, now, timeoutMs = 20_000) {
 
 /** Preflight, build, stage and exercise one disposable drawing; always write a report. */
 export async function runObsidianSmoke({ projectRoot, vaultName, vaultPath, configDir, automationRoot, reportDir, runCli, runBuild,
-  wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms)), now = () => Date.now(), source = {}, unique = () => randomUUID(), scenarios = [] }) {
+  wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms)), now = () => Date.now(), source = {}, unique = () => randomUUID(), scenarios = [], ownedDebugger = false }) {
   const report = { schemaVersion: 1, status: "failed", startedAt: new Date(now()).toISOString(), source,
     target: { vaultName, vaultPath, configDir }, capabilities: {}, artifacts: {}, scenarios: [], cleanup: "not-started" };
   mkdirSync(reportDir, { recursive: true });
   let phase = "preflight";
   let created = false;
+  let preserveOwnedFixtures = false;
+  let debuggerSession, ownedCli;
+  const expectedConsoleErrors = [];
   try {
     const target = validateTarget({ vaultName, vaultPath, configDir, automationRoot });
     const cli = (command, ...args) => {
@@ -112,6 +117,7 @@ export async function runObsidianSmoke({ projectRoot, vaultName, vaultPath, conf
       if (output.trim().startsWith("Error:")) throw new Error(`${command}: ${output.trim().slice(0, 500)}`);
       return output;
     };
+    ownedCli = cli;
     report.capabilities.version = cli("version").trim();
     const help = cli("help");
     const missing = REQUIRED_CLI.filter((command) => !help.includes(command));
@@ -128,6 +134,7 @@ export async function runObsidianSmoke({ projectRoot, vaultName, vaultPath, conf
     if (!existsSync(hostConfig) || realpathSync(hostConfig) !== target.config) {
       throw new Error(`CLI config directory differs from ${target.config}`);
     }
+    if (ownedDebugger) debuggerSession = acquireDebuggerSession(cli);
 
     phase = "build";
     const forkArtifacts = await runBuild();
@@ -150,7 +157,9 @@ export async function runObsidianSmoke({ projectRoot, vaultName, vaultPath, conf
     if (loaded.state !== "loaded") throw new Error("Plugin did not load");
     await poll(() => ({ state: cli("commands", `filter=${PLUGIN_ID}`).includes(`${PLUGIN_ID}:excalidraw-autocreate`)
       ? "registered" : "pending" }), (value) => value.state === "registered", wait, now);
-    report.scenarios.push({ id: "plugin-load", status: "passed" });
+    const runtime = parseEval(cli("eval", `code=JSON.stringify((()=>{const lib=app.plugins.plugins[${JSON.stringify(PLUGIN_ID)}].getCLIRuntime();return {valid:typeof lib.Excalidraw==="object"&&typeof lib.loadSceneFonts==="function"&&typeof lib.exportToBlob==="function",protocol:lib.OBSIDIAN_EXCALIDRAW_HOST_PROTOCOL_VERSION}})())`));
+    if (!runtime.valid || runtime.protocol !== 3) throw new Error("Plugin commands registered but its drawing runtime is unavailable or incompatible");
+    report.scenarios.push({ id: "plugin-load", status: "passed", assertions: ["commands registered", "drawing/font/export runtime available", "host protocol 3"] });
 
     phase = "drawing";
     const name = `${PREFIX}${unique()}`;
@@ -164,17 +173,24 @@ export async function runObsidianSmoke({ projectRoot, vaultName, vaultPath, conf
     report.scenarios.push({ id: "drawing-main-window", status: "passed", assertions: ["Excalidraw API ready", "wrapper mounted", "owner document matches", "main application document"] });
     phase = "feature-scenarios";
     for (const scenario of scenarios) {
-      report.scenarios.push(await scenario({ cli, drawingPath: drawing.path, reportDir }));
+      const result = await scenario({ cli, drawingPath: drawing.path, reportDir });
+      report.scenarios.push(result);
+      expectedConsoleErrors.push(...(result.expectedConsoleErrors || []));
     }
     const errors = cli("dev:errors").trim();
     if (errors && !/^No errors captured\.?$/i.test(errors)) throw new Error(`Captured JavaScript errors: ${errors.slice(0, 1000)}`);
     report.scenarios.push({ id: "javascript-errors", status: "passed" });
     report.status = "passed";
   } catch (error) {
+    preserveOwnedFixtures = error?.cleanupFailed === true;
     report.error = error instanceof Error ? error.message : String(error);
+    if (error?.evidence) report.failedTaskEvidence = error.evidence;
     report.scenarios.push({ id: phase, status: "failed", reason: report.error });
   } finally {
-    if (created) {
+    if (created && preserveOwnedFixtures) {
+      report.cleanup = "failed";
+      report.cleanupError = "Unsettled or leaked native task; fixtures preserved for guarded recovery";
+    } else if (created) {
       try {
         const cli = (code) => parseEval(runCli(vaultName, "eval", `code=${code}`));
         const response = cli(cleanupCode);
@@ -189,8 +205,24 @@ export async function runObsidianSmoke({ projectRoot, vaultName, vaultPath, conf
         report.status = "failed";
       }
     }
+    if (debuggerSession) {
+      try {
+        report.consoleErrors = debuggerSession.read();
+        report.unexpectedConsoleErrors = unexpectedConsoleErrors(report.consoleErrors, expectedConsoleErrors);
+        if (report.unexpectedConsoleErrors.length) { report.status = "failed"; report.error ||= "Unexpected console/JavaScript errors after native cleanup"; }
+        const errors = ownedCli("dev:errors").trim();
+        if (errors && !/^No errors captured\.?$/i.test(errors)) { report.status = "failed"; report.error ||= `Captured JavaScript errors after cleanup: ${errors.slice(0, 1000)}`; }
+      } catch (error) { report.status = "failed"; report.error ||= error.message; }
+      finally {
+        try { debuggerSession.dispose(); }
+        catch (error) { report.status = "failed"; report.cleanup = "failed"; report.cleanupError = error.message; }
+      }
+    }
     report.completedAt = new Date(now()).toISOString();
     writeFileSync(join(reportDir, "report.json"), `${JSON.stringify(report, null, 2)}\n`);
+    const normalized = adaptSmokeReport(report);
+    writeFileSync(join(reportDir, "report-v2.json"), JSON.stringify(normalized, null, 2) + "\n");
+    writeReportFiles(normalized, reportDir);
   }
   return report;
 }

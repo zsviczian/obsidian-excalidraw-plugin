@@ -2300,6 +2300,18 @@
       "mode": "isolated-or-extracted"
     },
     {
+      "path": "scripts/testing/host/debuggerSession.test.mjs",
+      "mode": "isolated-or-extracted"
+    },
+    {
+      "path": "scripts/testing/host/hostReadiness.test.mjs",
+      "mode": "direct-module-or-tooling"
+    },
+    {
+      "path": "scripts/testing/host/inAppTask.test.mjs",
+      "mode": "isolated-or-extracted"
+    },
+    {
       "path": "scripts/testing/host/processTools.test.mjs",
       "mode": "isolated-or-extracted"
     },
@@ -2328,7 +2340,23 @@
       "mode": "direct-module-or-tooling"
     },
     {
+      "path": "scripts/testing/persistence.source.test.mjs",
+      "mode": "direct-module-or-tooling"
+    },
+    {
       "path": "scripts/testing/provision.test.mjs",
+      "mode": "direct-module-or-tooling"
+    },
+    {
+      "path": "scripts/testing/reportFiles.test.mjs",
+      "mode": "direct-module-or-tooling"
+    },
+    {
+      "path": "scripts/testing/saveCoordinator.source.test.mjs",
+      "mode": "direct-module-or-tooling"
+    },
+    {
+      "path": "scripts/testing/sceneFiles.source.test.mjs",
       "mode": "direct-module-or-tooling"
     },
     {
@@ -2337,6 +2365,10 @@
     },
     {
       "path": "scripts/testing/settings/settingsWriter.test.mjs",
+      "mode": "direct-module-or-tooling"
+    },
+    {
+      "path": "scripts/testing/sourceInventory.test.mjs",
       "mode": "direct-module-or-tooling"
     },
     {

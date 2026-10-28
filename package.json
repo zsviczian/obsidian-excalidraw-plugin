@@ -96,6 +96,7 @@
     "@xmldom/xmldom": "0.9.12",
     "@zsviczian/excalidraw-extras-api": "^0.1.1",
     "@zsviczian/rollup-plugin-postprocess": "^1.0.3",
+    "c8": "12.0.0",
     "cross-env": "^7.0.3",
     "cssnano": "^6.0.2",
     "eslint": "^9.39.4",

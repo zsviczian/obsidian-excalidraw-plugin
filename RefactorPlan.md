@@ -27,7 +27,7 @@ validated, and what remains uncertain.
 | Phase | Status | Current outcome |
 | --- | --- | --- |
 | Assessment and baseline design | Complete | Initial architecture, risks, sequencing, and validation matrix documented |
-| Automated test coverage (#3022) | In progress; baseline and portable contract checkpoint | 365 fast tests pass; source-only coverage separates whole modules from historical VM copies. Synthetic seed, owned provisioning/reset, immutable artifacts and cross-session native lock are tested. Full feature, inherited, browser, Extras and device acceptance remain required; see docs/TESTING_BASELINE_3022.md |
+| Automated test coverage (#3022) | In progress; source, data and lifecycle checkpoint | 403 fast tests and 59 source-mapped tests pass; native data, dirty migrations/reload and real Extras/PDF checks pass. Fork-owned/browser and Extras source/browser checks pass. Inherited failures and incomplete feature/device/package/CI gates remain explicit; see docs/TESTING_BASELINE_3022.md |
 | Template selection and cancellation (#2649, PR #3020) | Implemented; source and native selection/cancellation checks pass | A dedicated chooser returns template/blank/cancel, displays paths relative to the configured root, and initially selects explicit blank. Interactive callers resolve before folder/file/editor/leaf side effects. Public getBlankDrawing/createDrawing and EA/CLI contracts retain string/file returns and deterministic initData behavior |
 | Nested-split fullscreen (#2743, PR #3020) | Implemented; seven source tests and native lower-right split pass | Keep the complete ancestor path visible; hide surrounding siblings and restore only owned classes. Native 958x641 drawing expands to 2560x1438 and returns to identical bounds. Existing inline styles remain untouched; controls are optional and cleanup retains the entry document across migration |
 | Canvas preview scaling investigation (#2729, PR #3020) | Original SVG-only behavior not reproduced on Windows Obsidian 1.14.5; unresolved | Two nodes sharing a drawing scale independently in SVG, SVG-as-image and PNG with immersive mode on/off. Doubling one node width scales its preview by 2.0063; the other remains unchanged. Tall previews clip in all modes. No speculative rendering/cache change; retain measurements and keep the issue open |
@@ -2919,3 +2919,24 @@ Highest risks for the next checkpoint: registration/staging in a fresh vault,
 inherited hook identity/timing, and cancellation before native teardown. Test
 main/new/restored popouts and actual mobile emulation independently; physical
 mobile, legacy hosts and other operating systems remain separate evidence.
+
+### 2026-10-28 - Source, persistence and native lifecycle coverage (#3022)
+
+Added whole-module persistence/snapshot/save/scene-file tests, stable discovery,
+source-map-aware c8 ratchets, JSON/JUnit/human evidence, an owned debugger and
+bounded async native work/cleanup. An unexpected autosave rejection now clears
+the busy flag and logs the error; its regression failed before and passes after.
+Focused lint and the production build pass. Native UUID-owned tests cover three
+formats, backups, external writes, failed saves/retry, rename/delete, split and
+fullscreen, both dirty migrations, fresh popout/survivor and plugin reload.
+Real Extras MathJax/Mermaid and PDF text/media-box/pixel checks pass. Fork-owned
+79 tests and ten real-browser checks pass; inherited 380 failures/47 pending/one
+todo remain visible. Source coverage uses c8 because Node's query-import merger
+produced inconsistent denominators; repeated source ratchets pass. Test work
+remains in progress: full feature registry, package consumers, breakpoint/device extensions,
+soak and CI are not yet accepted. First-attempt failures and guarded recovery
+evidence are retained outside Git.
+Highest-risk follow-up: cancellation while a popout is destroyed, workspace
+restoration across actual mobile-mode reloads, and delayed deletion callbacks.
+Validate main/new/restored popouts, phone/tablet orientation and theme changes;
+macOS/Linux, minimum hosts and physical Android/iOS remain separate gates.

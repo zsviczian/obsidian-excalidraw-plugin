@@ -110,7 +110,7 @@ export function adaptSmokeReport(report) {
   assert.equal(report.schemaVersion, 1, "Expected legacy smoke schema 1");
   return { schemaVersion: SCHEMA_VERSION, suiteId: "native-obsidian", source: report.source,
     status: report.status, cleanup: report.cleanup,
-    tests: report.scenarios.map(s => ({ ...s, testId: s.id, featureIds: [] })), legacy: report };
+    tests: report.scenarios.flatMap(s => s.tests?.length ? s.tests : [{ ...s, testId: s.id, featureIds: [] }]), legacy: report };
 }
 
 export function aggregateReports(reports, requiredTestIds) {

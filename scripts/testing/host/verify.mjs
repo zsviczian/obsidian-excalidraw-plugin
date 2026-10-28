@@ -21,6 +21,7 @@ import { runSvgImportScenario } from "./svgImport.mjs";
 import { runLucideScenario } from "./lucideIcons.mjs";
 import { runWorkflowFixesScenario } from "./workflowFixes.mjs";
 import { acquireHostLock } from "./hostLock.mjs";
+import { runDataIntegrityScenario } from "./dataIntegrity.mjs";
 
 const pluginRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const pluginOnly = process.argv.includes("--plugin-only");
@@ -39,8 +40,9 @@ const youtubeDrop = process.argv.includes("--youtube-drop");
 const svgImport = process.argv.includes("--svg-import");
 const lucide = process.argv.includes("--lucide");
 const workflowFixes = process.argv.includes("--workflow-fixes");
-if (process.argv.slice(2).some(arg => !["--workflow-fixes", "--plugin-only", "--lucide", "--text-undo", "--native-cli", "--embed-recovery", "--grouped-link-click", "--latex-input", "--latex-preview", "--image-geometry", "--image-geometry-real", "--wheel-zoom", "--web-drop", "--internal-drop", "--youtube-drop", "--svg-import"].includes(arg))) {
-  throw new Error("Supported options: --workflow-fixes, --plugin-only, --lucide, --text-undo, --native-cli, --embed-recovery, --grouped-link-click, --latex-input, --latex-preview, --image-geometry, --image-geometry-real, --wheel-zoom, --web-drop, --internal-drop, --youtube-drop, --svg-import");
+const dataIntegrity = process.argv.includes("--data-integrity");
+if (process.argv.slice(2).some(arg => !["--data-integrity", "--workflow-fixes", "--plugin-only", "--lucide", "--text-undo", "--native-cli", "--embed-recovery", "--grouped-link-click", "--latex-input", "--latex-preview", "--image-geometry", "--image-geometry-real", "--wheel-zoom", "--web-drop", "--internal-drop", "--youtube-drop", "--svg-import"].includes(arg))) {
+  throw new Error("Supported options: --data-integrity, --workflow-fixes, --plugin-only, --lucide, --text-undo, --native-cli, --embed-recovery, --grouped-link-click, --latex-input, --latex-preview, --image-geometry, --image-geometry-real, --wheel-zoom, --web-drop, --internal-drop, --youtube-drop, --svg-import");
 }
 const forkRoot = resolve(process.env.EXCALIDRAW_FORK_ROOT || join(pluginRoot, "../excalidraw"));
 const reportDir = process.env.EXCALIDRAW_TEST_REPORT_DIR || mkdtempSync(join(tmpdir(), "excalidraw-obsidian-"));
@@ -85,6 +87,7 @@ report = await runObsidianSmoke({
   reportDir,
   source,
   scenarios: [
+    ...(dataIntegrity ? [runDataIntegrityScenario] : []),
     ...(workflowFixes ? [runWorkflowFixesScenario] : []),
     ...(lucide ? [runLucideScenario] : []),
     ...(svgImport ? [runSvgImportScenario] : []),
