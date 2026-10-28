@@ -27,6 +27,8 @@ validated, and what remains uncertain.
 | Phase | Status | Current outcome |
 | --- | --- | --- |
 | Assessment and baseline design | Complete | Initial architecture, risks, sequencing, and validation matrix documented |
+| Nested-split fullscreen (#2743, PR #3020) | Implemented; seven source tests and native lower-right split pass | Keep the complete ancestor path visible; hide surrounding siblings and restore only owned classes. Native 958x641 drawing expands to 2560x1438 and returns to identical bounds. Existing inline styles remain untouched; controls are optional and cleanup retains the entry document across migration |
+| Canvas preview scaling investigation (#2729, PR #3020) | Not reproduced on Windows Obsidian 1.14.5; no rendering change | Two nodes sharing a drawing scale independently in SVG, SVG-as-image and PNG with immersive mode on/off. Doubling one node width scales its preview by 2.0063; the other remains unchanged. Keep the issue open and preserve the measurements rather than applying the unverified proposed patch |
 | Native Lucide insertion (#3019) | Implemented; reviewed/simplified 2026-10-28; maintainer approved intermediate source merge | Shared atomic installed-icon conversion, grouped workbench API, reusable scoped sidepanel and native CLI discovery/create/apply; CLI skill remains on cli-image-efficiency. Grid click delegation replaces per-page components/listeners. Protocol-3 fork publication and exact dependency installation are deferred by the maintainer and remain required before plugin release. See docs/LUCIDE_ICON_VALIDATION.md |
 | SVG import follow-ups (#3018) | Implemented; 55 source tests and full Windows native SVG lane pass | CSS specificity compares ID/class/type counts without carrying; direct/nested translucent use instances now report the existing compositing approximation. Windows Obsidian 1.14.5, installed component 0.18.145 artifacts: 1,992 nonempty icon conversions, five unchanged supplied SVGs, 95 appearance comparisons, main/popout editor checks, reload, clean JavaScript-error gate and cleanup. CLI skill updated on its existing cli-image-efficiency branch |
 | Coordinate PR #475 Mermaid 3/Pele | Implemented; local paired builds and Windows native main/popout/offline checks pass | Extras supplies converter/component 3.0.0; the plugin enforces that exact version. Preserve protocol-2 loaded/api and editable image source, and check generated local declarations before artifact copying. Published-package release, physical mobile and other platform/cold-start gates remain |
@@ -2832,3 +2834,20 @@ the plugin dependency later after accumulating other changes. Preserve protocol
 3 and fail-fast checks; do not add an old-protocol fallback or change versions,
 dependencies or lockfiles. Published-package verification remains a release gate.
 The CLI skill stays on its existing cli-image-efficiency branch for later release.
+
+### 2026-10-28 - Nested-split fullscreen (#2743, PR #3020)
+
+Reproduced an outer mod-root split being hidden in a native lower-right drawing:
+the drawing became 0x0. Seven structural regressions cover depth 0-3, missing
+controls, owned-class restoration, unchanged inline styles, repeated toggles,
+another drawing/window and cleanup after document migration. Walk the complete
+ancestor path and hide only surrounding sibling panes; retain one owner per
+document and restore only classes added by that operation. Temporary CSS classes
+replace destructive inline margin/padding writes. Native Windows Obsidian 1.14.5
+report excalidraw-obsidian-pFgYJY expands 958x641 to 2560x1438 and restores the exact
+starting bounds; focused lint passes. Native screenshots record before/after.
+Canvas preview sizing already passes the six tested mode/immersive combinations;
+no MarkdownPostProcessor or image-cache change is justified by those measurements.
+Highest-probability remaining risk: restored/popout layout transitions. Repeat
+deep splits, a second drawing, close while fullscreen and physical mobile; hosted
+CodeScanner and other desktop platforms remain separate validation environments.
