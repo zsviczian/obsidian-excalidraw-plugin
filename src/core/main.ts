@@ -1,7 +1,7 @@
 import { ExcalidrawExtrasGateway } from "../utils/ExcalidrawExtrasGateway";
 import { ExcalidrawCLI } from "./managers/ExcalidrawCLI";
 import type { ExcalidrawCLIRequest, ExcalidrawCLIResult } from "src/types/excalidrawCliTypes";
-import type { ExactDrawingCreationOptions } from "src/types/drawingCreationTypes";
+import type { ExactDrawingCreationOptions, PreparedDrawing } from "src/types/drawingCreationTypes";
 import {
   TFile,
   Plugin,
@@ -1138,6 +1138,11 @@ export default class ExcalidrawPlugin extends Plugin {
     return await this.fileManager.getBlankDrawing();
   }
 
+  /** Internal UI preparation; existing EA/CLI callers supply deterministic initData. */
+  public prepareDrawing(): Promise<PreparedDrawing> {
+    return this.fileManager.prepareDrawing();
+  }
+
   public async createDrawing(
     filename: string,
     foldername?: string,
@@ -1194,6 +1199,11 @@ export default class ExcalidrawPlugin extends Plugin {
     foldername?: string,
     initData?: string,
   ): Promise<string> {
+    if (initData === undefined) {
+      const prepared = await this.fileManager.prepareDrawing();
+      if (prepared.kind === "cancel") return "";
+      initData = prepared.data;
+    }
     const file = await this.createDrawing(filename, foldername, initData);
     this.fileManager.openDrawing(file, location, true, undefined, true);
     return file.path;

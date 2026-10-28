@@ -33,6 +33,15 @@ Use the actual configuration directory if it differs from `.obsidian`.
 
 ## Run on Windows
 
+For PR #3020, `npm run test:workflow-fixes` runs the focused fullscreen/template
+regressions. Add `-- --workflow-fixes` to `verify:obsidian:plugin` for native
+nested-split/popout geometry, actual template selection/cancellation, and Canvas
+preview measurements. The probe restores the test workspace/settings and deletes
+only its UUID-owned fixture folder. Canvas width-scaling measurements are an
+investigation result, not proof that issue #2729 is fixed; see
+[workflow validation](WORKFLOW_FIXES_VALIDATION.md). The file-explorer check uses
+the actual Obsidian menu and registered folder action.
+
 From this plugin checkout in PowerShell, substitute your actual vault path:
 
 ```powershell
