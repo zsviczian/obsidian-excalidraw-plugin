@@ -68,7 +68,7 @@ conflict handling, and the one-time adoption procedure for older workspaces.
 
 ## 🧪 Testing
 
-At this time, the project **has no comprehensive automated test suite**. As a contributor, you are responsible for testing your changes thoroughly.
+Use the layered [test lanes and maintenance guide](docs/TESTING.md): discovered fast tests, actual source-mapped coverage, production artifact checks and guarded native smoke/full/device/soak profiles. Build before running the fast suite because it inspects the shipped bundle. Keep the source-linked feature registry and public-surface inventory current; neither inventory nor a passing smoke establishes complete coverage. Native, inherited-suite and physical-device limitations remain explicit in the checkpoint record. Focus this suite on core Excalidraw and ExcalidrawAutomate; maintained scripts have their own tests in ea-scripts.
 
 The native CLI lane supports macOS and Windows. Run `npm run test:obsidian:runner`
 for the offline harness tests, then `npm run verify:obsidian:plugin` to build and

@@ -2296,12 +2296,24 @@
       "mode": "isolated-or-extracted"
     },
     {
+      "path": "scripts/testing/features.test.mjs",
+      "mode": "direct-module-or-tooling"
+    },
+    {
       "path": "scripts/testing/fullscreen.test.mjs",
       "mode": "isolated-or-extracted"
     },
     {
+      "path": "scripts/testing/host/combination.test.mjs",
+      "mode": "direct-module-or-tooling"
+    },
+    {
       "path": "scripts/testing/host/debuggerSession.test.mjs",
       "mode": "isolated-or-extracted"
+    },
+    {
+      "path": "scripts/testing/host/deviceProfiles.test.mjs",
+      "mode": "direct-module-or-tooling"
     },
     {
       "path": "scripts/testing/host/hostReadiness.test.mjs",
@@ -2312,11 +2324,23 @@
       "mode": "isolated-or-extracted"
     },
     {
+      "path": "scripts/testing/host/legacyTask.test.mjs",
+      "mode": "isolated-or-extracted"
+    },
+    {
       "path": "scripts/testing/host/processTools.test.mjs",
       "mode": "isolated-or-extracted"
     },
     {
+      "path": "scripts/testing/host/requireIsolatedSession.test.mjs",
+      "mode": "direct-module-or-tooling"
+    },
+    {
       "path": "scripts/testing/host/runner.test.mjs",
+      "mode": "direct-module-or-tooling"
+    },
+    {
+      "path": "scripts/testing/host/stability.test.mjs",
       "mode": "direct-module-or-tooling"
     },
     {

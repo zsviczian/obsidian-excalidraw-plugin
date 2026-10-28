@@ -79,6 +79,7 @@ function installTask(key, execute, args) {
   c.defer = callback => c.disposers.push(callback);
   c.case = async (testId, featureIds, executeCase) => {
     c.checkpoint();
+    c.activeCase=testId;
     try {
       const evidence = await executeCase();
       if (!evidence?.assertions?.length) throw Error('Native case has no assertion evidence');
@@ -86,7 +87,7 @@ function installTask(key, execute, args) {
     } catch (error) {
       c.tests.push({ testId, featureIds, status: 'failed', reason: String(error.stack || error) });
       throw error;
-    }
+    } finally { delete c.activeCase; }
   };
   c.task = (async () => {
     try { c.result = await execute(c, ...args); } catch (error) { c.error = String(error.stack || error); }

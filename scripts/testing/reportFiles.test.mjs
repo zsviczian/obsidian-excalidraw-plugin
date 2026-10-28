@@ -7,6 +7,9 @@ test("JUnit escapes evidence and represents blocked or cleanup-only failures as 
   const xml = renderJUnit(report);
   assert.ok(xml.includes('failures="1"')); assert.ok(xml.includes("&lt;host&gt; &amp; &quot;permission&quot;")); assert.ok(!xml.includes("<skipped"));
   assert.ok(renderJUnit({ ...report, tests: [{ testId: "pass", status: "passed" }] }).includes('name="suite-gate"'));
+  const optional={suiteId:'optional-platform',status:'passed',cleanup:'passed',tests:[{testId:'optional',status:'notApplicable',reason:'Documented platform exclusion'}]};
+  assert.ok(renderJUnit(optional).includes('<skipped'));assert.ok(renderJUnit(optional).includes('failures="0"'));
+  assert.ok(renderJUnit({...optional,status:'failed',requiredTestIds:['optional']}).includes('<failure'));assert.ok(!renderJUnit({...optional,requiredTestIds:['optional']}).includes('<skipped'));
 });
 test("source coverage ratchets fail on lost modules, missing branch evidence or regressions", () => {
   const baseline = [{ path: "src/critical.ts", lines: 90, branches: 80, functions: 75 }];

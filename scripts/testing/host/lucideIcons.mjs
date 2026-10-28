@@ -1,3 +1,4 @@
+import { runLegacyTask } from './legacyTask.mjs';
 /** #3019 live checks, restricted to fixtures owned by the guarded parent runner. */
 import assert from 'node:assert/strict';
 import { join } from 'node:path';
@@ -11,6 +12,7 @@ export async function runLucideScenario({cli,drawingPath,reportDir}) {
   const evaluate=code=>JSON.parse(cli('eval','code='+code).trim().replace(/^=>\s*/,''));
   const action=(command,values={})=>JSON.parse(cli('obsidian-excalidraw-plugin:'+command,'json='+JSON.stringify({apiVersion:1,...values})));
   const ok=r=>{assert.equal(r.ok,true,JSON.stringify(r));return r;};
+  let unsettled=false;
   let n=0;
   const id=()=>prefix.slice(-40)+'-'+(++n);
   const read=source=>ok(action('read',{path:paths.drawing,source,detail:'elements',limit:200})).data;
@@ -53,21 +55,14 @@ export async function runLucideScenario({cli,drawingPath,reportDir}) {
     const vault=evaluate('JSON.stringify(app.vault.adapter.basePath)');
     copyFileSync(join(vault,paths.png),join(reportDir,'lucide-presets.png'));
     ok(action('create',{requestId:id(),path:paths.popout,elements:[]}));
-    evaluate(`(()=>{if(globalThis.${key})throw Error('Lucide test already active');globalThis.${key}={state:'pending'};(${probeLucide.toString()})(${JSON.stringify(key)},${JSON.stringify(paths.drawing)},${JSON.stringify(drawingPath)},${JSON.stringify(catalog.map(e=>e.icon))},${JSON.stringify(paths.popout)}).then(result=>Object.assign(globalThis.${key},{state:'done',result})).catch(error=>Object.assign(globalThis.${key},{state:'failed',error:String(error.stack)}));return JSON.stringify({started:true})})()`);
-    let probe;
-    for(let i=0;i<1000;i++) {
-      probe=evaluate(`JSON.stringify(globalThis.${key})`);
-      if(probe.state!=='pending')break;
-      await new Promise(resolve=>setTimeout(resolve,100));
-    }
-    assert.equal(probe.state,'done',probe.error??'Lucide probe timed out');
+    const probe=await runLegacyTask({cli,control:key,execute:probeLucide,args:[paths.drawing,drawingPath,catalog.map(e=>e.icon),paths.popout],timeoutMs:120000,cleanupMs:120000});
     const saved=read('disk');assert.equal(saved.assetIds.length,0);
     assert.ok(saved.elements.every(e=>e.type!=='image'));
     evaluate(`(async()=>{const p=app.plugins.plugins['obsidian-excalidraw-plugin'];const view=app.workspace.getLeavesOfType('excalidraw').find(l=>l.view.file?.path===${JSON.stringify(paths.drawing)}).view;await p.lucidePicker.open(view);return JSON.stringify({open:true})})()`);
     cli('dev:screenshot','path='+join(reportDir,'lucide-picker.png'));
     return {id:'lucide-3019',status:'passed',catalog:catalog.length,artifacts,...probe.result};
-  } finally {
-    evaluate(`(async()=>{const p=app.plugins.plugins['obsidian-excalidraw-plugin'];p?.lucidePicker?.tab?.close();delete globalThis.${key};for(const path of ${JSON.stringify(Object.values(paths))}){if(!path.startsWith('__excalidraw_cli_smoke_'))throw Error('Not an owned fixture');for(const leaf of app.workspace.getLeavesOfType('excalidraw').filter(l=>l.view.file?.path===path)){await leaf.setViewState({type:'empty',state:{}});leaf.detach()}const file=app.vault.getFileByPath(path);if(file)await app.vault.delete(file)}return JSON.stringify({clean:true})})()`);
+  } catch(error) {unsettled=error.cleanupFailed===true;throw error;} finally {
+    if(!unsettled)evaluate(`(async()=>{const p=app.plugins.plugins['obsidian-excalidraw-plugin'];p?.lucidePicker?.tab?.close();delete globalThis.${key};for(const path of ${JSON.stringify(Object.values(paths))}){if(!path.startsWith('__excalidraw_cli_smoke_'))throw Error('Not an owned fixture');for(const leaf of app.workspace.getLeavesOfType('excalidraw').filter(l=>l.view.file?.path===path)){await leaf.setViewState({type:'empty',state:{}});leaf.detach()}const file=app.vault.getFileByPath(path);if(file)await app.vault.delete(file)}return JSON.stringify({clean:true})})()`);
   }
 }
 
@@ -186,7 +181,7 @@ async function probeLucide(key,path,otherPath,catalog,popoutPath) {
     return {catalogPresetConversions:conversions,rejectedCatalogInputs:rejected,totalElements:total,totalPoints:points,maxConversionMs:maxMs,imageMenu:true,uiPresets:true,gridPagination:true,nestedThumbnailClicks:true,undoRedo:true,keyboardNavigation:true,singleton:true,twoDrawings:true,popout:true,staleTarget:true,sessionReuse:true};
   } finally {
     picker.tab?.close();
-    if(popout){await popout.setViewState({type:'empty',state:{}});popout.detach();}
+    if(popout){const win=popout.view.containerEl.ownerDocument.defaultView;if(win===app.workspace.containerEl.ownerDocument.defaultView)throw Error('Lucide popout migrated unexpectedly');if(popout.view.isDirty?.())await popout.view.saveWithOutcome();win.close();const end=Date.now()+10000;while(!win.closed){if(Date.now()>end)throw Error('Lucide popout did not close');await new Promise(resolve=>setTimeout(resolve,25));}}
     if(view.excalidrawAPI===api)api.updateScene({appState:{currentItemStrokeColor:originalStyle.currentItemStrokeColor,currentItemRoughness:originalStyle.currentItemRoughness,currentItemOpacity:originalStyle.currentItemOpacity},captureUpdate:'NEVER'});
   }
 }

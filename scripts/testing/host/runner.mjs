@@ -1,7 +1,7 @@
 /** Native Obsidian smoke lane for the exact locally built Excalidraw plugin. */
 import { createHash, randomUUID } from "node:crypto";
 import { copyFileSync, existsSync, lstatSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
-import { basename, isAbsolute, join, relative, sep } from "node:path";
+import { basename, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { validateOwnedVault } from "../provision.mjs";
 import { adaptSmokeReport, ownedPath } from "../contracts.mjs";
 import { acquireDebuggerSession, unexpectedConsoleErrors } from "./debuggerSession.mjs";
@@ -84,9 +84,9 @@ function artifacts(projectRoot) {
   return { paths, hashes: Object.fromEntries(ARTIFACTS.map((name) => [name, hash(paths[name])])), version: manifest.version };
 }
 
-const startCode = (name) => `(()=>{const p=app.plugins.plugins[${JSON.stringify(PLUGIN_ID)}];if(!p)return JSON.stringify({state:"failed",error:"plugin not loaded"});if(globalThis.${CONTROL})return JSON.stringify({state:"failed",error:"smoke controller already exists"});const c={state:"pending",name:${JSON.stringify(name)},path:null,error:null,cancel:false};globalThis.${CONTROL}=c;const extension=p.settings.compatibilityMode?".excalidraw":p.settings.useExcalidrawExtension?".excalidraw.md":".md";Promise.resolve(p.createAndOpenDrawing(c.name+extension,"new-tab","/")).then(async path=>{c.path=path;c.state="created";if(c.cancel){const file=app.vault.getFileByPath(path);if(file&&file.name.startsWith(${JSON.stringify(PREFIX)})){const leaf=app.workspace.getLeavesOfType("excalidraw").find(l=>l.view.file?.path===path);if(leaf){await leaf.setViewState({type:"empty",state:{}});leaf.detach()}await app.vault.delete(file)}c.state="clean"}}).catch(error=>{c.error=String(error);c.state="failed"});return JSON.stringify({state:"started"})})()`;
-const statusCode = `(()=>{const c=globalThis.${CONTROL};if(!c)return JSON.stringify({state:"missing"});const leaf=c.path&&app.workspace.getLeavesOfType("excalidraw").find(l=>l.view.file?.path===c.path);const view=leaf?.view;return JSON.stringify({state:c.state,path:c.path,error:c.error,ready:!!view?.excalidrawAPI,wrapper:!!view?.containerEl?.querySelector(".excalidraw-wrapper"),ownerMatches:!!view&&view.ownerDocument===view.containerEl.ownerDocument,mainWindow:!!view&&view.ownerDocument===app.workspace.containerEl?.ownerDocument})})()`;
-const cleanupCode = `(()=>{const c=globalThis.${CONTROL};if(!c)return JSON.stringify({state:"clean"});if(c.state==="pending"){c.cancel=true;return JSON.stringify({state:"pending"})}if(c.state==="cleaning")return JSON.stringify({state:"cleaning"});const path=c.path;const file=path&&app.vault.getFileByPath(path);if(!file){delete globalThis.${CONTROL};return JSON.stringify({state:"clean"})}if(!file.name.startsWith(${JSON.stringify(PREFIX)}))return JSON.stringify({state:"failed",error:"refusing to delete a non-smoke drawing"});const leaf=app.workspace.getLeavesOfType("excalidraw").find(l=>l.view.file?.path===path);c.state="cleaning";(async()=>{if(leaf){await leaf.setViewState({type:"empty",state:{}});leaf.detach()}await app.vault.delete(file);c.state="clean"})().catch(error=>{c.error=String(error);c.state="failed"});return JSON.stringify({state:"cleaning"})})()`;
+const startCode = (name) => `(()=>{const p=app.plugins.plugins[${JSON.stringify(PLUGIN_ID)}];let anchor;app.workspace.iterateAllLeaves(leaf=>{if(!anchor&&leaf.getRoot()===app.workspace.rootSplit)anchor=leaf});if(anchor){app.workspace.setActiveLeaf(anchor,{focus:true});app.workspace.containerEl.ownerDocument.defaultView.focus()}if(!p)return JSON.stringify({state:"failed",error:"plugin not loaded"});if(globalThis.${CONTROL})return JSON.stringify({state:"failed",error:"smoke controller already exists"});const c={state:"pending",name:${JSON.stringify(name)},path:null,error:null,cancel:false};globalThis.${CONTROL}=c;const extension=p.settings.compatibilityMode?".excalidraw":p.settings.useExcalidrawExtension?".excalidraw.md":".md";Promise.resolve(p.createAndOpenDrawing(c.name+extension,"new-tab","/")).then(async path=>{c.path=path;c.state="created";if(c.cancel){const file=app.vault.getFileByPath(path);if(file&&file.name.startsWith(${JSON.stringify(PREFIX)})){const leaf=app.workspace.getLeavesOfType("excalidraw").find(l=>l.view.file?.path===path);if(leaf){await leaf.setViewState({type:"empty",state:{}});leaf.detach()}await app.vault.delete(file)}c.state="clean"}}).catch(error=>{c.error=String(error);c.state="failed"});return JSON.stringify({state:"started"})})()`;
+const statusCode = `(()=>{const c=globalThis.${CONTROL};if(!c)return JSON.stringify({state:"missing"});const leaf=c.path&&app.workspace.getLeavesOfType("excalidraw").find(l=>l.view.file?.path===c.path);const view=leaf?.view;return JSON.stringify({state:c.state,path:c.path,error:c.error,ready:!!view?.excalidrawAPI&&view.isLoaded&&!view.excalidrawAPI.getAppState().isLoading&&!view.semaphores.justLoaded&&!view.isClosingOrMigrating(),wrapper:!!view?.containerEl?.querySelector(".excalidraw-wrapper"),ownerMatches:!!view&&view.ownerDocument===view.containerEl.ownerDocument,mainWindow:!!view&&view.ownerDocument===app.workspace.containerEl?.ownerDocument})})()`;
+const cleanupCode = `(()=>{const c=globalThis.${CONTROL};if(!c)return JSON.stringify({state:"clean"});if(c.state==="pending"){c.cancel=true;return JSON.stringify({state:"pending"})}if(c.state==="cleaning")return JSON.stringify({state:"cleaning"});const path=c.path;const file=path&&app.vault.getFileByPath(path);if(!file){delete globalThis.${CONTROL};return JSON.stringify({state:"clean"})}if(!file.name.startsWith(${JSON.stringify(PREFIX)}))return JSON.stringify({state:"failed",error:"refusing to delete a non-smoke drawing"});const leaf=app.workspace.getLeavesOfType("excalidraw").find(l=>l.view.file?.path===path);c.state="cleaning";(async()=>{if(leaf){const view=leaf.view;if(view.excalidrawAPI&&view.isDirty()){const saved=await view.saveWithOutcome();if(saved.status!=="persisted")throw Error("Owned drawing cleanup could not save")}}await app.vault.delete(file);if(leaf){const end=Date.now()+15000;while(leaf.view.getViewType()==="excalidraw"&&leaf.view.containerEl.isConnected){if(Date.now()>end)throw Error("Deleted owned drawing did not retire");await new Promise(resolve=>setTimeout(resolve,25))}if(leaf.view.containerEl.isConnected)leaf.detach()}c.state="clean"})().catch(error=>{c.error=String(error);c.state="failed"});return JSON.stringify({state:"cleaning"})})()`;
 
 async function poll(read, acceptable, wait, now, timeoutMs = 20_000) {
   const deadline = now() + timeoutMs;
@@ -101,15 +101,23 @@ async function poll(read, acceptable, wait, now, timeoutMs = 20_000) {
 
 /** Preflight, build, stage and exercise one disposable drawing; always write a report. */
 export async function runObsidianSmoke({ projectRoot, vaultName, vaultPath, configDir, automationRoot, reportDir, runCli, runBuild,
-  wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms)), now = () => Date.now(), source = {}, unique = () => randomUUID(), scenarios = [], ownedDebugger = false }) {
+  wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms)), now = () => Date.now(), source = {}, unique = () => randomUUID(), scenarios = [], ownedDebugger = false, deployCompanions }) {
+  reportDir = resolve(reportDir);
   const report = { schemaVersion: 1, status: "failed", startedAt: new Date(now()).toISOString(), source,
     target: { vaultName, vaultPath, configDir }, capabilities: {}, artifacts: {}, scenarios: [], cleanup: "not-started" };
   mkdirSync(reportDir, { recursive: true });
   let phase = "preflight";
   let created = false;
   let preserveOwnedFixtures = false;
-  let debuggerSession, ownedCli;
+  let debuggerSession, ownedCli, companionCleanup;
   const expectedConsoleErrors = [];
+  const cleanupDrawing = async () => {
+    if(!created)return;
+    const cli = code => parseEval(runCli(vaultName,'eval','code='+code));
+    const response=cli(cleanupCode);if(response.state==='failed')throw Error(response.error);
+    await poll(()=>cli(`(()=>JSON.stringify({state:globalThis.${CONTROL}?.state||"clean",error:globalThis.${CONTROL}?.error}))()`),value=>value.state==='clean',wait,now);
+    cli(`(()=>{delete globalThis.${CONTROL};return JSON.stringify({state:"clean"})})()`);created=false;
+  };
   try {
     const target = validateTarget({ vaultName, vaultPath, configDir, automationRoot });
     const cli = (command, ...args) => {
@@ -120,7 +128,8 @@ export async function runObsidianSmoke({ projectRoot, vaultName, vaultPath, conf
     ownedCli = cli;
     report.capabilities.version = cli("version").trim();
     const help = cli("help");
-    const missing = REQUIRED_CLI.filter((command) => !help.includes(command));
+    const required=ownedDebugger?[...REQUIRED_CLI,"dev:debug","dev:cdp"]:REQUIRED_CLI;
+    const missing = required.filter((command) => !help.includes(command));
     if (missing.length) throw new Error(`Obsidian CLI lacks: ${missing.join(", ")}`);
     const selected = cliPath(cli("vault", "info=path"));
     if (!existsSync(selected) || realpathSync(selected) !== target.vault) {
@@ -135,15 +144,19 @@ export async function runObsidianSmoke({ projectRoot, vaultName, vaultPath, conf
       throw new Error(`CLI config directory differs from ${target.config}`);
     }
     if (ownedDebugger) debuggerSession = acquireDebuggerSession(cli);
+    if (ownedDebugger) report.capabilities.runtime = parseEval(cli("eval", "code=JSON.stringify({versions:require('process').versions,platform:require('process').platform,userAgent:navigator.userAgent})"));
 
     phase = "build";
-    const forkArtifacts = await runBuild();
-    const built = artifacts(projectRoot);
+    const buildResult = await runBuild();
+    const forkArtifacts = buildResult?.forkArtifacts || buildResult;
+    const built = artifacts(buildResult?.pluginArtifactRoot || projectRoot);
+    if (buildResult?.combination) report.combination = buildResult.combination;
     report.artifacts = { forkArtifacts, version: built.version, sourceHashes: built.hashes,
       mainBytes: readFileSync(built.paths["main.js"]).length };
 
     phase = "deploy";
     if (existsSync(target.pluginDir)) cli("plugin:disable", `id=${PLUGIN_ID}`);
+    if (deployCompanions) { const deployed = await deployCompanions({ cli, target }); report.artifacts.companions = deployed.evidence; companionCleanup = deployed.cleanup; }
     mkdirSync(target.pluginDir, { recursive: true });
     for (const name of ARTIFACTS) copyFileSync(built.paths[name], join(target.pluginDir, name));
     report.artifacts.installedHashes = Object.fromEntries(ARTIFACTS.map((name) => [name, hash(join(target.pluginDir, name))]));
@@ -166,16 +179,27 @@ export async function runObsidianSmoke({ projectRoot, vaultName, vaultPath, conf
     const started = parseEval(cli("eval", `code=${startCode(name)}`));
     if (started.state !== "started") throw new Error(started.error || "Could not start drawing smoke");
     created = true;
-    const drawing = await poll(() => parseEval(cli("eval", `code=${statusCode}`)),
+    let drawing = await poll(() => parseEval(cli("eval", `code=${statusCode}`)),
       (value) => value.state === "created" && value.ready && value.wrapper && value.ownerMatches && value.mainWindow, wait, now);
     if (!drawing.path || !basename(drawing.path).startsWith(PREFIX)) throw new Error("Unexpected smoke drawing path");
     report.target.drawingPath = drawing.path;
+    report.target.fixturePaths = [drawing.path];
     report.scenarios.push({ id: "drawing-main-window", status: "passed", assertions: ["Excalidraw API ready", "wrapper mounted", "owner document matches", "main application document"] });
     phase = "feature-scenarios";
-    for (const scenario of scenarios) {
+    for (const [index,scenario] of scenarios.entries()) {
+      if(index>0){
+        await cleanupDrawing();
+        const next=parseEval(cli('eval','code='+startCode(name+'_case'+index)));
+        if(next.state!=='started')throw Error(next.error||'Next scenario fixture did not start');created=true;
+        drawing=await poll(()=>parseEval(cli('eval','code='+statusCode)),value=>value.state==='created'&&value.ready&&value.wrapper&&value.ownerMatches&&value.mainWindow,wait,now);
+        if(!drawing.path||!basename(drawing.path).startsWith(PREFIX))throw Error('Unexpected scenario drawing path');
+        report.target.fixturePaths.push(drawing.path);
+      }
+      report.target.drawingPath=drawing.path;
       const result = await scenario({ cli, drawingPath: drawing.path, reportDir });
       report.scenarios.push(result);
       expectedConsoleErrors.push(...(result.expectedConsoleErrors || []));
+      if (result.status !== "passed") throw Error(`Required native scenario ${result.id} is ${result.status}: ${result.reason || "no reason supplied"}`);
     }
     const errors = cli("dev:errors").trim();
     if (errors && !/^No errors captured\.?$/i.test(errors)) throw new Error(`Captured JavaScript errors: ${errors.slice(0, 1000)}`);
@@ -185,19 +209,14 @@ export async function runObsidianSmoke({ projectRoot, vaultName, vaultPath, conf
     preserveOwnedFixtures = error?.cleanupFailed === true;
     report.error = error instanceof Error ? error.message : String(error);
     if (error?.evidence) report.failedTaskEvidence = error.evidence;
-    report.scenarios.push({ id: phase, status: "failed", reason: report.error });
+    report.scenarios.push({ id: phase, status: "failed", reason: report.error, ...(error?.evidence?.length ? {tests:error.evidence} : {}) });
   } finally {
     if (created && preserveOwnedFixtures) {
       report.cleanup = "failed";
       report.cleanupError = "Unsettled or leaked native task; fixtures preserved for guarded recovery";
     } else if (created) {
       try {
-        const cli = (code) => parseEval(runCli(vaultName, "eval", `code=${code}`));
-        const response = cli(cleanupCode);
-        if (response.state === "failed") throw new Error(response.error);
-        await poll(() => cli(`(()=>JSON.stringify({state:globalThis.${CONTROL}?.state||"clean",error:globalThis.${CONTROL}?.error}))()`),
-          (value) => value.state === "clean", wait, now);
-        cli(`(()=>{delete globalThis.${CONTROL};return JSON.stringify({state:"clean"})})()`);
+        await cleanupDrawing();
         report.cleanup = "passed";
       } catch (error) {
         report.cleanup = "failed";
@@ -205,6 +224,7 @@ export async function runObsidianSmoke({ projectRoot, vaultName, vaultPath, conf
         report.status = "failed";
       }
     }
+    if (companionCleanup) { try { await companionCleanup(); } catch(error) { report.status="failed"; report.cleanup="failed"; report.cleanupError=String(error); } }
     if (debuggerSession) {
       try {
         report.consoleErrors = debuggerSession.read();

@@ -129,7 +129,7 @@ export function aggregateReports(reports, requiredTestIds) {
   const unsuccessful = tests.filter(t => t.status !== "passed" && (t.status !== "notApplicable" || requiredTestIds.includes(t.testId)));
   const failedCleanup = reports.some(r => r.cleanup !== "passed" || r.status !== "passed");
   return { schemaVersion: SCHEMA_VERSION, suiteId: "aggregate", status: missing.length || unsuccessful.length || failedCleanup ? "failed" : "passed",
-    cleanup: reports.every(r => r.cleanup === "passed") ? "passed" : "failed", missing, tests };
+    cleanup: reports.every(r => r.cleanup === "passed") ? "passed" : "failed", requiredTestIds, missing, tests };
 }
 
 /** Stable discovery used by the fixture/discovery gate; never follows links. */

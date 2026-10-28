@@ -21,6 +21,11 @@ async function exerciseDataIntegrity(c, prefix, fixtures) {
   const check = (condition, message) => { if (!condition) throw Error(message); };
   const close = async leaf => { if (leaf.view?.getViewType() !== "empty") await leaf.setViewState({ type: "empty", state: {} }); leaf.detach(); ownedLeaves.delete(leaf); };
   c.defer(async () => {
+    // The intentional failed-write case creates persistent host notices. They
+    // belong to this exact fixture and otherwise cover later toolbar checks.
+    const notices=[...app.workspace.containerEl.ownerDocument.querySelectorAll('.notice')].filter(notice=>notice.textContent.includes(prefix+'/')&&notice.textContent.includes('EXCALIDRAW_OWNED_WRITE_FAILURE'));
+    for(const notice of notices)notice.click();
+    await c.waitForCleanup(()=>notices.every(notice=>!notice.isConnected),'owned fault-injection notices');
     for (const leaf of ownedLeaves) await close(leaf);
     if (originalLeaf) app.workspace.setActiveLeaf(originalLeaf, { focus: true });
     const folder = app.vault.getFolderByPath(prefix);

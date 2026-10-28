@@ -495,7 +495,9 @@ force-close the application while other vaults are open. After interrupted clean
 review the report/controller's exact drawing path before removing leftovers; never
 delete notes by prefix alone.
 
-The default smoke covers one newly created main-window drawing. It does not validate
+The historical default smoke covers one newly created main-window drawing. For the
+current reproducible workspace smoke/full/device/soak profiles, source and fixture
+guards, see [the maintained testing guide](TESTING.md). A smoke alone does not validate
 saved scenes, clipboard, text editing, fonts/images, export, custom pens, popout
 migration, offline assets, or physical mobile touch. For affected features, follow
 the fork's [native validation procedure](https://github.com/zsviczian/excalidraw/blob/master/dev-docs/Obsidian/OBSIDIAN_RUNTIME_TESTING.md)

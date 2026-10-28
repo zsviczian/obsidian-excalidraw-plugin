@@ -1,13 +1,14 @@
 /** Test-only ESM compilation graph: import whole production modules with explicit boundary substitutes. */
 import { randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { registerHooks } from "node:module";
+import * as nodeModule from "node:module";
 import { dirname, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import ts from "typescript";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
 export function sourceHarness(mocks = {}) {
+  if (typeof nodeModule.registerHooks !== "function") throw Error("Whole-module source tests require Node 22.15+; use the documented Node 22.22.3 toolchain");
   const token = "__sourceHarness_" + randomUUID().replaceAll("-", ""), query = `?${token}`;
   const compiledRoot = resolve(root, ".test-work/source-graphs", token), sourcePaths = new Map();
   const moduleURL = path => {
@@ -16,7 +17,7 @@ export function sourceHarness(mocks = {}) {
     sourcePaths.set(url, path); return url;
   };
   globalThis[token] = mocks;
-  const hooks = registerHooks({
+  const hooks = nodeModule.registerHooks({
     resolve(specifier, context, next) {
       if (sourcePaths.has(specifier)) return { shortCircuit: true, url: specifier };
       if (Object.hasOwn(mocks, specifier)) {

@@ -1,7 +1,7 @@
 /** Build a producer, fingerprint source before/after, then freeze verified outputs. */
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createArtifactManifest, freezeArtifacts, sourceIdentity, walkFiles } from "./contracts.mjs";
@@ -28,7 +28,7 @@ export function produceArtifacts({ root, kind, snapshotRoot, run = runBuild }) {
   assert.ok(["plugin", "fork", "extras"].includes(kind), "Unknown producer kind");
   assert.ok(!existsSync(snapshotRoot), "Snapshot already exists");
   const before = sourceIdentity(root);
-  const steps = kind === "fork" ? [{ manager: "yarn", args: ["build:obsidian"], cwd: join(root, "packages/excalidraw") }]
+  const steps = kind === "fork" ? ["build:esm", "build:obsidian"].map(script => ({ manager: "yarn", args: [script], cwd: join(root, "packages/excalidraw") }))
     : [{ manager: "npm", args: ["run", "build"], cwd: root }, ...(kind === "extras" ? [{ manager: "npm", args: ["run", "build:api"], cwd: root }] : [])];
   for (const step of steps) run(step);
   assert.deepEqual(sourceIdentity(root), before, "Producer source changed while building; discard output and rebuild");

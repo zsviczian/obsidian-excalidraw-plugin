@@ -89,6 +89,9 @@ async function exerciseLifecycle(c, prefix, fixture) {
   });
   await c.case("native:lifecycle-new-popout-survivor", ["P03"], async () => {
     const popout = app.workspace.openPopoutLeaf(); owned.add(popout);
+    // Obsidian moves the initially empty leaf asynchronously; begin file loading
+    // only after it reaches its destination document, as in the Lucide probe.
+    await c.waitFor(() => popout.view.containerEl.ownerDocument !== doc, "empty popout migration before drawing load");
     await popout.setViewState({ type: "excalidraw", state: { file: first.path } });
     app.workspace.setActiveLeaf(popout, { focus: true }); await ready(popout);
     check(popout.view.ownerDocument !== doc && popout.view.excalidrawAPI.getSceneElements()[0].x === 654, "fresh popout did not load persisted data");

@@ -1,0 +1,584 @@
+{
+  "schemaVersion": 2,
+  "inventory": "tests/inventory.json",
+  "policy": "Obligations and source/test mapping only. Execution, inherited failures and platform limits are reported independently; mapping a group does not cover every public entry. Specific maintained scripts are outside this PR scope per maintainer direction; they are tested in ea-scripts.",
+  "features": [
+    {
+      "id": "P01",
+      "priority": "P0",
+      "name": "Packaging and lifecycle",
+      "anchors": [
+        {
+          "path": "src/core/managers/PackageManager.ts",
+          "symbol": "export class PackageManager"
+        }
+      ],
+      "tests": [
+        {
+          "layer": "source",
+          "path": "scripts/testing/package.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/package.source.test.mjs::one private runtime serves main and two popout leases; only final release removes the alias",
+            "node:scripts/testing/package.source.test.mjs::destroy clears owned aliases and registrations without clobbering a replacement alias"
+          ]
+        },
+        {
+          "layer": "artifact",
+          "path": "scripts/testing/bundle.test.mjs",
+          "cases": [
+            "node:scripts/testing/bundle.test.mjs::production bootstrap supplies matching private React and JSX runtimes",
+            "node:scripts/testing/bundle.test.mjs::compressed Excalidraw retains every published offline font asset"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/lifecycle.mjs",
+          "cases": [
+            "native:lifecycle-plugin-reload"
+          ]
+        }
+      ],
+      "fixtures": [],
+      "platforms": [
+        "Windows desktop",
+        "desktop mobile emulation",
+        "macOS/Linux follow-up",
+        "physical Android/iOS follow-up"
+      ],
+      "success": "Exact private runtime and protocol load; runtime identity and commands are ready",
+      "failure": "Reject absent/incompatible adapters; roll back partial registration",
+      "cleanup": "Dispose owned adapters, aliases and leases",
+      "remaining": [
+        "Isolated native cold restart and restored-popout session require a prepared isolated application"
+      ]
+    },
+    {
+      "id": "P02",
+      "priority": "P0",
+      "name": "Drawing durability",
+      "anchors": [
+        {
+          "path": "src/view/managers/ViewSaveCoordinator.ts",
+          "symbol": "export class ViewSaveCoordinator"
+        }
+      ],
+      "tests": [
+        {
+          "layer": "source",
+          "path": "scripts/testing/persistence.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/persistence.source.test.mjs::same-path snapshots remain ordered and uncoalesced while another drawing proceeds independently",
+            "node:scripts/testing/persistence.source.test.mjs::failed writes preserve the failure receipt, never schedule a backup and release the path for retry"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/saveCoordinator.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/saveCoordinator.source.test.mjs::failed saves keep dirty state and successful retry acknowledges only captured bytes",
+            "node:scripts/testing/saveCoordinator.source.test.mjs::an edit during a save queues its own later snapshot instead of clearing the newer dirty revision"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/dataIntegrity.mjs",
+          "cases": [
+            "native:data-write-failure",
+            "native:data-rename-delete",
+            "native:data-backup"
+          ]
+        }
+      ],
+      "fixtures": [
+        "Drawings/Uncompressed.excalidraw.md",
+        "Drawings/Compressed.excalidraw.md",
+        "Drawings/Legacy.excalidraw"
+      ],
+      "platforms": [
+        "Windows desktop",
+        "desktop mobile emulation",
+        "macOS/Linux follow-up",
+        "physical Android/iOS follow-up"
+      ],
+      "success": "Save/reopen preserves prose, scene metadata and physical receipts",
+      "failure": "Failed writes retain dirty edits; stale API and own-write echoes cannot overwrite",
+      "cleanup": "Close owned views and delete exact owned files and backup keys",
+      "remaining": []
+    },
+    {
+      "id": "P03",
+      "priority": "P0",
+      "name": "Multiwindow and async work",
+      "anchors": [
+        {
+          "path": "src/view/ExcalidrawView.ts",
+          "symbol": "onWindowMigrated"
+        }
+      ],
+      "tests": [
+        {
+          "layer": "source",
+          "path": "scripts/testing/sceneFiles.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/sceneFiles.source.test.mjs::late file callbacks reject replacement API for the same path and release PDF resources",
+            "node:scripts/testing/sceneFiles.source.test.mjs::late file callbacks reject another file and release PDF resources"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/lifecycle.mjs",
+          "cases": [
+            "native:lifecycle-dirty-main-to-popout",
+            "native:lifecycle-dirty-popout-to-main",
+            "native:lifecycle-new-popout-survivor"
+          ]
+        }
+      ],
+      "fixtures": [
+        "Drawings/Uncompressed.excalidraw.md"
+      ],
+      "platforms": [
+        "Windows desktop",
+        "desktop mobile emulation",
+        "macOS/Linux follow-up",
+        "physical Android/iOS follow-up"
+      ],
+      "success": "Dirty migrations persist through replacement views; survivor remains usable",
+      "failure": "Refuse stale loaders and cancellation completion; unmount before async persistence",
+      "cleanup": "Await actual owned popout closure and settle all test tasks",
+      "remaining": [
+        "Current Electron 43.3.0 emits illegal-access teardown exceptions; confirm on a fixed Electron host without filtering"
+      ]
+    },
+    {
+      "id": "P04",
+      "priority": "P0",
+      "name": "Text, links and history",
+      "anchors": [
+        {
+          "path": "src/view/ExcalidrawView.ts",
+          "symbol": "ExcalidrawView"
+        }
+      ],
+      "tests": [
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/textUndo.mjs",
+          "cases": [
+            "text-undo-2976"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/groupedLinkClick.mjs",
+          "cases": [
+            "grouped-link-click"
+          ]
+        }
+      ],
+      "fixtures": [
+        "Links/Árvíztűrő 测试.md"
+      ],
+      "platforms": [
+        "Windows desktop",
+        "desktop mobile emulation",
+        "macOS/Linux follow-up",
+        "physical Android/iOS follow-up"
+      ],
+      "success": "Parsed/raw and keyboard/button variants retain edit/history behavior",
+      "failure": "Unchanged edit preserves redo; stale targets and rejected edits do not mutate",
+      "cleanup": "Close owned editors and restore focus",
+      "remaining": [
+        "Trusted OS clipboard/paste formats and navigation need independent native coverage"
+      ]
+    },
+    {
+      "id": "P05",
+      "priority": "P0",
+      "name": "Images and embedded content",
+      "anchors": [
+        {
+          "path": "src/utils/ExcalidrawExtrasGateway.ts",
+          "symbol": "export class ExcalidrawExtrasGateway"
+        }
+      ],
+      "tests": [
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/imageGeometry.mjs",
+          "cases": [
+            "image-geometry-real-3014"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/embedRecovery.mjs",
+          "cases": [
+            "markdown-embed-recovery-2953"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/extrasServices.mjs",
+          "cases": [
+            "native:extras-pdf-output"
+          ]
+        }
+      ],
+      "fixtures": [
+        "Assets/Transparency.png",
+        "Assets/Small.pdf",
+        "Notes/Embeds.md"
+      ],
+      "platforms": [
+        "Windows desktop",
+        "desktop mobile emulation",
+        "macOS/Linux follow-up",
+        "physical Android/iOS follow-up"
+      ],
+      "success": "Decoded output, crop geometry, shared files and embed recovery are correct",
+      "failure": "Stale/cancelled loaders cannot publish into a replacement context",
+      "cleanup": "Dispose image/PDF resources and remove exact owned assets",
+      "remaining": [
+        "PDF import and URL-image network failure require additional portable native cases"
+      ]
+    },
+    {
+      "id": "P06",
+      "priority": "P0",
+      "name": "Settings and recovery",
+      "anchors": [
+        {
+          "path": "src/core/settingsDefaults.ts",
+          "symbol": "DEFAULT_SETTINGS"
+        }
+      ],
+      "tests": [
+        {
+          "layer": "source",
+          "path": "scripts/testing/settings/settings.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/settings/settings.source.test.mjs::missing first-install settings are distinct from corruption and synchronized records",
+            "node:scripts/testing/settings/settings.source.test.mjs::settings queue coalesces writes, waits for in-flight revisions and applies actions after success"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/settings/settingsWriter.test.mjs",
+          "cases": [
+            "node:scripts/testing/settings/settingsWriter.test.mjs::key order does not change canonical serialization",
+            "node:scripts/testing/settings/settingsWriter.test.mjs::array order is semantically significant and preserved"
+          ]
+        }
+      ],
+      "fixtures": [
+        ".obsidian/app.json"
+      ],
+      "platforms": [
+        "Windows desktop",
+        "desktop mobile emulation",
+        "macOS/Linux follow-up",
+        "physical Android/iOS follow-up"
+      ],
+      "success": "Defaults, unknown keys and serialized revisions remain intact",
+      "failure": "Missing first install differs from corruption; queue failure remains recoverable",
+      "cleanup": "Restore changed preferences and await writes",
+      "remaining": [
+        "Native corrupt-settings recovery and legacy/new settings UI require an isolated owned session"
+      ]
+    },
+    {
+      "id": "P07",
+      "priority": "P1",
+      "name": "Authoring and interaction",
+      "anchors": [
+        {
+          "path": "src/shared/ExcalidrawAutomate.ts",
+          "symbol": "export class ExcalidrawAutomate"
+        }
+      ],
+      "tests": [
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/nativeCLI.mjs",
+          "cases": [
+            "native-cli-authoring"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/wheelZoom.mjs",
+          "cases": [
+            "wheel-zoom-3008"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/automate.mjs",
+          "cases": [
+            "native:ea-shapes-bindings-and-isolation",
+            "native:ea-edit-image-and-decoded-export",
+            "native:ea-svg-import-and-disposal"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/coreInteraction.mjs",
+          "cases": [
+            "native:core-toolbar-draw-history",
+            "native:core-custom-highlighter",
+            "native:core-laser-transient"
+          ]
+        }
+      ],
+      "fixtures": [],
+      "platforms": [
+        "Windows desktop",
+        "desktop mobile emulation",
+        "macOS/Linux follow-up",
+        "physical Android/iOS follow-up"
+      ],
+      "success": "Frames, bindings, groups and authoring survive disk/export round trips",
+      "failure": "Invalid relationships and stale revisions cannot partially mutate",
+      "cleanup": "Restore focus and retire all owned editor roots",
+      "remaining": [
+        "Layer ordering and drag selection have native cases pending; physical pressure/stylus is a separate device gate"
+      ]
+    },
+    {
+      "id": "P08",
+      "priority": "P1",
+      "name": "Layouts, navigation and devices",
+      "anchors": [
+        {
+          "path": "src/view/sidepanel/Sidepanel.ts",
+          "symbol": "export class ExcalidrawSidepanelView"
+        }
+      ],
+      "tests": [
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/workflowFixes.mjs",
+          "cases": [
+            "workflow-fixes-3020"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/devices.mjs",
+          "cases": [
+            "native:device:desktop-wide-full-light"
+          ]
+        }
+      ],
+      "fixtures": [],
+      "platforms": [
+        "Windows desktop",
+        "desktop mobile emulation",
+        "macOS/Linux follow-up",
+        "physical Android/iOS follow-up"
+      ],
+      "success": "Measured layout, reachable controls, trusted input and fullscreen restoration",
+      "failure": "Cancel pickers without creating files; fail clipped or missing controls",
+      "cleanup": "Restore theme, mobile mode, preferences, geometry and workspace",
+      "remaining": [
+        "Physical keyboard/stylus/safe-area behavior remains a physical-device release gate"
+      ]
+    },
+    {
+      "id": "P09",
+      "priority": "P1",
+      "name": "Import, export and libraries",
+      "anchors": [
+        {
+          "path": "src/shared/svgToExcalidraw/walker.ts",
+          "symbol": "walk"
+        }
+      ],
+      "tests": [
+        {
+          "layer": "source",
+          "path": "scripts/testing/svg.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/svg.source.test.mjs::whole-module SVG conversion preserves opacity, transforms and open strokes",
+            "node:scripts/testing/svg.source.test.mjs::whole-module SVG fixture imports without mutating source bytes"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/lucideIcons.mjs",
+          "cases": [
+            "lucide-3019"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/extrasServices.mjs",
+          "cases": [
+            "native:extras-mermaid-gateway",
+            "native:extras-pdf-output"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/automate.mjs",
+          "cases": [
+            "native:ea-shapes-bindings-and-isolation",
+            "native:ea-edit-image-and-decoded-export",
+            "native:ea-svg-import-and-disposal"
+          ]
+        }
+      ],
+      "fixtures": [
+        "Assets/Layers.svg",
+        "Sources/Diagrams.json"
+      ],
+      "platforms": [
+        "Windows desktop",
+        "desktop mobile emulation",
+        "macOS/Linux follow-up",
+        "physical Android/iOS follow-up"
+      ],
+      "success": "Layer/opacity conversion, editable diagrams and actual decoded export output",
+      "failure": "Invalid assets and unavailable services fail without hidden fallback",
+      "cleanup": "Remove temporary render DOM, print listeners and owned output",
+      "remaining": [
+        "Portable native SVG drop/library import and OS clipboard import need additional cases; public EA SVG import is exercised"
+      ]
+    },
+    {
+      "id": "P10",
+      "priority": "P1",
+      "name": "ExcalidrawAutomate, CLI and core scripting boundary",
+      "anchors": [
+        {
+          "path": "src/shared/Scripts.ts",
+          "symbol": "export class ScriptEngine"
+        }
+      ],
+      "tests": [
+        {
+          "layer": "source",
+          "path": "scripts/testing/cli.test.mjs",
+          "cases": [
+            "node:scripts/testing/cli.test.mjs::registration validates minimum API, optional method and desktop without bumping the baseline",
+            "node:scripts/testing/cli.test.mjs::icon discovery is read-only, bounded and snapshot-paginated"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/nativeCLI.mjs",
+          "cases": [
+            "native-cli-authoring"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/automate.mjs",
+          "cases": [
+            "native:ea-shapes-bindings-and-isolation",
+            "native:ea-edit-image-and-decoded-export",
+            "native:ea-svg-import-and-disposal"
+          ]
+        }
+      ],
+      "fixtures": [],
+      "platforms": [
+        "Windows desktop",
+        "desktop mobile emulation",
+        "macOS/Linux follow-up",
+        "physical Android/iOS follow-up"
+      ],
+      "success": "Direct EA authoring, grouping, binding, image and export APIs; idempotent CLI and typed discovery work",
+      "failure": "Interaction refusal, invalid relationships, BUSY and stale revisions retain scene",
+      "cleanup": "Destroy the owned EA instance and settle its resources before deleting the owned scene",
+      "remaining": []
+    },
+    {
+      "id": "P11",
+      "priority": "P1",
+      "name": "Offline and failure boundaries",
+      "anchors": [
+        {
+          "path": "src/utils/ExcalidrawExtrasGateway.ts",
+          "symbol": "getMathJax"
+        }
+      ],
+      "tests": [
+        {
+          "layer": "artifact",
+          "path": "scripts/testing/bundle.test.mjs",
+          "cases": [
+            "node:scripts/testing/bundle.test.mjs::production bootstrap supplies matching private React and JSX runtimes",
+            "node:scripts/testing/bundle.test.mjs::compressed Excalidraw retains every published offline font asset"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/package.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/package.source.test.mjs::one private runtime serves main and two popout leases; only final release removes the alias",
+            "node:scripts/testing/package.source.test.mjs::destroy clears owned aliases and registrations without clobbering a replacement alias"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/extrasServices.mjs",
+          "cases": [
+            "native:extras-mathjax-gateway"
+          ]
+        }
+      ],
+      "fixtures": [
+        "Sources/Equations.json",
+        "Invalid/Corrupt.excalidraw.md"
+      ],
+      "platforms": [
+        "Windows desktop",
+        "desktop mobile emulation",
+        "macOS/Linux follow-up",
+        "physical Android/iOS follow-up"
+      ],
+      "success": "Required payload/font bytes are embedded and services resolve through the gateway",
+      "failure": "Invalid protocol, failed activation and malformed input fail closed",
+      "cleanup": "Own and remove debugger/listeners; unrelated errors always fail",
+      "remaining": [
+        "Native real unhandled-error negative control is separate from ordinary clean-error acceptance"
+      ]
+    },
+    {
+      "id": "P12",
+      "priority": "P1",
+      "name": "Long-lived stability",
+      "anchors": [
+        {
+          "path": "src/view/ExcalidrawView.ts",
+          "symbol": "ExcalidrawView"
+        }
+      ],
+      "tests": [
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/stability.mjs",
+          "cases": [
+            "native:stability-roundtrip:0",
+            "native:stability-roundtrip:5"
+          ]
+        }
+      ],
+      "fixtures": [],
+      "platforms": [
+        "Windows desktop",
+        "desktop mobile emulation",
+        "macOS/Linux follow-up",
+        "physical Android/iOS follow-up"
+      ],
+      "success": "Bounded 1000-element save/reopen and decoded export; roots/APIs retire each cycle",
+      "failure": "Timeout or failed save fails the run without deleting unsettled resources",
+      "cleanup": "Return root count to baseline; delete exact owned scene",
+      "remaining": [
+        "25-cycle soak and repeated reload need the final profile run; forced-GC heap and physical-device performance are not inferred"
+      ]
+    }
+  ]
+}

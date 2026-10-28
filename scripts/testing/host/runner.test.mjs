@@ -68,7 +68,7 @@ test("stages exact artifacts, asserts an editor and cleans its test drawing", as
   const input = fixture();
   const commands = [];
   let cleanupStarted = false;
-  let commandReads = 0;
+  let commandReads = 0, activeDrawing="__excalidraw_cli_smoke_1.excalidraw.md";
   const runCli = (_vault, command, ...args) => {
     commands.push(command);
     if (command === "version") return "1.13.0";
@@ -84,18 +84,20 @@ test("stages exact artifacts, asserts an editor and cleans its test drawing", as
       if (code.includes("getCLIRuntime")) return '{"valid":true,"protocol":3}';
       if (code.includes("app.vault.configDir")) return '{"configDir":".obsidian"}';
       if (code.includes("createAndOpenDrawing")) {
+        activeDrawing=code.includes("_case1")?"__excalidraw_cli_smoke_1_case1.excalidraw.md":"__excalidraw_cli_smoke_1.excalidraw.md";
         assert.ok(code.includes("useExcalidrawExtension"));
         assert.ok(code.includes('"new-tab","/"'));
         return '=> {"state":"started"}';
       }
       if (code.includes("app.vault.delete")) {
-        assert.ok(code.indexOf('await leaf.setViewState({type:"empty",state:{}})') < code.indexOf("await app.vault.delete(file)"));
+        assert.ok(code.indexOf("await view.saveWithOutcome()")<code.indexOf("await app.vault.delete(file)"));
+        assert.ok(code.indexOf("await app.vault.delete(file)")<code.indexOf("Deleted owned drawing did not retire"));
         cleanupStarted = true;
         return '{"state":"cleaning"}';
       }
       if (code.includes("?.state||")) return cleanupStarted ? '{"state":"clean"}' : '{"state":"created"}';
       if (code.includes("delete globalThis.__excalidrawCliSmoke")) return '{"state":"clean"}';
-      if (code.includes("getLeavesOfType")) return '{"state":"created","path":"__excalidraw_cli_smoke_1.excalidraw.md","ready":true,"wrapper":true,"ownerMatches":true,"mainWindow":true}';
+      if(code.includes("getLeavesOfType"))return JSON.stringify({state:'created',path:activeDrawing,ready:true,wrapper:true,ownerMatches:true,mainWindow:true});
       return '{"state":"loaded"}';
     }
     return "";
@@ -105,11 +107,13 @@ test("stages exact artifacts, asserts an editor and cleans its test drawing", as
     assert.equal(cli("dev:errors"), "No errors captured.");
     return { id: "feature-test", status: "passed" };
   };
-  const options = { ...input, runCli, runBuild: () => {}, unique: () => "1", wait: () => {} };
-  const report = await runObsidianSmoke({ ...options, scenarios: [featureScenario] });
+  let companionCleaned = 0;
+  const options = { ...input, runCli, runBuild: () => ({pluginArtifactRoot:input.projectRoot,forkArtifacts:{verified:true}}), unique: () => "1", wait: () => {},
+    deployCompanions: ({target}) => { assert.equal(target.config,input.configDir); return {evidence:{paired:true},cleanup:()=>{assert.equal(cleanupStarted,true);companionCleaned++;}}; } };
+  const report = await runObsidianSmoke({ ...options, scenarios: [featureScenario,({drawingPath})=>{assert.equal(cleanupStarted,true,'Previous feature fixture must be retired first');assert.equal(drawingPath,'__excalidraw_cli_smoke_1_case1.excalidraw.md');return {id:'independent-feature',status:'passed'};}] });
   assert.equal(report.status, "passed", report.error);
   assert.equal(report.cleanup, "passed");
-  assert.equal(report.target.drawingPath, "__excalidraw_cli_smoke_1.excalidraw.md");
+  assert.equal(report.target.drawingPath, "__excalidraw_cli_smoke_1_case1.excalidraw.md");
   assert.deepEqual(report.artifacts.sourceHashes, report.artifacts.installedHashes);
   assert.ok(commands.includes("plugin:enable"));
   assert.equal(commandReads, 2);
@@ -121,6 +125,12 @@ test("stages exact artifacts, asserts an editor and cleans its test drawing", as
   assert.equal(failed.cleanup, "passed");
   assert.equal(cleanupStarted, true);
   assert.match(failed.error, /feature regression/);
+  assert.equal(companionCleaned,2,'Companion state restores after both success and scenario failure');
+  assert.equal(report.artifacts.companions.paired,true);
+  const blocked = await runObsidianSmoke({...options,scenarios:[()=>({id:'required-feature',status:'blocked',reason:'Missing host capability'})]});
+  assert.equal(blocked.status,'failed');assert.match(blocked.error,/required-feature is blocked/);assert.equal(blocked.cleanup,'passed');
+  const cleanupFailure=await runObsidianSmoke({...options,deployCompanions:()=>({evidence:{},cleanup:()=>{throw Error('owned companion cleanup failure');}})});
+  assert.equal(cleanupFailure.status,'failed');assert.equal(cleanupFailure.cleanup,'failed');assert.match(cleanupFailure.cleanupError,/companion cleanup failure/);
 });
 
 test("an eval Error payload fails even when the CLI process reports success", async () => {

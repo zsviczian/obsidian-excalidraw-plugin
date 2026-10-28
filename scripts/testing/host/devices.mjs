@@ -18,7 +18,7 @@ export async function runDeviceMatrix({ cli, reportDir, vaultName, vaultPath, co
   assert.equal(realpathSync(cli("vault", "info=path").trim()), target.vault, "Device CLI selected another vault");
   const evaluate = code => parseCLIJSON(cli("eval", "code=" + code));
   const owner = mainWindowExpression;
-  const original = evaluate(`JSON.stringify((()=>{const w=${owner};if(w.webContents.debugger.isAttached())throw Error('Existing debugger owner');return{mobile:app.isMobile===true,theme:app.vault.getConfig('theme'),layout:app.workspace.getLayout(),desktopMode:localStorage.getItem('excalidraw.desktopUIMode'),id:w.id,bounds:w.getBounds(),minimum:w.getMinimumSize(),maximized:w.isMaximized(),fullscreen:w.isFullScreen()};})())`);
+  const original = evaluate(`JSON.stringify((()=>{const w=${owner};if(w.webContents.debugger.isAttached())throw Error('Existing debugger owner');return{mobile:app.isMobile===true,theme:app.vault.getConfig('theme'),layout:app.workspace.getLayout(),desktopMode:localStorage.getItem('excalidraw.desktopUIMode'),id:w.id,bounds:w.getBounds(),minimum:w.getMinimumSize(),maximized:w.isMaximized(),fullscreen:w.isFullScreen(),zoom:w.webContents.getZoomFactor(),touch:{maxTouchPoints:navigator.maxTouchPoints,coarse:matchMedia('(pointer: coarse)').matches,hover:matchMedia('(hover: hover)').matches}};})())`);
   const path = `__excalidraw_cli_smoke_devices_${randomUUID()}.excalidraw.md`;
   const fixture = readFileSync(new URL("../../../tests/vault/Drawings/Uncompressed.excalidraw.md", import.meta.url), "utf8");
   const report = { schemaVersion: 2, suiteId: "native-devices", status: "failed", cleanup: "not-started", tests: [],
@@ -29,7 +29,7 @@ export async function runDeviceMatrix({ cli, reportDir, vaultName, vaultPath, co
   report.reloadDiagnostics = [];
   const ready = () => waitForNativeReady(cli, { diagnostics: report.reloadDiagnostics });
   try {
-    evaluate(`(()=>{const w=${owner};if(w.id!==${original.id})throw Error('Main owner changed');w.setFullScreen(false);w.unmaximize();w.setMinimumSize(200,200);return JSON.stringify(true);})()`);
+    evaluate(`(()=>{const w=${owner};if(w.id!==${original.id})throw Error('Main owner changed');w.setFullScreen(false);w.unmaximize();w.setMinimumSize(200,200);w.webContents.setZoomFactor(1);return JSON.stringify(true);})()`);
     await runInAppTask({ cli, args: [path, fixture], execute: async (_c, path, fixture) => {
       if (app.vault.getFileByPath(path)) throw Error("Device fixture collision"); await app.vault.create(path, fixture); return { created: true };
     } }); created = true;
@@ -44,6 +44,9 @@ export async function runDeviceMatrix({ cli, reportDir, vaultName, vaultPath, co
       cli("dev:cdp", "method=Emulation.setTouchEmulationEnabled", `params=${JSON.stringify({ enabled: profile.input === "touch", maxTouchPoints: profile.input === "touch" ? 5 : 1 })}`);
       const result = await runInAppTask({ cli, execute: exerciseDevice, args: [path, fixture, profile], timeoutMs: 60_000,
         onRequest: request => {
+          if (request.method === "resize-editor" && Number.isSafeInteger(request.params.delta) && Math.abs(request.params.delta) <= 32) {
+            evaluate(`(()=>{const w=${owner};if(w.id!==${original.id})throw Error('Main owner changed');const [width,height]=w.getContentSize();w.setContentSize(width+${request.params.delta},height);return JSON.stringify(true);})()`); return { resized: true };
+          }
           if (request.method === "screenshot" && request.params.id === profile.id) { cli("dev:screenshot", "path=" + join(reportDir, profile.id + ".png")); return { captured: true }; }
           if (request.method !== "cdp" || !["Input.dispatchMouseEvent", "Input.dispatchTouchEvent"].includes(request.params.method)) throw Error("Unexpected device input request");
           cli("dev:cdp", "method=" + request.params.method, "params=" + JSON.stringify(request.params.params)); return { dispatched: true };
@@ -59,8 +62,10 @@ export async function runDeviceMatrix({ cli, reportDir, vaultName, vaultPath, co
     if (error.cleanupFailed) report.unsettledTask = true;
   } finally {
     try {
-      if (debuggerSession) { debuggerSession.dispose(); debuggerSession = null; }
+      let debuggerError;
+      if (debuggerSession) { try { debuggerSession.dispose(); } catch (error) { debuggerError=error; } finally { debuggerSession=null; } }
       report.restoration = await restoreDeviceState({ cli, original, path, created });
+      if (debuggerError) throw debuggerError;
       report.cleanup = report.unsettledTask ? "failed" : "passed";
     } catch (error) { report.cleanup = "failed"; report.cleanupError = String(error.stack || error); }
     if (report.cleanup !== "passed") report.status = "failed";
@@ -71,6 +76,7 @@ export async function runDeviceMatrix({ cli, reportDir, vaultName, vaultPath, co
 
 async function exerciseDevice(c, path, fixture, profile) {
   const p = app.plugins.plugins["obsidian-excalidraw-plugin"], doc = app.workspace.containerEl.ownerDocument;
+  await c.waitFor(() => innerWidth === profile.width && innerHeight === profile.height, "actual requested viewport");
   const check = (condition, message) => { if (!condition) throw Error(message); };
   const settings = Object.fromEntries(["desktopUIMode", "tabletUIMode", "phoneUIMode", "penModeSingleFingerPanning"].map(key => [key, p.settings[key]]));
   const desktopMode = localStorage.getItem("excalidraw.desktopUIMode");
@@ -89,7 +95,7 @@ async function exerciseDevice(c, path, fixture, profile) {
   const file = app.vault.getFileByPath(path); check(file, "Owned device fixture missing"); await app.vault.modify(file, fixture);
   p.settings.desktopUIMode = profile.mode === "mobile" ? "tray" : profile.mode;
   p.settings.tabletUIMode = profile.mode === "mobile" ? "compact" : profile.mode;
-  p.settings.phoneUIMode = "mobile"; p.settings.penModeSingleFingerPanning = false;
+  p.settings.phoneUIMode = profile.boundary ? "mobile" : profile.mode; p.settings.penModeSingleFingerPanning = false;
   const leaf = app.workspace.getLeaf("tab");
   c.defer(async () => { await leaf.setViewState({ type: "empty", state: {} }); leaf.detach(); });
   await leaf.openFile(file);
@@ -102,11 +108,17 @@ async function exerciseDevice(c, path, fixture, profile) {
     view.gotoFullscreen(); c.defer(() => { view.exitFullscreen(); check(!view.isFullscreen(), "Owned fullscreen did not restore"); });
     await c.waitFor(() => view.isFullscreen() && view.containerEl.querySelector("canvas.interactive").getBoundingClientRect().width >= innerWidth - 100, "owned fullscreen viewport");
   }
+  if (profile.editorWidth !== undefined) {
+    const width = view.containerEl.querySelector(".excalidraw").getBoundingClientRect().width;
+    if (width !== profile.editorWidth) await c.requestHost("resize-editor", { delta: Math.round(profile.editorWidth - width) });
+    await c.waitFor(() => view.containerEl.querySelector(".excalidraw").getBoundingClientRect().width === profile.editorWidth, "exact editor breakpoint width");
+  }
   view.setUIMode(profile.mode === "mobile" ? "tray" : profile.mode); view.setTheme(profile.theme);
   api.updateScene({ appState: { penMode: false, viewModeEnabled: false }, captureUpdate: "NEVER" });
   await c.waitFor(() => doc.body.hasClass(profile.theme === "dark" ? "theme-dark" : "theme-light") && api.getAppState().theme === profile.theme, "actual host and drawing themes");
   try { await c.waitFor(() => api.getEditorInterface().formFactor === profile.formFactor, "measured device classification"); }
   catch (error) { throw Error(error.message + ": " + JSON.stringify({ viewport: { width: innerWidth, height: innerHeight }, editor: api.getEditorInterface(), device: p.getObsidianDevice() })); }
+  if (profile.canFitSidebar !== undefined) check(api.getEditorInterface().canFitSidebar === profile.canFitSidebar, "Sidebar breakpoint differs");
   const rect = element => { const r = element.getBoundingClientRect(); return { x: r.x, y: r.y, width: r.width, height: r.height, right: r.right, bottom: r.bottom }; };
   const button = [...view.containerEl.querySelectorAll('[data-testid="toolbar-rectangle"]')].find(element => !element.closest(".tool-popover-content") && element.getBoundingClientRect().width > 0);
   check(button, "Rectangle tool is not reachable");
@@ -119,6 +131,13 @@ async function exerciseDevice(c, path, fixture, profile) {
   };
   await input(profile.input === "touch" ? "touchStart" : "mousePressed", x, y); await input(profile.input === "touch" ? "touchEnd" : "mouseReleased", x, y);
   await c.waitFor(() => api.getAppState().activeTool.type === "rectangle", "trusted toolbar selection");
+  if (!profile.boundary) await c.waitFor(() => {
+    const root = view.containerEl.querySelector(".excalidraw"), compact = view.containerEl.querySelector(".compact-shape-actions");
+    if (profile.mode === "mobile") return root.classList.contains("excalidraw--mobile");
+    if (profile.mode === "tray") return root.classList.contains("excalidraw--tray") && !!view.containerEl.querySelector(".App-top-bar");
+    if (profile.mode === "compact") return !!compact && compact.getBoundingClientRect().width > 0;
+    return !compact && !root.classList.contains("excalidraw--tray") && !!view.containerEl.querySelector(".selected-shape-actions");
+  }, "actual requested layout");
   const canvas = view.containerEl.querySelector("canvas.interactive"), canvasBounds = rect(canvas), events = [];
   await c.requestHost("screenshot", { id: profile.id });
   const listener = event => { if (event.target === canvas) events.push({ trusted: event.isTrusted, pointerType: event.pointerType }); };
@@ -146,6 +165,6 @@ async function exerciseDevice(c, path, fixture, profile) {
   check((app.isMobile === true) === profile.mobile, "Narrow desktop/mobile mode confused");
   await c.requestHost("screenshot", { id: profile.id });
   return { assertions: ["actual Obsidian mobile/desktop mode", "measured editor classification", "actual host and drawing theme", "visible uncovered tool", "trusted pointer selects and draws", "device edit saves to disk"],
-    requested: profile, actual: { viewport: { width: innerWidth, height: innerHeight }, retiredRestoredOwnedEditors: restoredOwned.length, paneBefore, fullscreen: view.isFullscreen(), canvas: canvasBounds, tool: bounds, editorInterface: api.getEditorInterface(), hostDevice: p.getObsidianDevice(), mobile: app.isMobile === true,
+    requested: profile, actual: { viewport: { width: innerWidth, height: innerHeight }, retiredRestoredOwnedEditors: restoredOwned.length, paneBefore, fullscreen: view.isFullscreen(), editorBounds: rect(view.containerEl.querySelector(".excalidraw")), canvas: canvasBounds, tool: bounds, editorInterface: api.getEditorInterface(), hostDevice: p.getObsidianDevice(), mobile: app.isMobile === true,
       maxTouchPoints: navigator.maxTouchPoints, coarsePointer: matchMedia("(pointer: coarse)").matches, events } };
 }

@@ -1,0 +1,71 @@
+name: Trusted isolated native tests
+# Manual exact-SHA approval only. Never use pull_request_target or an untrusted
+# PR trigger on a persistent desktop. Configure the protected environment and
+# an isolated runner with no personal vaults/secrets before enabling this lane.
+on:
+  workflow_dispatch:
+    inputs:
+      tested_sha:
+        description: Exact 40-character plugin commit approved for this run
+        required: true
+      profile:
+        type: choice
+        options: [smoke, full, devices, soak]
+        default: smoke
+permissions:
+  contents: read
+jobs:
+  native:
+    environment: native-test-approval
+    runs-on: [self-hosted, Windows, excalidraw-isolated]
+    timeout-minutes: 90
+    env:
+      EXCALIDRAW_TEST_VAULT_NAME: ${{ vars.EXCALIDRAW_TEST_VAULT_NAME }}
+      EXCALIDRAW_TEST_VAULT_PATH: ${{ vars.EXCALIDRAW_TEST_VAULT_PATH }}
+      EXCALIDRAW_TEST_CONFIG_DIR: ${{ vars.EXCALIDRAW_TEST_CONFIG_DIR }}
+      EXCALIDRAW_TEST_AUTOMATION_ROOT: ${{ vars.EXCALIDRAW_TEST_AUTOMATION_ROOT }}
+      EXCALIDRAW_TEST_USER_DATA_PATH: ${{ vars.EXCALIDRAW_TEST_USER_DATA_PATH }}
+      EXCALIDRAW_TEST_REPORT_DIR: ${{ github.workspace }}/.test-work/reports/native-ci
+      EXCALIDRAW_FORK_ROOT: ${{ github.workspace }}/.test-work/checkouts/fork
+      EXCALIDRAW_TEST_FORK_TYPES_ROOT: ${{ github.workspace }}/.test-work/checkouts/fork
+      EXCALIDRAW_EXTRAS_ROOT: ${{ github.workspace }}/.test-work/checkouts/extras
+    steps:
+      - name: Require an exact approved commit
+        env:
+          TESTED_SHA: ${{ inputs.tested_sha }}
+        run: if ($env:TESTED_SHA -notmatch '^[a-f0-9]{40}$') { throw 'Supply an exact approved commit SHA' }
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tested_sha }}
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: zsviczian/excalidraw
+          ref: d04bc1a6211a15394a1cc7036e7a7532608bf421
+          path: .test-work/checkouts/fork
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: zsviczian/obsidian-excalidraw-extras
+          ref: e37c06feff9fef48877f565328762433a676afcc
+          path: .test-work/checkouts/extras
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.22.3'
+      - name: Prove session ownership before any native mutation
+        run: node scripts/testing/host/requireIsolatedSession.mjs
+      - run: npm ci
+      - run: corepack enable
+      - run: yarn --cwd .test-work/checkouts/fork install --frozen-lockfile
+      - run: npm ci --prefix .test-work/checkouts/extras
+      - name: Run approved native profile
+        env:
+          TEST_PROFILE: ${{ inputs.profile }}
+        run: node scripts/testing/host/verify.mjs "--profile=$env:TEST_PROFILE"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-${{ inputs.profile }}-${{ inputs.tested_sha }}
+          path: .test-work/reports
+          if-no-files-found: error

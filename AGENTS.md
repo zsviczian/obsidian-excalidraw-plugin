@@ -517,11 +517,11 @@ If a task touches any of the above, read adjacent code first and validate more c
 
 ## Validation Expectations
 
-There is no comprehensive runtime unit-test suite. The CLI harness has focused tests wired into `package.json`.
+Use the layered test commands and explicit acceptance limits documented below. Fast/source tests, built artifacts, native integration and physical devices establish different evidence.
 
 ### Obsidian CLI runtime lane
 
-Follow [Obsidian runtime testing](docs/OBSIDIAN_RUNTIME_TESTING.md) for macOS and Windows setup, and its linked fork guide for feature gates. `npm run test:obsidian:runner` tests the vault guards and platform launchers without Obsidian. `npm run verify:obsidian:plugin` builds this plugin with the installed component package. `npm run verify:obsidian` first builds and copies the sibling fork's four Obsidian artifacts. Both native lanes require the explicitly configured `excalidraw-test` vault, check the CLI-selected vault and config paths before deployment, stage the exact `main.js`/CSS/manifest, and assert a live drawing and clean JavaScript error buffer. Review the report's build mode, source identity, hashes, and cleanup result. A previous local artifact copy into `node_modules` remains in effect for the plugin-only lane until `npm install` restores the published package.
+Start with the layered [testing guide](docs/TESTING.md) and [Obsidian runtime testing](docs/OBSIDIAN_RUNTIME_TESTING.md). Use the discovered fast suite, source ratchets, immutable fixture/inventory/feature guards and workspace smoke/full/device/soak profiles. Specific maintained scripts are tested in ea-scripts; focus this repository on core Excalidraw and ExcalidrawAutomate. Preserve explicit remaining feature obligations and inherited failures. Native lanes require an explicitly configured `excalidraw-test` or marker-verified owned automation vault, validate CLI-selected vault/config paths before deployment and serialize all native work under the application-user-data lock. Review frozen source identities, installed hashes, actual geometry/input, errors and cleanup. The plugin-only lane retains any earlier ignored runtime copy until `npm install` restores the published package; it is not published-package verification.
 
 Look for an existing `excalidraw-test` vault in Obsidian's vault registry and confirm its path and enabled plugin. If absent, ask the user to create it and install/enable Excalidraw from Community plugins before deployment. Do not create or download a replacement vault without consent. Complete any first-open trust prompt and reopen the vault before CLI probes. Never choose a personal/default vault when the test vault is unavailable.
 

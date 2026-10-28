@@ -71,3 +71,15 @@ Portable JSON schemas and executable byte/path/report validation are under
 `scripts/testing/`; the shared contract is [documented here](testing-contracts.md).
 Future checkpoints must retain first-attempt failures, required blocked lanes,
 inherited-suite results and physical/legacy/platform gaps explicitly.
+
+## Core/device/frozen-workspace checkpoint
+
+- Plugin: 414 fast tests in 42 files; 59 measured whole-module tests with ratchets pass. Direct native EA authoring, image/decoded export, SVG import and disposal pass. Trusted toolbar/history, custom highlighter and transient-laser semantics pass.
+- Devices: 40 measured desktop/mobile-emulation/theme/layout/breakpoint cases pass, including exact boundaries and trusted input. Physical mobile remains untested.
+- Stability: six 1000-element edit/save/reopen cycles pass with fresh APIs, retired roots and actual decoded PNG pixels; the subsequent 16 text/history variants and grouped-link checks pass with zero captured errors.
+- Fork d04bc1a6: 93 owned tests, 12 built-browser cases, full/owned typechecks and clean packed consumer pass. Selected source coverage is 43.2% lines, 61.08% branches, 40.52% functions. Eighteen runtime modules remain unexecuted. The inherited lane stays failed: 2264 pass, 380 fail, 47 pending, one todo (2692 total). The required root update diagnostic also failed; all 16 generated golden changes were restored.
+- Extras e37c06fe: 30 source tests/ratchets, four production-bundle browser cases, production/API builds and clean packed API consumer pass. Native real MathJax, editable Mermaid and PDF checks pass; PDF is one 288x216pt page with text and 3330 red SVG pixels.
+
+The full frozen diagnostic has 12 passing functional scenarios and passing owned cleanup, but its overall error gate fails: three primitive illegal-access exceptions and two ENOENT errors after fixture deletion. A revised save-then-Vault-delete retirement sequence passes a later multi-scenario clean run; full repeat remains required. Electron documents the matching child-window teardown defect as fixed in 43.5.0 (https://releases.electronjs.org/pr/53041), newer than this host's 43.3.0. Treat the match as a hypothesis requiring a fixed-host run, not an approved suppression.
+
+Earlier exploratory maintained-script evidence is retained only in ignored diagnostics. Script-specific coverage is outside this PR following maintainer direction; core EA has its own direct native cases. Current remaining obligations are tracked in tests/features.json. Hosted and exact-SHA trusted-native workflows are implemented but have not yet run remotely. Native cold restart/fresh session registration, legacy/minimum hosts, macOS/Linux and physical Android/iOS are explicit unavailable gates in this shared session.

@@ -15,3 +15,14 @@ export function deviceProfiles() {
   // migration behavior has its separate native lifecycle obligations.
   return profiles.map(profile => ({ ...profile, pane: "fullscreen" }));
 }
+
+/** Canonical common/editorInterface.ts boundaries; actual editor bounds are recorded. */
+export function breakpointProfiles() {
+  const cases = [
+    ...[598, 599, 600].map(width => ({ id: `mobile-width-${width}`, width, height: 900, formFactor: width <= 599 ? "phone" : "tablet" })),
+    ...[799, 800, 801].map(width => ({ id: `sidebar-width-${width}`, width, height: 900, formFactor: "tablet", canFitSidebar: width > 800 })),
+    ...[999, 1000, 1001].map(width => ({ id: `landscape-width-${width}`, width, height: 499, formFactor: width < 1000 ? "phone" : "desktop" })),
+    ...[499, 500, 501].map(height => ({ id: `landscape-height-${height}`, width: 999, height, formFactor: height < 500 ? "phone" : "desktop" })),
+  ];
+  return cases.map(profile => ({ ...profile, editorWidth: profile.width, boundary: true, id: "breakpoint-" + profile.id, mobile: true, mode: profile.formFactor === "phone" ? "mobile" : "compact", theme: "light", input: "touch", pane: "fullscreen" }));
+}
