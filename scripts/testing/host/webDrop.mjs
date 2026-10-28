@@ -1,8 +1,9 @@
 /** #2967: mixed browser/file drops against an owned local PNG server. */
 import assert from "node:assert/strict";
+import {runLegacyTask} from "./legacyTask.mjs";
 import { createServer } from "node:http";
 
-async function exercise(control, drawingPath, imageURL, pngBase64) {
+async function exercise(control, drawingPath, imageURL, pngBase64, includePopout) {
   const c = globalThis[control], plugin = app.plugins.plugins["obsidian-excalidraw-plugin"];
   const main = app.workspace.getLeavesOfType("excalidraw").find(l => l.view.file?.path === drawingPath);
   const previous = structuredClone(plugin.settings.modifierKeyConfig);
@@ -29,7 +30,7 @@ async function exercise(control, drawingPath, imageURL, pngBase64) {
     throw Error(`Timed out: ${label}`);
   };
   try {
-    for (const popout of [false, true]) {
+    for (const popout of includePopout ? [false,true] : [false]) {
       let leaf = main;
       if (popout) {
         leaf = app.workspace.openPopoutLeaf(); c.pop = leaf;
@@ -119,40 +120,17 @@ async function exercise(control, drawingPath, imageURL, pngBase64) {
       try { const file = app.vault.getFileByPath(path); if (file) await app.vault.delete(file); }
       catch (error) { cleanupError ??= error; }
     }
-    if (cleanupError) throw cleanupError;
+    if (cleanupError) { const error=Error('Web-drop cleanup failed: '+String(cleanupError));error.cleanupFailed=true;throw error; }
   }
 }
 
 /** No external service is contacted; the server and owned fixtures are closed. */
-export async function runWebDropScenario({ cli, drawingPath }) {
-  const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a3f8AAAAASUVORK5CYII=", "base64");
-  const server = createServer((_request, response) => { response.writeHead(200, { "Content-Type": "image/png" }); response.end(png); });
-  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
-  const imageURL = `http://127.0.0.1:${server.address().port}/excalidraw-drop-${Date.now()}.png`;
-  const control = "__excalidrawWebDrop";
-  const evaluate = code => JSON.parse(cli("eval", `code=${code}`).trim().replace(/^=>\s*/, ""));
-  try {
-    evaluate(`(()=>{if(globalThis.${control})throw Error("web-drop controller exists");const c=globalThis.${control}={state:"pending"};(${exercise.toString()})(${JSON.stringify(control)},${JSON.stringify(drawingPath)},${JSON.stringify(imageURL)},${JSON.stringify(png.toString("base64"))}).then(()=>c.state="done").catch(e=>{c.state="failed";c.error=e.stack});return JSON.stringify({started:true})})()`);
-    let result;
-    // Twenty storage/reopen cases need a larger budget than the original four.
-    for (let i = 0; i < 1800; i++) {
-      result = evaluate(`JSON.stringify({state:globalThis.${control}.state,error:globalThis.${control}.error,results:globalThis.${control}.results})`);
-      if (result.state !== "pending") break;
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
-    assert.equal(result.state, "done", result.error ?? "web-drop scenario timed out");
-    return { id: "web-drop-2967", status: "passed", cases: result.results };
-  } finally {
-    try {
-      const state = () => evaluate(`JSON.stringify({state:globalThis.${control}?.state})`).state;
-      if (state() === "pending") {
-        cli("eval", `code=globalThis.${control}.cancelled=true`);
-        for (let i = 0; i < 200 && state() === "pending"; i++) await new Promise(resolve => setTimeout(resolve, 100));
-        assert.notEqual(state(), "pending", "drop exercise did not finish cleanup after cancellation");
-      }
-      cli("eval", `code=delete globalThis.${control}`);
-    } finally {
-      await new Promise(resolve => server.close(resolve));
-    }
-  }
+export async function runWebDropScenario({cli,drawingPath,includePopout=true}) {
+  assert.ok(drawingPath.startsWith('__excalidraw_cli_smoke_'));
+  const png=Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a3f8AAAAASUVORK5CYII=","base64");
+  const server=createServer((_request,response)=>{response.writeHead(200,{"Content-Type":"image/png"});response.end(png);});
+  await new Promise(resolve=>server.listen(0,"127.0.0.1",resolve));
+  const imageURL=`http://127.0.0.1:${server.address().port}/excalidraw-drop-${Date.now()}.png`;
+  try{const result=await runLegacyTask({cli,control:'__excalidrawWebDrop',execute:exercise,args:[drawingPath,imageURL,png.toString("base64"),includePopout],timeoutMs:240000});return{id:'web-drop-2967',status:'passed',input:'synthetic DataTransfer; real local server, Vault storage and reopen',cases:result.results};}
+  finally{await new Promise(resolve=>{server.close(resolve);server.closeAllConnections();});}
 }

@@ -1,7 +1,7 @@
 /** Native CI preflight only: prove the explicitly provisioned session is isolated. */
 import assert from 'node:assert/strict';
 import {readFileSync,realpathSync} from 'node:fs';
-import {join,resolve} from 'node:path';
+import {resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {ownedPath} from '../contracts.mjs';
 import {validateOwnedVault} from '../provision.mjs';

@@ -10,7 +10,7 @@ on:
         required: true
       profile:
         type: choice
-        options: [smoke, full, devices, soak]
+        options: [smoke, full, devices, soak, cold]
         default: smoke
 permissions:
   contents: read
@@ -62,7 +62,17 @@ jobs:
       - name: Run approved native profile
         env:
           TEST_PROFILE: ${{ inputs.profile }}
-        run: node scripts/testing/host/verify.mjs "--profile=$env:TEST_PROFILE"
+        run: |
+          if ($env:TEST_PROFILE -eq 'cold') {
+            node scripts/testing/host/verify.mjs --profile=smoke
+            if ($LASTEXITCODE -ne 0) { throw 'Cold-start prerequisite smoke failed' }
+            $coldSmoke = Get-Content -LiteralPath (Join-Path $env:EXCALIDRAW_TEST_REPORT_DIR 'report.json') -Raw | ConvertFrom-Json
+            $env:EXCALIDRAW_TEST_COMBINATION_PATH = Join-Path $coldSmoke.combination.output 'combination.json'
+            $env:EXCALIDRAW_TEST_REPORT_DIR = Join-Path $env:EXCALIDRAW_TEST_REPORT_DIR 'cold'
+            node scripts/testing/host/coldStart.mjs
+          } else {
+            node scripts/testing/host/verify.mjs "--profile=$env:TEST_PROFILE"
+          }
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -2272,6 +2272,10 @@
   ],
   "testFiles": [
     {
+      "path": "scripts/testing/acceptance.test.mjs",
+      "mode": "direct-module-or-tooling"
+    },
+    {
       "path": "scripts/testing/bundle.test.mjs",
       "mode": "isolated-or-extracted"
     },
@@ -2304,6 +2308,10 @@
       "mode": "isolated-or-extracted"
     },
     {
+      "path": "scripts/testing/host/coldStart.test.mjs",
+      "mode": "direct-module-or-tooling"
+    },
+    {
       "path": "scripts/testing/host/combination.test.mjs",
       "mode": "direct-module-or-tooling"
     },
@@ -2325,6 +2333,10 @@
     },
     {
       "path": "scripts/testing/host/legacyTask.test.mjs",
+      "mode": "isolated-or-extracted"
+    },
+    {
+      "path": "scripts/testing/host/pluginDiscovery.test.mjs",
       "mode": "isolated-or-extracted"
     },
     {

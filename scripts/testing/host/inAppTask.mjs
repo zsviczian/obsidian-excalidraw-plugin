@@ -8,16 +8,17 @@ export function parseCLIJSON(output) {
 }
 
 export async function runInAppTask({ cli, execute, args = [], timeoutMs = 60_000, cleanupMs = 30_000,
-  onRequest, wait = ms => new Promise(resolve => setTimeout(resolve, ms)), now = () => Date.now(), token = randomUUID().replaceAll("-", "") }) {
+  onRequest, onProgress, wait = ms => new Promise(resolve => setTimeout(resolve, ms)), now = () => Date.now(), token = randomUUID().replaceAll("-", "") }) {
   const key = `__excalidrawTestTask_${token}`;
   const evaluate = code => parseCLIJSON(cli("eval", "code=" + code));
   evaluate(`(${installTask.toString()})(${JSON.stringify(key)},${execute.toString()},${JSON.stringify(args)})`);
   const read = () => evaluate(`JSON.stringify((()=>{const c=globalThis[${JSON.stringify(key)}];return c?{state:c.state,result:c.result,error:c.error,tests:c.tests,cleanup:c.cleanup,cleanupErrors:c.cleanupErrors,cleanupPending:c.cleanupPending,phase:c.phase,request:c.request}:{state:'missing'}})())`);
-  let state, originalError;
+  let state, originalError, previousPhase;
   try {
     const end = now() + timeoutMs;
     for (;;) {
       state = read();
+      if(onProgress&&state.phase!==previousPhase){previousPhase=state.phase;onProgress(state.phase);}
       if (state.state === "done") {
         if (state.error) { const error = Error(state.error); error.evidence = state.tests; throw error; }
         if (state.cleanup !== "passed") throw Error("Native task cleanup failed: " + state.cleanupErrors.join("; "));

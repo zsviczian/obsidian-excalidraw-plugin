@@ -15,3 +15,19 @@ test('failed legacy cleanup retains both controllers for guarded recovery',async
   assert.equal(vm.runInContext('!!globalThis.__legacy_failed',state),true);
   assert.equal(Object.keys(state).filter(key=>key.startsWith('__excalidrawTestTask_')).length,1);
 });
+
+test('parent cancellation reaches the legacy loop before owned cleanup',async()=>{
+  const {state,cli}=host();
+  await assert.rejects(runLegacyTask({cli,control:'__legacy_cancelled',timeoutMs:10,cleanupMs:1000,
+    execute:async control=>{while(!globalThis[control].cancelled)await new Promise(resolve=>setTimeout(resolve,5));events.push('observed cancellation');},
+    cleanup:async()=>{events.push('cleaned');}}),error=>/deadline/.test(error.message)&&!error.cleanupFailed);
+  assert.deepEqual(state.events,['observed cancellation','cleaned']);
+  assert.equal(Object.keys(state).some(key=>key.startsWith('__')),false);
+});
+
+test('a legacy operation reports its own failed cleanup and retains recovery ownership',async()=>{
+  const {state,cli}=host();
+  await assert.rejects(runLegacyTask({cli,control:'__legacy_cleanup_in_work',execute:async()=>{const error=Error('owned server/view did not close');error.cleanupFailed=true;throw error;}}),error=>error.cleanupFailed&&/did not close/.test(error.message));
+  assert.ok(state.__legacy_cleanup_in_work);
+  assert.equal(Object.keys(state).filter(key=>key.startsWith('__excalidrawTestTask_')).length,1);
+});

@@ -10,7 +10,7 @@ function fixture(){
   const entries=['main.js','manifest.json','styles.css','index.d.ts'];
   entries.forEach(name=>writeFileSync(join(root,'dist',name),name==='manifest.json'?JSON.stringify({id:'excalidraw-extras'}):'owned '+name));
   const manifest=createArtifactManifest({root,kind:'extras',repository:'zsviczian/obsidian-excalidraw-extras',buildCommand:'synthetic producer fixture',identity:{commit:'a'.repeat(40),dirty:false,diffHash:'b'.repeat(64),lockfileHash:'c'.repeat(64)},artifacts:entries.map((name,i)=>({role:['main','manifest','styles','declarations'][i],relativePath:'dist/'+name}))});
-  const config=join(output,'vault/.obsidian');mkdirSync(config,{recursive:true});return{combination:{output,manifests:{extras:manifest}},target:{config},root};
+  const config=join(output,'vault/.obsidian');mkdirSync(config,{recursive:true});return{combination:{output,manifests:{extras:manifest}},target:{config},root,discoverPlugin:async()=>({discovery:'test-adapter'})};
 }
 test('corrupt frozen Extras bytes fail before the first native call',async()=>{
   const input=fixture();writeFileSync(join(input.root,'dist/main.js'),'corrupted');let calls=0;

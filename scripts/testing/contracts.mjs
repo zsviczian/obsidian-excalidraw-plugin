@@ -108,8 +108,8 @@ export function freezeArtifacts(manifest, producerRoot, snapshotRoot) {
 /** Explicit migration: v1 smoke evidence does not imply unexecuted feature coverage. */
 export function adaptSmokeReport(report) {
   assert.equal(report.schemaVersion, 1, "Expected legacy smoke schema 1");
-  return { schemaVersion: SCHEMA_VERSION, suiteId: "native-obsidian", source: report.source,
-    status: report.status, cleanup: report.cleanup,
+  return { schemaVersion: SCHEMA_VERSION, suiteId: report.source?.requestedProfile==='soak'?'native-soak':"native-obsidian", source: report.source,
+    status: report.status, cleanup: report.cleanup, error:report.error, cleanupError:report.cleanupError,
     tests: report.scenarios.flatMap(s => s.tests?.length ? s.tests : [{ ...s, testId: s.id, featureIds: [] }]), legacy: report };
 }
 
@@ -129,7 +129,8 @@ export function aggregateReports(reports, requiredTestIds) {
   const unsuccessful = tests.filter(t => t.status !== "passed" && (t.status !== "notApplicable" || requiredTestIds.includes(t.testId)));
   const failedCleanup = reports.some(r => r.cleanup !== "passed" || r.status !== "passed");
   return { schemaVersion: SCHEMA_VERSION, suiteId: "aggregate", status: missing.length || unsuccessful.length || failedCleanup ? "failed" : "passed",
-    cleanup: reports.every(r => r.cleanup === "passed") ? "passed" : "failed", requiredTestIds, missing, tests };
+    cleanup: reports.every(r => r.cleanup === "passed") ? "passed" : "failed", requiredTestIds, missing, tests,
+    failedSuites:reports.filter(r=>r.cleanup!=='passed'||r.status!=='passed').map(r=>({suiteId:r.suiteId,status:r.status,cleanup:r.cleanup,reason:r.error||r.cleanupError||'Suite or cleanup gate did not pass'})) };
 }
 
 /** Stable discovery used by the fixture/discovery gate; never follows links. */

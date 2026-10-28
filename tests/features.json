@@ -36,6 +36,13 @@
           "cases": [
             "native:lifecycle-plugin-reload"
           ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/coldStart.mjs",
+          "cases": [
+            "native:cold-durable-restoration"
+          ]
         }
       ],
       "fixtures": [],
@@ -87,6 +94,13 @@
             "native:data-rename-delete",
             "native:data-backup"
           ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/coldStart.mjs",
+          "cases": [
+            "native:cold-durable-restoration"
+          ]
         }
       ],
       "fixtures": [
@@ -132,6 +146,13 @@
             "native:lifecycle-dirty-popout-to-main",
             "native:lifecycle-new-popout-survivor"
           ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/coldStart.mjs",
+          "cases": [
+            "native:cold-durable-restoration"
+          ]
         }
       ],
       "fixtures": [
@@ -173,6 +194,18 @@
           "path": "scripts/testing/host/groupedLinkClick.mjs",
           "cases": [
             "grouped-link-click"
+          ]
+        },
+        {
+          "repository": "fork",
+          "layer": "source",
+          "path": "packages/excalidraw/clipboard.test.ts",
+          "cases": [
+            "fork-inherited:packages/excalidraw/clipboard.test.ts::parseClipboard() should parse JSON as plaintext if not excalidraw-api/clipboard data",
+            "fork-inherited:packages/excalidraw/clipboard.test.ts::parseClipboard() should parse valid excalidraw JSON if inside text/plain",
+            "fork-inherited:packages/excalidraw/clipboard.test.ts::parseClipboard() should parse valid excalidraw JSON if inside text/html",
+            "fork-inherited:packages/excalidraw/clipboard.test.ts::parseClipboard() should parse <image> `src` urls out of text/html",
+            "fork-inherited:packages/excalidraw/clipboard.test.ts::parseClipboard() should parse text content alongside <image> `src` urls out of text/html"
           ]
         }
       ],
@@ -223,6 +256,27 @@
           "cases": [
             "native:extras-pdf-output"
           ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/pdfImport.mjs",
+          "cases": [
+            "native:pdf-reference-and-decoded-content"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/webDrop.mjs",
+          "cases": [
+            "web-drop-2967"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/internalDrop.mjs",
+          "cases": [
+            "internal-drop-tooltip"
+          ]
         }
       ],
       "fixtures": [
@@ -240,7 +294,7 @@
       "failure": "Stale/cancelled loaders cannot publish into a replacement context",
       "cleanup": "Dispose image/PDF resources and remove exact owned assets",
       "remaining": [
-        "PDF import and URL-image network failure require additional portable native cases"
+        "URL-image failure paths are exercised by portable local-server/fallback cases; remote service outages and OS drag transports remain separate boundaries"
       ]
     },
     {
@@ -327,7 +381,68 @@
           "cases": [
             "native:core-toolbar-draw-history",
             "native:core-custom-highlighter",
-            "native:core-laser-transient"
+            "native:core-laser-transient",
+            "native:core-eraser-and-undo"
+          ]
+        },
+        {
+          "repository": "fork",
+          "layer": "source",
+          "path": "packages/element/tests/zindex.test.tsx",
+          "cases": [
+            "fork-inherited:packages/element/tests/zindex.test.tsx::z-index manipulation send back",
+            "fork-inherited:packages/element/tests/zindex.test.tsx::z-index manipulation bring forward",
+            "fork-inherited:packages/element/tests/zindex.test.tsx::z-index manipulation bring to front",
+            "fork-inherited:packages/element/tests/zindex.test.tsx::z-index manipulation send to back",
+            "fork-inherited:packages/element/tests/zindex.test.tsx::z-index manipulation duplicating elements should retain zindex integrity",
+            "fork-inherited:packages/element/tests/zindex.test.tsx::z-index manipulation duplicating incorrectly interleaved elements (group elements should be together) should still produce reasonable result",
+            "fork-inherited:packages/element/tests/zindex.test.tsx::z-index manipulation group-selected duplication should includes deleted elements that weren't selected on account of being deleted",
+            "fork-inherited:packages/element/tests/zindex.test.tsx::z-index manipulation text-container binding should be atomic",
+            "fork-inherited:packages/element/tests/zindex.test.tsx::z-indexing with frames moving whole frame by one (normalized)",
+            "fork-inherited:packages/element/tests/zindex.test.tsx::z-indexing with frames moving whole frame by one (DENORMALIZED)",
+            "fork-inherited:packages/element/tests/zindex.test.tsx::z-indexing with frames moving selected frame children by one (normalized)",
+            "fork-inherited:packages/element/tests/zindex.test.tsx::z-indexing with frames moving selected frame children by one (DENORMALIZED)",
+            "fork-inherited:packages/element/tests/zindex.test.tsx::z-indexing with frames moving whole frame to front/end",
+            "fork-inherited:packages/element/tests/zindex.test.tsx::z-indexing with frames bringing to front / sending to back children of MULTIPLE frames at once moves all of them",
+            "fork-inherited:packages/element/tests/zindex.test.tsx::z-indexing with frames send to back / bring to front of a grouped frame child (in group-editing mode) must not duplicate elements",
+            "fork-inherited:packages/element/tests/zindex.test.tsx::z-index reordering with broken contiguity (invariant-violating input) discontiguous frame children (foreign frame's child interleaved in span)",
+            "fork-inherited:packages/element/tests/zindex.test.tsx::z-index reordering with broken contiguity (invariant-violating input) discontiguous group, whole group selected",
+            "fork-inherited:packages/element/tests/zindex.test.tsx::z-index reordering with broken contiguity (invariant-violating input) discontiguous group, single member selected in group-editing mode",
+            "fork-inherited:packages/element/tests/zindex.test.tsx::z-index reordering with broken contiguity (invariant-violating input) two interleaved groups, both fully selected",
+            "fork-inherited:packages/element/tests/zindex.test.tsx::z-index reordering with inconsistent group-editing state does not duplicate or drop elements when selected elements fall outside the edited group scope"
+          ]
+        },
+        {
+          "repository": "fork",
+          "layer": "source",
+          "path": "packages/excalidraw/tests/selection.test.tsx",
+          "cases": [
+            "fork-inherited:packages/excalidraw/tests/selection.test.tsx::box-selection should allow adding to selection via box-select when holding shift",
+            "fork-inherited:packages/excalidraw/tests/selection.test.tsx::box-selection should (de)select element when box-selecting over and out while not holding shift",
+            "fork-inherited:packages/excalidraw/tests/selection.test.tsx::box-selection should not select an element when the selection box only partially overlaps it",
+            "fork-inherited:packages/excalidraw/tests/selection.test.tsx::box-selection overlap mode should select an element when the selection box partially overlaps it",
+            "fork-inherited:packages/excalidraw/tests/selection.test.tsx::box-selection overlap mode should select the whole group when overlapping one group member",
+            "fork-inherited:packages/excalidraw/tests/selection.test.tsx::box-selection overlap mode should return all group elements when overlapping one group member",
+            "fork-inherited:packages/excalidraw/tests/selection.test.tsx::box-selection overlap mode should retain nested and interleaved group element order",
+            "fork-inherited:packages/excalidraw/tests/selection.test.tsx::box-selection overlap mode should not select a transparent rectangle when the selection box stays inside it",
+            "fork-inherited:packages/excalidraw/tests/selection.test.tsx::box-selection overlap mode should select a transparent rectangle when the selection box crosses its outline",
+            "fork-inherited:packages/excalidraw/tests/selection.test.tsx::box-selection overlap mode should not select a rotated transparent rectangle when the selection box stays inside it",
+            "fork-inherited:packages/excalidraw/tests/selection.test.tsx::box-selection overlap mode should select a rotated rounded rectangle when the selection box contains its outline but not its bounds",
+            "fork-inherited:packages/excalidraw/tests/selection.test.tsx::box-selection overlap mode should not select a filled rotated rectangle when the selection box only overlaps its axis-aligned bounds",
+            "fork-inherited:packages/excalidraw/tests/selection.test.tsx::box-selection overlap mode should not select a filled ellipse when the selection box only overlaps its bounds corner",
+            "fork-inherited:packages/excalidraw/tests/selection.test.tsx::box-selection overlap mode should not select a filled diamond when the selection box only overlaps its bounds corner",
+            "fork-inherited:packages/excalidraw/tests/selection.test.tsx::box-selection overlap mode should not select a filled rotated ellipse when the selection box only overlaps its axis-aligned bounds",
+            "fork-inherited:packages/excalidraw/tests/selection.test.tsx::box-selection overlap mode should not select a filled rotated diamond when the selection box only overlaps its rotated local bounds",
+            "fork-inherited:packages/excalidraw/tests/selection.test.tsx::box-selection overlap mode should not select rotated text when the selection box only overlaps its axis-aligned bounds",
+            "fork-inherited:packages/excalidraw/tests/selection.test.tsx::box-selection overlap mode should not select rotated image when the selection box only overlaps its axis-aligned bounds",
+            "fork-inherited:packages/excalidraw/tests/selection.test.tsx::box-selection overlap mode should deselect a selected rotated rectangle when clicking in the empty corner of its axis-aligned bounds",
+            "fork-inherited:packages/excalidraw/tests/selection.test.tsx::box-selection overlap mode should not select a line when the selection box only overlaps its bounds",
+            "fork-inherited:packages/excalidraw/tests/selection.test.tsx::box-selection overlap mode should not click-select rotated freedraw in the corner of its axis-aligned bounds",
+            "fork-inherited:packages/excalidraw/tests/selection.test.tsx::box-selection overlap mode should select and drag a filled variable freedraw loop from its interior",
+            "fork-inherited:packages/excalidraw/tests/selection.test.tsx::box-selection overlap mode should select and drag a filled constant freedraw loop from its interior",
+            "fork-inherited:packages/excalidraw/tests/selection.test.tsx::box-selection overlap mode should not select a freedraw when the selection box only overlaps its bounds",
+            "fork-inherited:packages/excalidraw/tests/selection.test.tsx::box-selection overlap mode should not select a transparent framed element when the selection box stays inside its clipped bounds",
+            "fork-inherited:packages/excalidraw/tests/selection.test.tsx::box-selection overlap mode should not select a framed element when selection only overlaps its clipped-out outline"
           ]
         }
       ],
@@ -342,7 +457,7 @@
       "failure": "Invalid relationships and stale revisions cannot partially mutate",
       "cleanup": "Restore focus and retire all owned editor roots",
       "remaining": [
-        "Layer ordering and drag selection have native cases pending; physical pressure/stylus is a separate device gate"
+        "Physical pressure/stylus and OS touch behavior require an actual device; source box-selection and all 20 z-order cases are mapped separately"
       ]
     },
     {
@@ -427,6 +542,29 @@
             "native:ea-edit-image-and-decoded-export",
             "native:ea-svg-import-and-disposal"
           ]
+        },
+        {
+          "repository": "fork",
+          "layer": "source",
+          "path": "packages/excalidraw/tests/library.test.tsx",
+          "cases": [
+            "fork-inherited:packages/excalidraw/tests/library.test.tsx::library items inserting should regenerate ids but retain bindings on library insert",
+            "fork-inherited:packages/excalidraw/tests/library.test.tsx::library import library via drag&drop",
+            "fork-inherited:packages/excalidraw/tests/library.test.tsx::library drop library item onto canvas",
+            "fork-inherited:packages/excalidraw/tests/library.test.tsx::library should fix duplicate ids between items on insert",
+            "fork-inherited:packages/excalidraw/tests/library.test.tsx::library inserting library item should revert to selection tool",
+            "fork-inherited:packages/excalidraw/tests/library.test.tsx::library menu should load library from file picker",
+            "fork-inherited:packages/excalidraw/tests/library.test.tsx::library menu Escape (undocked sidebar) should clear an active search instead of closing the sidebar",
+            "fork-inherited:packages/excalidraw/tests/library.test.tsx::library menu Escape (undocked sidebar) should clear the item selection instead of closing the sidebar",
+            "fork-inherited:packages/excalidraw/tests/library.test.tsx::distributeLibraryItemsOnSquareGrid() should distribute items on a grid"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/pdfImport.mjs",
+          "cases": [
+            "native:pdf-reference-and-decoded-content"
+          ]
         }
       ],
       "fixtures": [
@@ -443,7 +581,7 @@
       "failure": "Invalid assets and unavailable services fail without hidden fallback",
       "cleanup": "Remove temporary render DOM, print listeners and owned output",
       "remaining": [
-        "Portable native SVG drop/library import and OS clipboard import need additional cases; public EA SVG import is exercised"
+        "Inherited library file-picker/search cases currently fail and remain visible; OS clipboard transport is separate from executed parser/serializer tests"
       ]
     },
     {
@@ -479,6 +617,13 @@
             "native:ea-shapes-bindings-and-isolation",
             "native:ea-edit-image-and-decoded-export",
             "native:ea-svg-import-and-disposal"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/pdfImport.mjs",
+          "cases": [
+            "native:pdf-reference-and-decoded-content"
           ]
         }
       ],
@@ -527,6 +672,13 @@
           "cases": [
             "native:extras-mathjax-gateway"
           ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/errorOracle.mjs",
+          "cases": [
+            "native:diagnostics-rejects-unhandled"
+          ]
         }
       ],
       "fixtures": [
@@ -542,9 +694,7 @@
       "success": "Required payload/font bytes are embedded and services resolve through the gateway",
       "failure": "Invalid protocol, failed activation and malformed input fail closed",
       "cleanup": "Own and remove debugger/listeners; unrelated errors always fail",
-      "remaining": [
-        "Native real unhandled-error negative control is separate from ordinary clean-error acceptance"
-      ]
+      "remaining": []
     },
     {
       "id": "P12",
@@ -577,8 +727,26 @@
       "failure": "Timeout or failed save fails the run without deleting unsettled resources",
       "cleanup": "Return root count to baseline; delete exact owned scene",
       "remaining": [
-        "25-cycle soak and repeated reload need the final profile run; forced-GC heap and physical-device performance are not inferred"
+        "Isolated repeated application restart and forced-GC heap analysis remain separate gates; 25-cycle native scene soak passed"
       ]
     }
+  ],
+  "requiredSuites": [
+    "plugin-fast",
+    "fork-owned",
+    "fork-inherited",
+    "fork-browser",
+    "extras-source",
+    "extras-browser",
+    "native-obsidian",
+    "native-devices",
+    "native-error-oracle",
+    "native-cold"
+  ],
+  "requiredGates": [
+    "plugin-source-coverage",
+    "fork-package",
+    "extras-package",
+    "native-soak"
   ]
 }

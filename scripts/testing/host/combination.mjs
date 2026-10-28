@@ -7,6 +7,7 @@ import {produceArtifacts} from '../produceArtifacts.mjs';
 import {sourceIdentity,validateArtifactManifest,ownedPath,fileHash} from '../contracts.mjs';
 import {packageManagerInvocation} from './processTools.mjs';
 import {parseCLIJSON} from './inAppTask.mjs';
+import {discoverStagedPlugin} from './pluginDiscovery.mjs';
 export function produceCombination({pluginRoot,forkRoot,extrasRoot,output}){
   output=resolve(output);assert.ok(!existsSync(output),'Combination output already exists');mkdirSync(output,{recursive:true});
   const roots={plugin:resolve(pluginRoot),fork:resolve(forkRoot),extras:resolve(extrasRoot)},manifests={};
@@ -24,7 +25,7 @@ export function produceCombination({pluginRoot,forkRoot,extrasRoot,output}){
   }
   const combination={schemaVersion:2,mode:'workspace',roots,manifests};writeFileSync(join(output,'combination.json'),JSON.stringify(combination,null,2)+'\n');return {...combination,output};
 }
-export async function stageExtras({combination,target,cli}){
+export async function stageExtras({combination,target,cli,discoverPlugin=discoverStagedPlugin}){
   const root=join(combination.output,'extras'),manifest=validateArtifactManifest(combination.manifests.extras,root),id='excalidraw-extras';
   const metadata=JSON.parse(readFileSync(ownedPath(root,manifest.artifacts.find(entry=>entry.role==='manifest').relativePath),'utf8'));assert.equal(metadata.id,id,'Wrong Extras plugin manifest');
   const entries=manifest.artifacts.filter(entry=>['main','manifest','styles'].includes(entry.role)).map(entry=>{
@@ -35,7 +36,8 @@ export async function stageExtras({combination,target,cli}){
   if(before.loaded)cli('plugin:disable','id='+id);
   const installedHashes={};
   for(const entry of entries){mkdirSync(join(entry.destination,'..'),{recursive:true});copyFileSync(ownedPath(root,entry.relativePath),entry.destination);installedHashes[entry.role]=fileHash(entry.destination);assert.equal(installedHashes[entry.role],entry.sha256,'Installed Extras byte mismatch');}
+  const discovery=await discoverPlugin(cli,id);
   cli('plugin:enable','id='+id);
   const end=Date.now()+20000;for(;;){const ready=parseCLIJSON(cli('eval',"code=JSON.stringify(!!app.plugins.plugins['excalidraw-extras']?.api)"));if(ready)break;if(Date.now()>end)throw Error('Paired Extras API did not become ready');await new Promise(resolve=>setTimeout(resolve,50));}
-  return {evidence:{installedHashes,id,source:manifest.commit,sha256:manifest.artifacts.find(entry=>entry.role==='main').sha256,previouslyLoaded:before.loaded},cleanup:()=>{if(!before.loaded)cli('plugin:disable','id='+id);}};
+  return {evidence:{installedHashes,id,source:manifest.commit,sha256:manifest.artifacts.find(entry=>entry.role==='main').sha256,previouslyLoaded:before.loaded,...discovery},cleanup:()=>{if(!before.loaded)cli('plugin:disable','id='+id);}};
 }

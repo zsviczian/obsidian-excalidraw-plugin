@@ -8,11 +8,13 @@ export async function runLegacyTask({cli,control,execute,cleanup=async()=>{},arg
   const adapter=new Function(`return async function(c,control,args){
     if(globalThis[control])throw Error('Existing native controller: '+control);
     const legacy={state:'pending'};globalThis[control]=legacy;
-    c.defer(async()=>{await (${cleanup.toString()})(control);if(globalThis[control]===legacy)delete globalThis[control];});
-    c.checkpoint();const result=await (${execute.toString()})(control,...args);
-    return {result,results:legacy.results,reopen:legacy.reopen};
+    Object.defineProperty(legacy,'cancelled',{get:()=>c.cancelled});
+    Object.defineProperty(c,'phase',{get:()=>control+': '+(legacy.results?.length??0)+' completed cases'});
+    c.defer(async()=>{await (${cleanup.toString()})(control);if(legacy.cleanupFailed)throw Error(legacy.cleanupFailed);if(globalThis[control]===legacy)delete globalThis[control];});
+    try{c.checkpoint();const result=await (${execute.toString()})(control,...args);return {result,results:legacy.results,reopen:legacy.reopen};}
+    catch(error){if(error.cleanupFailed)legacy.cleanupFailed=String(error);throw error;}
   }`)();
-  try{return await runInAppTask({cli,execute:adapter,args:[control,args],timeoutMs,cleanupMs});}
+  try{return await runInAppTask({cli,execute:adapter,args:[control,args],timeoutMs,cleanupMs,onProgress:phase=>process.stdout.write('[native] '+phase+'\n')});}
   catch(error){error.message+='; legacy controller: '+control;throw error;}
 }
 

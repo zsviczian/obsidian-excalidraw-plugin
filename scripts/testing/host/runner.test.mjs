@@ -108,7 +108,7 @@ test("stages exact artifacts, asserts an editor and cleans its test drawing", as
     return { id: "feature-test", status: "passed" };
   };
   let companionCleaned = 0;
-  const options = { ...input, runCli, runBuild: () => ({pluginArtifactRoot:input.projectRoot,forkArtifacts:{verified:true}}), unique: () => "1", wait: () => {},
+  const options = { ...input, runCli, discoverPlugin:async()=>({discovery:'test-adapter'}), runBuild: () => ({pluginArtifactRoot:input.projectRoot,forkArtifacts:{verified:true}}), unique: () => "1", wait: () => {},
     deployCompanions: ({target}) => { assert.equal(target.config,input.configDir); return {evidence:{paired:true},cleanup:()=>{assert.equal(cleanupStarted,true);companionCleaned++;}}; } };
   const report = await runObsidianSmoke({ ...options, scenarios: [featureScenario,({drawingPath})=>{assert.equal(cleanupStarted,true,'Previous feature fixture must be retired first');assert.equal(drawingPath,'__excalidraw_cli_smoke_1_case1.excalidraw.md');return {id:'independent-feature',status:'passed'};}] });
   assert.equal(report.status, "passed", report.error);
@@ -144,4 +144,15 @@ test("an eval Error payload fails even when the CLI process reports success", as
   assert.equal(report.status, "failed");
   assert.match(report.error, /Error: plugin initialization failed/);
   assert.equal(report.cleanup, "not-started");
+});
+
+test('a CLI session differing from the held application lock cannot build or deploy',async()=>{
+  const input=fixture();let built=false;
+  const report=await runObsidianSmoke({...input,expectedUserDataPath:input.projectRoot,runBuild:()=>{built=true;},runCli:(_vault,command,...args)=>{
+    if(command==='help')return'version vault plugin:enable plugin:disable commands eval dev:errors';
+    if(command==='vault')return input.vaultPath;
+    if(command==='eval')return args[0].includes('app.vault.configDir')?'{"configDir":".obsidian"}':JSON.stringify(input.vaultPath);
+    return'1.14.5';
+  }});
+  assert.equal(built,false);assert.equal(report.status,'failed');assert.match(report.error,/held host lock/);
 });

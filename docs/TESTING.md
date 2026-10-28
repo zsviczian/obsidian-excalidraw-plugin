@@ -14,6 +14,7 @@ checkouts when they are elsewhere. Then run:
 ```sh
 npm run test:build-workspace
 npm run lib
+npm run test:packages
 npm run test:fixtures
 npm run test:inventory
 npm run test:features
@@ -60,6 +61,8 @@ prerequisites. See [the runner contract](testing-contracts.md) and
 | `npm run verify:obsidian:full` | Smoke plus data/lifecycle, real Extras services/PDF, workflow/pickers, Lucide, text/history, images/embeds, wheel, CLI, links, LaTeX input, core EA authoring, stability and device matrix |
 | `npm run verify:obsidian:devices` | Smoke then 40 measured desktop/mobile-emulation/theme/layout/breakpoint cases |
 | `npm run verify:obsidian:soak` | Smoke then 25 bounded 1,000-element open/edit/save/export/close cycles |
+| `npm run verify:obsidian:diagnostics` | Separate negative control: an actual intentional unhandled host exception must be captured and rejected by the ordinary oracle |
+| `npm run verify:obsidian:cold` | Official app restart and durable workspace restoration, guarded by an isolated single-vault session proof |
 
 Each producer freezes bytes and generated declaration evidence before staging.
 Only the four runtime fork artifacts are copied to the installed exact npm
@@ -80,6 +83,37 @@ Desktop emulation uses actual Obsidian mobile mode and trusted input, but does
 not establish physical Android/iOS WebView, stylus, native keyboard or safe-area
 behavior. Whole-application restart is allowed only in an isolated automation
 session. Plugin reload is separate evidence and must never be called cold restart.
+
+The cold lane also requires `EXCALIDRAW_TEST_USER_DATA_PATH` and a frozen smoke
+`EXCALIDRAW_TEST_COMBINATION_PATH`. Its user-data directory must contain
+`.excalidraw-native-session.json` with `{ "schemaVersion": 2, "owner":
+"obsidian-excalidraw-tests", "vaultId": "<owned provisioner vault ID>" }`.
+The actual CLI user-data path and sole registered vault must match the markers.
+The driver then checks a changed main-process PID and saved drawing restoration.
+Missing isolation is a required blocked result. Its driver guards are tested;
+the real restart remains unexecuted in the maintainer's shared session.
+The native workflow requires a configured protected `native-test-approval`
+environment, an approved exact SHA, the environment variables above and a
+prepared `excalidraw-isolated` runner. This PR does not configure repository
+access, environment reviewers or runner provisioning.
+
+## Acceptance audit
+
+Run `npm run test:acceptance -- --report=<canonical.json> ...
+--gate=<quality.json> ... --output=<directory>`. Pass canonical fast, fork-owned,
+fork-inherited, both browser, Extras-source, native full, device, error-oracle and
+cold reports once each. Pass plugin source coverage, packed fork/Extras consumers
+and the soak report as gates. The required suite IDs live in `tests/features.json`.
+Package reports are written under `.test-work/reports/package-fork` and
+`package-extras`; producer-independent basic consumer evidence is explicitly
+adapted to schema 2 by the coordinator.
+
+The audit rejects missing cases/suites, duplicate canonical IDs, stale or mixed
+source identities, mismatched frozen producers, failed cleanup and required
+blocked obligations. Coverage and soak overlap other tests and therefore do not
+inflate canonical discovery. Existing inherited failures remain failures.
+Physical/mobile/legacy/OS limits stay documented in the registry and release
+checks; a source or emulated pass does not satisfy those workflows.
 
 ## Current acceptance evidence
 

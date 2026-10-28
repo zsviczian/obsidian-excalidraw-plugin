@@ -6,6 +6,7 @@ import { validateOwnedVault } from "../provision.mjs";
 import { adaptSmokeReport, ownedPath } from "../contracts.mjs";
 import { acquireDebuggerSession, unexpectedConsoleErrors } from "./debuggerSession.mjs";
 import { writeReportFiles } from "../reportFiles.mjs";
+import {discoverStagedPlugin} from './pluginDiscovery.mjs';
 
 export const PLUGIN_ID = "obsidian-excalidraw-plugin";
 export const ARTIFACTS = ["main.js", "manifest.json", "styles.css"];
@@ -100,8 +101,8 @@ async function poll(read, acceptable, wait, now, timeoutMs = 20_000) {
 }
 
 /** Preflight, build, stage and exercise one disposable drawing; always write a report. */
-export async function runObsidianSmoke({ projectRoot, vaultName, vaultPath, configDir, automationRoot, reportDir, runCli, runBuild,
-  wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms)), now = () => Date.now(), source = {}, unique = () => randomUUID(), scenarios = [], ownedDebugger = false, deployCompanions }) {
+export async function runObsidianSmoke({ projectRoot, vaultName, vaultPath, configDir, automationRoot, expectedUserDataPath, reportDir, runCli, runBuild,
+  wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms)), now = () => Date.now(), source = {}, unique = () => randomUUID(), scenarios = [], ownedDebugger = false, deployCompanions, discoverPlugin=discoverStagedPlugin }) {
   reportDir = resolve(reportDir);
   const report = { schemaVersion: 1, status: "failed", startedAt: new Date(now()).toISOString(), source,
     target: { vaultName, vaultPath, configDir }, capabilities: {}, artifacts: {}, scenarios: [], cleanup: "not-started" };
@@ -143,6 +144,11 @@ export async function runObsidianSmoke({ projectRoot, vaultName, vaultPath, conf
     if (!existsSync(hostConfig) || realpathSync(hostConfig) !== target.config) {
       throw new Error(`CLI config directory differs from ${target.config}`);
     }
+    if(expectedUserDataPath){
+      const actual=parseEval(cli('eval',"code=JSON.stringify(require('@electron/remote').app.getPath('userData'))"));
+      if(typeof actual!=='string'||!existsSync(actual)||realpathSync(actual)!==realpathSync(expectedUserDataPath))throw Error('CLI application user-data identity differs from the held host lock');
+      report.capabilities.applicationIdentity=realpathSync(actual);
+    }
     if (ownedDebugger) debuggerSession = acquireDebuggerSession(cli);
     if (ownedDebugger) report.capabilities.runtime = parseEval(cli("eval", "code=JSON.stringify({versions:require('process').versions,platform:require('process').platform,userAgent:navigator.userAgent})"));
 
@@ -164,6 +170,7 @@ export async function runObsidianSmoke({ projectRoot, vaultName, vaultPath, conf
       throw new Error("Installed artifacts differ from the local build");
     }
     cli("dev:errors", "clear");
+    report.capabilities.pluginDiscovery=await discoverPlugin(cli,PLUGIN_ID);
     cli("plugin:enable", `id=${PLUGIN_ID}`);
     const loaded = await poll(() => parseEval(cli("eval", `code=JSON.stringify({state:app.plugins?.plugins?.[${JSON.stringify(PLUGIN_ID)}]?"loaded":"pending"})`)),
       (value) => value.state === "loaded", wait, now);

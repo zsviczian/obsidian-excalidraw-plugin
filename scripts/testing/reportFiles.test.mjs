@@ -10,6 +10,9 @@ test("JUnit escapes evidence and represents blocked or cleanup-only failures as 
   const optional={suiteId:'optional-platform',status:'passed',cleanup:'passed',tests:[{testId:'optional',status:'notApplicable',reason:'Documented platform exclusion'}]};
   assert.ok(renderJUnit(optional).includes('<skipped'));assert.ok(renderJUnit(optional).includes('failures="0"'));
   assert.ok(renderJUnit({...optional,status:'failed',requiredTestIds:['optional']}).includes('<failure'));assert.ok(!renderJUnit({...optional,requiredTestIds:['optional']}).includes('<skipped'));
+  const combined=renderJUnit({...report,failedSuites:[{suiteId:'native',reason:'Unexpected teardown exception'}]});
+  assert.ok(combined.includes('suite-gate:native'));assert.ok(combined.includes('failures="2"'),'A failing assertion must not hide a second suite error gate');
+  assert.ok(renderJUnit({...report,failedSuites:[{suiteId:'native',reason:'Teardown error'},{suiteId:'coverage',reason:'Coverage regression'}]}).includes('failures="3"'));
 });
 test("source coverage ratchets fail on lost modules, missing branch evidence or regressions", () => {
   const baseline = [{ path: "src/critical.ts", lines: 90, branches: 80, functions: 75 }];

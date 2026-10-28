@@ -1,6 +1,6 @@
 /** Actual Obsidian mobile mode reloads the vault. Own state in Node across those reloads. */
 import assert from "node:assert/strict";
-import { randomUUID } from "node:crypto";
+import { randomUUID, createHash } from "node:crypto";
 import { mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { validateTarget } from "./runner.mjs";
@@ -18,12 +18,14 @@ export async function runDeviceMatrix({ cli, reportDir, vaultName, vaultPath, co
   assert.equal(realpathSync(cli("vault", "info=path").trim()), target.vault, "Device CLI selected another vault");
   const evaluate = code => parseCLIJSON(cli("eval", "code=" + code));
   const owner = mainWindowExpression;
-  const original = evaluate(`JSON.stringify((()=>{const w=${owner};if(w.webContents.debugger.isAttached())throw Error('Existing debugger owner');return{mobile:app.isMobile===true,theme:app.vault.getConfig('theme'),layout:app.workspace.getLayout(),desktopMode:localStorage.getItem('excalidraw.desktopUIMode'),id:w.id,bounds:w.getBounds(),minimum:w.getMinimumSize(),maximized:w.isMaximized(),fullscreen:w.isFullScreen(),zoom:w.webContents.getZoomFactor(),touch:{maxTouchPoints:navigator.maxTouchPoints,coarse:matchMedia('(pointer: coarse)').matches,hover:matchMedia('(hover: hover)').matches}};})())`);
+  const original = evaluate(`JSON.stringify((()=>{const w=${owner};if(w.webContents.debugger.isAttached())throw Error('Existing debugger owner');return{mobile:app.isMobile===true,theme:app.vault.getConfig('theme'),layout:app.workspace.getLayout(),desktopMode:localStorage.getItem('excalidraw.desktopUIMode'),id:w.id,bounds:w.getBounds(),normalBounds:w.getNormalBounds(),minimum:w.getMinimumSize(),maximized:w.isMaximized(),fullscreen:w.isFullScreen(),zoom:w.webContents.getZoomFactor(),touch:{maxTouchPoints:navigator.maxTouchPoints,coarse:matchMedia('(pointer: coarse)').matches,hover:matchMedia('(hover: hover)').matches}};})())`);
   const path = `__excalidraw_cli_smoke_devices_${randomUUID()}.excalidraw.md`;
   const fixture = readFileSync(new URL("../../../tests/vault/Drawings/Uncompressed.excalidraw.md", import.meta.url), "utf8");
   const report = { schemaVersion: 2, suiteId: "native-devices", status: "failed", cleanup: "not-started", tests: [],
     requestedProfile: "devices", actualProfile: profiles.map(profile => profile.id),
     limitations: ["Desktop Obsidian mobile emulation with trusted CDP touch input; no physical Android/iOS, WebView, stylus or OS-permission claim"] };
+  report.environment={cliVersion:cli('version').trim(),...evaluate("JSON.stringify({versions:require('process').versions,platform:require('process').platform,userAgent:navigator.userAgent})")};
+  report.fixture={id:'Drawings/Uncompressed.excalidraw.md',sha256:createHash('sha256').update(fixture).digest('hex')};
   mkdirSync(reportDir, { recursive: true }); writeFileSync(join(reportDir, "recovery.json"), JSON.stringify({ vaultName, path, original }, null, 2));
   let debuggerSession, currentMobile = original.mobile, created = false;
   report.reloadDiagnostics = [];

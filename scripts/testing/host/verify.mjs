@@ -27,10 +27,11 @@ import { runExtrasServicesScenario } from './extrasServices.mjs';
 import { runStabilityScenario } from './stability.mjs';
 import { runAutomateScenario } from './automate.mjs';
 import { runCoreInteractionScenario } from './coreInteraction.mjs';
+import { runPDFImportScenario } from './pdfImport.mjs';
 import { runDeviceMatrix } from './devices.mjs';
 import { deviceProfiles, breakpointProfiles } from './deviceProfiles.mjs';
 import { produceCombination, stageExtras } from './combination.mjs';
-import { aggregateReports, adaptSmokeReport } from '../contracts.mjs';
+import { aggregateReports, adaptSmokeReport, sourceIdentity } from '../contracts.mjs';
 import { writeReportFiles } from '../reportFiles.mjs';
 import { writeFileSync } from 'node:fs';
 
@@ -52,8 +53,8 @@ const latexPreview = process.argv.includes("--latex-preview");
 const imageGeometryReal = fullProfile || process.argv.includes("--image-geometry-real");
 const imageGeometry = process.argv.includes("--image-geometry") || imageGeometryReal;
 const wheelZoom = fullProfile || process.argv.includes("--wheel-zoom");
-const webDrop = process.argv.includes("--web-drop");
-const internalDrop = process.argv.includes("--internal-drop");
+const webDrop = fullProfile || process.argv.includes("--web-drop");
+const internalDrop = fullProfile || process.argv.includes("--internal-drop");
 const youtubeDrop = process.argv.includes("--youtube-drop");
 const svgImport = process.argv.includes("--svg-import");
 const lucide = fullProfile || process.argv.includes("--lucide");
@@ -86,6 +87,7 @@ const source = {
     forkDirty: Boolean(git(forkRoot, ["status", "--porcelain"])),
   }),
   buildMode: profile ? "workspace-frozen" : pluginOnly ? "installed-package" : "local-fork",
+  requestedProfile: profile || 'focused',
   node: process.version,
   platform: process.platform,
 };
@@ -96,7 +98,7 @@ const userDataPath = process.env.EXCALIDRAW_TEST_USER_DATA_PATH || (process.plat
   : process.platform === "darwin" ? join(homedir(), "Library/Application Support/obsidian")
   : join(process.env.XDG_CONFIG_HOME || join(homedir(), ".config"), "obsidian"));
 const hostLock = acquireHostLock({ userDataPath });
-let report, combination;
+let report, combination, deviceReport;
 try {
 report = await runObsidianSmoke({
   projectRoot: pluginRoot,
@@ -104,6 +106,7 @@ report = await runObsidianSmoke({
   vaultPath: process.env.EXCALIDRAW_TEST_VAULT_PATH,
   configDir: process.env.EXCALIDRAW_TEST_CONFIG_DIR,
   automationRoot: process.env.EXCALIDRAW_TEST_AUTOMATION_ROOT,
+  expectedUserDataPath:userDataPath,
   reportDir,
   source,
   ownedDebugger:true,
@@ -117,8 +120,8 @@ report = await runObsidianSmoke({
     ...(svgImport ? [runSvgImportScenario] : []),
     ...(wheelZoom ? [runWheelZoomScenario] : []),
     ...(imageGeometry ? [context => runImageGeometryScenario({ ...context, realRenderer: imageGeometryReal })] : []),
-    ...(webDrop ? [runWebDropScenario] : []),
-    ...(internalDrop ? [runInternalDropScenario] : []),
+    ...(webDrop ? [context=>runWebDropScenario({...context,includePopout:!fullProfile})] : []),
+    ...(internalDrop ? [context=>runInternalDropScenario({...context,includePopout:!fullProfile})] : []),
     ...(youtubeDrop ? [runYouTubeDropScenario] : []),
     ...(textUndo ? [runTextUndoScenario] : []),
     ...(nativeCLI ? [runNativeCLIScenario] : []),
@@ -128,6 +131,7 @@ report = await runObsidianSmoke({
     ...(latexPreview ? [context => runLatexInputScenario({ ...context, realRenderer: true })] : []),
     ...(fullProfile ? [runAutomateScenario] : []),
     ...(fullProfile ? [runCoreInteractionScenario] : []),
+    ...(fullProfile ? [runPDFImportScenario] : []),
     ...(fullProfile || profile==='soak' ? [context=>runStabilityScenario({...context,cycles:profile==='soak'?25:6})] : []),
   ],
   runCli: (vault, commandName, ...args) => command(obsidianCliExecutable(),
@@ -178,9 +182,26 @@ report = await runObsidianSmoke({
     return hashes;
   },
 });
-  if(devices && report.status==='passed'){
+  // A completed functional run can retain an error-gate failure while device
+  // cases execute independently. Unsettled cleanup must never enter this lane.
+  if(devices && report.cleanup==='passed'){
     const cli=(name,...args)=>command(obsidianCliExecutable(),[`vault=${process.env.EXCALIDRAW_TEST_VAULT_NAME}`,name,...args],pluginRoot);
-    const deviceReport=await runDeviceMatrix({cli,reportDir:join(reportDir,'devices'),vaultName:process.env.EXCALIDRAW_TEST_VAULT_NAME,vaultPath:process.env.EXCALIDRAW_TEST_VAULT_PATH,configDir:process.env.EXCALIDRAW_TEST_CONFIG_DIR,automationRoot:process.env.EXCALIDRAW_TEST_AUTOMATION_ROOT,profiles:[...deviceProfiles(),...breakpointProfiles()]});
+    deviceReport=await runDeviceMatrix({cli,reportDir:join(reportDir,'devices'),vaultName:process.env.EXCALIDRAW_TEST_VAULT_NAME,vaultPath:process.env.EXCALIDRAW_TEST_VAULT_PATH,configDir:process.env.EXCALIDRAW_TEST_CONFIG_DIR,automationRoot:process.env.EXCALIDRAW_TEST_AUTOMATION_ROOT,profiles:[...deviceProfiles(),...breakpointProfiles()]});
+    deviceReport.source=combination?.manifests.plugin||source;
+    deviceReport.artifacts=report.artifacts.installedHashes;
+    writeFileSync(join(reportDir,'devices/report.json'),JSON.stringify(deviceReport,null,2)+'\n');
+  }else if(devices){
+    const reason='Parent native cleanup did not complete; device work is blocked to preserve owned resources';
+    deviceReport={schemaVersion:2,suiteId:'native-devices',status:'blocked',cleanup:'not-started',source:combination?.manifests.plugin||source,tests:[...deviceProfiles(),...breakpointProfiles()].map(profile=>({testId:'native:device:'+profile.id,featureIds:['P07','P08'],status:'blocked',reason}))};
+    mkdirSync(join(reportDir,'devices'),{recursive:true});writeFileSync(join(reportDir,'devices/report.json'),JSON.stringify(deviceReport,null,2)+'\n');writeReportFiles(deviceReport,join(reportDir,'devices'));
+  }
+  if(combination){
+    try{for(const [kind,manifest]of Object.entries(combination.manifests)){const after=sourceIdentity(combination.roots[kind]);if(['commit','dirty','diffHash','lockfileHash'].some(key=>after[key]!==manifest[key]))throw Error(kind+' source changed during native verification');}report.scenarios.push({id:'source-stability',status:'passed'});}
+    catch(error){report.status='failed';report.error ||= error.message;report.scenarios.push({id:'source-stability',status:'failed',reason:error.message});}
+  }
+  writeFileSync(join(reportDir,'report.json'),JSON.stringify(report,null,2)+'\n');
+  const normalized=adaptSmokeReport(report);writeFileSync(join(reportDir,'report-v2.json'),JSON.stringify(normalized,null,2)+'\n');writeReportFiles(normalized,reportDir);
+  if(deviceReport){
     const aggregate=aggregateReports([adaptSmokeReport(report),deviceReport],[]);aggregate.source=source;aggregate.combination=combination;
     writeFileSync(join(reportDir,'aggregate.json'),JSON.stringify(aggregate,null,2)+'\n');writeReportFiles(aggregate,reportDir);if(aggregate.status!=='passed')report.status='failed';
   }

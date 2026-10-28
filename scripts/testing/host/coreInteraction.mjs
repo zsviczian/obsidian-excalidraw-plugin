@@ -58,6 +58,15 @@ async function exerciseCore(c,drawingPath,modifier){
     check((await p.ea.getSceneFromFile(view.file)).elements.some(el=>el.id===line.id&&el.customData?.strokeOptions?.highlighter),'Highlighter metadata lost on disk');
     return{assertions:['trusted custom pen toolbar activation','freehand pressure/highlighter metadata','highlighter beneath ordinary shapes','freedraw-only pen restores base options','custom stroke reaches physical save']};
   });
+  await c.case('native:core-eraser-and-undo',['P04','P07'],async()=>{
+    const before=api.getSceneElements().map(el=>el.id);
+    view.containerEl.querySelector('.excalidraw').focus();await key('e','KeyE',69);
+    await c.waitFor(()=>api.getAppState().activeTool.type==='eraser','eraser shortcut');await stroke();
+    await c.waitFor(()=>api.getSceneElements().length<before.length,'trusted eraser removes intersected shapes');
+    await key('z','KeyZ',90,modifier);
+    await c.waitFor(()=>JSON.stringify(api.getSceneElements().map(el=>el.id))===JSON.stringify(before),'eraser undo restores original element IDs');
+    return{assertions:['real keyboard shortcut activates eraser','trusted pointer removes scene elements','undo restores exact element IDs']};
+  });
   await c.case('native:core-laser-transient',['P07'],async()=>{
     api.setActiveTool({type:'laser'});await c.waitFor(()=>api.getAppState().activeTool.type==='laser','laser tool');
     const ids=api.getSceneElements().map(el=>el.id),eventCount=events.length;await stroke();

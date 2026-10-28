@@ -1,7 +1,8 @@
 /** Internal file tooltip/action agreement using Obsidian's real drag payload factory. */
 import assert from "node:assert/strict";
+import {runLegacyTask} from "./legacyTask.mjs";
 
-async function exercise(control, drawingPath, pngBase64) {
+async function exercise(control, drawingPath, pngBase64, includePopout) {
   const c = globalThis[control];
   const main = app.workspace.getLeavesOfType("excalidraw").find(leaf => leaf.view.file?.path === drawingPath);
   const previousDrag = app.dragManager.draggable;
@@ -24,7 +25,7 @@ async function exercise(control, drawingPath, pngBase64) {
       c.files.push(await app.vault.createBinary(path, bytes.buffer));
     }
     const [font, image] = c.files;
-    for (const popout of [false, true]) {
+    for (const popout of includePopout ? [false,true] : [false]) {
       let leaf = main;
       if (popout) {
         leaf = app.workspace.openPopoutLeaf(); c.pop = leaf;
@@ -93,35 +94,13 @@ async function exercise(control, drawingPath, pngBase64) {
       try { if (app.vault.getFileByPath(file.path)) await app.vault.delete(file); }
       catch (error) { cleanupError ??= error; }
     }
-    if (cleanupError) throw cleanupError;
+    if (cleanupError) { const error=Error('Internal-drop cleanup failed: '+String(cleanupError));error.cleanupFailed=true;throw error; }
   }
 }
 
-export async function runInternalDropScenario({ cli, drawingPath }) {
-  const control = "__excalidrawInternalDrop";
-  const png = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a3f8AAAAASUVORK5CYII=";
-  const evaluate = code => JSON.parse(cli("eval", `code=${code}`).trim().replace(/^=>\s*/, ""));
-  const state = () => evaluate(`JSON.stringify({state:globalThis.${control}?.state,error:globalThis.${control}?.error,results:globalThis.${control}?.results})`);
-  let started = false;
-  try {
-    evaluate(`(()=>{if(globalThis.${control})throw Error("internal-drop controller exists");const c=globalThis.${control}={state:"pending"};(${exercise.toString()})(${JSON.stringify(control)},${JSON.stringify(drawingPath)},${JSON.stringify(png)}).then(()=>c.state="done").catch(error=>{c.state="failed";c.error=error.stack});return JSON.stringify({started:true})})()`);
-    started = true;
-    let result;
-    for (let i = 0; i < 1200; i++) {
-      result = state();
-      if (result.state !== "pending") break;
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
-    assert.equal(result.state, "done", result.error ?? "internal-drop scenario timed out");
-    return { id: "internal-drop-tooltip", status: "passed", cases: result.results, reopen: true };
-  } finally {
-    if (started) {
-      if (state().state === "pending") {
-        cli("eval", `code=globalThis.${control}.cancelled=true`);
-        for (let i = 0; i < 200 && state().state === "pending"; i++) await new Promise(resolve => setTimeout(resolve, 100));
-        assert.notEqual(state().state, "pending", "internal-drop scenario did not finish cleanup");
-      }
-      cli("eval", `code=delete globalThis.${control}`);
-    }
-  }
+export async function runInternalDropScenario({cli,drawingPath,includePopout=true}) {
+  assert.ok(drawingPath.startsWith('__excalidraw_cli_smoke_'));
+  const png="iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a3f8AAAAASUVORK5CYII=";
+  const result=await runLegacyTask({cli,control:'__excalidrawInternalDrop',execute:exercise,args:[drawingPath,png,includePopout],timeoutMs:180000});
+  return{id:'internal-drop-tooltip',status:'passed',input:'synthetic DragEvent with actual Obsidian drag payload',cases:result.results,reopen:true};
 }

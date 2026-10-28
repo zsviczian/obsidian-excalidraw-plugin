@@ -6,9 +6,10 @@ export function renderJUnit(report) {
   const optionalNA=test=>test.status==='notApplicable'&&!(report.requiredTestIds||[]).includes(test.testId);
   const unsuccessful = report.tests.filter(test => test.status !== "passed"&&!optionalNA(test));
   const cases = report.tests.map(test => `<testcase classname="${xml(report.suiteId)}" name="${xml(test.testId)}" time="${(test.durationMs || 0) / 1000}">${test.status === "passed" ? "" : optionalNA(test)?`<skipped message="${xml(test.reason)}"/>`:`<failure type="${xml(test.status)}" message="${xml(test.reason || test.status)}">${xml(test.reason || test.status)}</failure>`}</testcase>`);
+  for(const suite of report.failedSuites||[])cases.push(`<testcase classname="${xml(report.suiteId)}" name="suite-gate:${xml(suite.suiteId)}"><failure>${xml(suite.reason)}</failure></testcase>`);
   // A required blocked case is deliberately a failure, never a skipped green job.
-  if (report.status !== "passed" && !unsuccessful.length) cases.push(`<testcase classname="${xml(report.suiteId)}" name="suite-gate"><failure>${xml(report.error || report.cleanupError || "Suite, discovery or cleanup gate failed")}</failure></testcase>`);
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<testsuites><testsuite name="${xml(report.suiteId)}" tests="${cases.length}" failures="${unsuccessful.length + (cases.length > report.tests.length ? 1 : 0)}">${cases.join("\n")}</testsuite></testsuites>\n`;
+  if (report.status !== "passed" && !unsuccessful.length && !report.failedSuites?.length) cases.push(`<testcase classname="${xml(report.suiteId)}" name="suite-gate"><failure>${xml(report.error || report.cleanupError || "Suite, discovery or cleanup gate failed")}</failure></testcase>`);
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<testsuites><testsuite name="${xml(report.suiteId)}" tests="${cases.length}" failures="${unsuccessful.length + cases.length-report.tests.length}">${cases.join("\n")}</testsuite></testsuites>\n`;
 }
 export function writeReportFiles(report, output) {
   writeFileSync(join(output, "junit.xml"), renderJUnit(report));
