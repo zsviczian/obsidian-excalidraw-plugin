@@ -1644,6 +1644,7 @@ export default {
   PROMPT_BUTTON_UPPERCASE: "Mayúsculas",
   PROMPT_BUTTON_SPECIAL_CHARS: "Carácteres especiales",
   PROMPT_SELECT_TEMPLATE: "Selecciona una plantilla",
+  PROMPT_BLANK_DRAWING: "Dibujo en blanco",
   LATEX_SUITE_PLUGIN_SUGGESTION:
     "Install the 'Latex Suite' plugin from Obsidian Community Plugins to enable live preview as you type your equation.",
 

@@ -9,6 +9,14 @@
   text-align: center;
 }
 
+.excalidraw-fullscreen-content {
+  margin-top: 0 !important;
+}
+
+.is-mobile .excalidraw-fullscreen-root {
+  padding-top: 0 !important;
+}
+
 svg.excalidraw-svg {
   width: 100%;
 }
