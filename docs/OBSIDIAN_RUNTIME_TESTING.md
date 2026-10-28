@@ -149,6 +149,23 @@ so a pending close/save cannot recreate it. Inspect both `status` and
 
 ## Troubleshooting and further coverage
 
+For the Lucide picker, run `npm run test:lucide`, then the guarded
+`npm run verify:obsidian:plugin -- --lucide`. Protocol 3 requires the matching
+component artifacts and declarations. For a temporary paired checkout, build the
+fork, copy its four Obsidian artifacts as described above, and set
+`EXCALIDRAW_TEST_FORK_TYPES_ROOT` to the fork root for the generated declaration
+preflight. This is local integration, not published dependency verification.
+
+The Lucide lane checks read-only paginated discovery, atomic create/apply,
+group/member handles, deterministic style and all three insertion presets,
+workbench-only construction across the installed catalog, bounded picker DOM,
+search/keyboard navigation, selection, native Undo/Redo, two-drawing styles,
+popout targeting, deferred stale-target refusal, session reuse, export and saved
+read-back. Malformed installed icons are recorded as rejected inputs, never
+counted as successful conversions. The existing `--svg-import` lane retains the
+supplied corpus read-only. Physical touch, restored popouts after cold restart
+and other operating systems remain separate gates.
+
 For text separators and editable-image geometry (#3013, #3014, #2947), run
 `npm run test:image-geometry`. These tests cover one/multiple newline separators,
 independent image copies, unresized content growth, a resize during rendering,

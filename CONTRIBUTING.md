@@ -56,6 +56,10 @@ refresh its local agent references, generated EA declaration graph and provenanc
 type dependencies, and template update manifest. The template consumes declarations
 only; personal script workspaces no longer need this plugin as a Git dependency.
 
+For a plugin-only reference update, run `npm run lib` followed by
+`node scripts/generate-script-library.mjs --no-template-sync` to leave the sibling
+template untouched. Review generated changes for unrelated stale snapshots.
+
 After generation, run `npm install`, `npm run check`, `npm run build`, and
 `npm run test:template` in the template. Review both repositories separately and
 publish the template's updated `master` so users can receive the snapshot with

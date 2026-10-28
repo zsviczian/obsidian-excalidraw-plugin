@@ -16,6 +16,7 @@ New skeleton IDs are local labels; use returned idMap actual IDs for updates. Up
 Every write requires requestId. Repeat the identical effective request to retrieve its receipt; different content with the same ID fails.
 :result requestId=<id> recovers a receipt after lost stdout. Receipts expire after 15 minutes/reload; unknown outcome requires read-back before another write.
 :api surface=ea name=<method> gives existing EA signatures. :api surface=lib lists the supported installed Lib reference; advanced exports remain available to scripts.
+:icons query=<name> discovers installed canonical Lucide names (paged); create icons / apply op=lucide insert editable native groups. groupMap maps logical icon aliases to groupId/elementIds; idMap remains single-element only. Defaults: size=96, strokeColor=#1e1e1e, roughness=1, opacity=100; optional strokeWidth is final scene units. No trusted script is required.
 :script requires trusted=true and an explicit existing local script file. utils.input contains args; utils.excalidrawLib is the installed runtime. Await all work; completion does not imply saved drawing.
 One-shot EA is cleaned up; utility prompts fail INTERACTION_REQUIRED. Trusted code can still invoke other interactive APIs: this is not a sandbox, timeout cancellation or transaction.
 Export names an explicit out=.svg/.png; overwrite=true is required for existing outputs. Live exports never implicitly save. Disk exports require local Vault assets; use a loaded live source or placeholders for remote assets.

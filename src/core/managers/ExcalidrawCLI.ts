@@ -13,6 +13,7 @@ import { prepareScript } from "src/core/cli/cliScripts";
 import { commandSchema } from "src/core/cli/cliSchema";
 import { imageInventory } from "src/core/cli/cliImages";
 import { nanoid } from "src/constants/constants";
+import { getLucideIcons } from "src/shared/lucideIcons";
 
 type Receipt = { fingerprint: string; result: ExcalidrawCLIResult; finishedAt?: number; preExecutionBusy?: boolean };
 
@@ -62,7 +63,7 @@ export class ExcalidrawCLI {
           if (!["true", "false"].includes(value)) throw new CLIError("INVALID_INPUT", "Expected true or false.", key);
           params[key] = value === "true";
         } else if (["offset", "limit", "scale", "padding", "maxWidth", "maxHeight", "maxPixels", "maxArtifactBytes"].includes(key)) params[key] = Number(value);
-        else if (["ids", "args", "area", "elements", "operations", "imagePolicy"].includes(key)) params[key] = JSON.parse(value);
+        else if (["ids", "args", "area", "elements", "icons", "operations", "imagePolicy"].includes(key)) params[key] = JSON.parse(value);
         else params[key] = value;
       }
       if (params.input !== undefined && params.json !== undefined) throw new CLIError("INVALID_INPUT", "Choose input or json, not both.");
@@ -177,7 +178,7 @@ export class ExcalidrawCLI {
       if (request.format !== undefined && !["json", "markdown"].includes(string(request.format, "format"))) throw new CLIError("INVALID_INPUT", "Expected json or markdown.", "format");
       return { markdown: CLI_SKILL };
     }
-    if (command === "status") return { apiVersion: 1, nativeCLI: Platform.isDesktop && requireApiVersion("1.12.2") && typeof (plugin as ExcalidrawPlugin & Partial<ObsidianCliRuntime>).registerCliHandler === "function", ready: plugin.isReady, vault: plugin.app.vault.getName(), version: plugin.manifest.version, converter: plugin.isReady && typeof plugin.getCLIRuntime().convertToExcalidrawElements === "function", receiptTTLSeconds: 900, receiptCapacity: 128 };
+    if (command === "status") return { apiVersion: 1, nativeCLI: Platform.isDesktop && requireApiVersion("1.12.2") && typeof (plugin as ExcalidrawPlugin & Partial<ObsidianCliRuntime>).registerCliHandler === "function", ready: plugin.isReady, vault: plugin.app.vault.getName(), version: plugin.manifest.version, converter: plugin.isReady && typeof plugin.getCLIRuntime().convertToExcalidrawElements === "function", lucideIcons: plugin.isReady, receiptTTLSeconds: 900, receiptCapacity: 128 };
     if (command === "schema") {
       const action = string(request.action, "action");
       if (!Object.hasOwn(CLI_COMMANDS, action)) throw new CLIError("UNSUPPORTED_COMMAND", "Unknown action.", "action");
@@ -191,6 +192,12 @@ export class ExcalidrawCLI {
       return { surface, subset: surface === "lib", entries: entries.filter(entry => request.name ? entry.name.toLowerCase() === query : `${entry.name} ${entry.description}`.toLowerCase().includes(query)).slice(0, 20) };
     }
     if (!plugin.isReady) throw new CLIError("NOT_READY", "Excalidraw is still initializing.", undefined, "Retry status after startup.");
+    if (command === "icons") {
+      const query = request.query === undefined ? "" : request.query;
+      if (typeof query !== "string" || query.length > 128) throw new CLIError("INVALID_INPUT", "Expected an icon query of at most 128 characters.", "query");
+      const icons = getLucideIcons(query);
+      return this.page(icons, request, `icons:${this.session}:${fingerprint(canonical(icons))}`, "icons");
+    }
     if (command === "list") {
       const folder = request.folder === undefined ? null : vaultPath(request.folder, "folder");
       const paths = plugin.app.vault.getFiles().filter(file => plugin.isExcalidrawFile(file) && (!folder || file.path.startsWith(`${folder}/`))).map(file => file.path).sort();

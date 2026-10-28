@@ -18,6 +18,7 @@ import { runWebDropScenario } from "./webDrop.mjs";
 import { runInternalDropScenario } from "./internalDrop.mjs";
 import { runYouTubeDropScenario } from "./youtubeDrop.mjs";
 import { runSvgImportScenario } from "./svgImport.mjs";
+import { runLucideScenario } from "./lucideIcons.mjs";
 
 const pluginRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const pluginOnly = process.argv.includes("--plugin-only");
@@ -34,8 +35,9 @@ const webDrop = process.argv.includes("--web-drop");
 const internalDrop = process.argv.includes("--internal-drop");
 const youtubeDrop = process.argv.includes("--youtube-drop");
 const svgImport = process.argv.includes("--svg-import");
-if (process.argv.slice(2).some(arg => !["--plugin-only", "--text-undo", "--native-cli", "--embed-recovery", "--grouped-link-click", "--latex-input", "--latex-preview", "--image-geometry", "--image-geometry-real", "--wheel-zoom", "--web-drop", "--internal-drop", "--youtube-drop", "--svg-import"].includes(arg))) {
-  throw new Error("Supported options: --plugin-only, --text-undo, --native-cli, --embed-recovery, --grouped-link-click, --latex-input, --latex-preview, --image-geometry, --image-geometry-real, --wheel-zoom, --web-drop, --internal-drop, --youtube-drop, --svg-import");
+const lucide = process.argv.includes("--lucide");
+if (process.argv.slice(2).some(arg => !["--plugin-only", "--lucide", "--text-undo", "--native-cli", "--embed-recovery", "--grouped-link-click", "--latex-input", "--latex-preview", "--image-geometry", "--image-geometry-real", "--wheel-zoom", "--web-drop", "--internal-drop", "--youtube-drop", "--svg-import"].includes(arg))) {
+  throw new Error("Supported options: --plugin-only, --lucide, --text-undo, --native-cli, --embed-recovery, --grouped-link-click, --latex-input, --latex-preview, --image-geometry, --image-geometry-real, --wheel-zoom, --web-drop, --internal-drop, --youtube-drop, --svg-import");
 }
 const forkRoot = resolve(process.env.EXCALIDRAW_FORK_ROOT || join(pluginRoot, "../excalidraw"));
 const reportDir = process.env.EXCALIDRAW_TEST_REPORT_DIR || mkdtempSync(join(tmpdir(), "excalidraw-obsidian-"));
@@ -71,6 +73,7 @@ const report = await runObsidianSmoke({
   reportDir,
   source,
   scenarios: [
+    ...(lucide ? [runLucideScenario] : []),
     ...(svgImport ? [runSvgImportScenario] : []),
     ...(wheelZoom ? [runWheelZoomScenario] : []),
     ...(imageGeometry ? [context => runImageGeometryScenario({ ...context, realRenderer: imageGeometryReal })] : []),

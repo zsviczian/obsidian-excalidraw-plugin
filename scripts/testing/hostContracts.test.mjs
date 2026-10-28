@@ -50,6 +50,9 @@ test(`plugin host and public Mermaid declarations match the ${typesSource} fork`
     declare const canonical: Host.ObsidianExcalidrawHostAdapter;
     declare const canonicalLoader: typeof Utils.loadMermaid;
     declare const canonicalConfigure: typeof Host.configureObsidianExcalidrawHost;
+    const coordinatedProtocol: typeof Host.OBSIDIAN_EXCALIDRAW_HOST_PROTOCOL_VERSION = 3;
+    const namedAction: Host.ObsidianExcalidrawHostAdapter["runAction"] =
+      (action, editorId) => plugin.runAction(action, editorId);
     const adapter: Host.ObsidianExcalidrawHostAdapter =
       createObsidianExcalidrawHostAdapter(plugin, ExcalidrawLib.OBSIDIAN_EXCALIDRAW_HOST_PROTOCOL_VERSION);
     const bridge: ExcalidrawLib.ObsidianExcalidrawHostAdapter = canonical;
@@ -68,7 +71,7 @@ test(`plugin host and public Mermaid declarations match the ${typesSource} fork`
     fixturePath,
     resolve(root, "src/types/types.d.ts"),
   ], options, host);
-  const files = [fixturePath, resolve(root, "src/core/managers/obsidianExcalidrawHostAdapter.ts")];
+  const files = [fixturePath, resolve(root, "src/core/managers/obsidianExcalidrawHostAdapter.ts"), resolve(root, "src/core/main.ts")];
   const diagnostics = [
     ...program.getOptionsDiagnostics(),
     ...program.getGlobalDiagnostics(),

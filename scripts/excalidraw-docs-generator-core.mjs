@@ -1028,10 +1028,8 @@ export function runUnifiedGeneration(options = {}) {
 
   if (mode === 'full') {
     writeSkillOutputs(scriptFiles, typeDefs, excalidrawLibFunctionsSection, startupSection);
-    syncTemplateRepository('full');
-  } else {
-    syncTemplateRepository(mode);
   }
+  if (options.syncTemplate !== false) syncTemplateRepository(mode);
 
   return {
     generated: {

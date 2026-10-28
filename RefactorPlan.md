@@ -27,6 +27,8 @@ validated, and what remains uncertain.
 | Phase | Status | Current outcome |
 | --- | --- | --- |
 | Assessment and baseline design | Complete | Initial architecture, risks, sequencing, and validation matrix documented |
+| Native Lucide insertion (#3019) | Implemented; reviewed/simplified 2026-10-28; maintainer approved intermediate source merge | Shared atomic installed-icon conversion, grouped workbench API, reusable scoped sidepanel and native CLI discovery/create/apply; CLI skill remains on cli-image-efficiency. Grid click delegation replaces per-page components/listeners. Protocol-3 fork publication and exact dependency installation are deferred by the maintainer and remain required before plugin release. See docs/LUCIDE_ICON_VALIDATION.md |
+| SVG import follow-ups (#3018) | Implemented; 55 source tests and full Windows native SVG lane pass | CSS specificity compares ID/class/type counts without carrying; direct/nested translucent use instances now report the existing compositing approximation. Windows Obsidian 1.14.5, installed component 0.18.145 artifacts: 1,992 nonempty icon conversions, five unchanged supplied SVGs, 95 appearance comparisons, main/popout editor checks, reload, clean JavaScript-error gate and cleanup. CLI skill updated on its existing cli-image-efficiency branch |
 | Coordinate PR #475 Mermaid 3/Pele | Implemented; local paired builds and Windows native main/popout/offline checks pass | Extras supplies converter/component 3.0.0; the plugin enforces that exact version. Preserve protocol-2 loaded/api and editable image source, and check generated local declarations before artifact copying. Published-package release, physical mobile and other platform/cold-start gates remain |
 | SVG import fidelity (#3018) | Implemented; 51 source tests and macOS native feature checks pass; strict error gate fails on unattributed ResizeObserver notifications | Native paint/inheritance/alpha, compound fill topology with real holes, adaptive transformed curves, viewports and local reuse replace the partial traversal. Actual Obsidian catalog: 1,935 Lucide-prefixed IDs and 47 other registered IDs; five supplied SVGs remain unchanged. Main/popout command and EA insertion, edits, history, clipboard, exports, save/reopen and plugin reload pass. Group compositing, stroke approximations, unsupported content and measured geometry costs are explicit in the support matrix and validation report |
 | Cropped shared Markdown images in #3015 | Implemented; 32 geometry/parser/save tests and native crop/save/export/reopen checks pass; known ResizeObserver error gate remains | Width changes remap each sibling crop to the new SVG; content refreshes retain its pixel viewport and canvas scale. Edge crops stay finite, crop-only changes invalidate caches, and PDF-link synchronization skips local Markdown/equation images |
@@ -2715,3 +2717,118 @@ This is an unpublished local-artifact integration checkpoint. Publish the next
 fork and Extras releases, install the plugin's updated exact fork dependency,
 and repeat published-byte verification before release. Companion source is
 left local; no companion commit or package publication is performed.
+
+### 2026-10-27 ? SVG follow-up checkpoints and CLI skill (#3018)
+
+1. Reproduced CSS specificity overflow before fixing it. Replaced decimal weights
+   with an ID/class/type tuple, retaining source-order ties and universal-selector
+   behavior. All 53 tests and the production build passed at this checkpoint.
+2. Reproduced missing compositing diagnostics for direct/nested translucent use
+   expansion. Count emitted pieces around each referenced visit, preserving the
+   current opacity approximation and reference cleanup. All 55 SVG tests, the
+   production build and four bundle tests pass. Focused lint is clean; full lint
+   is byte-for-byte unchanged at 119 baseline errors after its npm header.
+3. Updated the CLI skill and focused SVG guide on its current
+   cli-image-efficiency branch. Documented workbench-only boolean conversion,
+   explicit grouping/insertion/save, representation costs/limits and installed
+   release discovery. The trusted script schema has no caller-supplied revision
+   guard; its startup checks do not imply transactionality. All 25 offline CLI
+   tests and frontmatter/relative-link checks pass. The Python skill validator
+   could not load PyYAML; frontmatter was checked with the existing Node js-yaml.
+
+Windows native SVG lane: passed with Node 22.22.3, Obsidian 1.14.5, installed
+component 0.18.145 artifact hashes recorded in docs/SVG_IMPORT_VALIDATION.md.
+All 1,992 icon conversions, five unchanged supplied SVGs, 95 comparisons,
+main/fresh-popout editor checks, reload, clean JavaScript-error gate and cleanup
+pass. Source/current brain and project rocket PNGs inspected. main.js is
+5,012,500 bytes, with 230,380 bytes below the release target. Local report:
+excalidraw-obsidian-PlL0Xr/report.json. No published-tarball provenance inferred
+from this installed-package run; earlier integration copied local artifacts.
+
+Highest-probability remaining risk: overlapping opacity remains an approximation,
+and dense sampled SVGs can be expensive to edit. Check the new CSS/use examples
+in main and restored popouts, dense SVG edits on physical mobile, and published
+component bytes before release. Cold restart, Linux, macOS retest and physical
+resize/rotate/touch remain separate gates; the clean Windows result does not
+resolve the historical macOS ResizeObserver notification.
+
+### 2026-10-27 - Native Lucide insertion (#3019)
+
+1. Added one atomic installed-icon constructor and the synchronous view-free
+   EA method. Prepare viewport, color, sampling, style and a fresh outer group
+   before appending. Seven focused tests cover real conversion, aspect/padding,
+   final stroke width, fresh IDs and unchanged unrelated workbench/style/assets
+   on failure. Production and public-library builds pass; API suggester and
+   maintained reference documents include the new method and types.
+2. Added the reusable component-owned sidepanel and stable command, plus the
+   minimal shared fork image-menu action. Host protocol 3 forwards an initiating
+   editor ID without retaining a current view. Match live view/file/API/document
+   identities before publication and save; selection uses standard native
+   history. Seven current fork host tests, artifact/declaration build, generated
+   plugin contract checks and the 237-path customization inventory pass.
+3. Added paginated native discovery, create.icons and apply lucide staging with
+   groupMap handles, collision checks and aggregate geometry budgets. All 38
+   CLI/constructor tests pass. Updated the existing cli-image-efficiency skill
+   branch, installed-capability guidance and request example; 25 offline checks
+   and frontmatter/31 relative links/example validation from outside the bundle
+   pass. No secondary drawing engine or schema copy was introduced.
+4. Final Windows Obsidian 1.14.5 combined Lucide/SVG/native-CLI run passes in
+   excalidraw-test, including scoped fresh-popout insertion, stale-target refusal,
+   single Undo/Redo, plugin reload, JavaScript errors and cleanup. Attempted all
+   1,935 installed Lucide names at three presets: 5,802 successful constructions;
+   installed save-off is refused for out-of-viewBox geometry at each size.
+   Inspected picker and preset PNGs. All 55 SVG, four bundle and 11 runner tests
+   pass; production main.js is 5,028,698 bytes. Full plugin lint retains 119
+   baseline errors; fork typecheck retains four baseline test errors. Madge is
+   unavailable; hosted CodeScanner remains pending. Full evidence and hashes:
+   docs/LUCIDE_ICON_VALIDATION.md, report excalidraw-obsidian-uvQpEQ/report.json.
+
+An early probe raced the empty popout's document move and reached a retiring
+editor. The final probe waits for the destination document before loading the
+drawing; no general migration fix is claimed. Highest-probability remaining
+risk is target/focus ownership during switches and restored-popout migration.
+Repeat command/menu insertion, close/reopen, save and dense-icon edits after
+cold restart, on macOS/Linux and with physical mobile touch/scrolling. Normal
+group stroke resizing remains unchanged. Publish protocol-3 component bytes,
+install the next exact dependency/lockfile and repeat release gates before
+calling this a durable plugin handoff. No commits, pushes or publication made.
+
+### 2026-10-28 - Review and simplify Lucide insertion (#3019)
+
+Reviewed the shared constructor, EA and CLI staging, typed host/menu boundary,
+picker lifecycle, focus/migration, history and persistence. Replaced per-page
+Components and thumbnail listeners with one grid listener; removed the unused
+component field and repeated writable check. Reused the existing occupied-ID
+array instead of rebuilding a Set per icon. Collapsed the duplicate optional
+template-sync branch. No broad refactor or fork source changes were needed.
+
+All 38 CLI/EA, 55 SVG and four bundle tests pass, as do 25 companion CLI tests,
+focused lint, generator/probe syntax and generated paired-fork type contracts.
+Production and public-library outputs build with the documented installed-type
+warning. Native Windows report excalidraw-obsidian-enKChi passes Lucide/native
+CLI, including new paging and nested SVG/label clicks, history, popout insertion,
+stale-target refusal, JavaScript errors and cleanup. Current main.js is 5,028,518
+bytes. Retained the earlier SVG native corpus evidence; it was not rerun here.
+
+No further correctness defects found in this review. The installed 0.18.145
+contract still fails without the local generated-fork override, confirming the
+remaining merge dependency: publish/install protocol 3 and update the exact
+plugin dependency/lockfile before the normal build/native handoff. No merge,
+commit, publication, version bump or dependency update was performed.
+
+Highest-probability manual risk remains target/focus ownership during window
+migration. Repeat main/restored-popout switches and close/reopen after cold
+restart, with dense icon edits and actual touch/scrolling on physical mobile.
+macOS/Linux and hosted CodeScanner remain separate gates. See
+docs/LUCIDE_ICON_VALIDATION.md for exact review scope, checks and artifact hash.
+
+### 2026-10-28 - Authorized paired source merge (#3019)
+
+After reviewing the implementation and the image-menu fork requirement, the
+maintainer explicitly authorized commit, push and merge of the fork and plugin
+source. This supersedes the review's dependency requirement for merging this
+intermediate checkpoint. The maintainer will bump/publish the fork and advance
+the plugin dependency later after accumulating other changes. Preserve protocol
+3 and fail-fast checks; do not add an old-protocol fallback or change versions,
+dependencies or lockfiles. Published-package verification remains a release gate.
+The CLI skill stays on its existing cli-image-efficiency branch for later release.
