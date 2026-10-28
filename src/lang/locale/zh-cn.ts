@@ -1574,6 +1574,7 @@ export default {
   PROMPT_BUTTON_UPPERCASE: "大写",
   PROMPT_BUTTON_SPECIAL_CHARS: "特殊字符",
   PROMPT_SELECT_TEMPLATE: "选择一个模板",
+  PROMPT_BLANK_DRAWING: "空白绘图",
   LATEX_SUITE_PLUGIN_SUGGESTION:
     "安装 Obsidian 社区插件 'Latex Suite' 即可在输入公式时启用实时预览。",
 

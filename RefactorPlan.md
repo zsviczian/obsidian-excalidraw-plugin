@@ -27,6 +27,7 @@ validated, and what remains uncertain.
 | Phase | Status | Current outcome |
 | --- | --- | --- |
 | Assessment and baseline design | Complete | Initial architecture, risks, sequencing, and validation matrix documented |
+| Template selection and cancellation (#2649, PR #3020) | Implemented; source and native selection/cancellation checks pass | A dedicated chooser returns template/blank/cancel, displays paths relative to the configured root, and initially selects explicit blank. Interactive callers resolve before folder/file/editor/leaf side effects. Public getBlankDrawing/createDrawing and EA/CLI contracts retain string/file returns and deterministic initData behavior |
 | Nested-split fullscreen (#2743, PR #3020) | Implemented; seven source tests and native lower-right split pass | Keep the complete ancestor path visible; hide surrounding siblings and restore only owned classes. Native 958x641 drawing expands to 2560x1438 and returns to identical bounds. Existing inline styles remain untouched; controls are optional and cleanup retains the entry document across migration |
 | Canvas preview scaling investigation (#2729, PR #3020) | Not reproduced on Windows Obsidian 1.14.5; no rendering change | Two nodes sharing a drawing scale independently in SVG, SVG-as-image and PNG with immersive mode on/off. Doubling one node width scales its preview by 2.0063; the other remains unchanged. Keep the issue open and preserve the measurements rather than applying the unverified proposed patch |
 | Native Lucide insertion (#3019) | Implemented; reviewed/simplified 2026-10-28; maintainer approved intermediate source merge | Shared atomic installed-icon conversion, grouped workbench API, reusable scoped sidepanel and native CLI discovery/create/apply; CLI skill remains on cli-image-efficiency. Grid click delegation replaces per-page components/listeners. Protocol-3 fork publication and exact dependency installation are deferred by the maintainer and remain required before plugin release. See docs/LUCIDE_ICON_VALIDATION.md |
@@ -2851,3 +2852,27 @@ no MarkdownPostProcessor or image-cache change is justified by those measurement
 Highest-probability remaining risk: restored/popout layout transitions. Repeat
 deep splits, a second drawing, close while fullscreen and physical mobile; hosted
 CodeScanner and other desktop platforms remain separate validation environments.
+
+### 2026-10-28 - Template workflow (#2649, PR #3020)
+
+Baseline native report excalidraw-obsidian-pFgYJY displays identical filenames
+and Escape creates a drawing plus its target folder. Source regressions also
+fail on folder creation before content resolution and creation after cancellation.
+Added a dedicated FuzzySuggestModal with template/blank/cancel results and relative
+folder labels; empty-query ordering selects blank first. Shared link-prompt
+cancellation is unchanged. Public getBlankDrawing preserves its string contract
+and legacy script dismissal fallback, while internal prepareDrawing exposes
+cancellation to UI callers. New/open/embed, annotation, note conversion and
+NewFileActions resolve before their creation side effects; explicit initData and
+zero/single-template automatic behavior remain unchanged.
+
+Five source tests cover chooser lifecycle (including close-before-selection),
+path labels, folder/leaf side effects and theme/compatibility/compression cases.
+Native excalidraw-obsidian-VNplNN verifies explicit blank, filtered Beta selection,
+Escape/outside cancellation, unchanged note on embed cancellation, zero/single
+templates, legacy and explicit initialization plus native CLI authoring. Focused
+lint is clean; full lint retains 119 baseline errors. Added the blank label to all
+five maintained locales. Highest-probability remaining risk: uncommon callers
+that open nested dialogs; repeat annotation/NewFileActions interactively and
+check physical mobile focus/touch. Final combined native evidence is recorded in
+docs/WORKFLOW_FIXES_VALIDATION.md; no scene/dependency/version changes are needed.
