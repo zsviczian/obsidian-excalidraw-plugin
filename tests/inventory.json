@@ -2296,6 +2296,10 @@
       "mode": "isolated-or-extracted"
     },
     {
+      "path": "scripts/testing/excalidrawTypeSource.test.mjs",
+      "mode": "direct-module-or-tooling"
+    },
+    {
       "path": "scripts/testing/extrasMermaid.test.mjs",
       "mode": "isolated-or-extracted"
     },
@@ -2381,6 +2385,10 @@
     },
     {
       "path": "scripts/testing/provision.test.mjs",
+      "mode": "direct-module-or-tooling"
+    },
+    {
+      "path": "scripts/testing/regression.test.mjs",
       "mode": "direct-module-or-tooling"
     },
     {

@@ -8,7 +8,9 @@
     "lib/**/*"
   ],
   "scripts": {
-    "prebuild": "node --test scripts/testing/hostContracts.test.mjs",
+    "test:contracts": "node --test scripts/testing/hostContracts.test.mjs",
+    "test:regression": "node scripts/testing/regression.mjs",
+    "test:regression:portable": "node scripts/testing/regression.mjs --portable",
     "dev": "cross-env NODE_ENV=development rollup --config rollup.config.mjs",
     "build": "cross-env NODE_ENV=production rollup --config rollup.config.mjs",
     "test:fast": "node scripts/testing/runFast.mjs",
@@ -22,6 +24,7 @@
     "verify:obsidian:diagnostics": "node scripts/testing/host/errorOracle.mjs",
     "test:build-workspace": "node scripts/testing/buildWorkspace.mjs",
     "verify:obsidian:smoke": "node scripts/testing/host/verify.mjs --profile=smoke",
+    "verify:obsidian:regression": "node scripts/testing/host/verify.mjs --profile=regression",
     "verify:obsidian:full": "node scripts/testing/host/verify.mjs --profile=full",
     "verify:obsidian:devices": "node scripts/testing/host/verify.mjs --profile=devices",
     "verify:obsidian:soak": "node scripts/testing/host/verify.mjs --profile=soak",

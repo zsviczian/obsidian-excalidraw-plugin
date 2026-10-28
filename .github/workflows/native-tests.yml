@@ -10,7 +10,7 @@ on:
         required: true
       profile:
         type: choice
-        options: [smoke, full, devices, soak, cold]
+        options: [regression, smoke, full, devices, soak, cold]
         default: smoke
 permissions:
   contents: read
@@ -27,7 +27,6 @@ jobs:
       EXCALIDRAW_TEST_USER_DATA_PATH: ${{ vars.EXCALIDRAW_TEST_USER_DATA_PATH }}
       EXCALIDRAW_TEST_REPORT_DIR: ${{ github.workspace }}/.test-work/reports/native-ci
       EXCALIDRAW_FORK_ROOT: ${{ github.workspace }}/.test-work/checkouts/fork
-      EXCALIDRAW_TEST_FORK_TYPES_ROOT: ${{ github.workspace }}/.test-work/checkouts/fork
       EXCALIDRAW_EXTRAS_ROOT: ${{ github.workspace }}/.test-work/checkouts/extras
     steps:
       - name: Require an exact approved commit
@@ -41,7 +40,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: zsviczian/excalidraw
-          ref: d04bc1a6211a15394a1cc7036e7a7532608bf421
+          ref: 5340f04b1b9604ca6d18e478c8f3f2a96c1ac503
           path: .test-work/checkouts/fork
           persist-credentials: false
       - uses: actions/checkout@v4

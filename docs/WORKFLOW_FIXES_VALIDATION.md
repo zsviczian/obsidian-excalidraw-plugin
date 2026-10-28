@@ -52,7 +52,7 @@ JavaScript-error gate and owned-fixture cleanup. Windows, Node 22.22.3, Obsidian
 $env:EXCALIDRAW_TEST_VAULT_NAME='excalidraw-test'
 $env:EXCALIDRAW_TEST_VAULT_PATH='C:/Obsidian/excalidraw-test'
 $env:EXCALIDRAW_TEST_CONFIG_DIR='C:/Obsidian/excalidraw-test/.obsidian'
-$env:EXCALIDRAW_TEST_FORK_TYPES_ROOT='C:/Users/viczi/GitHub/excalidraw'
+$env:EXCALIDRAW_FORK_ROOT='C:/Users/viczi/GitHub/excalidraw'
 npm run verify:obsidian:plugin -- --workflow-fixes --native-cli --embed-recovery
 ```
 

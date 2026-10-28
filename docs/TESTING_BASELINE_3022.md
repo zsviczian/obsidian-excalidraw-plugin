@@ -1,5 +1,14 @@
 # Testing baseline: 2026-10-28
 
+**Historical attempts below are superseded by the current-product regression
+contract in [TESTING.md](TESTING.md).** The maintainer rejected completion with
+failed build/acceptance and clarified that current fork behavior is accepted by
+default. Required tests now use independent fork contracts and affected upstream
+workflows, rather than requiring the stale upstream web-app suite to pass.
+Suspected errors and retained product fixes are reviewed in
+[TESTING_FINDINGS_3022.md](TESTING_FINDINGS_3022.md). Preserve the earlier failed
+evidence as history; it is not the new regression expectation.
+
 This is an implementation checkpoint, not comprehensive acceptance.
 
 | Repository | Initial revision | Actual checks |

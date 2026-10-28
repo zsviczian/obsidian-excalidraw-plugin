@@ -11,7 +11,7 @@ import {discoverStagedPlugin} from './pluginDiscovery.mjs';
 export function produceCombination({pluginRoot,forkRoot,extrasRoot,output}){
   output=resolve(output);assert.ok(!existsSync(output),'Combination output already exists');mkdirSync(output,{recursive:true});
   const roots={plugin:resolve(pluginRoot),fork:resolve(forkRoot),extras:resolve(extrasRoot)},manifests={};
-  const run=({manager,args,cwd})=>{const invocation=packageManagerInvocation(manager,args);const r=spawnSync(invocation.file,invocation.args,{cwd,env:{...process.env,EXCALIDRAW_TEST_FORK_TYPES_ROOT:roots.fork},stdio:'inherit',windowsHide:true,timeout:600000});if(r.error||r.status)throw Error('Producer '+manager+' '+args.join(' ')+' failed: '+(r.error?.message||r.status));};
+  const run=({manager,args,cwd})=>{const invocation=packageManagerInvocation(manager,args);const r=spawnSync(invocation.file,invocation.args,{cwd,env:{...process.env,EXCALIDRAW_FORK_ROOT:roots.fork},stdio:'inherit',windowsHide:true,timeout:600000});if(r.error||r.status)throw Error('Producer '+manager+' '+args.join(' ')+' failed: '+(r.error?.message||r.status));};
   for(const kind of ['fork','extras'])manifests[kind]=produceArtifacts({root:roots[kind],kind,snapshotRoot:join(output,kind),run});
   const installed=JSON.parse(readFileSync(join(roots.plugin,'node_modules/@zsviczian/excalidraw/package.json'),'utf8'));
   const declared=JSON.parse(readFileSync(join(roots.plugin,'package.json'),'utf8')).dependencies['@zsviczian/excalidraw'];assert.equal(installed.version,declared,'Install the exact declared fork package before local artifact handoff');

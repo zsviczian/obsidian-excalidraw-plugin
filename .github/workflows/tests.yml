@@ -12,14 +12,13 @@ jobs:
     timeout-minutes: 35
     env:
       EXCALIDRAW_FORK_ROOT: ${{ github.workspace }}/.test-work/checkouts/fork
-      EXCALIDRAW_TEST_FORK_TYPES_ROOT: ${{ github.workspace }}/.test-work/checkouts/fork
       EXCALIDRAW_EXTRAS_ROOT: ${{ github.workspace }}/.test-work/checkouts/extras
     steps:
       - uses: actions/checkout@v4
       - uses: actions/checkout@v4
         with:
           repository: zsviczian/excalidraw
-          ref: d04bc1a6211a15394a1cc7036e7a7532608bf421
+          ref: 5340f04b1b9604ca6d18e478c8f3f2a96c1ac503
           path: .test-work/checkouts/fork
           persist-credentials: false
       - uses: actions/checkout@v4
@@ -36,15 +35,14 @@ jobs:
       - run: corepack enable
       - run: yarn --cwd .test-work/checkouts/fork install --frozen-lockfile
       - run: npm ci --prefix .test-work/checkouts/extras
-      - name: Build and freeze the reviewed workspace combination
-        run: npm run test:build-workspace
-      - run: npm run lib
-      - run: npm run test:packages
-      - run: npm run test:fixtures
-      - run: npm run test:inventory
+      - run: yarn --cwd .test-work/checkouts/fork playwright install --with-deps chromium
+      - name: Independent portable regression
+        run: npm run test:regression:portable
+      - name: Verify the ordinary build and paired declarations
+        run: |
+          npm run build
+          npm run test:contracts
       - run: npm run test:features
-      - run: npm run test:fast
-      - run: npm run test:source-coverage
       - run: node --check dist/main.js
       - uses: actions/upload-artifact@v4
         if: always()

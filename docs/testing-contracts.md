@@ -3,6 +3,13 @@
 The plugin owns the native coordinator; fork and Extras own independent suites.
 All files below are test tooling and must stay outside production graphs.
 
+The required `core-regression` report combines independent current-product
+suites. It requires native CLI/EA, popout lifecycle and device case identities unless explicitly run in
+portable mode; missing suites, failed cleanup, unexpected errors and coverage
+regressions remain failures. Upstream diagnostic mismatches and supplemental
+platform/restart obligations do not define the accepted fork baseline. Keep
+suspected defects visible in TESTING_FINDINGS_3022.md for maintainer decisions.
+
 `scripts/testing/contracts.mjs` is the executable artifact/report contract.
 Sibling producers may import it from an explicit `--contract-root` supplied by
 the coordinator. Their independent tests must not require this checkout. Keep

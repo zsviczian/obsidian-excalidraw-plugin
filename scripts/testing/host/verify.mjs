@@ -38,8 +38,8 @@ import { writeFileSync } from 'node:fs';
 const pluginRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const profileArg = process.argv.slice(2).find(arg=>arg.startsWith('--profile='));
 const profile = profileArg?.slice('--profile='.length);
-if(profileArg !== undefined && !['smoke','full','devices','soak'].includes(profile))throw Error('Use --profile=smoke|full|devices|soak');
-const fullProfile=profile==='full';
+if(profileArg !== undefined && !['smoke','regression','full','devices','soak'].includes(profile))throw Error('Use --profile=smoke|regression|full|devices|soak');
+const fullProfile=profile==='full'||profile==='regression';
 const lifecycle=fullProfile||process.argv.includes('--lifecycle');
 const extrasServices=fullProfile||process.argv.includes('--extras-services');
 const devices=fullProfile||profile==='devices'||process.argv.includes('--devices');
@@ -157,14 +157,6 @@ report = await runObsidianSmoke({
       for (const name of FORK_ARTIFACTS) {
         if (!existsSync(join(sourceDir, name))) throw new Error(`Fork build did not produce ${name}`);
       }
-      const contracts = spawnNativeSync(process.execPath,
-        [join(pluginRoot, "scripts/testing/hostContracts.test.mjs")], {
-          cwd: pluginRoot, encoding: "utf8", timeout: 120_000,
-          env: { ...process.env, EXCALIDRAW_TEST_FORK_TYPES_ROOT: forkRoot },
-        });
-      if (contracts.error || contracts.status !== 0) {
-        throw new Error(`Local fork declaration contract failed: ${contracts.error?.message || contracts.stderr || contracts.stdout}`);
-      }
       mkdirSync(installedDir, { recursive: true });
     }
     const hashes = {};
@@ -176,6 +168,14 @@ report = await runObsidianSmoke({
       const sourceHash = digest(sourcePath);
       if (sourceHash !== digest(join(installedDir, name))) throw new Error(`Fork artifact handoff changed ${name}`);
       hashes[name] = sourceHash;
+    }
+    const contracts = spawnNativeSync(process.execPath,
+      [join(pluginRoot, "scripts/testing/hostContracts.test.mjs")], {
+        cwd: pluginRoot, encoding: "utf8", timeout: 120_000,
+        env: { ...process.env, EXCALIDRAW_FORK_ROOT: forkRoot },
+      });
+    if (contracts.error || contracts.status !== 0) {
+      throw new Error(`Installed runtime declaration contract failed: ${contracts.error?.message || contracts.stderr || contracts.stdout}`);
     }
     const npm = packageManagerInvocation("npm", ["run", "build"]);
     command(npm.file, npm.args, pluginRoot, 600_000, true);

@@ -68,7 +68,7 @@ conflict handling, and the one-time adoption procedure for older workspaces.
 
 ## 🧪 Testing
 
-Use the layered [test lanes and maintenance guide](docs/TESTING.md): discovered fast tests, actual source-mapped coverage, production artifact checks and guarded native smoke/full/device/soak profiles. Build before running the fast suite because it inspects the shipped bundle. Keep the source-linked feature registry and public-surface inventory current; neither inventory nor a passing smoke establishes complete coverage. Native, inherited-suite and physical-device limitations remain explicit in the checkpoint record. Focus this suite on core Excalidraw and ExcalidrawAutomate; maintained scripts have their own tests in ea-scripts.
+Use `npm run test:regression` with the dedicated native test vault, or `npm run test:regression:portable` for hosted checks. Follow the [test guide](docs/TESTING.md) for setup, fixtures, repeatable reports and additional native profiles. The independent suite accepts current fork behavior and protects fork-specific contracts and affected upstream workflows. Historical upstream tests are an optional compatibility investigation, not a required regression gate. Build before focused fast tests because they inspect the shipped bundle. Keep inventory and feature mappings current without treating discovery as behavioral coverage. Report suspected product defects for maintainer review; do not silently change behavior or bless failed snapshots. Focus on core Excalidraw and ExcalidrawAutomate; maintained scripts have their own tests in ea-scripts.
 
 The native CLI lane supports macOS and Windows. Run `npm run test:obsidian:runner`
 for the offline harness tests, then `npm run verify:obsidian:plugin` to build and

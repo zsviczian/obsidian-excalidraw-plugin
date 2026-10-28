@@ -162,7 +162,7 @@ For the Lucide picker, run `npm run test:lucide`, then the guarded
 `npm run verify:obsidian:plugin -- --lucide`. Protocol 3 requires the matching
 component artifacts and declarations. For a temporary paired checkout, build the
 fork, copy its four Obsidian artifacts as described above, and set
-`EXCALIDRAW_TEST_FORK_TYPES_ROOT` to the fork root for the generated declaration
+`EXCALIDRAW_FORK_ROOT` to the fork root for the generated declaration
 preflight. This is local integration, not published dependency verification.
 
 The Lucide lane checks read-only paginated discovery, atomic create/apply,
