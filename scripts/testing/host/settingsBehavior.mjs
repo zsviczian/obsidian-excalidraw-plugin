@@ -137,11 +137,34 @@ export async function exerciseExportBehavior(c, env, rows) {
         );
         const png = await ea.createViewPNG({
           withBackground: row.expected.background,
-          padding: Math.max(10, row.expected.padding),
+          padding: row.expected.padding,
           theme: row.expected.theme,
           scale: 1,
         });
         const decoded = await decode(png);
+        const dimensions = (node) =>
+          ["width", "height"].map((key) =>
+            Number.parseFloat(node.getAttribute(key)),
+          );
+        const [width, height] = dimensions(svg);
+        const controlPadding = row.expected.padding === 0 ? 3 : 0;
+        const control = await ea.createViewSVG({
+          withBackground: row.expected.background,
+          padding: controlPadding,
+          theme: row.expected.theme,
+        });
+        const [controlWidth, controlHeight] = dimensions(control);
+        const delta = 2 * (row.expected.padding - controlPadding);
+        check(
+          Math.abs(width - controlWidth - delta) < 1e-8 &&
+            Math.abs(height - controlHeight - delta) < 1e-8,
+          "Actual SVG geometry does not honor the requested padding, including zero",
+        );
+        check(
+          Math.abs(decoded.width - width) <= 1 &&
+            Math.abs(decoded.height - height) <= 1,
+          "Decoded PNG geometry differs from matching SVG options beyond pixel rounding",
+        );
         check(
           decoded.width > 100 && decoded.height > 60 && decoded.red > 20,
           "Export lost fixture geometry or red content",

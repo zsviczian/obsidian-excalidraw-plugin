@@ -101,13 +101,26 @@ it is never an expected-failure or acceptance allowlist.
 
 ## Follow-up evidence, 2026-10-28 (unfinished)
 
-The first expanded portable aggregate passes **632 canonical cases**: 457 plugin
+The clean follow-up portable aggregate passes **633 canonical cases**: 458 plugin
 fast, 124 fork source, 18 fork browser, 29 Extras source and four Extras browser.
-It includes 34 new and 598 reused canonical identities. The overlapping plugin
-source-coverage gate passes 73 cases; both packed-consumer gates pass. Evidence:
-`.test-work/reports/expanded-portable-first/`. Subsequent recovery-tooling checks
-add one configuration test; final counts belong to the fresh follow-up run.
+It includes **35 new and 598 reused canonical identities**. The overlapping
+plugin source-coverage gate passes 73 cases; both packed-consumer gates pass.
+Evidence: `.test-work/reports/expanded-portable-clean/`, using clean plugin
+`d7d9a355efdf07fe1f47ded0f7e32f5c6b1225bf`, fork
+`6fc8f6b7176b93e098c75f3d8846c06c4cfb3106` and Extras
+`1cdcb7c425a9b80afdc7b39c88861143b4b85e58`.
+The first pre-checkpoint portable run also passed (632 cases, before the added
+live-configuration tooling case). Later follow-ups strengthen only native export
+geometry assertions and update documentation; these native assertions remain
+unexecuted until the local-vault prerequisite is completed.
 
+The required native denominator is **351 cases**: 311 core/behavior/drop cases
+and 40 device/layout cases. Seven of these IDs exercise actual plugin CLI
+commands; host/EA/input cases and emulated contexts are counted separately in
+reports. The 84 historical native IDs are recorded as omitted by the portable
+profile, rather than removed tests. Three old PDF deadline/lock-related
+identities were replaced/removed. There are **zero fresh native passes** in this
+follow-up; neither count nor implementation substitutes for execution.
 | Required follow-up | Current result |
 | --- | --- |
 | PDF timeout/lock rollback | Source regression passes; completion remains event-driven |

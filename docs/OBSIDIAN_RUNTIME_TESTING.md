@@ -398,9 +398,10 @@ the parent runner owns the disposable drawing and final JavaScript-error check.
 This input regression supplies a deterministic local SVG renderer through the
 MathJax gateway. It requires no Extras installation or network access and does
 not test MathJax rendering, its activation flow, or Latex Suite extensions.
-For real Extras formula rendering and Latex Suite preview positioning, install
-and enable both companions in the test vault, enable Extras MathJax-to-SVG and
-Latex Suite math previews, then run:
+For the optional Latex Suite preview-positioning gate, install that separate
+extension in the local working vault and enable its math previews once. The
+coordinator installs/configures Extras MathJax automatically. Latex Suite is not
+a dependency of the required core profile. Then run:
 
 ```bash
 npm run verify:obsidian:plugin -- --latex-preview
