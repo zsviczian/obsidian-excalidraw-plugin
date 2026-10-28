@@ -1,7 +1,7 @@
 /** Build the plugin (optionally with the sibling fork), then run the guarded native smoke. */
 import { createHash } from "node:crypto";
 import { copyFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { mkdtempSync } from "node:fs";
@@ -20,6 +20,7 @@ import { runYouTubeDropScenario } from "./youtubeDrop.mjs";
 import { runSvgImportScenario } from "./svgImport.mjs";
 import { runLucideScenario } from "./lucideIcons.mjs";
 import { runWorkflowFixesScenario } from "./workflowFixes.mjs";
+import { acquireHostLock } from "./hostLock.mjs";
 
 const pluginRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const pluginOnly = process.argv.includes("--plugin-only");
@@ -67,11 +68,20 @@ const source = {
   platform: process.platform,
 };
 
-const report = await runObsidianSmoke({
+// One lock spans every CLI call, staging and scenario across all three repositories.
+const userDataPath = process.env.EXCALIDRAW_TEST_USER_DATA_PATH || (process.platform === "win32"
+  ? join(process.env.APPDATA || "", "obsidian")
+  : process.platform === "darwin" ? join(homedir(), "Library/Application Support/obsidian")
+  : join(process.env.XDG_CONFIG_HOME || join(homedir(), ".config"), "obsidian"));
+const hostLock = acquireHostLock({ userDataPath });
+let report;
+try {
+report = await runObsidianSmoke({
   projectRoot: pluginRoot,
   vaultName: process.env.EXCALIDRAW_TEST_VAULT_NAME,
   vaultPath: process.env.EXCALIDRAW_TEST_VAULT_PATH,
   configDir: process.env.EXCALIDRAW_TEST_CONFIG_DIR,
+  automationRoot: process.env.EXCALIDRAW_TEST_AUTOMATION_ROOT,
   reportDir,
   source,
   scenarios: [
@@ -134,6 +144,9 @@ const report = await runObsidianSmoke({
     return hashes;
   },
 });
+} finally {
+  hostLock.release();
+}
 
 const log = (message) => process.stdout.write(`${message}\n`);
 log(`Obsidian smoke ${report.status}; report: ${join(reportDir, "report.json")}`);

@@ -1,0 +1,4 @@
+# Fixture hashes refer to exact bytes on every checkout.
+tests/vault/** -text
+tests/vault/Assets/*.pdf binary
+tests/fixtures/*.json text eol=lf

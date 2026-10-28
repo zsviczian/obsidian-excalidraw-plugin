@@ -27,6 +27,7 @@ validated, and what remains uncertain.
 | Phase | Status | Current outcome |
 | --- | --- | --- |
 | Assessment and baseline design | Complete | Initial architecture, risks, sequencing, and validation matrix documented |
+| Automated test coverage (#3022) | In progress; baseline and portable contract checkpoint | 365 fast tests pass; source-only coverage separates whole modules from historical VM copies. Synthetic seed, owned provisioning/reset, immutable artifacts and cross-session native lock are tested. Full feature, inherited, browser, Extras and device acceptance remain required; see docs/TESTING_BASELINE_3022.md |
 | Template selection and cancellation (#2649, PR #3020) | Implemented; source and native selection/cancellation checks pass | A dedicated chooser returns template/blank/cancel, displays paths relative to the configured root, and initially selects explicit blank. Interactive callers resolve before folder/file/editor/leaf side effects. Public getBlankDrawing/createDrawing and EA/CLI contracts retain string/file returns and deterministic initData behavior |
 | Nested-split fullscreen (#2743, PR #3020) | Implemented; seven source tests and native lower-right split pass | Keep the complete ancestor path visible; hide surrounding siblings and restore only owned classes. Native 958x641 drawing expands to 2560x1438 and returns to identical bounds. Existing inline styles remain untouched; controls are optional and cleanup retains the entry document across migration |
 | Canvas preview scaling investigation (#2729, PR #3020) | Original SVG-only behavior not reproduced on Windows Obsidian 1.14.5; unresolved | Two nodes sharing a drawing scale independently in SVG, SVG-as-image and PNG with immersive mode on/off. Doubling one node width scales its preview by 2.0063; the other remains unchanged. Tall previews clip in all modes. No speculative rendering/cache change; retain measurements and keep the issue open |
@@ -2900,3 +2901,21 @@ and readiness/menu corrections are recorded in docs/WORKFLOW_FIXES_VALIDATION.md
 no broad lifecycle fix or error suppression was added. Cold/restored popouts,
 annotation/NewFileActions, physical mobile, macOS/Linux and hosted CodeScanner
 remain manual gates. PR stays draft; no issue closure or external-repo changes.
+
+### 2026-10-28 - Automated coverage baseline and portable contract (#3022)
+
+Merged #3020 after maintainer authorization and closed #2743/#2649 with PR
+references; #2729 remains open. Reconciled the existing #3022 branch with master.
+Recorded initial plugin/fork/Extras test/build/type/lint results, including
+ignored historical fork discovery and unresolved inherited failures. Added
+schema-2 artifact/report validation, immutable snapshots, shared application
+session exclusion, a deterministic synthetic corpus, guarded owned-vault
+provision/reset, source-linked surface inventory and aggregate Node discovery.
+All 365 current fast tests pass; a separate 36-test whole-module coverage run
+records 261 unexecuted production modules rather than crediting VM copies.
+Package lease/adapter rollback and settings serialization/recovery tests execute
+whole production modules. No production feature change or release claim.
+Highest risks for the next checkpoint: registration/staging in a fresh vault,
+inherited hook identity/timing, and cancellation before native teardown. Test
+main/new/restored popouts and actual mobile emulation independently; physical
+mobile, legacy hosts and other operating systems remain separate evidence.

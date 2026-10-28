@@ -2,6 +2,8 @@
 import { createHash, randomUUID } from "node:crypto";
 import { copyFileSync, existsSync, lstatSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { basename, isAbsolute, join, relative, sep } from "node:path";
+import { validateOwnedVault } from "../provision.mjs";
+import { ownedPath } from "../contracts.mjs";
 
 export const PLUGIN_ID = "obsidian-excalidraw-plugin";
 export const ARTIFACTS = ["main.js", "manifest.json", "styles.css"];
@@ -19,17 +21,23 @@ function inside(parent, child, label) {
 }
 
 /** Reject ambiguous or redirected vault and plugin paths before any deployment. */
-export function validateTarget({ vaultName, vaultPath, configDir }) {
+export function validateTarget({ vaultName, vaultPath, configDir, automationRoot }) {
   if (!vaultName || !vaultPath || !configDir) {
     throw new Error("Set EXCALIDRAW_TEST_VAULT_NAME, EXCALIDRAW_TEST_VAULT_PATH and EXCALIDRAW_TEST_CONFIG_DIR");
   }
-  if (vaultName !== "excalidraw-test") throw new Error("This runner is restricted to the excalidraw-test vault");
+  const automation = vaultName !== "excalidraw-test";
+  if (automation && !automationRoot) throw new Error("This runner is restricted to the excalidraw-test vault or an explicitly owned automation vault");
   if (!isAbsolute(vaultPath) || !isAbsolute(configDir)) throw new Error("Vault and config paths must be absolute");
   if (!existsSync(vaultPath) || !existsSync(configDir)) throw new Error("Vault or config directory does not exist");
   const vault = realpathSync(vaultPath);
   const config = realpathSync(configDir);
-  if (basename(vault) !== vaultName) throw new Error("Vault folder does not match the selected vault name");
   inside(vault, config, "Config directory");
+  ownedPath(vaultPath, relative(vaultPath, configDir).split(sep).join("/"));
+  if (automation) {
+    const owned = validateOwnedVault({ workRoot: automationRoot, vaultPath });
+    if (owned.marker.vaultName !== vaultName || owned.config !== config) throw new Error("Automation vault identity/config differs");
+  }
+  if (basename(vault) !== vaultName) throw new Error("Vault folder does not match the selected vault name");
   if (!existsSync(join(config, "community-plugins.json"))) {
     throw new Error("Community plugins must be configured in this test vault");
   }
@@ -42,8 +50,8 @@ export function validateTarget({ vaultName, vaultPath, configDir }) {
     if (existsSync(file) && lstatSync(file).isSymbolicLink()) throw new Error(`Target artifact cannot be a symlink: ${name}`);
   }
   const manifestPath = join(pluginDir, "manifest.json");
-  if (!existsSync(manifestPath) || JSON.parse(readFileSync(manifestPath, "utf8")).id !== PLUGIN_ID ||
-    !JSON.parse(readFileSync(join(config, "community-plugins.json"), "utf8")).includes(PLUGIN_ID)) {
+  if (!automation && (!existsSync(manifestPath) || JSON.parse(readFileSync(manifestPath, "utf8")).id !== PLUGIN_ID ||
+    !JSON.parse(readFileSync(join(config, "community-plugins.json"), "utf8")).includes(PLUGIN_ID))) {
     throw new Error("Install and enable Excalidraw from Community plugins in excalidraw-test first");
   }
   return { vault, config, pluginDir };
@@ -90,7 +98,7 @@ async function poll(read, acceptable, wait, now, timeoutMs = 20_000) {
 }
 
 /** Preflight, build, stage and exercise one disposable drawing; always write a report. */
-export async function runObsidianSmoke({ projectRoot, vaultName, vaultPath, configDir, reportDir, runCli, runBuild,
+export async function runObsidianSmoke({ projectRoot, vaultName, vaultPath, configDir, automationRoot, reportDir, runCli, runBuild,
   wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms)), now = () => Date.now(), source = {}, unique = () => randomUUID(), scenarios = [] }) {
   const report = { schemaVersion: 1, status: "failed", startedAt: new Date(now()).toISOString(), source,
     target: { vaultName, vaultPath, configDir }, capabilities: {}, artifacts: {}, scenarios: [], cleanup: "not-started" };
@@ -98,7 +106,7 @@ export async function runObsidianSmoke({ projectRoot, vaultName, vaultPath, conf
   let phase = "preflight";
   let created = false;
   try {
-    const target = validateTarget({ vaultName, vaultPath, configDir });
+    const target = validateTarget({ vaultName, vaultPath, configDir, automationRoot });
     const cli = (command, ...args) => {
       const output = runCli(vaultName, command, ...args);
       if (output.trim().startsWith("Error:")) throw new Error(`${command}: ${output.trim().slice(0, 500)}`);

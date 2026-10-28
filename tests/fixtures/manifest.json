@@ -1,0 +1,147 @@
+{
+  "schemaVersion": 2,
+  "generator": "synthetic-core-v1",
+  "fixtures": [
+    {
+      "id": ".obsidian/app.json",
+      "path": ".obsidian/app.json",
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "bytes": 3,
+      "provenance": "Generated synthetic fixture; no imported vault or third-party artwork",
+      "license": "CC0-1.0",
+      "generator": "synthetic-core-v1"
+    },
+    {
+      "id": ".obsidian/appearance.json",
+      "path": ".obsidian/appearance.json",
+      "sha256": "4e33527221092418b05608e6646bceeb47a02087d0154fea456aaffaac267941",
+      "bytes": 22,
+      "provenance": "Generated synthetic fixture; no imported vault or third-party artwork",
+      "license": "CC0-1.0",
+      "generator": "synthetic-core-v1"
+    },
+    {
+      "id": ".obsidian/community-plugins.json",
+      "path": ".obsidian/community-plugins.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "bytes": 3,
+      "provenance": "Generated synthetic fixture; no imported vault or third-party artwork",
+      "license": "CC0-1.0",
+      "generator": "synthetic-core-v1"
+    },
+    {
+      "id": "Drawings/Uncompressed.excalidraw.md",
+      "path": "Drawings/Uncompressed.excalidraw.md",
+      "sha256": "48779a1d974992b6dbefed23e731e387ba985dab840a2b8c2830ffad3133705d",
+      "bytes": 1868,
+      "provenance": "Generated synthetic fixture; no imported vault or third-party artwork",
+      "license": "CC0-1.0",
+      "generator": "synthetic-core-v1"
+    },
+    {
+      "id": "Drawings/Compressed.excalidraw.md",
+      "path": "Drawings/Compressed.excalidraw.md",
+      "sha256": "44d88ae4759e9833bbcd739eb9993a49d30e902b9225468f95975148ff706ee7",
+      "bytes": 1253,
+      "provenance": "Generated synthetic fixture; no imported vault or third-party artwork",
+      "license": "CC0-1.0",
+      "generator": "synthetic-core-v1"
+    },
+    {
+      "id": "Drawings/Legacy.excalidraw",
+      "path": "Drawings/Legacy.excalidraw",
+      "sha256": "e3cf66876d5eb224985d8540798b79e3a55012705b4bae9aac13ed4926bad078",
+      "bytes": 1715,
+      "provenance": "Generated synthetic fixture; no imported vault or third-party artwork",
+      "license": "CC0-1.0",
+      "generator": "synthetic-core-v1"
+    },
+    {
+      "id": "Invalid/Truncated.excalidraw.md",
+      "path": "Invalid/Truncated.excalidraw.md",
+      "sha256": "cf9ac69191ee90f92fa5616bc41dbe43bb95689eec968cdd664bbaac976f1097",
+      "bytes": 1724,
+      "provenance": "Generated synthetic fixture; no imported vault or third-party artwork",
+      "license": "CC0-1.0",
+      "generator": "synthetic-core-v1"
+    },
+    {
+      "id": "Invalid/Corrupt.excalidraw.md",
+      "path": "Invalid/Corrupt.excalidraw.md",
+      "sha256": "7cebfba274639b4afdc8d17cfbaec160d1f382053ce0bc4cc975307f718d4d8b",
+      "bytes": 96,
+      "provenance": "Generated synthetic fixture; no imported vault or third-party artwork",
+      "license": "CC0-1.0",
+      "generator": "synthetic-core-v1"
+    },
+    {
+      "id": "Links/Árvíztűrő 测试.md",
+      "path": "Links/Árvíztűrő 测试.md",
+      "sha256": "43fd50de351a786c4924c8b2083eee7ab21a26cadbbdc3ac7e42ce104baed2cc",
+      "bytes": 99,
+      "provenance": "Generated synthetic fixture; no imported vault or third-party artwork",
+      "license": "CC0-1.0",
+      "generator": "synthetic-core-v1"
+    },
+    {
+      "id": "Notes/Embeds.md",
+      "path": "Notes/Embeds.md",
+      "sha256": "909c360c7adca7c78f12060e6c6dba806d39227c0335159fa2dc0f79bb3f1aa2",
+      "bytes": 159,
+      "provenance": "Generated synthetic fixture; no imported vault or third-party artwork",
+      "license": "CC0-1.0",
+      "generator": "synthetic-core-v1"
+    },
+    {
+      "id": "Assets/Transparency.png",
+      "path": "Assets/Transparency.png",
+      "sha256": "2067d12b3fbb0bc80aad8471b58776ec303496bf54c4fc4a4768eb3e33525730",
+      "bytes": 85,
+      "provenance": "Generated synthetic fixture; no imported vault or third-party artwork",
+      "license": "CC0-1.0",
+      "generator": "synthetic-core-v1"
+    },
+    {
+      "id": "Assets/Layers.svg",
+      "path": "Assets/Layers.svg",
+      "sha256": "592e3ef692a17271182ce347489b3613a03355d9b900f0d71962412b94a43321",
+      "bytes": 296,
+      "provenance": "Generated synthetic fixture; no imported vault or third-party artwork",
+      "license": "CC0-1.0",
+      "generator": "synthetic-core-v1"
+    },
+    {
+      "id": "Assets/Small.pdf",
+      "path": "Assets/Small.pdf",
+      "sha256": "8f855ca9712acffae276314d5b7dc1f9e9730e684c7e37d447031e24020d26cc",
+      "bytes": 619,
+      "provenance": "Generated synthetic fixture; no imported vault or third-party artwork",
+      "license": "CC0-1.0",
+      "generator": "synthetic-core-v1"
+    },
+    {
+      "id": "Sources/Equations.json",
+      "path": "Sources/Equations.json",
+      "sha256": "fb1afefb15c2342741de2bf81a42934448ca89081dee9de34b726bca3ee4b9b1",
+      "bytes": 105,
+      "provenance": "Generated synthetic fixture; no imported vault or third-party artwork",
+      "license": "CC0-1.0",
+      "generator": "synthetic-core-v1"
+    },
+    {
+      "id": "Sources/Diagrams.json",
+      "path": "Sources/Diagrams.json",
+      "sha256": "81a8d7decc369248e7b24b30f4cd6278adb34233cb9a802b197ea3694e32e800",
+      "bytes": 127,
+      "provenance": "Generated synthetic fixture; no imported vault or third-party artwork",
+      "license": "CC0-1.0",
+      "generator": "synthetic-core-v1"
+    }
+  ],
+  "stress": {
+    "generator": "scene",
+    "defaultCount": 2000,
+    "maxCount": 10000,
+    "checkedIn": false
+  }
+}
