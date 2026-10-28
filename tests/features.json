@@ -153,6 +153,24 @@
           "cases": [
             "native:cold-durable-restoration"
           ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/behaviorMatrix.mjs",
+          "cases": [
+            "native:behavior:main:cli-atomic-targeted-edit",
+            "native:behavior:main:ea-hooks-targeting-invalid",
+            "native:behavior:split:cli-atomic-targeted-edit",
+            "native:behavior:split:ea-hooks-targeting-invalid",
+            "native:behavior:nested-split:cli-atomic-targeted-edit",
+            "native:behavior:nested-split:ea-hooks-targeting-invalid",
+            "native:behavior:popout:cli-atomic-targeted-edit",
+            "native:behavior:popout:ea-hooks-targeting-invalid",
+            "native:behavior:phone:cli-atomic-targeted-edit",
+            "native:behavior:phone:ea-hooks-targeting-invalid",
+            "native:behavior:tablet:cli-atomic-targeted-edit",
+            "native:behavior:tablet:ea-hooks-targeting-invalid"
+          ]
         }
       ],
       "fixtures": [
@@ -168,7 +186,7 @@
       "failure": "Refuse stale loaders and cancellation completion; unmount before async persistence",
       "cleanup": "Await actual owned popout closure and settle all test tasks",
       "remaining": [
-        "Current Electron 43.3.0 emits illegal-access teardown exceptions; confirm on a fixed Electron host without filtering"
+        "Development-mode dirty migration retains the separately tracked illegal-access residual; expanded production contexts still require fresh native verification"
       ]
     },
     {
@@ -206,6 +224,42 @@
             "fork-inherited:packages/excalidraw/clipboard.test.ts::parseClipboard() should parse valid excalidraw JSON if inside text/html",
             "fork-inherited:packages/excalidraw/clipboard.test.ts::parseClipboard() should parse <image> `src` urls out of text/html",
             "fork-inherited:packages/excalidraw/clipboard.test.ts::parseClipboard() should parse text content alongside <image> `src` urls out of text/html"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/behaviorMatrix.mjs",
+          "cases": [
+            "native:behavior:main:frontmatter-prefixes-theme-scale",
+            "native:behavior:main:markdown-reading",
+            "native:behavior:main:markdown-live-preview",
+            "native:behavior:main:markdown-source-edit",
+            "native:behavior:main:raw-parsed-text",
+            "native:behavior:split:frontmatter-prefixes-theme-scale",
+            "native:behavior:split:markdown-reading",
+            "native:behavior:split:markdown-live-preview",
+            "native:behavior:split:markdown-source-edit",
+            "native:behavior:split:raw-parsed-text",
+            "native:behavior:nested-split:frontmatter-prefixes-theme-scale",
+            "native:behavior:nested-split:markdown-reading",
+            "native:behavior:nested-split:markdown-live-preview",
+            "native:behavior:nested-split:markdown-source-edit",
+            "native:behavior:nested-split:raw-parsed-text",
+            "native:behavior:popout:frontmatter-prefixes-theme-scale",
+            "native:behavior:popout:markdown-reading",
+            "native:behavior:popout:markdown-live-preview",
+            "native:behavior:popout:markdown-source-edit",
+            "native:behavior:popout:raw-parsed-text",
+            "native:behavior:phone:frontmatter-prefixes-theme-scale",
+            "native:behavior:phone:markdown-reading",
+            "native:behavior:phone:markdown-live-preview",
+            "native:behavior:phone:markdown-source-edit",
+            "native:behavior:phone:raw-parsed-text",
+            "native:behavior:tablet:frontmatter-prefixes-theme-scale",
+            "native:behavior:tablet:markdown-reading",
+            "native:behavior:tablet:markdown-live-preview",
+            "native:behavior:tablet:markdown-source-edit",
+            "native:behavior:tablet:raw-parsed-text"
           ]
         }
       ],
@@ -277,6 +331,48 @@
           "cases": [
             "internal-drop-tooltip"
           ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/behaviorMatrix.mjs",
+          "cases": [
+            "native:behavior:main:markdown-reading",
+            "native:behavior:main:markdown-live-preview",
+            "native:behavior:main:markdown-source-edit",
+            "native:behavior:main:images-shared-crops",
+            "native:behavior:main:images-source-edit-missing",
+            "native:behavior:main:drawing-and-markdown-embeds",
+            "native:behavior:split:markdown-reading",
+            "native:behavior:split:markdown-live-preview",
+            "native:behavior:split:markdown-source-edit",
+            "native:behavior:split:images-shared-crops",
+            "native:behavior:split:images-source-edit-missing",
+            "native:behavior:split:drawing-and-markdown-embeds",
+            "native:behavior:nested-split:markdown-reading",
+            "native:behavior:nested-split:markdown-live-preview",
+            "native:behavior:nested-split:markdown-source-edit",
+            "native:behavior:nested-split:images-shared-crops",
+            "native:behavior:nested-split:images-source-edit-missing",
+            "native:behavior:nested-split:drawing-and-markdown-embeds",
+            "native:behavior:popout:markdown-reading",
+            "native:behavior:popout:markdown-live-preview",
+            "native:behavior:popout:markdown-source-edit",
+            "native:behavior:popout:images-shared-crops",
+            "native:behavior:popout:images-source-edit-missing",
+            "native:behavior:popout:drawing-and-markdown-embeds",
+            "native:behavior:phone:markdown-reading",
+            "native:behavior:phone:markdown-live-preview",
+            "native:behavior:phone:markdown-source-edit",
+            "native:behavior:phone:images-shared-crops",
+            "native:behavior:phone:images-source-edit-missing",
+            "native:behavior:phone:drawing-and-markdown-embeds",
+            "native:behavior:tablet:markdown-reading",
+            "native:behavior:tablet:markdown-live-preview",
+            "native:behavior:tablet:markdown-source-edit",
+            "native:behavior:tablet:images-shared-crops",
+            "native:behavior:tablet:images-source-edit-missing",
+            "native:behavior:tablet:drawing-and-markdown-embeds"
+          ]
         }
       ],
       "fixtures": [
@@ -322,6 +418,192 @@
           "cases": [
             "node:scripts/testing/settings/settingsWriter.test.mjs::key order does not change canonical serialization",
             "node:scripts/testing/settings/settingsWriter.test.mjs::array order is semantically significant and preserved"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/behaviorMatrix.mjs",
+          "cases": [
+            "native:behavior:main:settings-01",
+            "native:behavior:main:settings-02",
+            "native:behavior:main:settings-03",
+            "native:behavior:main:settings-04",
+            "native:behavior:main:settings-05",
+            "native:behavior:main:settings-06",
+            "native:behavior:main:settings-07",
+            "native:behavior:main:settings-08",
+            "native:behavior:main:settings-09",
+            "native:behavior:main:settings-10",
+            "native:behavior:main:settings-11",
+            "native:behavior:main:settings-12",
+            "native:behavior:main:settings-13",
+            "native:behavior:main:settings-14",
+            "native:behavior:main:settings-15",
+            "native:behavior:main:settings-16",
+            "native:behavior:main:export-01",
+            "native:behavior:main:export-02",
+            "native:behavior:main:export-03",
+            "native:behavior:main:export-04",
+            "native:behavior:main:export-05",
+            "native:behavior:main:export-06",
+            "native:behavior:main:export-07",
+            "native:behavior:main:export-08",
+            "native:behavior:main:export-09",
+            "native:behavior:main:export-10",
+            "native:behavior:main:export-11",
+            "native:behavior:main:export-12",
+            "native:behavior:main:settings-live-persistence",
+            "native:behavior:main:frontmatter-prefixes-theme-scale",
+            "native:behavior:split:settings-01",
+            "native:behavior:split:settings-02",
+            "native:behavior:split:settings-03",
+            "native:behavior:split:settings-04",
+            "native:behavior:split:settings-05",
+            "native:behavior:split:settings-06",
+            "native:behavior:split:settings-07",
+            "native:behavior:split:settings-08",
+            "native:behavior:split:settings-09",
+            "native:behavior:split:settings-10",
+            "native:behavior:split:settings-11",
+            "native:behavior:split:settings-12",
+            "native:behavior:split:settings-13",
+            "native:behavior:split:settings-14",
+            "native:behavior:split:settings-15",
+            "native:behavior:split:settings-16",
+            "native:behavior:split:export-01",
+            "native:behavior:split:export-02",
+            "native:behavior:split:export-03",
+            "native:behavior:split:export-04",
+            "native:behavior:split:export-05",
+            "native:behavior:split:export-06",
+            "native:behavior:split:export-07",
+            "native:behavior:split:export-08",
+            "native:behavior:split:export-09",
+            "native:behavior:split:export-10",
+            "native:behavior:split:export-11",
+            "native:behavior:split:export-12",
+            "native:behavior:split:settings-live-persistence",
+            "native:behavior:split:frontmatter-prefixes-theme-scale",
+            "native:behavior:nested-split:settings-01",
+            "native:behavior:nested-split:settings-02",
+            "native:behavior:nested-split:settings-03",
+            "native:behavior:nested-split:settings-04",
+            "native:behavior:nested-split:settings-05",
+            "native:behavior:nested-split:settings-06",
+            "native:behavior:nested-split:settings-07",
+            "native:behavior:nested-split:settings-08",
+            "native:behavior:nested-split:settings-09",
+            "native:behavior:nested-split:settings-10",
+            "native:behavior:nested-split:settings-11",
+            "native:behavior:nested-split:settings-12",
+            "native:behavior:nested-split:settings-13",
+            "native:behavior:nested-split:settings-14",
+            "native:behavior:nested-split:settings-15",
+            "native:behavior:nested-split:settings-16",
+            "native:behavior:nested-split:export-01",
+            "native:behavior:nested-split:export-02",
+            "native:behavior:nested-split:export-03",
+            "native:behavior:nested-split:export-04",
+            "native:behavior:nested-split:export-05",
+            "native:behavior:nested-split:export-06",
+            "native:behavior:nested-split:export-07",
+            "native:behavior:nested-split:export-08",
+            "native:behavior:nested-split:export-09",
+            "native:behavior:nested-split:export-10",
+            "native:behavior:nested-split:export-11",
+            "native:behavior:nested-split:export-12",
+            "native:behavior:nested-split:settings-live-persistence",
+            "native:behavior:nested-split:frontmatter-prefixes-theme-scale",
+            "native:behavior:popout:settings-01",
+            "native:behavior:popout:settings-02",
+            "native:behavior:popout:settings-03",
+            "native:behavior:popout:settings-04",
+            "native:behavior:popout:settings-05",
+            "native:behavior:popout:settings-06",
+            "native:behavior:popout:settings-07",
+            "native:behavior:popout:settings-08",
+            "native:behavior:popout:settings-09",
+            "native:behavior:popout:settings-10",
+            "native:behavior:popout:settings-11",
+            "native:behavior:popout:settings-12",
+            "native:behavior:popout:settings-13",
+            "native:behavior:popout:settings-14",
+            "native:behavior:popout:settings-15",
+            "native:behavior:popout:settings-16",
+            "native:behavior:popout:export-01",
+            "native:behavior:popout:export-02",
+            "native:behavior:popout:export-03",
+            "native:behavior:popout:export-04",
+            "native:behavior:popout:export-05",
+            "native:behavior:popout:export-06",
+            "native:behavior:popout:export-07",
+            "native:behavior:popout:export-08",
+            "native:behavior:popout:export-09",
+            "native:behavior:popout:export-10",
+            "native:behavior:popout:export-11",
+            "native:behavior:popout:export-12",
+            "native:behavior:popout:settings-live-persistence",
+            "native:behavior:popout:frontmatter-prefixes-theme-scale",
+            "native:behavior:phone:settings-01",
+            "native:behavior:phone:settings-02",
+            "native:behavior:phone:settings-03",
+            "native:behavior:phone:settings-04",
+            "native:behavior:phone:settings-05",
+            "native:behavior:phone:settings-06",
+            "native:behavior:phone:settings-07",
+            "native:behavior:phone:settings-08",
+            "native:behavior:phone:settings-09",
+            "native:behavior:phone:settings-10",
+            "native:behavior:phone:settings-11",
+            "native:behavior:phone:settings-12",
+            "native:behavior:phone:settings-13",
+            "native:behavior:phone:settings-14",
+            "native:behavior:phone:settings-15",
+            "native:behavior:phone:settings-16",
+            "native:behavior:phone:export-01",
+            "native:behavior:phone:export-02",
+            "native:behavior:phone:export-03",
+            "native:behavior:phone:export-04",
+            "native:behavior:phone:export-05",
+            "native:behavior:phone:export-06",
+            "native:behavior:phone:export-07",
+            "native:behavior:phone:export-08",
+            "native:behavior:phone:export-09",
+            "native:behavior:phone:export-10",
+            "native:behavior:phone:export-11",
+            "native:behavior:phone:export-12",
+            "native:behavior:phone:settings-live-persistence",
+            "native:behavior:phone:frontmatter-prefixes-theme-scale",
+            "native:behavior:tablet:settings-01",
+            "native:behavior:tablet:settings-02",
+            "native:behavior:tablet:settings-03",
+            "native:behavior:tablet:settings-04",
+            "native:behavior:tablet:settings-05",
+            "native:behavior:tablet:settings-06",
+            "native:behavior:tablet:settings-07",
+            "native:behavior:tablet:settings-08",
+            "native:behavior:tablet:settings-09",
+            "native:behavior:tablet:settings-10",
+            "native:behavior:tablet:settings-11",
+            "native:behavior:tablet:settings-12",
+            "native:behavior:tablet:settings-13",
+            "native:behavior:tablet:settings-14",
+            "native:behavior:tablet:settings-15",
+            "native:behavior:tablet:settings-16",
+            "native:behavior:tablet:export-01",
+            "native:behavior:tablet:export-02",
+            "native:behavior:tablet:export-03",
+            "native:behavior:tablet:export-04",
+            "native:behavior:tablet:export-05",
+            "native:behavior:tablet:export-06",
+            "native:behavior:tablet:export-07",
+            "native:behavior:tablet:export-08",
+            "native:behavior:tablet:export-09",
+            "native:behavior:tablet:export-10",
+            "native:behavior:tablet:export-11",
+            "native:behavior:tablet:export-12",
+            "native:behavior:tablet:settings-live-persistence",
+            "native:behavior:tablet:frontmatter-prefixes-theme-scale"
           ]
         }
       ],
@@ -444,6 +726,36 @@
             "fork-inherited:packages/excalidraw/tests/selection.test.tsx::box-selection overlap mode should not select a transparent framed element when the selection box stays inside its clipped bounds",
             "fork-inherited:packages/excalidraw/tests/selection.test.tsx::box-selection overlap mode should not select a framed element when selection only overlaps its clipped-out outline"
           ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/behaviorMatrix.mjs",
+          "cases": [
+            "native:behavior:main:cli-atomic-targeted-edit",
+            "native:behavior:main:ea-selection-groups-bindings-frames",
+            "native:behavior:main:command-palette-selection-cancel",
+            "native:behavior:main:toolbar-context-shortcuts",
+            "native:behavior:split:cli-atomic-targeted-edit",
+            "native:behavior:split:ea-selection-groups-bindings-frames",
+            "native:behavior:split:command-palette-selection-cancel",
+            "native:behavior:split:toolbar-context-shortcuts",
+            "native:behavior:nested-split:cli-atomic-targeted-edit",
+            "native:behavior:nested-split:ea-selection-groups-bindings-frames",
+            "native:behavior:nested-split:command-palette-selection-cancel",
+            "native:behavior:nested-split:toolbar-context-shortcuts",
+            "native:behavior:popout:cli-atomic-targeted-edit",
+            "native:behavior:popout:ea-selection-groups-bindings-frames",
+            "native:behavior:popout:command-palette-selection-cancel",
+            "native:behavior:popout:toolbar-context-shortcuts",
+            "native:behavior:phone:cli-atomic-targeted-edit",
+            "native:behavior:phone:ea-selection-groups-bindings-frames",
+            "native:behavior:phone:command-palette-selection-cancel",
+            "native:behavior:phone:toolbar-context-shortcuts",
+            "native:behavior:tablet:cli-atomic-targeted-edit",
+            "native:behavior:tablet:ea-selection-groups-bindings-frames",
+            "native:behavior:tablet:command-palette-selection-cancel",
+            "native:behavior:tablet:toolbar-context-shortcuts"
+          ]
         }
       ],
       "fixtures": [],
@@ -565,6 +877,102 @@
           "cases": [
             "native:pdf-reference-and-decoded-content"
           ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/behaviorMatrix.mjs",
+          "cases": [
+            "native:behavior:main:export-01",
+            "native:behavior:main:export-02",
+            "native:behavior:main:export-03",
+            "native:behavior:main:export-04",
+            "native:behavior:main:export-05",
+            "native:behavior:main:export-06",
+            "native:behavior:main:export-07",
+            "native:behavior:main:export-08",
+            "native:behavior:main:export-09",
+            "native:behavior:main:export-10",
+            "native:behavior:main:export-11",
+            "native:behavior:main:export-12",
+            "native:behavior:main:frontmatter-prefixes-theme-scale",
+            "native:behavior:main:images-shared-crops",
+            "native:behavior:main:drawing-and-markdown-embeds",
+            "native:behavior:split:export-01",
+            "native:behavior:split:export-02",
+            "native:behavior:split:export-03",
+            "native:behavior:split:export-04",
+            "native:behavior:split:export-05",
+            "native:behavior:split:export-06",
+            "native:behavior:split:export-07",
+            "native:behavior:split:export-08",
+            "native:behavior:split:export-09",
+            "native:behavior:split:export-10",
+            "native:behavior:split:export-11",
+            "native:behavior:split:export-12",
+            "native:behavior:split:frontmatter-prefixes-theme-scale",
+            "native:behavior:split:images-shared-crops",
+            "native:behavior:split:drawing-and-markdown-embeds",
+            "native:behavior:nested-split:export-01",
+            "native:behavior:nested-split:export-02",
+            "native:behavior:nested-split:export-03",
+            "native:behavior:nested-split:export-04",
+            "native:behavior:nested-split:export-05",
+            "native:behavior:nested-split:export-06",
+            "native:behavior:nested-split:export-07",
+            "native:behavior:nested-split:export-08",
+            "native:behavior:nested-split:export-09",
+            "native:behavior:nested-split:export-10",
+            "native:behavior:nested-split:export-11",
+            "native:behavior:nested-split:export-12",
+            "native:behavior:nested-split:frontmatter-prefixes-theme-scale",
+            "native:behavior:nested-split:images-shared-crops",
+            "native:behavior:nested-split:drawing-and-markdown-embeds",
+            "native:behavior:popout:export-01",
+            "native:behavior:popout:export-02",
+            "native:behavior:popout:export-03",
+            "native:behavior:popout:export-04",
+            "native:behavior:popout:export-05",
+            "native:behavior:popout:export-06",
+            "native:behavior:popout:export-07",
+            "native:behavior:popout:export-08",
+            "native:behavior:popout:export-09",
+            "native:behavior:popout:export-10",
+            "native:behavior:popout:export-11",
+            "native:behavior:popout:export-12",
+            "native:behavior:popout:frontmatter-prefixes-theme-scale",
+            "native:behavior:popout:images-shared-crops",
+            "native:behavior:popout:drawing-and-markdown-embeds",
+            "native:behavior:phone:export-01",
+            "native:behavior:phone:export-02",
+            "native:behavior:phone:export-03",
+            "native:behavior:phone:export-04",
+            "native:behavior:phone:export-05",
+            "native:behavior:phone:export-06",
+            "native:behavior:phone:export-07",
+            "native:behavior:phone:export-08",
+            "native:behavior:phone:export-09",
+            "native:behavior:phone:export-10",
+            "native:behavior:phone:export-11",
+            "native:behavior:phone:export-12",
+            "native:behavior:phone:frontmatter-prefixes-theme-scale",
+            "native:behavior:phone:images-shared-crops",
+            "native:behavior:phone:drawing-and-markdown-embeds",
+            "native:behavior:tablet:export-01",
+            "native:behavior:tablet:export-02",
+            "native:behavior:tablet:export-03",
+            "native:behavior:tablet:export-04",
+            "native:behavior:tablet:export-05",
+            "native:behavior:tablet:export-06",
+            "native:behavior:tablet:export-07",
+            "native:behavior:tablet:export-08",
+            "native:behavior:tablet:export-09",
+            "native:behavior:tablet:export-10",
+            "native:behavior:tablet:export-11",
+            "native:behavior:tablet:export-12",
+            "native:behavior:tablet:frontmatter-prefixes-theme-scale",
+            "native:behavior:tablet:images-shared-crops",
+            "native:behavior:tablet:drawing-and-markdown-embeds"
+          ]
         }
       ],
       "fixtures": [
@@ -581,7 +989,7 @@
       "failure": "Invalid assets and unavailable services fail without hidden fallback",
       "cleanup": "Remove temporary render DOM, print listeners and owned output",
       "remaining": [
-        "Inherited library file-picker/search cases currently fail and remain visible; OS clipboard transport is separate from executed parser/serializer tests"
+        "Physical OS file-picker and clipboard transports remain separate from passing independent library/browser and parser/serializer tests"
       ]
     },
     {
@@ -624,6 +1032,30 @@
           "path": "scripts/testing/host/pdfImport.mjs",
           "cases": [
             "native:pdf-reference-and-decoded-content"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/behaviorMatrix.mjs",
+          "cases": [
+            "native:behavior:main:cli-atomic-targeted-edit",
+            "native:behavior:main:ea-selection-groups-bindings-frames",
+            "native:behavior:main:ea-hooks-targeting-invalid",
+            "native:behavior:split:cli-atomic-targeted-edit",
+            "native:behavior:split:ea-selection-groups-bindings-frames",
+            "native:behavior:split:ea-hooks-targeting-invalid",
+            "native:behavior:nested-split:cli-atomic-targeted-edit",
+            "native:behavior:nested-split:ea-selection-groups-bindings-frames",
+            "native:behavior:nested-split:ea-hooks-targeting-invalid",
+            "native:behavior:popout:cli-atomic-targeted-edit",
+            "native:behavior:popout:ea-selection-groups-bindings-frames",
+            "native:behavior:popout:ea-hooks-targeting-invalid",
+            "native:behavior:phone:cli-atomic-targeted-edit",
+            "native:behavior:phone:ea-selection-groups-bindings-frames",
+            "native:behavior:phone:ea-hooks-targeting-invalid",
+            "native:behavior:tablet:cli-atomic-targeted-edit",
+            "native:behavior:tablet:ea-selection-groups-bindings-frames",
+            "native:behavior:tablet:ea-hooks-targeting-invalid"
           ]
         }
       ],
@@ -748,5 +1180,1117 @@
     "fork-package",
     "extras-package",
     "native-soak"
-  ]
+  ],
+  "behaviorMatrix": {
+    "policy": "Required behavioral cases; missing important cases remain unfinished. Pairwise domains cover all pairs plus explicit high-risk rows. Source inventory alone never establishes behavior.",
+    "contexts": [
+      "main",
+      "split",
+      "nested-split",
+      "popout",
+      "phone",
+      "tablet"
+    ],
+    "settingsFactors": {
+      "defaultMode": [
+        "normal",
+        "view",
+        "zen"
+      ],
+      "frontMode": [
+        "missing",
+        "normal",
+        "view",
+        "zen"
+      ],
+      "linkOpacity": [
+        0,
+        0.35,
+        1
+      ],
+      "frontOpacity": [
+        "missing",
+        0,
+        1
+      ],
+      "showLinkBrackets": [
+        false,
+        true
+      ],
+      "frontBrackets": [
+        "missing",
+        false,
+        true
+      ]
+    },
+    "exportFactors": {
+      "withBackground": [
+        false,
+        true
+      ],
+      "padding": [
+        0,
+        10
+      ],
+      "frontTransparent": [
+        "missing",
+        false,
+        true
+      ],
+      "frontPadding": [
+        "missing",
+        0,
+        6
+      ],
+      "frontDark": [
+        "missing",
+        false,
+        true
+      ]
+    },
+    "caseTemplates": {
+      "settings": [
+        {
+          "id": "settings-01",
+          "values": {
+            "defaultMode": "view",
+            "frontMode": "normal",
+            "linkOpacity": 1,
+            "frontOpacity": 0,
+            "showLinkBrackets": true,
+            "frontBrackets": false
+          },
+          "expected": {
+            "mode": "normal",
+            "opacity": 0,
+            "brackets": false
+          },
+          "assertions": [
+            "global defaults apply when frontmatter is missing",
+            "frontmatter overrides conflicting settings including false and zero",
+            "loaded editor mode agrees with resolver",
+            "frontmatter and scene survive save/reopen"
+          ]
+        },
+        {
+          "id": "settings-02",
+          "values": {
+            "defaultMode": "zen",
+            "frontMode": "missing",
+            "linkOpacity": 0,
+            "frontOpacity": "missing",
+            "showLinkBrackets": false,
+            "frontBrackets": "missing"
+          },
+          "expected": {
+            "mode": "zen",
+            "opacity": 0,
+            "brackets": false
+          },
+          "assertions": [
+            "global defaults apply when frontmatter is missing",
+            "frontmatter overrides conflicting settings including false and zero",
+            "loaded editor mode agrees with resolver",
+            "frontmatter and scene survive save/reopen"
+          ]
+        },
+        {
+          "id": "settings-03",
+          "values": {
+            "defaultMode": "normal",
+            "frontMode": "missing",
+            "linkOpacity": 0.35,
+            "frontOpacity": 1,
+            "showLinkBrackets": true,
+            "frontBrackets": true
+          },
+          "expected": {
+            "mode": "normal",
+            "opacity": 1,
+            "brackets": true
+          },
+          "assertions": [
+            "global defaults apply when frontmatter is missing",
+            "frontmatter overrides conflicting settings including false and zero",
+            "loaded editor mode agrees with resolver",
+            "frontmatter and scene survive save/reopen"
+          ]
+        },
+        {
+          "id": "settings-04",
+          "values": {
+            "defaultMode": "normal",
+            "frontMode": "view",
+            "linkOpacity": 0,
+            "frontOpacity": 0,
+            "showLinkBrackets": false,
+            "frontBrackets": false
+          },
+          "expected": {
+            "mode": "view",
+            "opacity": 0,
+            "brackets": false
+          },
+          "assertions": [
+            "global defaults apply when frontmatter is missing",
+            "frontmatter overrides conflicting settings including false and zero",
+            "loaded editor mode agrees with resolver",
+            "frontmatter and scene survive save/reopen"
+          ]
+        },
+        {
+          "id": "settings-05",
+          "values": {
+            "defaultMode": "view",
+            "frontMode": "zen",
+            "linkOpacity": 0,
+            "frontOpacity": 1,
+            "showLinkBrackets": false,
+            "frontBrackets": true
+          },
+          "expected": {
+            "mode": "zen",
+            "opacity": 1,
+            "brackets": true
+          },
+          "assertions": [
+            "global defaults apply when frontmatter is missing",
+            "frontmatter overrides conflicting settings including false and zero",
+            "loaded editor mode agrees with resolver",
+            "frontmatter and scene survive save/reopen"
+          ]
+        },
+        {
+          "id": "settings-06",
+          "values": {
+            "defaultMode": "normal",
+            "frontMode": "zen",
+            "linkOpacity": 1,
+            "frontOpacity": "missing",
+            "showLinkBrackets": true,
+            "frontBrackets": "missing"
+          },
+          "expected": {
+            "mode": "zen",
+            "opacity": 1,
+            "brackets": true
+          },
+          "assertions": [
+            "global defaults apply when frontmatter is missing",
+            "frontmatter overrides conflicting settings including false and zero",
+            "loaded editor mode agrees with resolver",
+            "frontmatter and scene survive save/reopen"
+          ]
+        },
+        {
+          "id": "settings-07",
+          "values": {
+            "defaultMode": "zen",
+            "frontMode": "view",
+            "linkOpacity": 1,
+            "frontOpacity": 1,
+            "showLinkBrackets": true,
+            "frontBrackets": true
+          },
+          "expected": {
+            "mode": "view",
+            "opacity": 1,
+            "brackets": true
+          },
+          "assertions": [
+            "global defaults apply when frontmatter is missing",
+            "frontmatter overrides conflicting settings including false and zero",
+            "loaded editor mode agrees with resolver",
+            "frontmatter and scene survive save/reopen"
+          ]
+        },
+        {
+          "id": "settings-08",
+          "values": {
+            "defaultMode": "view",
+            "frontMode": "normal",
+            "linkOpacity": 0.35,
+            "frontOpacity": "missing",
+            "showLinkBrackets": false,
+            "frontBrackets": "missing"
+          },
+          "expected": {
+            "mode": "normal",
+            "opacity": 0.35,
+            "brackets": false
+          },
+          "assertions": [
+            "global defaults apply when frontmatter is missing",
+            "frontmatter overrides conflicting settings including false and zero",
+            "loaded editor mode agrees with resolver",
+            "frontmatter and scene survive save/reopen"
+          ]
+        },
+        {
+          "id": "settings-09",
+          "values": {
+            "defaultMode": "zen",
+            "frontMode": "zen",
+            "linkOpacity": 0.35,
+            "frontOpacity": 0,
+            "showLinkBrackets": false,
+            "frontBrackets": false
+          },
+          "expected": {
+            "mode": "zen",
+            "opacity": 0,
+            "brackets": false
+          },
+          "assertions": [
+            "global defaults apply when frontmatter is missing",
+            "frontmatter overrides conflicting settings including false and zero",
+            "loaded editor mode agrees with resolver",
+            "frontmatter and scene survive save/reopen"
+          ]
+        },
+        {
+          "id": "settings-10",
+          "values": {
+            "defaultMode": "normal",
+            "frontMode": "normal",
+            "linkOpacity": 0,
+            "frontOpacity": "missing",
+            "showLinkBrackets": true,
+            "frontBrackets": true
+          },
+          "expected": {
+            "mode": "normal",
+            "opacity": 0,
+            "brackets": true
+          },
+          "assertions": [
+            "global defaults apply when frontmatter is missing",
+            "frontmatter overrides conflicting settings including false and zero",
+            "loaded editor mode agrees with resolver",
+            "frontmatter and scene survive save/reopen"
+          ]
+        },
+        {
+          "id": "settings-11",
+          "values": {
+            "defaultMode": "view",
+            "frontMode": "missing",
+            "linkOpacity": 1,
+            "frontOpacity": "missing",
+            "showLinkBrackets": false,
+            "frontBrackets": false
+          },
+          "expected": {
+            "mode": "view",
+            "opacity": 1,
+            "brackets": false
+          },
+          "assertions": [
+            "global defaults apply when frontmatter is missing",
+            "frontmatter overrides conflicting settings including false and zero",
+            "loaded editor mode agrees with resolver",
+            "frontmatter and scene survive save/reopen"
+          ]
+        },
+        {
+          "id": "settings-12",
+          "values": {
+            "defaultMode": "view",
+            "frontMode": "view",
+            "linkOpacity": 0.35,
+            "frontOpacity": "missing",
+            "showLinkBrackets": false,
+            "frontBrackets": "missing"
+          },
+          "expected": {
+            "mode": "view",
+            "opacity": 0.35,
+            "brackets": false
+          },
+          "assertions": [
+            "global defaults apply when frontmatter is missing",
+            "frontmatter overrides conflicting settings including false and zero",
+            "loaded editor mode agrees with resolver",
+            "frontmatter and scene survive save/reopen"
+          ]
+        },
+        {
+          "id": "settings-13",
+          "values": {
+            "defaultMode": "zen",
+            "frontMode": "normal",
+            "linkOpacity": 0,
+            "frontOpacity": 1,
+            "showLinkBrackets": false,
+            "frontBrackets": "missing"
+          },
+          "expected": {
+            "mode": "normal",
+            "opacity": 1,
+            "brackets": false
+          },
+          "assertions": [
+            "global defaults apply when frontmatter is missing",
+            "frontmatter overrides conflicting settings including false and zero",
+            "loaded editor mode agrees with resolver",
+            "frontmatter and scene survive save/reopen"
+          ]
+        },
+        {
+          "id": "settings-14",
+          "values": {
+            "defaultMode": "normal",
+            "frontMode": "missing",
+            "linkOpacity": 0,
+            "frontOpacity": 0,
+            "showLinkBrackets": false,
+            "frontBrackets": "missing"
+          },
+          "expected": {
+            "mode": "normal",
+            "opacity": 0,
+            "brackets": false
+          },
+          "assertions": [
+            "global defaults apply when frontmatter is missing",
+            "frontmatter overrides conflicting settings including false and zero",
+            "loaded editor mode agrees with resolver",
+            "frontmatter and scene survive save/reopen"
+          ]
+        },
+        {
+          "id": "settings-15",
+          "values": {
+            "defaultMode": "normal",
+            "frontMode": "missing",
+            "linkOpacity": 0,
+            "frontOpacity": 0,
+            "showLinkBrackets": false,
+            "frontBrackets": true
+          },
+          "expected": {
+            "mode": "normal",
+            "opacity": 0,
+            "brackets": true
+          },
+          "assertions": [
+            "global defaults apply when frontmatter is missing",
+            "frontmatter overrides conflicting settings including false and zero",
+            "loaded editor mode agrees with resolver",
+            "frontmatter and scene survive save/reopen"
+          ]
+        },
+        {
+          "id": "settings-16",
+          "values": {
+            "defaultMode": "normal",
+            "frontMode": "missing",
+            "linkOpacity": 0,
+            "frontOpacity": 1,
+            "showLinkBrackets": false,
+            "frontBrackets": false
+          },
+          "expected": {
+            "mode": "normal",
+            "opacity": 1,
+            "brackets": false
+          },
+          "assertions": [
+            "global defaults apply when frontmatter is missing",
+            "frontmatter overrides conflicting settings including false and zero",
+            "loaded editor mode agrees with resolver",
+            "frontmatter and scene survive save/reopen"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "id": "export-01",
+          "values": {
+            "withBackground": true,
+            "padding": 10,
+            "frontTransparent": true,
+            "frontPadding": 0,
+            "frontDark": false
+          },
+          "expected": {
+            "background": false,
+            "padding": 0,
+            "theme": "light"
+          },
+          "assertions": [
+            "frontmatter background/theme/padding precedence",
+            "zero padding and explicit false are preserved",
+            "actual SVG geometry and decoded PNG alpha/color",
+            "saved/reopened scene identity"
+          ]
+        },
+        {
+          "id": "export-02",
+          "values": {
+            "withBackground": false,
+            "padding": 0,
+            "frontTransparent": false,
+            "frontPadding": "missing",
+            "frontDark": true
+          },
+          "expected": {
+            "background": true,
+            "padding": 0,
+            "theme": "dark"
+          },
+          "assertions": [
+            "frontmatter background/theme/padding precedence",
+            "zero padding and explicit false are preserved",
+            "actual SVG geometry and decoded PNG alpha/color",
+            "saved/reopened scene identity"
+          ]
+        },
+        {
+          "id": "export-03",
+          "values": {
+            "withBackground": false,
+            "padding": 10,
+            "frontTransparent": "missing",
+            "frontPadding": 6,
+            "frontDark": "missing"
+          },
+          "expected": {
+            "background": false,
+            "padding": 6,
+            "theme": "light"
+          },
+          "assertions": [
+            "frontmatter background/theme/padding precedence",
+            "zero padding and explicit false are preserved",
+            "actual SVG geometry and decoded PNG alpha/color",
+            "saved/reopened scene identity"
+          ]
+        },
+        {
+          "id": "export-04",
+          "values": {
+            "withBackground": true,
+            "padding": 0,
+            "frontTransparent": "missing",
+            "frontPadding": "missing",
+            "frontDark": "missing"
+          },
+          "expected": {
+            "background": true,
+            "padding": 0,
+            "theme": "light"
+          },
+          "assertions": [
+            "frontmatter background/theme/padding precedence",
+            "zero padding and explicit false are preserved",
+            "actual SVG geometry and decoded PNG alpha/color",
+            "saved/reopened scene identity"
+          ]
+        },
+        {
+          "id": "export-05",
+          "values": {
+            "withBackground": false,
+            "padding": 0,
+            "frontTransparent": true,
+            "frontPadding": 6,
+            "frontDark": false
+          },
+          "expected": {
+            "background": false,
+            "padding": 6,
+            "theme": "light"
+          },
+          "assertions": [
+            "frontmatter background/theme/padding precedence",
+            "zero padding and explicit false are preserved",
+            "actual SVG geometry and decoded PNG alpha/color",
+            "saved/reopened scene identity"
+          ]
+        },
+        {
+          "id": "export-06",
+          "values": {
+            "withBackground": true,
+            "padding": 10,
+            "frontTransparent": false,
+            "frontPadding": 6,
+            "frontDark": true
+          },
+          "expected": {
+            "background": true,
+            "padding": 6,
+            "theme": "dark"
+          },
+          "assertions": [
+            "frontmatter background/theme/padding precedence",
+            "zero padding and explicit false are preserved",
+            "actual SVG geometry and decoded PNG alpha/color",
+            "saved/reopened scene identity"
+          ]
+        },
+        {
+          "id": "export-07",
+          "values": {
+            "withBackground": false,
+            "padding": 0,
+            "frontTransparent": "missing",
+            "frontPadding": 0,
+            "frontDark": true
+          },
+          "expected": {
+            "background": false,
+            "padding": 0,
+            "theme": "dark"
+          },
+          "assertions": [
+            "frontmatter background/theme/padding precedence",
+            "zero padding and explicit false are preserved",
+            "actual SVG geometry and decoded PNG alpha/color",
+            "saved/reopened scene identity"
+          ]
+        },
+        {
+          "id": "export-08",
+          "values": {
+            "withBackground": false,
+            "padding": 0,
+            "frontTransparent": false,
+            "frontPadding": 0,
+            "frontDark": "missing"
+          },
+          "expected": {
+            "background": true,
+            "padding": 0,
+            "theme": "light"
+          },
+          "assertions": [
+            "frontmatter background/theme/padding precedence",
+            "zero padding and explicit false are preserved",
+            "actual SVG geometry and decoded PNG alpha/color",
+            "saved/reopened scene identity"
+          ]
+        },
+        {
+          "id": "export-09",
+          "values": {
+            "withBackground": false,
+            "padding": 10,
+            "frontTransparent": "missing",
+            "frontPadding": "missing",
+            "frontDark": false
+          },
+          "expected": {
+            "background": false,
+            "padding": 10,
+            "theme": "light"
+          },
+          "assertions": [
+            "frontmatter background/theme/padding precedence",
+            "zero padding and explicit false are preserved",
+            "actual SVG geometry and decoded PNG alpha/color",
+            "saved/reopened scene identity"
+          ]
+        },
+        {
+          "id": "export-10",
+          "values": {
+            "withBackground": false,
+            "padding": 0,
+            "frontTransparent": true,
+            "frontPadding": "missing",
+            "frontDark": "missing"
+          },
+          "expected": {
+            "background": false,
+            "padding": 0,
+            "theme": "light"
+          },
+          "assertions": [
+            "frontmatter background/theme/padding precedence",
+            "zero padding and explicit false are preserved",
+            "actual SVG geometry and decoded PNG alpha/color",
+            "saved/reopened scene identity"
+          ]
+        },
+        {
+          "id": "export-11",
+          "values": {
+            "withBackground": false,
+            "padding": 0,
+            "frontTransparent": false,
+            "frontPadding": "missing",
+            "frontDark": false
+          },
+          "expected": {
+            "background": true,
+            "padding": 0,
+            "theme": "light"
+          },
+          "assertions": [
+            "frontmatter background/theme/padding precedence",
+            "zero padding and explicit false are preserved",
+            "actual SVG geometry and decoded PNG alpha/color",
+            "saved/reopened scene identity"
+          ]
+        },
+        {
+          "id": "export-12",
+          "values": {
+            "withBackground": false,
+            "padding": 0,
+            "frontTransparent": true,
+            "frontPadding": "missing",
+            "frontDark": true
+          },
+          "expected": {
+            "background": false,
+            "padding": 0,
+            "theme": "dark"
+          },
+          "assertions": [
+            "frontmatter background/theme/padding precedence",
+            "zero padding and explicit false are preserved",
+            "actual SVG geometry and decoded PNG alpha/color",
+            "saved/reopened scene identity"
+          ]
+        }
+      ],
+      "workflows": [
+        {
+          "id": "cli-atomic-targeted-edit",
+          "features": [
+            "P03",
+            "P07",
+            "P10"
+          ],
+          "assertions": [
+            "actual plugin CLI read/apply transport",
+            "explicit target survives another active drawing",
+            "zero/false values reach disk",
+            "invalid mixed request is atomic",
+            "save/reopen preserves edited scene"
+          ]
+        },
+        {
+          "id": "settings-live-persistence",
+          "features": [
+            "P06"
+          ],
+          "assertions": [
+            "live settings reads",
+            "physical data.json",
+            "unknown setting retention",
+            "restoration"
+          ]
+        },
+        {
+          "id": "frontmatter-prefixes-theme-scale",
+          "features": [
+            "P04",
+            "P06",
+            "P09"
+          ],
+          "assertions": [
+            "empty prefixes",
+            "embeddable theme",
+            "PNG scale zero fallback and positive override",
+            "deprecated padding precedence"
+          ]
+        },
+        {
+          "id": "markdown-reading",
+          "features": [
+            "P04",
+            "P05"
+          ],
+          "assertions": [
+            "real reading view",
+            "aliases/headings/blocks",
+            "table/callout/equation",
+            "nested and drawing embeds",
+            "decoded images"
+          ]
+        },
+        {
+          "id": "markdown-live-preview",
+          "features": [
+            "P04",
+            "P05"
+          ],
+          "assertions": [
+            "actual Live Preview mode",
+            "table/callout/equation",
+            "nested and drawing embeds",
+            "decoded images"
+          ]
+        },
+        {
+          "id": "markdown-source-edit",
+          "features": [
+            "P04",
+            "P05"
+          ],
+          "assertions": [
+            "source edit rerenders nested content",
+            "updated text and decoded output",
+            "disk persistence"
+          ]
+        },
+        {
+          "id": "images-shared-crops",
+          "features": [
+            "P05",
+            "P09"
+          ],
+          "assertions": [
+            "raster/SVG references",
+            "shared source distinct sizes/crops",
+            "transparency",
+            "physical save and reopen"
+          ]
+        },
+        {
+          "id": "images-source-edit-missing",
+          "features": [
+            "P05"
+          ],
+          "assertions": [
+            "source edits invalidate rendering",
+            "missing asset has an explicit outcome",
+            "asynchronous completion",
+            "restoration"
+          ]
+        },
+        {
+          "id": "drawing-and-markdown-embeds",
+          "features": [
+            "P05",
+            "P09"
+          ],
+          "assertions": [
+            "drawing and Markdown rendered images",
+            "local embeddable target",
+            "decoded export content",
+            "save/reopen"
+          ]
+        },
+        {
+          "id": "raw-parsed-text",
+          "features": [
+            "P04"
+          ],
+          "assertions": [
+            "raw text preserved",
+            "parsed alias display",
+            "headings/block references",
+            "mode round trip and persistence"
+          ]
+        },
+        {
+          "id": "ea-selection-groups-bindings-frames",
+          "features": [
+            "P07",
+            "P10"
+          ],
+          "assertions": [
+            "public EA creation/edit/selection/group/frame/binding APIs",
+            "scene and disk relationships",
+            "workbench isolation"
+          ]
+        },
+        {
+          "id": "ea-hooks-targeting-invalid",
+          "features": [
+            "P03",
+            "P10"
+          ],
+          "assertions": [
+            "correct drawing and owning window",
+            "hooks run with their target",
+            "disposal",
+            "invalid input does not partially mutate",
+            "custom data survives save/reopen"
+          ]
+        },
+        {
+          "id": "command-palette-selection-cancel",
+          "features": [
+            "P07"
+          ],
+          "assertions": [
+            "trusted palette search and selection",
+            "observable command effect",
+            "Escape cancellation leaves scene unchanged"
+          ]
+        },
+        {
+          "id": "toolbar-context-shortcuts",
+          "features": [
+            "P07"
+          ],
+          "assertions": [
+            "trusted toolbar and context menu",
+            "keyboard shortcut and cancellation",
+            "scene state and on-disk save"
+          ]
+        }
+      ]
+    },
+    "requiredCaseIds": [
+      "native:behavior:main:settings-01",
+      "native:behavior:main:settings-02",
+      "native:behavior:main:settings-03",
+      "native:behavior:main:settings-04",
+      "native:behavior:main:settings-05",
+      "native:behavior:main:settings-06",
+      "native:behavior:main:settings-07",
+      "native:behavior:main:settings-08",
+      "native:behavior:main:settings-09",
+      "native:behavior:main:settings-10",
+      "native:behavior:main:settings-11",
+      "native:behavior:main:settings-12",
+      "native:behavior:main:settings-13",
+      "native:behavior:main:settings-14",
+      "native:behavior:main:settings-15",
+      "native:behavior:main:settings-16",
+      "native:behavior:main:export-01",
+      "native:behavior:main:export-02",
+      "native:behavior:main:export-03",
+      "native:behavior:main:export-04",
+      "native:behavior:main:export-05",
+      "native:behavior:main:export-06",
+      "native:behavior:main:export-07",
+      "native:behavior:main:export-08",
+      "native:behavior:main:export-09",
+      "native:behavior:main:export-10",
+      "native:behavior:main:export-11",
+      "native:behavior:main:export-12",
+      "native:behavior:main:cli-atomic-targeted-edit",
+      "native:behavior:main:settings-live-persistence",
+      "native:behavior:main:frontmatter-prefixes-theme-scale",
+      "native:behavior:main:markdown-reading",
+      "native:behavior:main:markdown-live-preview",
+      "native:behavior:main:markdown-source-edit",
+      "native:behavior:main:images-shared-crops",
+      "native:behavior:main:images-source-edit-missing",
+      "native:behavior:main:drawing-and-markdown-embeds",
+      "native:behavior:main:raw-parsed-text",
+      "native:behavior:main:ea-selection-groups-bindings-frames",
+      "native:behavior:main:ea-hooks-targeting-invalid",
+      "native:behavior:main:command-palette-selection-cancel",
+      "native:behavior:main:toolbar-context-shortcuts",
+      "native:behavior:split:settings-01",
+      "native:behavior:split:settings-02",
+      "native:behavior:split:settings-03",
+      "native:behavior:split:settings-04",
+      "native:behavior:split:settings-05",
+      "native:behavior:split:settings-06",
+      "native:behavior:split:settings-07",
+      "native:behavior:split:settings-08",
+      "native:behavior:split:settings-09",
+      "native:behavior:split:settings-10",
+      "native:behavior:split:settings-11",
+      "native:behavior:split:settings-12",
+      "native:behavior:split:settings-13",
+      "native:behavior:split:settings-14",
+      "native:behavior:split:settings-15",
+      "native:behavior:split:settings-16",
+      "native:behavior:split:export-01",
+      "native:behavior:split:export-02",
+      "native:behavior:split:export-03",
+      "native:behavior:split:export-04",
+      "native:behavior:split:export-05",
+      "native:behavior:split:export-06",
+      "native:behavior:split:export-07",
+      "native:behavior:split:export-08",
+      "native:behavior:split:export-09",
+      "native:behavior:split:export-10",
+      "native:behavior:split:export-11",
+      "native:behavior:split:export-12",
+      "native:behavior:split:cli-atomic-targeted-edit",
+      "native:behavior:split:settings-live-persistence",
+      "native:behavior:split:frontmatter-prefixes-theme-scale",
+      "native:behavior:split:markdown-reading",
+      "native:behavior:split:markdown-live-preview",
+      "native:behavior:split:markdown-source-edit",
+      "native:behavior:split:images-shared-crops",
+      "native:behavior:split:images-source-edit-missing",
+      "native:behavior:split:drawing-and-markdown-embeds",
+      "native:behavior:split:raw-parsed-text",
+      "native:behavior:split:ea-selection-groups-bindings-frames",
+      "native:behavior:split:ea-hooks-targeting-invalid",
+      "native:behavior:split:command-palette-selection-cancel",
+      "native:behavior:split:toolbar-context-shortcuts",
+      "native:behavior:nested-split:settings-01",
+      "native:behavior:nested-split:settings-02",
+      "native:behavior:nested-split:settings-03",
+      "native:behavior:nested-split:settings-04",
+      "native:behavior:nested-split:settings-05",
+      "native:behavior:nested-split:settings-06",
+      "native:behavior:nested-split:settings-07",
+      "native:behavior:nested-split:settings-08",
+      "native:behavior:nested-split:settings-09",
+      "native:behavior:nested-split:settings-10",
+      "native:behavior:nested-split:settings-11",
+      "native:behavior:nested-split:settings-12",
+      "native:behavior:nested-split:settings-13",
+      "native:behavior:nested-split:settings-14",
+      "native:behavior:nested-split:settings-15",
+      "native:behavior:nested-split:settings-16",
+      "native:behavior:nested-split:export-01",
+      "native:behavior:nested-split:export-02",
+      "native:behavior:nested-split:export-03",
+      "native:behavior:nested-split:export-04",
+      "native:behavior:nested-split:export-05",
+      "native:behavior:nested-split:export-06",
+      "native:behavior:nested-split:export-07",
+      "native:behavior:nested-split:export-08",
+      "native:behavior:nested-split:export-09",
+      "native:behavior:nested-split:export-10",
+      "native:behavior:nested-split:export-11",
+      "native:behavior:nested-split:export-12",
+      "native:behavior:nested-split:cli-atomic-targeted-edit",
+      "native:behavior:nested-split:settings-live-persistence",
+      "native:behavior:nested-split:frontmatter-prefixes-theme-scale",
+      "native:behavior:nested-split:markdown-reading",
+      "native:behavior:nested-split:markdown-live-preview",
+      "native:behavior:nested-split:markdown-source-edit",
+      "native:behavior:nested-split:images-shared-crops",
+      "native:behavior:nested-split:images-source-edit-missing",
+      "native:behavior:nested-split:drawing-and-markdown-embeds",
+      "native:behavior:nested-split:raw-parsed-text",
+      "native:behavior:nested-split:ea-selection-groups-bindings-frames",
+      "native:behavior:nested-split:ea-hooks-targeting-invalid",
+      "native:behavior:nested-split:command-palette-selection-cancel",
+      "native:behavior:nested-split:toolbar-context-shortcuts",
+      "native:behavior:popout:settings-01",
+      "native:behavior:popout:settings-02",
+      "native:behavior:popout:settings-03",
+      "native:behavior:popout:settings-04",
+      "native:behavior:popout:settings-05",
+      "native:behavior:popout:settings-06",
+      "native:behavior:popout:settings-07",
+      "native:behavior:popout:settings-08",
+      "native:behavior:popout:settings-09",
+      "native:behavior:popout:settings-10",
+      "native:behavior:popout:settings-11",
+      "native:behavior:popout:settings-12",
+      "native:behavior:popout:settings-13",
+      "native:behavior:popout:settings-14",
+      "native:behavior:popout:settings-15",
+      "native:behavior:popout:settings-16",
+      "native:behavior:popout:export-01",
+      "native:behavior:popout:export-02",
+      "native:behavior:popout:export-03",
+      "native:behavior:popout:export-04",
+      "native:behavior:popout:export-05",
+      "native:behavior:popout:export-06",
+      "native:behavior:popout:export-07",
+      "native:behavior:popout:export-08",
+      "native:behavior:popout:export-09",
+      "native:behavior:popout:export-10",
+      "native:behavior:popout:export-11",
+      "native:behavior:popout:export-12",
+      "native:behavior:popout:cli-atomic-targeted-edit",
+      "native:behavior:popout:settings-live-persistence",
+      "native:behavior:popout:frontmatter-prefixes-theme-scale",
+      "native:behavior:popout:markdown-reading",
+      "native:behavior:popout:markdown-live-preview",
+      "native:behavior:popout:markdown-source-edit",
+      "native:behavior:popout:images-shared-crops",
+      "native:behavior:popout:images-source-edit-missing",
+      "native:behavior:popout:drawing-and-markdown-embeds",
+      "native:behavior:popout:raw-parsed-text",
+      "native:behavior:popout:ea-selection-groups-bindings-frames",
+      "native:behavior:popout:ea-hooks-targeting-invalid",
+      "native:behavior:popout:command-palette-selection-cancel",
+      "native:behavior:popout:toolbar-context-shortcuts",
+      "native:behavior:phone:settings-01",
+      "native:behavior:phone:settings-02",
+      "native:behavior:phone:settings-03",
+      "native:behavior:phone:settings-04",
+      "native:behavior:phone:settings-05",
+      "native:behavior:phone:settings-06",
+      "native:behavior:phone:settings-07",
+      "native:behavior:phone:settings-08",
+      "native:behavior:phone:settings-09",
+      "native:behavior:phone:settings-10",
+      "native:behavior:phone:settings-11",
+      "native:behavior:phone:settings-12",
+      "native:behavior:phone:settings-13",
+      "native:behavior:phone:settings-14",
+      "native:behavior:phone:settings-15",
+      "native:behavior:phone:settings-16",
+      "native:behavior:phone:export-01",
+      "native:behavior:phone:export-02",
+      "native:behavior:phone:export-03",
+      "native:behavior:phone:export-04",
+      "native:behavior:phone:export-05",
+      "native:behavior:phone:export-06",
+      "native:behavior:phone:export-07",
+      "native:behavior:phone:export-08",
+      "native:behavior:phone:export-09",
+      "native:behavior:phone:export-10",
+      "native:behavior:phone:export-11",
+      "native:behavior:phone:export-12",
+      "native:behavior:phone:cli-atomic-targeted-edit",
+      "native:behavior:phone:settings-live-persistence",
+      "native:behavior:phone:frontmatter-prefixes-theme-scale",
+      "native:behavior:phone:markdown-reading",
+      "native:behavior:phone:markdown-live-preview",
+      "native:behavior:phone:markdown-source-edit",
+      "native:behavior:phone:images-shared-crops",
+      "native:behavior:phone:images-source-edit-missing",
+      "native:behavior:phone:drawing-and-markdown-embeds",
+      "native:behavior:phone:raw-parsed-text",
+      "native:behavior:phone:ea-selection-groups-bindings-frames",
+      "native:behavior:phone:ea-hooks-targeting-invalid",
+      "native:behavior:phone:command-palette-selection-cancel",
+      "native:behavior:phone:toolbar-context-shortcuts",
+      "native:behavior:tablet:settings-01",
+      "native:behavior:tablet:settings-02",
+      "native:behavior:tablet:settings-03",
+      "native:behavior:tablet:settings-04",
+      "native:behavior:tablet:settings-05",
+      "native:behavior:tablet:settings-06",
+      "native:behavior:tablet:settings-07",
+      "native:behavior:tablet:settings-08",
+      "native:behavior:tablet:settings-09",
+      "native:behavior:tablet:settings-10",
+      "native:behavior:tablet:settings-11",
+      "native:behavior:tablet:settings-12",
+      "native:behavior:tablet:settings-13",
+      "native:behavior:tablet:settings-14",
+      "native:behavior:tablet:settings-15",
+      "native:behavior:tablet:settings-16",
+      "native:behavior:tablet:export-01",
+      "native:behavior:tablet:export-02",
+      "native:behavior:tablet:export-03",
+      "native:behavior:tablet:export-04",
+      "native:behavior:tablet:export-05",
+      "native:behavior:tablet:export-06",
+      "native:behavior:tablet:export-07",
+      "native:behavior:tablet:export-08",
+      "native:behavior:tablet:export-09",
+      "native:behavior:tablet:export-10",
+      "native:behavior:tablet:export-11",
+      "native:behavior:tablet:export-12",
+      "native:behavior:tablet:cli-atomic-targeted-edit",
+      "native:behavior:tablet:settings-live-persistence",
+      "native:behavior:tablet:frontmatter-prefixes-theme-scale",
+      "native:behavior:tablet:markdown-reading",
+      "native:behavior:tablet:markdown-live-preview",
+      "native:behavior:tablet:markdown-source-edit",
+      "native:behavior:tablet:images-shared-crops",
+      "native:behavior:tablet:images-source-edit-missing",
+      "native:behavior:tablet:drawing-and-markdown-embeds",
+      "native:behavior:tablet:raw-parsed-text",
+      "native:behavior:tablet:ea-selection-groups-bindings-frames",
+      "native:behavior:tablet:ea-hooks-targeting-invalid",
+      "native:behavior:tablet:command-palette-selection-cancel",
+      "native:behavior:tablet:toolbar-context-shortcuts"
+    ]
+  }
 }

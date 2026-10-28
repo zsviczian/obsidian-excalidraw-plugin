@@ -2126,6 +2126,128 @@
       "line": 261
     }
   ],
+  "frontmatter": [
+    {
+      "name": "excalidraw-plugin",
+      "path": "src/constants/constants.ts",
+      "line": 314
+    },
+    {
+      "name": "excalidraw-export-transparent",
+      "path": "src/constants/constants.ts",
+      "line": 315
+    },
+    {
+      "name": "excalidraw-mask",
+      "path": "src/constants/constants.ts",
+      "line": 320
+    },
+    {
+      "name": "excalidraw-export-dark",
+      "path": "src/constants/constants.ts",
+      "line": 321
+    },
+    {
+      "name": "excalidraw-export-svgpadding",
+      "path": "src/constants/constants.ts",
+      "line": 326
+    },
+    {
+      "name": "excalidraw-export-padding",
+      "path": "src/constants/constants.ts",
+      "line": 331
+    },
+    {
+      "name": "excalidraw-export-pngscale",
+      "path": "src/constants/constants.ts",
+      "line": 336
+    },
+    {
+      "name": "excalidraw-export-embed-scene",
+      "path": "src/constants/constants.ts",
+      "line": 341
+    },
+    {
+      "name": "excalidraw-export-internal-links",
+      "path": "src/constants/constants.ts",
+      "line": 346
+    },
+    {
+      "name": "excalidraw-link-prefix",
+      "path": "src/constants/constants.ts",
+      "line": 351
+    },
+    {
+      "name": "excalidraw-url-prefix",
+      "path": "src/constants/constants.ts",
+      "line": 356
+    },
+    {
+      "name": "excalidraw-link-brackets",
+      "path": "src/constants/constants.ts",
+      "line": 361
+    },
+    {
+      "name": "excalidraw-onload-script",
+      "path": "src/constants/constants.ts",
+      "line": 366
+    },
+    {
+      "name": "excalidraw-linkbutton-opacity",
+      "path": "src/constants/constants.ts",
+      "line": 371
+    },
+    {
+      "name": "excalidraw-default-mode",
+      "path": "src/constants/constants.ts",
+      "line": 376
+    },
+    {
+      "name": "excalidraw-font",
+      "path": "src/constants/constants.ts",
+      "line": 381
+    },
+    {
+      "name": "excalidraw-font-color",
+      "path": "src/constants/constants.ts",
+      "line": 382
+    },
+    {
+      "name": "excalidraw-border-color",
+      "path": "src/constants/constants.ts",
+      "line": 387
+    },
+    {
+      "name": "excalidraw-css",
+      "path": "src/constants/constants.ts",
+      "line": 392
+    },
+    {
+      "name": "excalidraw-autoexport",
+      "path": "src/constants/constants.ts",
+      "line": 393
+    },
+    {
+      "name": "excalidraw-iframe-theme",
+      "path": "src/constants/constants.ts",
+      "line": 398
+    },
+    {
+      "name": "excalidraw-embeddable-theme",
+      "path": "src/constants/constants.ts",
+      "line": 403
+    },
+    {
+      "name": "excalidraw-open-md",
+      "path": "src/constants/constants.ts",
+      "line": 408
+    },
+    {
+      "name": "excalidraw-embed-md",
+      "path": "src/constants/constants.ts",
+      "line": 413
+    }
+  ],
   "cliCommands": [
     {
       "name": "help",
@@ -2288,6 +2410,10 @@
       "mode": "direct-module-or-tooling"
     },
     {
+      "path": "scripts/testing/coverageChanges.test.mjs",
+      "mode": "direct-module-or-tooling"
+    },
+    {
       "path": "scripts/testing/drawingLoadError.test.mjs",
       "mode": "isolated-or-extracted"
     },
@@ -2305,6 +2431,10 @@
     },
     {
       "path": "scripts/testing/features.test.mjs",
+      "mode": "direct-module-or-tooling"
+    },
+    {
+      "path": "scripts/testing/frontmatter.source.test.mjs",
       "mode": "direct-module-or-tooling"
     },
     {
@@ -2368,6 +2498,10 @@
       "mode": "isolated-or-extracted"
     },
     {
+      "path": "scripts/testing/localVault.test.mjs",
+      "mode": "isolated-or-extracted"
+    },
+    {
       "path": "scripts/testing/lucideIcons.test.mjs",
       "mode": "isolated-or-extracted"
     },
@@ -2377,6 +2511,10 @@
     },
     {
       "path": "scripts/testing/package.source.test.mjs",
+      "mode": "direct-module-or-tooling"
+    },
+    {
+      "path": "scripts/testing/pairwise.test.mjs",
       "mode": "direct-module-or-tooling"
     },
     {

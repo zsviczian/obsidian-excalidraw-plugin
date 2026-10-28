@@ -1,15 +1,15 @@
 {
   "schemaVersion": 2,
-  "generator": "synthetic-core-v1",
+  "generator": "synthetic-native-v2",
   "fixtures": [
     {
       "id": ".obsidian/app.json",
       "path": ".obsidian/app.json",
-      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
-      "bytes": 3,
+      "sha256": "0b0edc780b27f1297d1935e3cfb1281a582667d0a8823b453fb3a616045381ce",
+      "bytes": 145,
       "provenance": "Generated synthetic fixture; no imported vault or third-party artwork",
       "license": "CC0-1.0",
-      "generator": "synthetic-core-v1"
+      "generator": "synthetic-native-v2"
     },
     {
       "id": ".obsidian/appearance.json",
@@ -18,16 +18,43 @@
       "bytes": 22,
       "provenance": "Generated synthetic fixture; no imported vault or third-party artwork",
       "license": "CC0-1.0",
-      "generator": "synthetic-core-v1"
+      "generator": "synthetic-native-v2"
+    },
+    {
+      "id": ".obsidian/core-plugins.json",
+      "path": ".obsidian/core-plugins.json",
+      "sha256": "020f63521e3acfc4da3c7cea41855d0da23169d8b10700a19ecf70ef71ac4fa5",
+      "bytes": 129,
+      "provenance": "Generated synthetic fixture; no imported vault or third-party artwork",
+      "license": "CC0-1.0",
+      "generator": "synthetic-native-v2"
     },
     {
       "id": ".obsidian/community-plugins.json",
       "path": ".obsidian/community-plugins.json",
-      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
-      "bytes": 3,
+      "sha256": "9c368c7ae1a93833fb93ac79d657eab3ddbb4b5859b9ecb2cccc4e0323ec7d2d",
+      "bytes": 51,
       "provenance": "Generated synthetic fixture; no imported vault or third-party artwork",
       "license": "CC0-1.0",
-      "generator": "synthetic-core-v1"
+      "generator": "synthetic-native-v2"
+    },
+    {
+      "id": ".obsidian/plugins/obsidian-excalidraw-plugin/data.json",
+      "path": ".obsidian/plugins/obsidian-excalidraw-plugin/data.json",
+      "sha256": "26d620c8337201b4623b94d11ca3fd6017099a4b22c5a30759f96120ab1a7b65",
+      "bytes": 476,
+      "provenance": "Generated synthetic fixture; no imported vault or third-party artwork",
+      "license": "CC0-1.0",
+      "generator": "synthetic-native-v2"
+    },
+    {
+      "id": ".obsidian/plugins/excalidraw-extras/data.json",
+      "path": ".obsidian/plugins/excalidraw-extras/data.json",
+      "sha256": "d9d66dc867b3bc74078d0917c3ac3f3c33a5646f6b3a23c8d83fe653db09ece5",
+      "bytes": 126,
+      "provenance": "Generated synthetic fixture; no imported vault or third-party artwork",
+      "license": "CC0-1.0",
+      "generator": "synthetic-native-v2"
     },
     {
       "id": "Drawings/Uncompressed.excalidraw.md",
@@ -36,7 +63,7 @@
       "bytes": 1868,
       "provenance": "Generated synthetic fixture; no imported vault or third-party artwork",
       "license": "CC0-1.0",
-      "generator": "synthetic-core-v1"
+      "generator": "synthetic-native-v2"
     },
     {
       "id": "Drawings/Compressed.excalidraw.md",
@@ -45,7 +72,7 @@
       "bytes": 1253,
       "provenance": "Generated synthetic fixture; no imported vault or third-party artwork",
       "license": "CC0-1.0",
-      "generator": "synthetic-core-v1"
+      "generator": "synthetic-native-v2"
     },
     {
       "id": "Drawings/Legacy.excalidraw",
@@ -54,7 +81,7 @@
       "bytes": 1715,
       "provenance": "Generated synthetic fixture; no imported vault or third-party artwork",
       "license": "CC0-1.0",
-      "generator": "synthetic-core-v1"
+      "generator": "synthetic-native-v2"
     },
     {
       "id": "Invalid/Truncated.excalidraw.md",
@@ -63,7 +90,7 @@
       "bytes": 1724,
       "provenance": "Generated synthetic fixture; no imported vault or third-party artwork",
       "license": "CC0-1.0",
-      "generator": "synthetic-core-v1"
+      "generator": "synthetic-native-v2"
     },
     {
       "id": "Invalid/Corrupt.excalidraw.md",
@@ -72,7 +99,7 @@
       "bytes": 96,
       "provenance": "Generated synthetic fixture; no imported vault or third-party artwork",
       "license": "CC0-1.0",
-      "generator": "synthetic-core-v1"
+      "generator": "synthetic-native-v2"
     },
     {
       "id": "Links/Árvíztűrő 测试.md",
@@ -81,7 +108,7 @@
       "bytes": 99,
       "provenance": "Generated synthetic fixture; no imported vault or third-party artwork",
       "license": "CC0-1.0",
-      "generator": "synthetic-core-v1"
+      "generator": "synthetic-native-v2"
     },
     {
       "id": "Notes/Embeds.md",
@@ -90,7 +117,34 @@
       "bytes": 159,
       "provenance": "Generated synthetic fixture; no imported vault or third-party artwork",
       "license": "CC0-1.0",
-      "generator": "synthetic-core-v1"
+      "generator": "synthetic-native-v2"
+    },
+    {
+      "id": "Notes/Render target.md",
+      "path": "Notes/Render target.md",
+      "sha256": "0301cc0690ba4625ea8aa52898a025147d00323a82a6291c6c003f80c93d6d4b",
+      "bytes": 113,
+      "provenance": "Generated synthetic fixture; no imported vault or third-party artwork",
+      "license": "CC0-1.0",
+      "generator": "synthetic-native-v2"
+    },
+    {
+      "id": "Notes/Render nested.md",
+      "path": "Notes/Render nested.md",
+      "sha256": "f2a6499efc33cf28d0cca53bc12f5b4be630ae551002ae24c61df297190d46f2",
+      "bytes": 64,
+      "provenance": "Generated synthetic fixture; no imported vault or third-party artwork",
+      "license": "CC0-1.0",
+      "generator": "synthetic-native-v2"
+    },
+    {
+      "id": "Notes/Render matrix.md",
+      "path": "Notes/Render matrix.md",
+      "sha256": "8db780b9bb36117c12c51d3ca1443b930f7f73799ea3d73da57b158cb7223f89",
+      "bytes": 458,
+      "provenance": "Generated synthetic fixture; no imported vault or third-party artwork",
+      "license": "CC0-1.0",
+      "generator": "synthetic-native-v2"
     },
     {
       "id": "Assets/Transparency.png",
@@ -99,7 +153,7 @@
       "bytes": 85,
       "provenance": "Generated synthetic fixture; no imported vault or third-party artwork",
       "license": "CC0-1.0",
-      "generator": "synthetic-core-v1"
+      "generator": "synthetic-native-v2"
     },
     {
       "id": "Assets/Layers.svg",
@@ -108,7 +162,7 @@
       "bytes": 296,
       "provenance": "Generated synthetic fixture; no imported vault or third-party artwork",
       "license": "CC0-1.0",
-      "generator": "synthetic-core-v1"
+      "generator": "synthetic-native-v2"
     },
     {
       "id": "Assets/Small.pdf",
@@ -117,7 +171,7 @@
       "bytes": 619,
       "provenance": "Generated synthetic fixture; no imported vault or third-party artwork",
       "license": "CC0-1.0",
-      "generator": "synthetic-core-v1"
+      "generator": "synthetic-native-v2"
     },
     {
       "id": "Sources/Equations.json",
@@ -126,7 +180,7 @@
       "bytes": 105,
       "provenance": "Generated synthetic fixture; no imported vault or third-party artwork",
       "license": "CC0-1.0",
-      "generator": "synthetic-core-v1"
+      "generator": "synthetic-native-v2"
     },
     {
       "id": "Sources/Diagrams.json",
@@ -135,7 +189,7 @@
       "bytes": 127,
       "provenance": "Generated synthetic fixture; no imported vault or third-party artwork",
       "license": "CC0-1.0",
-      "generator": "synthetic-core-v1"
+      "generator": "synthetic-native-v2"
     }
   ],
   "stress": {

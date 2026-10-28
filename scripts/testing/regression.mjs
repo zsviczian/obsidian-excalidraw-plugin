@@ -16,6 +16,8 @@ import { writeReportFiles } from "./reportFiles.mjs";
 import { packageManagerInvocation } from "./host/processTools.mjs";
 import { runPackageConsumer } from "./packageConsumers.mjs";
 import { deviceProfiles, breakpointProfiles } from "./host/deviceProfiles.mjs";
+import { behavioralCases } from "./behaviorPlan.mjs";
+import { coverageChanges } from "./coverageChanges.mjs";
 
 export const requiredDeviceCases = [
   ...deviceProfiles(),
@@ -23,6 +25,16 @@ export const requiredDeviceCases = [
 ].map((profile) => "native:device:" + profile.id);
 
 export const requiredNativeCases = [
+  ...behavioralCases().map((row) => row.testId),
+  ...["image-url", "image-import"].flatMap((action) =>
+    ["uri", "linked-image", "extensionless", "blob"].map(
+      (payload) => "native:drop:web:popout:" + payload + ":" + action,
+    ),
+  ),
+  ...["link", "embeddable"].map(
+    (action) => "native:drop:web:popout:linked-page:" + action,
+  ),
+  ...Array.from({ length: 5 }, (_, i) => "native:drop:internal:popout:" + i),
   "plugin-load",
   "drawing-main-window",
   "javascript-errors",
@@ -126,16 +138,6 @@ async function main() {
     "Use --portable or no options",
   );
   const native = !process.argv.includes("--portable");
-  if (native)
-    for (const key of [
-      "EXCALIDRAW_TEST_VAULT_NAME",
-      "EXCALIDRAW_TEST_VAULT_PATH",
-      "EXCALIDRAW_TEST_CONFIG_DIR",
-    ])
-      assert.ok(
-        process.env[key],
-        "Set " + key + " for the dedicated native test vault",
-      );
   const plugin = resolve(import.meta.dirname, "../..");
   const roots = {
     plugin,
@@ -286,6 +288,12 @@ async function main() {
     }
     const result = auditRegression(reports, gates, { native });
     result.sources = before;
+    const baseline = JSON.parse(
+      readFileSync(join(plugin, "tests/reused-case-ids-3022.json"), "utf8"),
+    );
+    result.changeCounts = coverageChanges(reports, baseline.testIds, {
+      notRunInProfile: native ? [] : baseline.nativeTestIds,
+    });
     writeFileSync(
       join(output, "report.json"),
       JSON.stringify(result, null, 2) + "\n",

@@ -1,160 +1,108 @@
 # Obsidian runtime testing on macOS and Windows
 
-This desktop lane builds the real plugin, deploys its exact artifacts to the named
-`excalidraw-test` vault, opens a disposable drawing, and checks that the Excalidraw
-API and editor mount in the main application document. It supplements source
-tests and change-specific manual checks.
+Use the repository-local, marker-owned vault:
 
-## Prepare the test vault
+`obsidian-excalidraw-plugin/.test-work/vaults/excalidraw-auto-test/`
 
-1. Look for an existing vault named `excalidraw-test` in Obsidian's vault switcher
-   or registry (`~/Library/Application Support/obsidian/obsidian.json` on macOS;
-   `%APPDATA%\obsidian\obsidian.json` on Windows). Confirm its absolute path.
-2. If it is missing, ask the user to create it and install and enable Excalidraw
-   through **Settings → Community plugins**. A fresh empty vault is sufficient
-   for this smoke. Agents need consent to create or download a replacement vault.
-3. Open the vault in Obsidian. For a downloaded/copied vault, complete any
-   first-open trust prompt, then close and reopen that vault. Finish plugin
-   onboarding before automated testing.
-4. Use an Obsidian installer with CLI support and enable **Settings → General →
-   Command line interface**. Follow its registration prompt; see the official
-   [CLI installation and troubleshooting guide](https://obsidian.md/help/cli).
-5. Keep Obsidian running and select the test vault's main window. Ensure its
-   Excalidraw drawing template does not open a chooser. Avoid simultaneous edits
-   or another CLI runner in that vault during testing.
-6. Use Node.js 22 or newer and install this repository's dependencies with
-   `npm install`. Check `node --version` in the same terminal used for testing.
-
-The runner requires all three environment variables below. It accepts only the
-name `excalidraw-test`, checks canonical vault and configuration paths against the
-running app, requires the initial enabled Community plugin installation, and
-rejects symlinked plugin directories/artifacts. There is no default-vault fallback.
-Use the actual configuration directory if it differs from `.obsidian`.
-
-## Run on Windows
-
-For PR #3020, `npm run test:workflow-fixes` runs the focused fullscreen/template
-regressions. Add `-- --workflow-fixes` to `verify:obsidian:plugin` for native
-nested-split/popout geometry, actual template selection/cancellation, and Canvas
-preview measurements. The probe restores the test workspace/settings and deletes
-only its UUID-owned fixture folder. Canvas width-scaling measurements are an
-investigation result, not proof that issue #2729 is fixed; see
-[workflow validation](WORKFLOW_FIXES_VALIDATION.md). The file-explorer check uses
-the actual Obsidian menu and registered folder action.
-
-From this plugin checkout in PowerShell, substitute your actual vault path:
+From the plugin checkout, the preparation-and-test entry point is:
 
 ```powershell
-$env:EXCALIDRAW_TEST_VAULT_NAME = 'excalidraw-test'
-$env:EXCALIDRAW_TEST_VAULT_PATH = 'C:\Obsidian\excalidraw-test'
-$env:EXCALIDRAW_TEST_CONFIG_DIR = 'C:\Obsidian\excalidraw-test\.obsidian'
-npm.cmd run test:obsidian:runner
-npm.cmd run verify:obsidian:plugin
+npm.cmd run test:native
 ```
 
-The launcher discovers `Obsidian.com` under `%LOCALAPPDATA%\Obsidian`,
-`%PROGRAMFILES%\Obsidian`, or `%PROGRAMFILES(X86)%\Obsidian`, then falls back to
-`obsidian` on PATH. For another installation, set an executable path:
+On macOS use `npm run test:native`. This builds current selected workspace
+revisions, freezes them, installs the real plugin and available Extras binaries,
+hash-verifies deployment, applies deterministic settings, enables both plugins,
+verifies the running CLI-selected canonical vault/config paths, runs the expanded
+native suite and restores the declared baseline. Every CLI call explicitly uses
+`vault=excalidraw-auto-test`. Conflicting inherited vault environment variables
+are rejected before mutation. There is no personal/default/desktop-vault fallback.
 
-```powershell
-$env:EXCALIDRAW_OBSIDIAN_CLI = 'C:\Program Files\Obsidian\Obsidian.com'
-```
+## One-time preparation
 
-Use the console launcher `.com` to capture output. The driver passes argument
-arrays directly to native processes. It launches npm/Yarn JavaScript entries
-through the current Node binary, avoiding `.cmd` shims and shell quoting.
-PowerShell environment assignments apply to the current terminal session. Use
-`npm.cmd` in PowerShell if its execution policy blocks `npm.ps1`; no global policy
-change is necessary. The same applies to `npm.cmd install` and the fork lane's
-`npm.cmd run verify:obsidian`.
+1. Install this checkout's npm dependencies, the sibling fork's Yarn dependencies
+   and available Extras npm dependencies. Use Node 22.22.3 or newer.
+2. Run `npm run test:native -- --prepare-only` to build and install the working
+   vault before opening it. This is the same entry point with execution omitted;
+   a copied seed without binaries is not a prepared installation.
+3. Open that exact folder as a vault in Obsidian once. Accept the community-plugin
+   trust prompt and enable/register **Settings ? General ? Command line interface**.
+   Leave the vault open. The runner never edits the global vault registry.
+4. Repeat `npm run test:native`. Subsequent runs require no manual copying,
+   plugin enabling or Extras service configuration.
 
-For additional eval probes, import `spawnNativeSync` from
-`scripts/testing/host/processTools.mjs` in a Node script and pass
-`['vault=excalidraw-test', 'eval', 'code=' + code]`. Windows PowerShell can alter
-embedded native quotes, and large/multiline inline evals can corrupt Obsidian's
-console IPC JSON. The helper moves those payloads to an owned UTF-8 script in the
-system temporary directory, sends a short file-reading eval, and removes the
-directory after success or failure. This local file bridge exists only in test
-tooling; no production plugin feature reads external test scripts.
+The immutable seed in `tests/vault/` contains synthetic CC0 notes, drawings and
+assets plus `.obsidian` configuration and both plugins' `data.json`. The runner
+copies current builds into the working vault's plugin directories:
 
-## Run on macOS
+- `.obsidian/plugins/obsidian-excalidraw-plugin/{main.js,manifest.json,styles.css,data.json}`
+- `.obsidian/plugins/excalidraw-extras/{main.js,manifest.json,styles.css,data.json}`
 
-From this plugin checkout in a shell, substitute your actual vault path:
+Executable builds, installed manifests and runtime work are ignored, never
+committed as fixtures. `.excalidraw-automation.json` records ownership/seed
+identity; `.excalidraw-installed-build.json` records installed hashes and frozen
+producer provenance. Latest means these selected workspace revisions, including
+recorded dirty-diff and lock hashes. Missing Extras is explicit and cannot count
+as passed service coverage.
 
-```bash
-export EXCALIDRAW_TEST_VAULT_NAME=excalidraw-test
-export EXCALIDRAW_TEST_VAULT_PATH="$HOME/Obsidian/excalidraw-test"
-export EXCALIDRAW_TEST_CONFIG_DIR="$EXCALIDRAW_TEST_VAULT_PATH/.obsidian"
-npm run test:obsidian:runner
-npm run verify:obsidian:plugin
-```
+## Focused and complete commands
 
-The launcher discovers `/Applications/Obsidian.app/Contents/MacOS/obsidian-cli`,
-then the application binary `/Applications/Obsidian.app/Contents/MacOS/Obsidian`,
-then `obsidian` on PATH. Set `EXCALIDRAW_OBSIDIAN_CLI` to an executable path for a
-nonstandard installation. Do not include command arguments in the override.
-macOS evals use native argument arrays without the Windows temporary-file bridge.
+| Command | Work |
+| --- | --- |
+| `npm run test:native` | Preparation, complete native core and expanded behavior matrix, popout drop variants and device workflows |
+| `npm run test:native -- --prepare-only` | Build/freeze/install/apply configuration; report first-open prerequisite or verify live readiness |
+| `npm run test:regression` | Complete native work plus independent portable/source/browser/package gates |
+| `npm run verify:obsidian:smoke` | Same current-workspace preparation, then focused editor startup |
+| `npm run verify:obsidian -- --extras-services` | Same preparation; real MathJax/Mermaid gateways and a single native PDF export |
+| `npm run verify:obsidian -- --behavior-matrix` | Same preparation; expanded desktop/main/split/nested/popout behavioral workflows |
+| `npm run verify:obsidian:diagnostics` | Same fresh-build preparation, then the real unhandled-error negative control |
 
-## Choose the build
+The historical `verify:obsidian:plugin` name is retained as a command alias; it
+now prepares current workspace inputs too. `--plugin-only` is rejected. No native
+sequence silently consumes a previous installed artifact. Set
+`EXCALIDRAW_FORK_ROOT` / `EXCALIDRAW_EXTRAS_ROOT` only for non-sibling checkouts;
+the dedicated target vault remains local to this plugin repository.
 
-| Command | Component input | Prerequisites |
-| --- | --- | --- |
-| `npm run test:obsidian:runner` | Fake host fixtures | Node; no Obsidian required |
-| `npm run verify:obsidian:plugin` | Installed `@zsviczian/excalidraw` artifacts | Plugin dependencies and prepared test vault |
-| `npm run verify:obsidian` | Fresh sibling fork build | Both repositories' dependencies, Yarn, prepared test vault |
+For portable checks install the fork's pinned Chromium once (`yarn playwright
+install chromium`, with `--with-deps` on Linux CI). Native input uses the real
+Obsidian Electron host and its owned debugger, not Playwright's Chromium.
 
-The plugin-only lane checks the installed component version against the exact
-declared dependency, hashes its four Obsidian artifacts, and runs the real
-production `npm run build`. It does not require the sibling fork checkout. If you
-previously copied unpublished fork artifacts into `node_modules`, this lane uses
-those bytes; version equality alone does not prove published provenance. Run
-`npm install` to restore the published dependency before a release smoke.
+## Transport, ownership and safe cleanup
 
-For a fork integration check, use `npm run verify:obsidian`. It runs
-`yarn build:obsidian` in `../excalidraw/packages/excalidraw`, copies only the four
-generated Obsidian JavaScript/CSS files into the ignored installed package,
-checks their hashes, then builds the plugin. Set `EXCALIDRAW_FORK_ROOT` to an
-absolute checkout path when the fork is elsewhere. This temporary handoff does
-not change dependencies or lockfiles and remains in `node_modules` afterward.
+The Windows launcher discovers `Obsidian.com` under the standard installation
+locations; use `EXCALIDRAW_OBSIDIAN_CLI` for another executable path. macOS uses
+the installed Obsidian CLI/application binary. See the official
+[CLI installation guide](https://obsidian.md/help/cli). The driver launches
+npm/Yarn through the current Node binary and passes native argument arrays.
+Long Windows evals use an owned temporary UTF-8 script cleaned after each call.
 
-Windows resolves Yarn's JavaScript entry from the Node installation, the user's
-global npm installation, or Corepack. For a different installation, set
-`EXCALIDRAW_YARN_CLI` to the absolute `yarn.js` path. Use the fork's declared Yarn
-version. npm must be discoverable through its `npm_execpath` or a standard Node
-installation; launching through `npm run` supplies that entry automatically.
+All native work is serial under the application-user-data lock, including build,
+preparation, staging, debugger ownership and cleanup. Never detach another
+owner's debugger or restart a shared application. Whole-app cold restart remains
+an optional, separately guarded isolated-session workflow.
 
-## Assertions, deployment and cleanup
+Every scenario owns its exact UUID files/controllers. It waits for asynchronous
+work and physical save acknowledgement before deleting owned data. Successful
+runs restore declared settings/theme, fixture content and preferences, retain the
+installed working vault for inspection and record cleanup/restoration evidence.
+Reports live under `.test-work/reports` or `EXCALIDRAW_TEST_REPORT_DIR`.
 
-After CLI capability and target checks, the runner:
+A tooling deadline is a failed test, not cancellation of native printing.
+Unsettled native work retains its resources/controller/files and recovery record.
+Do not delete or reload it while a native promise is pending. The single-export
+PDF scenario waits for real completion, verifies its header/page geometry/text
+and decoded pixels, and retains `native-single-export.pdf` plus its rendered page
+in the report directory. There is no native concurrent-print acceptance test.
 
-1. Builds the selected inputs and validates the plugin manifest ID.
-2. Disables Excalidraw in the test vault, copies `dist/main.js`, `styles.css` and
-   `manifest.json`, checks deployed SHA-256 hashes, and enables the plugin.
-3. Waits for the live plugin instance and stable drawing command registration.
-4. Creates a UUID-named `__excalidraw_cli_smoke_*` drawing in the vault root through
-   the plugin, opens it in a new tab, and waits for an API and editor wrapper with
-   the correct owning document.
-5. Rejects captured JavaScript errors, closes/deletes its own drawing, removes its
-   temporary controller, and writes `report.json`. Cleanup failure fails the run.
+The expanded matrix records actual mobile mode, measured geometry, scene state,
+saved/reopened data, decoded output, errors and cleanup. Trusted CDP interaction
+and synthetic drag payloads are labeled separately. Phone/tablet emulation is
+not physical Android/iOS, native OS drag or stylus evidence.
 
-Every CLI call explicitly starts with `vault=excalidraw-test`. A CLI `Error:`
-payload is failure even when the process exits zero. Internal plugin access via
-CLI eval belongs only in these host scripts, never in production modules.
+## Earlier focused scenario details
 
-Deployment replaces the test vault's installed plugin build and leaves it enabled;
-it does not restore the Community release afterward. The runner does not overwrite
-`data.json`, existing notes, or other plugins. Normal plugin startup/drawing
-creation may persist its own settings. Opening the temporary tab can change focus
-and workspace history; use a disposable test vault. It clears the test vault's
-developer error buffer to attribute errors to this run.
-
-The printed report path is in a unique temporary directory unless you set
-`EXCALIDRAW_TEST_REPORT_DIR`. Reports include source revisions/dirty flags, build
-mode, component version, Node/platform/Obsidian versions, component and deployed
-plugin hashes, bundle size, scenarios, the exact temporary drawing path, and
-cleanup. The runner awaits an empty view transition before deleting its drawing
-so a pending close/save cannot recreate it. Inspect both `status` and
-`cleanup`; keep reports outside the checkout and review local paths before sharing.
+The following scenario notes retain their feature-specific assertions. Their
+native execution now uses the preparation and local vault contract above.
 
 ## Troubleshooting and further coverage
 
@@ -224,7 +172,7 @@ For wheel zoom limits (#3008), run
 dispatches actual wheel events with deliberately changed live minimum/maximum
 settings, including scroll constraints and zoom above 3000%, in the main window
 and a popout. Test settings are restored without saving them. This option can
-be combined with `--image-geometry`. Use the plugin-only lane only after the
+be combined with `--image-geometry`. Use the current-workspace lane only after the
 installed component contains the fix. Unpublished artifact copies remain a
 local integration checkpoint; the declared published dependency is unchanged.
 

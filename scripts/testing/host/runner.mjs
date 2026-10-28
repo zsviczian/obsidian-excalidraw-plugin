@@ -231,7 +231,9 @@ export async function runObsidianSmoke({ projectRoot, vaultName, vaultPath, conf
         report.status = "failed";
       }
     }
-    if (companionCleanup) { try { await companionCleanup(); } catch(error) { report.status="failed"; report.cleanup="failed"; report.cleanupError=String(error); } }
+    // Unsettled Electron work still owns its services and resources. Tooling
+    // cannot unload a companion as if a deadline had cancelled native printing.
+    if (companionCleanup && !preserveOwnedFixtures) { try { await companionCleanup(); } catch(error) { report.status="failed"; report.cleanup="failed"; report.cleanupError=String(error); } }
     if (debuggerSession) {
       try {
         report.consoleErrors = debuggerSession.read();

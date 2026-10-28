@@ -20,6 +20,7 @@ import {
   fileHash,
 } from "../contracts.mjs";
 import { writeReportFiles } from "../reportFiles.mjs";
+import { configureLocalVaultEnvironment } from "../localVault.mjs";
 export async function restartIsolatedHost({
   proveIsolation,
   cli,
@@ -62,6 +63,7 @@ if (
   process.argv[1] &&
   resolve(process.argv[1]) === fileURLToPath(import.meta.url)
 ) {
+  configureLocalVaultEnvironment(root);
   const reportDir = resolve(
     process.env.EXCALIDRAW_TEST_REPORT_DIR ||
       join(root, ".test-work/reports/cold-start"),
@@ -126,8 +128,19 @@ if (
       ),
       combination = JSON.parse(readFileSync(combinationPath, "utf8")),
       output = dirname(combinationPath);
-    for (const kind of ["fork", "extras", "plugin"])
+    for (const kind of ["fork", "extras", "plugin"]) {
       validateArtifactManifest(combination.manifests[kind], join(output, kind));
+      const current = sourceIdentity(combination.roots[kind]);
+      for (const key of ["commit", "dirty", "diffHash", "lockfileHash"])
+        assert.equal(
+          current[key],
+          combination.manifests[kind][key],
+          "Cold-start source changed since its prerequisite workspace build: " +
+            kind +
+            " " +
+            key,
+        );
+    }
     report.combination = combination;
     report.source = combination.manifests.plugin;
     const installed = target.pluginDir;

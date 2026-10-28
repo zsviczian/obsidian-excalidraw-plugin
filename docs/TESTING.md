@@ -2,13 +2,15 @@
 
 ## Required current-product regression
 
-Current fork behavior is the accepted baseline. Run `npm run test:regression`
-with the dedicated native test-vault environment below. It builds the three
+Current fork behavior is the accepted baseline. Run `npm run test:regression`.
+Native work always prepares `.test-work/vaults/excalidraw-auto-test/` from the
+current selected workspace revisions; no desktop-vault environment is needed. It builds the three
 repositories, runs independent fork/Extras source and built-browser tests, plugin
 fixture/source tests and coverage gates, clean package consumers, and native
 CLI/ExcalidrawAutomate/persistence/rendering checks, main/popout lifecycle and the
-40-case device/layout matrix. Every required
-case and error/cleanup gate must pass. JSON, JUnit, command logs and source
+40-case device/layout matrix plus the expanded behavioral workflows. Every
+required case and error/cleanup gate must pass. The earlier 685-case core
+checkpoint does not satisfy omitted important behaviors in this follow-up. JSON, JUnit, command logs and source
 identities are written together under `.test-work/reports/regression-<uuid>`.
 
 Use `npm run test:regression:portable` in hosted CI or without an Obsidian session.
@@ -27,22 +29,104 @@ tests use Node's synchronous registration hooks and require Node 22.15 or newer.
 The plugin still supports its declared Obsidian minimum; the native CLI has a
 separate installer floor (1.12.7) and desktop-only transport.
 
-## Windows workspace quick start
+## Repository-local preparation and test entry point
 
-From the plugin checkout, with the dedicated vault open and Obsidian CLI enabled:
+From the plugin checkout:
 
 ```powershell
-$env:EXCALIDRAW_TEST_VAULT_NAME = 'excalidraw-test'
-$env:EXCALIDRAW_TEST_VAULT_PATH = 'C:/Obsidian/excalidraw-test'
-$env:EXCALIDRAW_TEST_CONFIG_DIR = "$env:EXCALIDRAW_TEST_VAULT_PATH/.obsidian"
+npm.cmd run test:native -- --prepare-only
+# Open .test-work/vaults/excalidraw-auto-test/ once in Obsidian and accept trust.
+npm.cmd run test:native
+```
+
+`test:native` is one preparation-and-test entry point; `--prepare-only` is an
+optional first-open convenience. It installs real `main.js`, `manifest.json`,
+`styles.css` and declared `data.json` for the plugin and available workspace
+Extras. Subsequent runs rebuild, freeze, deploy/hash-verify, configure and enable
+both automatically. Installer/CLI registration and the first Obsidian vault
+opening/trust are one-time host prerequisites. No global vault-registry edit,
+manual plugin copy, service configuration or personal/desktop-vault fallback is
+part of a run. Conflicting inherited vault environment variables fail early.
+
+The seed includes synthetic content and deterministic application/core-plugin/
+community-plugin/plugin settings. Generated executables remain in the ignored
+working vault. See [runtime preparation, commands and recovery](OBSIDIAN_RUNTIME_TESTING.md).
+
+For all portable and native gates together, use:
+
+```powershell
 $env:PLAYWRIGHT_BROWSERS_PATH = Join-Path (Resolve-Path ../excalidraw) '.test-work/browsers'
-yarn.cmd --cwd ../excalidraw playwright install chromium # One-time browser setup
+yarn.cmd --cwd ../excalidraw playwright install chromium # One-time portable browser setup
 npm.cmd run test:regression
 ```
 
-Use the actual dedicated vault path if it differs. Repeat the last command for a
-fresh run; the default report directory is unique each time. `npm.cmd` and
-`yarn.cmd` also work when PowerShell blocks their `.ps1` shims.
+Repeat the same command for fresh evidence. Default reports use unique output
+directories. `npm.cmd` / `yarn.cmd` avoid blocked PowerShell `.ps1` shims.
+
+## Expanded behavioral obligations
+
+`tests/features.json.behaviorMatrix` defines all factor domains, reviewed
+expected results/assertions, case templates and required context-specific IDs.
+There are currently **252 additional required behavioral cases** across main,
+ordinary split, nested split, popout, emulated phone and emulated tablet contexts.
+Six of these use actual plugin CLI `read`/`apply` transport; the other host cases
+use native EA/renderers and trusted CDP input as applicable. Fifteen popout
+web/internal-drop variants are also required and explicitly labeled synthetic
+payload evidence. Existing native command-authoring and lifecycle cases remain.
+
+The settings plan covers every pair in its declared domains plus explicit
+high-risk rows, including conflicting defaults/overrides, missing values,
+false and zero. Export rows check actual decoded output. Markdown rows use real
+reading view and Live Preview; image rows cover shared sources, independent
+crops/sizes, source edits, missing assets, drawing/Markdown/PDF and local
+embeddables. EA and actual palette/menu/shortcut workflows run in each context.
+Phone/tablet workflows therefore establish more than rectangle layout tests.
+
+Source discovery enumerates 187 settings, 24 frontmatter fields, 161 public EA
+entries, 76 commands and 14 hooks. Enumeration is not proof that every member is
+behaviorally covered. Reports retain the exact exercised cases and genuine gaps;
+physical touch/stylus, OS drag/clipboard, other native OSes and isolated whole-app
+restart remain separate environments. Missing important required cases keep the
+expanded suite unfinished; they cannot be waived by the old core count.
+
+**Current follow-up status:** PDF rollback/source gates and installation guards
+pass; the expanded native matrix, single real PDF output check and two complete
+native repeats still require execution in the opened local vault. Do not treat
+implemented case declarations as passed evidence.
+
+Reports distinguish new/reused canonical identities against
+`tests/reused-case-ids-3022.json`, actual plugin CLI command cases, host/EA/input
+cases and mobile emulation. That historical ID list is only count accounting;
+it is never an expected-failure or acceptance allowlist.
+
+## Follow-up evidence, 2026-10-28 (unfinished)
+
+The first expanded portable aggregate passes **632 canonical cases**: 457 plugin
+fast, 124 fork source, 18 fork browser, 29 Extras source and four Extras browser.
+It includes 34 new and 598 reused canonical identities. The overlapping plugin
+source-coverage gate passes 73 cases; both packed-consumer gates pass. Evidence:
+`.test-work/reports/expanded-portable-first/`. Subsequent recovery-tooling checks
+add one configuration test; final counts belong to the fresh follow-up run.
+
+| Required follow-up | Current result |
+| --- | --- |
+| PDF timeout/lock rollback | Source regression passes; completion remains event-driven |
+| Delay beyond two minutes | Controlled clock passes at 120001 ms and a further 15 minutes; resources remain owned until completion |
+| Real plugin?Extras PDF and decoded-page inspection | **Pending** in the local vault |
+| Actual installed plugin and Extras files | Present and hash-verified; latest preparation/provenance must be refreshed after changes |
+| One-time local vault registration/trust | **Pending**; no fallback permitted |
+| 252 cross-context behavioral cases | Implemented, **unexecuted** |
+| 15 additional popout drop variants | Required, **unexecuted** |
+| Two complete matching-build native runs | **Pending** |
+| Follow-up production diff | Pass: plugin/fork runtime unchanged; Extras PDF rollback only |
+
+The portable report records **zero native cases**. Source simulation, actual
+browser rendering, CLI command transport and host/EA/trusted-input evidence are
+separate. Profile-omitted native cases are not described as deleted tests. The
+new/reused ledger records canonical identities rather than new test files or
+changed assertion counts. No new suspected product defect has been established
+by these unexecuted native cases; failures must be reproduced and reported before
+any further production change.
 
 ## Portable checks
 
@@ -79,29 +163,23 @@ historical extraction/VM tests receive no original-source coverage credit.
 
 ## Native workspace profiles
 
-Set all of these explicitly; never fall back to an active vault:
+The target is fixed to the marker-owned repository-local vault. The coordinator
+sets its name, canonical vault/config paths and ownership root; do not point
+native commands at the historical desktop vault. `EXCALIDRAW_TEST_REPORT_DIR`
+may select a fresh report directory. `EXCALIDRAW_TEST_USER_DATA_PATH` selects an
+explicit host identity when the normal application data location differs; the
+actual CLI host must match the held session lock.
 
-```sh
-EXCALIDRAW_TEST_VAULT_NAME=excalidraw-test
-EXCALIDRAW_TEST_VAULT_PATH=/absolute/path/excalidraw-test
-EXCALIDRAW_TEST_CONFIG_DIR=/absolute/path/excalidraw-test/.obsidian
-EXCALIDRAW_TEST_REPORT_DIR=/absolute/path/to/new-report-directory
-```
-
-Use environment assignment appropriate to the shell. Other vault names require
-the provisioner's ownership marker and `EXCALIDRAW_TEST_AUTOMATION_ROOT`.
-Provisioning copies the immutable CC0 synthetic seed; it does not register a
-vault or alter Obsidian's global registry. Initial installer, CLI registration,
-vault opening, community-plugin trust and install/discovery are explicit setup
-prerequisites. See [the runner contract](testing-contracts.md) and
-[runtime transport guidance](OBSIDIAN_RUNTIME_TESTING.md).
+Provisioning installs executable builds as well as the immutable seed. It never
+edits the global registry. Complete the first opening/trust/CLI prerequisite
+above once; subsequent native profiles perform preparation automatically.
 
 | Command | Required work |
 | --- | --- |
 | `npm run verify:obsidian:smoke` | Build/freeze/stage all three repositories; load commands, protocol and one main-window drawing |
-| `npm run verify:obsidian:regression` | Full production native profile: core/persistence, main/popout lifecycle, real services, CLI/EA, trusted tools, imports/text/history, six large-scene round trips and 40 device/layout cases |
+| `npm run verify:obsidian:regression` | Full production native profile: core/persistence, main/popout lifecycle, real services, CLI/EA, trusted tools, imports/text/history, six large-scene round trips, the required behavior matrix, popout drop variants and 40 device/layout cases |
 | `npm run verify:obsidian:full` | Smoke plus data/lifecycle, real Extras services/PDF, workflow/pickers, Lucide, text/history, images/embeds, wheel, CLI, links, LaTeX input, core EA authoring, stability and device matrix |
-| `npm run verify:obsidian:devices` | Smoke then 40 measured desktop/mobile-emulation/theme/layout/breakpoint cases |
+| `npm run verify:obsidian:devices` | Smoke then 40 measured desktop/mobile-emulation/theme/layout/breakpoint cases plus phone/tablet behavioral workflows |
 | `npm run verify:obsidian:soak` | Smoke then 25 bounded 1,000-element open/edit/save/export/close cycles |
 | `npm run verify:obsidian:diagnostics` | Separate negative control: an actual intentional unhandled host exception must be captured and rejected by the ordinary oracle |
 | `npm run verify:obsidian:cold` | Official app restart and durable workspace restoration, guarded by an isolated single-vault session proof |

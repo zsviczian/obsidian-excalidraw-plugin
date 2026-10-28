@@ -3,6 +3,29 @@
 The plugin owns the native coordinator; fork and Extras own independent suites.
 All files below are test tooling and must stay outside production graphs.
 
+The native working vault is always
+`.test-work/vaults/excalidraw-auto-test/` in this checkout. `npm run test:native`
+builds, freezes and deploys the selected workspace revisions, including current
+Extras when present, before executing scenarios. Installed hashes and running
+vault/config identities must match. The immutable seed includes both plugin
+`data.json` files and the enabled-plugin/core-plugin configuration; generated
+executable files are installed only in the ignored working copy. Ownership
+markers and the shared host lock span all preparation, deployment and cleanup.
+
+`tests/features.json.behaviorMatrix` contains reviewed factor domains, case
+templates with expected behavior/assertions, all required host contexts and the
+expanded canonical case IDs. Missing important cases fail the regression audit;
+the previous core count cannot substitute for the expanded matrix. Reports keep
+native plugin-command cases, native host/EA/trusted-input cases, emulated layout
+cases, source simulations and actual built-browser cases distinct. Synthetic
+drop payloads never establish real OS drag transport or physical-device input.
+
+PDF export itself has no introduced deadline or per-document lock. Tooling has
+bounded deadlines but cannot cancel an Electron print: a pending native promise
+retains its content, style, listener, controller and owned paths for recovery.
+Only actual completion or a settled error allows cleanup. Single-export native
+evidence retains the generated PDF and decoded page beside its report.
+
 The required `core-regression` report combines independent current-product
 suites. It requires native CLI/EA, popout lifecycle and device case identities unless explicitly run in
 portable mode; missing suites, failed cleanup, unexpected errors and coverage

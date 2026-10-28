@@ -126,6 +126,12 @@ test("stages exact artifacts, asserts an editor and cleans its test drawing", as
   assert.equal(cleanupStarted, true);
   assert.match(failed.error, /feature regression/);
   assert.equal(companionCleaned,2,'Companion state restores after both success and scenario failure');
+  cleanupStarted = false;
+  const pending = await runObsidianSmoke({...options,scenarios:[()=>{const error=Error('Unsettled native print');error.cleanupFailed=true;throw error;}]});
+  assert.equal(pending.status,'failed');assert.equal(pending.cleanup,'failed');
+  assert.equal(cleanupStarted,false,'A tooling deadline must preserve the native owner fixture');
+  assert.equal(companionCleaned,2,'Unsettled native work must retain its loaded companion services');
+  assert.match(pending.cleanupError,/preserved/);
   assert.equal(report.artifacts.companions.paired,true);
   const blocked = await runObsidianSmoke({...options,scenarios:[()=>({id:'required-feature',status:'blocked',reason:'Missing host capability'})]});
   assert.equal(blocked.status,'failed');assert.match(blocked.error,/required-feature is blocked/);assert.equal(blocked.cleanup,'passed');

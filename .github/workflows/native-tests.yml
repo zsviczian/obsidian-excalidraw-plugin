@@ -20,10 +20,10 @@ jobs:
     runs-on: [self-hosted, Windows, excalidraw-isolated]
     timeout-minutes: 90
     env:
-      EXCALIDRAW_TEST_VAULT_NAME: ${{ vars.EXCALIDRAW_TEST_VAULT_NAME }}
-      EXCALIDRAW_TEST_VAULT_PATH: ${{ vars.EXCALIDRAW_TEST_VAULT_PATH }}
-      EXCALIDRAW_TEST_CONFIG_DIR: ${{ vars.EXCALIDRAW_TEST_CONFIG_DIR }}
-      EXCALIDRAW_TEST_AUTOMATION_ROOT: ${{ vars.EXCALIDRAW_TEST_AUTOMATION_ROOT }}
+      EXCALIDRAW_TEST_VAULT_NAME: excalidraw-auto-test
+      EXCALIDRAW_TEST_VAULT_PATH: ${{ github.workspace }}/.test-work/vaults/excalidraw-auto-test
+      EXCALIDRAW_TEST_CONFIG_DIR: ${{ github.workspace }}/.test-work/vaults/excalidraw-auto-test/.obsidian
+      EXCALIDRAW_TEST_AUTOMATION_ROOT: ${{ github.workspace }}/.test-work/vaults
       EXCALIDRAW_TEST_USER_DATA_PATH: ${{ vars.EXCALIDRAW_TEST_USER_DATA_PATH }}
       EXCALIDRAW_TEST_REPORT_DIR: ${{ github.workspace }}/.test-work/reports/native-ci
       EXCALIDRAW_FORK_ROOT: ${{ github.workspace }}/.test-work/checkouts/fork
@@ -37,16 +37,22 @@ jobs:
         with:
           ref: ${{ inputs.tested_sha }}
           persist-credentials: false
+          # Preserve the registered, marker-owned working vault across runs.
+          clean: false
+      - name: Reject tracked source drift in the persistent checkout
+        run: |
+          git diff --exit-code
+          git diff --cached --exit-code
       - uses: actions/checkout@v4
         with:
           repository: zsviczian/excalidraw
-          ref: e0cf824c6225d02f48b98c30c5b79d6ab8536c35
+          ref: 6fc8f6b7176b93e098c75f3d8846c06c4cfb3106
           path: .test-work/checkouts/fork
           persist-credentials: false
       - uses: actions/checkout@v4
         with:
           repository: zsviczian/obsidian-excalidraw-extras
-          ref: e37c06feff9fef48877f565328762433a676afcc
+          ref: 1cdcb7c425a9b80afdc7b39c88861143b4b85e58
           path: .test-work/checkouts/extras
           persist-credentials: false
       - uses: actions/setup-node@v4
