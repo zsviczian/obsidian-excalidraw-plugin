@@ -227,6 +227,19 @@ export default {
   // Compatibility keys consumed by upstream Excalidraw via ExcalidrawPlugin.getLabel().
   // Keep this group in sync across maintained locales.
   ABOUT_LIBRARIES: "如何加载素材库",
+  // Lucide icon picker
+  INSERT_LUCIDE_ICON: "插入 Lucide 图标",
+  LUCIDE_SEARCH: "搜索图标",
+  LUCIDE_SIZE: "图标大小",
+  LUCIDE_SMALL: "小（48）",
+  LUCIDE_MEDIUM: "中（96）",
+  LUCIDE_LARGE: "大（192）",
+  LUCIDE_PREVIOUS: "上一页",
+  LUCIDE_NEXT: "下一页",
+  LUCIDE_EMPTY: "没有匹配的图标。",
+  LUCIDE_NO_DRAWING: "请选择可编辑的 Excalidraw 绘图以插入图标。",
+  LUCIDE_APPROXIMATION: "此图标使用近似的原生描边或不透明度表示。",
+  LUCIDE_INSERT_FAILED: "无法完成图标插入。请检查绘图并保存未保存的更改后重试。",
   INSERT_CARD: "插入“背景笔记”卡片",
   COMP_IMG: "图片 & 文件",
   COMP_IMG_FROM_SYSTEM: "从系统导入",

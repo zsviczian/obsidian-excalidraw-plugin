@@ -3,6 +3,7 @@ import type { CLICommand } from "src/types/excalidrawCliTypes";
 import { CLI_COMMANDS } from "./cliCommands";
 import { CLI_OPERATION_FIELDS } from "./cliApply";
 import { CLI_SHAPES, CLI_STYLE_FIELDS } from "./cliElements";
+import { CLI_ICON_FIELDS } from "./cliIcons";
 
 const required: Partial<Record<CLICommand, string[]>> = {
   schema: ["action"], read: ["path"], open: ["path"], create: ["requestId", "path"],
@@ -10,11 +11,13 @@ const required: Partial<Record<CLICommand, string[]>> = {
   script: ["requestId", "script", "trusted"], result: ["requestId"],
 };
 const operationRequired: Record<string, string[]> = {
+  lucide: ["id", "icon"],
   add: ["elements"], update: ["id", "set"], delete: ["ids"], connect: ["from", "to"],
   group: ["ids"], ungroup: ["ids", "groupId"], image: ["asset"], imageMetadata: ["id"], latex: ["text"],
 };
 function property(name: string): Record<string, unknown> {
-  if (["x", "y", "width", "height", "angle", "fontSize", "fontFamily", "opacity", "strokeWidth", "roughness", "offset", "limit", "padding", "scale", "scaleX", "scaleY", "maxWidth", "maxHeight", "maxPixels", "maxArtifactBytes"].includes(name)) return { type: "number" };
+  if (["x", "y", "size", "width", "height", "angle", "fontSize", "fontFamily", "opacity", "strokeWidth", "roughness", "offset", "limit", "padding", "scale", "scaleX", "scaleY", "maxWidth", "maxHeight", "maxPixels", "maxArtifactBytes"].includes(name)) return { type: "number" };
+  if (name === "icons") return { type: "array", maxItems: 100, items: { type: "object", required: ["id", "icon"], additionalProperties: false, properties: Object.fromEntries(CLI_ICON_FIELDS.map(field => [field, property(field)])) } };
   if (["overwrite", "trusted", "selectedOnly", "locked"].includes(name)) return { type: "boolean" };
   if (name === "ids" || name === "children") return { type: "array", items: { type: "string" } };
   if (name === "elements") return { type: "array", maxItems: 500, items: { $ref: "#/$defs/skeleton" } };

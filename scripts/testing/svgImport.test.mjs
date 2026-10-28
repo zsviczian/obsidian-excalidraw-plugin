@@ -191,6 +191,35 @@ test("local CSS resolves class, ID, descendant and inline precedence without hos
     ).warnings.includes("css"),
   );
 });
+test("CSS specificity does not carry classes into IDs or types into classes", () => {
+  const repeatedClass = ".c".repeat(11);
+  for (const rules of [
+    `#target{fill:red}${repeatedClass}{fill:blue}`,
+    `${repeatedClass}{fill:blue}#target{fill:red}`,
+  ]) {
+    const [e] = elements(
+      `<style>${rules}</style><rect id="target" class="c" width="20" height="20"/>`,
+    );
+    assert.equal(e.backgroundColor, "#ff0000");
+  }
+  const types = `${"g ".repeat(11)}rect`;
+  const [e] = elements(
+    `<style>.c{fill:red}${types}{fill:blue}</style>${"<g>".repeat(11)}<rect class="c" width="20" height="20"/>${"</g>".repeat(11)}`,
+  );
+  assert.equal(e.backgroundColor, "#ff0000");
+});
+
+test("equal CSS specificity uses source order and universal selectors add no weight", () => {
+  const [e] = elements(
+    '<style>g .c{fill:red}* .c{fill:green}g .d{fill:blue}</style><g><rect class="c d" width="20" height="20"/></g>',
+  );
+  assert.equal(e.backgroundColor, "#0000ff");
+  const [universal] = elements(
+    '<style>.c{fill:red}* .c{fill:green}</style><g><rect class="c" width="20" height="20"/></g>',
+  );
+  assert.equal(universal.backgroundColor, "#008000");
+});
+
 test("object/group opacity is not inherited as a presentation value and approximations are explicit", () => {
   const result = convert(
     svg(
@@ -201,6 +230,31 @@ test("object/group opacity is not inherited as a presentation value and approxim
   assert.deepEqual(result.content.map((e) => e.opacity).join(","), "50,25");
   assert.ok(result.warnings.includes("compositing"));
 });
+test("use opacity diagnoses compositing for direct and nested referenced children", () => {
+  for (const [target, opacity] of [["pair", 50], ["nested", 50], ["relay", 25]]) {
+    const result = convert(svg(
+      `<defs><g id="pair"><rect width="20" height="20" fill="red"/><rect x="10" width="20" height="20" fill="blue"/></g><g id="nested"><use href="#pair"/></g><use id="relay" href="#pair" opacity="0.5"/></defs><use href="#${target}" opacity="0.5"/>`,
+    ));
+    assert.equal(result.hasErrors, false);
+    assert.equal(result.content.length, 2);
+    assert.ok(result.content.every((e) => e.opacity === opacity));
+    assert.ok(result.warnings.includes("compositing"), target);
+  }
+});
+
+test("use opacity needs no compositing notice for one emitted piece or opaque reuse", () => {
+  for (const [body, opacity, count] of [
+    ['<defs><rect id="one" width="20" height="20"/></defs><use href="#one" opacity="0.5"/>', 50, 1],
+    ['<defs><g id="pair"><rect width="20" height="20"/><rect x="10" width="20" height="20"/></g></defs><use href="#pair" opacity="1"/>', 100, 2],
+  ]) {
+    const result = convert(svg(body));
+    assert.equal(result.hasErrors, false);
+    assert.equal(result.content.length, count);
+    assert.ok(result.content.every((e) => e.opacity === opacity));
+    assert.ok(!result.warnings.includes("compositing"));
+  }
+});
+
 test("rendering-tree paint order and all ancestor groups survive native emission", () => {
   const output = elements(
     '<rect fill="red" width="2" height="2"/><g><circle fill="blue" r="1"/><g><path fill="yellow" d="M0 0H1V1Z"/></g></g><rect fill="green" width="2" height="2"/>',

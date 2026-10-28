@@ -2020,6 +2020,17 @@ export declare class ExcalidrawAutomate {
      */
     importSVG(svgString: string): boolean;
     /**
+     * Synchronously appends one installed Lucide icon as grouped editable elements.
+     * Works without a view; never clears, inserts, saves, or changes EA style/images.
+     * Coordinates are the nominal viewport origin; size is its longest side (96 by
+     * default), preserving source aspect ratio/padding. Stroke width scales with size
+     * unless explicitly supplied in final scene units. Color/roughness/opacity default
+     * to this EA's style. Throws before appending on invalid input, empty conversion,
+     * or omitted geometry. Nonfatal native approximations are returned as warning codes.
+     * @returns The canonical name, fresh outer group, every member ID and nominal viewport.
+     */
+    addLucideIcon(options: LucideIconOptions): LucideIconResult;
+    /**
      * Returns CodeMirror 6 constructor classes and utilities for creating advanced embedded editors.
      * Includes EditorView, EditorState, keymap, history, LRLanguage, Tree, and NodeType.
      * Useful when building custom sidepanels or modals that require rich text editing features.
@@ -6686,6 +6697,46 @@ declare module "web-worker:*" {
   const WorkerFactory: new (options?: WorkerOptions) => Worker;
   export default WorkerFactory;
 }
+
+
+/* ******************************** */
+/* lib/types/lucideTypes.d.ts */
+/* ******************************** */
+/** Installed Lucide icon construction; coordinates describe the nominal viewport. */
+export interface LucideIconOptions {
+    icon: string;
+    x?: number;
+    y?: number;
+    /** Longest viewport side in scene units; defaults to 96. */
+    size?: number;
+    /** Final scene stroke width; omitted means proportional source width. */
+    strokeWidth?: number;
+    strokeColor?: string;
+    roughness?: number;
+    /** Native percentage, 0–100. */
+    opacity?: number;
+}
+/** One fresh outer group, including single-element icons; no group element exists. */
+export type LucideIconResult = {
+    icon: string;
+    groupId: string;
+    elementIds: string[];
+    warnings: SVGWarning[];
+    /** Nominal viewport, retaining source padding; use runtime bounds for painted bounds. */
+    viewport: {
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+    };
+};
+/** Canonical identifiers come only from the running Obsidian registry. */
+export interface LucideIconEntry {
+    icon: string;
+    name: string;
+}
+
+export type SVGWarning = "compositing" | "stroke" | "unsupported" | "css" | "viewport";
 
 ```
 

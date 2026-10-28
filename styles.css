@@ -2449,3 +2449,42 @@ button.excalidraw-font-picker {
 .excalidraw .excalidraw-tooltip-wrapper {
   --no-tooltip: true;
 }
+.excalidraw-lucide-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.excalidraw-lucide-picker input,
+.excalidraw-lucide-picker select {
+  width: 100%;
+}
+.excalidraw-lucide-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+  gap: 6px;
+}
+.excalidraw-lucide-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: auto;
+  min-height: 64px;
+  padding: 8px 4px;
+  gap: 4px;
+  white-space: normal;
+}
+.excalidraw-lucide-icon svg {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+.excalidraw-lucide-icon span,
+.excalidraw-lucide-status {
+  font-size: var(--font-ui-smaller);
+  overflow-wrap: break-word;
+}
+.excalidraw-lucide-pages {
+  display: flex;
+  justify-content: space-between;
+}

@@ -104,17 +104,22 @@ export function readStyleRules(root: Element, state: SVGConversionState): void {
         state.rules.push({
           selector,
           declarations: declarations(match[2], state),
-          specificity:
-            (selector.match(/#/g)?.length ?? 0) * 100 +
-            (selector.match(/\./g)?.length ?? 0) * 10 +
-            (selector.match(/(?:^|\s)[a-z]/gi)?.length ?? 0),
+          specificity: [
+            selector.match(/#/g)?.length ?? 0,
+            selector.match(/\./g)?.length ?? 0,
+            selector.match(/(?:^|\s)[\w-]+/g)?.length ?? 0,
+          ],
           order: state.rules.length,
         });
       }
     }
   }
   state.rules.sort(
-    (a, b) => a.specificity - b.specificity || a.order - b.order,
+    (a, b) =>
+      a.specificity[0] - b.specificity[0] ||
+      a.specificity[1] - b.specificity[1] ||
+      a.specificity[2] - b.specificity[2] ||
+      a.order - b.order,
   );
 }
 

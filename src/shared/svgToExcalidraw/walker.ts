@@ -167,11 +167,14 @@ function visit(
         }
       : undefined;
     state.references.add(target);
+    const start = state.elements.length;
     try {
       visit(target, context, state, depth + 1, true, size);
     } finally {
       state.references.delete(target);
     }
+    if (ownOpacity < 1 && state.elements.length - start > 1)
+      state.warnings.add("compositing");
     return;
   }
   if (shapes.has(tag)) {

@@ -1,5 +1,7 @@
 # SVG import validation — #3018
 
+## Original macOS checkpoint
+
 Measured on macOS on 2026-10-27, Node 22.22.2, Obsidian CLI/app
 1.15.0 (installer 1.14.0), plugin manifest 2.29.0. The old converter is pinned
 to `5e4c83f6370f93d3f794ef7afb9545a6b6208c11`. The guarded runner builds that
@@ -156,3 +158,67 @@ are local evidence, not files shipped in the plugin.
 The finalized corpus-lookup/test-dependency run (`excalidraw-obsidian-icsGTc`)
 repeated all feature and cleanup passes with identical installed artifact hashes;
 its strict error gate again failed on the same unattributed notification.
+
+## Windows follow-up — 2026-10-27
+
+Rechecked merged PR #3018 at `9e52063296ffcd3b38d6a2bd5b23546d7e6268f7`
+with the local follow-up changes: CSS specificity now compares ID/class/type
+counts lexicographically, and translucent `<use>` instances diagnose the existing
+compositing approximation when expansion emits multiple pieces. Direct/nested
+reuse, opaque/single-piece controls, repeated classes/types, universal selectors
+and source-order ties have regression coverage. Both reported reproductions
+failed before their respective fixes; all **55** converter/importer tests pass.
+
+`npm run build`, four bundle tests and focused ESLint pass. Full `npm run code`
+retains exactly the same **119** baseline errors; Rollup's circular-dependency
+warnings are unchanged. No public EA signature, locale key, CSS or fork API changed.
+
+`npm run verify:obsidian:plugin -- --svg-import` passed on Windows, Node 22.22.3,
+Obsidian **1.14.5 (installer 1.14.0)**, using only the dedicated `excalidraw-test`
+vault. The plugin manifest remains 2.29.0; these changes target the upcoming
+2.29.1 release without a version bump. The installed-package lane identified
+component **0.18.145** and the following actual bytes. This run did not reinstall
+the component or establish published-tarball provenance for locally installed
+artifacts; the preceding Mermaid integration used local artifact copying.
+
+| Component artifact | SHA-256 |
+| --- | --- |
+| `excalidraw.production.min.js` | `dd9fca04252b4f1b74dc8c293fc77d0960af6d0461cb2d4092adbdc62a4ab00a` |
+| `excalidraw.production.min.css` | `0337e307594435b5125d216c9570aad9b5d4460908f3f0e716baf1daa87ac002` |
+| `excalidraw.development.js` | `392dd6954b105f25675d210d7470e3a83d035299481050489f8da28296ad5ffc` |
+| `excalidraw.development.css` | `192fb4463825f0b870d9f59862f6ae54056e591226546608958fe9e3c937b883` |
+
+All **1,992/1,992** registered icons converted to nonempty native output,
+including **1,935** Lucide-prefixed IDs. The five supplied SVGs have the same
+before/after hashes listed above. Nineteen representative cases across five
+backgrounds produced **95** source/baseline/current comparisons; unsupported
+copyright text and group compositing retain their documented fidelity exclusions.
+The generated source/current checkerboard PNGs for the colored brain and project
+rocket were also visually inspected. Catalog conversion is not visual
+certification of every icon.
+
+Main-window and fresh-popout command/EA import, append/failure isolation,
+grouping, scripted edits/duplicate/resize/rotate, native Undo/Redo, cross-drawing
+clipboard, SVG-as-image, SVG/PNG export and save/reopen passed. Plugin reload,
+the strict JavaScript-error gate and fixture/controller cleanup also passed.
+This clean Windows run does not identify or resolve the historical macOS
+ResizeObserver notification.
+
+Local evidence: `excalidraw-obsidian-PlL0Xr/report.json`, `svg-corpus.json` and
+PNG companions in the host temporary directory. Built and deployed hashes match:
+
+| Plugin artifact | SHA-256 |
+| --- | --- |
+| `main.js` | `f1cd74d06fd9a5e977ca2961f0bca6921a1c70d2d95494b305d8ff448d2e97e1` |
+| `styles.css` | `cabd7e32c71e41dca2cbaff8bb7f4f06b27417901da143d88608d4c7175a8284` |
+| `manifest.json` | `4880b885c50643ef848d31cea829776ca2e96747353aee334d71e875f79d31c0` |
+
+`main.js` is **5,012,500 bytes**, leaving **230,380 bytes** below the 5 MiB target.
+The companion CLI skill/reference update stays on `cli-image-efficiency`;
+its 25 offline tests and frontmatter/relative-link checks pass. These are not
+live acceptance of a trusted SVG script through the companion bundle.
+
+Priority remaining checks: repeat the new specificity/use-opacity examples in
+main/restored popouts; assess dense SVG editing on physical mobile; rerun against
+published component bytes before release. Cold restart, Linux and physical touch
+remain separate environments. Existing representation limits remain unchanged.

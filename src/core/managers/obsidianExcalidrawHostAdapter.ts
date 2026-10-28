@@ -29,7 +29,7 @@ export const createObsidianExcalidrawHostAdapter = (
   shouldSyncElementLinkWithText: () => plugin.settings.syncElementLinkWithText,
   loadFontFromFile: (filename) => plugin.loadFontFromFile(filename),
   getMermaid: () => plugin.getMermaid(),
-  runAction: (action) => plugin.runAction(action),
+  runAction: (action, editorId?: string) => plugin.runAction(action, editorId),
   getLabel: (key) =>
     plugin.getLabel(key as Parameters<ExcalidrawPlugin["getLabel"]>[0]),
   attachInlineLinkSuggester: (
