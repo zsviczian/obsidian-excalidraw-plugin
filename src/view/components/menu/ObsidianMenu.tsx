@@ -177,7 +177,7 @@ export class ObsidianMenu {
 
   private actionCustomPenLabelClick(index: number, pen: PenStyle) {
     const now = Date.now();
-    const dblClick = now - this.clickTimestamp[index] < 500;
+    const dblClick = now - (this.clickTimestamp[index] ?? 0) < 500;
     //open pen settings on double click
     if (dblClick) {
       const penSettings = new PenSettingsModal(this.plugin, this.view, index);

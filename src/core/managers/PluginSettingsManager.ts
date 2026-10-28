@@ -2,6 +2,7 @@ import { Notice, type App, type PluginManifest } from "obsidian";
 import { JSON_parse } from "src/constants/constants";
 import {
   DEFAULT_SETTINGS,
+  ensureCustomPenSlots,
   type ExcalidrawSettings,
 } from "src/core/settingsDefaults";
 import { PreviewImageType } from "src/types/utilTypes";
@@ -179,6 +180,8 @@ export class PluginSettingsManager {
       DEFAULT_SETTINGS,
       decryptedSettings,
     );
+    didSettingsMigration =
+      ensureCustomPenSlots(this.host.settings) || didSettingsMigration;
     if (typeof decryptedSettings.libraryStorageMode === "undefined") {
       const legacyLibrary: unknown =
         typeof decryptedSettings.library === "string" &&
