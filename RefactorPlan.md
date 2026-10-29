@@ -3180,3 +3180,13 @@ remain strict pending maintainer classification; no production changes.
   work and left all PRs draft. Highest-risk next checks are exact text-action DOM
   readiness and migration on an approved host containing the related Electron
   fix; physical touch and other native desktop OSes remain separate validation.
+
+- 2026-10-29 (#3022): Verified clean reviewed heads f240fb86 / 053a3b9 / 1cdcb7c
+  and exclusive foreground access. Added read-only text-history snapshots for
+  exact variant/action, owning window, active target/layout, control state and
+  actual owning-App stack lengths. The immediate control check and every text/
+  history assertion remain unchanged. Failure-only passive samples observe late
+  readiness without retrying input or turning failure into success. Two offline
+  diagnostics tests and the unchanged production build pass. Focused prefix
+  reproduction, migration comparison and large-scene sequence diagnosis remain
+  in progress; production behavior and the PDF rollback remain untouched.

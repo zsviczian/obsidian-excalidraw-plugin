@@ -2498,6 +2498,10 @@
       "mode": "isolated-or-extracted"
     },
     {
+      "path": "scripts/testing/host/textUndoDiagnostics.test.mjs",
+      "mode": "direct-module-or-tooling"
+    },
+    {
       "path": "scripts/testing/hostContracts.test.mjs",
       "mode": "isolated-or-extracted"
     },
