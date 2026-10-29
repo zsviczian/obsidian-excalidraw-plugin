@@ -11,9 +11,9 @@
   },
   "portable": {
     "status": "passed",
-    "source": {
+    "sources": {
       "plugin": {
-        "commit": "098e6ee13dc245c5c86c57575dbf6d10c5f72052",
+        "commit": "9cb6c5eb1f517839059bf5c239a46cfcfc36e9bf",
         "dirty": false,
         "diffHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
         "lockfileHash": "6a52b4b078cb94835b4c9f11c025aaa132baafb7b0e885c8a91835e80c2cfb5c"
@@ -31,44 +31,213 @@
         "lockfileHash": "4773e2de84c7606e94b7eddf5a93957d418d1b0e1bd35091553b01b37d35f8ab"
       }
     },
-    "canonicalCases": 655,
-    "lanes": [
-      {
-        "suiteId": "plugin-fast",
-        "total": 477,
-        "reused": 434,
-        "new": 43,
-        "passed": 477
+    "canonicalCases": 662,
+    "changeCounts": {
+      "policy": "New/reused identity accounting only; a call or inventory entry does not establish behavior.",
+      "lanes": [
+        {
+          "suiteId": "plugin-fast",
+          "total": 484,
+          "reused": 434,
+          "new": 50,
+          "passed": 484
+        },
+        {
+          "suiteId": "fork-owned",
+          "total": 127,
+          "reused": 115,
+          "new": 12,
+          "passed": 127
+        },
+        {
+          "suiteId": "fork-browser",
+          "total": 18,
+          "reused": 18,
+          "new": 0,
+          "passed": 18
+        },
+        {
+          "suiteId": "extras-source",
+          "total": 29,
+          "reused": 27,
+          "new": 2,
+          "passed": 29
+        },
+        {
+          "suiteId": "extras-browser",
+          "total": 4,
+          "reused": 4,
+          "new": 0,
+          "passed": 4
+        }
+      ],
+      "removedOrReplaced": [
+        "node:scripts/testing/pdf.source.test.mjs::missing completion has a bounded deadline and late acknowledgement has no remaining listener",
+        "node:scripts/testing/pdf.source.test.mjs::IPC listener registration failure clears its deadline and print resources",
+        "node:scripts/testing/pdf.source.test.mjs::overlapping exports in one document reject without consuming the first completion"
+      ],
+      "notRunInProfile": [
+        "plugin-load",
+        "drawing-main-window",
+        "native:lifecycle-two-split-fullscreen",
+        "native:lifecycle-dirty-main-to-popout",
+        "native:lifecycle-dirty-popout-to-main",
+        "native:lifecycle-new-popout-survivor",
+        "native:lifecycle-plugin-reload",
+        "native:extras-mathjax-gateway",
+        "native:extras-mermaid-gateway",
+        "native:extras-pdf-output",
+        "native:data-roundtrip:Uncompressed.excalidraw.md",
+        "native:data-roundtrip:Compressed.excalidraw.md",
+        "native:data-roundtrip:Legacy.excalidraw",
+        "native:data-backup",
+        "native:data-external-change",
+        "native:data-write-failure",
+        "native:data-rename-delete",
+        "workflow-fixes-3020",
+        "lucide-3019",
+        "wheel-zoom-3008",
+        "image-geometry-real-3014",
+        "web-drop-2967",
+        "internal-drop-tooltip",
+        "text-undo-2976",
+        "native-cli-authoring",
+        "markdown-embed-recovery-2953",
+        "grouped-link-click",
+        "latex-input-2970",
+        "native:ea-shapes-bindings-and-isolation",
+        "native:ea-edit-image-and-decoded-export",
+        "native:ea-svg-import-and-disposal",
+        "native:core-toolbar-draw-history",
+        "native:core-custom-highlighter",
+        "native:core-eraser-and-undo",
+        "native:core-laser-transient",
+        "native:pdf-reference-and-decoded-content",
+        "native:stability-roundtrip:0",
+        "native:stability-roundtrip:1",
+        "native:stability-roundtrip:2",
+        "native:stability-roundtrip:3",
+        "native:stability-roundtrip:4",
+        "native:stability-roundtrip:5",
+        "javascript-errors",
+        "source-stability",
+        "native:device:desktop-wide-full-light",
+        "native:device:desktop-wide-tray-light",
+        "native:device:desktop-wide-compact-light",
+        "native:device:desktop-narrow-full-light",
+        "native:device:desktop-narrow-tray-light",
+        "native:device:desktop-narrow-compact-light",
+        "native:device:phone-portrait-light",
+        "native:device:phone-landscape-light",
+        "native:device:tablet-portrait-full-light",
+        "native:device:tablet-portrait-tray-light",
+        "native:device:tablet-portrait-compact-light",
+        "native:device:tablet-landscape-full-light",
+        "native:device:tablet-landscape-tray-light",
+        "native:device:tablet-landscape-compact-light",
+        "native:device:desktop-wide-full-dark",
+        "native:device:desktop-wide-tray-dark",
+        "native:device:desktop-wide-compact-dark",
+        "native:device:desktop-narrow-full-dark",
+        "native:device:desktop-narrow-tray-dark",
+        "native:device:desktop-narrow-compact-dark",
+        "native:device:phone-portrait-dark",
+        "native:device:phone-landscape-dark",
+        "native:device:tablet-portrait-full-dark",
+        "native:device:tablet-portrait-tray-dark",
+        "native:device:tablet-portrait-compact-dark",
+        "native:device:tablet-landscape-full-dark",
+        "native:device:tablet-landscape-tray-dark",
+        "native:device:tablet-landscape-compact-dark",
+        "native:device:breakpoint-mobile-width-598",
+        "native:device:breakpoint-mobile-width-599",
+        "native:device:breakpoint-mobile-width-600",
+        "native:device:breakpoint-sidebar-width-799",
+        "native:device:breakpoint-sidebar-width-800",
+        "native:device:breakpoint-sidebar-width-801",
+        "native:device:breakpoint-landscape-width-999",
+        "native:device:breakpoint-landscape-width-1000",
+        "native:device:breakpoint-landscape-width-1001",
+        "native:device:breakpoint-landscape-height-499",
+        "native:device:breakpoint-landscape-height-500",
+        "native:device:breakpoint-landscape-height-501"
+      ],
+      "native": {
+        "pluginCommandCases": 0,
+        "hostEAAndTrustedInputCases": 0,
+        "emulatedContextCases": 0,
+        "physicalDeviceCases": 0,
+        "commandCaseIds": [],
+        "mobileProtocolCases": 0,
+        "mobileProtocolCaseIds": []
       },
-      {
-        "suiteId": "fork-owned",
-        "total": 127,
-        "reused": 115,
-        "new": 12,
-        "passed": 127
-      },
-      {
-        "suiteId": "fork-browser",
-        "total": 18,
-        "reused": 18,
-        "new": 0,
-        "passed": 18
-      },
-      {
-        "suiteId": "extras-source",
-        "total": 29,
-        "reused": 27,
-        "new": 2,
-        "passed": 29
-      },
-      {
-        "suiteId": "extras-browser",
-        "total": 4,
-        "reused": 4,
-        "new": 0,
-        "passed": 4
-      }
-    ],
+      "newCaseIds": [
+        "node:scripts/testing/canvasNodeFocus.test.mjs::internal preview construction preserves the active editor and renders the requested file",
+        "node:scripts/testing/canvasNodeFocus.test.mjs::replacing an internal preview preserves focus and replaces only its registered node",
+        "node:scripts/testing/canvasNodeFocus.test.mjs::explicit embedded-note editing still enters the editor and acquires focus",
+        "node:scripts/testing/canvasNodeFocus.test.mjs::the old default-focus path reproduces the missing-editor toolbar failure",
+        "node:scripts/testing/coverageChanges.test.mjs::new/reused accounting separates plugin CLI commands, host tasks and mobile emulation without inferring passes",
+        "node:scripts/testing/frontmatter.source.test.mjs::prepared export pairwise precedence export-01",
+        "node:scripts/testing/frontmatter.source.test.mjs::prepared export pairwise precedence export-02",
+        "node:scripts/testing/frontmatter.source.test.mjs::prepared export pairwise precedence export-03",
+        "node:scripts/testing/frontmatter.source.test.mjs::prepared export pairwise precedence export-04",
+        "node:scripts/testing/frontmatter.source.test.mjs::prepared export pairwise precedence export-05",
+        "node:scripts/testing/frontmatter.source.test.mjs::prepared export pairwise precedence export-06",
+        "node:scripts/testing/frontmatter.source.test.mjs::prepared export pairwise precedence export-07",
+        "node:scripts/testing/frontmatter.source.test.mjs::prepared export pairwise precedence export-08",
+        "node:scripts/testing/frontmatter.source.test.mjs::prepared export pairwise precedence export-09",
+        "node:scripts/testing/frontmatter.source.test.mjs::prepared export pairwise precedence export-10",
+        "node:scripts/testing/frontmatter.source.test.mjs::prepared export pairwise precedence export-11",
+        "node:scripts/testing/frontmatter.source.test.mjs::prepared export pairwise precedence export-12",
+        "node:scripts/testing/frontmatter.source.test.mjs::export overrides preserve explicit false and zero while invalid scales retain defaults",
+        "node:scripts/testing/frontmatter.source.test.mjs::autoexport format overrides keep both-theme intent and fall back for missing or unrecognized values",
+        "node:scripts/testing/host/browserDiagnostics.test.mjs::only the exact browser notification without an Error object is diagnostic",
+        "node:scripts/testing/host/browserDiagnostics.test.mjs::large raw notification evidence is retrieved in bounded pages without chasing new events",
+        "node:scripts/testing/host/browserDiagnostics.test.mjs::CLI classification retains raw lines and rejects exceptions, suffixes and unknown formats",
+        "node:scripts/testing/host/browserDiagnostics.test.mjs::a stable quiet window settles without altering browser events or geometry",
+        "node:scripts/testing/host/browserDiagnostics.test.mjs::persistent notification storms fail the bounded idle check",
+        "node:scripts/testing/host/browserDiagnostics.test.mjs::unstable geometry fails even without any notification",
+        "node:scripts/testing/host/debuggerSession.test.mjs::renderer scheduling is scoped and restores both original background-throttling values",
+        "node:scripts/testing/host/debuggerSession.test.mjs::expected missing-asset diagnostics cannot hide exceptions, extra fields, another source or repeated errors",
+        "node:scripts/testing/host/debuggerSession.test.mjs::truncated console objects expose the actual native error and complete own properties",
+        "node:scripts/testing/host/inAppTask.test.mjs::collecting independent behavioral failures retains strict failed acceptance",
+        "node:scripts/testing/host/inAppTask.test.mjs::tool deadlines retain unsettled native print resources and never claim cancellation",
+        "node:scripts/testing/host/markdownImageClose.test.mjs::Markdown-image fixture retirement waits for asynchronous owner release and persistence",
+        "node:scripts/testing/host/markdownImageClose.test.mjs::a close deadline fails and retains the live owner without cancelling native work",
+        "node:scripts/testing/host/stability.test.mjs::failed stability loading retires the owned leaf before deleting its file",
+        "node:scripts/testing/host/textUndoDiagnostics.test.mjs::text-history diagnostics preserve owning window, leaked active target, controls and actual stack depths without mutation",
+        "node:scripts/testing/host/textUndoDiagnostics.test.mjs::missing and hidden history controls remain unavailable evidence and cyclic private fibers stay bounded",
+        "node:scripts/testing/host/textUndoDiagnostics.test.mjs::text fixture awaits the normal mode reload before clearing the replacement API",
+        "node:scripts/testing/host/textUndoDiagnostics.test.mjs::incoherent text modes fail before scene or history mutation",
+        "node:scripts/testing/localVault.test.mjs::live preparation restores core activation and accepts Obsidian's persisted boolean map",
+        "node:scripts/testing/localVault.test.mjs::native entry points reject desktop/personal target overrides before changing any environment value",
+        "node:scripts/testing/localVault.test.mjs::local working vault contains hash-verified executable plugins and declared settings, idempotently",
+        "node:scripts/testing/localVault.test.mjs::missing Extras is explicit and cannot masquerade as installed coverage",
+        "node:scripts/testing/localVault.test.mjs::corrupt producer bytes and redirected destinations cannot become a prepared installation",
+        "node:scripts/testing/localVault.test.mjs::registration check accepts only the exact open local vault and never modifies the host registry",
+        "node:scripts/testing/pairwise.test.mjs::pairwise cases retain missing, false and zero and cover every factor pair reproducibly",
+        "node:scripts/testing/pairwise.test.mjs::invalid high-risk rows and unbounded Cartesian spaces fail before generating a partial plan",
+        "node:scripts/testing/pdfImport.test.mjs::PDF loader renders plain PDF file",
+        "node:scripts/testing/pdfImport.test.mjs::PDF loader renders missing PDF reference",
+        "node:scripts/testing/pdfImport.test.mjs::PDF loader renders explicit PDF page",
+        "node:scripts/testing/pdfImport.test.mjs::PDF loader renders explicit PDF crop",
+        "node:scripts/testing/pdfImport.test.mjs::the previous plain-PDF null-reference path fails the loader evidence",
+        "fork-owned:tests/obsidian/unit/coreRegression.test.tsx::system font CSS uses the local fallback without fetching nonexistent font content",
+        "fork-owned:tests/obsidian/unit/coreRegression.test.tsx::bundled font CSS still embeds the registered font content",
+        "fork-owned:tests/obsidian/unit/coreRegression.test.tsx::vault-provided Local Font content remains embedded",
+        "fork-owned:tests/obsidian/unit/imageVariants.test.ts::saved host image variants 'raster' opacity=+0 locked=false cropped=false preserves shared-source geometry",
+        "fork-owned:tests/obsidian/unit/imageVariants.test.ts::saved host image variants 'raster' opacity=50 locked=true cropped=true preserves shared-source geometry",
+        "fork-owned:tests/obsidian/unit/imageVariants.test.ts::saved host image variants 'svg' opacity=100 locked=false cropped=true preserves shared-source geometry",
+        "fork-owned:tests/obsidian/unit/imageVariants.test.ts::saved host image variants 'pdf-page' opacity=100 locked=true cropped=false preserves shared-source geometry",
+        "fork-owned:tests/obsidian/unit/imageVariants.test.ts::saved host image variants 'svg' opacity=+0 locked=true cropped=false preserves shared-source geometry",
+        "fork-owned:tests/obsidian/unit/imageVariants.test.ts::saved host image variants 'pdf-page' opacity=+0 locked=false cropped=true preserves shared-source geometry",
+        "fork-owned:tests/obsidian/unit/imageVariants.test.ts::saved host image variants 'svg' opacity=50 locked=false cropped=false preserves shared-source geometry",
+        "fork-owned:tests/obsidian/unit/imageVariants.test.ts::saved host image variants 'raster' opacity=100 locked=false cropped=false preserves shared-source geometry",
+        "fork-owned:tests/obsidian/unit/imageVariants.test.ts::saved host image variants 'pdf-page' opacity=50 locked=false cropped=false preserves shared-source geometry",
+        "node:scripts/testing/pdf.source.test.mjs::PDF remains pending beyond two minutes with resources intact until real completion",
+        "node:scripts/testing/pdf.source.test.mjs::IPC listener registration failure clears print resources"
+      ]
+    },
     "gates": [
       {
         "suiteId": "plugin-source-coverage",
@@ -85,11 +254,6 @@
         "status": "passed",
         "cleanup": "passed"
       }
-    ],
-    "removedOrReplaced": [
-      "node:scripts/testing/pdf.source.test.mjs::missing completion has a bounded deadline and late acknowledgement has no remaining listener",
-      "node:scripts/testing/pdf.source.test.mjs::IPC listener registration failure clears its deadline and print resources",
-      "node:scripts/testing/pdf.source.test.mjs::overlapping exports in one document reject without consuming the first completion"
     ]
   },
   "attempts": [
@@ -9922,7 +10086,7 @@
     },
     "repositories": {
       "plugin": {
-        "head": "098e6ee13dc245c5c86c57575dbf6d10c5f72052",
+        "head": "9cb6c5eb1f517839059bf5c239a46cfcfc36e9bf",
         "productionPathsChanged": [
           "src/shared/Dialogs/Messages.ts",
           "src/shared/EmbeddedFileLoader.ts",
@@ -10001,30 +10165,175 @@
     "protocol": 3
   },
   "remaining": [
-    {
-      "scenario": "text-undo-2976",
-      "failure": "Full-sequence history button unavailable; earlier isolated unchanged 16 variants pass.",
-      "next": "Capture exact variant/action and button readiness/layout before deciding whether tooling or product behavior is responsible."
-    },
-    {
-      "scenario": "native:lifecycle-dirty-popout-to-main",
-      "failure": "Four primitive illegal-access exceptions during dirty migration in the production build; no stack is supplied.",
-      "next": "Evaluate the matching Electron teardown fix on an approved Obsidian host; retain strict error capture. No host upgrade was made.",
-      "hostElectron": "43.3.0",
-      "upstreamFixFirstRelease": "43.5.0",
-      "source": "https://releases.electronjs.org/pr/53041",
-      "causation": "Matching known signature; complete cause unproven."
-    },
-    {
-      "scenario": "native:stability-roundtrip:3",
-      "failure": "Earlier 9c08d814 full attempt timed out at first commit. Corrected test-only cleanup and passive state snapshots pass all six focused cycles; later full attempt stopped before this scenario.",
-      "next": "Re-run all six cycles in the complete sequence after the earlier blockers are resolved; do not count the focused pass as a complete repeat."
-    }
+    "Two fresh complete 357-case matching-build passes: 0/2.",
+    "Intermittent four illegal-access exceptions during dirty popout-to-main; clean route/Markdown controls do not establish sole host causation.",
+    "Current core sequence records an Obsidian updateStatus/getZoomFactor exception and a Lucide settling storm; strict gates still fail.",
+    "Installer comparison requires maintainer approval; no production behavior or installer change was made."
   ],
   "limitations": [
     "Windows Electron native host only; no physical Android/iOS/WebView/stylus evidence.",
     "Trusted CDP input is separate from synthetic drag payloads and actual OS drag/clipboard evidence.",
     "No isolated whole-app cold start, native macOS/Linux run, host installer upgrade or unapproved production fix.",
     "No exception waiver, assertion weakening, merge, publication or release/dependency bump."
-  ]
+  ],
+  "currentInvestigation": {
+    "file": "acceptance-investigation-2026-10-29.json",
+    "currentCodeCheckpoint": {
+      "pluginRevision": "9cb6c5eb1f517839059bf5c239a46cfcfc36e9bf",
+      "pluginDirty": false,
+      "forkRevision": "053a3b9f9e77917c457fce8ca9453d38b92a303b",
+      "forkDirty": false,
+      "buildMode": "workspace-frozen",
+      "requestedProfile": "core",
+      "node": "v22.22.3",
+      "platform": "win32"
+    },
+    "fullAttempt": {
+      "status": "failed",
+      "requiredCases": 357,
+      "recordedRequired": 356,
+      "passedRequired": 345,
+      "failedRequired": 11,
+      "missing": [
+        "lucide-3019"
+      ],
+      "failedSuites": [
+        {
+          "suiteId": "native-obsidian",
+          "status": "failed",
+          "cleanup": "passed",
+          "reason": "Required native scenario web-drop-2967 is failed: Browser did not reach stable geometry and notification-free idle"
+        },
+        {
+          "suiteId": "native-devices",
+          "status": "failed",
+          "cleanup": "passed",
+          "reason": "Suite or cleanup gate did not pass"
+        }
+      ]
+    },
+    "currentFocusedCore": {
+      "status": "failed",
+      "error": "Required native scenario lucide-3019 is failed: Browser did not reach stable geometry and notification-free idle",
+      "unexpectedExceptions": [
+        {
+          "kind": "exception",
+          "timestamp": 1793311195711.291,
+          "tasks": [
+            {
+              "key": "__excalidrawTestTask_4ffd627105944f258a9b97a50b255ac0",
+              "phase": "close-owned-leaf",
+              "activeCase": "native:lifecycle-new-popout-survivor",
+              "lastCase": "native:lifecycle-dirty-popout-to-main"
+            }
+          ],
+          "details": {
+            "columnNumber": 1553211,
+            "exception": {
+              "className": "TypeError",
+              "description": "TypeError: t.webContents.getZoomFactor is not a function\n    at e.updateStatus (app://obsidian.md/app.js:1:1553212)\n    at c (app://obsidian.md/app.js:1:545214)\n    at u (app://obsidian.md/app.js:1:545326)",
+              "objectId": "-8853224816095566281.448.1260",
+              "preview": {
+                "description": "TypeError: t.webContents.getZoomFactor is not a function\n    at e.updateStatus (app://obsidian.md/app.js:1:1553212)\n    at c (app://obsidian.md/app.js:1:545214)\n    at u (app://obsidian.md/app.js:1:545326)",
+                "overflow": false,
+                "properties": [
+                  {
+                    "name": "stack",
+                    "type": "string",
+                    "value": "TypeError: t.webContents.getZoomFactor is not a fu…214)\n    at u (app://obsidian.md/app.js:1:545326)"
+                  },
+                  {
+                    "name": "message",
+                    "type": "string",
+                    "value": "t.webContents.getZoomFactor is not a function"
+                  }
+                ],
+                "subtype": "error",
+                "type": "object"
+              },
+              "subtype": "error",
+              "type": "object"
+            },
+            "exceptionId": 41,
+            "executionContextId": 448,
+            "lineNumber": 0,
+            "scriptId": "35627",
+            "stackTrace": {
+              "callFrames": [
+                {
+                  "columnNumber": 1553211,
+                  "functionName": "",
+                  "lineNumber": 0,
+                  "scriptId": "35627",
+                  "url": "app://obsidian.md/app.js"
+                },
+                {
+                  "columnNumber": 545213,
+                  "functionName": "c",
+                  "lineNumber": 0,
+                  "scriptId": "35627",
+                  "url": "app://obsidian.md/app.js"
+                },
+                {
+                  "columnNumber": 545325,
+                  "functionName": "u",
+                  "lineNumber": 0,
+                  "scriptId": "35627",
+                  "url": "app://obsidian.md/app.js"
+                }
+              ]
+            },
+            "text": "Uncaught",
+            "url": "app://obsidian.md/app.js"
+          },
+          "messages": [
+            "TypeError: t.webContents.getZoomFactor is not a function\n    at e.updateStatus (app://obsidian.md/app.js:1:1553212)\n    at c (app://obsidian.md/app.js:1:545214)\n    at u (app://obsidian.md/app.js:1:545326)"
+          ]
+        }
+      ],
+      "rawEvents": 675,
+      "cleanup": "passed",
+      "baseline": {
+        "restored": true,
+        "pluginEnabled": true,
+        "extrasEnabled": true,
+        "theme": "moonstone",
+        "restoredFixturePaths": []
+      }
+    }
+  },
+  "rendererRecovery": {
+    "operation": {
+      "recovery": "reload only this verified test-vault renderer",
+      "contentsId": 289,
+      "applicationRestart": false,
+      "acceptanceCredit": false
+    },
+    "inspection": {
+      "vault": "<plugin>\\.test-work\\vaults\\excalidraw-auto-test",
+      "config": ".obsidian",
+      "pluginReady": true,
+      "extrasReady": true,
+      "mobile": false,
+      "activeLeaf": "3022000000000003",
+      "activeFile": "Notes/Render target.md",
+      "leftCollapsed": true,
+      "rightCollapsed": true,
+      "popouts": 0,
+      "tasks": [],
+      "printRoots": 0,
+      "protocol": 3
+    },
+    "passive": {
+      "started": 1793311888846,
+      "completed": 1793311890983,
+      "events": [],
+      "activeFile": "Notes/Render target.md",
+      "popouts": 0,
+      "debuggerAttached": false,
+      "pluginReady": true,
+      "extrasReady": true
+    },
+    "acceptanceCredit": false
+  }
 }

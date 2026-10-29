@@ -3,33 +3,36 @@
 ## Current checkpoint (2026-10-29)
 
 [Accessible sanitized case summaries and artifact manifests](testing-evidence/3022/README.md)
-record the tested plugin `098e6ee1`, fork `053a3b9` and Extras `1cdcb7c`.
-Fresh portable verification passes **655 canonical cases (57 new, 598 reused)**.
+record the tested plugin `9cb6c5eb`, fork `053a3b9` and Extras `1cdcb7c`.
+Fresh portable verification passes **662 canonical cases (64 new, 598 reused)**.
 The approved internal-preview focus correction passes four actual-method tests
 and the isolated phone embedding workflow, with no window errors and successful
 save/reopen, device restoration and baseline cleanup. Existing `patchMobileView`
 visibility handling remains unchanged. Hosted Plugin tests and CodeQL pass.
 
-At the earlier plugin `3fc7cc9c` checkpoint, all **59 independent core cases** plus
-one focused nested-pane case pass, including
-all **15 popout drop variants**, cleanup and baseline restoration; the core run
-records zero unexpected errors/notifications. Native error/layout negative controls
-pass. Real single-export PDF output is decoded and visually inspected.
-
 Acceptance remains **failed**: **zero of two required complete native repeats**
-have passed. Exclusive unchanged reruns pass all 16 text-history variants and the
-desktop pointer profile. Both subsequent full attempts pass all 258 behavioral
-obligations and 40 device profiles. At 9c08d814, stability cycle 3 times out and
-strict capture records eight illegal-access exceptions plus a host onDelete
-parent-null exception; 353 required identities pass and three are missing. At
-098e6ee1, text-history testing fails with an unavailable history button and four
-illegal-access exceptions occur during dirty popout-to-main migration; 336 required
-identities pass and 21 are missing. Cleanup, baseline restoration and both negative
-controls pass in each. The demonstrated test-only delete/detach race is corrected
-with a regression; all six focused stability cycles pass with passive load
-snapshots. No production changes or diagnostic waivers. Capture exact text-action
-readiness and evaluate the related Electron fixed-host comparison before another
-full attempt. Do not merge or substitute subset results for the 357-case gate.
+have passed. The latest full attempt at e4a36a6b records 345 required passes,
+11 failures and one missing identity. All 258 behavioral cases execute; 34/40
+device profiles pass, while six fail inherited notification storms. Five desktop
+native-CLI cases execute and both mobile public EA protocol cases execute.
+Cleanup, baseline restoration and both native negative controls pass.
+
+Native evidence proves two test defects: raw-mode setup left its data model
+parsed, and cropped Markdown-image testing retired its drawing before asynchronous
+editor close completed. Both are corrected with regressions, preserving original
+assertions. All 16 text-history variants and six large-scene cycles now pass after
+the full core predecessors. The corrected core has no required identity missing
+but still fails strict gates: a Lucide notification storm and an Obsidian popout
+`updateStatus`/`getZoomFactor` exception. Four illegal-access exceptions also recur
+intermittently in a separate dirty-migration prefix. Clean route and six
+plugins-unloaded Markdown controls do not establish sole host causation.
+
+Raw retrieval is paged with an over-4-MB regression; complete current events and
+an explicit older capture limitation are published. A passive storm continues
+with both community runtimes unloaded and no debugger, drawing or input. A final
+renderer-only recovery restores a quiet installed baseline but earns no acceptance
+credit. Installer comparison requires maintainer approval; production and installer
+are unchanged. Do not merge or substitute focused results for the 357-case gate.
 The full plan has six native CLI-bearing cases (five editing plus Lucide) and two
 separate mobile public `EA.executeCLI` workflows. Historical checkpoints below
 retain their original scope and results.

@@ -27,7 +27,7 @@ validated, and what remains uncertain.
 | Phase | Status | Current outcome |
 | --- | --- | --- |
 | Assessment and baseline design | Complete | Initial architecture, risks, sequencing, and validation matrix documented |
-| Automated test coverage (#3022) | Acceptance failed; PRs remain draft | At plugin 098e6ee1 / fork 053a3b9 / Extras 1cdcb7c, 655 portable cases pass (57 new / 598 reused), with source/package gates. Exclusive input and focused corrected stability/drop checks pass. Both full attempts pass 258 behavior and 40 device cases; earlier stability timeout and latest unavailable text-history button prevent completion. Latest strict capture records four illegal-access exceptions during dirty popout-to-main migration. Cleanup/restoration and negative controls pass; production is unchanged. Zero of two complete matching-build native repeats pass. Public summaries retain missing cases, raw exceptions and hashes. See docs/TESTING.md |
+| Automated test coverage (#3022) | Acceptance blocked; PRs remain draft | At plugin 9cb6c5eb / fork 053a3b9 / Extras 1cdcb7c, 662 portable cases pass (64 new / 598 reused), with source/package gates. Proven text-mode and asynchronous image-editor test setup/cleanup defects are corrected. All 16 text variants and six large-scene cycles pass after full core predecessors. Latest full attempt has 345 required passes, 11 failures and one missing identity; no full repeat passes. Strict storms, intermittent migration exceptions and a host getZoomFactor teardown exception remain blockers. Raw payloads, capture limitations, hashes and recovery are public. Installer comparison requires approval; production unchanged. See docs/TESTING.md |
 | Template selection and cancellation (#2649, PR #3020) | Implemented; source and native selection/cancellation checks pass | A dedicated chooser returns template/blank/cancel, displays paths relative to the configured root, and initially selects explicit blank. Interactive callers resolve before folder/file/editor/leaf side effects. Public getBlankDrawing/createDrawing and EA/CLI contracts retain string/file returns and deterministic initData behavior |
 | Nested-split fullscreen (#2743, PR #3020) | Implemented; seven source tests and native lower-right split pass | Keep the complete ancestor path visible; hide surrounding siblings and restore only owned classes. Native 958x641 drawing expands to 2560x1438 and returns to identical bounds. Existing inline styles remain untouched; controls are optional and cleanup retains the entry document across migration |
 | Canvas preview scaling investigation (#2729, PR #3020) | Original SVG-only behavior not reproduced on Windows Obsidian 1.14.5; unresolved | Two nodes sharing a drawing scale independently in SVG, SVG-as-image and PNG with immersive mode on/off. Doubling one node width scales its preview by 2.0063; the other remains unchanged. Tall previews clip in all modes. No speculative rendering/cache change; retain measurements and keep the issue open |
@@ -3236,3 +3236,19 @@ remain strict pending maintainer classification; no production changes.
   unproven. Added one bounded six-cycle host-only Markdown control with both
   community runtimes unloaded, outside acceptance coverage. No installer,
   production behavior, observer or diagnostic exclusion changed.
+
+- 2026-10-29 (#3022): Final code checkpoint 9cb6c5eb passes 662 portable cases
+  (64 new / 598 reused), source/package gates, production build and exact scope
+  audit. Corrected core confirms owner release before retirement in both image
+  cases, all 16 text variants and all six large-scene cycles; strict gates still
+  fail a Lucide storm and Obsidian updateStatus/getZoomFactor popout-close error.
+  Captured all 675 current window events. A no-input/no-debugger/no-layout-sampling
+  control records 112 notifications in two seconds with both community runtimes
+  unloaded; original trigger remains unproven. Retained evidence then reloaded
+  only the verified, fully saved test-vault renderer for recovery, earning no
+  acceptance credit. Baseline/plugins are restored and the passive sample is
+  quiet. Published sanitized case results, raw payload references and checksums;
+  both complete native repeats remain outstanding. Installer comparison is an
+  explicit maintainer decision, not a presumed fix. Next risk checks are dirty
+  migration and popout teardown on an approved host, Lucide idle, and two complete
+  matching-build repeats; physical mobile and other native OSes remain separate.

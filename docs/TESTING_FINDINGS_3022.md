@@ -387,3 +387,91 @@ Obsidian. Acceptance is zero of two complete passes. Keep all PRs draft and do n
 merge. Next steps are focused text-action diagnostics, an approved fixed-host
 migration comparison, and two fresh complete matching-build runs once blockers
 are resolved. Production fixes still require explicit approval.
+
+## F22 - Invalid text-mode fixture and exact history failure
+
+At 65f63a30 the full desktop/core prefix reproduces `raw/button/wikilink`, second
+undo after unchanged redo submission. Undo is present, visible, enabled and
+uncovered in the correct main-window drawing. Its stack drops from three entries
+to two, but raw source stays `[[other]]`; cached display is stale and link metadata
+has changed. This is not an unavailable-button occurrence.
+
+Native setup snapshots prove `changeTextMode(mode, false)` sets the view raw while
+leaving its data model parsed. Tests now await the normal mode save/reload before
+clearing the next scene/history. The same failing step then has two coherent
+entries and restores source. All 16 variants pass after full predecessors at
+e4a36a6b and 9cb6c5eb. Structural comparison preserves all 28 original assertion/
+poll calls. The earlier unavailable-button occurrence remains unreproduced; no
+control is skipped/retried, and no history assertion or deadline is weakened.
+
+## F23 - Markdown-image test retires a still-closing drawing
+
+Passive native snapshots at 4199a3dd show the crop helper signals tab close and
+starts retiring its drawing while `sameFileEditGate.hasActiveOwners` is still
+true. The non-crop helper's 100-ms sample is already released. Feature close is
+asynchronous and includes native editor flush, save and reload; signalling close
+is not its completion.
+
+Only test tooling changes: a shared bounded helper waits for ownership release
+and persistence completion before retirement, including failed-scenario cleanup.
+Two offline controls prove asynchronous waiting and that deadline failure retains
+the live owner without cancellation. At 9cb6c5eb both native image cases release
+ownership before retirement. Existing dimensions/crops, disk save/reopen and SVG/
+PNG assertions remain. This does not establish a cause or fix for the storms.
+
+## F24 - Retained storms, finite evidence retrieval and host controls
+
+The full e4a36a6b attempt fails the unchanged quiet/stable gate around web drop.
+Pane geometry stays fixed while the event counter grows around 60/second through
+desktop cleanup. It reaches 14,428. The old single-response raw retrieval exceeds
+CLI capacity; complete desktop raw payloads are absent, with only idle counters
+and the latest 50 CLI notification lines retained. This evidence limitation is
+explicit. Finite prefix pagination now preserves large streams, tested above
+4 MB without chasing later events. Device cleanup disposes its own listener even
+if retrieval fails. No browser/production event or observer is suppressed.
+
+At 9cb6c5eb native retrieval retains 674 exact notifications and one unrelated
+window error. A post-run passive control observes 113 notifications while loaded,
+112 with both community runtimes fully unloaded, and 115 after restoration, each
+over two seconds. No debugger, input, drawing, popout or geometry sampling is
+active. The active community runtimes are not required to sustain that loop; its
+trigger remains unproven. F13's earlier focus-emulation reproduction does not
+establish instrumentation as the sole cause of later notifications.
+
+After retaining evidence, recovery reloads only the verified, fully saved
+test-vault renderer. Other vault windows and installer remain untouched. Its final
+two-second passive sample is quiet and both plugins/baseline are restored. This
+recovery earns no acceptance credit. Storms still fail within five seconds; the
+one-second quiet/stable interval, unrelated exception and cleanup gates remain.
+
+## F25 - Current acceptance and runtime decision
+
+Final portable verification at 9cb6c5eb / 053a3b9 / 1cdcb7c passes 662 canonical
+cases: 64 new / 598 reused, plus source/package gates. Production build and the
+exact accepted-scope audit pass. No production behavior changes follow f240fb86.
+
+The e4a36a6b full attempt has 345 required passes, 11 failures and one missing
+identity (`lucide-3019`), with all 258 behavior cases executed and 34/40 device
+profiles passing. Five desktop native-CLI cases and both mobile public EA protocol
+cases execute; all six desktop CLI cases execute in the later focused core. The
+corrected core has no required identity missing, all text assertions and six
+large-scene cycles pass, but strict acceptance still fails at Lucide idle and an
+unrelated popout-close exception. No complete passing repeat exists: **0/2**.
+
+Four primitive illegal-access exceptions recur during dirty popout-to-main after
+desktop predecessors at 4199a3dd. Both migration routes can pass with the same
+predecessors. Six alternating-route plain Markdown migrations pass with both
+community runtimes unloaded. Those controls neither establish sole host causation
+nor exonerate drawing migration. Current core additionally throws
+`t.webContents.getZoomFactor is not a function` in Obsidian's `updateStatus`,
+called during fresh popout close. Its installed callback reads Electron zoom
+while checking the DOM window's closed state. No workaround or exception waiver.
+
+Installed executable 1.14.0 runs app code 1.14.5 on Electron 43.3.0. The official
+[1.14.5 installer](https://obsidian.md/changelog/2026-10-22-desktop-v1.14.5/)
+uses Electron 43.8.3, including the related
+[43.5.0 child-window teardown fix](https://releases.electronjs.org/release/v43.5.0).
+A controlled comparison is proposed, not a proven resolution. Explicit maintainer
+approval is pending; no installer or production change was made. [Accessible
+case results, complete available raw payloads, limitations and hashes](testing-evidence/3022/README.md)
+are published. Keep all three PRs draft pending both complete native passes.

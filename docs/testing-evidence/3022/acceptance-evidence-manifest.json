@@ -4,8 +4,18 @@
   "files": [
     {
       "name": "acceptance-status.json",
-      "sha256": "58dcf891f95ee47c65caa6686bca81b0d8ca95c76061fc3a6d3618c872b335b2",
-      "bytes": 521465
+      "sha256": "b0db731b3e2152bef9835b214af9a273d9d3233a65ab775c893fe071f34bca0a",
+      "bytes": 539375
+    },
+    {
+      "name": "acceptance-investigation-2026-10-29.json",
+      "sha256": "59eabfced8918750e79c4ab22fc3e45247f4360f28b1adabedc1743a82e347ef",
+      "bytes": 8481043
+    },
+    {
+      "name": "native-event-payloads-2026-10-29.jsonl",
+      "sha256": "c29b7c73c1e74a7e2e0aedea4cbeeb7edbad9033a11931fa6c416a86eb7b674f",
+      "bytes": 3455034
     },
     {
       "name": "acceptance-failed-9c08d814.json",

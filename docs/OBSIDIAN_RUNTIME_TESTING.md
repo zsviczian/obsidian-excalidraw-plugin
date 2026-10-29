@@ -1,5 +1,9 @@
 # Obsidian runtime testing on macOS and Windows
 
+Current acceptance is **0/2 complete passes**. See the [current evidence and
+blockers](testing-evidence/3022/README.md) before repeating the full suite. Portable
+validation passes 662 cases; it does not establish native acceptance.
+
 Use the repository-local, marker-owned vault:
 
 `obsidian-excalidraw-plugin/.test-work/vaults/excalidraw-auto-test/`
