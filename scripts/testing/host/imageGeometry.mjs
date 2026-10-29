@@ -146,8 +146,12 @@ async function exerciseMarkdown(control, drawingPath) {
   const sharedBounds = checkSharedWidth();
   c.results.push({ kind: "markdown-shared-width", copies: 2, previousWidth, nextWidth, displayed: sharedBounds, fileId: image.fileId });
   c.tab.close(); c.tab = null;
+  const closeEvidence = { kind: "markdown-image-close-evidence", afterSignal: { active: view.sameFileEditGate.hasActiveOwners, grace: view.sameFileEditGate.isInGracePeriod, saving: view.isSaveInProgress() } };
+  c.results.push(closeEvidence);
   await new Promise(resolve => setTimeout(resolve, 100));
+  closeEvidence.after100ms = { active: view.sameFileEditGate.hasActiveOwners, grace: view.sameFileEditGate.isInGracePeriod, saving: view.isSaveInProgress() };
   await view.forceSave(true, true);
+  closeEvidence.beforeRetire = { active: view.sameFileEditGate.hasActiveOwners, grace: view.sameFileEditGate.isInGracePeriod, saving: view.isSaveInProgress() };
   await leaf.setViewState({ type: "empty", state: {} });
   await leaf.setViewState({ type: "excalidraw", state: { file: drawingPath } });
   await waitFor(() => leaf.view.excalidrawAPI && leaf.view.getViewElements().some(el => el.id === image.id), "Markdown image reopen");

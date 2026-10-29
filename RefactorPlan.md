@@ -3216,3 +3216,11 @@ remain strict pending maintainer classification; no production changes.
   excluded or silenced. Baseline restoration and native negative controls pass.
   Next check: focused storm reproduction with complete raw evidence; no second
   full retry until this strict blocker is understood. Production remains exact.
+
+- 2026-10-29 (#3022): Post-run baseline is usable and a two-second passive
+  no-input/no-layout-sampling/no-debugger observation records no notifications.
+  The failed desktop sequence retained an open Markdown-image sidepanel. Added
+  read-only active-owner/grace/save snapshots around its existing close/save/
+  retirement steps to distinguish pending native cleanup from a product loop.
+  Existing delays, actions, assertions and deadlines remain unchanged pending
+  evidence. Focused image/web-drop predecessor reproduction is next.
