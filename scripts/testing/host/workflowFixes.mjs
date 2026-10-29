@@ -19,19 +19,8 @@ async function probeWorkflows(c,prefix,drawingPath,baseline) {
   const originalLayout=app.workspace.getLayout(),leaves=[],doc=app.workspace.containerEl.ownerDocument;
   const settings=Object.fromEntries(['templateFilePath','previewImageType','canvasImmersiveEmbed','folder','embedUseExcalidrawFolder','compatibilityMode'].map(key=>[key,p.settings[key]]));
   const check=(condition,message)=>{if(!condition)throw Error(message);};
-  const renderContexts=[],observedContexts=new Set();
-  const observeMarkdown=(el,ctx)=>{
-    if(!ctx.sourcePath?.startsWith(prefix+'/') && ctx.sourcePath!==drawingPath)return;
-    const key=[ctx.sourcePath,el.tagName,el.className,ctx.remainingNestLevel,!!ctx.frontmatter].join('|');
-    if(observedContexts.has(key))return;observedContexts.add(key);
-    if(renderContexts.length>=24)return;
-    renderContexts.push({path:ctx.sourcePath,tag:el.tagName,classes:el.className,
-      nest:ctx.remainingNestLevel,frontmatter:!!ctx.frontmatter,container:ctx.containerEl?.className,
-      html:el.outerHTML.slice(0,1000)});
-    c.observations={...c.observations,renderContexts};
-  };
-  p.ea.obsidian.MarkdownPreviewRenderer.registerPostProcessor(observeMarkdown,-1000);
-  c.defer(()=>p.ea.obsidian.MarkdownPreviewRenderer.unregisterPostProcessor(observeMarkdown));
+  const originalWindows=app.workspace.floatingSplit.children.map(win=>win.id).sort();
+  c.defer(()=>check(JSON.stringify(app.workspace.floatingSplit.children.map(win=>win.id).sort())===JSON.stringify(originalWindows),'Workflow leaked a popout window'));
   const ownedPrompts=new Set();
   const wait=async(predicate,message)=>{await c.waitFor(predicate,message,25000);if(message.includes('chooser')){const prompt=doc.querySelector('.prompt');if(prompt)ownedPrompts.add(prompt);}};
   const settle=()=>new Promise(r=>setTimeout(r,250));
@@ -109,7 +98,6 @@ async function probeWorkflows(c,prefix,drawingPath,baseline) {
     focusMain();
     fullscreenView=null;
     const canvasResults=[];
-    c.observations.canvasSources=await Promise.all([draw,app.vault.getFileByPath(prefix+'/Tall.excalidraw.md')].map(async file=>({path:file.path,source:(await app.vault.read(file)).slice(0,250),metadata:app.metadataCache.getFileCache(file)?.frontmatter,isDrawing:p.isExcalidrawFile(file)})));
     for(const mode of ['SVG','SVGIMG','PNG'])for(const immersive of [false,true]) {
       const canvasPath=prefix+'/Preview-'+mode+'-'+immersive+'.canvas';
       await app.vault.create(canvasPath,JSON.stringify({nodes:[{id:'small',type:'file',file:draw.path,x:0,y:0,width:320,height:240},{id:'large',type:'file',file:draw.path,x:420,y:0,width:640,height:480},{id:'tall',type:'file',file:prefix+'/Tall.excalidraw.md',x:1150,y:0,width:320,height:480}],edges:[]}));

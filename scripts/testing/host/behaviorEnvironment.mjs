@@ -35,6 +35,7 @@ export async function behaviorEnvironment(
         message: event.message,
         at: Date.now(),
         hasError: event.error != null,
+        isTrusted: event.isTrusted,
         stack: event.error?.stack,
         source: event.filename,
         line: event.lineno,

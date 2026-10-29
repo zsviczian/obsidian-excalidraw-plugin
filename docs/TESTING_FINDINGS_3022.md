@@ -204,7 +204,7 @@ Inspection found an empty popout still alive after workflow cleanup. Its documen
 could become the target of later `getLeaf("tab")` calls. The workflow now closes
 its owned popout and waits for actual window/API teardown, explicitly selects a
 main-window anchor, and asserts Canvas document ownership. All preview, growth
-and independent-size assertions remain. Focused native confirmation is pending.
+and independent-size assertions remain. Focused native confirmation passes (`canvas-owned-diagnostic-policy/`): all six SVG/SVGIMG/PNG x immersive combinations render, selected-node preview growth is 2.006x, independent-copy geometry is unchanged, fullscreen/template workflows and cleanup pass. Both real native negative controls pass.
 A stylesheet-unload exception also occurred while that extra popout was alive;
 production code remains unchanged. It is not classified as a ResizeObserver
-notification. Reassess only if it persists after correct owned-window cleanup.
+notification. The focused run has no such exception after correct owned-window cleanup; reassess if it recurs.

@@ -44,6 +44,7 @@ import {
 } from "../localVault.mjs";
 import { runBehaviorMatrix } from "./behaviorMatrix.mjs";
 import { runErrorOracle } from "./errorOracle.mjs";
+import {requiredNativeCases,requiredDeviceCases} from '../regression.mjs';
 
 const pluginRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const target = configureLocalVaultEnvironment(pluginRoot);
@@ -441,7 +442,7 @@ try {
     if (deviceReport) {
       const aggregate = aggregateReports(
         [adaptSmokeReport(report), deviceReport],
-        [],
+        fullProfile ? [...requiredNativeCases,...requiredDeviceCases] : [],
       );
       aggregate.source = source;
       aggregate.combination = combination;
@@ -451,6 +452,7 @@ try {
       );
       writeReportFiles(aggregate, reportDir);
       if (aggregate.status !== "passed") report.status = "failed";
+      writeFileSync(join(reportDir,'report.json'),JSON.stringify(report,null,2)+'\n');
     }
   }
 } finally {

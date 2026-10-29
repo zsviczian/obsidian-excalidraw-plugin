@@ -472,3 +472,27 @@ Desktop behavioral editing uses registered native plugin CLI commands. Phone and
 tablet workflows use public `EA.executeCLI`; those two in-process workflows are
 not counted as native CLI command invocations. The current plan therefore has
 five native CLI feature cases and two mobile EA CLI cases.
+
+### Two complete matching-build repeats and shareable evidence
+
+Keep all three selected workspace revisions unchanged between repeats:
+
+```powershell
+$env:EXCALIDRAW_TEST_REPORT_DIR = Join-Path $PWD '.test-work/reports/native-repeat-1'
+npm.cmd run test:native
+$env:EXCALIDRAW_TEST_REPORT_DIR = Join-Path $PWD '.test-work/reports/native-repeat-2'
+npm.cmd run test:native
+node scripts/testing/summarizeNativeEvidence.mjs .test-work/reports/native-repeat-1 .test-work/reports/native-repeat-2
+$env:EXCALIDRAW_TEST_REPORT_DIR = Join-Path $PWD '.test-work/reports/final-portable'
+npm.cmd run test:regression:portable
+node scripts/testing/review3022ProductionDiff.mjs
+```
+
+The full native profile enforces all 357 required feature identities, including
+258 behavioral cases. Diagnostic negative controls are additional and separate.
+The evidence exporter refuses incomplete repeats, failed cleanup/baseline
+restoration, dirty source revisions, changed build manifests or mismatched
+artifacts. It writes sanitized case results, geometry, notification records,
+PDF/Canvas evidence and artifact/source manifests to `docs/testing-evidence/3022/`.
+These small documents may be committed and linked from the existing PRs; generated
+plugin binaries and full local reports remain ignored. No publication is needed.

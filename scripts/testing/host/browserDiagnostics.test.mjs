@@ -8,13 +8,19 @@ import {
 } from "./browserDiagnostics.mjs";
 
 test("only the exact browser notification without an Error object is diagnostic", () => {
-  const allowed = { message: resizeNotification, hasError: false, at: 1 };
+  const allowed = {
+    message: resizeNotification,
+    hasError: false,
+    isTrusted: true,
+    at: 1,
+  };
   const others = [
     { message: resizeNotification, hasError: true },
     { message: resizeNotification, hasError: false, stack: "Error stack" },
     { message: "prefix " + resizeNotification, hasError: false },
     { message: "unrelated", hasError: false },
     { message: resizeNotification },
+    { message: resizeNotification, hasError: false, isTrusted: false },
   ];
   assert.deepEqual(splitWindowErrors([allowed, ...others]), {
     diagnostics: [allowed],
