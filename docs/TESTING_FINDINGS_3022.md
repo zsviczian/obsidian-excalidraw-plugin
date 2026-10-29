@@ -49,6 +49,13 @@ The required regression runs production artifacts, including main/popout
 lifecycle, with strict error and cleanup gates. Physical devices and other desktop
 hosts still require their own evidence.
 
+Current production residual, 2026-10-29: the expanded production suite also
+captures eight primitive illegal-access exceptions at 9c08d814 and four during
+dirty popout-to-main migration at 098e6ee1. The residual is therefore not limited
+to development builds. The upstream 43.5.0 fix was rechecked; this host remains
+43.3.0. A matching signature is not proof of complete causation. No host upgrade,
+additional production mitigation or exception exclusion was made. See F21.
+
 ## Product fixes retained in scope after evidence review
 
 | Finding | Before | Regression evidence and expected contract |
@@ -342,3 +349,41 @@ or the eight `illegal access` exceptions. Added passive per-cycle load snapshots
 and a focused `--stability` selector for diagnosis without changing the six-cycle,
 1000-element, save/reopen, root-retirement, rendering or timeout assertions. Both
 full repeats must use a new clean checkpoint after any test-tooling changes.
+
+## F21 - Current acceptance remains failed at 098e6ee1
+
+The frozen test-only checkpoint passes build, 477 fast tests and the final portable
+gate: 655 canonical cases (57 new / 598 reused), plus source/package gates. The
+exact production audit passes and the production diff from reviewed 9c08d814 is
+empty. The installed plugin remains 5,030,423 bytes with the same artifact hash.
+
+A freshly built focused `--internal-drop --stability` run passes popout drop and
+all six unchanged 1000-element save/reopen cycles with no notifications or
+unexpected exceptions. Passive snapshots show each new editor reaching 1000
+elements with a fresh API. This validates the corrected cleanup, not the cause of
+the earlier load timeout.
+
+The next full `npm.cmd run test:native` attempt passes all 258 behavior cases and
+40 device profiles, but `text-undo-2976` fails with `history button unavailable`.
+The parent records it as a feature-scenario failure, so its result and the later
+20 required identities are missing. There are 336 recorded required passes, not a
+complete 357-case pass. The helper does not retain its exact variant/action for
+this direct eval error; capture button state/readiness and that label before
+classifying the cause or changing assertions. The earlier unchanged isolated
+16-variant run passes, so neither interference nor a product defect is assumed.
+
+Four uncaught primitive `illegal access` exceptions are timestamped while
+`native:lifecycle-dirty-popout-to-main` is active. Its persistence/scene assertions
+pass, but exceptions remain fatal. No broader diagnostic rule is applied. The
+first failed full attempt's two exact ResizeObserver notifications settle under
+the bounded policy; the latest attempt has none. [Current sanitized reports,
+counts, raw events, hashes and missing cases](testing-evidence/3022/README.md).
+
+Both failed full attempts pass task cleanup, device/baseline restoration and the
+two actual native error/layout negative controls. The working vault is installed,
+both plugins are ready, and no tasks, print roots or popouts remain. Foreground
+testing stopped; final portable checks use headless browsers and do not drive
+Obsidian. Acceptance is zero of two complete passes. Keep all PRs draft and do not
+merge. Next steps are focused text-action diagnostics, an approved fixed-host
+migration comparison, and two fresh complete matching-build runs once blockers
+are resolved. Production fixes still require explicit approval.

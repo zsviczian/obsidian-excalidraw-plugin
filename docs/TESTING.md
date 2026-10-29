@@ -3,8 +3,8 @@
 ## Current checkpoint (2026-10-29)
 
 [Accessible sanitized case summaries and artifact manifests](testing-evidence/3022/README.md)
-record the tested plugin `9c08d814`, fork `053a3b9` and Extras `1cdcb7c`.
-Fresh portable verification passes **654 canonical cases (56 new, 598 reused)**.
+record the tested plugin `098e6ee1`, fork `053a3b9` and Extras `1cdcb7c`.
+Fresh portable verification passes **655 canonical cases (57 new, 598 reused)**.
 The approved internal-preview focus correction passes four actual-method tests
 and the isolated phone embedding workflow, with no window errors and successful
 save/reopen, device restoration and baseline cleanup. Existing `patchMobileView`
@@ -18,15 +18,18 @@ pass. Real single-export PDF output is decoded and visually inspected.
 
 Acceptance remains **failed**: **zero of two required complete native repeats**
 have passed. Exclusive unchanged reruns pass all 16 text-history variants and the
-desktop pointer profile; the prior failures remain retained without assuming their
-cause. The next full attempt passes all 258 behavioral obligations and 40 device
-profiles, but stability cycle 3 times out. Cycles 4/5 and the successful error gate
-are missing. Eight illegal-access exceptions and one host onDelete parent-null
-exception fail strict capture. Cleanup, baseline restoration and both negative
-controls pass. The demonstrated test-only delete/detach race is corrected with a
-regression; passive load snapshots and focused stability selection support the
-remaining diagnosis. No production changes or diagnostic waivers. Do not merge or
-substitute subset results for the 357-case gate.
+desktop pointer profile. Both subsequent full attempts pass all 258 behavioral
+obligations and 40 device profiles. At 9c08d814, stability cycle 3 times out and
+strict capture records eight illegal-access exceptions plus a host onDelete
+parent-null exception; 353 required identities pass and three are missing. At
+098e6ee1, text-history testing fails with an unavailable history button and four
+illegal-access exceptions occur during dirty popout-to-main migration; 336 required
+identities pass and 21 are missing. Cleanup, baseline restoration and both negative
+controls pass in each. The demonstrated test-only delete/detach race is corrected
+with a regression; all six focused stability cycles pass with passive load
+snapshots. No production changes or diagnostic waivers. Capture exact text-action
+readiness and evaluate the related Electron fixed-host comparison before another
+full attempt. Do not merge or substitute subset results for the 357-case gate.
 The full plan has six native CLI-bearing cases (five editing plus Lucide) and two
 separate mobile public `EA.executeCLI` workflows. Historical checkpoints below
 retain their original scope and results.

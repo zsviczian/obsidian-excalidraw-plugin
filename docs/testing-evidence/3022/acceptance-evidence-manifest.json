@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "status": "acceptance-failed",
+  "files": [
+    {
+      "name": "acceptance-status.json",
+      "sha256": "58dcf891f95ee47c65caa6686bca81b0d8ca95c76061fc3a6d3618c872b335b2",
+      "bytes": 521465
+    },
+    {
+      "name": "acceptance-failed-9c08d814.json",
+      "sha256": "42920c346cb3ac27f69e806f93b9bfc6cdd04fac2338af0b48b54d754d5f943e",
+      "bytes": 1664130
+    },
+    {
+      "name": "acceptance-failed-098e6ee1.json",
+      "sha256": "869a0ca3aec1a1e469bcc6870fbe9078ce193bdc9c7832603a69bcb8dd58e52e",
+      "bytes": 1442703
+    }
+  ]
+}

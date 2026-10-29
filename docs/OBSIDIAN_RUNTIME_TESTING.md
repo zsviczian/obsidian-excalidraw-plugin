@@ -47,6 +47,19 @@ as passed service coverage.
 
 ## Focused and complete commands
 
+The current acceptance remains failed; see the [accessible closeout evidence](testing-evidence/3022/README.md).
+The unchanged exclusive recheck and focused corrected stability/drop run used:
+
+```powershell
+npm.cmd run verify:obsidian -- --text-undo --devices --device-profiles=desktop-wide-full-light
+npm.cmd run verify:obsidian -- --internal-drop --stability
+```
+
+These focused passes do not count as complete repeats. The full profile still
+requires all 357 identities and strict exception/cleanup gates. Text-history
+readiness and dirty-migration exceptions must be diagnosed before another full
+attempt; retain the exact failed evidence and make no unapproved product changes.
+
 | Command | Work |
 | --- | --- |
 | `npm run test:native` | Preparation, complete native core and expanded behavior matrix, popout drop variants and device workflows |
