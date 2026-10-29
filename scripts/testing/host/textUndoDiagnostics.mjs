@@ -48,7 +48,7 @@ export function captureTextUndoState(view, workspace) {
   );
   let history = { source: "not exposed by public API" };
   // Forensics only: walk the owning root's ancestors, bounded even for malformed
-  // test fibers. Read stack lengths, never retain the App/fiber or call its APIs.
+  // test fibers. Read bounded delta data, never retain the App/fiber or call its APIs.
   const key =
     root && Object.keys(root).find((k) => k.startsWith("__reactFiber$"));
   let fiber = key && root[key];
@@ -68,6 +68,16 @@ export function captureTextUndoState(view, workspace) {
         source: "read-only owning App fiber",
         undoDepth: candidate.undoStack.length,
         redoDepth: candidate.redoStack.length,
+        undoEntries: candidate.undoStack.slice(-8).map((entry) => ({
+          id: entry.id,
+          elements: entry.elements,
+          appState: entry.appState?.delta,
+        })),
+        redoEntries: candidate.redoStack.slice(-8).map((entry) => ({
+          id: entry.id,
+          elements: entry.elements,
+          appState: entry.appState?.delta,
+        })),
       };
       break;
     }
@@ -108,6 +118,8 @@ export function captureTextUndoState(view, workspace) {
     history,
     viewState: {
       textMode: view?.textMode,
+      modelTextMode: view?.excalidrawData?.textMode,
+      scenePrevTextMode: view?.excalidrawData?.scene?.prevTextMode,
       compatibilityMode: view?.compatibilityMode,
       dirty: view?.isDirty?.(),
       closing: view?.isClosingOrMigrating?.(),
@@ -128,6 +140,11 @@ export function captureTextUndoState(view, workspace) {
         text: e.text,
         originalText: e.originalText,
         rawText: e.rawText,
+        link: e.link,
+        x: e.x,
+        y: e.y,
+        width: e.width,
+        height: e.height,
         cache:
           e.type === "text"
             ? view.excalidrawData.getParsedResult(e.id)

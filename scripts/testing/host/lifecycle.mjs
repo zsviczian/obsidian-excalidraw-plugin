@@ -3,15 +3,20 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { runInAppTask } from "./inAppTask.mjs";
 
-export async function runLifecycleScenario({ cli, drawingPath }) {
+export async function runLifecycleScenario({ cli, drawingPath }, { migrationRoute = "direct" } = {}) {
+  assert.ok(["direct", "host-drag"].includes(migrationRoute));
   assert.ok(drawingPath.startsWith("__excalidraw_cli_smoke_"));
   const prefix = drawingPath.replace(/\.(excalidraw\.md|excalidraw|md)$/, "") + "_lifecycle";
   const fixture = readFileSync(new URL("../../../tests/vault/Drawings/Uncompressed.excalidraw.md", import.meta.url), "utf8");
-  const result = await runInAppTask({ cli, execute: exerciseLifecycle, args: [prefix, fixture], timeoutMs: 180_000 });
-  return { id: "lifecycle", status: "passed", ...result };
+  const result = await runInAppTask({ cli, execute: exerciseLifecycle, args: [prefix, fixture, migrationRoute], timeoutMs: 180_000 });
+  return { id: migrationRoute === "direct" ? "lifecycle" : "lifecycle-host-drag-control", status: "passed", ...result };
 }
 
-async function exerciseLifecycle(c, prefix, fixture) {
+async function exerciseLifecycle(c, prefix, fixture, migrationRoute) {
+  if (migrationRoute === "host-drag") {
+    const originalCase = c.case.bind(c);
+    c.case = (id, features, run) => originalCase(id.replace("native:", "diagnostic:host-drag:"), features, run);
+  }
   let plugin = app.plugins.plugins["obsidian-excalidraw-plugin"];
   const doc = app.workspace.containerEl.ownerDocument, previous = app.workspace.activeLeaf, owned = new Set();
   const check = (condition, label) => { if (!condition) throw Error(label); };
@@ -79,13 +84,45 @@ async function exerciseLifecycle(c, prefix, fixture) {
     // Reacquire a live destination instead of retaining that detached group.
     const destination = survivor.parent;
     check(destination.containerEl.isConnected && destination.containerEl.ownerDocument === doc && typeof main.parent.removeChild === "function" && typeof destination.insertChild === "function", "installed host cannot migrate an owned leaf back to main");
-    main.parent.removeChild(main); main.setDimension(null); destination.insertChild(-1, main);
-    destination.selectTabIndex(destination.children.indexOf(main)); app.workspace.requestResize();
+    let routeEvidence = { input: "direct host remove/insert operations" };
+    if (migrationRoute === "host-drag") {
+      // Enter Obsidian's registered tab dragstart/drop handlers instead of
+      // rearranging leaf parents in test code. This is a synthetic host-route
+      // control, not evidence of a real OS drag or trusted pointer interaction.
+      const source = main.tabHeaderEl, target = survivor.tabHeaderEl;
+      const sourceWindow = source.ownerDocument.defaultView, mainWindow = doc.defaultView;
+      const sr = source.getBoundingClientRect(), tr = target.getBoundingClientRect();
+      check(sr.width > 0 && tr.width > 0, "migration tab headers are not visible");
+      const point = { clientX: tr.x + tr.width / 2, clientY: tr.y + tr.height * 0.8 };
+      const start = new sourceWindow.DragEvent("dragstart", { bubbles: true, cancelable: true,
+        clientX: sr.x + sr.width / 2, clientY: sr.y + sr.height / 2, dataTransfer: new sourceWindow.DataTransfer() });
+      const end = new sourceWindow.DragEvent("dragend", { bubbles: true });
+      let dropDispatched = false;
+      source.dispatchEvent(start);
+      try {
+        const over = new mainWindow.DragEvent("dragover", { bubbles: true, cancelable: true,
+          ...point, dataTransfer: new mainWindow.DataTransfer() });
+        target.dispatchEvent(over);
+        check(app.workspace.getDropLocation(over) === destination, "ordinary tab drag did not target the live main tab group");
+        const drop = new mainWindow.DragEvent("drop", { bubbles: true, cancelable: true,
+          ...point, dataTransfer: new mainWindow.DataTransfer() });
+        dropDispatched = true;
+        target.dispatchEvent(drop); // Host drop handler removes its drag listeners before migrating.
+        check(main.getRoot() === app.workspace.rootSplit, "ordinary tab drop did not move the owned leaf");
+        routeEvidence = { input: "synthetic dragstart/dragover/drop through Obsidian's ordinary tab handlers",
+          trusted: false, sourceMain: sourceWindow === mainWindow, point };
+      } finally {
+        if (!dropDispatched) source.dispatchEvent(end);
+      }
+    } else {
+      main.parent.removeChild(main); main.setDimension(null); destination.insertChild(-1, main);
+      destination.selectTabIndex(destination.children.indexOf(main)); app.workspace.requestResize();
+    }
     await c.waitFor(() => main.view !== retired && main.view.ownerDocument === doc && main.view.excalidrawAPI, "popout to main replacement");
     await ready(main); check(!retired.excalidrawAPI && main.view.excalidrawAPI.getSceneElements()[0].x === 654, "popout source survived or lost edit");
     await c.waitFor(() => !main.view.isDirty(), "replacement main-window persistence");
     const saved = await plugin.ea.getSceneFromFile(first); check(saved.elements[0].x === 654, "main replacement did not write captured migration edit");
-    return { assertions: ["dirty edit survives popout-to-main", "retired popout API unmounted", "replacement main window physically saves captured edit"] };
+    return { routeEvidence, assertions: ["dirty edit survives popout-to-main", "retired popout API unmounted", "replacement main window physically saves captured edit"] };
   });
   await c.case("native:lifecycle-new-popout-survivor", ["P03"], async () => {
     const popout = app.workspace.openPopoutLeaf(); owned.add(popout);

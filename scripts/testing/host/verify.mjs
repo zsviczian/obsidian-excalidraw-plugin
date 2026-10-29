@@ -62,6 +62,9 @@ if (
 const fullProfile = profile === "full" || profile === "regression";
 const coreOnly=process.argv.includes("--core"),coreScenarios=fullProfile||coreOnly;
 const lifecycle = coreScenarios || process.argv.includes("--lifecycle");
+const migrationComparison = process.argv.includes("--migration-comparison");
+if (fullProfile && migrationComparison)
+  throw Error("Migration comparison is a focused diagnostic, not a full-profile replacement");
 const extrasServices =
   coreScenarios || process.argv.includes("--extras-services");
 const devices =
@@ -121,6 +124,7 @@ const flags = [
   "--prepare-only",
   "--behavior-matrix",
   "--lifecycle",
+  "--migration-comparison",
   "--extras-services",
   "--devices",
   "--data-integrity",
@@ -267,6 +271,10 @@ try {
             ]
           : []),
         ...(lifecycle ? [runLifecycleScenario] : []),
+        ...(migrationComparison ? [
+          context => runLifecycleScenario(context),
+          context => runLifecycleScenario(context, { migrationRoute: "host-drag" }),
+        ] : []),
         ...(extrasServices ? [runExtrasServicesScenario] : []),
         ...(dataIntegrity ? [runDataIntegrityScenario] : []),
         ...(workflowFixes ? [runWorkflowFixesScenario] : []),

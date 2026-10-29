@@ -4,6 +4,30 @@ import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { captureTextUndoState } from "./textUndoDiagnostics.mjs";
 
+/** Use the real mode transition; reload=false changes only the view, not its model. */
+export async function prepareTextUndoFixture(view, mode) {
+  if (view.compatibilityMode)
+    throw Error("text undo regression requires a Markdown drawing");
+  const modes = () => ({ view: view.textMode, model: view.excalidrawData.textMode });
+  const before = modes();
+  if (before.view !== mode || before.model !== mode)
+    await view.changeTextMode(mode);
+  const after = modes();
+  if (after.view !== mode || after.model !== mode)
+    throw Error("text fixture mode transition did not synchronize view and model");
+  // Mode switching saves/reloads the previous drawing. Clear the next fixture
+  // only afterwards, using the current API, so that reload cannot restore it.
+  const api = view.excalidrawAPI;
+  api.updateScene({ elements: [], appState: { viewModeEnabled: false, selectedElementIds: {} }, captureUpdate: "NEVER" });
+  api.history.clear();
+  api.setActiveTool({ type: "text" });
+  const canvas = view.containerEl.querySelector("canvas.interactive");
+  if (!canvas) throw Error("interactive canvas missing");
+  const r = canvas.getBoundingClientRect();
+  return { x: r.x + r.width / 2, y: r.y + r.height / 2,
+    modeSetup: { requested: mode, before, after } };
+}
+
 /**
  * Verify scene source survives reopening and unchanged submission after undo/redo.
  * Uses native CDP input in the main window and the toolbar's stable test IDs.
@@ -22,7 +46,7 @@ export async function runTextUndoScenario({ cli, drawingPath, reportDir }) {
   const snapshotCode = `(()=>{const v=${viewCode};const a=v?.excalidrawAPI;return JSON.stringify({elements:a?.getSceneElements().filter(e=>e.type==="text").map(e=>({id:e.id,text:e.text,originalText:e.originalText,rawText:e.rawText,cache:v.excalidrawData.getParsedResult(e.id)})),selected:a?.getAppState().selectedElementIds,editor:v?.containerEl.querySelector("textarea.excalidraw-wysiwyg")?.value??null})})()`;
   const snapshot = () => evaluate(snapshotCode);
   const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-  const observations = { version: 1, actions: [], completedVariants: [] };
+  const observations = { version: 2, setups: [], actions: [], completedVariants: [] };
   let variantLabel, actionLabel;
   const inspect = () =>
     evaluate(
@@ -173,9 +197,11 @@ export async function runTextUndoScenario({ cli, drawingPath, reportDir }) {
           variantLabel = label;
           actionLabel = "create/edit text";
           const point = evaluate(
-            `(()=>{const v=${viewCode};if(v.compatibilityMode)throw Error("text undo regression requires a Markdown drawing");const a=v.excalidrawAPI;a.updateScene({elements:[],appState:{viewModeEnabled:false,selectedElementIds:{}},captureUpdate:"NEVER"});a.history.clear();v.changeTextMode(${JSON.stringify(mode)},false);a.setActiveTool({type:"text"});const canvas=v.containerEl.querySelector("canvas.interactive");if(!canvas)throw Error("interactive canvas missing");const r=canvas.getBoundingClientRect();return JSON.stringify({x:r.x+r.width/2,y:r.y+r.height/2})})()`,
+            `(${prepareTextUndoFixture.toString()})(${viewCode},${JSON.stringify(mode)}).then(JSON.stringify)`,
           );
-          click(point);
+          observations.setups.push({ variant: label, ...point.modeSetup });
+          persist();
+          click({ x: point.x, y: point.y });
           await poll(
             (value) => value.editor !== null,
             `${label}: new text editor`,

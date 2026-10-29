@@ -3190,3 +3190,15 @@ remain strict pending maintainer classification; no production changes.
   diagnostics tests and the unchanged production build pass. Focused prefix
   reproduction, migration comparison and large-scene sequence diagnosis remain
   in progress; production behavior and the PDF rollback remain untouched.
+
+- 2026-10-29 (#3022): Prefix reproduction at 65f63a30 identifies raw/button/wikilink
+  second undo consuming an enabled, visible control's real history entry without
+  restoring text. The isolated legacy setup then proves every raw variant leaves
+  the view raw while its data model remains parsed. Corrected only test setup to
+  await the normal save/reload mode transition before clearing the next fixture;
+  two regressions enforce synchronization and ordering. Added bounded read-only
+  delta/model evidence and a focused ordinary-host-tab-drag migration control;
+  it is explicitly synthetic and outside full-profile coverage. Every original
+  text/history, migration and cleanup assertion remains. Production and PDF
+  rollback unchanged. Next risk checks: full predecessor text sequence, both
+  migration routes and all six large-scene cycles before complete repeats.

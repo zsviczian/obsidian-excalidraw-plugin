@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { captureTextUndoState } from "./textUndoDiagnostics.mjs";
+import { prepareTextUndoFixture } from "./textUndo.mjs";
 
 function fixture() {
   const history = { undoStack: [{}], redoStack: [{}, {}] };
@@ -93,6 +94,11 @@ test("text-history diagnostics preserve owning window, leaked active target, con
     source: "read-only owning App fiber",
     undoDepth: 1,
     redoDepth: 2,
+    undoEntries: [{ id: undefined, elements: undefined, appState: undefined }],
+    redoEntries: [
+      { id: undefined, elements: undefined, appState: undefined },
+      { id: undefined, elements: undefined, appState: undefined },
+    ],
   });
   assert.equal(snapshot.elements[0].cache.raw, "[[file|label]]");
   assert.deepEqual(f.history, { undoStack: [{}], redoStack: [{}, {}] });
@@ -116,4 +122,31 @@ test("missing and hidden history controls remain unavailable evidence and cyclic
   assert.equal(snapshot.controls.undo.visible, false);
   assert.equal(snapshot.history.source, "not exposed by public API");
   assert.doesNotThrow(() => JSON.stringify(snapshot));
+});
+
+test("text fixture awaits the normal mode reload before clearing the replacement API", async () => {
+  const calls = [];
+  const api = {
+    updateScene: () => calls.push("clear scene"),
+    history: { clear: () => calls.push("clear history") },
+    setActiveTool: () => calls.push("text tool"),
+  };
+  const view = { textMode: "parsed", excalidrawData: { textMode: "parsed" },
+    excalidrawAPI: {}, containerEl: { querySelector: () => ({ getBoundingClientRect: () => ({ x: 0, y: 0, width: 100, height: 80 }) }) },
+    async changeTextMode(...args) {
+      assert.deepEqual(args, ["raw"], "reload=false would leave the model parsed");
+      calls.push("reload"); await Promise.resolve();
+      this.textMode = this.excalidrawData.textMode = "raw";
+      this.excalidrawAPI = api;
+    } };
+  const result = await prepareTextUndoFixture(view, "raw");
+  assert.deepEqual(calls, ["reload", "clear scene", "clear history", "text tool"]);
+  assert.deepEqual(result.modeSetup.after, { view: "raw", model: "raw" });
+  assert.deepEqual({ x: result.x, y: result.y }, { x: 50, y: 40 });
+});
+
+test("incoherent text modes fail before scene or history mutation", async () => {
+  const view = { textMode: "raw", excalidrawData: { textMode: "parsed" },
+    async changeTextMode() {} };
+  await assert.rejects(prepareTextUndoFixture(view, "raw"), /did not synchronize/);
 });
