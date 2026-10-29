@@ -10,8 +10,8 @@ all **15 popout drop variants**, cleanup and baseline restoration; the core run
 records zero unexpected errors/notifications. Native error/layout negative controls
 pass. Real single-export PDF output is decoded and visually inspected.
 
-Acceptance remains **incomplete**: an isolated mobile embedding exception needs a
-production decision (F17), and **zero of two required complete native repeats**
+Acceptance remains **incomplete**: the approved mobile embedding focus correction
+(F17) needs fresh native confirmation, and **zero of two required complete native repeats**
 have passed. Do not merge or substitute these subset results for the 357-case gate.
 The full plan has six native CLI-bearing cases (five editing plus Lucide) and two
 separate mobile public `EA.executeCLI` workflows. Historical checkpoints below

@@ -3136,3 +3136,12 @@ remain strict pending maintainer classification; no production changes.
   accepted scope. Full native CLI accounting is six cases including Lucide;
   phone/tablet EA protocol cases remain separate. Highest-risk next checks are
   mobile embedded-note focus and fresh complete matrix/cleanup repeats.
+
+- 2026-10-29 (#3022): Implemented the explicitly approved internal Canvas-node
+  `focus: false` correction. Four actual-method regressions pass, including the
+  old-path negative control and preservation of explicit editing activation.
+  Retained all `patchMobileView` visibility handling. The exact production-diff
+  audit now permits only this additional flag/type and release note. Highest-risk
+  validation is phone/tablet embedded Markdown loading and deliberate editing;
+  desktop/popout embedding remains in the complete native repeats. Physical mobile
+  touch behavior remains a separate validation environment.

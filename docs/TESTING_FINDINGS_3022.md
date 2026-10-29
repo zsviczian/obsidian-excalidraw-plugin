@@ -230,7 +230,7 @@ fail the inherited notification storm and the two feature-bearing profiles also
 reflect their workflow failures. Cleanup and baseline restoration pass. Neither
 required full repeat has passed yet.
 
-## F17 - Mobile embedding exception: production approval pending
+## F17 - Mobile embedding exception: approved focus correction
 
 The isolated command below reproduces the exception with only the embedding
 workflow selected; its rendering/save/reopen assertions pass but the JavaScript
@@ -245,10 +245,15 @@ node scripts/testing/host/verify.mjs --profile=devices --device-profiles=phone-p
 embedded Markdown preview with no editor. The active drawing remains Excalidraw.
 Inspection of Obsidian 1.14.5's actual `createFileNode` implementation confirms
 that omitted `focus` defaults to selection/focus of the new node. The plugin's
-internal Canvas-node factory currently omits that option. Proposed narrow fix:
-create this internal node with `focus: false`, preserving deliberate editing
-activation. The maintainer has been asked for explicit approval. No production
-change or exception filtering has been made for this finding.
+internal Canvas-node factory omitted that option. The maintainer explicitly
+approved the narrow fix: create this internal node with `focus: false`, preserving
+deliberate editing activation. This correction is now implemented, with four
+actual-method regressions covering construction, replacement, explicit editing
+and a negative control reproducing the old missing-editor failure. All four pass.
+The existing `patchMobileView` visibility workaround remains unchanged: preventing
+unrequested editor activation does not establish that mobile visibility patching
+can be removed. Fresh native confirmation and complete repeats remain required;
+the exception gate has not been weakened.
 
 The next independent-core run retains failures from cleaned scenarios instead of
 omitting later unrelated cases. Pending native work still stops the sequence.
@@ -279,7 +284,7 @@ verification passes 650 canonical cases (52 new, 598 reused), plus source/packag
 gates. [Sanitized, accessible evidence](testing-evidence/3022/README.md) records
 case results and actual source/artifact hashes.
 
-This does not establish full acceptance: F17 production approval is pending and
-neither complete matching-build repeat has passed. CLI accounting includes the
+This does not establish full acceptance: the approved F17 correction still needs
+fresh native confirmation and neither complete matching-build repeat has passed. CLI accounting includes the
 Lucide case's real native commands: six CLI-bearing cases in the full plan, with
 the two mobile public EA protocol cases reported separately.

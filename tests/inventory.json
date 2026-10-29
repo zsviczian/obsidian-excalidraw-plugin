@@ -2402,6 +2402,10 @@
       "mode": "isolated-or-extracted"
     },
     {
+      "path": "scripts/testing/canvasNodeFocus.test.mjs",
+      "mode": "isolated-or-extracted"
+    },
+    {
       "path": "scripts/testing/cli.test.mjs",
       "mode": "isolated-or-extracted"
     },
