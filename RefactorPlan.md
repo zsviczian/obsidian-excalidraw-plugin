@@ -3016,3 +3016,30 @@ Pushed the existing branches: plugin `d7d9a355efdf07fe1f47ded0f7e32f5c6b1225bf`,
 A subsequent native-only assertion review removes a substituted PNG padding: every export row now uses its actual requested padding, compares SVG dimension changes against an independent padding control, and checks decoded PNG dimensions within integer pixel rounding. These strengthened assertions are syntax-checked but remain unexecuted. The required native denominator is 351 IDs, including seven actual plugin-command cases; all require fresh evidence.
 
 The installed repository-local vault still awaits one-time Obsidian opening/trust/CLI registration. No native workflow, real PDF inspection or complete repeated native run is claimed. All three PRs remain draft and their bodies explain this unfinished state. Highest-risk checks remain active Live Preview, zero/false precedence, asynchronous source/crop updates and trusted command/EA targeting in popouts and phone/tablet emulation. Physical devices and other desktop operating systems remain separate environments.
+
+### 2026-10-29 � Local-vault native execution and test-tooling corrections (#3022)
+
+The maintainer completed local-vault registration/trust. A fresh real plugin?Extras
+PDF passed completion, cleanup, PDF.js text/page/pixel checks and independent
+visual inspection (10,610 bytes, one 288 � 216 pt page). The initial occluded-display
+render deadline remains failed evidence; test PDF decoding now uses print intent.
+The plugin fast suite passes 462 cases. The current denominator is 258 behavioral
+cases and 357 native cases overall, including the accepted frame-padding policy.
+
+Corrected test-only metadata readiness, supported EA zoom use, opacity-aware
+pixel assertions, visible Markdown-root selection, individual wheel completion,
+command labels/shortcut badges, wrapped-link hit targets and native console-object
+inspection. Renderer scheduling and focus emulation are scoped and recorded.
+Desktop execution exposed the already-known destroyed-popout promise hazard;
+recovery and failed evidence are retained. Behavior cleanup now uses the existing
+lifecycle close-window pattern. A focused eight-case split/popout run passes
+business assertions and cleanup but fails the ResizeObserver error gate. No
+errors were filtered. Plain PDF TFile input and Helvetica Markdown-image diagnostics
+are reported for maintainer classification. Production-diff audit still permits
+only the Extras PDF timeout/lock rollback; plugin/fork runtime is unchanged.
+
+Remaining: complete mobile/core workflows, fresh full portable verification, two
+complete matching-build native passes, final evidence/counts and PR updates. The
+highest-risk checks are trusted palette/shortcuts and actual embed/settings flows
+in narrow/mobile panes, plus popout teardown and error-free surviving-editor saves.
+Physical devices and macOS/Linux remain separate environments.

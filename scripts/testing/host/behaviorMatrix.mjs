@@ -1,6 +1,7 @@
 /** Required core workflows across actual workspace contexts; no screenshots count as behavioral passes. */
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { behavioralCases } from "../behaviorPlan.mjs";
 import { runInAppTask, parseCLIJSON } from "./inAppTask.mjs";
 import { behaviorEnvironment } from "./behaviorEnvironment.mjs";
@@ -16,6 +17,7 @@ import { exerciseMarkdownBehavior } from "./markdownBehavior.mjs";
 import { exerciseImageBehavior } from "./imageBehavior.mjs";
 import { exerciseInteractionBehavior } from "./interactionBehavior.mjs";
 import { exerciseCLIBehavior } from "./cliBehavior.mjs";
+import { completeConsoleErrors } from "./debuggerSession.mjs";
 
 const methods = new Set([
   "Input.dispatchMouseEvent",
@@ -24,6 +26,36 @@ const methods = new Set([
   "Input.insertText",
   "Emulation.setTouchEmulationEnabled",
 ]);
+
+/** Continue independent cases while retaining failures; cancellation still stops work. */
+export function collectBehaviorCases(c) {
+  const runCase = c.case.bind(c);
+  c.case = async (...args) => {
+    c.phase = args[0];
+    c.caseTrace = {};
+    try {
+      return await runCase(...args);
+    } catch (error) {
+      const record = c.tests.find(
+        (test) => test.testId === args[0] && test.status === "failed",
+      );
+      if (record && c.diagnostics) {
+        try {
+          record.diagnostics = c.diagnostics();
+        } catch (diagnosticError) {
+          record.diagnosticError = String(diagnosticError);
+        }
+      }
+      if (
+        c.cancelled ||
+        !c.tests.some(
+          (test) => test.testId === args[0] && test.status === "failed",
+        )
+      )
+        throw error;
+    }
+  };
+}
 export function behaviorInputDriver(cli) {
   return (request) => {
     if (request.method === "behavior-plugin-cli") {
@@ -61,6 +93,7 @@ export async function runBehaviorMatrix({
   contexts = ["main", "split", "nested-split", "popout"],
   input = "mouse",
   caseIds,
+  reportDir,
 }) {
   const template = readFileSync(
     new URL(
@@ -69,7 +102,8 @@ export async function runBehaviorMatrix({
     ),
     "utf8",
   );
-  const tests = [];
+  const tests = [],
+    consoleErrors = [];
   for (const id of contexts) {
     const rows = behavioralCases([id]).filter(
       (row) => !caseIds || caseIds.includes(row.id),
@@ -82,7 +116,9 @@ export async function runBehaviorMatrix({
     );
     const execute =
       new Function(`return async function(c,path,context,template,rows,modifier){
-      const env=await (${behaviorEnvironment.toString()})(c,path,context,template);
+      (${collectBehaviorCases.toString()})(c);
+      const env=await (${behaviorEnvironment.toString()})(c,path,context,template,${completeConsoleErrors.toString()});
+      c.diagnostics=env.diagnostics;
       await (${exerciseSettingsBehavior.toString()})(c,env,rows.filter(r=>r.id.startsWith('settings-')&&r.values));
       await (${exerciseExportBehavior.toString()})(c,env,rows.filter(r=>r.id.startsWith('export-')));
       await (${exerciseSettingsLifecycle.toString()})(c,env,rows.filter(r=>['settings-live-persistence','frontmatter-prefixes-theme-scale'].includes(r.id)));
@@ -91,7 +127,7 @@ export async function runBehaviorMatrix({
       await (${exerciseImageBehavior.toString()})(c,env,rows.filter(r=>r.id.startsWith('images-')||r.id==='drawing-and-markdown-embeds'));
       await (${exerciseEABehavior.toString()})(c,env,rows.filter(r=>r.id.startsWith('ea-')));
       await (${exerciseInteractionBehavior.toString()})(c,env,rows.filter(r=>r.id.startsWith('command-')||r.id==='toolbar-context-shortcuts'),modifier);
-      return {tests:c.tests};
+      return {tests:c.tests,consoleErrors:c.externalConsoleErrors||[]};
     }`)();
     const result = await runInAppTask({
       cli,
@@ -106,6 +142,21 @@ export async function runBehaviorMatrix({
       timeoutMs: 600000,
       cleanupMs: 60000,
       onRequest: behaviorInputDriver(cli),
+      onProgress: (phase, state) => {
+        if (reportDir)
+          writeFileSync(
+            join(reportDir, "behavior-" + id + "-progress.json"),
+            JSON.stringify({
+              phase,
+              tests: state.tests,
+              at: new Date().toISOString(),
+            }) + "\n",
+          );
+      },
+    }).catch((error) => {
+      // Keep completed contexts when a later context cannot finish cleanup.
+      error.evidence = [...tests, ...(error.evidence || [])];
+      throw error;
     });
     assert.deepEqual(
       result.tests.map((t) => t.testId).sort(),
@@ -113,11 +164,18 @@ export async function runBehaviorMatrix({
       "Behavioral obligations missing from " + id,
     );
     tests.push(...result.tests);
+    consoleErrors.push(...result.consoleErrors);
   }
   return {
     id: "behavior-matrix",
-    status: "passed",
+    status: tests.every((test) => test.status === "passed")
+      ? "passed"
+      : "failed",
     tests,
+    consoleErrors,
+    expectedConsoleErrors: tests.flatMap(
+      (test) => test.expectedConsoleErrors || [],
+    ),
     scope: { contexts, caseIds: caseIds || "all" },
   };
 }

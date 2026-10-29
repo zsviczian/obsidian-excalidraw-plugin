@@ -19,6 +19,11 @@ export async function runExtrasServicesScenario({
     args: [prefix],
     timeoutMs: 180_000,
     cleanupMs: 135_000,
+    onProgress: (phase) =>
+      writeFileSync(
+        join(reportDir, "native-single-export-progress.json"),
+        JSON.stringify({ phase, at: new Date().toISOString() }) + "\n",
+      ),
     onRequest: (request) => {
       assert.equal(request.method, "pdf-evidence");
       assert.equal(request.params.path, prefix + "/Output.pdf");
@@ -36,6 +41,7 @@ export async function runExtrasServicesScenario({
 }
 
 async function exerciseExtras(c, prefix) {
+  c.phase = "extras-services";
   const plugin = app.plugins.plugins["obsidian-excalidraw-plugin"],
     extras = app.plugins.plugins["excalidraw-extras"];
   const check = (value, label) => {
@@ -139,6 +145,7 @@ async function exerciseExtras(c, prefix) {
       beforePrints = doc.querySelectorAll("body > .print").length;
     const path = prefix + "/Output.pdf",
       absolutePath = app.vault.adapter.getFullPath(path);
+    c.phase = "pdf-native-print";
     await service.exportToPDF(
       content,
       absolutePath,
@@ -155,6 +162,7 @@ async function exerciseExtras(c, prefix) {
         beforeStyles.every((sheet, i) => doc.adoptedStyleSheets[i] === sheet),
       "PDF temporary DOM or stylesheet leaked",
     );
+    c.phase = "pdf-read-completed-output";
     await c.waitFor(
       () => app.vault.getFileByPath(path),
       "native PDF file event",
@@ -171,12 +179,14 @@ async function exerciseExtras(c, prefix) {
     const pdf = await loading.promise;
     c.defer(() => pdf.destroy());
     check(pdf.numPages === 1, `unexpected PDF page count: ${pdf.numPages}`);
+    c.phase = "pdf-page";
     const first = await pdf.getPage(1),
       viewport = first.getViewport({ scale: 1 });
     check(
       Math.abs(viewport.width - 288) < 1 && Math.abs(viewport.height - 216) < 1,
       "PDF media box differs from 4in × 3in",
     );
+    c.phase = "pdf-text";
     const text = (await first.getTextContent()).items
       .map((item) => item.str || "")
       .join(" ");
@@ -185,12 +195,18 @@ async function exerciseExtras(c, prefix) {
     canvas.width = Math.ceil(viewport.width);
     canvas.height = Math.ceil(viewport.height);
     const context = canvas.getContext("2d");
-    await first.render({ canvasContext: context, viewport }).promise;
+    c.phase = "pdf-decode-pixels";
+    // Batch verification must not depend on display animation frames: Electron
+    // can occlude the vault while its CLI remains available. PDF.js print intent
+    // renders the same page without requestAnimationFrame scheduling.
+    await first.render({ canvasContext: context, viewport, intent: "print" })
+      .promise;
     const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
     let red = 0;
     for (let i = 0; i < pixels.length; i += 4)
       if (pixels[i] > 180 && pixels[i + 1] < 80 && pixels[i + 2] < 80) red++;
     check(red > 100, "PDF lost SVG content");
+    c.phase = "pdf-retain-evidence";
     const evidence = await c.requestHost("pdf-evidence", {
       path,
       pngBase64: canvas.toDataURL("image/png").split(",")[1],

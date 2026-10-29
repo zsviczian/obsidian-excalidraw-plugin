@@ -1,5 +1,11 @@
 /** Serialized only into the owned native vault; shared setup never substitutes for behavioral assertions. */
-export async function behaviorEnvironment(c, parentPath, context, template) {
+export async function behaviorEnvironment(
+  c,
+  parentPath,
+  context,
+  template,
+  completeConsoleErrors,
+) {
   const p = app.plugins.plugins["obsidian-excalidraw-plugin"],
     mainDoc = app.workspace.containerEl.ownerDocument;
   const check = (condition, label) => {
@@ -9,10 +15,12 @@ export async function behaviorEnvironment(c, parentPath, context, template) {
     parentPath.startsWith("__excalidraw_cli_smoke_"),
     "Unowned behavior fixture",
   );
+  const runId = parentPath.match(
+    /[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/i,
+  )?.[0];
+  check(runId, "Owned behavior parent has no run identity");
   const prefix =
-    parentPath.replace(/\.(excalidraw\.md|excalidraw|md)$/, "") +
-    "_behavior_" +
-    context.id;
+    "__excalidraw_cli_smoke_" + runId.slice(0, 8) + "_behavior_" + context.id;
   check(!app.vault.getFolderByPath(prefix), "Behavior fixture collision");
   await app.vault.createFolder(prefix);
   const owned = new Set(),
@@ -25,8 +33,19 @@ export async function behaviorEnvironment(c, parentPath, context, template) {
           "Behavior cleanup save failed",
         );
       if (leaf.view?.containerEl.isConnected) {
-        await leaf.setViewState({ type: "empty", state: {} });
-        leaf.detach();
+        const owner = leaf.view.containerEl.ownerDocument.defaultView;
+        if (owner !== mainDoc.defaultView && !owner.closed) {
+          // Match the lifecycle suite: the final tab can destroy the realm
+          // owning setViewState's promise. Observe actual host teardown instead.
+          owner.close();
+          await c.waitForCleanup(
+            () => owner.closed,
+            "owned behavior popout teardown",
+          );
+        } else {
+          await leaf.setViewState({ type: "empty", state: {} });
+          leaf.detach();
+        }
       }
     }
     const folder = app.vault.getFolderByPath(prefix);
@@ -114,27 +133,54 @@ export async function behaviorEnvironment(c, parentPath, context, template) {
     .require("@electron/remote")
     .getCurrentWebContents();
   const errors = [];
+  c.externalConsoleErrors = errors;
   if (ownerContents.id !== mainContents.id) {
     check(
       !ownerContents.debugger.isAttached(),
       "Behavior popout already has a debugger owner",
     );
+    const background = ownerContents.getBackgroundThrottling();
+    ownerContents.setBackgroundThrottling(false);
+    c.defer(() => {
+      if (!ownerContents.isDestroyed())
+        ownerContents.setBackgroundThrottling(background);
+    });
     ownerContents.debugger.attach("1.3");
     const listener = (_event, method, params) => {
       if (method === "Runtime.exceptionThrown")
-        errors.push(params.exceptionDetails);
+        errors.push({
+          kind: "exception",
+          details: params.exceptionDetails,
+          messages: [
+            String(
+              params.exceptionDetails.exception?.description ??
+                params.exceptionDetails.text,
+            ),
+          ],
+        });
       if (method === "Runtime.consoleAPICalled" && params.type === "error")
-        errors.push(params.args);
+        errors.push({
+          kind: "console",
+          overflowArgs: params.args.some((arg) => arg.preview?.overflow)
+            ? params.args
+            : undefined,
+          messages: params.args.map(
+            (arg) =>
+              String(arg.description ?? arg.value ?? arg.type) +
+              (arg.preview?.properties
+                ? " " + JSON.stringify(arg.preview.properties)
+                : ""),
+          ),
+        });
     };
     ownerContents.debugger.on("message", listener);
     await ownerContents.debugger.sendCommand("Runtime.enable");
-    c.defer(() => {
+    c.defer(async () => {
+      await completeConsoleErrors({ errors, debugger: ownerContents.debugger });
       ownerContents.debugger.removeListener("message", listener);
       ownerContents.debugger.detach();
-      check(
-        errors.length === 0,
-        "Unexpected popout behavior error: " + JSON.stringify(errors),
-      );
+      // The coordinator applies the same strict error/count oracle across
+      // main and popout captures after owned cleanup has settled.
     });
   }
   const input = (method, params) =>
@@ -143,6 +189,19 @@ export async function behaviorEnvironment(c, parentPath, context, template) {
       method,
       params,
     });
+  // CLI can address an occluded vault. Make this owned behavioral page active
+  // for hit testing and layout; lifecycle scenarios keep real focus semantics.
+  await ownerContents.debugger.sendCommand(
+    "Emulation.setFocusEmulationEnabled",
+    { enabled: true },
+  );
+  c.defer(async () => {
+    if (!ownerContents.isDestroyed())
+      await ownerContents.debugger.sendCommand(
+        "Emulation.setFocusEmulationEnabled",
+        { enabled: false },
+      );
+  });
   const key = async (key, code, keyCode, modifiers = 0) => {
     for (const type of ["keyDown", "keyUp"])
       await input("Input.dispatchKeyEvent", {
@@ -155,17 +214,44 @@ export async function behaviorEnvironment(c, parentPath, context, template) {
   };
   const click = async (element, button = "left") => {
     check(element, "Missing interaction target");
-    element.scrollIntoView({ block: "nearest", inline: "nearest" });
+    // Leave already-visible controls in place. Scrolling a fixed toolbar or
+    // modal input can disturb the surrounding Obsidian workspace layout.
+    const uncovered = () =>
+      [...element.getClientRects()].some(
+        (r) =>
+          r.width > 0 &&
+          r.height > 0 &&
+          element.contains(
+            doc.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2),
+          ),
+      );
+    if (!uncovered())
+      element.scrollIntoView({
+        block: element.tagName === "A" ? "center" : "nearest",
+        inline: "nearest",
+      });
     let x, y;
     await c.waitFor(() => {
-      const r = element.getBoundingClientRect();
-      x = r.x + r.width / 2;
-      y = r.y + r.height / 2;
-      return (
-        r.width > 0 &&
-        r.height > 0 &&
-        element.contains(doc.elementFromPoint(x, y))
-      );
+      // Wrapped inline links have a bounding-box center outside their text.
+      for (const r of element.getClientRects()) {
+        x = r.x + r.width / 2;
+        y = r.y + r.height / 2;
+        if (
+          r.width > 0 &&
+          r.height > 0 &&
+          element.contains(doc.elementFromPoint(x, y))
+        )
+          return true;
+      }
+      c.caseTrace = {
+        ...c.caseTrace,
+        clickTarget: {
+          html: element.outerHTML.slice(0, 700),
+          bounds: element.getBoundingClientRect().toJSON(),
+          hit: doc.elementFromPoint(x, y)?.outerHTML.slice(0, 400),
+        },
+      };
+      return false;
     }, "visible uncovered behavior control");
     if (context.input === "touch" && button === "left") {
       await input("Input.dispatchTouchEvent", {
@@ -274,9 +360,30 @@ export async function behaviorEnvironment(c, parentPath, context, template) {
       ctx.drawImage(image, 0, 0);
       const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
       let red = 0,
+        green = 0,
         blue = 0,
         transparent = 0;
+      let redDominant = 0,
+        halfAlphaRed = 0,
+        redOverWhite = 0;
+      const opaqueColors = new Map();
       for (let i = 0; i < pixels.length; i += 4) {
+        const [r, g, b, a] = pixels.subarray(i, i + 4);
+        if (a && r > g + 30 && r > b + 30) {
+          redDominant++;
+          if (a >= 120 && a <= 136) halfAlphaRed++;
+        }
+        if (
+          r === 255 &&
+          Math.abs(g - 127.5) < 1.6 &&
+          Math.abs(b - 127.5) < 1.6 &&
+          a === 255
+        )
+          redOverWhite++;
+        if (a === 255) {
+          const key = r + "," + g + "," + b;
+          opaqueColors.set(key, (opaqueColors.get(key) || 0) + 1);
+        }
         if (
           pixels[i] > 180 &&
           pixels[i + 1] < 90 &&
@@ -285,15 +392,24 @@ export async function behaviorEnvironment(c, parentPath, context, template) {
         )
           red++;
         if (pixels[i + 2] > 180 && pixels[i] < 90 && pixels[i + 3]) blue++;
+        if (g > 180 && r < 90 && b < 90 && a) green++;
         if (!pixels[i + 3]) transparent++;
       }
       return {
         width: canvas.width,
         height: canvas.height,
         red,
+        green,
         blue,
         transparent,
         cornerAlpha: pixels[3],
+        redDominant,
+        halfAlphaRed,
+        redOverWhite,
+        dominantOpaque: [...opaqueColors.entries()]
+          .sort((a, b) => b[1] - a[1])[0]?.[0]
+          .split(",")
+          .map(Number),
       };
     } finally {
       if (typeof source !== "string") win.URL.revokeObjectURL(url);
@@ -310,7 +426,50 @@ export async function behaviorEnvironment(c, parentPath, context, template) {
     leafId: leaf.id,
     ownerContentsId: ownerContents.id,
     mainContentsId: mainContents.id,
+    visibility: doc.visibilityState,
+    scopedBackgroundThrottling: ownerContents.getBackgroundThrottling(),
+    focusEmulation: true,
   });
+  const diagnostics = () => {
+    const view = leaf.view,
+      state = view.excalidrawAPI?.getAppState();
+    return {
+      file: view.file?.path,
+      viewType: view.getViewType(),
+      mode: view.getMode?.(),
+      actual: geometry(),
+      camera: state
+        ? {
+            zoom: state.zoom,
+            allowWheelZoom: state.allowWheelZoom,
+            inputDevice: state.inputDevice,
+            width: state.width,
+            height: state.height,
+            viewModeEnabled: state.viewModeEnabled,
+          }
+        : null,
+      canvas: [...view.containerEl.querySelectorAll("canvas")].map((el) => ({
+        classes: el.className,
+        bounds: el.getBoundingClientRect().toJSON(),
+      })),
+      preview: [
+        ...view.contentEl.querySelectorAll(
+          ".markdown-preview-view,.markdown-preview-sizer",
+        ),
+      ]
+        .slice(0, 3)
+        .map((el) => ({
+          classes: el.className,
+          bounds: el.getBoundingClientRect().toJSON(),
+          text: el.textContent.slice(0, 800),
+          html: el.outerHTML.slice(0, 1800),
+        })),
+      palette: [...doc.querySelectorAll(".prompt .suggestion-item")].map(
+        (el) => el.textContent,
+      ),
+      trace: c.caseTrace,
+    };
+  };
   check(
     (app.isMobile === true) === ["phone", "tablet"].includes(context.id),
     "Behavior context does not match actual Obsidian mobile mode",
@@ -332,5 +491,6 @@ export async function behaviorEnvironment(c, parentPath, context, template) {
     key,
     click,
     geometry,
+    diagnostics,
   };
 }

@@ -114,6 +114,7 @@ export async function runDeviceMatrix({
         `(()=>{app.changeTheme(${JSON.stringify(profile.theme === "dark" ? "obsidian" : "moonstone")});return JSON.stringify(true);})()`,
       );
       debuggerSession = acquireDebuggerSession(cli);
+      const expectedConsoleErrors = [];
       cli(
         "dev:cdp",
         "method=Emulation.setTouchEmulationEnabled",
@@ -160,23 +161,29 @@ export async function runDeviceMatrix({
           return { dispatched: true };
         },
       });
+      let workflows;
       if (
         featureWorkflows &&
         ["phone-portrait-light", "tablet-portrait-full-light"].includes(
           profile.id,
         )
       ) {
-        const workflows = await runBehaviorMatrix({
+        workflows = await runBehaviorMatrix({
           cli,
           drawingPath: path,
           contexts: [profile.id.startsWith("phone-") ? "phone" : "tablet"],
           input: "touch",
+          reportDir,
         });
         report.tests.push(...workflows.tests);
+        expectedConsoleErrors.push(...(workflows.expectedConsoleErrors || []));
       }
-      const errors = debuggerSession.read();
+      const errors = [
+        ...debuggerSession.read(),
+        ...(workflows?.consoleErrors || []),
+      ];
       assert.deepEqual(
-        unexpectedConsoleErrors(errors),
+        unexpectedConsoleErrors(errors, expectedConsoleErrors),
         [],
         "Unexpected device console/JavaScript error",
       );
@@ -189,7 +196,9 @@ export async function runDeviceMatrix({
         ...result,
       });
     }
-    report.status = "passed";
+    report.status = report.tests.every((test) => test.status === "passed")
+      ? "passed"
+      : "failed";
   } catch (error) {
     report.error = String(error.stack || error);
     report.tests.push(...(error.evidence || []));

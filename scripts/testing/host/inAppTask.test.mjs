@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import vm from "node:vm";
 import { parseCLIJSON, runInAppTask } from "./inAppTask.mjs";
+import { collectBehaviorCases } from "./behaviorMatrix.mjs";
+import { aggregateReports } from "../contracts.mjs";
 function host() {
   const state = { setTimeout, clearTimeout, events: [] };
   vm.createContext(state);
@@ -40,16 +42,50 @@ test("timeout cancels condition waits, awaits cleanup, then propagates failure",
       timeoutMs: 20,
       execute: async (c) => {
         c.defer(() => events.push("cancel cleanup"));
+        await c.case("completed-before-deadline", [], async () => ({
+          assertions: ["completed before the stall"],
+        }));
         await c.waitFor(() => false, "never ready");
       },
     }),
-    /deadline/,
+    (error) =>
+      /deadline/.test(error.message) &&
+      error.evidence.some(
+        (test) =>
+          test.testId === "completed-before-deadline" &&
+          test.status === "passed",
+      ),
   );
   assert.deepEqual(state.events, ["cancel cleanup"]);
   assert.equal(
     Object.keys(state).some((k) => k.startsWith("__excalidrawTestTask_")),
     false,
   );
+});
+
+test("collecting independent behavioral failures retains strict failed acceptance", async () => {
+  const { cli } = host();
+  const execute = new Function(
+    `return async function(c){(${collectBehaviorCases.toString()})(c);await c.case('failed-case',[],async()=>{throw Error('assertion failed')});await c.case('later-case',[],async()=>({assertions:['ran after failed case']}));return {tests:c.tests};}`,
+  )();
+  const result = await runInAppTask({ cli, execute });
+  assert.deepEqual(
+    result.tests.map((test) => test.status),
+    ["failed", "passed"],
+  );
+  const aggregate = aggregateReports(
+    [
+      {
+        schemaVersion: 2,
+        suiteId: "native-obsidian",
+        status: "passed",
+        cleanup: "passed",
+        tests: result.tests,
+      },
+    ],
+    ["failed-case", "later-case"],
+  );
+  assert.equal(aggregate.status, "failed");
 });
 test("failed cleanup retains the controller and cannot become a pass", async () => {
   const { cli, state } = host();

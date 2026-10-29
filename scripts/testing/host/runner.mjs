@@ -149,7 +149,7 @@ export async function runObsidianSmoke({ projectRoot, vaultName, vaultPath, conf
       if(typeof actual!=='string'||!existsSync(actual)||realpathSync(actual)!==realpathSync(expectedUserDataPath))throw Error('CLI application user-data identity differs from the held host lock');
       report.capabilities.applicationIdentity=realpathSync(actual);
     }
-    if (ownedDebugger) debuggerSession = acquireDebuggerSession(cli);
+    if (ownedDebugger) { debuggerSession = acquireDebuggerSession(cli); report.capabilities.scheduling = debuggerSession.scheduling; }
     if (ownedDebugger) report.capabilities.runtime = parseEval(cli("eval", "code=JSON.stringify({versions:require('process').versions,platform:require('process').platform,userAgent:navigator.userAgent})"));
 
     phase = "build";
@@ -236,7 +236,7 @@ export async function runObsidianSmoke({ projectRoot, vaultName, vaultPath, conf
     if (companionCleanup && !preserveOwnedFixtures) { try { await companionCleanup(); } catch(error) { report.status="failed"; report.cleanup="failed"; report.cleanupError=String(error); } }
     if (debuggerSession) {
       try {
-        report.consoleErrors = debuggerSession.read();
+        report.consoleErrors = [...debuggerSession.read(), ...report.scenarios.flatMap(s=>s.consoleErrors||[])];
         report.unexpectedConsoleErrors = unexpectedConsoleErrors(report.consoleErrors, expectedConsoleErrors);
         if (report.unexpectedConsoleErrors.length) { report.status = "failed"; report.error ||= "Unexpected console/JavaScript errors after native cleanup"; }
         const errors = ownedCli("dev:errors").trim();

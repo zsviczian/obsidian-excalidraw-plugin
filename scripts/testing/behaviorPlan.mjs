@@ -100,6 +100,16 @@ export const exportCases = pairwise(exportFactors, [
 
 export const workflowCases = [
   {
+    id: "export-frame-padding-policy",
+    features: ["P06", "P09"],
+    assertions: [
+      "default frame rendering suppresses padding, including scenes without frames",
+      "disabling frame rendering enables the requested padding",
+      "actual SVG and decoded PNG dimensions agree",
+      "saved scene survives reopen",
+    ],
+  },
+  {
     id: "cli-atomic-targeted-edit",
     features: ["P03", "P07", "P10"],
     assertions: [

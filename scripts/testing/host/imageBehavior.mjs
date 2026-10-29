@@ -111,7 +111,17 @@ export async function exerciseImageBehavior(c, env, rows) {
             first.red > 100 && first.blue === 0,
             "Initial SVG source is not red",
           );
+          const editNote = await env.create(
+            "Source-edit-anchor.md",
+            "Owned external-edit anchor.",
+          );
+          const editLeaf = app.workspace.getLeaf("tab");
+          env.owned.add(editLeaf);
+          await editLeaf.openFile(editNote);
+          app.workspace.setActiveLeaf(editLeaf, { focus: true });
           await app.vault.modify(source, svgText("#0000ff"));
+          app.workspace.setActiveLeaf(env.leaf, { focus: true });
+          env.win.focus();
           await c.waitFor(
             () => {
               const data =
@@ -181,11 +191,33 @@ export async function exerciseImageBehavior(c, env, rows) {
             edited,
             restored,
             missing: { imageIdRetained: true, referenceRetained: true },
+            expectedConsoleErrors: [
+              {
+                containsAll: [
+                  '"value":"EmbeddedFileLoader._getObsidianImage"',
+                  '"value":"' + reference + '"',
+                  '"name":"depth","type":"number","value":"0"',
+                  '"name":"code","type":"string","value":"ENOENT"',
+                  '"name":"syscall","type":"string","value":"open"',
+                  JSON.stringify({
+                    name: "path",
+                    type: "string",
+                    value: require("node:path").join(
+                      app.vault.adapter.getBasePath(),
+                      reference,
+                    ),
+                  }),
+                ],
+                excludes: ["[preview truncated]"],
+                min: 1,
+                max: 1,
+              },
+            ],
           };
         }
         const markdown = await env.create(
           "Embedded-note.md",
-          '---\nexcalidraw-font: Helvetica\nexcalidraw-font-color: "#ff0000"\nexcalidraw-border-color: "#0000ff"\nexcalidraw-css: "h1 { color: #ff0000; }"\n---\n# EMBEDDED_MARKDOWN_RENDER_TOKEN\n\n| Name | Value |\n| --- | --- |\n| Owned | 42 |\n\n$E=mc^2$\n',
+          '---\nexcalidraw-font: Excalifont\nexcalidraw-font-color: "#ff0000"\nexcalidraw-border-color: "#0000ff"\nexcalidraw-css: "h1 { background-color: #00ff00; }"\n---\n# EMBEDDED_MARKDOWN_RENDER_TOKEN\n\n| Name | Value |\n| --- | --- |\n| Owned | 42 |\n\n$E=mc^2$\n',
         );
         const drawing = await env.create(
           "Embedded-source.excalidraw.md",
@@ -205,7 +237,13 @@ export async function exerciseImageBehavior(c, env, rows) {
           drawing,
           app.vault.getFileByPath("Assets/Small.pdf"),
         ].entries()) {
-          const id = await ea.addImage(i * 450, 300, file, false, false);
+          const id = await ea.addImage(
+            i * 450,
+            300,
+            file.extension === "pdf" ? file.path + "#page=1" : file,
+            false,
+            false,
+          );
           check(id, "Embedded source conversion failed: " + file.path);
           ids.push(id);
         }
@@ -229,9 +267,10 @@ export async function exerciseImageBehavior(c, env, rows) {
             }),
           "asynchronous embedded image data",
         );
-        view.excalidrawAPI.scrollToContent(
+        ea.viewZoomToElements(
+          false,
           view.getViewElements().filter((e) => e.id === embeddable),
-          { fitToContent: true },
+          0.05,
         );
         await c.waitFor(() => {
           const ref = view.getEmbeddableLeafElementById(embeddable);
@@ -264,7 +303,9 @@ export async function exerciseImageBehavior(c, env, rows) {
           }),
         );
         check(
-          markdownPixels.red > 10 && markdownPixels.blue > 10,
+          markdownPixels.red > 10 &&
+            markdownPixels.blue > 10 &&
+            markdownPixels.green > 20,
           "Markdown font/CSS and border frontmatter did not reach actual exported pixels",
         );
         view = await saveReopen(view);

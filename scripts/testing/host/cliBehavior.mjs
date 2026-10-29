@@ -28,6 +28,14 @@ export async function exerciseCLIBehavior(c, env, rows) {
       );
       const otherLeaf = app.workspace.getLeaf("tab");
       env.owned.add(otherLeaf);
+      await c.waitFor(
+        () =>
+          p.isExcalidrawFile(other) &&
+          app.metadataCache.getFileCache(other)?.frontmatter?.[
+            "excalidraw-plugin"
+          ],
+        "other CLI target metadata",
+      );
       await otherLeaf.openFile(other);
       await env.ready(otherLeaf);
       app.workspace.setActiveLeaf(otherLeaf, { focus: true });

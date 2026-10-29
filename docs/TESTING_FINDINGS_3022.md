@@ -88,3 +88,51 @@ tests exercise real production/development artifacts. Native tests exercise real
 Obsidian CLI, EA, file persistence and decoded exports. Reports keep those forms
 of evidence distinct. Physical mobile and other operating systems require their
 own validation; desktop emulation does not establish those environments.
+
+## F10 � Plain PDF TFile input: classification pending
+
+In `behavior-main-scheduled/report.json`, `EA.addImage(x,y,pdfTFile)`
+reproduces a loader error followed by a null-size exception. The API documents
+`TFile | string`, and the loader defaults the page to 1, but its crop parsing
+reads `linkParts.ref.split(...)` when ref is null. An explicit
+`pdfTFile.path + '#page=1'` works and is used in the valid-reference workflow.
+The maintainer has been asked whether plain PDF TFile input should load page 1
+or whether an explicit page reference is the accepted requirement. Production
+code is unchanged; this finding is not a passing invalid-input contract.
+
+## F11 � System-font Markdown image: classification pending
+
+The same native report records `Failed to fetch font "Helvetica" from urls "" []`
+for Markdown-image frontmatter `excalidraw-font: Helvetica`. The plugin comment
+expects an empty CSS definition for that system font; the fork font-content
+helper instead reports the empty source list. Bundled Excalifont is the valid
+font used by the rendering workflow. The maintainer has been asked whether the
+system-font diagnostic is intended fallback behavior or a defect. No production
+change or exception allowlist has been introduced for it.
+
+## F12 � Native tooling teardown and layout diagnostics
+
+The broad desktop run `behavior-desktop-contexts/` closed the final popout via
+`await leaf.setViewState({type:'empty'})`. Obsidian destroyed that renderer while
+the promise remained pending, the same host limitation already documented in the
+lifecycle helper. It also produced repeated primitive illegal-access exceptions.
+The failed run was retained. Guarded recovery verified renderer 252 was destroyed,
+that no print DOM remained, then reloaded only the canonical local-vault renderer
+250 and removed the exact two owned scenario paths. No native print was cancelled;
+the orphaned promise was not represented as settled.
+
+The behavior cleanup now follows the existing lifecycle pattern: physically save
+if dirty, close the owning popout window, and wait from the main realm for actual
+host teardown. A focused split/popout repeat completed all eight business cases
+and cleanup without that stranded promise, but failed the strict error gate on
+ResizeObserver notifications. This remains a failed run, not a waived host error.
+Test input was also unnecessarily scrolling already-visible fixed controls; the
+next run checks targeted input without those extra layout changes. Reproduce and
+classify any residual before proposing a production change.
+
+## Maintainer decision � Export padding and frames
+
+Frame-enabled SVG/PNG exports suppress padding even without frame elements. The
+maintainer confirmed this is intended. Padding combinations explicitly disable
+frame rendering, and a separate default/enabled policy case protects the existing
+behavior in each context. No production modification is needed.

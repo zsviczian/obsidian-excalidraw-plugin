@@ -32,13 +32,23 @@ export async function exerciseMarkdownBehavior(c, env, rows) {
     "Markdown heading/block and drawing metadata",
   );
   const activeRoot = (mode) => {
-    const root = leaf.view.contentEl.querySelector(
-      mode === "preview"
-        ? ".markdown-preview-view"
-        : ".markdown-source-view.is-live-preview",
-    );
-    const bounds = root?.getBoundingClientRect();
-    return bounds?.width > 0 && bounds.height > 0 ? root : null;
+    // Nested embeds retain hidden preview renderers, including in Live Preview.
+    // Inspect this view's visible renderer rather than the first nested preview.
+    const root = [
+      ...leaf.view.contentEl.querySelectorAll(
+        mode === "preview"
+          ? ".markdown-preview-view"
+          : ".markdown-source-view.is-live-preview",
+      ),
+    ].find((element) => {
+      const bounds = element.getBoundingClientRect();
+      return (
+        bounds.width > 0 &&
+        bounds.height > 0 &&
+        !element.closest(".internal-embed")
+      );
+    });
+    return root || null;
   };
   const open = async (mode) => {
     await leaf.setViewState({
@@ -102,6 +112,10 @@ export async function exerciseMarkdownBehavior(c, env, rows) {
           check(
             view.getViewElements().find((el) => el.id === id).rawText === raw,
             "Parsed mode lost the original link source",
+          );
+          check(
+            (await view.saveWithOutcome()).status === "persisted",
+            "Raw-mode source was not physically saved",
           );
           await view.changeTextMode("raw");
           await c.waitFor(

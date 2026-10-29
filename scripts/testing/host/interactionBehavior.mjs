@@ -32,11 +32,28 @@ export async function exerciseInteractionBehavior(c, env, rows, modifier) {
               () => doc.querySelector(".prompt input.prompt-input"),
               "trusted command-palette opening",
             );
+            const input = doc.querySelector(".prompt input.prompt-input");
+            await click(input);
+            await c.waitFor(
+              () => doc.activeElement === input,
+              "palette input focus",
+            );
             await env.input("Input.insertText", { text: selected.name });
             let item;
             await c.waitFor(() => {
+              c.caseTrace = {
+                command: selected.name,
+                query: input.value,
+                items: [
+                  ...doc.querySelectorAll(".prompt .suggestion-item"),
+                ].map((el) => el.textContent),
+              };
               item = [...doc.querySelectorAll(".prompt .suggestion-item")].find(
-                (el) => el.textContent.includes(selected.name),
+                // Obsidian renders the command's namespace and label in separate
+                // spans, without the colon/space in the registered command name.
+                (el) =>
+                  el.querySelector(".suggestion-content")?.textContent ===
+                  selected.name.replace(": ", ""),
               );
               return item;
             }, "command-palette search result");
@@ -65,18 +82,16 @@ export async function exerciseInteractionBehavior(c, env, rows, modifier) {
           const first = api.getSceneElements()[0],
             expectedX = first.x + 19;
           api.updateScene({
-            elements: api
-              .getSceneElements()
-              .map((el) =>
-                el.id === first.id
-                  ? {
-                      ...el,
-                      x: expectedX,
-                      version: el.version + 1,
-                      versionNonce: el.versionNonce + 1,
-                    }
-                  : el,
-              ),
+            elements: api.getSceneElements().map((el) =>
+              el.id === first.id
+                ? {
+                    ...el,
+                    x: expectedX,
+                    version: el.version + 1,
+                    versionNonce: el.versionNonce + 1,
+                  }
+                : el,
+            ),
             captureUpdate: "IMMEDIATELY",
           });
           await c.waitFor(() => view.isDirty(), "palette-save dirty edit");
@@ -178,16 +193,50 @@ export async function exerciseInteractionBehavior(c, env, rows, modifier) {
             () => api.getAppState().activeTool.type === "selection",
             "selection shortcut",
           );
+          let menuPoint;
+          const scene = api.getSceneElements(),
+            state = api.getAppState();
+          for (const [x, y] of [
+            [0.15, 0.85],
+            [0.85, 0.85],
+            [0.15, 0.35],
+          ]) {
+            const point = { x: r.x + r.width * x, y: r.y + r.height * y };
+            const sx = (point.x - r.x) / state.zoom.value - state.scrollX,
+              sy = (point.y - r.y) / state.zoom.value - state.scrollY;
+            if (
+              doc.elementFromPoint(point.x, point.y) === canvas &&
+              !scene.some(
+                (el) =>
+                  sx >= el.x - 5 &&
+                  sx <= el.x + el.width + 5 &&
+                  sy >= el.y - 5 &&
+                  sy <= el.y + el.height + 5,
+              )
+            ) {
+              menuPoint = point;
+              break;
+            }
+          }
+          check(menuPoint, "No empty canvas point for the canvas context menu");
           for (const type of ["mousePressed", "mouseReleased"])
             await env.input("Input.dispatchMouseEvent", {
               type,
-              ...a,
+              ...menuPoint,
               button: "right",
               buttons: type === "mousePressed" ? 2 : 0,
               clickCount: 1,
             });
           let selectAll;
           await c.waitFor(() => {
+            c.caseTrace = {
+              menuPoint,
+              contextMenu: api.getAppState().contextMenu,
+              menuHTML: doc
+                .querySelector(".context-menu")
+                ?.outerHTML.slice(0, 3000),
+              events,
+            };
             selectAll = doc.querySelector(
               '.context-menu [data-testid="selectAll"] button',
             );

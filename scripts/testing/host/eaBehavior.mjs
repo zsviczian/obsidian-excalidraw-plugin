@@ -87,6 +87,14 @@ export async function exerciseEABehavior(c, env, rows) {
           );
           const otherLeaf = app.workspace.getLeaf("tab");
           env.owned.add(otherLeaf);
+          await c.waitFor(
+            () =>
+              p.isExcalidrawFile(otherFile) &&
+              app.metadataCache.getFileCache(otherFile)?.frontmatter?.[
+                "excalidraw-plugin"
+              ],
+            "other EA target metadata",
+          );
           await otherLeaf.openFile(otherFile);
           await env.ready(otherLeaf);
           app.workspace.setActiveLeaf(otherLeaf, { focus: true });
@@ -242,6 +250,19 @@ export async function exerciseSettingsLifecycle(c, env, rows) {
         const api = view.excalidrawAPI,
           canvas = view.containerEl.querySelector("canvas.interactive"),
           bounds = canvas.getBoundingClientRect();
+        const wheelEvents = [];
+        c.caseTrace = { wheelEvents };
+        const observeWheel = (event) =>
+          wheelEvents.push({
+            trusted: event.isTrusted,
+            deltaY: event.deltaY,
+            ctrl: event.ctrlKey,
+            meta: event.metaKey,
+            target: event.target?.className,
+          });
+        canvas.addEventListener("wheel", observeWheel, { passive: true });
+        c.defer(() => canvas.removeEventListener("wheel", observeWheel));
+        p.settings.allowWheelZoom = true;
         let point;
         for (const [x, y] of [
           [0.7, 0.55],
@@ -273,13 +294,21 @@ export async function exerciseSettingsLifecycle(c, env, rows) {
           () => api.getAppState().allowWheelZoom === true,
           "wheel-ready app state",
         );
-        for (let i = 0; i < 8; i++)
+        for (let i = 0; i < 12 && api.getAppState().zoom.value > 0.5; i++) {
+          const before = api.getAppState().zoom.value;
           await env.input("Input.dispatchMouseEvent", {
             type: "mouseWheel",
             ...point,
+            modifiers: 0,
             deltaX: 0,
             deltaY: 300,
           });
+          // Wait for each wheel update; Chromium may coalesce a burst of ticks.
+          await c.waitFor(
+            () => api.getAppState().zoom.value < before,
+            "individual trusted wheel update",
+          );
+        }
         await c.waitFor(
           () => Math.abs(api.getAppState().zoom.value - 0.5) < 1e-8,
           "trusted wheel uses first live minimum",
@@ -288,6 +317,7 @@ export async function exerciseSettingsLifecycle(c, env, rows) {
         await env.input("Input.dispatchMouseEvent", {
           type: "mouseWheel",
           ...point,
+          modifiers: 0,
           deltaX: 0,
           deltaY: 300,
         });

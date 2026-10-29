@@ -67,7 +67,7 @@ directories. `npm.cmd` / `yarn.cmd` avoid blocked PowerShell `.ps1` shims.
 
 `tests/features.json.behaviorMatrix` defines all factor domains, reviewed
 expected results/assertions, case templates and required context-specific IDs.
-There are currently **252 additional required behavioral cases** across main,
+There are currently **258 additional required behavioral cases** across main,
 ordinary split, nested split, popout, emulated phone and emulated tablet contexts.
 Six of these use actual plugin CLI `read`/`apply` transport; the other host cases
 use native EA/renderers and trusted CDP input as applicable. Fifteen popout
@@ -114,7 +114,7 @@ live-configuration tooling case). Later follow-ups strengthen only native export
 geometry assertions and update documentation; these native assertions remain
 unexecuted until the local-vault prerequisite is completed.
 
-The required native denominator is **351 cases**: 311 core/behavior/drop cases
+The required native denominator is **357 cases**: 317 core/behavior/drop cases
 and 40 device/layout cases. Seven of these IDs exercise actual plugin CLI
 commands; host/EA/input cases and emulated contexts are counted separately in
 reports. The 84 historical native IDs are recorded as omitted by the portable
@@ -125,10 +125,10 @@ follow-up; neither count nor implementation substitutes for execution.
 | --- | --- |
 | PDF timeout/lock rollback | Source regression passes; completion remains event-driven |
 | Delay beyond two minutes | Controlled clock passes at 120001 ms and a further 15 minutes; resources remain owned until completion |
-| Real plugin?Extras PDF and decoded-page inspection | **Pending** in the local vault |
+| Real plugin?Extras PDF and decoded-page inspection | **Passed**, `opened-single-pdf-repeat/`: one page, 288 � 216 pt, preserved text and 3330 red pixels |
 | Actual installed plugin and Extras files | Present and hash-verified; latest preparation/provenance must be refreshed after changes |
-| One-time local vault registration/trust | **Pending**; no fallback permitted |
-| 252 cross-context behavioral cases | Implemented, **unexecuted** |
+| One-time local vault registration/trust | **Completed** by maintainer; native canonical-path verification passes |
+| 258 cross-context behavioral cases | Desktop execution/debugging in progress; phone/tablet and complete acceptance pending |
 | 15 additional popout drop variants | Required, **unexecuted** |
 | Two complete matching-build native runs | **Pending** |
 | Follow-up production diff | Pass: plugin/fork runtime unchanged; Extras PDF rollback only |
@@ -294,3 +294,36 @@ The optional inherited diagnostic preserves its own failures and is available
 through manual workflow dispatch. It is not a required PR job. Workflows upload
 their reports even on failure. Ordinary hosted CI never launches Obsidian or
 accesses vaults.
+
+## Native execution checkpoint, 2026-10-29
+
+Reports under the ignored working tree retain source/diff identities, artifact
+hashes, all failures and cleanup evidence. The plugin artifact remains 5,029,887
+bytes with SHA-256 `676808bf603c5169886a25a7b4d5b193e32e1c580276bc078b832516aab048fd`;
+Extras remains `28f3c966b44bb35881b98d05f3fc327163b170b51bcdb3af13821c427015c8bb`.
+
+- `opened-single-pdf-repeat/`: real gateway/export, decoded output and cleanup
+  pass. Retained `native-single-export.pdf` is 10,610 bytes; SHA-256
+  `7e93eafebb3710df05efce6697ae39287b4c9348038c1255e53dd7a7a6ef1bc8`.
+  Its decoded page was also visually inspected. An earlier tooling display-render
+  deadline remains recorded as failed; PDF.js print intent avoids waiting for a
+  display animation frame in an occluded renderer. This changes test tooling only.
+- `follow-up-fast/`: 462 tests in 51 files pass, including four additional
+  tooling regressions since the 458-case portable checkpoint. A fresh full
+  portable aggregate is still required before reporting a new aggregate count.
+- `behavior-desktop-contexts/`: broad desktop execution; the failed popout
+  cleanup awaited a promise whose realm Obsidian destroyed. Failed evidence and
+  guarded recovery are retained. Only the verified local-vault renderer was
+  reloaded after proving no native print resources remained. The task was not
+  reported as settled or passed.
+- `behavior-split-popout-targeted/`: eight real behavior cases pass; cleanup
+  passes; acceptance fails on ResizeObserver notifications. No error filtering.
+
+The padding oracle follows the maintainer decision: frame-enabled exports retain
+their existing no-padding policy; explicit padding cases disable frame rendering.
+A separate policy case runs in every context. Behavior input scopes background
+throttling and CDP focus emulation to its owned renderer, records actual mode and
+geometry, then restores scheduling. This is trusted CDP input with emulated page
+focus, not physical OS-focus, touch or drag evidence. Lifecycle tests keep their
+own focus semantics. Popout error capture uses the same strict combined oracle;
+expected missing-asset ENOENT diagnostics require the exact owned path and count.
