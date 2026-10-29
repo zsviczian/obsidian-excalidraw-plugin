@@ -508,3 +508,11 @@ identities, including popout drops. It does not satisfy the full 357-case profil
 Returned, fully cleaned scenarios may retain failures while independent scenarios
 continue; pending task/print resources stop the sequence. Existing report evidence
 cannot be overwritten: select a fresh report directory for each attempt.
+
+The immutable seed now declares a single main reading-view tab and collapsed
+sidebars in `.obsidian/workspace.json`. Preparation and baseline restoration apply
+that layout through Obsidian's live workspace API and verify the active leaf and
+sidebar state. Native tests therefore do not inherit a previous picker/split
+layout. Behavioral split/popout/device scenarios still construct and assert their
+own declared contexts. Canvas preview scenarios collapse sidebars before fitting
+their multi-node fixture, preserving rendered-preview and independent-resize checks.

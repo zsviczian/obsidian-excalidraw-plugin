@@ -32,7 +32,7 @@ function temporary(t) {
   return root;
 }
 test("seed is deterministic, provenance-complete and retains saved data in all formats", () => {
-  assert.equal(verifySeed().manifest.fixtures.length, 21);
+  assert.equal(verifySeed().manifest.fixtures.length, 22);
   assert.deepEqual(coreFixtures(), coreFixtures());
   const compressed = drawingMarkdown(scene(), true).match(
     /```compressed-json\n([^\n]+)\n/,

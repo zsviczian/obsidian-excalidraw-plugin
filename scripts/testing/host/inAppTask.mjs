@@ -103,6 +103,7 @@ export async function runInAppTask({
       evaluate(
         `(()=>{delete globalThis[${JSON.stringify(key)}];return JSON.stringify({removed:true})})()`,
       );
+      if(originalError){originalError.cleanupVerified=true;originalError.observations=state.observations;}
     } catch (cleanupError) {
       const error = new Error(
         `${originalError?.message || "Native task"}; ${cleanupError.message}`,

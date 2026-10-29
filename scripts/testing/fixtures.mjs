@@ -122,6 +122,12 @@ export function coreFixtures() {
         spellcheck: false,
       }) + "\n",
     ".obsidian/appearance.json": '{"theme":"moonstone"}\n',
+    ".obsidian/workspace.json": JSON.stringify({
+      main:{id:'3022000000000001',type:'split',direction:'vertical',children:[{id:'3022000000000002',type:'tabs',children:[{id:'3022000000000003',type:'leaf',state:{type:'markdown',state:{file:'Notes/Render target.md',mode:'preview',source:false}}}]}]},
+      left:{id:'3022000000000004',type:'split',direction:'horizontal',width:300,collapsed:true,children:[{id:'3022000000000005',type:'tabs',children:[{id:'3022000000000006',type:'leaf',state:{type:'file-explorer',state:{sortOrder:'alphabetical',autoReveal:false}}},{id:'3022000000000007',type:'leaf',state:{type:'search',state:{query:''}}}]}]},
+      right:{id:'3022000000000008',type:'split',direction:'horizontal',width:300,collapsed:true,children:[]},
+      active:'3022000000000003',
+    },null,2)+'\n',
     ".obsidian/core-plugins.json":
       JSON.stringify([
         "file-explorer",

@@ -49,7 +49,7 @@ test("timeout cancels condition waits, awaits cleanup, then propagates failure",
       },
     }),
     (error) =>
-      /deadline/.test(error.message) &&
+      /deadline/.test(error.message) && error.cleanupVerified===true &&
       error.evidence.some(
         (test) =>
           test.testId === "completed-before-deadline" &&

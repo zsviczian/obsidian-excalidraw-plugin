@@ -40,7 +40,9 @@ test("live preparation restores core activation and accepts Obsidian's persisted
     ]),
   );
   let pendingWrites = 1;
+  const layout={active:'baseline-leaf',left:{collapsed:true},right:{collapsed:true}};
   const app = {
+    workspace:{floatingSplit:{children:[]},activeLeaf:{id:'wrong'},layout:{left:{collapsed:false},right:{collapsed:false}},async changeLayout(value){this.layout=JSON.parse(JSON.stringify(value));this.activeLeaf={id:value.active};},getLayout(){return this.layout;}},
     vault: {
       setConfig(key, value) {
         live[key] = value;
@@ -76,7 +78,9 @@ test("live preparation restores core activation and accepts Obsidian's persisted
     { app },
   );
   for (let i = 0; i < 2; i++) {
-    await execute(c, configuration, ["command-palette", "file-explorer"]);
+    await execute(c, configuration, ["command-palette", "file-explorer"],layout);
+    assert.deepEqual(app.workspace.getLayout(),layout);
+    assert.equal(app.workspace.activeLeaf.id,layout.active);
     assert.deepEqual(live, configuration);
     assert.equal(plugins["command-palette"].enabled, true);
     assert.equal(plugins["file-explorer"].enabled, true);

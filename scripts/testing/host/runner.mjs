@@ -211,7 +211,12 @@ export async function runObsidianSmoke({ projectRoot, vaultName, vaultPath, conf
       }
       report.target.drawingPath=drawing.path;
       browserSession?.setLabel('scenario:'+index);
-      const result = await scenario({ cli, drawingPath: drawing.path, reportDir });
+      let result;
+      try {result = await scenario({ cli, drawingPath: drawing.path, reportDir });}
+      catch(error){
+        if(error.cleanupVerified!==true)throw error;
+        result={id:scenario.name||'scenario:'+index,status:'failed',reason:error.message,cleanup:'passed',...(error.evidence?.length?{tests:error.evidence}:{}),observations:error.observations};
+      }
       report.scenarios.push(result);
       browserSession?.setLabel(result.id);
       if(browserSession){result.settlingCheck=await browserSession.settle();if(result.settlingCheck.status!=='passed'){result.status='failed';result.reason=result.settlingCheck.reason;}}

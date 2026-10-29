@@ -82,6 +82,7 @@ export async function applyDeclaredHostConfiguration(
   c,
   configuration,
   corePlugins,
+  layout,
 ) {
   for (const [key, value] of Object.entries(configuration))
     app.vault.setConfig(key, value);
@@ -120,7 +121,12 @@ export async function applyDeclaredHostConfiguration(
         JSON.stringify([...wanted].sort())
     );
   }, "declared core plugins persisted");
-  return { configuration, enabledCorePlugins: [...wanted] };
+  if(layout){
+    if(app.workspace.floatingSplit.children.length)throw Error('Cannot restore baseline with live popout windows');
+    await app.workspace.changeLayout(layout);
+    await c.waitFor(()=>{const state=app.workspace.getLayout();return app.workspace.activeLeaf?.id===layout.active&&state.left.collapsed===true&&state.right.collapsed===true;},'declared workspace layout');
+  }
+  return { configuration, enabledCorePlugins: [...wanted],...(layout?{layoutApplied:true,activeLeaf:layout.active}: {}) };
 }
 
 function declaredHostConfiguration(projectRoot) {
@@ -128,6 +134,7 @@ function declaredHostConfiguration(projectRoot) {
   return [
     JSON.parse(readFileSync(join(seed, "app.json"), "utf8")),
     JSON.parse(readFileSync(join(seed, "core-plugins.json"), "utf8")),
+    JSON.parse(readFileSync(join(seed, "workspace.json"), "utf8")),
   ];
 }
 

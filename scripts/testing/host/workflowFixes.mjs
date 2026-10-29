@@ -96,6 +96,10 @@ async function probeWorkflows(c,prefix,drawingPath,baseline) {
     await app.workspace.changeLayout({...originalLayout,main:{id:uid(),type:'split',direction:'vertical',children:[tabs(note.path,'markdown')]}});
     const focusMain=()=>{let anchor;app.workspace.iterateAllLeaves(leaf=>{if(!anchor&&leaf.getRoot()===app.workspace.rootSplit&&leaf.view.containerEl.ownerDocument===doc)anchor=leaf;});check(anchor,'Main workflow anchor missing');app.workspace.setActiveLeaf(anchor,{focus:true});};
     focusMain();
+    // A saved sidebar layout can leave only a few hundred pixels for Canvas.
+    // Fit previews in the main workspace, rather than testing far-zoom placeholders.
+    app.workspace.leftSplit.collapse();app.workspace.rightSplit.collapse();
+    await settle();
     fullscreenView=null;
     const canvasResults=[];
     for(const mode of ['SVG','SVGIMG','PNG'])for(const immersive of [false,true]) {
@@ -108,6 +112,7 @@ async function probeWorkflows(c,prefix,drawingPath,baseline) {
       const canvas=canvasLeaf.view.canvas;
       c.observations.canvasHost={ownerMatches:canvasLeaf.view.containerEl.ownerDocument===doc,active:app.workspace.activeLeaf===canvasLeaf,bounds:rect(canvasLeaf.view.contentEl),zoom:canvas.zoom};
       canvas.zoomToFit?.();await settle();
+      c.observations.canvasHost.zoomAfterFit=canvas.zoom;
       const selector=mode==='SVG'?'.excalidraw-embedded-img svg':'img.excalidraw-embedded-img';
       try {await wait(()=>canvasLeaf.view.containerEl.querySelectorAll(selector).length===3&&[...canvasLeaf.view.containerEl.querySelectorAll(selector)].every(el=>mode==='SVG'||el.complete&&el.naturalWidth>0),'Canvas '+mode+' previews');}
       catch(error){throw Error(error.message+' '+JSON.stringify([...canvas.nodes.values()].map(n=>({id:n.id,connected:n.nodeEl.isConnected,svg:n.nodeEl.querySelectorAll(selector).length,html:n.nodeEl.innerHTML.slice(-1100)}))));}

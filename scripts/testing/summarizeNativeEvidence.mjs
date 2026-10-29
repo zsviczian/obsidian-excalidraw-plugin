@@ -49,6 +49,7 @@ export function summarizeNativeRun(directory) {
           diffHash: m.diffHash,
           lockfileHash: m.lockfileHash,
           buildCommand: m.buildCommand,
+          toolchain: m.toolchain,
           artifacts: m.artifacts,
         },
       ];
@@ -95,6 +96,8 @@ export function summarizeNativeRun(directory) {
   return {
     schemaVersion: 1,
     status: aggregate.status,
+    environment: native.capabilities,
+    canonicalTarget: native.target,
     startedAt: native.startedAt,
     completedAt: native.completedAt,
     vault: ".test-work/vaults/excalidraw-auto-test/",

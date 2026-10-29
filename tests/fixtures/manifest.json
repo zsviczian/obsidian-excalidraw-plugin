@@ -21,6 +21,15 @@
       "generator": "synthetic-native-v2"
     },
     {
+      "id": ".obsidian/workspace.json",
+      "path": ".obsidian/workspace.json",
+      "sha256": "e6e8f84d5abb49d00a556657a5353fcf221806a80bc0b5902692484195fb98c1",
+      "bytes": 1528,
+      "provenance": "Generated synthetic fixture; no imported vault or third-party artwork",
+      "license": "CC0-1.0",
+      "generator": "synthetic-native-v2"
+    },
+    {
       "id": ".obsidian/core-plugins.json",
       "path": ".obsidian/core-plugins.json",
       "sha256": "b2f11b77b7461a3155bca869908c4659e3c261806f574a080a9d0b1fa6b39f10",

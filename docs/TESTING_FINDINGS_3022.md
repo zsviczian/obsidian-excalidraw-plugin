@@ -255,3 +255,15 @@ omitting later unrelated cases. Pending native work still stops the sequence.
 The nested-pane context-menu driver also now sends its trusted press/release in
 one CLI dispatch sequence, avoiding an uncontrolled CLI-duration button hold;
 selection, shortcut, save/reopen and scene assertions are unchanged.
+
+## F18 - Deterministic baseline layout and Canvas level of detail
+
+The first independent core attempt restored a prior open-sidebar layout, leaving
+Canvas only 380 pixels wide. Its fitted multi-node scene correctly used Obsidian's
+far-zoom placeholders, so rendered-preview assertions failed. This is distinct
+from F15's wrong-window targeting. The seed now includes an explicit single-tab,
+collapsed-sidebar baseline, applied and verified through the live workspace API.
+Canvas also collapses sidebars for its fit/resize measurement. No production
+rendering policy or preview/resize assertion changed. Safe task failures now carry
+an explicit cleanup-verified marker so independent scenarios can continue; actual
+unsettled work still stops all subsequent work.
