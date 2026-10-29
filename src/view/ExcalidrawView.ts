@@ -5996,6 +5996,26 @@ export default class ExcalidrawView
   public onChange(et: ExcalidrawElement[], st: AppState, files: BinaryFiles) {
     this.selectedElementActionsMenu?.update(et, st);
     if (st.activeTool?.type) {
+      if (this.plugin.settings.keepDrawingToolsSelected) {
+        const isDrawingTool = [
+          "line",
+          "arrow",
+          "rectangle",
+          "ellipse",
+          "diamond",
+          "freedraw",
+          "text",
+        ].includes(st.activeTool.type);
+        if (isDrawingTool && !st.activeTool.locked) {
+          st.activeTool.locked = true;
+          this.excalidrawAPI?.updateScene({
+            appState: {
+              activeTool: { ...st.activeTool, locked: true },
+            },
+            captureUpdate: CaptureUpdateAction.NEVER,
+          });
+        }
+      }
       if (st.activeTool.type === "image") {
         if (
           st.selectedElementIds &&

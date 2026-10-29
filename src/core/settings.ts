@@ -3132,6 +3132,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         aliases: ["pen crosshair", "freedraw crosshair"],
         control: { type: "toggle", key: "penModeCrosshairVisible" },
       },
+      {
+        name: t("SHOW_HIGHLIGHTER_TOOLBAR_NAME"),
+        desc: fragWithHTML(t("SHOW_HIGHLIGHTER_TOOLBAR_DESC")),
+        aliases: ["highlighter", "marker", "fosforlu"],
+        control: { type: "toggle", key: "showHighlighterInToolbar" },
+      },
+      {
+        name: t("KEEP_DRAWING_TOOLS_NAME"),
+        desc: fragWithHTML(t("KEEP_DRAWING_TOOLS_DESC")),
+        aliases: ["tool lock", "keep tool", "line lock"],
+        control: { type: "toggle", key: "keepDrawingToolsSelected" },
+      },
     ];
   }
 
