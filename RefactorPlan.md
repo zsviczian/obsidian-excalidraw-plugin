@@ -3104,3 +3104,17 @@ no filtering or additional production edits. Portable CI passes all 645 cases,
 with only a subsequent artifact-finalization ECONNRESET failure. Remaining risks
 are old core-case integration assumptions and phone/tablet feature workflows;
 complete error/cleanup-gated runs must still pass twice.
+
+### 2026-10-29 - Correct mobile CLI transport and capture Canvas renderer evidence
+
+The ordinary-focus desktop matrix passes all 172 cases with zero window errors.
+Lifecycle, real PDF/MathJax/Mermaid, and data integrity pass. Canvas nodes now load
+but their drawing previews are empty; added a passive, owned-path-only Markdown
+postprocessor observer and retained failed-task observations for diagnosis.
+Phone tests reached the CLI workflow and exposed a harness assumption: native
+command registration is desktop-only; public EA.executeCLI remains supported on
+mobile. The same atomic read/apply assertions now use that in-process API there,
+with nativeCLI=false verified and evidenceKind distinguishing transport. No cases
+were removed. Native CLI transport has five applicable cases, not seven; the two
+mobile protocol cases remain in the required matrix. Device error notifications
+remain strict pending maintainer classification; no production changes.

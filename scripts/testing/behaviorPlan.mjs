@@ -113,7 +113,7 @@ export const workflowCases = [
     id: "cli-atomic-targeted-edit",
     features: ["P03", "P07", "P10"],
     assertions: [
-      "actual plugin CLI read/apply transport",
+      "native desktop CLI or public in-process EA read/apply on mobile",
       "explicit target survives another active drawing",
       "zero/false values reach disk",
       "invalid mixed request is atomic",

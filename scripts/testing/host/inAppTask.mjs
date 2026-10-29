@@ -31,7 +31,7 @@ export async function runInAppTask({
   );
   const read = () =>
     evaluate(
-      `JSON.stringify((()=>{const c=globalThis[${JSON.stringify(key)}];return c?{state:c.state,result:c.result,error:c.error,tests:c.tests,cleanup:c.cleanup,cleanupErrors:c.cleanupErrors,cleanupPending:c.cleanupPending,phase:c.phase,request:c.request}:{state:'missing'}})())`,
+      `JSON.stringify((()=>{const c=globalThis[${JSON.stringify(key)}];return c?{state:c.state,result:c.result,error:c.error,tests:c.tests,observations:c.observations,cleanup:c.cleanup,cleanupErrors:c.cleanupErrors,cleanupPending:c.cleanupPending,phase:c.phase,request:c.request}:{state:'missing'}})())`,
     );
   let state, originalError, previousPhase;
   try {
@@ -78,6 +78,7 @@ export async function runInAppTask({
   } catch (error) {
     originalError = error;
     error.evidence ||= state?.tests;
+    error.observations ||= state?.observations;
     throw error;
   } finally {
     const end = now() + cleanupMs;
@@ -108,6 +109,7 @@ export async function runInAppTask({
         { cause: originalError || cleanupError },
       );
       error.evidence = state?.tests || originalError?.evidence;
+      error.observations = state?.observations || originalError?.observations;
       error.cleanupFailed = true;
       throw error;
     }

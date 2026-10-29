@@ -219,6 +219,7 @@ export async function runObsidianSmoke({ projectRoot, vaultName, vaultPath, conf
     preserveOwnedFixtures = error?.cleanupFailed === true;
     report.error = error instanceof Error ? error.message : String(error);
     if (error?.evidence) report.failedTaskEvidence = error.evidence;
+    if (error?.observations) report.failedTaskObservations = error.observations;
     report.scenarios.push({ id: phase, status: "failed", reason: report.error, ...(error?.evidence?.length ? {tests:error.evidence} : {}) });
   } finally {
     if (created && preserveOwnedFixtures) {

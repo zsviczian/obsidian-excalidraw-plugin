@@ -4,15 +4,25 @@ export async function exerciseCLIBehavior(c, env, rows) {
     await c.case(row.testId, row.featureIds, async () => {
       const { p, check } = env;
       let view = await env.openDrawing(row.id);
+      const mobile = app.isMobile === true,
+        ea = mobile ? p.ea.getAPI(view) : null;
+      if (ea) c.defer(() => ea.destroy());
       const command = (name, request) =>
-        c.requestHost("behavior-plugin-cli", {
-          command: name,
-          request: { apiVersion: 1, ...request },
-        });
+        mobile
+          ? ea.executeCLI({ apiVersion: 1, command: name, ...request })
+          : c.requestHost("behavior-plugin-cli", {
+              command: name,
+              request: { apiVersion: 1, ...request },
+            });
       const ok = (result) => {
         check(result.ok === true, JSON.stringify(result));
         return result;
       };
+      if (mobile)
+        check(
+          ok(await command("status", {})).data.nativeCLI === false,
+          "Mobile must expose the in-process EA protocol without desktop CLI registration",
+        );
       const path = view.file.path,
         live = ok(
           await command("read", { path, source: "live", detail: "elements" }),
@@ -114,7 +124,8 @@ export async function exerciseCLIBehavior(c, env, rows) {
       );
       return {
         assertions: row.assertions,
-        evidenceKind: "native-cli-commands",
+        evidenceKind: mobile ? "in-process-ea-cli" : "native-cli-commands",
+        transport: mobile ? "public EA.executeCLI" : "native Obsidian CLI",
         commands: ["read", "apply"],
         actual: env.geometry(),
         reopened: true,
