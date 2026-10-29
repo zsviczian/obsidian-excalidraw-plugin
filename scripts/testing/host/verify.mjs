@@ -1,6 +1,6 @@
 /** Prepare the repository-local vault from current workspace builds, then run guarded native profiles. */
 import { randomUUID } from "node:crypto";
-import { mkdirSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -60,32 +60,33 @@ if (
 )
   throw Error("Use --profile=smoke|regression|full|devices|soak");
 const fullProfile = profile === "full" || profile === "regression";
-const lifecycle = fullProfile || process.argv.includes("--lifecycle");
+const coreOnly=process.argv.includes("--core"),coreScenarios=fullProfile||coreOnly;
+const lifecycle = coreScenarios || process.argv.includes("--lifecycle");
 const extrasServices =
-  fullProfile || process.argv.includes("--extras-services");
+  coreScenarios || process.argv.includes("--extras-services");
 const devices =
   fullProfile || profile === "devices" || process.argv.includes("--devices");
-const textUndo = fullProfile || process.argv.includes("--text-undo");
-const nativeCLI = fullProfile || process.argv.includes("--native-cli");
-const embedRecovery = fullProfile || process.argv.includes("--embed-recovery");
+const textUndo = coreScenarios || process.argv.includes("--text-undo");
+const nativeCLI = coreScenarios || process.argv.includes("--native-cli");
+const embedRecovery = coreScenarios || process.argv.includes("--embed-recovery");
 const groupedLinkClick =
-  fullProfile || process.argv.includes("--grouped-link-click");
-const latexInput = fullProfile || process.argv.includes("--latex-input");
+  coreScenarios || process.argv.includes("--grouped-link-click");
+const latexInput = coreScenarios || process.argv.includes("--latex-input");
 const latexPreview = process.argv.includes("--latex-preview");
 const imageGeometryReal =
-  fullProfile || process.argv.includes("--image-geometry-real");
+  coreScenarios || process.argv.includes("--image-geometry-real");
 const imageGeometry =
   process.argv.includes("--image-geometry") || imageGeometryReal;
-const wheelZoom = fullProfile || process.argv.includes("--wheel-zoom");
-const webDrop = fullProfile || process.argv.includes("--web-drop");
-const internalDrop = fullProfile || process.argv.includes("--internal-drop");
+const wheelZoom = coreScenarios || process.argv.includes("--wheel-zoom");
+const webDrop = coreScenarios || process.argv.includes("--web-drop");
+const internalDrop = coreScenarios || process.argv.includes("--internal-drop");
 const youtubeDrop = process.argv.includes("--youtube-drop");
 const svgImport = process.argv.includes("--svg-import");
-const lucide = fullProfile || process.argv.includes("--lucide");
-const workflowFixes = fullProfile || process.argv.includes("--workflow-fixes");
+const lucide = coreScenarios || process.argv.includes("--lucide");
+const workflowFixes = coreScenarios || process.argv.includes("--workflow-fixes");
 const behaviorMatrix =
   fullProfile || process.argv.includes("--behavior-matrix");
-const dataIntegrity = fullProfile || process.argv.includes("--data-integrity");
+const dataIntegrity = coreScenarios || process.argv.includes("--data-integrity");
 const focusContextArg = process.argv
   .slice(2)
   .find((arg) => arg.startsWith("--behavior-context="));
@@ -115,6 +116,7 @@ if (
   throw Error("Focused desktop contexts: main,split,nested-split,popout");
 const flags = [
   "--diagnostics",
+  "--core",
   "--prepare-only",
   "--behavior-matrix",
   "--lifecycle",
@@ -162,6 +164,8 @@ const reportDir =
   process.env.EXCALIDRAW_TEST_REPORT_DIR ||
   join(pluginRoot, ".test-work/reports/native-" + randomUUID());
 
+if(existsSync(join(reportDir,'report.json'))||existsSync(join(reportDir,'preparation.json')))throw Error('Choose a new native report directory; previous evidence must not be overwritten');
+
 function command(file, args, cwd, timeout = 60_000, inherit = false) {
   const result = spawnNativeSync(file, args, {
     cwd,
@@ -186,7 +190,7 @@ const source = {
   forkRevision: git(forkRoot, ["rev-parse", "HEAD"]),
   forkDirty: Boolean(git(forkRoot, ["status", "--porcelain"])),
   buildMode: "workspace-frozen",
-  requestedProfile: profile || "focused",
+  requestedProfile: coreOnly ? "core" : profile || "focused",
   node: process.version,
   platform: process.platform,
 };
@@ -299,10 +303,10 @@ try {
                 runLatexInputScenario({ ...context, realRenderer: true }),
             ]
           : []),
-        ...(fullProfile ? [runAutomateScenario] : []),
-        ...(fullProfile ? [runCoreInteractionScenario] : []),
-        ...(fullProfile ? [runPDFImportScenario] : []),
-        ...(fullProfile || profile === "soak"
+        ...(coreScenarios ? [runAutomateScenario] : []),
+        ...(coreScenarios ? [runCoreInteractionScenario] : []),
+        ...(coreScenarios ? [runPDFImportScenario] : []),
+        ...(coreScenarios || profile === "soak"
           ? [
               (context) =>
                 runStabilityScenario({
@@ -436,6 +440,7 @@ try {
         report.cleanupError = String(error.stack || error);
       }
     }
+    if(coreOnly){const audit=aggregateReports([adaptSmokeReport(report)],requiredNativeCases.filter(id=>!id.startsWith('native:behavior:')));report.coreAudit={status:audit.status,missing:audit.missing};if(audit.status!=='passed')report.status='failed';}
     writeFileSync(
       join(reportDir, "report.json"),
       JSON.stringify(report, null, 2) + "\n",

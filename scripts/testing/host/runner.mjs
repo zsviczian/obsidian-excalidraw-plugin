@@ -216,13 +216,18 @@ export async function runObsidianSmoke({ projectRoot, vaultName, vaultPath, conf
       browserSession?.setLabel(result.id);
       if(browserSession){result.settlingCheck=await browserSession.settle();if(result.settlingCheck.status!=='passed'){result.status='failed';result.reason=result.settlingCheck.reason;}}
       expectedConsoleErrors.push(...(result.expectedConsoleErrors || []));
-      if (result.status !== "passed") throw Error(`Required native scenario ${result.id} is ${result.status}: ${result.reason || "no reason supplied"}`);
+      if (result.status !== "passed") {
+        report.error ||= `Required native scenario ${result.id} is ${result.status}: ${result.reason || "no reason supplied"}`;
+        // Returned scenarios have completed their cleanup. Keep independent
+        // failures visible while continuing; never continue unsettled work.
+        if(ownedDebugger){const pending=parseEval(cli('eval',"code=JSON.stringify(Object.keys(globalThis).some(key=>key.startsWith('__excalidrawTestTask_'))||[app.workspace.containerEl.ownerDocument,...app.workspace.floatingSplit.children.map(win=>win.doc)].some(doc=>doc?.querySelector('body > .print')))"));if(pending){const error=Error('Failed scenario still owns native work');error.cleanupFailed=true;throw error;}}
+      }
     }
     const errors = cli("dev:errors").trim();
     report.cliErrors=classifyCLIErrorText(errors);
     if (report.cliErrors.unexpected.length) throw new Error(`Captured JavaScript errors: ${errors.slice(0, 1000)}`);
     report.scenarios.push({ id: "javascript-errors", status: "passed" });
-    report.status = "passed";
+    report.status = report.scenarios.every(scenario=>scenario.status==='passed')?'passed':'failed';
   } catch (error) {
     preserveOwnedFixtures = error?.cleanupFailed === true;
     report.error = error instanceof Error ? error.message : String(error);

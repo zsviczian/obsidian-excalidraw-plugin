@@ -78,11 +78,13 @@ export function behaviorInputDriver(cli) {
         Number.isSafeInteger(request.params.contentsId),
     );
     const { contentsId, method, params } = request.params;
+    const sequence=Array.isArray(params)?params:[params];
+    assert.ok(sequence.length>0&&sequence.length<=4,'Bounded trusted input sequence required');
     return parseCLIJSON(
       cli(
         "eval",
         "code=" +
-          `(async()=>{const wc=require('@electron/remote').webContents.fromId(${contentsId});if(!wc?.debugger.isAttached())throw Error('Behavior input debugger ownership missing');await wc.debugger.sendCommand(${JSON.stringify(method)},${JSON.stringify(params)});return JSON.stringify({dispatched:true});})()`,
+          `(async()=>{const wc=require('@electron/remote').webContents.fromId(${contentsId});if(!wc?.debugger.isAttached())throw Error('Behavior input debugger ownership missing');const times=[];for(const params of ${JSON.stringify(sequence)}){await wc.debugger.sendCommand(${JSON.stringify(method)},params);times.push({type:params.type,at:Date.now()});}return JSON.stringify({dispatched:true,times});})()`,
       ),
     );
   };
@@ -178,6 +180,7 @@ export async function runBehaviorMatrix({
       classified.unexpected.length === 0 && browserIdle.every(idle=>idle.status==='passed')
         ? "passed"
         : "failed",
+    ...(tests.some(test=>test.status!=='passed') ? {reason:'Behavior assertions failed: '+tests.filter(test=>test.status!=='passed').map(test=>test.testId).join(', ')} : {}),
     ...(classified.unexpected.length || browserIdle.some(idle=>idle.status!=='passed')
       ? {
           reason: "Unexpected native window errors during behavioral workflows",

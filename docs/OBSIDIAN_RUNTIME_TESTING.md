@@ -501,3 +501,10 @@ Focused device diagnosis can use `--profile=devices --device-profiles=phone-port
 The profile still runs all 43 workflows in each selected context. Full/regression
 profiles reject this filter and continue to require all 40 device profiles and
 all 258 behavioral obligations.
+
+Independent core diagnosis: `node scripts/testing/host/verify.mjs --core --diagnostics`
+builds/deploys the same three repositories and requires all 59 non-matrix core
+identities, including popout drops. It does not satisfy the full 357-case profile.
+Returned, fully cleaned scenarios may retain failures while independent scenarios
+continue; pending task/print resources stop the sequence. Existing report evidence
+cannot be overwritten: select a fresh report directory for each attempt.

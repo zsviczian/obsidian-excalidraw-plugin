@@ -14,6 +14,7 @@ export async function exerciseInteractionBehavior(c, env, rows, modifier) {
         listener = (e) =>
           events.push({
             type: e.type,
+            at: e.timeStamp,
             trusted: e.isTrusted,
             pointerType: e.pointerType,
           });
@@ -220,18 +221,20 @@ export async function exerciseInteractionBehavior(c, env, rows, modifier) {
             }
           }
           check(menuPoint, "No empty canvas point for the canvas context menu");
-          for (const type of ["mousePressed", "mouseReleased"])
-            await env.input("Input.dispatchMouseEvent", {
+          // Send one native click sequence without a CLI round trip between
+          // press/release, which can turn a click into a long right-button hold.
+          const rightClick=await env.input("Input.dispatchMouseEvent",["mousePressed", "mouseReleased"].map(type=>({
               type,
               ...menuPoint,
               button: "right",
               buttons: type === "mousePressed" ? 2 : 0,
               clickCount: 1,
-            });
+            })));
           let selectAll;
           await c.waitFor(() => {
             c.caseTrace = {
               menuPoint,
+              rightClick,
               contextMenu: api.getAppState().contextMenu,
               menuHTML: doc
                 .querySelector(".context-menu")

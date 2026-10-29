@@ -67,6 +67,12 @@ export function summarizeNativeRun(directory) {
     assertions: test.assertions,
     evidenceKind: test.evidenceKind,
     transport: test.transport,
+    actual: test.actual,
+    decoded: test.decoded,
+    pdfPixels: test.pdfPixels,
+    markdownPixels: test.markdownPixels,
+    reopened: test.reopened,
+    sourceKinds: test.sourceKinds,
   }));
   const notifications = [
     ...(native.windowErrors || []),

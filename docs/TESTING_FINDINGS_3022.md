@@ -229,3 +229,29 @@ All 40 device interaction/layout profiles executed; six earlier desktop profiles
 fail the inherited notification storm and the two feature-bearing profiles also
 reflect their workflow failures. Cleanup and baseline restoration pass. Neither
 required full repeat has passed yet.
+
+## F17 - Mobile embedding exception: production approval pending
+
+The isolated command below reproduces the exception with only the embedding
+workflow selected; its rendering/save/reopen assertions pass but the JavaScript
+error gate correctly fails:
+
+```powershell
+node scripts/testing/host/verify.mjs --profile=devices --device-profiles=phone-portrait-light --behavior-cases=drawing-and-markdown-embeds
+```
+
+`mobile-embeddable-isolated/` records Obsidian's mobile-toolbar `update` calling
+`activeEditor.editor.hasFocus()` while the active editor is the plugin-owned
+embedded Markdown preview with no editor. The active drawing remains Excalidraw.
+Inspection of Obsidian 1.14.5's actual `createFileNode` implementation confirms
+that omitted `focus` defaults to selection/focus of the new node. The plugin's
+internal Canvas-node factory currently omits that option. Proposed narrow fix:
+create this internal node with `focus: false`, preserving deliberate editing
+activation. The maintainer has been asked for explicit approval. No production
+change or exception filtering has been made for this finding.
+
+The next independent-core run retains failures from cleaned scenarios instead of
+omitting later unrelated cases. Pending native work still stops the sequence.
+The nested-pane context-menu driver also now sends its trusted press/release in
+one CLI dispatch sequence, avoiding an uncontrolled CLI-duration button hold;
+selection, shortcut, save/reopen and scene assertions are unchanged.
