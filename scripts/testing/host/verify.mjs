@@ -102,6 +102,11 @@ const focusedContexts = focusContextArg
 const focusedCases = focusCasesArg
   ?.slice("--behavior-cases=".length)
   .split(",");
+const deviceProfilesArg=process.argv.slice(2).find(arg=>arg.startsWith('--device-profiles='));
+const allDeviceProfiles=[...deviceProfiles(),...breakpointProfiles()];
+const selectedDeviceIds=deviceProfilesArg?.slice('--device-profiles='.length).split(',');
+if(fullProfile&&deviceProfilesArg)throw Error('Full/regression profiles cannot omit device profiles');
+if(selectedDeviceIds?.some(id=>!allDeviceProfiles.some(profile=>profile.id===id)))throw Error('Unknown focused device profile');
 if (
   focusedContexts?.some(
     (id) => !["main", "split", "nested-split", "popout"].includes(id),
@@ -136,7 +141,7 @@ const unknown = process.argv
   .slice(2)
   .filter(
     (arg) =>
-      ![profileArg, focusContextArg, focusCasesArg, ...flags].includes(arg),
+      ![profileArg, focusContextArg, focusCasesArg, deviceProfilesArg, ...flags].includes(arg),
   );
 if (unknown.length)
   throw Error(
@@ -259,7 +264,6 @@ try {
         ...(extrasServices ? [runExtrasServicesScenario] : []),
         ...(dataIntegrity ? [runDataIntegrityScenario] : []),
         ...(workflowFixes ? [runWorkflowFixesScenario] : []),
-        ...(lucide ? [runLucideScenario] : []),
         ...(svgImport ? [runSvgImportScenario] : []),
         ...(wheelZoom ? [runWheelZoomScenario] : []),
         ...(imageGeometry
@@ -307,6 +311,8 @@ try {
                 }),
             ]
           : []),
+        // The catalogue/picker workflow runs after independent core scenarios.
+        ...(lucide ? [runLucideScenario] : []),
       ],
       runCli: (vault, commandName, ...args) =>
         command(
@@ -347,7 +353,7 @@ try {
         vaultPath: process.env.EXCALIDRAW_TEST_VAULT_PATH,
         configDir: process.env.EXCALIDRAW_TEST_CONFIG_DIR,
         automationRoot: process.env.EXCALIDRAW_TEST_AUTOMATION_ROOT,
-        profiles: [...deviceProfiles(), ...breakpointProfiles()],
+        profiles: selectedDeviceIds ? allDeviceProfiles.filter(profile=>selectedDeviceIds.includes(profile.id)) : allDeviceProfiles,
         featureWorkflows: fullProfile || profile === "devices",
       });
       deviceReport.source = combination?.manifests.plugin || source;

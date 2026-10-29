@@ -3,6 +3,7 @@ import { runLegacyTask } from './legacyTask.mjs';
 import assert from 'node:assert/strict';
 import { join } from 'node:path';
 import { copyFileSync } from 'node:fs';
+import {runLucideInteractionControl} from './lucideInteractionControl.mjs';
 
 export async function runLucideScenario({cli,drawingPath,reportDir}) {
   const prefix=drawingPath.replace(/\.(excalidraw\.md|excalidraw|md)$/,'')+'_lucide';
@@ -10,6 +11,8 @@ export async function runLucideScenario({cli,drawingPath,reportDir}) {
   const paths={drawing:prefix+'.excalidraw.md',invalid:prefix+'_invalid.excalidraw.md',popout:prefix+'_popout.excalidraw.md',svg:prefix+'.svg',png:prefix+'.png'};
   const key='__lucide3019';
   const evaluate=code=>JSON.parse(cli('eval','code='+code).trim().replace(/^=>\s*/,''));
+  const originalLayout=evaluate('JSON.stringify(app.workspace.getLayout())');
+  const ordinaryInteraction=await runLucideInteractionControl({cli,drawingPath});
   const action=(command,values={})=>JSON.parse(cli('obsidian-excalidraw-plugin:'+command,'json='+JSON.stringify({apiVersion:1,...values})));
   const ok=r=>{assert.equal(r.ok,true,JSON.stringify(r));return r;};
   let unsettled=false;
@@ -60,9 +63,9 @@ export async function runLucideScenario({cli,drawingPath,reportDir}) {
     assert.ok(saved.elements.every(e=>e.type!=='image'));
     evaluate(`(async()=>{const p=app.plugins.plugins['obsidian-excalidraw-plugin'];const view=app.workspace.getLeavesOfType('excalidraw').find(l=>l.view.file?.path===${JSON.stringify(paths.drawing)}).view;await p.lucidePicker.open(view);return JSON.stringify({open:true})})()`);
     cli('dev:screenshot','path='+join(reportDir,'lucide-picker.png'));
-    return {id:'lucide-3019',status:'passed',catalog:catalog.length,artifacts,...probe.result};
+    return {id:'lucide-3019',status:'passed',ordinaryInteraction,catalog:catalog.length,artifacts,...probe.result};
   } catch(error) {unsettled=error.cleanupFailed===true;throw error;} finally {
-    if(!unsettled)evaluate(`(async()=>{const p=app.plugins.plugins['obsidian-excalidraw-plugin'];p?.lucidePicker?.tab?.close();delete globalThis.${key};for(const path of ${JSON.stringify(Object.values(paths))}){if(!path.startsWith('__excalidraw_cli_smoke_'))throw Error('Not an owned fixture');for(const leaf of app.workspace.getLeavesOfType('excalidraw').filter(l=>l.view.file?.path===path)){await leaf.setViewState({type:'empty',state:{}});leaf.detach()}const file=app.vault.getFileByPath(path);if(file)await app.vault.delete(file)}return JSON.stringify({clean:true})})()`);
+    if(!unsettled)evaluate(`(async()=>{const p=app.plugins.plugins['obsidian-excalidraw-plugin'];p?.lucidePicker?.tab?.close();delete globalThis.${key};for(const path of ${JSON.stringify(Object.values(paths))}){if(!path.startsWith('__excalidraw_cli_smoke_'))throw Error('Not an owned fixture');for(const leaf of app.workspace.getLeavesOfType('excalidraw').filter(l=>l.view.file?.path===path)){await leaf.setViewState({type:'empty',state:{}});leaf.detach()}const file=app.vault.getFileByPath(path);if(file)await app.vault.delete(file)}await app.workspace.changeLayout(${JSON.stringify(originalLayout)});return JSON.stringify({clean:true,layoutRestored:true})})()`);
   }
 }
 

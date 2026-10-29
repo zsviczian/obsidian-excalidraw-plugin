@@ -496,3 +496,8 @@ artifacts. It writes sanitized case results, geometry, notification records,
 PDF/Canvas evidence and artifact/source manifests to `docs/testing-evidence/3022/`.
 These small documents may be committed and linked from the existing PRs; generated
 plugin binaries and full local reports remain ignored. No publication is needed.
+
+Focused device diagnosis can use `--profile=devices --device-profiles=phone-portrait-light,tablet-portrait-full-light`.
+The profile still runs all 43 workflows in each selected context. Full/regression
+profiles reject this filter and continue to require all 40 device profiles and
+all 258 behavioral obligations.

@@ -290,7 +290,7 @@ export async function prepareLocalVault({
       session = acquireDebuggerSession(cli);
       await runInAppTask({
         cli,
-        execute: async () => {
+        execute: async (c) => {
           const tasks = Object.keys(globalThis).filter((k) =>
             k.startsWith("__excalidrawTestTask_"),
           );
@@ -300,6 +300,9 @@ export async function prepareLocalVault({
             );
           const leaves = [];
           app.workspace.iterateAllLeaves((leaf) => leaves.push(leaf));
+          const mainDocument=app.workspace.containerEl.ownerDocument;
+          const popouts=[...app.workspace.floatingSplit.children].map(window=>window.win);
+          if([mainDocument,...app.workspace.floatingSplit.children.map(window=>window.doc)].some(doc=>doc?.querySelector('body > .print')))throw Error('Native print resources remain; preserve working vault');
           for (const leaf of leaves) {
             const view = leaf.view;
             if (
@@ -308,10 +311,12 @@ export async function prepareLocalVault({
               (await view.saveWithOutcome()).status !== "persisted"
             )
               throw Error("Cannot settle working-vault drawing");
-            if (view.file)
+            if (view.file && view.containerEl.ownerDocument===mainDocument)
               await leaf.setViewState({ type: "empty", state: {} });
           }
-          return { quiescent: true, mobile: app.isMobile === true };
+          for(const owner of popouts)if(!owner.closed)owner.close();
+          await c.waitForCleanup(()=>popouts.every(owner=>owner.closed),'working-vault popout teardown');
+          return { quiescent: true, mobile: app.isMobile === true,closedPopouts:popouts.length };
         },
       });
       for (const id of ["obsidian-excalidraw-plugin", "excalidraw-extras"]) {

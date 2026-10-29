@@ -208,3 +208,24 @@ and independent-size assertions remain. Focused native confirmation passes (`can
 A stylesheet-unload exception also occurred while that extra popout was alive;
 production code remains unchanged. It is not classified as a ResizeObserver
 notification. The focused run has no such exception after correct owned-window cleanup; reassess if it recurs.
+
+## F16 - First complete attempt: strict storm failure and mobile activation
+
+`native-repeat-1/` at plugin 0e6c48c5 is failed and retained. All 172 desktop
+behavior cases, lifecycle, Extras including real PDF, data integrity and Canvas
+pass. The Lucide scenario completes its functional assertions but leaves an empty
+host sidepanel/layout behind; the post-scenario idle check records roughly
+60 ResizeObserver notifications/second and fails within five seconds. No storm
+waiver or production change was made. The scenario now restores its original
+layout. A trusted command-palette/open/close control checks idle while the ordinary
+picker is open and after closing it, before the exhaustive workflow.
+
+Phone and tablet each complete 41 of 43 behavioral obligations. Both remaining
+failures use saveReopen after deliberately activating another drawing: the helper
+reopens its owned tab without selecting it, then checks an inactive editor's
+form factor. Disk-save checks pass. The helper now explicitly selects the owned
+leaf before/after reopen; scene-ID, durable-save and form-factor checks remain.
+All 40 device interaction/layout profiles executed; six earlier desktop profiles
+fail the inherited notification storm and the two feature-bearing profiles also
+reflect their workflow failures. Cleanup and baseline restoration pass. Neither
+required full repeat has passed yet.

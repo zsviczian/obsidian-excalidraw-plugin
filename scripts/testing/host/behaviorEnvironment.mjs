@@ -374,8 +374,11 @@ export async function behaviorEnvironment(
       ) === JSON.stringify(ids),
       "Behavior scene IDs differ on disk",
     );
+    check(view.leaf===leaf,'Save/reopen selected a different owned leaf');
+    app.workspace.setActiveLeaf(leaf,{focus:true});
     await leaf.setViewState({ type: "empty", state: {} });
     await leaf.openFile(file);
+    app.workspace.setActiveLeaf(leaf,{focus:true});
     await ready(leaf);
     if (["phone", "tablet"].includes(context.id)) {
       leaf.view.gotoFullscreen();

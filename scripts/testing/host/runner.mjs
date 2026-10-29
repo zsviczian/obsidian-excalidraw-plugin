@@ -210,8 +210,10 @@ export async function runObsidianSmoke({ projectRoot, vaultName, vaultPath, conf
         report.target.fixturePaths.push(drawing.path);
       }
       report.target.drawingPath=drawing.path;
+      browserSession?.setLabel('scenario:'+index);
       const result = await scenario({ cli, drawingPath: drawing.path, reportDir });
       report.scenarios.push(result);
+      browserSession?.setLabel(result.id);
       if(browserSession){result.settlingCheck=await browserSession.settle();if(result.settlingCheck.status!=='passed'){result.status='failed';result.reason=result.settlingCheck.reason;}}
       expectedConsoleErrors.push(...(result.expectedConsoleErrors || []));
       if (result.status !== "passed") throw Error(`Required native scenario ${result.id} is ${result.status}: ${result.reason || "no reason supplied"}`);

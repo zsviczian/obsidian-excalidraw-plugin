@@ -110,10 +110,14 @@ export function acquireBrowserDiagnostics(cli, label) {
   const key =
     "__excalidrawBrowserDiagnostics_" + randomUUID().replaceAll("-", "");
   evaluate(
-    `(()=>{const c={events:[]};c.listener=event=>c.events.push({at:Date.now(),message:event.message,isTrusted:event.isTrusted,hasError:event.error!=null,stack:event.error?.stack,source:event.filename,line:event.lineno,column:event.colno,label:${JSON.stringify(label)},cases:Object.keys(globalThis).filter(k=>k.startsWith('__excalidrawTestTask_')).map(k=>({phase:globalThis[k].activeCase||globalThis[k].phase}))});window.addEventListener('error',c.listener);globalThis[${JSON.stringify(key)}]=c;return JSON.stringify(true)})()`,
+    `(()=>{const c={events:[],label:${JSON.stringify(label)}};c.listener=event=>c.events.push({at:Date.now(),message:event.message,isTrusted:event.isTrusted,hasError:event.error!=null,stack:event.error?.stack,source:event.filename,line:event.lineno,column:event.colno,label:c.label,cases:Object.keys(globalThis).filter(k=>k.startsWith('__excalidrawTestTask_')).map(k=>({phase:globalThis[k].activeCase||globalThis[k].phase}))});window.addEventListener('error',c.listener);globalThis[${JSON.stringify(key)}]=c;return JSON.stringify(true)})()`,
   );
   let disposed = false;
   return {
+    setLabel: (label) =>
+      evaluate(
+        `(()=>{globalThis[${JSON.stringify(key)}].label=${JSON.stringify(label)};return JSON.stringify(true)})()`,
+      ),
     read: () =>
       evaluate(`JSON.stringify(globalThis[${JSON.stringify(key)}].events)`),
     settle: () =>
