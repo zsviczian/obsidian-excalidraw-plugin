@@ -118,8 +118,21 @@ export function acquireBrowserDiagnostics(cli, label) {
       evaluate(
         `(()=>{globalThis[${JSON.stringify(key)}].label=${JSON.stringify(label)};return JSON.stringify(true)})()`,
       ),
-    read: () =>
-      evaluate(`JSON.stringify(globalThis[${JSON.stringify(key)}].events)`),
+    read: () => {
+      // Snapshot the append-only prefix once. A storm must fail settling, but
+      // must not overflow CLI transport and discard the evidence of that failure.
+      const count = evaluate(`JSON.stringify(globalThis[${JSON.stringify(key)}].events.length)`);
+      if (!Number.isSafeInteger(count) || count < 0) throw Error("Invalid browser event count");
+      const events = [];
+      for (let start = 0; start < count; start += 128) {
+        const end = Math.min(start + 128, count);
+        const page = evaluate(`JSON.stringify(globalThis[${JSON.stringify(key)}].events.slice(${start},${end}))`);
+        if (!Array.isArray(page) || page.length !== end - start)
+          throw Error("Browser event evidence changed during retrieval");
+        events.push(...page);
+      }
+      return events;
+    },
     settle: () =>
       evaluate(
         `(${settleBrowserDiagnostics.toString()})(window,globalThis[${JSON.stringify(key)}].events,${JSON.stringify(label)}).then(JSON.stringify)`,

@@ -229,7 +229,11 @@ export async function runDeviceMatrix({
   } finally {
     try {
       let debuggerError;
-      if(browserSession){try{report.failedWindowEvents=browserSession.read();browserSession.dispose();}catch(error){debuggerError=error;}browserSession=null;}
+      if(browserSession){
+        try{report.failedWindowEvents=browserSession.read();}
+        catch(error){debuggerError=error;}
+        finally{try{browserSession.dispose();}catch(error){debuggerError||=error;}browserSession=null;}
+      }
       if (debuggerSession) {
         try {
           debuggerSession.dispose();

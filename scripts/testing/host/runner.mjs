@@ -266,7 +266,7 @@ export async function runObsidianSmoke({ projectRoot, vaultName, vaultPath, conf
         report.cleanupCLIErrors=classifyCLIErrorText(errors);
         if (report.cleanupCLIErrors.unexpected.length) { report.status = "failed"; report.error ||= `Captured JavaScript errors after cleanup: ${errors.slice(0, 1000)}`; }
         if(browserSession){report.windowErrors=browserSession.read();report.browserDiagnostics=splitWindowErrors(report.windowErrors);if(report.browserDiagnostics.unexpected.length){report.status='failed';report.error||='Unexpected browser window errors';}}
-      } catch (error) { report.status = "failed"; report.error ||= error.message; }
+      } catch (error) { report.status = "failed"; report.error ||= error.message; report.diagnosticsCaptureError = error.message; }
       finally {
         try { browserSession?.dispose(); } catch(error){report.status='failed';report.cleanup='failed';report.cleanupError=error.message;}
         try { debuggerSession.dispose(); }

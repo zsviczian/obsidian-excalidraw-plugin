@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import vm from "node:vm";
 import {
   resizeNotification,
   splitWindowErrors,
   classifyCLIErrorText,
   settleBrowserDiagnostics,
+  acquireBrowserDiagnostics,
 } from "./browserDiagnostics.mjs";
 
 test("only the exact browser notification without an Error object is diagnostic", () => {
@@ -26,6 +28,36 @@ test("only the exact browser notification without an Error object is diagnostic"
     diagnostics: [allowed],
     unexpected: others,
   });
+});
+
+test("large raw notification evidence is retrieved in bounded pages without chasing new events", () => {
+  let removed = 0, pageCount = 0;
+  const context = vm.createContext({ window: {
+    addEventListener() {}, removeEventListener() { removed++; },
+  } });
+  const cli = (command, argument) => {
+    assert.equal(command, "eval");
+    const code = argument.slice(5);
+    const result = vm.runInContext(code, context);
+    assert.ok(Buffer.byteLength(result) < 256 * 1024, "simulated bounded CLI buffer");
+    if (code.includes(".events.slice(") && ++pageCount === 1)
+      context[key].events.push({ at: 999999, message: "arrived after the snapshot" });
+    return result;
+  };
+  const observer = acquireBrowserDiagnostics(cli, "large-evidence");
+  const key = Object.keys(context).find(key => key.startsWith("__excalidrawBrowserDiagnostics_"));
+  const events = Array.from({ length: 10000 }, (_, at) => ({
+    at, message: resizeNotification, isTrusted: true, hasError: false,
+    source: "app://obsidian.md/index.html", context: "x".repeat(768),
+  }));
+  context[key].events.push(...events);
+  assert.ok(Buffer.byteLength(JSON.stringify(events)) > 4 * 1024 * 1024);
+  assert.deepEqual(observer.read(), events);
+  assert.equal(context[key].events.length, events.length + 1);
+  assert.equal(pageCount, Math.ceil(events.length / 128));
+  observer.dispose(); observer.dispose();
+  assert.equal(removed, 1);
+  assert.equal(context[key], undefined);
 });
 test("CLI classification retains raw lines and rejects exceptions, suffixes and unknown formats", () => {
   const raw =

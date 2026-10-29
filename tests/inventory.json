@@ -2447,7 +2447,7 @@
     },
     {
       "path": "scripts/testing/host/browserDiagnostics.test.mjs",
-      "mode": "direct-module-or-tooling"
+      "mode": "isolated-or-extracted"
     },
     {
       "path": "scripts/testing/host/coldStart.test.mjs",

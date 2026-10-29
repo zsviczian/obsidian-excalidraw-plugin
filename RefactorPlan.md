@@ -3202,3 +3202,17 @@ remain strict pending maintainer classification; no production changes.
   text/history, migration and cleanup assertion remains. Production and PDF
   rollback unchanged. Next risk checks: full predecessor text sequence, both
   migration routes and all six large-scene cycles before complete repeats.
+
+- 2026-10-29 (#3022): Clean e4a36a6b migration controls both pass with no
+  exceptions. The full-predecessor core sequence passes all 16 text variants and
+  all six 1000-element cycles, preserving every original assertion and deadline.
+  The subsequent full attempt fails the unchanged idle gate: roughly 60 exact
+  browser notifications per second start at web drop and persist through desktop
+  cleanup despite stable sampled pane geometry. All 258 behavioral obligations
+  execute; the run is not an acceptance pass. Desktop raw-event retrieval exceeds
+  the CLI buffer, leaving counts/idle samples and CLI tail but incomplete raw
+  payloads. Added finite snapshot pagination with an over-4-MB regression and
+  guaranteed device observer disposal on capture errors. No observer is patched,
+  excluded or silenced. Baseline restoration and native negative controls pass.
+  Next check: focused storm reproduction with complete raw evidence; no second
+  full retry until this strict blocker is understood. Production remains exact.
