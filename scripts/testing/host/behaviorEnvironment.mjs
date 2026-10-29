@@ -26,33 +26,44 @@ export async function behaviorEnvironment(
   const owned = new Set(),
     previous = app.workspace.activeLeaf;
   c.defer(async () => {
+    c.phase = "behavior:" + context.id + ":cleanup";
+    const windows = new Map();
     for (const leaf of [...owned].reverse()) {
-      if (leaf.view?.excalidrawAPI && leaf.view.isDirty())
-        check(
-          (await leaf.view.saveWithOutcome()).status === "persisted",
-          "Behavior cleanup save failed",
+      const view = leaf.view,
+        owner = view.ownerWindow || view.containerEl.ownerDocument.defaultView;
+      if (!owner || owner.closed) {
+        await c.waitForCleanup(
+          () => !view.excalidrawAPI,
+          "retired behavior editor teardown",
         );
-      if (leaf.view?.containerEl.isConnected) {
-        const owner = leaf.view.containerEl.ownerDocument.defaultView;
-        if (!owner || owner.closed) {
+        continue;
+      }
+      if (!windows.has(owner)) windows.set(owner, []);
+      windows.get(owner).push({ leaf, view });
+    }
+    for (const [owner, entries] of windows) {
+      for (const { view } of entries)
+        if (view.excalidrawAPI && view.isDirty())
           check(
-            !leaf.view.excalidrawAPI,
-            "Destroyed behavior window retained a live editor",
+            (await view.saveWithOutcome()).status === "persisted",
+            "Behavior cleanup save failed",
           );
-          continue;
-        }
-        if (owner !== mainDoc.defaultView) {
-          // Match the lifecycle suite: the final tab can destroy the realm
-          // owning setViewState's promise. Observe actual host teardown instead.
-          owner.close();
-          await c.waitForCleanup(
-            () => owner.closed,
-            "owned behavior popout teardown",
-          );
-        } else {
-          await leaf.setViewState({ type: "empty", state: {} });
-          leaf.detach();
-        }
+      if (owner !== mainDoc.defaultView) {
+        // Several owned drawings can share this popout. Retire all its tabs
+        // before closing the window; do not strand setViewState promises there.
+        for (const { leaf } of entries) leaf.detach();
+        if (!owner.closed) owner.close();
+        await c.waitForCleanup(
+          () =>
+            owner.closed && entries.every(({ view }) => !view.excalidrawAPI),
+          "all owned popout editors teardown",
+        );
+      } else {
+        for (const { leaf } of entries)
+          if (leaf.view.containerEl.isConnected) {
+            await leaf.setViewState({ type: "empty", state: {} });
+            leaf.detach();
+          }
       }
     }
     const folder = app.vault.getFolderByPath(prefix);

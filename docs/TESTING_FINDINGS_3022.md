@@ -89,28 +89,28 @@ Obsidian CLI, EA, file persistence and decoded exports. Reports keep those forms
 of evidence distinct. Physical mobile and other operating systems require their
 own validation; desktop emulation does not establish those environments.
 
-## F10 � Plain PDF TFile input: classification pending
+## F10 - Plain PDF TFile input: approved fix, source regression passes
 
 In `behavior-main-scheduled/report.json`, `EA.addImage(x,y,pdfTFile)`
 reproduces a loader error followed by a null-size exception. The API documents
 `TFile | string`, and the loader defaults the page to 1, but its crop parsing
 reads `linkParts.ref.split(...)` when ref is null. An explicit
-`pdfTFile.path + '#page=1'` works and is used in the valid-reference workflow.
-The maintainer has been asked whether plain PDF TFile input should load page 1
-or whether an explicit page reference is the accepted requirement. Production
-code is unchanged; this finding is not a passing invalid-input contract.
+`pdfTFile.path + '#page=1'` works. The maintainer confirmed that a plain PDF must
+load page 1 and approved an immediate fix. Optional crop-reference access now
+preserves that default. Source regressions pass; native workflows again use the
+plain TFile, while separate explicit-page coverage is retained.
 
-## F11 � System-font Markdown image: classification pending
+## F11 - System-font Markdown image: approved fix, source regression passes
 
 The same native report records `Failed to fetch font "Helvetica" from urls "" []`
 for Markdown-image frontmatter `excalidraw-font: Helvetica`. The plugin comment
 expects an empty CSS definition for that system font; the fork font-content
-helper instead reports the empty source list. Bundled Excalifont is the valid
-font used by the rendering workflow. The maintainer has been asked whether the
-system-font diagnostic is intended fallback behavior or a defect. No production
-change or exception allowlist has been introduced for it.
+helper instead reports the empty source list. The maintainer classified this as
+a defect and approved an immediate fix. The helper now respects metadata.local;
+local no-fetch and bundled-font regressions pass. Native workflows again use
+Helvetica. No exception allowlist has been introduced.
 
-## F12 � Native tooling teardown and layout diagnostics
+## F12 - Native tooling teardown and layout diagnostics
 
 The broad desktop run `behavior-desktop-contexts/` closed the final popout via
 `await leaf.setViewState({type:'empty'})`. Obsidian destroyed that renderer while
@@ -130,9 +130,30 @@ Test input was also unnecessarily scrolling already-visible fixed controls; the
 next run checks targeted input without those extra layout changes. Reproduce and
 classify any residual before proposing a production change.
 
-## Maintainer decision � Export padding and frames
+## Maintainer decision - Export padding and frames
 
 Frame-enabled SVG/PNG exports suppress padding even without frame elements. The
 maintainer confirmed this is intended. Padding combinations explicitly disable
 frame rendering, and a separate default/enabled policy case protects the existing
 behavior in each context. No production modification is needed.
+
+## Maintainer authorization and fixes, 2026-10-29
+
+The maintainer classified F10 and F11 as defects and explicitly requested immediate
+fixes, expanding the earlier rollback-only production scope. PDF crop parsing now
+uses optional access for a missing reference, preserving the existing page-1
+default. Five AST-isolated actual-method cases pass: null/missing reference,
+explicit page, explicit crop, and a negative control reproducing the old failure.
+These receive no whole-module coverage or native-render credit.
+
+The fork CSS helper now respects the existing `metadata.local` flag, returning an
+empty definition for system fonts without fetching font-file content. The 127-case
+independent fork suite includes local-font no-fetch and bundled-font CSS regressions;
+artifact/declaration build, full typecheck and focused lint pass. The native
+composite embed workflow again uses a plain PDF TFile and Helvetica in every
+context. Native confirmation and complete repeated acceptance remain pending.
+
+The production-diff audit now verifies the exact two approved patches and their
+release-note lines, plus the unchanged targeted Extras rollback. No other runtime
+edits are permitted. Broad plugin lint still reports 119 existing diagnostics;
+focused lint of both touched plugin source files passes.

@@ -373,6 +373,27 @@
             "native:behavior:tablet:images-source-edit-missing",
             "native:behavior:tablet:drawing-and-markdown-embeds"
           ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/pdfImport.test.mjs",
+          "cases": [
+            "node:scripts/testing/pdfImport.test.mjs::PDF loader renders plain PDF file",
+            "node:scripts/testing/pdfImport.test.mjs::PDF loader renders missing PDF reference",
+            "node:scripts/testing/pdfImport.test.mjs::PDF loader renders explicit PDF page",
+            "node:scripts/testing/pdfImport.test.mjs::PDF loader renders explicit PDF crop",
+            "node:scripts/testing/pdfImport.test.mjs::the previous plain-PDF null-reference path fails the loader evidence"
+          ]
+        },
+        {
+          "repository": "fork",
+          "layer": "source",
+          "path": "tests/obsidian/unit/coreRegression.test.tsx",
+          "cases": [
+            "fork-owned:tests/obsidian/unit/coreRegression.test.tsx::system font CSS uses the local fallback without fetching nonexistent font content",
+            "fork-owned:tests/obsidian/unit/coreRegression.test.tsx::bundled font CSS still embeds the registered font content",
+            "fork-owned:tests/obsidian/unit/coreRegression.test.tsx::vault-provided Local Font content remains embedded"
+          ]
         }
       ],
       "fixtures": [
@@ -985,6 +1006,17 @@
             "native:behavior:tablet:images-shared-crops",
             "native:behavior:tablet:drawing-and-markdown-embeds"
           ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/pdfImport.test.mjs",
+          "cases": [
+            "node:scripts/testing/pdfImport.test.mjs::PDF loader renders plain PDF file",
+            "node:scripts/testing/pdfImport.test.mjs::PDF loader renders missing PDF reference",
+            "node:scripts/testing/pdfImport.test.mjs::PDF loader renders explicit PDF page",
+            "node:scripts/testing/pdfImport.test.mjs::PDF loader renders explicit PDF crop",
+            "node:scripts/testing/pdfImport.test.mjs::the previous plain-PDF null-reference path fails the loader evidence"
+          ]
         }
       ],
       "fixtures": [
@@ -1068,6 +1100,17 @@
             "native:behavior:tablet:cli-atomic-targeted-edit",
             "native:behavior:tablet:ea-selection-groups-bindings-frames",
             "native:behavior:tablet:ea-hooks-targeting-invalid"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/pdfImport.test.mjs",
+          "cases": [
+            "node:scripts/testing/pdfImport.test.mjs::PDF loader renders plain PDF file",
+            "node:scripts/testing/pdfImport.test.mjs::PDF loader renders missing PDF reference",
+            "node:scripts/testing/pdfImport.test.mjs::PDF loader renders explicit PDF page",
+            "node:scripts/testing/pdfImport.test.mjs::PDF loader renders explicit PDF crop",
+            "node:scripts/testing/pdfImport.test.mjs::the previous plain-PDF null-reference path fails the loader evidence"
           ]
         }
       ],
@@ -1996,6 +2039,8 @@
           ],
           "assertions": [
             "drawing and Markdown rendered images",
+            "Helvetica frontmatter renders without an empty-source font error",
+            "plain PDF TFile decodes page 1 content",
             "local embeddable target",
             "decoded export content",
             "save/reopen"

@@ -3017,11 +3017,11 @@ A subsequent native-only assertion review removes a substituted PNG padding: eve
 
 The installed repository-local vault still awaits one-time Obsidian opening/trust/CLI registration. No native workflow, real PDF inspection or complete repeated native run is claimed. All three PRs remain draft and their bodies explain this unfinished state. Highest-risk checks remain active Live Preview, zero/false precedence, asynchronous source/crop updates and trusted command/EA targeting in popouts and phone/tablet emulation. Physical devices and other desktop operating systems remain separate environments.
 
-### 2026-10-29 � Local-vault native execution and test-tooling corrections (#3022)
+### 2026-10-29 - Local-vault native execution and test-tooling corrections (#3022)
 
 The maintainer completed local-vault registration/trust. A fresh real plugin?Extras
 PDF passed completion, cleanup, PDF.js text/page/pixel checks and independent
-visual inspection (10,610 bytes, one 288 � 216 pt page). The initial occluded-display
+visual inspection (10,610 bytes, one 288 x 216 pt page). The initial occluded-display
 render deadline remains failed evidence; test PDF decoding now uses print intent.
 The plugin fast suite passes 462 cases. The current denominator is 258 behavioral
 cases and 357 native cases overall, including the accepted frame-padding policy.
@@ -3057,3 +3057,19 @@ points, verifies an already-destroyed window has no live editor, and uses the
 existing close-window pattern in the newly required popout drop variants too.
 No runtime source changes. Highest-risk validation remains nested-split input,
 final-popout teardown, all drop variants, and phone/tablet feature workflows.
+
+### 2026-10-29 - Approved plain-PDF and system-font fixes (#3022/#477)
+
+The maintainer confirmed both native findings are defects and requested immediate
+fixes. Added optional access for the absent PDF crop reference so the existing
+page-1 default can render; five actual-method simulations pass, including explicit
+page/crop preservation and the original-failure negative control. The fork font
+CSS helper now skips metadata.local, matching existing font registration; local
+no-fetch and bundled-content regressions bring its independent suite to 127 passes.
+Fork artifact/declarations and full typecheck pass; focused plugin/fork lint pass.
+Broad plugin lint retains 119 unrelated baseline diagnostics. The exact-patch
+production audit includes only these two fixes/release notes and the PDF rollback.
+Native embeds again use plain PDFs and Helvetica. Behavior cleanup now retires all
+owned tabs in each shared popout before window closure and waits for actual API
+teardown. Remaining highest-risk checks are the multi-drawing popout, valid
+PDF/Helvetica decoded output and mobile interaction/settings/embed workflows.

@@ -217,7 +217,7 @@ export async function exerciseImageBehavior(c, env, rows) {
         }
         const markdown = await env.create(
           "Embedded-note.md",
-          '---\nexcalidraw-font: Excalifont\nexcalidraw-font-color: "#ff0000"\nexcalidraw-border-color: "#0000ff"\nexcalidraw-css: "h1 { background-color: #00ff00; }"\n---\n# EMBEDDED_MARKDOWN_RENDER_TOKEN\n\n| Name | Value |\n| --- | --- |\n| Owned | 42 |\n\n$E=mc^2$\n',
+          '---\nexcalidraw-font: Helvetica\nexcalidraw-font-color: "#ff0000"\nexcalidraw-border-color: "#0000ff"\nexcalidraw-css: "h1 { background-color: #00ff00; }"\n---\n# EMBEDDED_MARKDOWN_RENDER_TOKEN\n\n| Name | Value |\n| --- | --- |\n| Owned | 42 |\n\n$E=mc^2$\n',
         );
         const drawing = await env.create(
           "Embedded-source.excalidraw.md",
@@ -237,13 +237,7 @@ export async function exerciseImageBehavior(c, env, rows) {
           drawing,
           app.vault.getFileByPath("Assets/Small.pdf"),
         ].entries()) {
-          const id = await ea.addImage(
-            i * 450,
-            300,
-            file.extension === "pdf" ? file.path + "#page=1" : file,
-            false,
-            false,
-          );
+          const id = await ea.addImage(i * 450, 300, file, false, false);
           check(id, "Embedded source conversion failed: " + file.path);
           ids.push(id);
         }
@@ -308,6 +302,16 @@ export async function exerciseImageBehavior(c, env, rows) {
             markdownPixels.green > 20,
           "Markdown font/CSS and border frontmatter did not reach actual exported pixels",
         );
+        const pdfElement = view
+          .getViewElements()
+          .find((element) => element.id === ids[2]);
+        const pdfPixels = await env.decode(
+          view.excalidrawAPI.getFiles()[pdfElement.fileId].dataURL,
+        );
+        check(
+          pdfPixels.blue > 100 && pdfPixels.width > 0 && pdfPixels.height > 0,
+          "Plain PDF TFile did not decode page 1 blue content",
+        );
         view = await saveReopen(view);
         check(
           ids.every((id) =>
@@ -328,6 +332,9 @@ export async function exerciseImageBehavior(c, env, rows) {
           actual: env.geometry(),
           decoded,
           markdownPixels,
+          pdfPixels,
+          markdownFont: "Helvetica",
+          plainPdfDefaultPage: 1,
           sourceKinds: [
             "Markdown rendered image",
             "drawing rendered image",

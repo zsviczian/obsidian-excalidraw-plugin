@@ -2518,6 +2518,10 @@
       "mode": "direct-module-or-tooling"
     },
     {
+      "path": "scripts/testing/pdfImport.test.mjs",
+      "mode": "isolated-or-extracted"
+    },
+    {
       "path": "scripts/testing/persistence.source.test.mjs",
       "mode": "direct-module-or-tooling"
     },

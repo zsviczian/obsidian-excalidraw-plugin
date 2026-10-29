@@ -195,6 +195,8 @@ export const workflowCases = [
     features: ["P05", "P09"],
     assertions: [
       "drawing and Markdown rendered images",
+      "Helvetica frontmatter renders without an empty-source font error",
+      "plain PDF TFile decodes page 1 content",
       "local embeddable target",
       "decoded export content",
       "save/reopen",

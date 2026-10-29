@@ -125,7 +125,7 @@ follow-up; neither count nor implementation substitutes for execution.
 | --- | --- |
 | PDF timeout/lock rollback | Source regression passes; completion remains event-driven |
 | Delay beyond two minutes | Controlled clock passes at 120001 ms and a further 15 minutes; resources remain owned until completion |
-| Real plugin?Extras PDF and decoded-page inspection | **Passed**, `opened-single-pdf-repeat/`: one page, 288 � 216 pt, preserved text and 3330 red pixels |
+| Real plugin-to-Extras PDF and decoded-page inspection | **Passed**, `opened-single-pdf-repeat/`: one page, 288 x 216 pt, preserved text and 3330 red pixels |
 | Actual installed plugin and Extras files | Present and hash-verified; latest preparation/provenance must be refreshed after changes |
 | One-time local vault registration/trust | **Completed** by maintainer; native canonical-path verification passes |
 | 258 cross-context behavioral cases | Desktop execution/debugging in progress; phone/tablet and complete acceptance pending |
@@ -327,3 +327,15 @@ geometry, then restores scheduling. This is trusted CDP input with emulated page
 focus, not physical OS-focus, touch or drag evidence. Lifecycle tests keep their
 own focus semantics. Popout error capture uses the same strict combined oracle;
 expected missing-asset ENOENT diagnostics require the exact owned path and count.
+
+## Authorized defect fixes, 2026-10-29
+
+The maintainer explicitly approved immediate fixes for the plain-PDF page-1
+null-reference error and Helvetica Markdown-image empty-source font fetch. The
+PDF loader now handles a missing crop reference; the fork CSS helper skips local
+system-font content. Exact patches and release notes are checked by
+`scripts/testing/review3022ProductionDiff.mjs`. This approval expands the original
+PDF rollback-only follow-up scope; no other runtime changes are authorized.
+Five actual-method PDF simulations and the 127-case independent fork suite pass.
+Native composite embeds use plain PDF TFiles and Helvetica to confirm both fixes;
+explicit PDF page-reference coverage remains in the separate native PDF case.

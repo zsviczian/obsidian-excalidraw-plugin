@@ -18,7 +18,7 @@ export function reviewProductionDiff({
   const roots = { plugin: pluginRoot, fork: forkRoot, extras: extrasRoot },
     report = {
       scope:
-        "Only PDF timeout and per-document concurrency rejection may change production behavior in this follow-up.",
+        "PDF timeout/concurrency rollback, plus the maintainer-authorized plain-PDF and local-font fixes of 2026-10-29 and their release notes; no other production changes.",
       baselines,
       repositories: {},
     };
@@ -61,9 +61,64 @@ export function reviewProductionDiff({
       .filter(Boolean);
     assert.deepEqual(
       changed,
-      kind === "extras" ? ["src/PDFExport/index.ts"] : [],
+      kind === "extras"
+        ? ["src/PDFExport/index.ts"]
+        : kind === "plugin"
+          ? [
+              "src/shared/Dialogs/Messages.ts",
+              "src/shared/EmbeddedFileLoader.ts",
+            ]
+          : ["packages/excalidraw/obsidianUtils.ts"],
       kind + " has an unauthorized additional production diff",
     );
+    const normalized = (text) => text.replaceAll("\r\n", "\n");
+    const expectedFile = (path, transform) => {
+      const before = git(root, ["show", baselines[kind] + ":" + path]);
+      const expected = transform(normalized(before));
+      assert.notEqual(
+        expected,
+        normalized(before),
+        "Authorized patch anchor missing: " + path,
+      );
+      assert.equal(
+        normalized(readFileSync(join(root, path), "utf8")),
+        expected,
+        "Unexpected production edits in " + path,
+      );
+    };
+    if (kind === "plugin") {
+      expectedFile("src/shared/EmbeddedFileLoader.ts", (source) =>
+        source.replace(
+          'linkParts.ref\n        .split("rect=")[1]',
+          'linkParts.ref?.split("rect=")[1]',
+        ),
+      );
+      expectedFile("src/shared/Dialogs/Messages.ts", (source) =>
+        source.replace(
+          "## Fixed\n- Autosave",
+          [
+            "## Fixed",
+            "- Importing a PDF file through ExcalidrawAutomate loads page 1 when no page reference is supplied. [#3022](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/3022)",
+            "- Markdown images using Helvetica no longer try to fetch a nonexistent font file. [#3022](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/3022)",
+            "- Autosave",
+          ].join("\n"),
+        ),
+      );
+    }
+    if (kind === "fork")
+      expectedFile("packages/excalidraw/obsidianUtils.ts", (source) =>
+        source.replace(
+          "  const fontFaces = Fonts.registered.get(fontFamily)?.fontFaces;",
+          [
+            "  const registered = Fonts.registered.get(fontFamily);",
+            "  // zsviczian -- #477: system fonts have no font-file content to embed.",
+            "  if (registered?.metadata.local) {",
+            '    return "";',
+            "  }",
+            "  const fontFaces = registered?.fontFaces;",
+          ].join("\n"),
+        ),
+      );
     for (const path of [
       "package.json",
       ...(kind === "fork" ? ["packages/excalidraw/package.json"] : []),
@@ -151,7 +206,7 @@ if (
     JSON.stringify(report, null, 2) + "\n",
   );
   process.stdout.write(
-    "Production diff audit passed: plugin/fork runtime unchanged; Extras contains only the reviewed PDF rollback. " +
+    "Production diff audit passed: exact plain-PDF/local-font fixes and release notes; Extras PDF rollback only. " +
       output +
       "\n",
   );
