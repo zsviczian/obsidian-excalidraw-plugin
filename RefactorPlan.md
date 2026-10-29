@@ -3073,3 +3073,18 @@ Native embeds again use plain PDFs and Helvetica. Behavior cleanup now retires a
 owned tabs in each shared popout before window closure and waits for actual API
 teardown. Remaining highest-risk checks are the multi-drawing popout, valid
 PDF/Helvetica decoded output and mobile interaction/settings/embed workflows.
+
+### 2026-10-29 - Native approved-fix confirmation and strict device error evidence (#3022)
+
+The clean e3f421b3/053a3b9f9/1cdcb7c popout build passes all five focused business
+workflows and owned cleanup. A plain PDF TFile decodes its page-1 blue content
+(800 x 640, 102270 blue pixels); Helvetica Markdown frontmatter renders without
+the former empty-source fetch diagnostic. The overall run correctly fails on
+ResizeObserver window errors. Those errors are not suppressed or classified as
+accepted behavior. Added workflow-phase window-error evidence, per-device CLI
+error gates and continued evidence only after settled device profiles. Actual
+phone/tablet editor classification and fullscreen restoration are required.
+Popout drop cleanup now detaches owned tabs and waits for API teardown. The next
+complete run covers all core/mobile/drop obligations; two complete passes remain
+required. Most likely remaining failures are native layout errors and context-
+specific interaction assumptions; no further production edits are authorized.

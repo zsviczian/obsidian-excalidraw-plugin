@@ -33,9 +33,10 @@ async function exercise(control, drawingPath, pngBase64, includePopout) {
         (await view.saveWithOutcome()).status !== "persisted"
       )
         throw Error("Owned drop popout could not save before closing");
-      owner.close();
+      c.pop.detach();
+      if (!owner.closed) owner.close();
       const end = Date.now() + 20000;
-      while (!owner.closed) {
+      while (!owner.closed || view.excalidrawAPI) {
         if (Date.now() >= end) throw Error("Owned drop popout did not close");
         await new Promise((resolve) => setTimeout(resolve, 25));
       }

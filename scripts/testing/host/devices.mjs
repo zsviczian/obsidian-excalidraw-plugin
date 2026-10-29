@@ -114,6 +114,7 @@ export async function runDeviceMatrix({
         `(()=>{app.changeTheme(${JSON.stringify(profile.theme === "dark" ? "obsidian" : "moonstone")});return JSON.stringify(true);})()`,
       );
       debuggerSession = acquireDebuggerSession(cli);
+      cli("dev:errors", "clear");
       const expectedConsoleErrors = [];
       cli(
         "dev:cdp",
@@ -182,18 +183,26 @@ export async function runDeviceMatrix({
         ...debuggerSession.read(),
         ...(workflows?.consoleErrors || []),
       ];
-      assert.deepEqual(
-        unexpectedConsoleErrors(errors, expectedConsoleErrors),
-        [],
-        "Unexpected device console/JavaScript error",
-      );
+      const unexpected = unexpectedConsoleErrors(errors, expectedConsoleErrors),
+        windowErrorText = cli("dev:errors").trim();
+      const errorGatePassed =
+        unexpected.length === 0 &&
+        (!windowErrorText || /^No errors captured\.?$/i.test(windowErrorText));
       debuggerSession.dispose();
       debuggerSession = null;
       report.tests.push({
         testId: "native:device:" + profile.id,
         featureIds: ["P07", "P08"],
-        status: "passed",
         ...result,
+        status: errorGatePassed ? "passed" : "failed",
+        ...(errorGatePassed
+          ? {}
+          : {
+              reason: "Unexpected native device errors",
+              unexpectedConsoleErrors: unexpected,
+              windowErrorText,
+              windowErrors: workflows?.windowErrors || [],
+            }),
       });
     }
     report.status = report.tests.every((test) => test.status === "passed")

@@ -78,7 +78,10 @@ export async function exerciseInteractionBehavior(c, env, rows, modifier) {
               JSON.stringify(api.getSceneElements()) === before,
             "Cancelled palette command changed view or scene",
           );
-          if (view.isFullscreen() !== wasFullscreen) view.exitFullscreen();
+          if (view.isFullscreen() !== wasFullscreen) {
+            if (wasFullscreen) view.gotoFullscreen();
+            else view.exitFullscreen();
+          }
           const first = api.getSceneElements()[0],
             expectedX = first.x + 19;
           api.updateScene({

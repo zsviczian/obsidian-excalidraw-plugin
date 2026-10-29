@@ -23,6 +23,29 @@ export async function behaviorEnvironment(
     "__excalidraw_cli_smoke_" + runId.slice(0, 8) + "_behavior_" + context.id;
   check(!app.vault.getFolderByPath(prefix), "Behavior fixture collision");
   await app.vault.createFolder(prefix);
+  const windowErrors = [],
+    errorListeners = [];
+  const observeWindowErrors = (window) => {
+    const listener = (event) =>
+      windowErrors.push({
+        context: context.id,
+        window: window === mainDoc.defaultView ? "main" : "owner",
+        phase: c.activeCase || c.phase,
+        message: event.message,
+        stack: event.error?.stack,
+        source: event.filename,
+        line: event.lineno,
+        column: event.colno,
+      });
+    window.addEventListener("error", listener);
+    errorListeners.push({ window, listener });
+  };
+  // Registered first so it also observes owned teardown; no error is suppressed.
+  c.defer(() => {
+    for (const { window, listener } of errorListeners)
+      if (!window.closed) window.removeEventListener("error", listener);
+  });
+  observeWindowErrors(mainDoc.defaultView);
   const owned = new Set(),
     previous = app.workspace.activeLeaf;
   c.defer(async () => {
@@ -42,6 +65,7 @@ export async function behaviorEnvironment(
       windows.get(owner).push({ leaf, view });
     }
     for (const [owner, entries] of windows) {
+      for (const { view } of entries) view.exitFullscreen?.();
       for (const { view } of entries)
         if (view.excalidrawAPI && view.isDirty())
           check(
@@ -146,6 +170,7 @@ export async function behaviorEnvironment(
     );
   const doc = leaf.view.containerEl.ownerDocument,
     win = doc.defaultView;
+  if (win !== mainDoc.defaultView) observeWindowErrors(win);
   const ownerContents = win.require("@electron/remote").getCurrentWebContents();
   const mainContents = mainDoc.defaultView
     .require("@electron/remote")
@@ -327,6 +352,15 @@ export async function behaviorEnvironment(
     await ready(leaf);
     app.workspace.setActiveLeaf(leaf, { focus: true });
     win.focus();
+    if (["phone", "tablet"].includes(context.id)) {
+      leaf.view.gotoFullscreen();
+      await c.waitFor(
+        () =>
+          leaf.view.excalidrawAPI.getEditorInterface().formFactor ===
+          context.id,
+        "actual " + context.id + " editor classification",
+      );
+    }
     check(
       leaf.view.ownerDocument === doc &&
         (doc !== mainDoc) === (context.id === "popout"),
@@ -351,6 +385,15 @@ export async function behaviorEnvironment(
     await leaf.setViewState({ type: "empty", state: {} });
     await leaf.openFile(file);
     await ready(leaf);
+    if (["phone", "tablet"].includes(context.id)) {
+      leaf.view.gotoFullscreen();
+      await c.waitFor(
+        () =>
+          leaf.view.excalidrawAPI.getEditorInterface().formFactor ===
+          context.id,
+        "reopened " + context.id + " editor classification",
+      );
+    }
     check(
       JSON.stringify(
         leaf.view.excalidrawAPI.getSceneElements().map((e) => e.id),
@@ -510,5 +553,6 @@ export async function behaviorEnvironment(
     click,
     geometry,
     diagnostics,
+    windowErrors,
   };
 }

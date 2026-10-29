@@ -103,7 +103,8 @@ export async function runBehaviorMatrix({
     "utf8",
   );
   const tests = [],
-    consoleErrors = [];
+    consoleErrors = [],
+    windowErrors = [];
   for (const id of contexts) {
     const rows = behavioralCases([id]).filter(
       (row) => !caseIds || caseIds.includes(row.id),
@@ -127,7 +128,7 @@ export async function runBehaviorMatrix({
       await (${exerciseImageBehavior.toString()})(c,env,rows.filter(r=>r.id.startsWith('images-')||r.id==='drawing-and-markdown-embeds'));
       await (${exerciseEABehavior.toString()})(c,env,rows.filter(r=>r.id.startsWith('ea-')));
       await (${exerciseInteractionBehavior.toString()})(c,env,rows.filter(r=>r.id.startsWith('command-')||r.id==='toolbar-context-shortcuts'),modifier);
-      return {tests:c.tests,consoleErrors:c.externalConsoleErrors||[]};
+      return {tests:c.tests,consoleErrors:c.externalConsoleErrors||[],windowErrors:env.windowErrors};
     }`)();
     const result = await runInAppTask({
       cli,
@@ -165,6 +166,7 @@ export async function runBehaviorMatrix({
     );
     tests.push(...result.tests);
     consoleErrors.push(...result.consoleErrors);
+    windowErrors.push(...result.windowErrors);
   }
   return {
     id: "behavior-matrix",
@@ -173,6 +175,7 @@ export async function runBehaviorMatrix({
       : "failed",
     tests,
     consoleErrors,
+    windowErrors,
     expectedConsoleErrors: tests.flatMap(
       (test) => test.expectedConsoleErrors || [],
     ),
