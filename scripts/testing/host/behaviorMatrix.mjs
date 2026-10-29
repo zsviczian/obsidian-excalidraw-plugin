@@ -170,9 +170,16 @@ export async function runBehaviorMatrix({
   }
   return {
     id: "behavior-matrix",
-    status: tests.every((test) => test.status === "passed")
-      ? "passed"
-      : "failed",
+    status:
+      tests.every((test) => test.status === "passed") &&
+      windowErrors.length === 0
+        ? "passed"
+        : "failed",
+    ...(windowErrors.length
+      ? {
+          reason: "Unexpected native window errors during behavioral workflows",
+        }
+      : {}),
     tests,
     consoleErrors,
     windowErrors,

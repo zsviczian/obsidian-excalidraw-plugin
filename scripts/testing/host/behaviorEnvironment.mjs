@@ -232,19 +232,6 @@ export async function behaviorEnvironment(
       method,
       params,
     });
-  // CLI can address an occluded vault. Make this owned behavioral page active
-  // for hit testing and layout; lifecycle scenarios keep real focus semantics.
-  await ownerContents.debugger.sendCommand(
-    "Emulation.setFocusEmulationEnabled",
-    { enabled: true },
-  );
-  c.defer(async () => {
-    if (!ownerContents.isDestroyed())
-      await ownerContents.debugger.sendCommand(
-        "Emulation.setFocusEmulationEnabled",
-        { enabled: false },
-      );
-  });
   const key = async (key, code, keyCode, modifiers = 0) => {
     for (const type of ["keyDown", "keyUp"])
       await input("Input.dispatchKeyEvent", {
@@ -489,7 +476,7 @@ export async function behaviorEnvironment(
     mainContentsId: mainContents.id,
     visibility: doc.visibilityState,
     scopedBackgroundThrottling: ownerContents.getBackgroundThrottling(),
-    focusEmulation: true,
+    focusEmulation: false,
   });
   const diagnostics = () => {
     const view = leaf.view,

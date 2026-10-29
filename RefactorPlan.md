@@ -3088,3 +3088,19 @@ Popout drop cleanup now detaches owned tabs and waits for API teardown. The next
 complete run covers all core/mobile/drop obligations; two complete passes remain
 required. Most likely remaining failures are native layout errors and context-
 specific interaction assumptions; no further production edits are authorized.
+
+### 2026-10-29 - Remove test-induced focus loop and enable required Canvas
+
+The full current build passes 172 desktop case assertions plus lifecycle (5),
+real Extras (3) and data integrity (7). Canvas coverage exposed an omitted core
+plugin in the seed; added Canvas to deterministic activation and asserted it
+before any .canvas opening. Recovered exact owned paths/markers after the failed
+workflow. The persistent ResizeObserver error was reproduced with both community
+runtimes unloaded; explicit CDP focus emulation triggers it, while ordinary
+debugger attachment does not. Removed that unnecessary tooling and reopened only
+the verified local vault after settling all work. Fresh renderer baseline: zero
+errors, both plugins loaded, Canvas enabled. Added an error-free startup gate;
+no filtering or additional production edits. Portable CI passes all 645 cases,
+with only a subsequent artifact-finalization ECONNRESET failure. Remaining risks
+are old core-case integration assumptions and phone/tablet feature workflows;
+complete error/cleanup-gated runs must still pass twice.

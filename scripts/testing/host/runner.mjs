@@ -192,6 +192,9 @@ export async function runObsidianSmoke({ projectRoot, vaultName, vaultPath, conf
     report.target.drawingPath = drawing.path;
     report.target.fixturePaths = [drawing.path];
     report.scenarios.push({ id: "drawing-main-window", status: "passed", assertions: ["Excalidraw API ready", "wrapper mounted", "owner document matches", "main application document"] });
+    const baselineErrors = cli("dev:errors").trim();
+    if (baselineErrors && !/^No errors captured\.?$/i.test(baselineErrors)) throw Error("Native error baseline failed before feature tests: " + baselineErrors.slice(0, 1000));
+    report.capabilities.errorBaseline = "passed";
     phase = "feature-scenarios";
     for (const [index,scenario] of scenarios.entries()) {
       if(index>0){

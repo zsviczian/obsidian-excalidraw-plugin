@@ -82,6 +82,7 @@ async function probeWorkflows(c,prefix,drawingPath,baseline) {
       } finally {await popout.setViewState({type:'empty',state:{}});popout.detach();}
     }
     c.observations.fullscreen.variants=fullscreenVariants;
+    check(app.internalPlugins.getPluginById('canvas')?.enabled,'Required core Canvas plugin is disabled');
     // A fitted three-node Canvas in an eighth-width pane uses Obsidian's
     // far-zoom placeholders. Measure actual previews in a normal-sized pane.
     await app.workspace.changeLayout({...originalLayout,main:{id:uid(),type:'split',direction:'vertical',children:[tabs(note.path,'markdown')]}});

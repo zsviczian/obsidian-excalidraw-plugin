@@ -128,6 +128,7 @@ export function coreFixtures() {
         "global-search",
         "switcher",
         "command-palette",
+        "canvas",
         "backlink",
         "outgoing-link",
         "tag-pane",

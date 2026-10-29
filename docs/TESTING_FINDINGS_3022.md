@@ -157,3 +157,27 @@ The production-diff audit now verifies the exact two approved patches and their
 release-note lines, plus the unchanged targeted Extras rollback. No other runtime
 edits are permitted. Broad plugin lint still reports 119 existing diagnostics;
 focused lint of both touched plugin source files passes.
+
+## F13 - ResizeObserver host loop caused by test focus emulation
+
+The full desktop matrix recorded 8928 ResizeObserver window events while all 172
+business assertions passed. Bounded idle controls reproduced 91 events in 1.5
+seconds with both Excalidraw and Extras completely unloaded and zero editors.
+A debugger-only control produced zero events; enabling CDP focus emulation
+triggered about 60/second. This was unnecessary test tooling, not evidence of a
+plugin or fork defect. Removed focus emulation and reopened only the exact
+registered test-vault window after verifying no pending task, dirty drawing or
+print resources. The fresh renderer has zero baseline errors with both plugins
+loaded. Raw controls are retained under approved-fixes-complete/build/resize-*.json.
+No production fix or error filtering was introduced. Complete repeated acceptance
+is still required; later genuine errors must still fail.
+
+## F14 - Missing Canvas preparation prerequisite
+
+The original local core-plugin list omitted Canvas, which the existing #3020
+Canvas-embedding cases require. Opening an unsupported .canvas file caused repeated
+open-URI attempts and an EBUSY cleanup failure. Enabling the required core plugin,
+closing the exact owned leaves and deleting only the report-owned paths completed
+recovery. The immutable seed and regenerated hashes now include Canvas. The old
+workflow checks this prerequisite before creating Canvas files. This changes only
+test setup and avoids a personal-vault/runtime dependency.

@@ -321,10 +321,10 @@ Extras remains `28f3c966b44bb35881b98d05f3fc327163b170b51bcdb3af13821c427015c8bb
 
 The padding oracle follows the maintainer decision: frame-enabled exports retain
 their existing no-padding policy; explicit padding cases disable frame rendering.
-A separate policy case runs in every context. Behavior input scopes background
-throttling and CDP focus emulation to its owned renderer, records actual mode and
-geometry, then restores scheduling. This is trusted CDP input with emulated page
-focus, not physical OS-focus, touch or drag evidence. Lifecycle tests keep their
+A separate policy case runs in every context. Behavior input scopes background throttling to its owned renderer, records actual
+mode/geometry and uses ordinary window focus. CDP focus emulation was removed
+after reproducing a host-only ResizeObserver loop. Trusted CDP input does not
+establish physical touch or OS drag behavior. Lifecycle tests keep their
 own focus semantics. Popout error capture uses the same strict combined oracle;
 expected missing-asset ENOENT diagnostics require the exact owned path and count.
 
@@ -339,3 +339,23 @@ PDF rollback-only follow-up scope; no other runtime changes are authorized.
 Five actual-method PDF simulations and the 127-case independent fork suite pass.
 Native composite embeds use plain PDF TFiles and Helvetica to confirm both fixes;
 explicit PDF page-reference coverage remains in the separate native PDF case.
+
+## Host-tooling recovery checkpoint, 2026-10-29
+
+The current approved-fix build passes all 172 desktop behavioral case assertions,
+five lifecycle cases, three real Extras gateway cases and seven data-integrity
+cases. The old Canvas workflow stopped because the local seed omitted the Canvas
+core plugin. The deterministic core configuration now includes Canvas and the
+workflow asserts its activation before opening a .canvas file. Exact owned
+resources and markers were recovered; no personal vault was used.
+
+A bounded idle control reproduced about 60 ResizeObserver errors/second with both
+community runtimes fully unloaded and zero editors. Ordinary debugger attachment
+produced zero; CDP focus emulation triggered the loop. That unnecessary emulation
+was removed, and only the registered local-vault window was closed/reopened to
+clear its host state. The fresh renderer control reports zero errors with both
+plugins loaded and Canvas enabled. No errors are filtered. Native startup now
+requires an error-free baseline and the behavioral gate includes all recorded
+window errors. Complete core/mobile acceptance and two complete repeats remain
+required. Portable CI passed 645 cases at e3f421b3; its artifact upload separately
+failed with ECONNRESET after upload, not during build or tests.
