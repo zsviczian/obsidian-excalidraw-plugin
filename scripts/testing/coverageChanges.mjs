@@ -20,6 +20,7 @@ export function coverageChanges(
   const commandCases = native.filter(
     (t) =>
       t.testId === "native-cli-authoring" ||
+      t.testId === "lucide-3019" ||
       t.evidenceKind === "native-cli-commands",
   );
   const emulated = native.filter(
@@ -43,6 +44,12 @@ export function coverageChanges(
       emulatedContextCases: emulated.length,
       physicalDeviceCases: 0,
       commandCaseIds: commandCases.map((t) => t.testId),
+      mobileProtocolCases: native.filter(
+        (t) => t.evidenceKind === "in-process-ea-cli",
+      ).length,
+      mobileProtocolCaseIds: native
+        .filter((t) => t.evidenceKind === "in-process-ea-cli")
+        .map((t) => t.testId),
     },
     newCaseIds: [...current].filter((id) => !baseline.has(id)),
   };

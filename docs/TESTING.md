@@ -1,5 +1,22 @@
 # Maintaining the test lanes
 
+## Current checkpoint (2026-10-29)
+
+[Accessible sanitized case summaries and artifact manifests](testing-evidence/3022/README.md)
+record the tested plugin `3fc7cc9c`, fork `053a3b9` and Extras `1cdcb7c`.
+Fresh portable verification passes **650 canonical cases (52 new, 598 reused)**.
+All **59 independent core cases** plus one focused nested-pane case pass, including
+all **15 popout drop variants**, cleanup and baseline restoration; the core run
+records zero unexpected errors/notifications. Native error/layout negative controls
+pass. Real single-export PDF output is decoded and visually inspected.
+
+Acceptance remains **incomplete**: an isolated mobile embedding exception needs a
+production decision (F17), and **zero of two required complete native repeats**
+have passed. Do not merge or substitute these subset results for the 357-case gate.
+The full plan has six native CLI-bearing cases (five editing plus Lucide) and two
+separate mobile public `EA.executeCLI` workflows. Historical checkpoints below
+retain their original scope and results.
+
 ## Required current-product regression
 
 Current fork behavior is the accepted baseline. Run `npm run test:regression`.
@@ -128,10 +145,10 @@ follow-up; neither count nor implementation substitutes for execution.
 | Real plugin-to-Extras PDF and decoded-page inspection | **Passed**, `opened-single-pdf-repeat/`: one page, 288 x 216 pt, preserved text and 3330 red pixels |
 | Actual installed plugin and Extras files | Present and hash-verified; latest preparation/provenance must be refreshed after changes |
 | One-time local vault registration/trust | **Completed** by maintainer; native canonical-path verification passes |
-| 258 cross-context behavioral cases | Desktop execution/debugging in progress; phone/tablet and complete acceptance pending |
-| 15 additional popout drop variants | Required, **unexecuted** |
+| 258 cross-context behavioral cases | Functional assertions exercised; phone/tablet error gate fails F17; full acceptance remains pending |
+| 15 additional popout drop variants | **Passed** in the 59-case independent core run |
 | Two complete matching-build native runs | **Pending** |
-| Follow-up production diff | Pass: plugin/fork runtime unchanged; Extras PDF rollback only |
+| Follow-up production diff | Pass: exact PDF rollback and approved plain-PDF/font fixes; no additional runtime change |
 
 The portable report records **zero native cases**. Source simulation, actual
 browser rendering, CLI command transport and host/EA/trusted-input evidence are

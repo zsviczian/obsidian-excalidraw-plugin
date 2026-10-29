@@ -3126,3 +3126,13 @@ remain strict pending maintainer classification; no production changes.
   and complete repeated native validation pending. Highest-risk checks: Canvas
   previews/independent resizing, popout teardown, mobile targeting and save/reopen;
   physical mobile and other desktop OSes remain separate environments.
+
+- 2026-10-29 (#3022): Verified deterministic 22-file seed/workspace baseline,
+  all 59 independent core cases plus focused nested-pane input, all 15 popout drop
+  variants, real PDF output and two native negative controls. Fresh portable gate:
+  650 canonical cases, 52 new / 598 reused. Published sanitized checkpoint evidence
+  and manifests. Full acceptance remains incomplete pending the explicit F17 mobile
+  focus decision and two complete native repeats. Production remains within the
+  accepted scope. Full native CLI accounting is six cases including Lucide;
+  phone/tablet EA protocol cases remain separate. Highest-risk next checks are
+  mobile embedded-note focus and fresh complete matrix/cleanup repeats.

@@ -1,0 +1,1692 @@
+{
+  "schemaVersion": 1,
+  "acceptance": "incomplete",
+  "requiredNativeCases": 357,
+  "requiredBehaviorCases": 258,
+  "requiredCompleteRepeats": 2,
+  "passedCompleteRepeats": 0,
+  "testedRevisions": {
+    "fork": "053a3b9f9e77917c457fce8ca9453d38b92a303b",
+    "extras": "1cdcb7c425a9b80afdc7b39c88861143b4b85e58",
+    "plugin": "3fc7cc9caf89bb4ca8361c004109ac59528fce1e"
+  },
+  "vault": ".test-work/vaults/excalidraw-auto-test/",
+  "canonicalTarget": {
+    "vaultName": "excalidraw-auto-test",
+    "vaultPath": "<plugin>/.test-work/vaults/excalidraw-auto-test",
+    "configDir": "<plugin>/.test-work/vaults/excalidraw-auto-test/.obsidian",
+    "drawingPath": "__excalidraw_cli_smoke_a5cdb453-ac7a-4c43-b548-677f3a12c8ca_case18.excalidraw.md",
+    "fixturePaths": [
+      "__excalidraw_cli_smoke_a5cdb453-ac7a-4c43-b548-677f3a12c8ca.excalidraw.md",
+      "__excalidraw_cli_smoke_a5cdb453-ac7a-4c43-b548-677f3a12c8ca_case1.excalidraw.md",
+      "__excalidraw_cli_smoke_a5cdb453-ac7a-4c43-b548-677f3a12c8ca_case2.excalidraw.md",
+      "__excalidraw_cli_smoke_a5cdb453-ac7a-4c43-b548-677f3a12c8ca_case3.excalidraw.md",
+      "__excalidraw_cli_smoke_a5cdb453-ac7a-4c43-b548-677f3a12c8ca_case4.excalidraw.md",
+      "__excalidraw_cli_smoke_a5cdb453-ac7a-4c43-b548-677f3a12c8ca_case5.excalidraw.md",
+      "__excalidraw_cli_smoke_a5cdb453-ac7a-4c43-b548-677f3a12c8ca_case6.excalidraw.md",
+      "__excalidraw_cli_smoke_a5cdb453-ac7a-4c43-b548-677f3a12c8ca_case7.excalidraw.md",
+      "__excalidraw_cli_smoke_a5cdb453-ac7a-4c43-b548-677f3a12c8ca_case8.excalidraw.md",
+      "__excalidraw_cli_smoke_a5cdb453-ac7a-4c43-b548-677f3a12c8ca_case9.excalidraw.md",
+      "__excalidraw_cli_smoke_a5cdb453-ac7a-4c43-b548-677f3a12c8ca_case10.excalidraw.md",
+      "__excalidraw_cli_smoke_a5cdb453-ac7a-4c43-b548-677f3a12c8ca_case11.excalidraw.md",
+      "__excalidraw_cli_smoke_a5cdb453-ac7a-4c43-b548-677f3a12c8ca_case12.excalidraw.md",
+      "__excalidraw_cli_smoke_a5cdb453-ac7a-4c43-b548-677f3a12c8ca_case13.excalidraw.md",
+      "__excalidraw_cli_smoke_a5cdb453-ac7a-4c43-b548-677f3a12c8ca_case14.excalidraw.md",
+      "__excalidraw_cli_smoke_a5cdb453-ac7a-4c43-b548-677f3a12c8ca_case15.excalidraw.md",
+      "__excalidraw_cli_smoke_a5cdb453-ac7a-4c43-b548-677f3a12c8ca_case16.excalidraw.md",
+      "__excalidraw_cli_smoke_a5cdb453-ac7a-4c43-b548-677f3a12c8ca_case17.excalidraw.md",
+      "__excalidraw_cli_smoke_a5cdb453-ac7a-4c43-b548-677f3a12c8ca_case18.excalidraw.md"
+    ]
+  },
+  "environment": {
+    "version": "1.14.5 (installer 1.14.0)",
+    "applicationIdentity": "<user>/AppData/Roaming/obsidian",
+    "scheduling": {
+      "originalBackgroundThrottling": true,
+      "scopedBackgroundThrottling": false
+    },
+    "runtime": {
+      "versions": {
+        "node": "24.18.1",
+        "acorn": "8.16.0",
+        "ada": "3.4.4",
+        "amaro": "1.1.9",
+        "ares": "1.34.6",
+        "brotli": "1.2.0",
+        "cldr": "48.0",
+        "icu": "78.2",
+        "llhttp": "9.4.3",
+        "merve": "1.2.2",
+        "modules": "148",
+        "napi": "10",
+        "nbytes": "0.1.4",
+        "ncrypto": "0.0.1",
+        "nghttp2": "1.69.0",
+        "nghttp3": "",
+        "ngtcp2": "",
+        "openssl": "0.0.0",
+        "simdjson": "4.6.4",
+        "simdutf": "7.7.0",
+        "sqlite": "3.53.1",
+        "tz": "2025c",
+        "undici": "7.29.0",
+        "unicode": "17.0",
+        "uv": "1.52.1",
+        "uvwasi": "0.0.23",
+        "v8": "15.0.245.23-electron.0",
+        "zlib": "1.3.2.1-motley",
+        "zstd": "1.6.0",
+        "electron": "43.3.0",
+        "chrome": "150.0.7871.212"
+      },
+      "platform": "win32",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) obsidian/1.14.0 Chrome/150.0.7871.212 Electron/43.3.0 Safari/537.36"
+    },
+    "pluginDiscovery": {
+      "discovery": "existing"
+    },
+    "errorBaseline": "passed"
+  },
+  "portable": {
+    "status": "passed",
+    "cases": 650,
+    "lanes": [
+      {
+        "suiteId": "plugin-fast",
+        "total": 472,
+        "reused": 434,
+        "new": 38,
+        "passed": 472
+      },
+      {
+        "suiteId": "fork-owned",
+        "total": 127,
+        "reused": 115,
+        "new": 12,
+        "passed": 127
+      },
+      {
+        "suiteId": "fork-browser",
+        "total": 18,
+        "reused": 18,
+        "new": 0,
+        "passed": 18
+      },
+      {
+        "suiteId": "extras-source",
+        "total": 29,
+        "reused": 27,
+        "new": 2,
+        "passed": 29
+      },
+      {
+        "suiteId": "extras-browser",
+        "total": 4,
+        "reused": 4,
+        "new": 0,
+        "passed": 4
+      }
+    ],
+    "new": 52,
+    "reused": 598,
+    "removedOrReplaced": [
+      "node:scripts/testing/pdf.source.test.mjs::missing completion has a bounded deadline and late acknowledgement has no remaining listener",
+      "node:scripts/testing/pdf.source.test.mjs::IPC listener registration failure clears its deadline and print resources",
+      "node:scripts/testing/pdf.source.test.mjs::overlapping exports in one document reject without consuming the first completion"
+    ],
+    "source": {
+      "plugin": {
+        "commit": "3fc7cc9caf89bb4ca8361c004109ac59528fce1e",
+        "dirty": false,
+        "diffHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "lockfileHash": "6a52b4b078cb94835b4c9f11c025aaa132baafb7b0e885c8a91835e80c2cfb5c"
+      },
+      "fork": {
+        "commit": "053a3b9f9e77917c457fce8ca9453d38b92a303b",
+        "dirty": false,
+        "diffHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "lockfileHash": "5c64a40db44edf20c89888704dd8c2fa073dbc833bdaa5f8a6d0cf162ecaa909"
+      },
+      "extras": {
+        "commit": "1cdcb7c425a9b80afdc7b39c88861143b4b85e58",
+        "dirty": false,
+        "diffHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "lockfileHash": "4773e2de84c7606e94b7eddf5a93957d418d1b0e1bd35091553b01b37d35f8ab"
+      }
+    },
+    "hostedGate": "https://github.com/zsviczian/obsidian-excalidraw-plugin/actions/runs/40887221793"
+  },
+  "nativeCore": {
+    "status": "passed",
+    "required": 59,
+    "passedRequired": 59,
+    "additionalFocused": 1,
+    "caseCounts": [
+      {
+        "suiteId": "native-obsidian",
+        "total": 60,
+        "reused": 44,
+        "new": 16,
+        "passed": 60
+      }
+    ],
+    "coreAudit": {
+      "status": "passed",
+      "missing": []
+    },
+    "cleanup": "passed",
+    "baselineRestoration": {
+      "restored": true,
+      "pluginEnabled": true,
+      "extrasEnabled": true,
+      "theme": "moonstone",
+      "restoredFixturePaths": []
+    },
+    "notifications": 0,
+    "unexpectedErrors": 0,
+    "popoutDropCases": 15,
+    "nativePluginCommandCaseIds": [
+      "lucide-3019",
+      "native-cli-authoring"
+    ],
+    "cases": [
+      {
+        "testId": "plugin-load",
+        "status": "passed",
+        "assertions": [
+          "commands registered",
+          "drawing/font/export runtime available",
+          "host protocol 3"
+        ]
+      },
+      {
+        "testId": "drawing-main-window",
+        "status": "passed",
+        "assertions": [
+          "Excalidraw API ready",
+          "wrapper mounted",
+          "owner document matches",
+          "main application document"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:toolbar-context-shortcuts",
+        "status": "passed",
+        "assertions": [
+          "trusted toolbar and context menu",
+          "keyboard shortcut and cancellation",
+          "scene state and on-disk save"
+        ],
+        "actual": {
+          "requested": {
+            "id": "nested-split",
+            "input": "mouse"
+          },
+          "mobile": false,
+          "hostDevice": {
+            "isDesktop": true,
+            "isPhone": false,
+            "isTablet": false,
+            "isMobile": false,
+            "isLinux": false,
+            "isMacOS": false,
+            "isWindows": true,
+            "isIOS": false,
+            "isAndroid": false
+          },
+          "viewport": {
+            "width": 1024,
+            "height": 800
+          },
+          "editor": {
+            "x": 534,
+            "y": 440,
+            "width": 490,
+            "height": 360,
+            "top": 440,
+            "right": 1024,
+            "bottom": 800,
+            "left": 534
+          },
+          "editorInterface": {
+            "formFactor": "desktop",
+            "desktopUIMode": "tray",
+            "userAgent": {
+              "isMobileDevice": false,
+              "platform": "other"
+            },
+            "isTouchScreen": false,
+            "canFitSidebar": false,
+            "isLandscape": true
+          },
+          "workspacePath": [
+            {
+              "type": "split",
+              "direction": "vertical",
+              "id": "3022000000000001"
+            },
+            {
+              "type": "split",
+              "direction": "horizontal",
+              "id": "354f69371cb69816"
+            },
+            {
+              "type": "tabs",
+              "id": "8874823e2f8c91a7"
+            }
+          ],
+          "leafId": "0f36825bccae7fcc",
+          "ownerContentsId": 289,
+          "mainContentsId": 289,
+          "visibility": "visible",
+          "scopedBackgroundThrottling": false,
+          "focusEmulation": false
+        }
+      },
+      {
+        "testId": "native:lifecycle-two-split-fullscreen",
+        "status": "passed",
+        "assertions": [
+          "split editors share one runtime and distinct APIs",
+          "one drawing's edit does not affect the other",
+          "fullscreen enters and restores owned classes"
+        ]
+      },
+      {
+        "testId": "native:lifecycle-dirty-main-to-popout",
+        "status": "passed",
+        "assertions": [
+          "dirty edit survives main-to-popout",
+          "retired source API unmounted",
+          "popout retains shared private runtime"
+        ]
+      },
+      {
+        "testId": "native:lifecycle-dirty-popout-to-main",
+        "status": "passed",
+        "assertions": [
+          "dirty edit survives popout-to-main",
+          "retired popout API unmounted",
+          "replacement main window physically saves captured edit"
+        ]
+      },
+      {
+        "testId": "native:lifecycle-new-popout-survivor",
+        "status": "passed",
+        "assertions": [
+          "fresh popout opens persisted scene",
+          "popout window closes",
+          "surviving drawing remains editable and saves",
+          "other drawing stays unchanged"
+        ]
+      },
+      {
+        "testId": "native:lifecycle-plugin-reload",
+        "status": "passed",
+        "assertions": [
+          "disable unmounts editor APIs and retires runtime",
+          "reload obtains a new plugin and runtime",
+          "both saved drawings reopen",
+          "stable command registered once"
+        ]
+      },
+      {
+        "testId": "native:extras-mathjax-gateway",
+        "status": "passed",
+        "assertions": [
+          "real plugin gateway resolves Extras",
+          "actual MathJax SVG decodes with positive geometry"
+        ],
+        "width": 79,
+        "height": 50
+      },
+      {
+        "testId": "native:extras-mermaid-gateway",
+        "status": "passed",
+        "assertions": [
+          "real plugin gateway resolves Mermaid",
+          "actual converter returns editable labels and arrow"
+        ]
+      },
+      {
+        "testId": "native:extras-pdf-output",
+        "status": "passed",
+        "assertions": [
+          "actual Electron PDF completion",
+          "print DOM and styles restored",
+          "valid PDF header and one page",
+          "expected media box",
+          "text extraction preserves content",
+          "rendered PDF contains red SVG pixels"
+        ],
+        "evidence": {
+          "pdf": "<native-report>/native-single-export.pdf",
+          "png": "<native-report>/native-single-export-page.png",
+          "sha256": "536b8e864e3c4e1c41e52faa9c0eb25fdf18cac5633bf6c45803db287c0888b8",
+          "pageSha256": "7ef3e029a4a65827e1e3855a95d58971f7d6a923e419d9b1ff116ce9f22bd152"
+        },
+        "bytes": 10616,
+        "pages": 1,
+        "width": 288,
+        "height": 216,
+        "redPixels": 3330
+      },
+      {
+        "testId": "native:data-roundtrip:Uncompressed.excalidraw.md",
+        "status": "passed",
+        "assertions": [
+          "two elements load",
+          "real edit becomes dirty",
+          "physical save receipt",
+          "disk customData and Markdown preserved",
+          "reopen restores edit"
+        ],
+        "bytes": 3425
+      },
+      {
+        "testId": "native:data-roundtrip:Compressed.excalidraw.md",
+        "status": "passed",
+        "assertions": [
+          "two elements load",
+          "real edit becomes dirty",
+          "physical save receipt",
+          "disk customData and Markdown preserved",
+          "reopen restores edit"
+        ],
+        "bytes": 3425
+      },
+      {
+        "testId": "native:data-roundtrip:Legacy.excalidraw",
+        "status": "passed",
+        "assertions": [
+          "two elements load",
+          "real edit becomes dirty",
+          "physical save receipt",
+          "disk customData and Markdown preserved",
+          "reopen restores edit"
+        ],
+        "bytes": 3216
+      },
+      {
+        "testId": "native:data-backup",
+        "status": "passed",
+        "assertions": [
+          "successful save reaches durable main-window backup",
+          "owned UUID key contains user Markdown"
+        ]
+      },
+      {
+        "testId": "native:data-external-change",
+        "status": "passed",
+        "assertions": [
+          "external Vault edit reaches the open editor",
+          "own-write reconciliation preserves element count"
+        ]
+      },
+      {
+        "testId": "native:data-write-failure",
+        "status": "passed",
+        "assertions": [
+          "injected failure reports no durability",
+          "dirty scene and old disk bytes survive",
+          "successful retry saves local edit"
+        ]
+      },
+      {
+        "testId": "native:data-rename-delete",
+        "status": "passed",
+        "assertions": [
+          "rename/move preserves editor and disk",
+          "Unicode path reopens",
+          "deletion retires the view"
+        ]
+      },
+      {
+        "testId": "workflow-fixes-3020",
+        "status": "passed"
+      },
+      {
+        "testId": "wheel-zoom-3008",
+        "status": "passed"
+      },
+      {
+        "testId": "image-geometry-real-3014",
+        "status": "passed"
+      },
+      {
+        "testId": "web-drop-2967",
+        "status": "passed",
+        "assertions": [
+          "all ten main-window mixed-payload variants preserve expected storage and reopen"
+        ]
+      },
+      {
+        "testId": "native:drop:web:popout:uri:image-url",
+        "status": "passed",
+        "assertions": [
+          "synthetic mixed payload reaches actual popout drop handling",
+          "expected URL/local file/link/embeddable storage",
+          "physical save and reopen preserves target"
+        ]
+      },
+      {
+        "testId": "native:drop:web:popout:linked-image:image-url",
+        "status": "passed",
+        "assertions": [
+          "synthetic mixed payload reaches actual popout drop handling",
+          "expected URL/local file/link/embeddable storage",
+          "physical save and reopen preserves target"
+        ]
+      },
+      {
+        "testId": "native:drop:web:popout:extensionless:image-url",
+        "status": "passed",
+        "assertions": [
+          "synthetic mixed payload reaches actual popout drop handling",
+          "expected URL/local file/link/embeddable storage",
+          "physical save and reopen preserves target"
+        ]
+      },
+      {
+        "testId": "native:drop:web:popout:blob:image-url",
+        "status": "passed",
+        "assertions": [
+          "synthetic mixed payload reaches actual popout drop handling",
+          "expected URL/local file/link/embeddable storage",
+          "physical save and reopen preserves target"
+        ]
+      },
+      {
+        "testId": "native:drop:web:popout:uri:image-import",
+        "status": "passed",
+        "assertions": [
+          "synthetic mixed payload reaches actual popout drop handling",
+          "expected URL/local file/link/embeddable storage",
+          "physical save and reopen preserves target"
+        ]
+      },
+      {
+        "testId": "native:drop:web:popout:linked-image:image-import",
+        "status": "passed",
+        "assertions": [
+          "synthetic mixed payload reaches actual popout drop handling",
+          "expected URL/local file/link/embeddable storage",
+          "physical save and reopen preserves target"
+        ]
+      },
+      {
+        "testId": "native:drop:web:popout:extensionless:image-import",
+        "status": "passed",
+        "assertions": [
+          "synthetic mixed payload reaches actual popout drop handling",
+          "expected URL/local file/link/embeddable storage",
+          "physical save and reopen preserves target"
+        ]
+      },
+      {
+        "testId": "native:drop:web:popout:blob:image-import",
+        "status": "passed",
+        "assertions": [
+          "synthetic mixed payload reaches actual popout drop handling",
+          "expected URL/local file/link/embeddable storage",
+          "physical save and reopen preserves target"
+        ]
+      },
+      {
+        "testId": "native:drop:web:popout:linked-page:link",
+        "status": "passed",
+        "assertions": [
+          "synthetic mixed payload reaches actual popout drop handling",
+          "expected URL/local file/link/embeddable storage",
+          "physical save and reopen preserves target"
+        ]
+      },
+      {
+        "testId": "native:drop:web:popout:linked-page:embeddable",
+        "status": "passed",
+        "assertions": [
+          "synthetic mixed payload reaches actual popout drop handling",
+          "expected URL/local file/link/embeddable storage",
+          "physical save and reopen preserves target"
+        ]
+      },
+      {
+        "testId": "internal-drop-tooltip",
+        "status": "passed",
+        "assertions": [
+          "all five main-window Obsidian-payload modifier variants agree with tooltips and preserve inserted IDs on reopen"
+        ]
+      },
+      {
+        "testId": "native:drop:internal:popout:0",
+        "status": "passed",
+        "assertions": [
+          "actual Obsidian payload factory",
+          "popout modifier tooltip agrees with insertion",
+          "saved inserted IDs survive reopen"
+        ]
+      },
+      {
+        "testId": "native:drop:internal:popout:1",
+        "status": "passed",
+        "assertions": [
+          "actual Obsidian payload factory",
+          "popout modifier tooltip agrees with insertion",
+          "saved inserted IDs survive reopen"
+        ]
+      },
+      {
+        "testId": "native:drop:internal:popout:2",
+        "status": "passed",
+        "assertions": [
+          "actual Obsidian payload factory",
+          "popout modifier tooltip agrees with insertion",
+          "saved inserted IDs survive reopen"
+        ]
+      },
+      {
+        "testId": "native:drop:internal:popout:3",
+        "status": "passed",
+        "assertions": [
+          "actual Obsidian payload factory",
+          "popout modifier tooltip agrees with insertion",
+          "saved inserted IDs survive reopen"
+        ]
+      },
+      {
+        "testId": "native:drop:internal:popout:4",
+        "status": "passed",
+        "assertions": [
+          "actual Obsidian payload factory",
+          "popout modifier tooltip agrees with insertion",
+          "saved inserted IDs survive reopen"
+        ]
+      },
+      {
+        "testId": "text-undo-2976",
+        "status": "passed",
+        "assertions": [
+          "reopened source after undo/redo",
+          "unchanged submission refreshes cache",
+          "editing after undo",
+          "parsed Markdown source",
+          "legacy and empty source"
+        ]
+      },
+      {
+        "testId": "native-cli-authoring",
+        "status": "passed",
+        "assertions": [
+          "native discovery/file input",
+          "stable labels, bindings and frames",
+          "template prose",
+          "collision and invalid-batch refusal",
+          "guarded text save/read-back",
+          "idempotent receipts",
+          "competing write BUSY",
+          "stale async text leaves metadata intact",
+          "failed save preserves recoverable edit",
+          "add/connect/group/ungroup/delete and frame child guard",
+          "live/disk SVG/PNG",
+          "vault image metadata round-trip",
+          "trusted script context/source identity/prompt refusal",
+          "save/reopen",
+          "owned fixture cleanup"
+        ]
+      },
+      {
+        "testId": "markdown-embed-recovery-2953",
+        "status": "passed",
+        "assertions": [
+          "SVGIMG: detached Live Preview context completes and reattaches",
+          "SVGIMG: width attribute refresh preserves all three embeds",
+          "SVGIMG: Reading mode after Live Preview",
+          "SVGIMG: warm Live Preview reopen",
+          "PNG: detached Live Preview context completes and reattaches",
+          "PNG: width attribute refresh preserves all three embeds",
+          "PNG: Reading mode after Live Preview",
+          "PNG: warm Live Preview reopen",
+          "SVG: detached Live Preview context completes and reattaches",
+          "SVG: width attribute refresh preserves all three embeds",
+          "SVG: Reading mode after Live Preview",
+          "SVG: warm Live Preview reopen",
+          "permanent context unload rejects insertion into the retired embed containers",
+          "popout: detached context, reattachment and width refresh in the owning document",
+          "hybrid source, nested=false: self-image, drawing and native PNG visible in popout",
+          "hybrid source, nested=true: self-image, drawing and native PNG visible in popout",
+          "hybrid preview, nested=false: self-image, drawing and native PNG visible in popout",
+          "hybrid preview, nested=true: self-image, drawing and native PNG visible in popout"
+        ]
+      },
+      {
+        "testId": "grouped-link-click",
+        "status": "passed",
+        "assertions": [
+          "unlinked first click selects without navigation",
+          "unlinked second click never inherits sibling link",
+          "linked first click drills into selected group",
+          "linked second click navigates exact member",
+          "switching grouped member selects without navigation",
+          "second click preserves Shift navigation modifier",
+          "unselected linked group member gets selection first",
+          "selected grouped member preserves Alt navigation modifier",
+          "Alt click on different unlinked member cannot navigate stale selection",
+          "ungrouped link still navigates on first modifier click",
+          "grouped bound label gets selection first",
+          "second click follows bound label link"
+        ]
+      },
+      {
+        "testId": "latex-input-2970",
+        "status": "passed",
+        "assertions": [
+          "mounted CodeMirror root",
+          "native clicks/arrows/backspace",
+          "selection replacement/undo",
+          "Mod-Enter/save/reopen",
+          "cancel/destroy"
+        ]
+      },
+      {
+        "testId": "native:ea-shapes-bindings-and-isolation",
+        "status": "passed",
+        "assertions": [
+          "independent EA styles and staged scenes",
+          "shape/arrow bindings, group, frame and bound text",
+          "invalid connection has no partial mutation",
+          "published custom metadata reaches physical drawing"
+        ]
+      },
+      {
+        "testId": "native:ea-edit-image-and-decoded-export",
+        "status": "passed",
+        "assertions": [
+          "copy-for-editing isolates live elements until publication",
+          "image data and natural dimensions preserved",
+          "existing ID updated once",
+          "actual SVG content and decoded PNG pixels"
+        ]
+      },
+      {
+        "testId": "native:ea-svg-import-and-disposal",
+        "status": "passed",
+        "assertions": [
+          "public EA imports the portable SVG fixture",
+          "opacity and open strokes retained",
+          "idempotent cleanup leaves editor usable"
+        ]
+      },
+      {
+        "testId": "native:core-toolbar-draw-history",
+        "status": "passed",
+        "assertions": [
+          "visible uncovered toolbar control",
+          "trusted pointer produces a rectangle",
+          "actual keyboard undo and redo preserve scene count"
+        ]
+      },
+      {
+        "testId": "native:core-custom-highlighter",
+        "status": "passed",
+        "assertions": [
+          "trusted custom pen toolbar activation",
+          "freehand pressure/highlighter metadata",
+          "highlighter beneath ordinary shapes",
+          "freedraw-only pen restores base options",
+          "custom stroke reaches physical save"
+        ]
+      },
+      {
+        "testId": "native:core-eraser-and-undo",
+        "status": "passed",
+        "assertions": [
+          "real keyboard shortcut activates eraser",
+          "trusted pointer removes scene elements",
+          "undo restores exact element IDs"
+        ]
+      },
+      {
+        "testId": "native:core-laser-transient",
+        "status": "passed",
+        "assertions": [
+          "active laser receives trusted pointer input",
+          "laser stroke adds no persistent scene element",
+          "selection remains usable"
+        ]
+      },
+      {
+        "testId": "native:pdf-reference-and-decoded-content",
+        "status": "passed",
+        "assertions": [
+          "real PDF.js page render through public EA API",
+          "decoded blue PDF pixels",
+          "page/source metadata retained",
+          "physical drawing preserves PDF reference",
+          "source PDF bytes unchanged"
+        ],
+        "width": 800,
+        "height": 640
+      },
+      {
+        "testId": "native:stability-roundtrip:0",
+        "status": "passed",
+        "assertions": [
+          "1000 elements and unknown custom data retained",
+          "physical save and Markdown preserved",
+          "fresh API and retired root",
+          "bounded scene/export duration"
+        ]
+      },
+      {
+        "testId": "native:stability-roundtrip:1",
+        "status": "passed",
+        "assertions": [
+          "1000 elements and unknown custom data retained",
+          "physical save and Markdown preserved",
+          "fresh API and retired root",
+          "bounded scene/export duration"
+        ]
+      },
+      {
+        "testId": "native:stability-roundtrip:2",
+        "status": "passed",
+        "assertions": [
+          "1000 elements and unknown custom data retained",
+          "physical save and Markdown preserved",
+          "fresh API and retired root",
+          "bounded scene/export duration"
+        ]
+      },
+      {
+        "testId": "native:stability-roundtrip:3",
+        "status": "passed",
+        "assertions": [
+          "1000 elements and unknown custom data retained",
+          "physical save and Markdown preserved",
+          "fresh API and retired root",
+          "bounded scene/export duration"
+        ]
+      },
+      {
+        "testId": "native:stability-roundtrip:4",
+        "status": "passed",
+        "assertions": [
+          "1000 elements and unknown custom data retained",
+          "physical save and Markdown preserved",
+          "fresh API and retired root",
+          "bounded scene/export duration"
+        ]
+      },
+      {
+        "testId": "native:stability-roundtrip:5",
+        "status": "passed",
+        "assertions": [
+          "1000 elements and unknown custom data retained",
+          "physical save and Markdown preserved",
+          "fresh API and retired root",
+          "bounded scene/export duration"
+        ]
+      },
+      {
+        "testId": "lucide-3019",
+        "status": "passed"
+      },
+      {
+        "testId": "javascript-errors",
+        "status": "passed"
+      },
+      {
+        "testId": "source-stability",
+        "status": "passed"
+      }
+    ],
+    "canvas": [
+      {
+        "mode": "SVG",
+        "immersive": false,
+        "beforeResize": [
+          {
+            "id": "small",
+            "node": {
+              "x": 88.54544067382812,
+              "y": 293.59234619140625,
+              "width": 193.93939208984375,
+              "height": 145.45452880859375
+            },
+            "preview": {
+              "x": 89.15150451660156,
+              "y": 299.0657958984375,
+              "width": 192.72727966308594,
+              "height": 131.7708740234375
+            },
+            "svgWidth": "400"
+          },
+          {
+            "id": "large",
+            "node": {
+              "x": 343.09088134765625,
+              "y": 293.59234619140625,
+              "width": 387.87884521484375,
+              "height": 290.9090576171875
+            },
+            "preview": {
+              "x": 343.69696044921875,
+              "y": 305.4957275390625,
+              "width": 386.66668701171875,
+              "height": 264.375
+            },
+            "svgWidth": "400"
+          },
+          {
+            "id": "tall",
+            "node": {
+              "x": 785.51513671875,
+              "y": 293.59234619140625,
+              "width": 193.939453125,
+              "height": 290.9090576171875
+            },
+            "preview": {
+              "x": 786.1212158203125,
+              "y": -60.19557189941406,
+              "width": 192.727294921875,
+              "height": 995.7576293945312
+            },
+            "svgWidth": "400"
+          }
+        ],
+        "afterResize": [
+          {
+            "id": "small",
+            "node": {
+              "x": 88.54544067382812,
+              "y": 293.59234619140625,
+              "width": 387.8787841796875,
+              "height": 218.18182373046875
+            },
+            "preview": {
+              "x": 89.15150451660156,
+              "y": 269.1321105957031,
+              "width": 386.66668701171875,
+              "height": 264.3749694824219
+            },
+            "svgWidth": "400"
+          },
+          {
+            "id": "large",
+            "node": {
+              "x": 343.09088134765625,
+              "y": 293.59234619140625,
+              "width": 387.87884521484375,
+              "height": 290.9090576171875
+            },
+            "preview": {
+              "x": 343.69696044921875,
+              "y": 305.4957275390625,
+              "width": 386.66668701171875,
+              "height": 264.375
+            },
+            "svgWidth": "400"
+          },
+          {
+            "id": "tall",
+            "node": {
+              "x": 785.51513671875,
+              "y": 293.59234619140625,
+              "width": 193.939453125,
+              "height": 290.9090576171875
+            },
+            "preview": {
+              "x": 786.1212158203125,
+              "y": -60.19557189941406,
+              "width": 192.727294921875,
+              "height": 995.7576293945312
+            },
+            "svgWidth": "400"
+          }
+        ],
+        "scale": 2.006289341538291
+      },
+      {
+        "mode": "SVG",
+        "immersive": true,
+        "beforeResize": [
+          {
+            "id": "small",
+            "node": {
+              "x": 88.54544067382812,
+              "y": 293.59234619140625,
+              "width": 193.93939208984375,
+              "height": 145.45452880859375
+            },
+            "preview": {
+              "x": 89.15150451660156,
+              "y": 299.0657958984375,
+              "width": 192.72727966308594,
+              "height": 131.7708740234375
+            },
+            "svgWidth": "400"
+          },
+          {
+            "id": "large",
+            "node": {
+              "x": 343.09088134765625,
+              "y": 293.59234619140625,
+              "width": 387.87884521484375,
+              "height": 290.9090576171875
+            },
+            "preview": {
+              "x": 343.69696044921875,
+              "y": 305.4957275390625,
+              "width": 386.66668701171875,
+              "height": 264.375
+            },
+            "svgWidth": "400"
+          },
+          {
+            "id": "tall",
+            "node": {
+              "x": 785.51513671875,
+              "y": 293.59234619140625,
+              "width": 193.939453125,
+              "height": 290.9090576171875
+            },
+            "preview": {
+              "x": 786.1212158203125,
+              "y": -60.19557189941406,
+              "width": 192.727294921875,
+              "height": 995.7576293945312
+            },
+            "svgWidth": "400"
+          }
+        ],
+        "afterResize": [
+          {
+            "id": "small",
+            "node": {
+              "x": 88.54544067382812,
+              "y": 293.59234619140625,
+              "width": 387.8787841796875,
+              "height": 218.18182373046875
+            },
+            "preview": {
+              "x": 89.15150451660156,
+              "y": 269.1321105957031,
+              "width": 386.66668701171875,
+              "height": 264.3749694824219
+            },
+            "svgWidth": "400"
+          },
+          {
+            "id": "large",
+            "node": {
+              "x": 343.09088134765625,
+              "y": 293.59234619140625,
+              "width": 387.87884521484375,
+              "height": 290.9090576171875
+            },
+            "preview": {
+              "x": 343.69696044921875,
+              "y": 305.4957275390625,
+              "width": 386.66668701171875,
+              "height": 264.375
+            },
+            "svgWidth": "400"
+          },
+          {
+            "id": "tall",
+            "node": {
+              "x": 785.51513671875,
+              "y": 293.59234619140625,
+              "width": 193.939453125,
+              "height": 290.9090576171875
+            },
+            "preview": {
+              "x": 786.1212158203125,
+              "y": -60.19557189941406,
+              "width": 192.727294921875,
+              "height": 995.7576293945312
+            },
+            "svgWidth": "400"
+          }
+        ],
+        "scale": 2.006289341538291
+      },
+      {
+        "mode": "SVGIMG",
+        "immersive": false,
+        "beforeResize": [
+          {
+            "id": "small",
+            "node": {
+              "x": 88.54544067382812,
+              "y": 293.59234619140625,
+              "width": 193.93939208984375,
+              "height": 145.45452880859375
+            },
+            "preview": {
+              "x": 89.15150451660156,
+              "y": 300.429443359375,
+              "width": 192.72727966308594,
+              "height": 131.77084350585938
+            },
+            "svgWidth": null
+          },
+          {
+            "id": "large",
+            "node": {
+              "x": 343.09088134765625,
+              "y": 293.59234619140625,
+              "width": 387.87884521484375,
+              "height": 290.9090576171875
+            },
+            "preview": {
+              "x": 343.69696044921875,
+              "y": 306.859375,
+              "width": 386.66668701171875,
+              "height": 264.375
+            },
+            "svgWidth": null
+          },
+          {
+            "id": "tall",
+            "node": {
+              "x": 785.51513671875,
+              "y": 293.59234619140625,
+              "width": 193.939453125,
+              "height": 290.9090576171875
+            },
+            "preview": {
+              "x": 786.1212158203125,
+              "y": -58.83192443847656,
+              "width": 192.727294921875,
+              "height": 995.7576293945312
+            },
+            "svgWidth": null
+          }
+        ],
+        "afterResize": [
+          {
+            "id": "small",
+            "node": {
+              "x": 88.54544067382812,
+              "y": 293.59234619140625,
+              "width": 387.8787841796875,
+              "height": 218.18182373046875
+            },
+            "preview": {
+              "x": 89.15150451660156,
+              "y": 270.4957275390625,
+              "width": 386.66668701171875,
+              "height": 264.375
+            },
+            "svgWidth": null
+          },
+          {
+            "id": "large",
+            "node": {
+              "x": 343.09088134765625,
+              "y": 293.59234619140625,
+              "width": 387.87884521484375,
+              "height": 290.9090576171875
+            },
+            "preview": {
+              "x": 343.69696044921875,
+              "y": 306.859375,
+              "width": 386.66668701171875,
+              "height": 264.375
+            },
+            "svgWidth": null
+          },
+          {
+            "id": "tall",
+            "node": {
+              "x": 785.51513671875,
+              "y": 293.59234619140625,
+              "width": 193.939453125,
+              "height": 290.9090576171875
+            },
+            "preview": {
+              "x": 786.1212158203125,
+              "y": -58.83192443847656,
+              "width": 192.727294921875,
+              "height": 995.7576293945312
+            },
+            "svgWidth": null
+          }
+        ],
+        "scale": 2.006289341538291
+      },
+      {
+        "mode": "SVGIMG",
+        "immersive": true,
+        "beforeResize": [
+          {
+            "id": "small",
+            "node": {
+              "x": 88.54544067382812,
+              "y": 293.59234619140625,
+              "width": 193.93939208984375,
+              "height": 145.45452880859375
+            },
+            "preview": {
+              "x": 89.15150451660156,
+              "y": 300.429443359375,
+              "width": 192.72727966308594,
+              "height": 131.77084350585938
+            },
+            "svgWidth": null
+          },
+          {
+            "id": "large",
+            "node": {
+              "x": 343.09088134765625,
+              "y": 293.59234619140625,
+              "width": 387.87884521484375,
+              "height": 290.9090576171875
+            },
+            "preview": {
+              "x": 343.69696044921875,
+              "y": 306.859375,
+              "width": 386.66668701171875,
+              "height": 264.375
+            },
+            "svgWidth": null
+          },
+          {
+            "id": "tall",
+            "node": {
+              "x": 785.51513671875,
+              "y": 293.59234619140625,
+              "width": 193.939453125,
+              "height": 290.9090576171875
+            },
+            "preview": {
+              "x": 786.1212158203125,
+              "y": -58.83192443847656,
+              "width": 192.727294921875,
+              "height": 995.7576293945312
+            },
+            "svgWidth": null
+          }
+        ],
+        "afterResize": [
+          {
+            "id": "small",
+            "node": {
+              "x": 88.54544067382812,
+              "y": 293.59234619140625,
+              "width": 387.8787841796875,
+              "height": 218.18182373046875
+            },
+            "preview": {
+              "x": 89.15150451660156,
+              "y": 270.4957275390625,
+              "width": 386.66668701171875,
+              "height": 264.375
+            },
+            "svgWidth": null
+          },
+          {
+            "id": "large",
+            "node": {
+              "x": 343.09088134765625,
+              "y": 293.59234619140625,
+              "width": 387.87884521484375,
+              "height": 290.9090576171875
+            },
+            "preview": {
+              "x": 343.69696044921875,
+              "y": 306.859375,
+              "width": 386.66668701171875,
+              "height": 264.375
+            },
+            "svgWidth": null
+          },
+          {
+            "id": "tall",
+            "node": {
+              "x": 785.51513671875,
+              "y": 293.59234619140625,
+              "width": 193.939453125,
+              "height": 290.9090576171875
+            },
+            "preview": {
+              "x": 786.1212158203125,
+              "y": -58.83192443847656,
+              "width": 192.727294921875,
+              "height": 995.7576293945312
+            },
+            "svgWidth": null
+          }
+        ],
+        "scale": 2.006289341538291
+      },
+      {
+        "mode": "PNG",
+        "immersive": false,
+        "beforeResize": [
+          {
+            "id": "small",
+            "node": {
+              "x": 88.54544067382812,
+              "y": 293.59234619140625,
+              "width": 193.93939208984375,
+              "height": 145.45452880859375
+            },
+            "preview": {
+              "x": 89.15150451660156,
+              "y": 300.43890380859375,
+              "width": 192.72727966308594,
+              "height": 131.76138305664062
+            },
+            "svgWidth": null
+          },
+          {
+            "id": "large",
+            "node": {
+              "x": 343.09088134765625,
+              "y": 293.59234619140625,
+              "width": 387.87884521484375,
+              "height": 290.9090576171875
+            },
+            "preview": {
+              "x": 343.69696044921875,
+              "y": 306.86883544921875,
+              "width": 386.66668701171875,
+              "height": 264.3560791015625
+            },
+            "svgWidth": null
+          },
+          {
+            "id": "tall",
+            "node": {
+              "x": 785.51513671875,
+              "y": 293.59234619140625,
+              "width": 193.939453125,
+              "height": 290.9090576171875
+            },
+            "preview": {
+              "x": 786.1212158203125,
+              "y": -58.83192443847656,
+              "width": 192.727294921875,
+              "height": 995.7576293945312
+            },
+            "svgWidth": null
+          }
+        ],
+        "afterResize": [
+          {
+            "id": "small",
+            "node": {
+              "x": 88.54544067382812,
+              "y": 293.59234619140625,
+              "width": 387.8787841796875,
+              "height": 218.18182373046875
+            },
+            "preview": {
+              "x": 89.15150451660156,
+              "y": 270.50518798828125,
+              "width": 386.66668701171875,
+              "height": 264.3560791015625
+            },
+            "svgWidth": null
+          },
+          {
+            "id": "large",
+            "node": {
+              "x": 343.09088134765625,
+              "y": 293.59234619140625,
+              "width": 387.87884521484375,
+              "height": 290.9090576171875
+            },
+            "preview": {
+              "x": 343.69696044921875,
+              "y": 306.86883544921875,
+              "width": 386.66668701171875,
+              "height": 264.3560791015625
+            },
+            "svgWidth": null
+          },
+          {
+            "id": "tall",
+            "node": {
+              "x": 785.51513671875,
+              "y": 293.59234619140625,
+              "width": 193.939453125,
+              "height": 290.9090576171875
+            },
+            "preview": {
+              "x": 786.1212158203125,
+              "y": -58.83192443847656,
+              "width": 192.727294921875,
+              "height": 995.7576293945312
+            },
+            "svgWidth": null
+          }
+        ],
+        "scale": 2.006289341538291
+      },
+      {
+        "mode": "PNG",
+        "immersive": true,
+        "beforeResize": [
+          {
+            "id": "small",
+            "node": {
+              "x": 88.54544067382812,
+              "y": 293.59234619140625,
+              "width": 193.93939208984375,
+              "height": 145.45452880859375
+            },
+            "preview": {
+              "x": 89.15150451660156,
+              "y": 300.43890380859375,
+              "width": 192.72727966308594,
+              "height": 131.76138305664062
+            },
+            "svgWidth": null
+          },
+          {
+            "id": "large",
+            "node": {
+              "x": 343.09088134765625,
+              "y": 293.59234619140625,
+              "width": 387.87884521484375,
+              "height": 290.9090576171875
+            },
+            "preview": {
+              "x": 343.69696044921875,
+              "y": 306.86883544921875,
+              "width": 386.66668701171875,
+              "height": 264.3560791015625
+            },
+            "svgWidth": null
+          },
+          {
+            "id": "tall",
+            "node": {
+              "x": 785.51513671875,
+              "y": 293.59234619140625,
+              "width": 193.939453125,
+              "height": 290.9090576171875
+            },
+            "preview": {
+              "x": 786.1212158203125,
+              "y": -58.83192443847656,
+              "width": 192.727294921875,
+              "height": 995.7576293945312
+            },
+            "svgWidth": null
+          }
+        ],
+        "afterResize": [
+          {
+            "id": "small",
+            "node": {
+              "x": 88.54544067382812,
+              "y": 293.59234619140625,
+              "width": 387.8787841796875,
+              "height": 218.18182373046875
+            },
+            "preview": {
+              "x": 89.15150451660156,
+              "y": 270.50518798828125,
+              "width": 386.66668701171875,
+              "height": 264.3560791015625
+            },
+            "svgWidth": null
+          },
+          {
+            "id": "large",
+            "node": {
+              "x": 343.09088134765625,
+              "y": 293.59234619140625,
+              "width": 387.87884521484375,
+              "height": 290.9090576171875
+            },
+            "preview": {
+              "x": 343.69696044921875,
+              "y": 306.86883544921875,
+              "width": 386.66668701171875,
+              "height": 264.3560791015625
+            },
+            "svgWidth": null
+          },
+          {
+            "id": "tall",
+            "node": {
+              "x": 785.51513671875,
+              "y": 293.59234619140625,
+              "width": 193.939453125,
+              "height": 290.9090576171875
+            },
+            "preview": {
+              "x": 786.1212158203125,
+              "y": -58.83192443847656,
+              "width": 192.727294921875,
+              "height": 995.7576293945312
+            },
+            "svgWidth": null
+          }
+        ],
+        "scale": 2.006289341538291
+      }
+    ],
+    "pdf": {
+      "testId": "native:extras-pdf-output",
+      "featureIds": [
+        "P05",
+        "P09"
+      ],
+      "status": "passed",
+      "assertions": [
+        "actual Electron PDF completion",
+        "print DOM and styles restored",
+        "valid PDF header and one page",
+        "expected media box",
+        "text extraction preserves content",
+        "rendered PDF contains red SVG pixels"
+      ],
+      "bytes": 10616,
+      "pages": 1,
+      "width": 288,
+      "height": 216,
+      "redPixels": 3330,
+      "evidence": {
+        "pdf": "<native-report>/native-single-export.pdf",
+        "png": "<native-report>/native-single-export-page.png",
+        "sha256": "536b8e864e3c4e1c41e52faa9c0eb25fdf18cac5633bf6c45803db287c0888b8",
+        "pageSha256": "7ef3e029a4a65827e1e3855a95d58971f7d6a923e419d9b1ff116ce9f22bd152"
+      }
+    },
+    "negativeControls": [
+      {
+        "testId": "native:diagnostics-rejects-unhandled",
+        "featureIds": [
+          "P11"
+        ],
+        "status": "passed",
+        "assertions": [
+          "actual uncaught host exception captured by a fresh owned stream",
+          "ordinary clean-error oracle rejects it",
+          "no unrelated error is filtered"
+        ]
+      },
+      {
+        "testId": "native:diagnostics-rejects-broken-layout",
+        "featureIds": [
+          "P11"
+        ],
+        "status": "passed",
+        "assertions": [
+          "actual workspace geometry measured",
+          "ordinary native task/case collector rejects deliberately wrong width",
+          "negative-control cleanup passes"
+        ]
+      }
+    ]
+  },
+  "blocker": {
+    "status": "approval-pending",
+    "description": "Internal Canvas node creation defaults to focus and takes the host active-editor reference while the Markdown preview has no editor; the mobile toolbar throws. No production fix is applied.",
+    "proposedFix": "Pass focus: false for internal Markdown Canvas-node creation, preserving deliberate editing activation.",
+    "reproduce": "node scripts/testing/host/verify.mjs --profile=devices --device-profiles=phone-portrait-light --behavior-cases=drawing-and-markdown-embeds",
+    "source": {
+      "schemaVersion": 2,
+      "kind": "plugin",
+      "repository": "zsviczian/obsidian-excalidraw-plugin",
+      "commit": "6cffcacc8142b87acc5b2ceae5630e7a05c42ee3",
+      "dirty": false,
+      "diffHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "lockfileHash": "6a52b4b078cb94835b4c9f11c025aaa132baafb7b0e885c8a91835e80c2cfb5c",
+      "buildCommand": "npm run build",
+      "toolchain": {
+        "node": "v22.22.3",
+        "platform": "win32"
+      },
+      "evidence": [],
+      "artifacts": [
+        {
+          "role": "main",
+          "relativePath": "dist/main.js",
+          "sha256": "cf3742b3a0152c5c9169e1b3a130ed9f487a595cd5e69294ab998f0c6b4e64a3",
+          "bytes": 5030235
+        },
+        {
+          "role": "manifest",
+          "relativePath": "dist/manifest.json",
+          "sha256": "4880b885c50643ef848d31cea829776ca2e96747353aee334d71e875f79d31c0",
+          "bytes": 470
+        },
+        {
+          "role": "styles",
+          "relativePath": "dist/styles.css",
+          "sha256": "4f71f6598b45de2e1ae94c20b7a190397a8b1150cd78b29e10fdf4638b6e6c7d",
+          "bytes": 354364
+        }
+      ]
+    },
+    "cleanup": "passed",
+    "events": [
+      {
+        "at": 1793282496866,
+        "message": "Uncaught TypeError: Cannot read properties of undefined (reading 'hasFocus')",
+        "isTrusted": true,
+        "hasError": true,
+        "activeLeaf": {
+          "type": "excalidraw",
+          "file": "__excalidraw_cli_smoke_a4a043d6_behavior_phone/drawing-and-markdown-embeds.excalidraw.md"
+        },
+        "activeEditor": {
+          "file": "__excalidraw_cli_smoke_a4a043d6_behavior_phone/Embedded-note.md",
+          "editor": false,
+          "keys": [
+            "_loaded",
+            "_events",
+            "_children",
+            "file",
+            "hoverPopover",
+            "editable",
+            "text",
+            "dirty",
+            "useIframe",
+            "requestSaveFolds",
+            "requestSave",
+            "app",
+            "containerEl",
+            "state",
+            "previewEl",
+            "editorEl",
+            "previewMode",
+            "subpath",
+            "useLocalPropertiesFoldState",
+            "localPropertiesFoldState",
+            "data",
+            "subpathNotFound",
+            "before",
+            "after",
+            "heading",
+            "indent",
+            "lastSavedData",
+            "saving",
+            "saveAgain",
+            "fileBeingRenamed",
+            "rawFrontmatter",
+            "inlineTitleEl",
+            "metadataEditor",
+            "scope"
+          ]
+        },
+        "cases": [
+          {
+            "phase": "native:behavior:phone:drawing-and-markdown-embeds"
+          }
+        ]
+      },
+      {
+        "at": 1793282497212,
+        "message": "Uncaught TypeError: Cannot read properties of undefined (reading 'hasFocus')",
+        "isTrusted": true,
+        "hasError": true,
+        "activeLeaf": {
+          "type": "excalidraw",
+          "file": "__excalidraw_cli_smoke_a4a043d6_behavior_phone/drawing-and-markdown-embeds.excalidraw.md"
+        },
+        "activeEditor": {
+          "file": "__excalidraw_cli_smoke_a4a043d6_behavior_phone/Embedded-note.md",
+          "editor": false,
+          "keys": [
+            "_loaded",
+            "_events",
+            "_children",
+            "file",
+            "hoverPopover",
+            "editable",
+            "text",
+            "dirty",
+            "useIframe",
+            "requestSaveFolds",
+            "requestSave",
+            "app",
+            "containerEl",
+            "state",
+            "previewEl",
+            "editorEl",
+            "previewMode",
+            "subpath",
+            "useLocalPropertiesFoldState",
+            "localPropertiesFoldState",
+            "data",
+            "subpathNotFound",
+            "before",
+            "after",
+            "heading",
+            "indent",
+            "lastSavedData",
+            "saving",
+            "saveAgain",
+            "fileBeingRenamed",
+            "rawFrontmatter",
+            "inlineTitleEl",
+            "metadataEditor",
+            "scope"
+          ]
+        },
+        "cases": [
+          {
+            "phase": "behavior:phone:cleanup"
+          }
+        ]
+      }
+    ]
+  },
+  "remaining": [
+    "Explicit production approval/decision for the isolated mobile focus defect",
+    "Two complete matching-revision native repeats with all behavioral, error, idle and cleanup gates passing"
+  ],
+  "limitations": [
+    "Desktop mobile emulation; no physical Android/iOS/WebView/stylus claim",
+    "Trusted CDP interaction and explicitly synthetic drag payloads; no real OS drag claim",
+    "Native Windows validation; other desktop OSes and isolated whole-app cold start remain separate environments"
+  ]
+}

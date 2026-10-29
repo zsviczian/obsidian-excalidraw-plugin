@@ -8,6 +8,7 @@ test("new/reused accounting separates plugin CLI commands, host tasks and mobile
         suiteId: "native-obsidian",
         tests: [
           { testId: "native-cli-authoring", status: "passed" },
+          { testId: "lucide-3019", status: "passed" },
           { testId: "native:behavior:main:settings-01", status: "failed" },
         ],
       },
@@ -18,6 +19,11 @@ test("new/reused accounting separates plugin CLI commands, host tasks and mobile
             testId: "native:behavior:phone:markdown-reading",
             status: "passed",
           },
+          {
+            testId: "native:behavior:phone:cli-atomic-targeted-edit",
+            evidenceKind: "in-process-ea-cli",
+            status: "failed",
+          },
         ],
       },
     ],
@@ -26,15 +32,22 @@ test("new/reused accounting separates plugin CLI commands, host tasks and mobile
   assert.deepEqual(
     r.lanes.map((l) => [l.reused, l.new, l.passed]),
     [
-      [1, 1, 1],
-      [0, 1, 1],
+      [1, 2, 2],
+      [0, 2, 1],
     ],
   );
   assert.deepEqual(r.removedOrReplaced, ["removed-old-case"]);
-  assert.equal(r.native.pluginCommandCases, 1);
-  assert.equal(r.native.hostEAAndTrustedInputCases, 2);
-  assert.equal(r.native.emulatedContextCases, 1);
+  assert.equal(r.native.pluginCommandCases, 2);
+  assert.equal(r.native.hostEAAndTrustedInputCases, 3);
+  assert.equal(r.native.emulatedContextCases, 2);
   assert.equal(r.native.physicalDeviceCases, 0);
+  assert.equal(r.native.mobileProtocolCases, 1);
+  assert.equal(
+    r.native.commandCaseIds.includes(
+      "native:behavior:phone:cli-atomic-targeted-edit",
+    ),
+    false,
+  );
   const portable = coverageChanges(
     [
       {

@@ -267,3 +267,19 @@ Canvas also collapses sidebars for its fit/resize measurement. No production
 rendering policy or preview/resize assertion changed. Safe task failures now carry
 an explicit cleanup-verified marker so independent scenarios can continue; actual
 unsettled work still stops all subsequent work.
+
+## Verified independent checkpoint (2026-10-29)
+
+At plugin 3fc7cc9c / fork 053a3b9 / Extras 1cdcb7c, all 59 independent core cases
+plus the focused nested-pane toolbar/context-menu case pass. This includes all 15
+popout drop variants, real PDF decoding/visual inspection, cleanup and declared
+baseline restoration. Both actual native negative controls pass. There are zero
+recorded notifications or unexpected exceptions in that run. Fresh portable
+verification passes 650 canonical cases (52 new, 598 reused), plus source/package
+gates. [Sanitized, accessible evidence](testing-evidence/3022/README.md) records
+case results and actual source/artifact hashes.
+
+This does not establish full acceptance: F17 production approval is pending and
+neither complete matching-build repeat has passed. CLI accounting includes the
+Lucide case's real native commands: six CLI-bearing cases in the full plan, with
+the two mobile public EA protocol cases reported separately.

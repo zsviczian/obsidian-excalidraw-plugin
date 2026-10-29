@@ -471,7 +471,7 @@ controls, reported separately from the 357 required feature cases.
 Desktop behavioral editing uses registered native plugin CLI commands. Phone and
 tablet workflows use public `EA.executeCLI`; those two in-process workflows are
 not counted as native CLI command invocations. The current plan therefore has
-five native CLI feature cases and two mobile EA CLI cases.
+six native CLI-bearing feature cases (five editing plus Lucide) and two mobile EA CLI cases.
 
 ### Two complete matching-build repeats and shareable evidence
 

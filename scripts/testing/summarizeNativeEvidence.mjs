@@ -86,7 +86,8 @@ export function summarizeNativeRun(directory) {
     nativeCLI: cases.filter(
       (test) =>
         test.evidenceKind === "native-cli-commands" ||
-        test.testId === "native-cli-authoring",
+        test.testId === "native-cli-authoring" ||
+        test.testId === "lucide-3019",
     ).length,
     mobileEA: cases.filter((test) => test.evidenceKind === "in-process-ea-cli")
       .length,
