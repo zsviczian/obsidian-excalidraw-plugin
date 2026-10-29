@@ -92,22 +92,33 @@ async function probeWorkflows(c,prefix,drawingPath,baseline) {
         await popout.openFile(draw);await wait(()=>popout.view.excalidrawAPI&&popout.view.isLoaded&&!popout.view.isClosingOrMigrating(),'popout drawing');
         const count=doc.body.querySelectorAll('.excalidraw-hidden').length;
         await exercise(popout.view,'popout');check(doc.body.querySelectorAll('.excalidraw-hidden').length===count,'popout changed main document');
-      } finally {await popout.setViewState({type:'empty',state:{}});popout.detach();}
+      } finally {
+        const view=popout.view,owner=view.ownerWindow||view.containerEl.ownerDocument.defaultView;
+        check(owner!==doc.defaultView,'Workflow popout did not migrate');
+        if(view.excalidrawAPI&&view.isDirty())check((await view.saveWithOutcome()).status==='persisted','Workflow popout cleanup save');
+        popout.detach();if(!owner.closed)owner.close();
+        await c.waitForCleanup(()=>owner.closed&&!view.excalidrawAPI,'Workflow popout teardown');
+      }
     }
     c.observations.fullscreen.variants=fullscreenVariants;
     check(app.internalPlugins.getPluginById('canvas')?.enabled,'Required core Canvas plugin is disabled');
     // A fitted three-node Canvas in an eighth-width pane uses Obsidian's
     // far-zoom placeholders. Measure actual previews in a normal-sized pane.
     await app.workspace.changeLayout({...originalLayout,main:{id:uid(),type:'split',direction:'vertical',children:[tabs(note.path,'markdown')]}});
+    const focusMain=()=>{let anchor;app.workspace.iterateAllLeaves(leaf=>{if(!anchor&&leaf.getRoot()===app.workspace.rootSplit&&leaf.view.containerEl.ownerDocument===doc)anchor=leaf;});check(anchor,'Main workflow anchor missing');app.workspace.setActiveLeaf(anchor,{focus:true});};
+    focusMain();
     fullscreenView=null;
     const canvasResults=[];
+    c.observations.canvasSources=await Promise.all([draw,app.vault.getFileByPath(prefix+'/Tall.excalidraw.md')].map(async file=>({path:file.path,source:(await app.vault.read(file)).slice(0,250),metadata:app.metadataCache.getFileCache(file)?.frontmatter,isDrawing:p.isExcalidrawFile(file)})));
     for(const mode of ['SVG','SVGIMG','PNG'])for(const immersive of [false,true]) {
       const canvasPath=prefix+'/Preview-'+mode+'-'+immersive+'.canvas';
       await app.vault.create(canvasPath,JSON.stringify({nodes:[{id:'small',type:'file',file:draw.path,x:0,y:0,width:320,height:240},{id:'large',type:'file',file:draw.path,x:420,y:0,width:640,height:480},{id:'tall',type:'file',file:prefix+'/Tall.excalidraw.md',x:1150,y:0,width:320,height:480}],edges:[]}));
       p.settings.previewImageType=mode;p.settings.canvasImmersiveEmbed=immersive;
-      const canvasLeaf=app.workspace.getLeaf('tab');leaves.push(canvasLeaf);await canvasLeaf.openFile(app.vault.getFileByPath(canvasPath));
+      focusMain();const canvasLeaf=app.workspace.getLeaf('tab');leaves.push(canvasLeaf);check(canvasLeaf.view.containerEl.ownerDocument===doc,'Canvas targeted a popout');await canvasLeaf.openFile(app.vault.getFileByPath(canvasPath));
+      app.workspace.setActiveLeaf(canvasLeaf,{focus:true});
       await wait(()=>canvasLeaf.view.canvas?.nodes?.size===3,'Canvas nodes');
       const canvas=canvasLeaf.view.canvas;
+      c.observations.canvasHost={ownerMatches:canvasLeaf.view.containerEl.ownerDocument===doc,active:app.workspace.activeLeaf===canvasLeaf,bounds:rect(canvasLeaf.view.contentEl),zoom:canvas.zoom};
       canvas.zoomToFit?.();await settle();
       const selector=mode==='SVG'?'.excalidraw-embedded-img svg':'img.excalidraw-embedded-img';
       try {await wait(()=>canvasLeaf.view.containerEl.querySelectorAll(selector).length===3&&[...canvasLeaf.view.containerEl.querySelectorAll(selector)].every(el=>mode==='SVG'||el.complete&&el.naturalWidth>0),'Canvas '+mode+' previews');}

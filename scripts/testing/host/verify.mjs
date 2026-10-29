@@ -48,7 +48,7 @@ import { runErrorOracle } from "./errorOracle.mjs";
 const pluginRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const target = configureLocalVaultEnvironment(pluginRoot);
 const prepareOnly = process.argv.includes("--prepare-only");
-const diagnostics = process.argv.includes("--diagnostics");
+const diagnostics = process.argv.includes("--diagnostics") || process.argv.some(arg=>['--profile=full','--profile=regression'].includes(arg));
 const profileArg = process.argv
   .slice(2)
   .find((arg) => arg.startsWith("--profile="));

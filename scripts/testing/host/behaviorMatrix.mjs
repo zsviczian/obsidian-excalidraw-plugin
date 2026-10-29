@@ -18,6 +18,7 @@ import { exerciseImageBehavior } from "./imageBehavior.mjs";
 import { exerciseInteractionBehavior } from "./interactionBehavior.mjs";
 import { exerciseCLIBehavior } from "./cliBehavior.mjs";
 import { completeConsoleErrors } from "./debuggerSession.mjs";
+import { splitWindowErrors, settleBrowserDiagnostics } from './browserDiagnostics.mjs';
 
 const methods = new Set([
   "Input.dispatchMouseEvent",
@@ -104,7 +105,7 @@ export async function runBehaviorMatrix({
   );
   const tests = [],
     consoleErrors = [],
-    windowErrors = [];
+    windowErrors = [], browserIdle = [];
   for (const id of contexts) {
     const rows = behavioralCases([id]).filter(
       (row) => !caseIds || caseIds.includes(row.id),
@@ -118,7 +119,7 @@ export async function runBehaviorMatrix({
     const execute =
       new Function(`return async function(c,path,context,template,rows,modifier){
       (${collectBehaviorCases.toString()})(c);
-      const env=await (${behaviorEnvironment.toString()})(c,path,context,template,${completeConsoleErrors.toString()});
+      const env=await (${behaviorEnvironment.toString()})(c,path,context,template,${completeConsoleErrors.toString()},${settleBrowserDiagnostics.toString()});
       c.diagnostics=env.diagnostics;
       await (${exerciseSettingsBehavior.toString()})(c,env,rows.filter(r=>r.id.startsWith('settings-')&&r.values));
       await (${exerciseExportBehavior.toString()})(c,env,rows.filter(r=>r.id.startsWith('export-')));
@@ -128,7 +129,7 @@ export async function runBehaviorMatrix({
       await (${exerciseImageBehavior.toString()})(c,env,rows.filter(r=>r.id.startsWith('images-')||r.id==='drawing-and-markdown-embeds'));
       await (${exerciseEABehavior.toString()})(c,env,rows.filter(r=>r.id.startsWith('ea-')));
       await (${exerciseInteractionBehavior.toString()})(c,env,rows.filter(r=>r.id.startsWith('command-')||r.id==='toolbar-context-shortcuts'),modifier);
-      return {tests:c.tests,consoleErrors:c.externalConsoleErrors||[],windowErrors:env.windowErrors};
+      return {tests:c.tests,consoleErrors:c.externalConsoleErrors||[],windowErrors:env.windowErrors,browserIdle:env.browserIdle};
     }`)();
     const result = await runInAppTask({
       cli,
@@ -167,15 +168,17 @@ export async function runBehaviorMatrix({
     tests.push(...result.tests);
     consoleErrors.push(...result.consoleErrors);
     windowErrors.push(...result.windowErrors);
+    browserIdle.push(...result.browserIdle);
   }
+  const classified=splitWindowErrors(windowErrors);
   return {
     id: "behavior-matrix",
     status:
       tests.every((test) => test.status === "passed") &&
-      windowErrors.length === 0
+      classified.unexpected.length === 0 && browserIdle.every(idle=>idle.status==='passed')
         ? "passed"
         : "failed",
-    ...(windowErrors.length
+    ...(classified.unexpected.length || browserIdle.some(idle=>idle.status!=='passed')
       ? {
           reason: "Unexpected native window errors during behavioral workflows",
         }
@@ -183,6 +186,9 @@ export async function runBehaviorMatrix({
     tests,
     consoleErrors,
     windowErrors,
+    browserDiagnostics:classified.diagnostics,
+    unexpectedWindowErrors:classified.unexpected,
+    browserIdle,
     expectedConsoleErrors: tests.flatMap(
       (test) => test.expectedConsoleErrors || [],
     ),

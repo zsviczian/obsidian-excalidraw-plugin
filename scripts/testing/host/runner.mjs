@@ -7,6 +7,7 @@ import { adaptSmokeReport, ownedPath } from "../contracts.mjs";
 import { acquireDebuggerSession, unexpectedConsoleErrors } from "./debuggerSession.mjs";
 import { writeReportFiles } from "../reportFiles.mjs";
 import {discoverStagedPlugin} from './pluginDiscovery.mjs';
+import {acquireBrowserDiagnostics, classifyCLIErrorText, splitWindowErrors} from './browserDiagnostics.mjs';
 
 export const PLUGIN_ID = "obsidian-excalidraw-plugin";
 export const ARTIFACTS = ["main.js", "manifest.json", "styles.css"];
@@ -110,7 +111,7 @@ export async function runObsidianSmoke({ projectRoot, vaultName, vaultPath, conf
   let phase = "preflight";
   let created = false;
   let preserveOwnedFixtures = false;
-  let debuggerSession, ownedCli, companionCleanup;
+  let debuggerSession, browserSession, ownedCli, companionCleanup;
   const expectedConsoleErrors = [];
   const cleanupDrawing = async () => {
     if(!created)return;
@@ -150,6 +151,7 @@ export async function runObsidianSmoke({ projectRoot, vaultName, vaultPath, conf
       report.capabilities.applicationIdentity=realpathSync(actual);
     }
     if (ownedDebugger) { debuggerSession = acquireDebuggerSession(cli); report.capabilities.scheduling = debuggerSession.scheduling; }
+    if (ownedDebugger) browserSession=acquireBrowserDiagnostics(cli,'native-main');
     if (ownedDebugger) report.capabilities.runtime = parseEval(cli("eval", "code=JSON.stringify({versions:require('process').versions,platform:require('process').platform,userAgent:navigator.userAgent})"));
 
     phase = "build";
@@ -193,7 +195,9 @@ export async function runObsidianSmoke({ projectRoot, vaultName, vaultPath, conf
     report.target.fixturePaths = [drawing.path];
     report.scenarios.push({ id: "drawing-main-window", status: "passed", assertions: ["Excalidraw API ready", "wrapper mounted", "owner document matches", "main application document"] });
     const baselineErrors = cli("dev:errors").trim();
-    if (baselineErrors && !/^No errors captured\.?$/i.test(baselineErrors)) throw Error("Native error baseline failed before feature tests: " + baselineErrors.slice(0, 1000));
+    report.baselineErrors=classifyCLIErrorText(baselineErrors);
+    if (report.baselineErrors.unexpected.length) throw Error("Native error baseline failed before feature tests: " + baselineErrors.slice(0, 1000));
+    if(browserSession){report.baselineIdle=await browserSession.settle();if(report.baselineIdle.status!=='passed')throw Error(report.baselineIdle.reason);}
     report.capabilities.errorBaseline = "passed";
     phase = "feature-scenarios";
     for (const [index,scenario] of scenarios.entries()) {
@@ -208,11 +212,13 @@ export async function runObsidianSmoke({ projectRoot, vaultName, vaultPath, conf
       report.target.drawingPath=drawing.path;
       const result = await scenario({ cli, drawingPath: drawing.path, reportDir });
       report.scenarios.push(result);
+      if(browserSession){result.settlingCheck=await browserSession.settle();if(result.settlingCheck.status!=='passed'){result.status='failed';result.reason=result.settlingCheck.reason;}}
       expectedConsoleErrors.push(...(result.expectedConsoleErrors || []));
       if (result.status !== "passed") throw Error(`Required native scenario ${result.id} is ${result.status}: ${result.reason || "no reason supplied"}`);
     }
     const errors = cli("dev:errors").trim();
-    if (errors && !/^No errors captured\.?$/i.test(errors)) throw new Error(`Captured JavaScript errors: ${errors.slice(0, 1000)}`);
+    report.cliErrors=classifyCLIErrorText(errors);
+    if (report.cliErrors.unexpected.length) throw new Error(`Captured JavaScript errors: ${errors.slice(0, 1000)}`);
     report.scenarios.push({ id: "javascript-errors", status: "passed" });
     report.status = "passed";
   } catch (error) {
@@ -240,13 +246,17 @@ export async function runObsidianSmoke({ projectRoot, vaultName, vaultPath, conf
     if (companionCleanup && !preserveOwnedFixtures) { try { await companionCleanup(); } catch(error) { report.status="failed"; report.cleanup="failed"; report.cleanupError=String(error); } }
     if (debuggerSession) {
       try {
+        if(browserSession){report.cleanupIdle=await browserSession.settle();if(report.cleanupIdle.status!=='passed'){report.status='failed';report.error||=report.cleanupIdle.reason;}}
         report.consoleErrors = [...debuggerSession.read(), ...report.scenarios.flatMap(s=>s.consoleErrors||[])];
         report.unexpectedConsoleErrors = unexpectedConsoleErrors(report.consoleErrors, expectedConsoleErrors);
         if (report.unexpectedConsoleErrors.length) { report.status = "failed"; report.error ||= "Unexpected console/JavaScript errors after native cleanup"; }
         const errors = ownedCli("dev:errors").trim();
-        if (errors && !/^No errors captured\.?$/i.test(errors)) { report.status = "failed"; report.error ||= `Captured JavaScript errors after cleanup: ${errors.slice(0, 1000)}`; }
+        report.cleanupCLIErrors=classifyCLIErrorText(errors);
+        if (report.cleanupCLIErrors.unexpected.length) { report.status = "failed"; report.error ||= `Captured JavaScript errors after cleanup: ${errors.slice(0, 1000)}`; }
+        if(browserSession){report.windowErrors=browserSession.read();report.browserDiagnostics=splitWindowErrors(report.windowErrors);if(report.browserDiagnostics.unexpected.length){report.status='failed';report.error||='Unexpected browser window errors';}}
       } catch (error) { report.status = "failed"; report.error ||= error.message; }
       finally {
+        try { browserSession?.dispose(); } catch(error){report.status='failed';report.cleanup='failed';report.cleanupError=error.message;}
         try { debuggerSession.dispose(); }
         catch (error) { report.status = "failed"; report.cleanup = "failed"; report.cleanupError = error.message; }
       }

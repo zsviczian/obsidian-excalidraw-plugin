@@ -158,19 +158,29 @@ release-note lines, plus the unchanged targeted Extras rollback. No other runtim
 edits are permitted. Broad plugin lint still reports 119 existing diagnostics;
 focused lint of both touched plugin source files passes.
 
-## F13 - ResizeObserver host loop caused by test focus emulation
+## F13 - ResizeObserver notifications and instrumentation interference
 
-The full desktop matrix recorded 8928 ResizeObserver window events while all 172
-business assertions passed. Bounded idle controls reproduced 91 events in 1.5
-seconds with both Excalidraw and Extras completely unloaded and zero editors.
-A debugger-only control produced zero events; enabling CDP focus emulation
-triggered about 60/second. This was unnecessary test tooling, not evidence of a
-plugin or fork defect. Removed focus emulation and reopened only the exact
-registered test-vault window after verifying no pending task, dirty drawing or
-print resources. The fresh renderer has zero baseline errors with both plugins
-loaded. Raw controls are retained under approved-fixes-complete/build/resize-*.json.
-No production fix or error filtering was introduced. Complete repeated acceptance
-is still required; later genuine errors must still fail.
+A control reproduced a notification loop after explicit CDP focus emulation;
+ordinary debugger attachment did not reproduce it in that comparison. The loop
+also continued after both community runtimes were unloaded. This establishes
+instrumentation interference, not that instrumentation is the sole cause of
+every later notification or that no plugin observer could be involved. Unnecessary
+focus emulation remains removed. No production observer is patched or silenced.
+
+The maintainer approved a narrow diagnostic policy on 2026-10-29. Only the exact
+browser notification `ResizeObserver loop completed with undelivered notifications.`
+without a JavaScript Error/stack is classified separately. CLI text must have the
+exact timestamped notification format; other messages and all debugger exceptions
+remain failures. Raw events, timestamps, affected task/case phases and counts are
+retained. Behavioral and cleanup assertions remain required. Each host/context
+must reach 1000 ms of notification-free, stable measured geometry within 5000 ms;
+persistent storms or geometry changes fail. Native CLI deadlines still detect an
+unresponsive renderer. Failed input, persistence or cleanup assertions cannot be
+waived by this policy. Source controls reject unrelated exceptions, near matches,
+storms and deliberately unstable geometry. Full native runs additionally exercise
+an actual uncaught exception and an intentionally incorrect measured-layout case
+through the normal task/case failure collector.
+
 
 ## F14 - Missing Canvas preparation prerequisite
 
@@ -181,3 +191,20 @@ closing the exact owned leaves and deleting only the report-owned paths complete
 recovery. The immutable seed and regenerated hashes now include Canvas. The old
 workflow checks this prerequisite before creating Canvas files. This changes only
 test setup and avoids a personal-vault/runtime dependency.
+
+## F15 - Canvas target ownership and workflow cleanup investigation
+
+The reviewed-head focused workflow reproduced three loaded Canvas nodes with empty
+preview containers. A minimal Canvas with copied seed drawings rendered correctly;
+a second minimal reproduction using freshly generated drawings and a simple
+popout cycle also rendered correctly. Evidence is retained in
+`canvas-focused-current/canvas-{minimal,generated,after-popout,zoom}.json`.
+
+Inspection found an empty popout still alive after workflow cleanup. Its document
+could become the target of later `getLeaf("tab")` calls. The workflow now closes
+its owned popout and waits for actual window/API teardown, explicitly selects a
+main-window anchor, and asserts Canvas document ownership. All preview, growth
+and independent-size assertions remain. Focused native confirmation is pending.
+A stylesheet-unload exception also occurred while that extra popout was alive;
+production code remains unchanged. It is not classified as a ResizeObserver
+notification. Reassess only if it persists after correct owned-window cleanup.

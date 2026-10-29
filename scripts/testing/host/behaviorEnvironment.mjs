@@ -5,6 +5,7 @@ export async function behaviorEnvironment(
   context,
   template,
   completeConsoleErrors,
+  settleBrowserDiagnostics,
 ) {
   const p = app.plugins.plugins["obsidian-excalidraw-plugin"],
     mainDoc = app.workspace.containerEl.ownerDocument;
@@ -23,7 +24,7 @@ export async function behaviorEnvironment(
     "__excalidraw_cli_smoke_" + runId.slice(0, 8) + "_behavior_" + context.id;
   check(!app.vault.getFolderByPath(prefix), "Behavior fixture collision");
   await app.vault.createFolder(prefix);
-  const windowErrors = [],
+  const windowErrors = [], browserIdle = [],
     errorListeners = [];
   const observeWindowErrors = (window) => {
     const listener = (event) =>
@@ -32,6 +33,8 @@ export async function behaviorEnvironment(
         window: window === mainDoc.defaultView ? "main" : "owner",
         phase: c.activeCase || c.phase,
         message: event.message,
+        at: Date.now(),
+        hasError: event.error != null,
         stack: event.error?.stack,
         source: event.filename,
         line: event.lineno,
@@ -65,6 +68,7 @@ export async function behaviorEnvironment(
       windows.get(owner).push({ leaf, view });
     }
     for (const [owner, entries] of windows) {
+      browserIdle.push(await settleBrowserDiagnostics(owner,windowErrors,'behavior:'+context.id));
       for (const { view } of entries) view.exitFullscreen?.();
       for (const { view } of entries)
         if (view.excalidrawAPI && view.isDirty())
@@ -541,5 +545,6 @@ export async function behaviorEnvironment(
     geometry,
     diagnostics,
     windowErrors,
+    browserIdle,
   };
 }

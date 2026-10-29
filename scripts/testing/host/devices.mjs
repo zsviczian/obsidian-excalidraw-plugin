@@ -14,6 +14,7 @@ import { writeReportFiles } from "../reportFiles.mjs";
 import { waitForNativeReady } from "./hostReadiness.mjs";
 import { mainWindowExpression, restoreDeviceState } from "./deviceRecovery.mjs";
 import { runBehaviorMatrix } from "./behaviorMatrix.mjs";
+import {acquireBrowserDiagnostics,classifyCLIErrorText,splitWindowErrors} from './browserDiagnostics.mjs';
 
 /** The caller owns the application-session lock and exact build staging. */
 export async function runDeviceMatrix({
@@ -78,7 +79,7 @@ export async function runDeviceMatrix({
     join(reportDir, "recovery.json"),
     JSON.stringify({ vaultName, path, original }, null, 2),
   );
-  let debuggerSession,
+  let debuggerSession, browserSession,
     currentMobile = original.mobile,
     created = false;
   report.reloadDiagnostics = [];
@@ -114,6 +115,7 @@ export async function runDeviceMatrix({
         `(()=>{app.changeTheme(${JSON.stringify(profile.theme === "dark" ? "obsidian" : "moonstone")});return JSON.stringify(true);})()`,
       );
       debuggerSession = acquireDebuggerSession(cli);
+      browserSession=acquireBrowserDiagnostics(cli,profile.id);
       cli("dev:errors", "clear");
       const expectedConsoleErrors = [];
       cli(
@@ -179,15 +181,18 @@ export async function runDeviceMatrix({
         report.tests.push(...workflows.tests);
         expectedConsoleErrors.push(...(workflows.expectedConsoleErrors || []));
       }
+      const browserIdle=await browserSession.settle();
       const errors = [
         ...debuggerSession.read(),
         ...(workflows?.consoleErrors || []),
       ];
       const unexpected = unexpectedConsoleErrors(errors, expectedConsoleErrors),
         windowErrorText = cli("dev:errors").trim();
+      const windowEvents=browserSession.read(),classified=splitWindowErrors(windowEvents),cliErrors=classifyCLIErrorText(windowErrorText);
       const errorGatePassed =
         unexpected.length === 0 &&
-        (!windowErrorText || /^No errors captured\.?$/i.test(windowErrorText));
+        classified.unexpected.length===0 && cliErrors.unexpected.length===0 && browserIdle.status==='passed' && (!workflows||workflows.status==='passed');
+      browserSession.dispose();browserSession=null;
       debuggerSession.dispose();
       debuggerSession = null;
       report.tests.push({
@@ -195,6 +200,7 @@ export async function runDeviceMatrix({
         featureIds: ["P07", "P08"],
         ...result,
         status: errorGatePassed ? "passed" : "failed",
+        windowEvents,browserDiagnostics:classified.diagnostics,cliErrors,browserIdle,
         ...(errorGatePassed
           ? {}
           : {
@@ -221,6 +227,7 @@ export async function runDeviceMatrix({
   } finally {
     try {
       let debuggerError;
+      if(browserSession){try{report.failedWindowEvents=browserSession.read();browserSession.dispose();}catch(error){debuggerError=error;}browserSession=null;}
       if (debuggerSession) {
         try {
           debuggerSession.dispose();

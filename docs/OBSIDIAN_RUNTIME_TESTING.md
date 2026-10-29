@@ -453,3 +453,22 @@ the fork's [native validation procedure](https://github.com/zsviczian/excalidraw
 and its V03–V11 gates (also available in the sibling checkout). Record macOS and
 Windows live results separately, along with artifact identity and unavailable
 gates. A test of platform argument construction is not a live macOS smoke.
+
+### Exact browser diagnostic policy (2026-10-29)
+
+The native coordinator retains the exact browser ResizeObserver notification as
+raw diagnostic evidence, including timing and affected task/case phases. It does
+not suppress events or patch observers. Every context/profile and post-cleanup
+host must reach one second of unchanged geometry with no new notifications within
+five seconds. Persistent storms, unstable geometry, JavaScript exceptions, other
+errors, failed behavior and failed cleanup fail acceptance. The exact message is
+`ResizeObserver loop completed with undelivered notifications.`; messages carrying
+an Error/stack or broader exception text are not eligible. Instrumentation
+triggered one reproduced loop; sole causation of every notification is unproven.
+Full runs include uncaught-exception and deliberately incorrect-layout negative
+controls, reported separately from the 357 required feature cases.
+
+Desktop behavioral editing uses registered native plugin CLI commands. Phone and
+tablet workflows use public `EA.executeCLI`; those two in-process workflows are
+not counted as native CLI command invocations. The current plan therefore has
+five native CLI feature cases and two mobile EA CLI cases.

@@ -8,9 +8,10 @@ import {
   acquireDebuggerSession,
   unexpectedConsoleErrors,
 } from "./debuggerSession.mjs";
-import { parseCLIJSON } from "./inAppTask.mjs";
+import { parseCLIJSON, runInAppTask } from "./inAppTask.mjs";
 import { spawnNativeSync } from "./processTools.mjs";
 import { writeReportFiles } from "../reportFiles.mjs";
+import {classifyCLIErrorText} from './browserDiagnostics.mjs';
 export async function runErrorOracle({ cli, reportDir, source = {} }) {
   mkdirSync(reportDir, { recursive: true });
   const token = randomUUID().replaceAll("-", ""),
@@ -27,11 +28,8 @@ export async function runErrorOracle({ cli, reportDir, source = {} }) {
   let session,
     installed = false;
   try {
-    assert.match(
-      cli("dev:errors").trim(),
-      /^No errors captured\.?$/i,
-      "Existing host errors must be reviewed first",
-    );
+    report.initialCLIErrors=classifyCLIErrorText(cli('dev:errors'));
+    assert.deepEqual(report.initialCLIErrors.unexpected,[],"Existing host errors must be reviewed first");
     session = acquireDebuggerSession(cli);
     assert.deepEqual(session.read(), [], "Fresh debugger has existing errors");
     parseCLIJSON(
@@ -81,6 +79,21 @@ export async function runErrorOracle({ cli, reportDir, source = {} }) {
         "no unrelated error is filtered",
       ],
     });
+    const actualWidth=parseCLIJSON(cli('eval','code=JSON.stringify(app.workspace.containerEl.getBoundingClientRect().width)'));
+    let layoutFailure;
+    try {
+      await runInAppTask({cli,args:[actualWidth+17],execute:async(c,expected)=>c.case('negative-control:broken-layout',['P11'],async()=>{
+        const actual=app.workspace.containerEl.getBoundingClientRect().width;
+        if(actual!==expected)throw Error('INTENTIONAL_LAYOUT_MISMATCH: '+actual+' !== '+expected);
+        return {assertions:['workspace width matches expected']};
+      })});
+    } catch(error){layoutFailure=error;}
+    assert.match(layoutFailure?.message||'',/INTENTIONAL_LAYOUT_MISMATCH/,'Deliberately broken native layout assertion passed');
+    assert.notEqual(layoutFailure.cleanupFailed,true,'Negative control did not clean up');
+    assert.equal(layoutFailure.evidence?.[0]?.status,'failed','The ordinary native case collector accepted a broken layout');
+    report.layoutNegativeControl=layoutFailure.evidence;
+    report.tests.push({testId:'native:diagnostics-rejects-broken-layout',featureIds:['P11'],status:'passed',assertions:['actual workspace geometry measured','ordinary native task/case collector rejects deliberately wrong width','negative-control cleanup passes']});
+
   } catch (error) {
     report.error = String(error.stack || error);
     report.tests.push({

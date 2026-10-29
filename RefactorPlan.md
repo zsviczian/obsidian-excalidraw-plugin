@@ -3118,3 +3118,11 @@ with nativeCLI=false verified and evidenceKind distinguishing transport. No case
 were removed. Native CLI transport has five applicable cases, not seven; the two
 mobile protocol cases remain in the required matrix. Device error notifications
 remain strict pending maintainer classification; no production changes.
+
+- 2026-10-29 (#3022): Applied maintainer-approved exact browser diagnostic policy
+  only in native tooling, with bounded idle/geometry checks and failure controls.
+  Corrected workflow popout teardown and explicit main-window Canvas targeting;
+  preview/resize assertions retained. Production diff remains unchanged. Focused
+  and complete repeated native validation pending. Highest-risk checks: Canvas
+  previews/independent resizing, popout teardown, mobile targeting and save/reopen;
+  physical mobile and other desktop OSes remain separate environments.
