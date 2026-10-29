@@ -3224,3 +3224,15 @@ remain strict pending maintainer classification; no production changes.
   retirement steps to distinguish pending native cleanup from a product loop.
   Existing delays, actions, assertions and deadlines remain unchanged pending
   evidence. Focused image/web-drop predecessor reproduction is next.
+
+- 2026-10-29 (#3022): Read-only native evidence at 4199a3dd proves the crop
+  helper retires its drawing with a live Markdown-image owner; the non-crop
+  helper's 100-ms sample has already released ownership. Replaced only this
+  test overlap with bounded ownership/persistence completion, including error
+  cleanup and a preserve-unsettled-work deadline regression. Existing geometry,
+  crop, save/reopen/export assertions remain. Both migration routes after the
+  full desktop predecessors pass, while the preceding reproduction captures
+  four direct-route illegal-access exceptions. Cause remains intermittent and
+  unproven. Added one bounded six-cycle host-only Markdown control with both
+  community runtimes unloaded, outside acceptance coverage. No installer,
+  production behavior, observer or diagnostic exclusion changed.

@@ -2478,6 +2478,10 @@
       "mode": "isolated-or-extracted"
     },
     {
+      "path": "scripts/testing/host/markdownImageClose.test.mjs",
+      "mode": "direct-module-or-tooling"
+    },
+    {
       "path": "scripts/testing/host/pluginDiscovery.test.mjs",
       "mode": "isolated-or-extracted"
     },

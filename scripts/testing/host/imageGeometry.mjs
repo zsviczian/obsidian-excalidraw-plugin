@@ -1,6 +1,7 @@
 /** #3014/#2947: real formula bounds and resized Markdown sidepanel edits. */
 import { runLegacyTask } from "./legacyTask.mjs";
 import { exerciseMarkdownCrop } from "./markdownImageCrop.mjs";
+import { closeMarkdownImageTab } from "./markdownImageClose.mjs";
 
 const CONTROL = "__excalidrawImageGeometry";
 
@@ -77,6 +78,7 @@ async function exerciseMarkdown(control, drawingPath) {
   const c = globalThis[control], plugin = app.plugins.plugins["obsidian-excalidraw-plugin"];
   const leaf = app.workspace.getLeavesOfType("excalidraw").find(l => l.view.file?.path === drawingPath);
   const view = leaf.view, doc = view.ownerDocument;
+  c.editorView = view;
   c.previous = app.workspace.activeLeaf;
   if (doc.querySelector(".excalidraw-markdown-image-editor .cm-content")) throw Error("close the existing Markdown-image editor before testing");
   const waitFor = async (predicate, label) => {
@@ -145,11 +147,9 @@ async function exerciseMarkdown(control, drawingPath) {
   await setContent("Shorter shared content");
   const sharedBounds = checkSharedWidth();
   c.results.push({ kind: "markdown-shared-width", copies: 2, previousWidth, nextWidth, displayed: sharedBounds, fileId: image.fileId });
-  c.tab.close(); c.tab = null;
-  const closeEvidence = { kind: "markdown-image-close-evidence", afterSignal: { active: view.sameFileEditGate.hasActiveOwners, grace: view.sameFileEditGate.isInGracePeriod, saving: view.isSaveInProgress() } };
+  const closeEvidence = { kind: "markdown-image-close-evidence", beforeClose: { active: view.sameFileEditGate.hasActiveOwners, grace: view.sameFileEditGate.isInGracePeriod, saving: view.isSaveInProgress() } };
   c.results.push(closeEvidence);
-  await new Promise(resolve => setTimeout(resolve, 100));
-  closeEvidence.after100ms = { active: view.sameFileEditGate.hasActiveOwners, grace: view.sameFileEditGate.isInGracePeriod, saving: view.isSaveInProgress() };
+  await closeMarkdownImageTab(c, view);
   await view.forceSave(true, true);
   closeEvidence.beforeRetire = { active: view.sameFileEditGate.hasActiveOwners, grace: view.sameFileEditGate.isInGracePeriod, saving: view.isSaveInProgress() };
   await leaf.setViewState({ type: "empty", state: {} });
@@ -168,7 +168,7 @@ async function cleanup(control) {
     if (c.hadOwn) c.gateway.getMathJax = c.original;
     else delete c.gateway.getMathJax;
   }
-  c.tab?.close();
+  if(c.tab || c.closingView) await closeMarkdownImageTab(c, c.closingView || c.editorView);
   if (c.pop) {
     const win=c.pop.view.containerEl.ownerDocument.defaultView;
     if(win===app.workspace.containerEl.ownerDocument.defaultView){await c.pop.setViewState({type:'empty',state:{}});c.pop.detach();}
@@ -182,7 +182,7 @@ async function cleanup(control) {
 export async function runImageGeometryScenario({ cli, drawingPath, realRenderer = false }) {
   const cases=[];
   for(const [popout,scenario] of [[false,exercise],[true,exercise],[false,exerciseMarkdown],[false,exerciseMarkdownCrop]]){
-    const result=await runLegacyTask({cli,control:CONTROL,execute:scenario,cleanup,args:[drawingPath,popout,realRenderer],timeoutMs:90000,cleanupMs:120000});
+    const result=await runLegacyTask({cli,control:CONTROL,execute:scenario,cleanup,helpers:[closeMarkdownImageTab],args:[drawingPath,popout,realRenderer],timeoutMs:90000,cleanupMs:120000});
     cases.push({window:popout?'popout':'main',...result});
   }
   return {id:realRenderer?'image-geometry-real-3014':'image-geometry-3014',renderer:realRenderer?'extras-mathjax':'deterministic-svg',status:'passed',cases};

@@ -22,6 +22,7 @@ import { runWorkflowFixesScenario } from "./workflowFixes.mjs";
 import { acquireHostLock } from "./hostLock.mjs";
 import { runDataIntegrityScenario } from "./dataIntegrity.mjs";
 import { runLifecycleScenario } from "./lifecycle.mjs";
+import { runMarkdownMigrationControl } from "./markdownMigrationControl.mjs";
 import { runExtrasServicesScenario } from "./extrasServices.mjs";
 import { runStabilityScenario } from "./stability.mjs";
 import { runAutomateScenario } from "./automate.mjs";
@@ -63,8 +64,11 @@ const fullProfile = profile === "full" || profile === "regression";
 const coreOnly=process.argv.includes("--core"),coreScenarios=fullProfile||coreOnly;
 const lifecycle = coreScenarios || process.argv.includes("--lifecycle");
 const migrationComparison = process.argv.includes("--migration-comparison");
+const markdownMigrationControl = process.argv.includes("--markdown-migration-control");
 if (fullProfile && migrationComparison)
   throw Error("Migration comparison is a focused diagnostic, not a full-profile replacement");
+if (fullProfile && markdownMigrationControl)
+  throw Error("Host-only Markdown migration is a focused diagnostic, not full coverage");
 const extrasServices =
   coreScenarios || process.argv.includes("--extras-services");
 const devices =
@@ -125,6 +129,7 @@ const flags = [
   "--behavior-matrix",
   "--lifecycle",
   "--migration-comparison",
+  "--markdown-migration-control",
   "--extras-services",
   "--devices",
   "--data-integrity",
@@ -275,6 +280,7 @@ try {
           context => runLifecycleScenario(context),
           context => runLifecycleScenario(context, { migrationRoute: "host-drag" }),
         ] : []),
+        ...(markdownMigrationControl ? [runMarkdownMigrationControl] : []),
         ...(extrasServices ? [runExtrasServicesScenario] : []),
         ...(dataIntegrity ? [runDataIntegrityScenario] : []),
         ...(workflowFixes ? [runWorkflowFixesScenario] : []),

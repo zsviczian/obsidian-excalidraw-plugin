@@ -1,11 +1,12 @@
 /** Retire polling-only native probes through the shared settle-before-cleanup contract. */
 import assert from 'node:assert/strict';
 import {runInAppTask} from './inAppTask.mjs';
-export async function runLegacyTask({cli,control,execute,cleanup=async()=>{},args=[],timeoutMs=120000,cleanupMs=180000}){
+export async function runLegacyTask({cli,control,execute,cleanup=async()=>{},helpers=[],args=[],timeoutMs=120000,cleanupMs=180000}){
   assert.match(control,/^__[a-zA-Z0-9_]+$/,'Legacy controller must be a named owned test global');
   // Both functions are local repository helpers, serialized exactly as existing
   // native probes are. No remote code, production instrumentation or source-coverage credit.
   const adapter=new Function(`return async function(c,control,args){
+    ${helpers.map(helper=>helper.toString()).join(';')}
     if(globalThis[control])throw Error('Existing native controller: '+control);
     const legacy={state:'pending'};globalThis[control]=legacy;
     Object.defineProperty(legacy,'cancelled',{get:()=>c.cancelled});
