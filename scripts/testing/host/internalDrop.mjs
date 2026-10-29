@@ -21,6 +21,29 @@ async function exercise(control, drawingPath, pngBase64, includePopout) {
     throw Error(`Timed out: ${label}`);
   };
   const png = Uint8Array.from(atob(pngBase64), (char) => char.charCodeAt(0));
+  // Match the lifecycle suite: observe closing the actual window from the
+  // main realm instead of awaiting a promise owned by the final popout tab.
+  const closePopout = async () => {
+    if (!c.pop) return;
+    const view = c.pop.view,
+      owner = view.containerEl.ownerDocument.defaultView;
+    if (owner && !owner.closed) {
+      if (
+        view.isDirty?.() &&
+        (await view.saveWithOutcome()).status !== "persisted"
+      )
+        throw Error("Owned drop popout could not save before closing");
+      owner.close();
+      const end = Date.now() + 20000;
+      while (!owner.closed) {
+        if (Date.now() >= end) throw Error("Owned drop popout did not close");
+        await new Promise((resolve) => setTimeout(resolve, 25));
+      }
+    }
+    if (view.excalidrawAPI)
+      throw Error("Closed drop popout retained its editor");
+    c.pop = null;
+  };
   try {
     for (const [extension, bytes] of [
       ["ttf", new Uint8Array([0])],
@@ -136,9 +159,7 @@ async function exercise(control, drawingPath, pngBase64, includePopout) {
           throw Error("internal insertion changed after reopen");
       }
       if (c.pop) {
-        await c.pop.setViewState({ type: "empty", state: {} });
-        c.pop.detach();
-        c.pop = null;
+        await closePopout();
       }
       app.workspace.setActiveLeaf(main, { focus: true });
     }
@@ -147,8 +168,7 @@ async function exercise(control, drawingPath, pngBase64, includePopout) {
     let cleanupError;
     try {
       if (c.pop) {
-        await c.pop.setViewState({ type: "empty", state: {} });
-        c.pop.detach();
+        await closePopout();
       }
       if (main.view.excalidrawAPI) {
         main.view.dropManager.onDragLeave();

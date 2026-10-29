@@ -3043,3 +3043,17 @@ complete matching-build native passes, final evidence/counts and PR updates. The
 highest-risk checks are trusted palette/shortcuts and actual embed/settings flows
 in narrow/mobile panes, plus popout teardown and error-free surviving-editor saves.
 Physical devices and macOS/Linux remain separate environments.
+
+### 2026-10-29 ? Broad desktop run and closed-window guard (#3022)
+
+The clean b8b22739 run retained all 172 desktop case records: 171 passed; the
+nested-split context-menu test exhausted its three empty-space candidates.
+Cleanup then failed on an already-destroyed view whose document.defaultView was
+null. The task genuinely completed with failed cleanup; exact owned paths were
+recovered under the shared lock and the baseline restored without a renderer
+reload. The strict overall run remains failed; the final error gate was not
+reached. The next test-only checkpoint scans a larger grid of actual empty canvas
+points, verifies an already-destroyed window has no live editor, and uses the
+existing close-window pattern in the newly required popout drop variants too.
+No runtime source changes. Highest-risk validation remains nested-split input,
+final-popout teardown, all drop variants, and phone/tablet feature workflows.

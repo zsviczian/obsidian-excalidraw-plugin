@@ -45,6 +45,29 @@ async function exercise(
     }
     throw Error(`Timed out: ${label}`);
   };
+  // Match the lifecycle suite: observe closing the actual window from the
+  // main realm instead of awaiting a promise owned by the final popout tab.
+  const closePopout = async () => {
+    if (!c.pop) return;
+    const view = c.pop.view,
+      owner = view.containerEl.ownerDocument.defaultView;
+    if (owner && !owner.closed) {
+      if (
+        view.isDirty?.() &&
+        (await view.saveWithOutcome()).status !== "persisted"
+      )
+        throw Error("Owned drop popout could not save before closing");
+      owner.close();
+      const end = Date.now() + 20000;
+      while (!owner.closed) {
+        if (Date.now() >= end) throw Error("Owned drop popout did not close");
+        await new Promise((resolve) => setTimeout(resolve, 25));
+      }
+    }
+    if (view.excalidrawAPI)
+      throw Error("Closed drop popout retained its editor");
+    c.pop = null;
+  };
   try {
     for (const popout of includePopout ? [false, true] : [false]) {
       let leaf = main;
@@ -203,9 +226,7 @@ async function exercise(
         });
       }
       if (c.pop) {
-        await c.pop.setViewState({ type: "empty", state: {} });
-        c.pop.detach();
-        c.pop = null;
+        await closePopout();
       }
       app.workspace.setActiveLeaf(main, { focus: true });
     }
@@ -214,8 +235,7 @@ async function exercise(
     let cleanupError;
     try {
       if (c.pop) {
-        await c.pop.setViewState({ type: "empty", state: {} });
-        c.pop.detach();
+        await closePopout();
       }
     } catch (error) {
       cleanupError = error;

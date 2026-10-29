@@ -34,7 +34,14 @@ export async function behaviorEnvironment(
         );
       if (leaf.view?.containerEl.isConnected) {
         const owner = leaf.view.containerEl.ownerDocument.defaultView;
-        if (owner !== mainDoc.defaultView && !owner.closed) {
+        if (!owner || owner.closed) {
+          check(
+            !leaf.view.excalidrawAPI,
+            "Destroyed behavior window retained a live editor",
+          );
+          continue;
+        }
+        if (owner !== mainDoc.defaultView) {
           // Match the lifecycle suite: the final tab can destroy the realm
           // owning setViewState's promise. Observe actual host teardown instead.
           owner.close();
