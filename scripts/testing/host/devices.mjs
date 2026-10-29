@@ -26,6 +26,7 @@ export async function runDeviceMatrix({
   automationRoot,
   profiles = deviceProfiles(),
   featureWorkflows = false,
+  featureCases,
 }) {
   reportDir = resolve(reportDir);
   const target = validateTarget({
@@ -177,6 +178,7 @@ export async function runDeviceMatrix({
           contexts: [profile.id.startsWith("phone-") ? "phone" : "tablet"],
           input: "touch",
           reportDir,
+          ...(featureCases ? {caseIds:featureCases} : {}),
         });
         report.tests.push(...workflows.tests);
         expectedConsoleErrors.push(...(workflows.expectedConsoleErrors || []));

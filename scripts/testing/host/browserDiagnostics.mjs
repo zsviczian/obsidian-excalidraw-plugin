@@ -110,7 +110,7 @@ export function acquireBrowserDiagnostics(cli, label) {
   const key =
     "__excalidrawBrowserDiagnostics_" + randomUUID().replaceAll("-", "");
   evaluate(
-    `(()=>{const c={events:[],label:${JSON.stringify(label)}};c.listener=event=>c.events.push({at:Date.now(),message:event.message,isTrusted:event.isTrusted,hasError:event.error!=null,stack:event.error?.stack,source:event.filename,line:event.lineno,column:event.colno,label:c.label,cases:Object.keys(globalThis).filter(k=>k.startsWith('__excalidrawTestTask_')).map(k=>({phase:globalThis[k].activeCase||globalThis[k].phase}))});window.addEventListener('error',c.listener);globalThis[${JSON.stringify(key)}]=c;return JSON.stringify(true)})()`,
+    `(()=>{const c={events:[],label:${JSON.stringify(label)}};c.listener=event=>c.events.push({at:Date.now(),message:event.message,isTrusted:event.isTrusted,hasError:event.error!=null,stack:event.error?.stack,source:event.filename,line:event.lineno,column:event.colno,label:c.label,activeLeaf:{type:app.workspace.activeLeaf?.view?.getViewType(),file:app.workspace.activeLeaf?.view?.file?.path},activeEditor:{type:app.workspace.activeEditor?.getViewType?.(),file:app.workspace.activeEditor?.file?.path,editor:!!app.workspace.activeEditor?.editor,keys:Object.keys(app.workspace.activeEditor||{})},cases:Object.keys(globalThis).filter(k=>k.startsWith('__excalidrawTestTask_')).map(k=>({phase:globalThis[k].activeCase||globalThis[k].phase}))});window.addEventListener('error',c.listener);globalThis[${JSON.stringify(key)}]=c;return JSON.stringify(true)})()`,
   );
   let disposed = false;
   return {

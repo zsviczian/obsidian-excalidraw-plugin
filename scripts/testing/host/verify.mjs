@@ -355,6 +355,7 @@ try {
         automationRoot: process.env.EXCALIDRAW_TEST_AUTOMATION_ROOT,
         profiles: selectedDeviceIds ? allDeviceProfiles.filter(profile=>selectedDeviceIds.includes(profile.id)) : allDeviceProfiles,
         featureWorkflows: fullProfile || profile === "devices",
+        featureCases:focusedCases,
       });
       deviceReport.source = combination?.manifests.plugin || source;
       deviceReport.artifacts = report.artifacts.installedHashes;
