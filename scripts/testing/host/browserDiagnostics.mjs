@@ -72,22 +72,22 @@ export async function settleBrowserDiagnostics(
       stableSince = current.at;
     }
     samples.push(current);
-    if (current.at - stableSince >= quietMs)
-      return {
-        status: "passed",
-        label,
-        started,
-        completed: current.at,
-        timeoutMs,
-        quietMs,
-        samples,
-      };
     if (current.at - started >= timeoutMs)
       return {
         status: "failed",
         label,
         reason:
           "Browser did not reach stable geometry and notification-free idle",
+        started,
+        completed: current.at,
+        timeoutMs,
+        quietMs,
+        samples,
+      };
+    if (current.at - stableSince >= quietMs)
+      return {
+        status: "passed",
+        label,
         started,
         completed: current.at,
         timeoutMs,

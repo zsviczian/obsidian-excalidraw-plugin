@@ -52,6 +52,20 @@ test("a stable quiet window settles without altering browser events or geometry"
   });
   assert.equal(result.status, "passed");
   assert.ok(result.samples.length >= 2);
+  // A late event-loop callback cannot turn an exceeded deadline into a pass.
+  const stalled = {
+    ...win,
+    setTimeout: (callback) => setTimeout(callback, 30),
+  };
+  assert.equal(
+    (
+      await settleBrowserDiagnostics(stalled, [], "late-callback", {
+        quietMs: 10,
+        timeoutMs: 20,
+      })
+    ).status,
+    "failed",
+  );
 });
 test("persistent notification storms fail the bounded idle check", async () => {
   const events = [],
