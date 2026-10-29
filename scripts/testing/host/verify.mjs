@@ -67,6 +67,7 @@ const extrasServices =
 const devices =
   fullProfile || profile === "devices" || process.argv.includes("--devices");
 const textUndo = coreScenarios || process.argv.includes("--text-undo");
+const stability = coreScenarios || profile === "soak" || process.argv.includes("--stability");
 const nativeCLI = coreScenarios || process.argv.includes("--native-cli");
 const embedRecovery = coreScenarios || process.argv.includes("--embed-recovery");
 const groupedLinkClick =
@@ -126,6 +127,7 @@ const flags = [
   "--workflow-fixes",
   "--lucide",
   "--text-undo",
+  "--stability",
   "--native-cli",
   "--embed-recovery",
   "--grouped-link-click",
@@ -306,7 +308,7 @@ try {
         ...(coreScenarios ? [runAutomateScenario] : []),
         ...(coreScenarios ? [runCoreInteractionScenario] : []),
         ...(coreScenarios ? [runPDFImportScenario] : []),
-        ...(coreScenarios || profile === "soak"
+        ...(stability
           ? [
               (context) =>
                 runStabilityScenario({

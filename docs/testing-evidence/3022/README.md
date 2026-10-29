@@ -1,5 +1,20 @@
 # Testing checkpoint: acceptance remains incomplete
 
+Latest acceptance attempt: plugin `9c08d814`, fork `053a3b9`, Extras `1cdcb7c`.
+Fresh portable validation passes 654 cases and source/package gates. Exclusive
+unchanged text/pointer reruns pass. The subsequent full run passes all 258
+behavioral cases and all 40 device/layout cases, but stability cycle 3 times out;
+cycles 4/5 and the passing JavaScript-error gate are missing. Eight illegal-access
+exceptions and one host onDelete exception remain failures. Cleanup/restoration
+and both actual negative controls pass. **Zero of two complete repeats pass.**
+
+[Sanitized failed acceptance, complete available cases and artifact manifests](acceptance-failed-9c08d814.json)
+retains the evidence. The test-only file-delete/detach cleanup race has a
+deterministic regression and correction; the initial load timeout and illegal
+access still require focused diagnosis. No production fix, exclusion expansion,
+or blind full-run retry is applied. A new clean checkpoint is required for both
+full repeats after test-tooling corrections. Historical checkpoints follow.
+
 Latest tested product: plugin `38bf80fbf42fe75784e31d9763fab35a3196b35c`,
 fork `053a3b9f9e77917c457fce8ca9453d38b92a303b`, Extras
 `1cdcb7c425a9b80afdc7b39c88861143b4b85e58`.

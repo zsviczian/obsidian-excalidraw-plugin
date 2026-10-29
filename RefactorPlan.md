@@ -27,7 +27,7 @@ validated, and what remains uncertain.
 | Phase | Status | Current outcome |
 | --- | --- | --- |
 | Assessment and baseline design | Complete | Initial architecture, risks, sequencing, and validation matrix documented |
-| Automated test coverage (#3022) | Expanded acceptance in progress; foreground native runs paused | At plugin 38bf80fb / fork 053a3b9 / Extras 1cdcb7c, all 654 portable cases pass (56 new / 598 reused). Approved internal-preview focus correction passes four source regressions and isolated phone rendering/save/reopen with clean restoration. Earlier independent core 59 + focused nested-pane case and all 15 popout drop variants pass. Actual builds are installed/hash-verified in the prepared local vault; one-time trust is complete. Full scope remains 357 native cases including 258 behavioral obligations; zero of two complete repeats pass. Resume fresh runs when maintainer foreground access is free. See docs/TESTING.md |
+| Automated test coverage (#3022) | Acceptance failed; focused diagnosis | At plugin 9c08d814 / fork 053a3b9 / Extras 1cdcb7c, all 654 portable cases pass (56 new / 598 reused). Exclusive unchanged text/pointer reruns pass. The full run passes all 258 behavioral and 40 device cases, but stability cycle 3 times out; cycles 4/5 and a passing error gate are missing. Eight illegal-access exceptions and one host delete-handler exception fail capture. Cleanup/restoration and negative controls pass. Test-only cleanup ordering is corrected with a regression and passive load snapshots; production is unchanged. Zero of two complete matching-build native repeats pass. See docs/TESTING.md |
 | Template selection and cancellation (#2649, PR #3020) | Implemented; source and native selection/cancellation checks pass | A dedicated chooser returns template/blank/cancel, displays paths relative to the configured root, and initially selects explicit blank. Interactive callers resolve before folder/file/editor/leaf side effects. Public getBlankDrawing/createDrawing and EA/CLI contracts retain string/file returns and deterministic initData behavior |
 | Nested-split fullscreen (#2743, PR #3020) | Implemented; seven source tests and native lower-right split pass | Keep the complete ancestor path visible; hide surrounding siblings and restore only owned classes. Native 958x641 drawing expands to 2560x1438 and returns to identical bounds. Existing inline styles remain untouched; controls are optional and cleanup retains the entry document across migration |
 | Canvas preview scaling investigation (#2729, PR #3020) | Original SVG-only behavior not reproduced on Windows Obsidian 1.14.5; unresolved | Two nodes sharing a drawing scale independently in SVG, SVG-as-image and PNG with immersive mode on/off. Doubling one node width scales its preview by 2.0063; the other remains unchanged. Tall previews clip in all modes. No speculative rendering/cache change; retain measurements and keep the issue open |
@@ -3156,3 +3156,14 @@ remain strict pending maintainer classification; no production changes.
   unfinished; rerun unchanged input assertions with exclusive access. No further
   production changes. Highest-risk next checks remain complete phone/tablet and
   popout workflows; physical touch and other desktop OSes remain separate.
+
+- 2026-10-29 (#3022): Exclusive unchanged rerun passes all 16 text-history variants
+  and the first trusted desktop-pointer profile. Full attempt at 9c08d814 passes
+  all 258 behavior cases and 40 device/layout cases, but stability cycle 3 times
+  out and strict capture records eight illegal-access exceptions plus one host
+  onDelete parent-null exception. Cleanup/restoration and negative controls pass;
+  acceptance remains zero of two. Corrected the demonstrated test-only file-delete
+  cleanup race with an actual-function regression, and added passive load-state
+  evidence/focused stability selection. No production changes or gate waivers.
+  Highest-risk next checks are the large-scene reopen timeout and real popout
+  teardown exceptions; fresh full matching-build repeats remain required.

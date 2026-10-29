@@ -3,7 +3,7 @@
 ## Current checkpoint (2026-10-29)
 
 [Accessible sanitized case summaries and artifact manifests](testing-evidence/3022/README.md)
-record the tested plugin `38bf80fb`, fork `053a3b9` and Extras `1cdcb7c`.
+record the tested plugin `9c08d814`, fork `053a3b9` and Extras `1cdcb7c`.
 Fresh portable verification passes **654 canonical cases (56 new, 598 reused)**.
 The approved internal-preview focus correction passes four actual-method tests
 and the isolated phone embedding workflow, with no window errors and successful
@@ -16,13 +16,17 @@ all **15 popout drop variants**, cleanup and baseline restoration; the core run
 records zero unexpected errors/notifications. Native error/layout negative controls
 pass. Real single-export PDF output is decoded and visually inspected.
 
-Acceptance remains **incomplete**: **zero of two required complete native repeats**
-have passed. The next full attempt was interrupted for the maintainer's foreground
-PC access and is not counted. Its keyboard/pointer failures require an unchanged
-rerun with exclusive access; interference is plausible, not established. The test
-vault was restored with both plugins ready and no tasks, print roots or popouts.
-Native input remains paused until the maintainer frees the machine. Do not merge
-or substitute subset results for the 357-case gate.
+Acceptance remains **failed**: **zero of two required complete native repeats**
+have passed. Exclusive unchanged reruns pass all 16 text-history variants and the
+desktop pointer profile; the prior failures remain retained without assuming their
+cause. The next full attempt passes all 258 behavioral obligations and 40 device
+profiles, but stability cycle 3 times out. Cycles 4/5 and the successful error gate
+are missing. Eight illegal-access exceptions and one host onDelete parent-null
+exception fail strict capture. Cleanup, baseline restoration and both negative
+controls pass. The demonstrated test-only delete/detach race is corrected with a
+regression; passive load snapshots and focused stability selection support the
+remaining diagnosis. No production changes or diagnostic waivers. Do not merge or
+substitute subset results for the 357-case gate.
 The full plan has six native CLI-bearing cases (five editing plus Lucide) and two
 separate mobile public `EA.executeCLI` workflows. Historical checkpoints below
 retain their original scope and results.

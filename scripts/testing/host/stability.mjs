@@ -14,7 +14,7 @@ export async function runStabilityScenario({cli,drawingPath,cycles=6}){
   assert.ok(drawingPath.startsWith('__excalidraw_cli_smoke_'));
   assert.ok(Number.isInteger(cycles)&&cycles>=2&&cycles<=25,'Bounded stability cycles');
   const fixture=stabilityFixture(),path=drawingPath.replace(/\.(excalidraw\.md|excalidraw|md)$/,'')+'_stability.excalidraw.md';
-  const result=await runInAppTask({cli,execute:exerciseStability,args:[path,fixture,cycles],timeoutMs:cycles*30000+90000,cleanupMs:60000});
+  const result=await runInAppTask({cli,execute:exerciseStability,args:[path,fixture,cycles],timeoutMs:cycles*30000+90000,cleanupMs:60000,onProgress:(phase)=>console.log('[native] '+(phase||'stability starting'))});
   return {id:'stability',status:'passed',fixtureHash:sha256(fixture),...result};
 }
 async function exerciseStability(c,path,fixture,cycles){
@@ -25,21 +25,29 @@ async function exerciseStability(c,path,fixture,cycles){
   c.defer(async()=>{
     const file=app.vault.getFileByPath(path);
     if(leaf?.view?.excalidrawAPI&&leaf.view.isDirty())check((await leaf.view.saveWithOutcome()).status==='persisted','Stability cleanup save failed');
+    // Close the view first: file deletion invokes Obsidian's async onDelete,
+    // which still uses the leaf parent after its own awaited open(null).
+    if(leaf){const view=leaf.view;await leaf.setViewState({type:'empty',state:{}});leaf.detach();leaf=null;await c.waitForCleanup(()=>!view.excalidrawAPI&&!view.containerEl.querySelector('.excalidraw-wrapper'),'stability view retirement');}
     if(file){check(path.startsWith('__excalidraw_cli_smoke_')&&file.path===path,'Unowned stability cleanup');await app.vault.delete(file);}
-    if(leaf){await c.waitForCleanup(()=>leaf.view.getViewType()!=='excalidraw'||!leaf.view.containerEl.isConnected,'stability view retirement');if(leaf.view.containerEl.isConnected)leaf.detach();}
     if(previous?.view.containerEl.isConnected)app.workspace.setActiveLeaf(previous,{focus:true});
     check(doc.querySelectorAll('.excalidraw-wrapper').length===beforeRoots,'Stability left an editor root');
   });
   const file=await app.vault.create(path,fixture);
   await c.waitFor(()=>p.isExcalidrawFile(file),'large fixture metadata');
   const timings=[],retired=[];
+  c.observations=[];
+  const loadState=()=>{const view=leaf?.view;return{at:Date.now(),leafId:leaf?.id,connected:view?.containerEl.isConnected,mainWindow:view?.containerEl.ownerDocument===doc,type:view?.getViewType?.(),file:view?.file?.path,isLoaded:view?.isLoaded,api:!!view?.excalidrawAPI,elements:view?.excalidrawAPI?.getSceneElements?.()?.length,justLoaded:view?.semaphores?.justLoaded,closing:view?.isClosingOrMigrating?.(),activeLeaf:app.workspace.activeLeaf?.id};};
   for(let cycle=0;cycle<cycles;cycle++){
     await c.case(`native:stability-roundtrip:${cycle}`,['P02','P07','P12'],async()=>{
       const start=performance.now();
+      c.phase='stability cycle '+cycle+' opening';
+      const observation={cycle};c.observations.push(observation);
       let anchor;app.workspace.iterateAllLeaves(l=>{if(!anchor&&l.getRoot()===app.workspace.rootSplit)anchor=l;});
       check(anchor,'No main-window anchor');app.workspace.setActiveLeaf(anchor,{focus:true});
       leaf=app.workspace.getLeaf('tab');await leaf.openFile(file);
-      await c.waitFor(()=>leaf.view.excalidrawAPI&&leaf.view.isLoaded&&!leaf.view.semaphores.justLoaded&&!leaf.view.isClosingOrMigrating(),'large scene first commit',60000);
+      observation.opened=loadState();
+      try{await c.waitFor(()=>leaf.view.excalidrawAPI&&leaf.view.isLoaded&&!leaf.view.semaphores.justLoaded&&!leaf.view.isClosingOrMigrating(),'large scene first commit',60000);}catch(error){observation.failed=loadState();throw error;}
+      observation.ready=loadState();c.phase='stability cycle '+cycle+' save and reopen';
       const view=leaf.view,api=view.excalidrawAPI,elements=api.getSceneElements();
       check(elements.length===1000,'Large scene lost elements');
       check(elements.every((element,i)=>element.customData?.retainedUnknown?.value===i),'Large scene lost custom data');
@@ -67,5 +75,5 @@ async function exerciseStability(c,path,fixture,cycles){
       return {assertions:['1000 elements and unknown custom data retained','physical save and Markdown preserved','fresh API and retired root','bounded scene/export duration'],durationMs:elapsed};
     });
   }
-  return {tests:c.tests,cycles,elements:1000,timingsMs:timings,limitations:'No forced-GC heap or physical-device performance claim; popout stress has its separate lifecycle lane.'};
+  return {tests:c.tests,cycles,elements:1000,timingsMs:timings,observations:c.observations,limitations:'No forced-GC heap or physical-device performance claim; popout stress has its separate lifecycle lane.'};
 }

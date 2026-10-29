@@ -2495,7 +2495,7 @@
     },
     {
       "path": "scripts/testing/host/stability.test.mjs",
-      "mode": "direct-module-or-tooling"
+      "mode": "isolated-or-extracted"
     },
     {
       "path": "scripts/testing/hostContracts.test.mjs",

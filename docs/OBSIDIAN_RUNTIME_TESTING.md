@@ -55,6 +55,7 @@ as passed service coverage.
 | `npm run verify:obsidian:smoke` | Same current-workspace preparation, then focused editor startup |
 | `npm run verify:obsidian -- --extras-services` | Same preparation; real MathJax/Mermaid gateways and a single native PDF export |
 | `npm run verify:obsidian -- --behavior-matrix` | Same preparation; expanded desktop/main/split/nested/popout behavioral workflows |
+| `npm run verify:obsidian -- --stability` | Same preparation; unchanged six large-scene save/reopen cycles with passive first-commit state snapshots |
 | `npm run verify:obsidian:diagnostics` | Same fresh-build preparation, then the real unhandled-error negative control |
 
 The historical `verify:obsidian:plugin` name is retained as a command alias; it

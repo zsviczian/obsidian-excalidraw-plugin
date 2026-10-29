@@ -307,3 +307,38 @@ no test tasks, print resources or popouts remain. This interrupted attempt is no
 one of the two required complete repeats. Foreground tests remain on hold until
 the maintainer signals availability. Independent background portable validation
 passes 654 canonical cases (56 new / 598 reused), plus source/package gates.
+
+## F19 - Exclusive input recheck and failed full acceptance at 9c08d814
+
+The maintainer confirmed exclusive foreground access. The unchanged text-undo
+scenario passes all 16 parsed/raw, keyboard/button variants, including parsed
+keyboard wikilink redo and unchanged submission. The unchanged first desktop
+trusted-pointer profile passes drawing, physical save and restoration. No window
+or unexpected JavaScript errors occur in that focused rerun. The prior failures
+remain preserved; foreground interference is plausible but not established.
+
+Fresh portable verification at 9c08d814 / 053a3b9 / 1cdcb7c passes 654 canonical
+cases and source/package gates. The next full `npm.cmd run test:native` attempt
+passes all 258 behavioral obligations and all 40 device/layout profiles, but fails
+`native:stability-roundtrip:3` waiting for the large scene's first commit. Cycles
+4/5 and the successful JavaScript-error gate remain missing. Eight uncaught
+`illegal access` exceptions and one Obsidian `children` null-reference exception
+are retained and fail the gate. The two exact trusted ResizeObserver notifications
+in popout Markdown reading settle under the existing bounded policy; no exclusion
+was broadened. Cleanup, baseline restoration and both native negative controls
+pass. This is not a complete passing repeat: acceptance remains zero of two.
+
+## F20 - Stability failure cleanup races Obsidian's file-delete handler
+
+The captured Obsidian 1.14.5 stack resolves to its file-view `onDelete` handler:
+after awaiting an empty-file open, it still accesses the leaf parent's children.
+The test deletes the open file and then detaches its leaf while that handler is
+pending, making the parent null. A deterministic actual-function regression fails
+with the old order and passes when the test retires its view/leaf before deleting
+the fixture. This is a test-only cleanup correction; production is unchanged.
+
+That correction does not establish the cause of the earlier first-commit timeout
+or the eight `illegal access` exceptions. Added passive per-cycle load snapshots
+and a focused `--stability` selector for diagnosis without changing the six-cycle,
+1000-element, save/reopen, root-retirement, rendering or timeout assertions. Both
+full repeats must use a new clean checkpoint after any test-tooling changes.
