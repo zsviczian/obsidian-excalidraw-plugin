@@ -69,6 +69,14 @@ Obsidian Electron host and its owned debugger, not Playwright's Chromium.
 
 ## Transport, ownership and safe cleanup
 
+Reserve foreground access for native input/device sequences. Another Obsidian
+vault shares the application session and can change focus while trusted keyboard
+or pointer input is in flight. If the maintainer needs the machine, stop further
+UI dispatch, preserve unsettled native work, complete owned cleanup and restoration,
+and record the run as interrupted. Resume with a fresh full run after availability
+is confirmed; do not reinterpret input failures or count a partial run as a repeat.
+Portable source/package checks and headless browser tests can continue separately.
+
 The Windows launcher discovers `Obsidian.com` under the standard installation
 locations; use `EXCALIDRAW_OBSIDIAN_CLI` for another executable path. macOS uses
 the installed Obsidian CLI/application binary. See the official

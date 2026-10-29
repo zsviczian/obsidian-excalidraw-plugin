@@ -27,7 +27,7 @@ validated, and what remains uncertain.
 | Phase | Status | Current outcome |
 | --- | --- | --- |
 | Assessment and baseline design | Complete | Initial architecture, risks, sequencing, and validation matrix documented |
-| Automated test coverage (#3022) | Expanded acceptance in progress; native validation pending | Historical 685-case baseline is insufficient for the expanded scope. PDF timeout/lock rollback and 29 Extras source tests pass; 124 fork-owned source tests pass. The repository-local working vault contains actual hash-verified builds. The new 252-case behavior matrix and 15 popout drop variants require native execution and two complete repeated matching-build runs. One-time local-vault opening/trust remains pending; no desktop-vault fallback is permitted. See docs/TESTING.md |
+| Automated test coverage (#3022) | Expanded acceptance in progress; foreground native runs paused | At plugin 38bf80fb / fork 053a3b9 / Extras 1cdcb7c, all 654 portable cases pass (56 new / 598 reused). Approved internal-preview focus correction passes four source regressions and isolated phone rendering/save/reopen with clean restoration. Earlier independent core 59 + focused nested-pane case and all 15 popout drop variants pass. Actual builds are installed/hash-verified in the prepared local vault; one-time trust is complete. Full scope remains 357 native cases including 258 behavioral obligations; zero of two complete repeats pass. Resume fresh runs when maintainer foreground access is free. See docs/TESTING.md |
 | Template selection and cancellation (#2649, PR #3020) | Implemented; source and native selection/cancellation checks pass | A dedicated chooser returns template/blank/cancel, displays paths relative to the configured root, and initially selects explicit blank. Interactive callers resolve before folder/file/editor/leaf side effects. Public getBlankDrawing/createDrawing and EA/CLI contracts retain string/file returns and deterministic initData behavior |
 | Nested-split fullscreen (#2743, PR #3020) | Implemented; seven source tests and native lower-right split pass | Keep the complete ancestor path visible; hide surrounding siblings and restore only owned classes. Native 958x641 drawing expands to 2560x1438 and returns to identical bounds. Existing inline styles remain untouched; controls are optional and cleanup retains the entry document across migration |
 | Canvas preview scaling investigation (#2729, PR #3020) | Original SVG-only behavior not reproduced on Windows Obsidian 1.14.5; unresolved | Two nodes sharing a drawing scale independently in SVG, SVG-as-image and PNG with immersive mode on/off. Doubling one node width scales its preview by 2.0063; the other remains unchanged. Tall previews clip in all modes. No speculative rendering/cache change; retain measurements and keep the issue open |
@@ -3145,3 +3145,14 @@ remain strict pending maintainer classification; no production changes.
   validation is phone/tablet embedded Markdown loading and deliberate editing;
   desktop/popout embedding remains in the complete native repeats. Physical mobile
   touch behavior remains a separate validation environment.
+
+- 2026-10-29 (#3022): Confirmed the approved focus correction natively in the
+  isolated phone embedding case at clean plugin 38bf80fb, with no window errors,
+  rendering/save/reopen assertions and device/baseline restoration passing. Fresh
+  portable gate passes 654 canonical cases (56 new / 598 reused); hosted checks
+  pass. Stopped the subsequent full native attempt for maintainer foreground use,
+  preserved its input failures, settled owned work and restored the test vault.
+  Published sanitized focused evidence. Two full matching-build repeats remain
+  unfinished; rerun unchanged input assertions with exclusive access. No further
+  production changes. Highest-risk next checks remain complete phone/tablet and
+  popout workflows; physical touch and other desktop OSes remain separate.

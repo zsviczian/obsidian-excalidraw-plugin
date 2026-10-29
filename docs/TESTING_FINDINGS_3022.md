@@ -252,8 +252,10 @@ actual-method regressions covering construction, replacement, explicit editing
 and a negative control reproducing the old missing-editor failure. All four pass.
 The existing `patchMobileView` visibility workaround remains unchanged: preventing
 unrequested editor activation does not establish that mobile visibility patching
-can be removed. Fresh native confirmation and complete repeats remain required;
-the exception gate has not been weakened.
+can be removed. Native confirmation at plugin `38bf80fb` now passes the isolated
+phone case with actual mobile mode, a 390 x 844 viewport, decoded rendering,
+save/reopen, no window errors and successful device/baseline restoration. The
+exception gate has not been weakened. [Sanitized evidence and artifact hashes](testing-evidence/3022/focus-correction-summary.json).
 
 The next independent-core run retains failures from cleaned scenarios instead of
 omitting later unrelated cases. Pending native work still stops the sequence.
@@ -284,7 +286,24 @@ verification passes 650 canonical cases (52 new, 598 reused), plus source/packag
 gates. [Sanitized, accessible evidence](testing-evidence/3022/README.md) records
 case results and actual source/artifact hashes.
 
-This does not establish full acceptance: the approved F17 correction still needs
-fresh native confirmation and neither complete matching-build repeat has passed. CLI accounting includes the
+This does not establish full acceptance: neither complete matching-build repeat
+has passed. The approved F17 correction is now independently confirmed above. CLI accounting includes the
 Lucide case's real native commands: six CLI-bearing cases in the full plan, with
 the two mobile public EA protocol cases reported separately.
+
+## Foreground-access interruption after the focus correction
+
+The next full attempt at plugin `38bf80fb` passed all 172 desktop behavioral
+cases and reached the independent/device workflows. It also recorded a parsed
+keyboard redo/submission mismatch and a trusted pointer timeout. The maintainer
+requested foreground use of another Obsidian vault during this interval. A focus
+conflict is plausible, but causation is not established; retain both failures and
+rerun the unchanged assertions with exclusive access before classifying them.
+
+The native dispatcher was stopped to avoid further UI interference. Its owned
+task settled with cleanup passed, no print work was pending, and recovery restored
+the exact device geometry and declared vault baseline. Both plugins are ready;
+no test tasks, print resources or popouts remain. This interrupted attempt is not
+one of the two required complete repeats. Foreground tests remain on hold until
+the maintainer signals availability. Independent background portable validation
+passes 654 canonical cases (56 new / 598 reused), plus source/package gates.

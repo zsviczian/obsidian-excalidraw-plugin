@@ -3,16 +3,26 @@
 ## Current checkpoint (2026-10-29)
 
 [Accessible sanitized case summaries and artifact manifests](testing-evidence/3022/README.md)
-record the tested plugin `3fc7cc9c`, fork `053a3b9` and Extras `1cdcb7c`.
-Fresh portable verification passes **650 canonical cases (52 new, 598 reused)**.
-All **59 independent core cases** plus one focused nested-pane case pass, including
+record the tested plugin `38bf80fb`, fork `053a3b9` and Extras `1cdcb7c`.
+Fresh portable verification passes **654 canonical cases (56 new, 598 reused)**.
+The approved internal-preview focus correction passes four actual-method tests
+and the isolated phone embedding workflow, with no window errors and successful
+save/reopen, device restoration and baseline cleanup. Existing `patchMobileView`
+visibility handling remains unchanged. Hosted Plugin tests and CodeQL pass.
+
+At the earlier plugin `3fc7cc9c` checkpoint, all **59 independent core cases** plus
+one focused nested-pane case pass, including
 all **15 popout drop variants**, cleanup and baseline restoration; the core run
 records zero unexpected errors/notifications. Native error/layout negative controls
 pass. Real single-export PDF output is decoded and visually inspected.
 
-Acceptance remains **incomplete**: the approved mobile embedding focus correction
-(F17) needs fresh native confirmation, and **zero of two required complete native repeats**
-have passed. Do not merge or substitute these subset results for the 357-case gate.
+Acceptance remains **incomplete**: **zero of two required complete native repeats**
+have passed. The next full attempt was interrupted for the maintainer's foreground
+PC access and is not counted. Its keyboard/pointer failures require an unchanged
+rerun with exclusive access; interference is plausible, not established. The test
+vault was restored with both plugins ready and no tasks, print roots or popouts.
+Native input remains paused until the maintainer frees the machine. Do not merge
+or substitute subset results for the 357-case gate.
 The full plan has six native CLI-bearing cases (five editing plus Lucide) and two
 separate mobile public `EA.executeCLI` workflows. Historical checkpoints below
 retain their original scope and results.
@@ -106,10 +116,10 @@ physical touch/stylus, OS drag/clipboard, other native OSes and isolated whole-a
 restart remain separate environments. Missing important required cases keep the
 expanded suite unfinished; they cannot be waived by the old core count.
 
-**Current follow-up status:** PDF rollback/source gates and installation guards
-pass; the expanded native matrix, single real PDF output check and two complete
-native repeats still require execution in the opened local vault. Do not treat
-implemented case declarations as passed evidence.
+**Current follow-up status:** PDF rollback, real PDF output, source gates and
+installation guards pass. The isolated approved focus correction passes natively.
+Two complete native repeats remain required; foreground native work is paused.
+Do not treat implemented case declarations as passed evidence.
 
 Reports distinguish new/reused canonical identities against
 `tests/reused-case-ids-3022.json`, actual plugin CLI command cases, host/EA/input
@@ -131,13 +141,14 @@ live-configuration tooling case). Later follow-ups strengthen only native export
 geometry assertions and update documentation; these native assertions remain
 unexecuted until the local-vault prerequisite is completed.
 
-The required native denominator is **357 cases**: 317 core/behavior/drop cases
-and 40 device/layout cases. Seven of these IDs exercise actual plugin CLI
-commands; host/EA/input cases and emulated contexts are counted separately in
-reports. The 84 historical native IDs are recorded as omitted by the portable
-profile, rather than removed tests. Three old PDF deadline/lock-related
-identities were replaced/removed. There are **zero fresh native passes** in this
-follow-up; neither count nor implementation substitutes for execution.
+The current required native denominator is **357 cases**: 317 core/behavior/drop
+cases and 40 device/layout cases (273 new identities / 84 reused). Six exercise
+registered desktop plugin CLI commands; two mobile workflows use public
+`EA.executeCLI` separately. Host/EA/trusted-input cases and emulated contexts are
+counted separately. The historical native IDs are omitted by the portable profile,
+rather than removed tests. Three old PDF deadline/lock identities were replaced
+or removed. The dated 2026-10-28 follow-up had zero fresh native passes; current
+subset results are recorded above and do not satisfy the complete-repeat gate.
 | Required follow-up | Current result |
 | --- | --- |
 | PDF timeout/lock rollback | Source regression passes; completion remains event-driven |
@@ -145,10 +156,10 @@ follow-up; neither count nor implementation substitutes for execution.
 | Real plugin-to-Extras PDF and decoded-page inspection | **Passed**, `opened-single-pdf-repeat/`: one page, 288 x 216 pt, preserved text and 3330 red pixels |
 | Actual installed plugin and Extras files | Present and hash-verified; latest preparation/provenance must be refreshed after changes |
 | One-time local vault registration/trust | **Completed** by maintainer; native canonical-path verification passes |
-| 258 cross-context behavioral cases | Functional assertions exercised; phone/tablet error gate fails F17; full acceptance remains pending |
+| 258 cross-context behavioral cases | Isolated F17 correction passes; full repeats remain pending after a foreground-access interruption |
 | 15 additional popout drop variants | **Passed** in the 59-case independent core run |
 | Two complete matching-build native runs | **Pending** |
-| Follow-up production diff | Pass: exact PDF rollback and approved plain-PDF/font fixes; no additional runtime change |
+| Follow-up production diff | Pass: exact PDF rollback and approved plain-PDF/font/internal-preview-focus fixes and release notes |
 
 The portable report records **zero native cases**. Source simulation, actual
 browser rendering, CLI command transport and host/EA/trusted-input evidence are
