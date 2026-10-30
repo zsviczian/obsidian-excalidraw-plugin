@@ -357,6 +357,17 @@ and legacy/empty source handling. The matrix includes plain text, `[[link]]`,
 and JavaScript error checks. The scenario uses the toolbar's stable test IDs, so
 labels may be localized. Physical mobile and popout checks remain separate.
 
+It also draws four earlier shapes, A, a `[[link]]` label and B using trusted
+pointer/keyboard input. Eight additional sequences cover bound/standalone text,
+raw/parsed mode and keyboard/toolbar history. They undo B, the text, A and every
+earlier shape to an empty scene, then redo the full sequence and compare element
+identity, geometry, Markdown source, link metadata and bindings. Evidence is
+written to `text-creation-history.json`; these sequences extend the existing
+`text-undo-2976` identity rather than adding new canonical native case IDs.
+An optional selection-only editor entry is verified separately: it must have
+no element delta, consume exactly one history entry and leave the scene unchanged.
+Every drawing-action entry must still undo in the specified order.
+
 For the native Excalidraw authoring protocol, run:
 
 ```sh

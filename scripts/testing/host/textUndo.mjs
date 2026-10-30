@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { captureTextUndoState } from "./textUndoDiagnostics.mjs";
+import { runTextCreationHistory } from "./textCreationHistory.mjs";
 
 /** Use the real mode transition; reload=false changes only the view, not its model. */
 export async function prepareTextUndoFixture(view, mode) {
@@ -190,6 +191,9 @@ export async function runTextUndoScenario({ cli, drawingPath, reportDir }) {
     },
   ];
   try {
+    observations.creationHistory = await runTextCreationHistory({
+      cli, drawingPath, reportDir, prepareFixture: prepareTextUndoFixture,
+    });
     for (const mode of ["parsed", "raw"]) {
       for (const input of ["keyboard", "button"]) {
         for (const variant of variants) {
@@ -306,6 +310,7 @@ export async function runTextUndoScenario({ cli, drawingPath, reportDir }) {
       cases,
       observations,
       assertions: [
+        "undo past bound/standalone link creation to an empty drawing and redo the complete scene",
         "reopened source after undo/redo",
         "unchanged submission refreshes cache",
         "editing after undo",

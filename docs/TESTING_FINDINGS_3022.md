@@ -1,6 +1,6 @@
 # Test findings for maintainer review
 
-**Current evidence: F32 and the [2026-10-30 acceptance report](testing-evidence/3022/README.md).**
+**Acceptance checkpoint: F32 and the [2026-10-30 acceptance report](testing-evidence/3022/README.md). Later approved link-history fix: F33.**
 Earlier findings retain their original hosts and failed attempts as history.
 The required native pair passes 357/357 in both complete matching-build repeats.
 Earlier failures remain historical evidence; no production observer fix is claimed.
@@ -735,3 +735,93 @@ and the strict gate is unchanged. Physical touch/WebView/stylus, real OS
 drag/clipboard, native macOS/Linux and isolated whole-app cold start remain
 separate environments. [Both complete case matrices and manifests](testing-evidence/3022/native-acceptance-pair-2026-10-30.json)
 support review readiness without claiming those additional environments.
+
+## F33 - Parsed-link submission discarded earlier drawing history
+
+The maintainer reproduced drawing earlier shapes, A, a bound `[[link]]` label
+and B, then undoing B and the label but being unable to undo A or earlier shapes.
+Source execution confirms this predates the testing PR and the October 11 text
+restoration fix. The parser submission branch explicitly cleared the entire
+history whenever raw Markdown differed from parsed display text. The initial
+focused native reproduction confirms the same failure: after two undos, five
+rectangles remain with undo depth zero. Original evidence is retained under
+`.test-work/reports/2026-10-30-link-history-before/`.
+
+The maintainer authorized fixing this on October 30. Remove only that ordinary
+parsed-link submission reset: the matching fork already captures raw Markdown,
+parsed display and link metadata in the text transaction. Leave the independent
+mode-switch, asynchronous-transclusion and invalid-clipboard reset paths intact.
+No fork or Extras production code, observer or printing changes.
+
+Four new source cases use the actual submission hook and parser for raw/parsed
+and bound/standalone text, each checking plain text, wiki links, aliases and
+Markdown links plus cache refresh after undo. Eight native sequences use real
+CDP drawing/text input and keyboard/toolbar history. They undo B, the link text,
+A and all four earlier rectangles to an empty scene, then redo the entire scene
+and compare identities, geometry, source, links and bindings. The first fixed
+probe exposed a test assumption: entering a label may capture a selection-only
+entry. That failed evidence remains in `2026-10-30-link-history-after/`. The
+corrected test explicitly verifies at most one such entry, no element delta,
+unchanged scene and one consumed history entry; no drawing-action assertion is
+removed. The final focused run passes all eight sequences and all 16 existing
+text-edit variants, error controls, cleanup and baseline restoration:
+`.test-work/reports/2026-10-30-link-history-verified/`.
+
+Repeat with `node --test scripts/testing/textSubmissionHistory.test.mjs` and
+`npm.cmd run verify:obsidian -- --text-undo --diagnostics`. Broader portable and
+build verification uses `npm.cmd run test:regression:portable`; the exact
+production audit now includes this specifically authorized patch. Native case
+identity remains `text-undo-2976`; no earlier complete-run evidence is relabeled
+as testing this later fix. Main-window trusted input is covered; popout and
+physical mobile remain separate risk checks for this follow-up.
+
+Broader verification also exposed an independent fork-owned browser setup
+error. After the preceding tool workflow already selects Selection, clicking
+that active toolbar button intentionally activates Lasso. Passive failure
+capture confirms `activeTool.type === "lasso"`; the existing readiness assertion
+correctly fails. Guard only that redundant setup click. All 18 normal browser
+cases then pass with the original group/delete/history assertions unchanged.
+The fork inventory records this test-only correction. Use the documented
+`PLAYWRIGHT_BROWSERS_PATH` when running portable checks; no browser upgrade is
+needed. Initial failed reports remain in the ignored local evidence directories.
+
+Local deployment verification caught a settings-file rewrite during reload.
+The original backup was restored while the plugin was unloaded, then loaded
+again and verified byte-identical after settling. The fixed runtime and drawing
+editors are ready. The rewrite's original cause is unassigned; no settings
+production change is included, and private settings/backups remain untracked.
+
+## F34 - Settings replacement during reload: unsafe late-save path reproduced
+
+The preserved deployment evidence shows a substantive replacement, not merely
+canonical JSON ordering: 212 persisted keys became 187. Canonical comparison
+against source literals matches 178 of 179 comparable default properties; the
+exception is the normal once-off compression-reset flag. Eight computed defaults
+are outside that static comparison. The replacement differs from the native
+vault's configured fixture, and the two vaults have distinct recovery namespaces.
+This supports default initialization/persistence as the failure mechanism; it
+does not prove which load or save initiated the incident.
+
+There is a concrete unsafe lifecycle path. `onunload()` destroys the settings
+manager and sets `settings = null`. The manager's `destroy()` closes the recovery
+store but does not reject later `saveSettings()` calls. The API-key persistence
+helper spreads its input (`{ ...settings }`), so a null input becomes an empty
+object. The still-active writer can then save `{}`. The loader accepts an empty
+object as a valid record and fills defaults on the next load.
+
+An isolated reproduction executes the actual manager, serialization writer and
+key-obfuscation modules with fake storage: destroy the manager, clear host
+settings, invoke a late save. It performs one write after destruction and loses
+the non-default sentinel. This is evidence of the unsafe path, not a native
+capture of the original callback. The private diagnostic is
+`tmp/reproduce-late-settings-save.mjs`, with results under the ignored deployment
+evidence directory; no real settings are used in that reproduction.
+
+Existing native coverage saves/loads settings on a live plugin instance. The
+separate plugin-reload case asserts drawing/runtime/command survival, without
+asserting custom settings across that boundary. A combined regression must use
+non-default values and unknown keys, cover delayed saves during teardown, reload
+the plugin, and check both persisted data and loaded preferences. Keep any
+production fix separate until approved. Original settings were restored from
+the exact backup and their loaded preferences verified. No additional reload
+experiment was performed in the personal vault for this diagnosis.

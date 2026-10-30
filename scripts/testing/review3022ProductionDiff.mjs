@@ -18,7 +18,7 @@ export function reviewProductionDiff({
   const roots = { plugin: pluginRoot, fork: forkRoot, extras: extrasRoot },
     report = {
       scope:
-        "PDF timeout/concurrency rollback, plus the maintainer-authorized plain-PDF, local-font and internal Canvas-node focus fixes of 2026-10-29 and their release notes; no other production changes.",
+        "PDF timeout/concurrency rollback, plus the maintainer-authorized plain-PDF, local-font and internal Canvas-node focus fixes of 2026-10-29, parsed-link undo-history preservation authorized on 2026-10-30, and their release notes; no other production changes.",
       baselines,
       repositories: {},
     };
@@ -67,6 +67,7 @@ export function reviewProductionDiff({
           ? [
               "src/shared/Dialogs/Messages.ts",
               "src/shared/EmbeddedFileLoader.ts",
+              "src/view/ExcalidrawView.ts",
               "src/view/managers/CanvasNodeFactory.ts",
             ]
           : ["packages/excalidraw/obsidianUtils.ts"],
@@ -88,6 +89,20 @@ export function reviewProductionDiff({
       );
     };
     if (kind === "plugin") {
+      expectedFile("src/view/ExcalidrawView.ts", (source) =>
+        source.replace(
+          [
+            "        // Updating only the cache after undo must not discard the redo stack.",
+            "        if (textChanged) {",
+            "          api.history.clear();",
+            "        }",
+          ].join("\n"),
+          [
+            "        // The fork records raw Markdown and parsed display text in the same edit.",
+            "        // Preserve earlier drawing actions as well as redo on cache-only updates.",
+          ].join("\n"),
+        ),
+      );
       expectedFile("src/view/managers/CanvasNodeFactory.ts", (source) =>
         source
           .replace(
@@ -110,6 +125,7 @@ export function reviewProductionDiff({
           "## Fixed\n- Autosave",
           [
             "## Fixed",
+            "- Adding a link to a text element or shape label no longer discards undo history for earlier drawing actions.",
             "- Embedded Markdown previews no longer take editor focus when they load, avoiding a mobile toolbar error. [#3022](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/3022)",
             "- Importing a PDF file through ExcalidrawAutomate loads page 1 when no page reference is supplied. [#3022](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/3022)",
             "- Markdown images using Helvetica no longer try to fetch a nonexistent font file. [#3022](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/3022)",
@@ -219,7 +235,7 @@ if (
     JSON.stringify(report, null, 2) + "\n",
   );
   process.stdout.write(
-    "Production diff audit passed: exact plain-PDF/local-font/internal-node-focus fixes and release notes; Extras PDF rollback only. " +
+    "Production diff audit passed: exact plain-PDF/local-font/internal-node-focus/parsed-link-history fixes and release notes; Extras PDF rollback only. " +
       output +
       "\n",
   );

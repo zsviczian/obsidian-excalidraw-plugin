@@ -1,11 +1,12 @@
 # Incremental refactor assessment and plan
 
-Testing follow-up, 2026-10-30: maintainer installed Obsidian 1.14.5; runtime
-inspection confirms Electron 43.8.3. Current product branches remain unchanged.
-Host versions remain evidence, never exact-version gates; the existing runner
-success control now uses a future alpha label, and automatic runtime metadata
-also records installer identity. Exclusive foreground access is confirmed for
-focused blocker reruns and the two still-required complete native repeats.
+Testing follow-up, 2026-10-30: two complete matching-build native repeats pass
+357/357 each at the recorded acceptance checkpoint (F32). The subsequently
+reported parsed-link undo truncation predates the testing PR. Its approved
+plugin-only fix passes eight new full drawing-history sequences and all 16
+existing text-edit variants (F33). This focused follow-up is separate from the
+earlier full-pair evidence. Host versions remain metadata, never exact-version
+gates; the native runner also verifies a future alpha label.
 
 Status: the `ExcalidrawView`/`main.ts` plan is parked as of 2026-08-13 (see
 "Parked: next steps if resumed" near the end). The active refactor is the
@@ -34,7 +35,8 @@ validated, and what remains uncertain.
 | Phase | Status | Current outcome |
 | --- | --- | --- |
 | Assessment and baseline design | Complete | Initial architecture, risks, sequencing, and validation matrix documented |
-| Automated test coverage (#3022) | Acceptance blocked; PRs remain draft | At plugin 9cb6c5eb / fork 053a3b9 / Extras 1cdcb7c, 662 portable cases pass (64 new / 598 reused), with source/package gates. Proven text-mode and asynchronous image-editor test setup/cleanup defects are corrected. All 16 text variants and six large-scene cycles pass after full core predecessors. Latest full attempt has 345 required passes, 11 failures and one missing identity; no full repeat passes. Strict storms, intermittent migration exceptions and a host getZoomFactor teardown exception remain blockers. Raw payloads, capture limitations, hashes and recovery are public. Installer comparison requires approval; production unchanged. See docs/TESTING.md |
+| Automated test coverage (#3022) | Acceptance complete at the frozen checkpoint; PRs ready for review | Plugin fd32ac68 / fork 053a3b9 / Extras 1cdcb7c pass two complete 357/357 native repeats and 666 portable cases, with matching artifacts, cleanup, baseline restoration and strict negative controls. Historical failures remain public; the original observer-storm cause remains unidentified. See F32 and the immutable acceptance report. The later approved link-history fix has separate focused evidence in F33. |
+| Parsed-link drawing history | Implemented; focused source/native regression passes | Preserve earlier shape actions when submitting parsed links. Four new source cases cover plain/wiki/aliased/Markdown links; eight trusted-input sequences undo all seven drawing actions to empty and redo identity, geometry, source, links and bindings. Verify the optional selection-only editor step explicitly; retain all 16 previous text-edit variants. No fork or Extras production change. |
 | Template selection and cancellation (#2649, PR #3020) | Implemented; source and native selection/cancellation checks pass | A dedicated chooser returns template/blank/cancel, displays paths relative to the configured root, and initially selects explicit blank. Interactive callers resolve before folder/file/editor/leaf side effects. Public getBlankDrawing/createDrawing and EA/CLI contracts retain string/file returns and deterministic initData behavior |
 | Nested-split fullscreen (#2743, PR #3020) | Implemented; seven source tests and native lower-right split pass | Keep the complete ancestor path visible; hide surrounding siblings and restore only owned classes. Native 958x641 drawing expands to 2560x1438 and returns to identical bounds. Existing inline styles remain untouched; controls are optional and cleanup retains the entry document across migration |
 | Canvas preview scaling investigation (#2729, PR #3020) | Original SVG-only behavior not reproduced on Windows Obsidian 1.14.5; unresolved | Two nodes sharing a drawing scale independently in SVG, SVG-as-image and PNG with immersive mode on/off. Doubling one node width scales its preview by 2.0063; the other remains unchanged. Tall previews clip in all modes. No speculative rendering/cache change; retain measurements and keep the issue open |
@@ -3391,3 +3393,41 @@ remain strict pending maintainer classification; no production changes.
   complete; highest remaining risk is intermittent observer recurrence, retained
   under the strict gate. Physical mobile, native macOS/Linux, real OS drag and
   isolated whole-app cold start remain separate validation environments.
+
+- 2026-10-30 (approved parsed-link history fix): Reproduced the maintainer's
+  shape/label/B sequence with real input: after undoing B and the text, five
+  rectangles remain with zero undo depth. Removed only the ordinary parsed-link
+  submission history reset; the fork already records raw/display/link values
+  together. Four source regressions and all eight new plus 16 existing native
+  text sequences pass, with strict errors, cleanup and baseline restoration.
+  Retained the initial failed expectation about the editor's selection-only
+  entry; explicitly verify that entry without skipping drawing edits. Updated
+  the feature map, reviewed the new test inventory entry and scoped the exact
+  production audit to this authorized patch. Touched production files introduce
+  no lint diagnostics. Risk checks: replay the maintainer's sequence in the main
+  window; separately exercise popout and physical mobile label editing. The
+  earlier complete 357-case pair remains evidence for its frozen checkpoint,
+  not for this later patch. Repeat portable/build checks before deployment.
+
+- 2026-10-30 (link-history verification follow-up): The normal standalone fork
+  browser suite exposed an independent setup error: pointer-clicking its already
+  active Selection tool deliberately switches to Lasso. Passive state capture
+  confirms the cause. Guard the redundant click in the fork-owned fixture;
+  retain every grouping/deletion/history assertion. All 18 browser cases pass.
+  The new history fix is deployed and ready; an unexpected deployment settings
+  rewrite was recovered from the exact pre-reload backup and remains unassigned.
+  No settings production fix, fork runtime change or printing change is included.
+
+- 2026-10-30 (test-maintenance policy and settings incident assessment): Made
+  test authoring and focused/PR-ready/release/upstream/Obsidian-alpha execution
+  requirements explicit in all three agent guides; clarified automatic portable
+  CI versus manually invoked native profiles. Read-only saved-evidence analysis
+  identifies a defaults-like settings replacement. Isolated actual-manager code
+  reproduces a save after destruction with null settings persisting an empty
+  object. The original callback is not captured, so incident attribution remains
+  a leading hypothesis. Recorded the combined custom-settings/unload/reload
+  coverage gap in F34. No settings production changes or personal-vault reload
+  experiments. Documentation/inventory checks apply to this checkpoint; the
+  code-validation evidence remains the prior 670-case portable and focused
+  native run. Highest next risk is a delayed settings save after plugin teardown;
+  reproduce it in the repository-local vault before a separately approved fix.

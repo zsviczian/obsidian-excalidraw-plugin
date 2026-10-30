@@ -208,6 +208,16 @@
           ]
         },
         {
+          "layer": "source",
+          "path": "scripts/testing/textSubmissionHistory.test.mjs",
+          "cases": [
+            "parsed standalone text submission preserves earlier drawing history and Markdown source",
+            "parsed bound text submission preserves earlier drawing history and Markdown source",
+            "raw standalone text submission preserves earlier drawing history and Markdown source",
+            "raw bound text submission preserves earlier drawing history and Markdown source"
+          ]
+        },
+        {
           "layer": "native",
           "path": "scripts/testing/host/groupedLinkClick.mjs",
           "cases": [
