@@ -1,0 +1,22 @@
+import {readFileSync,writeFileSync} from 'node:fs';
+import {splitWindowErrors} from '../scripts/testing/host/browserDiagnostics.mjs';
+const dir=process.argv[2],t=JSON.parse(readFileSync(dir+'/resize-observer-trace.json','utf8'));
+const classified=splitWindowErrors(t.notifications);
+const groups=[];
+for(const e of [...classified.diagnostics].sort((a,b)=>a.at-b.at)){
+ let g=groups.at(-1);if(!g||e.at-g.last>200){g={first:e.at,last:e.at,count:0,phases:{},realms:{}};groups.push(g);}
+ g.last=e.at;g.count++;g.realms[e.realm]=(g.realms[e.realm]||0)+1;const phase=e.phase?.map(p=>p.phase).join(',')||'no-task';g.phases[phase]=(g.phases[phase]||0)+1;
+}
+for(const g of groups)g.spanMs=g.last-g.first;
+const available=[],unavailable=[];
+for(const r of t.observers)for(const target of r.targets.filter(t=>t.observed)){
+ const current=target.current;
+ if(!r.alive||!current){unavailable.push({id:r.id,target:target.id,observerAlive:r.alive,targetAvailable:!!current});continue;}
+ const last=r.lastDelivery?.find(e=>e.target.id===target.id),first=r.firstDelivery?.find(e=>e.target.id===target.id);
+ const foreign=(r.events||[]).filter(e=>e.target?.id===target.id).map(e=>e.target.realm).filter(id=>id!=null&&id!==r.realm);
+ available.push({id:r.id,target:target.id,observerRealm:r.realm,current,lastSize:last?{width:last.width,height:last.height,realm:last.target.realm}:null,firstSize:first?{width:first.width,height:first.height,realm:first.target.realm}:null,lastCallbackAt:r.lastCallbackAt,callbacks:r.callbacks,foreignAtObserve:foreign,constructorCaller:r.creationStack?.split('\n').slice(2,6),events:r.events.map(e=>({kind:e.kind,at:e.at,target:e.target?.id}))});
+}
+const orphaned=available.filter(a=>a.current.realm==null||a.current.windowClosed===true),nonzero=orphaned.filter(a=>a.lastSize&&(a.lastSize.width!==0||a.lastSize.height!==0));
+const result={status:'diagnostic-candidates-only',meta:t.meta,notificationClusters:groups,otherWindowEvents:classified.unexpected,availableActiveTargets:available.length,unavailableActiveMetadata:unavailable.length,ownerlessOrClosedTargets:orphaned,ownerlessOrClosedWithLastNonzero:nonzero,liveCrossRealmTargets:available.filter(a=>a.current.realm!=null&&a.current.realm!==a.observerRealm),firstErrors:t.firstErrors.map(e=>({at:e.at,realm:e.realm,phase:e.phase,availableOrphaned:e.liveObservers.flatMap(r=>r.targets.filter(x=>x.current&&(x.current.realm==null||x.current.windowClosed===true)).map(x=>({observer:r.id,observerAlive:r.alive,...x})))})),limits:['End target snapshots are paginated after restoration, not synchronous with each error.','A missing/collected target is unavailable evidence, not a cross-realm target.','WeakRef liveness, detached targets and ownership mismatch alone do not establish a leak or cause.','Last-delivery data may omit targets absent from the final callback entries; missing sizes are unknown, not zero.']};
+writeFileSync(dir+'/observer-candidates.json',JSON.stringify(result,null,2)+'\n');
+process.stdout.write(JSON.stringify({observers:t.meta.observerCount,notifications:t.meta.notificationCount,overflow:t.meta.notificationOverflow,clusters:groups.map(g=>({count:g.count,spanMs:g.spanMs,phases:g.phases})),availableActiveTargets:available.length,orphaned:orphaned.map(a=>({id:a.id,classes:a.current.classes,lastSize:a.lastSize,caller:a.constructorCaller})),ownerlessLastNonzero:nonzero.length,traceActive:t.meta.active,failures:t.meta.failures})+'\n');

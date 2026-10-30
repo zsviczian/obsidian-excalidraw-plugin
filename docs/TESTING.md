@@ -1,41 +1,38 @@
 # Maintaining the test lanes
 
-## Current checkpoint (2026-10-29)
+## Current checkpoint (2026-10-30)
 
 [Accessible sanitized case summaries and artifact manifests](testing-evidence/3022/README.md)
-record the tested plugin `9cb6c5eb`, fork `053a3b9` and Extras `1cdcb7c`.
-Fresh portable verification passes **662 canonical cases (64 new, 598 reused)**.
-The approved internal-preview focus correction passes four actual-method tests
-and the isolated phone embedding workflow, with no window errors and successful
-save/reopen, device restoration and baseline cleanup. Existing `patchMobileView`
-visibility handling remains unchanged. Hosted Plugin tests and CodeQL pass.
+record the tested plugin `fd32ac68`, fork `053a3b9` and Extras `1cdcb7c`.
+Fresh portable verification passes **666 canonical cases (68 new, 598 reused)**,
+source/package gates, builds and declarations. Both complete native repeats pass
+**357/357 cases**, including all **258 behavioral obligations** and all **40
+device/layout profiles**. Source revisions, frozen/deployed artifact hashes and
+seed match; cleanup, baseline restoration and both native negative controls pass
+in each repeat. Native accounting remains **273 new / 84 reused identities**;
+diagnostic repetitions add no canonical cases.
 
-Acceptance remains **failed**: **zero of two required complete native repeats**
-have passed. The latest full attempt at e4a36a6b records 345 required passes,
-11 failures and one missing identity. All 258 behavioral cases execute; 34/40
-device profiles pass, while six fail inherited notification storms. Five desktop
-native-CLI cases execute and both mobile public EA protocol cases execute.
-Cleanup, baseline restoration and both native negative controls pass.
+The normal repeats use `npm.cmd run test:native` in the repository-local vault,
+without observer interception or optional state snapshots. They retain one and
+two exact transient ResizeObserver notifications respectively; every idle gate
+passes and device captures are quiet. The historical sustained storm did not
+recur and its original observer remains unidentified. No production fix or sole
+host/instrumentation cause is inferred, and a future storm must still fail.
 
-Native evidence proves two test defects: raw-mode setup left its data model
-parsed, and cropped Markdown-image testing retired its drawing before asynchronous
-editor close completed. Both are corrected with regressions, preserving original
-assertions. All 16 text-history variants and six large-scene cycles now pass after
-the full core predecessors. The corrected core has no required identity missing
-but still fails strict gates: a Lucide notification storm and an Obsidian popout
-`updateStatus`/`getZoomFactor` exception. Four illegal-access exceptions also recur
-intermittently in a separate dirty-migration prefix. Clean route and six
-plugins-unloaded Markdown controls do not establish sole host causation.
+All 16 text-history variants, all six large-scene cycles and all 15 popout-drop
+variants pass in both complete repeats. Both actual uncaught-error and deliberately
+wrong-layout negative controls prove strict rejection. The accepted production
+fixes, `patchMobileView` behavior and PDF timeout/concurrency-lock rollback remain
+unchanged. The final production-diff audit passes.
 
-Raw retrieval is paged with an over-4-MB regression; complete current events and
-an explicit older capture limitation are published. A passive storm continues
-with both community runtimes unloaded and no debugger, drawing or input. A final
-renderer-only recovery restores a quiet installed baseline but earns no acceptance
-credit. Installer comparison requires maintainer approval; production and installer
-are unchanged. Do not merge or substitute focused results for the 357-case gate.
-The full plan has six native CLI-bearing cases (five editing plus Lucide) and two
-separate mobile public `EA.executeCLI` workflows. Historical checkpoints below
-retain their original scope and results.
+The preceding 231-case full desktop/core trace and matched untraced comparison
+pass but earn no complete acceptance credit. The diagnostic is removed before
+both ordinary repeats, with no diagnostic reset between those repeats. Historical
+failed reports and raw events remain published. The working vault is installed,
+restored, quiet and usable. The full plan has six registered native CLI-bearing
+cases (five editing plus Lucide) and two separate mobile public `EA.executeCLI`
+workflows. Physical devices, other native OSes, real OS drag/clipboard and isolated
+whole-app cold start remain separate environments, not additional claimed passes.
 
 ## Required current-product regression
 
@@ -106,7 +103,9 @@ directories. `npm.cmd` / `yarn.cmd` avoid blocked PowerShell `.ps1` shims.
 expected results/assertions, case templates and required context-specific IDs.
 There are currently **258 additional required behavioral cases** across main,
 ordinary split, nested split, popout, emulated phone and emulated tablet contexts.
-Six of these use actual plugin CLI `read`/`apply` transport; the other host cases
+Four desktop behavior cases use registered native plugin CLI `read`/`apply`;
+the two phone/tablet CLI cases use public `EA.executeCLI`. Native authoring and
+Lucide export are the other two desktop CLI-bearing cases. Other host cases
 use native EA/renderers and trusted CDP input as applicable. Fifteen popout
 web/internal-drop variants are also required and explicitly labeled synthetic
 payload evidence. Existing native command-authoring and lifecycle cases remain.

@@ -1,8 +1,9 @@
 # Test findings for maintainer review
 
-**Current evidence: F30 and the [2026-10-30 acceptance report](testing-evidence/3022/README.md).**
+**Current evidence: F32 and the [2026-10-30 acceptance report](testing-evidence/3022/README.md).**
 Earlier findings retain their original hosts and failed attempts as history.
-The required native pair remains incomplete; all three PRs stay draft.
+The required native pair passes 357/357 in both complete matching-build repeats.
+Earlier failures remain historical evidence; no production observer fix is claimed.
 
 The current fork is the accepted baseline. A historical upstream test failure is
 not a product defect. The independent regression suite checks fork contracts and
@@ -683,3 +684,54 @@ restoration reload Obsidian through its normal emulation command. Keep all PRs d
 two fresh matching-build complete passes. [Sanitized case evidence and source
 archives](testing-evidence/3022/observer-scheduling-followup-2026-10-30.json)
 include failed-wrapper evidence, raw notifications and exact artifact hashes.
+
+## F31 - Full desktop/core trace and matched untraced comparison
+
+The maintainer instructed autonomous continuation within the PR purpose. At
+plugin `fd32ac68`, fork `053a3b9` and Extras `1cdcb7c`, the forwarding-only trace
+passes all 231 required desktop/core identities and records 3,511 observers,
+1,478 targets and two isolated settling notifications. Recording failures and
+overflow are zero. Its available closed-document observation has a final
+zero-size delivery; no available target fits the smaller nonzero-size orphaned
+condition. WeakRef liveness, missing targets or ownership mismatch alone do not
+identify the historical storm's cause.
+
+The trace is removed and native methods restored. A verified saved-baseline
+renderer-only reload clears captured wrappers after the completed diagnostic,
+outside acceptance evidence. The matched untraced 231-case core run then passes
+with one settling notification. Both use identical artifact bytes. Neither
+focused run counts as a complete acceptance repeat. No production, lifecycle,
+observer gate, timing threshold or upstream-test change follows this diagnosis.
+[Complete comparison and raw trace](testing-evidence/3022/observer-core-comparison-2026-10-30.json)
+retain identities, counts, target/constructor evidence, limitations and recovery.
+
+## F32 - Two complete matching-build native passes
+
+Both subsequent standard `npm.cmd run test:native` runs pass **357/357** required
+identities, including all **258 behavioral obligations** and **40 device/layout
+profiles**. Each has six registered desktop CLI-bearing cases and two public
+mobile `EA.executeCLI` cases. All text-history variants, six stability cycles,
+15 popout-drop variants, cleanup, baseline restoration and both native negative
+controls pass. No identity is missing, skipped or replaced by a focused probe.
+
+The repeats use clean plugin `fd32ac682e2aadc0f982fa23d36da482011117f9`, fork
+`053a3b9f9e77917c457fce8ca9453d38b92a303b` and Extras
+`1cdcb7c425a9b80afdc7b39c88861143b4b85e58`; artifact and seed hashes match.
+No diagnostic loader, observer interception, optional state snapshots or
+diagnostic reset is used between the complete repeats. Main captures retain one
+and two exact transient notifications respectively, all settling; device captures
+are quiet. Every unrelated exception/error and sustained storm remains fatal.
+
+Final portable validation passes **666 cases (68 new / 598 reused)**, with source,
+package, build and declaration gates. Production audit passes. Native accounting
+remains 273 new / 84 reused; this completion adds no canonical test identities.
+Each repeat performs a real single PDF export and verifies page/text/pixels and
+resource cleanup; the final rendered page was visually inspected. The working
+vault contains both installed plugins, restored configuration and no owned work.
+
+The historical sustained observer trigger is still unidentified. Passing current
+runs do not prove it was harmless or fixed; the failed evidence remains linked
+and the strict gate is unchanged. Physical touch/WebView/stylus, real OS
+drag/clipboard, native macOS/Linux and isolated whole-app cold start remain
+separate environments. [Both complete case matrices and manifests](testing-evidence/3022/native-acceptance-pair-2026-10-30.json)
+support review readiness without claiming those additional environments.

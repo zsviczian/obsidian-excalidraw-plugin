@@ -3369,3 +3369,25 @@ remain strict pending maintainer classification; no production changes.
   executed and no bypass attempted. Explicit approval for the full desktop/core
   diagnostic trace is pending. Next risk check is that ownership trace if
   authorized, then two fresh full repeats only after an evidenced resolution.
+
+- 2026-10-30 (#3022 acceptance completion): Under the maintainer's instruction
+  to proceed autonomously within PR scope, the full desktop/core ownership trace
+  passes all 231 required identities, recording 3,511 observers/1,478 targets and
+  two settling notifications, with no overflow or recording failures. Available
+  closed-document observations have final zero-size delivery; the historical
+  storm's exact observer remains unidentified. Removed the trace and cleared
+  captured wrappers after the diagnostic; the matching untraced core also passes
+  231/231. Both focused runs earn no complete acceptance credit. Then two normal
+  `npm.cmd run test:native` repeats at plugin fd32ac68/fork 053a3b9/Extras 1cdcb7c
+  pass 357/357 each: all 258 behavioral obligations, all 40 device profiles,
+  six native CLI-bearing/two mobile EA CLI cases, cleanup/restoration and both
+  negative controls. Artifact/config/seed hashes match, with no diagnostic hooks
+  or reset between full repeats. One/two main-window transient notifications
+  settle; profile captures are quiet. Final portable passes 666 (68 new/598
+  reused), production audit passes, real single-PDF output is decoded and visually
+  inspected, and the installed vault is restored/usable. Completion changes are
+  documentation and inert evidence only; no production/PDF/threshold/upstream
+  test/version change. Historical failures remain preserved. Review evidence is
+  complete; highest remaining risk is intermittent observer recurrence, retained
+  under the strict gate. Physical mobile, native macOS/Linux, real OS drag and
+  isolated whole-app cold start remain separate validation environments.

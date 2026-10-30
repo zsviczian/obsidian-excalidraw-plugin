@@ -1,8 +1,12 @@
 # Obsidian runtime testing on macOS and Windows
 
-Current acceptance is **0/2 complete passes**. See the [current evidence and
-blockers](testing-evidence/3022/README.md) before repeating the full suite. Portable
-validation passes 662 cases; it does not establish native acceptance.
+Current acceptance is **2/2 complete matching-build passes**, each with all
+**357 required native cases**, including 258 behavioral obligations and 40
+device/layout profiles. Final portable validation passes **666 cases** and the
+production audit passes. See [case results, exact revisions/hashes, diagnostic
+limits and restoration](testing-evidence/3022/README.md). Historical observer
+storms remain recorded; their original cause is not claimed fixed, and the
+unchanged strict gate must still reject a recurrence.
 
 The suite tests the currently running Obsidian, including alpha releases. There
 is no exact Obsidian/Electron version allowlist or version-specific pass baseline.

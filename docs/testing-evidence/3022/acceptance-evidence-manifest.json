@@ -4,8 +4,8 @@
   "files": [
     {
       "name": "acceptance-status.json",
-      "sha256": "911fbab6d9e6572d18c9e84ac05f7a5128b838287f8e177a82adfa3a7de28bdc",
-      "bytes": 38292
+      "sha256": "801b94434cd168deac9cf5cf37892a432053baa150b35d8b9d32b72f9c1908e1",
+      "bytes": 363050
     },
     {
       "name": "acceptance-investigation-2026-10-30.json",
@@ -121,6 +121,41 @@
       "name": "observer-hidden-host-control-source.txt",
       "sha256": "7efb2d484481c54ec74fb0770a4c17c88c0cd75d6da0576c2f426337742b95df",
       "bytes": 3072
+    },
+    {
+      "name": "observer-core-loader-source.txt",
+      "sha256": "b552f1828bf2fe4c6962d8b0bce81279e8b9b43460d408d62d786427ea843226",
+      "bytes": 3030
+    },
+    {
+      "name": "observer-candidate-analysis-source.txt",
+      "sha256": "0c9e1f59dc3193b9a4264ee74bb6b67d34d18d35120f630e9ea69caf927197ad",
+      "bytes": 3432
+    },
+    {
+      "name": "observer-core-removal-source.txt",
+      "sha256": "f621935bbbeed10a03afde9edfd9f105c0f8bc8033a27e2a405906a6733bfd0d",
+      "bytes": 2785
+    },
+    {
+      "name": "observer-core-trace-records-2026-10-30.json",
+      "sha256": "68e29beac911881081efbb515e37db34565c4ed262788eff65c3032852231b4e",
+      "bytes": 17158694
+    },
+    {
+      "name": "observer-core-comparison-2026-10-30.json",
+      "sha256": "b93d26256efa17cf6f9ac8337a06bbf3f53917e5df9789add83038f94fd020ae",
+      "bytes": 1118823
+    },
+    {
+      "name": "native-acceptance-pair-2026-10-30.json",
+      "sha256": "04835f5b4e5464be6b24d37ecd77455c14abbc587a4b0c53accbccf033dea538",
+      "bytes": 3204901
+    },
+    {
+      "name": "native-pair-audit-source.txt",
+      "sha256": "fec11a6586205b7ff55e3ab7a54218333af3bf06a1c1967d3746f8bb8ec10607",
+      "bytes": 4505
     }
   ]
 }
