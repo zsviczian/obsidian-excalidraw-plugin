@@ -1,11 +1,21 @@
 {
   "schemaVersion": 1,
-  "status": "acceptance-failed",
+  "status": "acceptance-incomplete",
   "files": [
     {
       "name": "acceptance-status.json",
-      "sha256": "591411b6ae6eb2c71f9519cd327c89e885bf7b6c583bfed33a29af6d876cce61",
-      "bytes": 392809
+      "sha256": "306f67183d9505ab0a70f4e915fa6b636613eeef8f1ad2b7001ab89e6400c8b7",
+      "bytes": 31162
+    },
+    {
+      "name": "acceptance-investigation-2026-10-30.json",
+      "sha256": "13047c5474fcccb825da6db1de29c8ff04d132f533eee72c6f54b29053dd48a1",
+      "bytes": 10165255
+    },
+    {
+      "name": "native-event-payloads-2026-10-30.jsonl",
+      "sha256": "1b953af190410aeb57b9ec8515832cca7d085022b87d2fa10f87c01e9a7c6b36",
+      "bytes": 14754983
     },
     {
       "name": "acceptance-investigation-2026-10-29.json",

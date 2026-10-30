@@ -3283,3 +3283,16 @@ remain strict pending maintainer classification; no production changes.
   or production code changed. The isolated traced Lucide workflow passes with
   zero window errors. Next risk check is the same workflow after its desktop
   and core predecessors, then two fresh matching checkpoint repeats if resolved.
+
+- 2026-10-30 (#3022): Traced ordered replay retains 16,879 exact notifications;
+  sustained failure first appears during fresh-popout teardown, before Lucide.
+  No unrelated exceptions. Isolated Lucide/lifecycle and a 43-popout-case prefix
+  followed by lifecycle are clean apart from one settling notification. Empty
+  popout observer controls do not support the suspected ownership fix. No
+  production change or broadened error exclusion. Final portable passes 664
+  cases (66 new / 598 reused); production audit passes. Published the historical
+  matching full pair (357 pass, then 350 pass / seven fail), raw payloads and
+  controls; acceptance remains incomplete. Restored installed vault is quiet.
+  Next risk check: isolate retained state before fresh-popout teardown, then
+  two fresh full matching-build passes after an evidenced resolution. Physical
+  mobile and other native OSes still require separate validation.

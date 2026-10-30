@@ -1,5 +1,9 @@
 # Test findings for maintainer review
 
+**Current evidence: F27 and the [2026-10-30 acceptance report](testing-evidence/3022/README.md).**
+Earlier findings retain their original hosts and failed attempts as history.
+The required native pair remains incomplete; all three PRs stay draft.
+
 The current fork is the accepted baseline. A historical upstream test failure is
 not a product defect. The independent regression suite checks fork contracts and
 the editing workflows affected by those contracts. It does not require upstream's
@@ -444,7 +448,7 @@ two-second passive sample is quiet and both plugins/baseline are restored. This
 recovery earns no acceptance credit. Storms still fail within five seconds; the
 one-second quiet/stable interval, unrelated exception and cleanup gates remain.
 
-## F25 - Current acceptance and runtime decision
+## F25 - 2026-10-29 acceptance and runtime decision (historical)
 
 Final portable verification at 9cb6c5eb / 053a3b9 / 1cdcb7c passes 662 canonical
 cases: 64 new / 598 reused, plus source/package gates. Production build and the
@@ -475,3 +479,84 @@ A controlled comparison is proposed, not a proven resolution. Explicit maintaine
 approval is pending; no installer or production change was made. [Accessible
 case results, complete available raw payloads, limitations and hashes](testing-evidence/3022/README.md)
 are published. Keep all three PRs draft pending both complete native passes.
+
+## F26 - Pixel-verifier CORS and missing-source setup
+
+At bebf652f, eight Markdown pixel-verification cases fail because their verifier
+loads vault-resource URLs without CORS opt-in. Native default/anonymous/fetched-
+blob controls decode the same actual resources: default canvas reads throw
+SecurityError; anonymous loading before `src` and fetched blobs expose the same
+expected colors/transparency. The corrected verifier opts into CORS and creates
+its canvas detached in the owning document. No production change, security
+bypass, version branch or pixel assertion removal. The actual-helper regression
+enforces CORS ordering and rejects live-body canvas insertion.
+
+The missing-source case also deleted an image while its drawing editor remained
+alive and required exactly one incidental filesystem error. Nested-split behavior
+recovers correctly with zero such logs. Setup now retires the editor before
+deletion, then reopens the drawing; the incidental-error allowance is removed.
+All missing-reference, save/reopen, recreation and decoded-recovery assertions
+remain. A second actual-source regression enforces retirement before deletion.
+All 12 focused cases and both full attempts pass these behaviors at 9b2874ba.
+
+## F27 - 2026-10-30 complete attempts and retained storm
+
+The maintainer installed Obsidian 1.14.5 / Electron 43.8.3. Versions are recorded
+metadata, never an exact-version allowlist, skip or altered success criterion.
+The existing runner-success test now exercises a future alpha version. No
+installer action was performed by the agent and no production behavior changed.
+
+At plugin 9b2874ba / fork 053a3b9 / Extras 1cdcb7c, two complete native runs use
+identical source revisions and all matching artifact identities. First: **357/357
+pass**. Second: **350 pass / seven fail**, no missing IDs. Both pass all 258
+behavioral obligations, 16 text-history variants, six large-scene cycles, all 15
+popout-drop variants, physical save/cleanup and baseline restoration. Six desktop
+cases use registered native CLI commands; both mobile public EA.executeCLI cases
+are separate. Both actual error/layout negative controls pass in each attempt.
+
+The second fails `lucide-3019` and six light desktop profiles (wide/narrow times
+full/tray/compact) on the unchanged quiet-idle gate. Its 702 exact notifications
+start inside the exhaustive Lucide probe, before the final screenshot. Functional
+assertions pass and no unrelated JavaScript exception is captured. This does not
+establish Lucide as the sole trigger or allow those failures to count as passed.
+
+At diagnostic-only checkpoint 84a30be0, passive Lucide stage labels are retained
+without changing actions or thresholds. Isolated Lucide passes with zero events.
+The 172-desktop-plus-core replay retains 16,879 notifications: one earlier popout
+Markdown notification settles, but a sustained loop starts during
+`native:lifecycle-new-popout-survivor`, before Lucide. Subsequent parent idle and
+cleanup-idle gates fail. All functional cases execute; all history variants and
+six large cycles still pass. Restoration succeeds but does not waive failed idle.
+
+After restoration, a two-second passive sample captures 120 notifications with no
+debugger, input, layout sampling, drawing or popout. The unload control records
+120 loaded, 121 with both community runtimes unloaded, then zero while restoring.
+A short native timeline records repeated resize-delivery phases and JavaScript
+error-handler calls; it does not identify the observer. Isolated lifecycle passes
+with zero events. The 43-popout-case prefix followed by lifecycle passes with one
+transient notification that settles. Three empty-popout controls (no added
+observer, test-owned main-realm observer, owning-realm observer) are clean with
+both community runtimes unloaded. These controls do not prove sole host causation
+or justify a production observer change. Earlier focus instrumentation did trigger
+a loop; sole instrumentation causation of every later event remains unproven.
+
+The exact diagnostic policy is unchanged: one second of stable geometry and
+notification-free idle within five seconds. Storms, unrelated exceptions,
+unresponsive controls, failed behavior/persistence and cleanup fail. No browser
+event or production observer is suppressed or patched. The earlier illegal-access
+and getZoomFactor exceptions were not reproduced here; historical evidence stays.
+
+Final portable at 84a30be0 passes **664 cases: 66 new / 598 reused**, plus source,
+package, build and declaration gates. Exact production-diff audit passes. The
+first full PDF is decoded and visually inspected: 10,616 bytes, one 288 x 216 pt
+page, expected text and 3330 red pixels. PDF rollback remains completion-driven.
+
+The historical pair is one pass and one failure, not accepted. Two fresh complete
+matching-build passes remain required at the resolved checkpoint. Next: isolate
+state retained between desktop workflows and fresh-popout teardown; propose a
+minimal production fix for explicit approval only if evidence supports it. No
+additional full reruns were spent after the ordered reproduction. Keep all PRs
+draft. Sanitized cases, raw payloads, source/artifact hashes, controls and restored
+baseline are [published together](testing-evidence/3022/README.md). Final installed
+plugins are ready with no owned work and a quiet passive sample; recovery earns
+no acceptance credit.
