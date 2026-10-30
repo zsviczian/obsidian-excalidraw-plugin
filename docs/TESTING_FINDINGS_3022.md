@@ -825,3 +825,29 @@ the plugin, and check both persisted data and loaded preferences. Keep any
 production fix separate until approved. Original settings were restored from
 the exact backup and their loaded preferences verified. No additional reload
 experiment was performed in the personal vault for this diagnosis.
+
+The maintainer subsequently authorized the fix. A retired manager now refuses
+new saves/loads, stops queued work before storage begins, and checks ownership
+after awaited reads, recovery operations and recovery choices. Invalid runtime
+settings are rejected before the key helper can turn null into `{}`. Pending
+startup continuations stop when unload has cleared settings. Already-started
+disk writes retain their real completion; no cancellation is claimed.
+
+Eleven whole-module regressions cover the null late-save reproduction, invalid
+snapshots, idempotent disposal, queued and recovery-delayed writes, delayed file
+reads, recovery choices, active error propagation/retry and a fresh manager's
+custom-field reload. The initial nine-case run retained eight failures before
+the fix. The existing native plugin-reload case now saves non-default settings
+and an unknown nested zero/false sentinel, calls the retired plugin's save both
+before and after replacement, and checks the physical file and live preferences.
+Baseline restoration removes only the scenario-owned mutations.
+
+Verification passes: all 11 new source cases, all five native lifecycle cases
+(plus plugin/drawing/error/source gates), cleanup/restoration and 681 portable
+canonical cases with source coverage, browser/package checks and builds. Native
+and portable plugin artifact hashes match; changed production files have zero
+lint diagnostics. The exact authorized source patch is retained in
+`tests/approved-settings-lifecycle.patch` for the scoped production-diff audit.
+The incident's original callback remains untraced; this fixes the reproduced
+unsafe path without claiming complete causal attribution. No personal-vault
+reload was used for this fix's validation.

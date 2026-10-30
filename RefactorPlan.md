@@ -37,6 +37,7 @@ validated, and what remains uncertain.
 | Assessment and baseline design | Complete | Initial architecture, risks, sequencing, and validation matrix documented |
 | Automated test coverage (#3022) | Acceptance complete at the frozen checkpoint; PRs ready for review | Plugin fd32ac68 / fork 053a3b9 / Extras 1cdcb7c pass two complete 357/357 native repeats and 666 portable cases, with matching artifacts, cleanup, baseline restoration and strict negative controls. Historical failures remain public; the original observer-storm cause remains unidentified. See F32 and the immutable acceptance report. The later approved link-history fix has separate focused evidence in F33. |
 | Parsed-link drawing history | Implemented; focused source/native regression passes | Preserve earlier shape actions when submitting parsed links. Four new source cases cover plain/wiki/aliased/Markdown links; eight trusted-input sequences undo all seven drawing actions to empty and redo identity, geometry, source, links and bindings. Verify the optional selection-only editor step explicitly; retain all 16 previous text-edit variants. No fork or Extras production change. |
+| Settings teardown safety | Implemented; 11 source regressions and native lifecycle pass | Retire manager reads/writes before clearing settings; reject invalid snapshots and stop deferred recovery/load continuations. Verify non-default/unknown settings and late old-instance saves across actual plugin replacement. Already-started disk writes retain real completion. |
 | Template selection and cancellation (#2649, PR #3020) | Implemented; source and native selection/cancellation checks pass | A dedicated chooser returns template/blank/cancel, displays paths relative to the configured root, and initially selects explicit blank. Interactive callers resolve before folder/file/editor/leaf side effects. Public getBlankDrawing/createDrawing and EA/CLI contracts retain string/file returns and deterministic initData behavior |
 | Nested-split fullscreen (#2743, PR #3020) | Implemented; seven source tests and native lower-right split pass | Keep the complete ancestor path visible; hide surrounding siblings and restore only owned classes. Native 958x641 drawing expands to 2560x1438 and returns to identical bounds. Existing inline styles remain untouched; controls are optional and cleanup retains the entry document across migration |
 | Canvas preview scaling investigation (#2729, PR #3020) | Original SVG-only behavior not reproduced on Windows Obsidian 1.14.5; unresolved | Two nodes sharing a drawing scale independently in SVG, SVG-as-image and PNG with immersive mode on/off. Doubling one node width scales its preview by 2.0063; the other remains unchanged. Tall previews clip in all modes. No speculative rendering/cache change; retain measurements and keep the issue open |
@@ -3431,3 +3432,21 @@ remain strict pending maintainer classification; no production changes.
   code-validation evidence remains the prior 670-case portable and focused
   native run. Highest next risk is a delayed settings save after plugin teardown;
   reproduce it in the repository-local vault before a separately approved fix.
+
+- 2026-10-30 (authorized settings teardown fix): Committed the existing work
+  first in plugin 2e378198, fork 22f05c1e7 and Extras 064faf1. Added per-manager
+  retirement guards at save/load and asynchronous storage/recovery boundaries,
+  invalid-snapshot protection and null checks for retired startup continuations.
+  No new queue, timeout or storage migration. Eleven whole-module regressions
+  pass; initial evidence retains eight failures before the fix. The repository-
+  local native lifecycle run passes all five lifecycle cases, strict error gates,
+  cleanup and baseline restoration, including non-default/unknown settings and
+  retired-instance saves before/after replacement. Full portable validation
+  passes 681 canonical cases with builds, source coverage and package/browser
+  gates; native and portable plugin artifact hashes match. All three touched
+  production files have zero lint diagnostics. The scoped production audit
+  verifies the exact reviewed settings patch and preserves all earlier accepted
+  changes. The original incident callback remains untraced; the reproduced unsafe
+  path is closed. Main/popout behavior is covered; physical mobile reload and
+  user-specific delayed startup callbacks remain separate risk checks. No new
+  personal-vault deployment or reload was performed for this fix.

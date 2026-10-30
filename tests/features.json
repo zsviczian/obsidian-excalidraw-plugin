@@ -11,6 +11,10 @@
         {
           "path": "src/core/managers/PackageManager.ts",
           "symbol": "export class PackageManager"
+        },
+        {
+          "path": "src/core/managers/PluginSettingsManager.ts",
+          "symbol": "export class PluginSettingsManager"
         }
       ],
       "tests": [
@@ -42,6 +46,15 @@
           "path": "scripts/testing/host/coldStart.mjs",
           "cases": [
             "native:cold-durable-restoration"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/settings/settingsManagerLifecycle.source.test.mjs",
+          "cases": [
+            "late save after settings teardown cannot replace a custom configuration with an empty record",
+            "teardown during recovery persistence prevents an old instance from overwriting replacement settings",
+            "active storage errors still reject and a later retry preserves custom settings"
           ]
         }
       ],

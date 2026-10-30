@@ -2574,6 +2574,10 @@
       "mode": "direct-module-or-tooling"
     },
     {
+      "path": "scripts/testing/settings/settingsManagerLifecycle.source.test.mjs",
+      "mode": "direct-module-or-tooling"
+    },
+    {
       "path": "scripts/testing/settings/settingsWriter.test.mjs",
       "mode": "direct-module-or-tooling"
     },

@@ -357,6 +357,15 @@ and legacy/empty source handling. The matrix includes plain text, `[[link]]`,
 and JavaScript error checks. The scenario uses the toolbar's stable test IDs, so
 labels may be localized. Physical mobile and popout checks remain separate.
 
+For settings teardown changes, run `npm.cmd run verify:obsidian -- --lifecycle --diagnostics`.
+Its plugin-reload case persists non-default values and unknown
+nested settings, checks late retired-instance saves before/after replacement,
+and verifies disk and loaded preferences alongside the existing drawing/runtime
+assertions. Source timing controls run with `node --test scripts/testing/settings/settingsManagerLifecycle.source.test.mjs`.
+A write
+already inside native storage is awaited as real work; the tests do not claim
+it was cancelled by destroying a manager.
+
 It also draws four earlier shapes, A, a `[[link]]` label and B using trusted
 pointer/keyboard input. Eight additional sequences cover bound/standalone text,
 raw/parsed mode and keyboard/toolbar history. They undo B, the text, A and every

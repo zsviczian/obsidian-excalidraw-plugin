@@ -18,7 +18,7 @@ export function reviewProductionDiff({
   const roots = { plugin: pluginRoot, fork: forkRoot, extras: extrasRoot },
     report = {
       scope:
-        "PDF timeout/concurrency rollback, plus the maintainer-authorized plain-PDF, local-font and internal Canvas-node focus fixes of 2026-10-29, parsed-link undo-history preservation authorized on 2026-10-30, and their release notes; no other production changes.",
+        "PDF timeout/concurrency rollback, plus the maintainer-authorized plain-PDF, local-font and internal Canvas-node focus fixes of 2026-10-29, parsed-link history and settings teardown safety fixes authorized on 2026-10-30, and their release notes; no other production changes.",
       baselines,
       repositories: {},
     };
@@ -65,6 +65,8 @@ export function reviewProductionDiff({
         ? ["src/PDFExport/index.ts"]
         : kind === "plugin"
           ? [
+              "src/core/main.ts",
+              "src/core/managers/PluginSettingsManager.ts",
               "src/shared/Dialogs/Messages.ts",
               "src/shared/EmbeddedFileLoader.ts",
               "src/view/ExcalidrawView.ts",
@@ -89,6 +91,14 @@ export function reviewProductionDiff({
       );
     };
     if (kind === "plugin") {
+      // Exact reviewed source patch for the separately authorized settings fix.
+      // This records production scope; behavioral regressions are tested separately.
+      assert.equal(
+        normalized(git(root, ["diff", "--no-ext-diff", "--no-color", "2e37819804e4b85904ffaf7b52dd99b83ee94056",
+          "--", "src/core/main.ts", "src/core/managers/PluginSettingsManager.ts"])),
+        normalized(readFileSync(join(pluginRoot, "tests/approved-settings-lifecycle.patch"), "utf8")),
+        "Unexpected settings lifecycle production edits",
+      );
       expectedFile("src/view/ExcalidrawView.ts", (source) =>
         source.replace(
           [
@@ -125,6 +135,7 @@ export function reviewProductionDiff({
           "## Fixed\n- Autosave",
           [
             "## Fixed",
+            "- Plugin reload no longer lets late settings saves replace custom preferences with an empty record or defaults.",
             "- Adding a link to a text element or shape label no longer discards undo history for earlier drawing actions.",
             "- Embedded Markdown previews no longer take editor focus when they load, avoiding a mobile toolbar error. [#3022](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/3022)",
             "- Importing a PDF file through ExcalidrawAutomate loads page 1 when no page reference is supplied. [#3022](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/3022)",
@@ -235,7 +246,7 @@ if (
     JSON.stringify(report, null, 2) + "\n",
   );
   process.stdout.write(
-    "Production diff audit passed: exact plain-PDF/local-font/internal-node-focus/parsed-link-history fixes and release notes; Extras PDF rollback only. " +
+    "Production diff audit passed: exact approved PDF/font/focus/history/settings-lifecycle fixes and release notes. " +
       output +
       "\n",
   );

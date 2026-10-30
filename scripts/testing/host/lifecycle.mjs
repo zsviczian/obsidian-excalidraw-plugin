@@ -143,6 +143,26 @@ async function exerciseLifecycle(c, prefix, fixture, migrationRoute) {
   });
   await c.case("native:lifecycle-plugin-reload", ["P01", "P02", "P03"], async () => {
     const oldPlugin = plugin, oldViews = [main.view, survivor.view], oldRuntime = plugin.getCLIRuntime();
+    const settingsPath = app.vault.configDir + "/plugins/obsidian-excalidraw-plugin/data.json";
+    const markerKey = "__excalidrawReloadRegression";
+    const settingsKeys = ["zoomMax", "linkOpacity", "exportPaddingSVG", markerKey];
+    const originalSettings = Object.fromEntries(settingsKeys.map(key => [key, {
+      present: Object.prototype.hasOwnProperty.call(plugin.settings, key),
+      value: plugin.settings[key],
+    }]));
+    c.defer(async () => {
+      const live = app.plugins.plugins["obsidian-excalidraw-plugin"];
+      if (!live?.isReady) throw Error("Live plugin unavailable for settings restoration");
+      for (const [key, saved] of Object.entries(originalSettings)) {
+        if (saved.present) live.settings[key] = saved.value;
+        else delete live.settings[key];
+      }
+      await live.saveSettings();
+    });
+    const marker = { retained: true, zero: 0, flag: false, paths: ["custom/settings"] };
+    Object.assign(plugin.settings, { zoomMax: 7, linkOpacity: 0.37, exportPaddingSVG: 0, [markerKey]: marker });
+    await plugin.saveSettings();
+    const persistedBeforeUnload = await app.vault.adapter.read(settingsPath);
     c.defer(async () => {
       if (!app.plugins.plugins["obsidian-excalidraw-plugin"]) {
         await app.plugins.enablePlugin("obsidian-excalidraw-plugin");
@@ -151,15 +171,27 @@ async function exerciseLifecycle(c, prefix, fixture, migrationRoute) {
     });
     await app.plugins.disablePlugin("obsidian-excalidraw-plugin");
     await c.waitFor(() => oldViews.every(view => !view.excalidrawAPI), "plugin disable editor teardown");
+    await oldPlugin.saveSettings();
+    check(await app.vault.adapter.read(settingsPath) === persistedBeforeUnload, "late retired settings save replaced persisted preferences");
     let retired = false; try { oldPlugin.getCLIRuntime(); } catch { retired = true; } check(retired, "plugin disable retained runtime registrations");
     await app.plugins.enablePlugin("obsidian-excalidraw-plugin");
     await c.waitFor(() => app.plugins.plugins["obsidian-excalidraw-plugin"]?.isReady, "reloaded plugin readiness");
     plugin = app.plugins.plugins["obsidian-excalidraw-plugin"];
     check(plugin !== oldPlugin && plugin.getCLIRuntime() !== oldRuntime, "plugin reload reused retired instance");
+    check(plugin.settings.zoomMax === 7 && plugin.settings.linkOpacity === 0.37 && plugin.settings.exportPaddingSVG === 0,
+      "reload reset non-default or zero settings");
+    check(plugin.settings[markerKey]?.retained && plugin.settings[markerKey]?.zero === 0 && plugin.settings[markerKey]?.flag === false &&
+      plugin.settings[markerKey]?.paths?.[0] === marker.paths[0], "reload lost unknown nested settings");
+    plugin.settings[markerKey].replacementInstance = true;
+    await plugin.saveSettings();
+    const replacementSettings = await app.vault.adapter.read(settingsPath);
+    await oldPlugin.saveSettings();
+    check(await app.vault.adapter.read(settingsPath) === replacementSettings, "retired callback overwrote replacement plugin settings");
     main = await open(first); survivor = await open(second);
     check(main.view.excalidrawAPI.getSceneElements()[0].x === 654 && survivor.view.excalidrawAPI.getSceneElements()[0].x === 777, "reload lost drawing data");
     check(Object.keys(app.commands.commands).filter(id => id === "obsidian-excalidraw-plugin:excalidraw-autocreate").length === 1, "command registration duplicated");
-    return { assertions: ["disable unmounts editor APIs and retires runtime", "reload obtains a new plugin and runtime", "both saved drawings reopen", "stable command registered once"] };
+    return { assertions: ["disable unmounts editor APIs and retires runtime", "reload obtains a new plugin and runtime", "both saved drawings reopen", "stable command registered once",
+      "custom settings, zero/false and unknown nested keys survive reload", "late old-instance saves preserve disk before and after replacement"] };
   });
   return { tests: c.tests };
 }

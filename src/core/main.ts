@@ -488,10 +488,16 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   private async onloadCheckForOnceOffSettingsUpdates() {
+    if (!this.settings) {
+      return;
+    }
     if (!this.settings.onceOffCompressFlagReset) {
       this.settings.compress = true;
       this.settings.onceOffCompressFlagReset = true;
       await this.saveSettings();
+    }
+    if (!this.settings) {
+      return;
     }
     this.settingsTab = new ExcalidrawSettingTab(this.app, this);
     this.addSettingTab(this.settingsTab);
@@ -505,6 +511,9 @@ export default class ExcalidrawPlugin extends Plugin {
       "\n----------------------------------\nWorkspace onLayoutReady event fired (these actions are outside the plugin initialization)",
     );
     await this.awaitSettings();
+    if (!this.settings) {
+      return;
+    }
     this.logStartupEvent("Settings awaited");
     this.extrasGateway = new ExcalidrawExtrasGateway(this.app, this);
     if (!this.settings.overrideObsidianFontSize) {
