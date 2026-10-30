@@ -8,10 +8,10 @@ test('passive native state reads preserve settings, layout, focus and scheduling
   const forbidden=()=>{throw Error('Diagnostic attempted a state/layout write');};
   const doc={hasFocus:()=>true,visibilityState:'visible',querySelectorAll:()=>[],activeElement:null,defaultView:{innerWidth:1024,innerHeight:800,focus:forbidden,ResizeObserver:forbidden}};
   const settings={falseValue:false,zeroValue:0,secret:'fixture-secret'};
-  const view={getViewType:()=> 'excalidraw',containerEl:{ownerDocument:doc,isConnected:true},isPersistenceBusy:()=>false,_events:{close:[{}]}};
+  const view={getViewType:()=> 'excalidraw',containerEl:{ownerDocument:doc,isConnected:true},isPersistenceBusy:()=>false,_events:[forbidden]};
   const leaf={id:'leaf',parent:{id:'tabs'},view};
   const layout={main:{id:'split'},left:{collapsed:true},right:{collapsed:true}};
-  const workspace={containerEl:{ownerDocument:doc},activeLeaf:leaf,activeEditor:view,getLayout:()=>layout,iterateAllLeaves:fn=>fn(leaf),floatingSplit:{children:[]},_events:{'layout-change':[{},{}]},setActiveLeaf:forbidden};
+  const workspace={containerEl:{ownerDocument:doc},activeLeaf:leaf,activeEditor:view,getLayout:()=>layout,iterateAllLeaves:fn=>fn(leaf),floatingSplit:{children:[]},_:{'layout-change':[{},{}]},setActiveLeaf:forbidden};
   const wc={getBackgroundThrottling:()=>false,setBackgroundThrottling:forbidden,debugger:{isAttached:()=>true,listenerCount:()=>1}};
   const context={app:{workspace,plugins:{plugins:{'obsidian-excalidraw-plugin':{settings}}}},require:name=>name==='crypto'?{createHash}:{getCurrentWebContents:()=>wc}};
   const result=vm.runInNewContext('('+readNativeState.toString()+')('+'"boundary"'+')',context);
@@ -20,7 +20,9 @@ test('passive native state reads preserve settings, layout, focus and scheduling
   assert.equal(result.settings.missing,undefined);
   assert.ok(!JSON.stringify(result).includes('fixture-secret'));
   assert.equal(result.layout,layout);assert.equal(workspace.activeLeaf,leaf);assert.equal(settings.secret,'fixture-secret');
-  assert.equal(result.workspaceListeners['layout-change'],2);assert.equal(result.mainWindow.debuggerMessageListeners,1);
+  assert.equal(result.workspaceListeners.kind,'Events');assert.equal(result.workspaceListeners.counts['layout-change'],2);
+  assert.equal(result.leaves[0].listeners.kind,'Component');assert.equal(result.leaves[0].listeners.cleanupCallbacks,1);
+  assert.equal(result.pluginListeners.kind,'unavailable');assert.equal(result.mainWindow.debuggerMessageListeners,1);
 });
 
 test('passive case evidence preserves original failure and captures cleanup without restoring state',async()=>{

@@ -3309,3 +3309,17 @@ remain strict pending maintainer classification; no production changes.
   input or reduction has started. Next risk check is ordered half-prefix native
   trials with matching artifacts and an instrumentation-off control. No cause or
   production fix is inferred; physical devices remain a separate environment.
+
+- 2026-10-30 (#3022 initial reductions): Main/split -> lifecycle passes with
+  zero notifications; nested-split/popout -> lifecycle passes with one settling
+  notification. Artifacts match the prior complete pair; settings return exactly
+  to baseline and roots/popouts retire. Their document visibility is hidden,
+  unlike the historical visible failing prefix, so they are not matched proof
+  against that failure. Ordinary native show/focus restores visible state in
+  58 ms without emulation or reset. Also corrected the new passive reader's
+  demonstrated Events/Component shape mismatch, retaining an offline failing
+  then passing regression. Unknown internals are explicitly unavailable; owner
+  scheduling and vault/metadata registrations are now recorded. Functional
+  assertions, production and PDF code remain unchanged. Next risk check is the
+  second-half prefix with the visible precondition, then ordered interaction
+  reductions and instrumentation-off controls.
