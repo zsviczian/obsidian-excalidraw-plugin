@@ -20,6 +20,10 @@ concurrency-lock rollback and all previously approved fixes are preserved.
 - [SHA-256 evidence manifest](acceptance-evidence-manifest.json)
 - [Ordered reductions, matched snapshot controls and boundary state](resize-reduction-2026-10-30.json)
   ([JSON download](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/refs/heads/2026-10-28-automated-test-coverage/docs/testing-evidence/3022/resize-reduction-2026-10-30.json))
+- [Approved observer diagnostic and minimal ownership controls](observer-diagnostic-2026-10-30.json)
+  ([JSON download](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/refs/heads/2026-10-28-automated-test-coverage/docs/testing-evidence/3022/observer-diagnostic-2026-10-30.json))
+- [Complete sanitized observer records](approved-observer-trace-records-2026-10-30.json)
+  ([JSON download](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/refs/heads/2026-10-28-automated-test-coverage/docs/testing-evidence/3022/approved-observer-trace-records-2026-10-30.json))
 - [Earlier failed attempts and controls](acceptance-investigation-2026-10-29.json),
   [9c08d814](acceptance-failed-9c08d814.json) and
   [098e6ee1](acceptance-failed-098e6ee1.json) remain retained.
@@ -104,20 +108,73 @@ records are explicitly unavailable evidence, not zero registrations. The matched
 original-prefix controls do not establish that passive snapshots cause or cure
 the intermittent failure.
 
-**Precise blocker:** no stable failing reduced sequence or distinguishing
-retained state has been isolated. The historical 172-case prefix/fresh-popout
-storm remains a failure; its current pass is not a fix. No new 357-case run was
+**Original-suite blocker:** the responsible observer is not yet identified; the
+ordered reductions do not reliably fail. The historical storm remains a failure
+and the current prefix passes are not a fix. The subsequent approved diagnostic
+isolates a smaller ownership/lifetime mechanism below. No new 357-case run was
 spent and no acceptance gate was weakened.
 
-**Maintainer decision pending:** a bounded 30-minute diagnostic-only observer
-construction/target-lifetime trace is proposed. It would forward all behavior,
-suppress no notifications, retain sanitized ownership/stacks with weak
-references, and be removed before acceptance. It changes no production source
-and earns no acceptance credit. This needs an explicit exception to the earlier
-no-ResizeObserver-patching instruction; the trace has not been implemented or
-run. Until that decision, further native input is held. The installed vault is
-restored, both plugins are ready, no tasks/print roots/popouts remain, and the
-final passive sample is quiet.
+## Approved observer diagnostic: completed within cap
+
+The maintainer approved a 30-minute diagnostic-only exception. Investigation
+started at 10:21:04 UTC; last live experiment ended at 10:49:39, before the
+10:51:04 deadline. Budapest was UTC+1: the earlier spoken 12:51 deadline was an
+hour too late; the runtime guard always used the correct UTC deadline, 11:51 local.
+
+The traced 172-case prefix, lifecycle and Lucide workflow passes with one exact
+notification that settles. It records 2,331 observers/968 targets across five
+realms, with no recording errors. Constructor/method interception was restored
+before export. A verified saved-baseline renderer-only reload then cleared
+callbacks/constructors that modules could have captured, outside the trial and
+with no acceptance credit. Final native-function checks show original
+ResizeObserver/observe/unobserve/disconnect, no trace global or owned work, both
+plugins ready and a quiet passive sample.
+
+**Small failing mechanism, without workspace/popout operations:** create a
+same-origin iframe, adopt a test element into its document, observe it, then
+remove the iframe while retaining the observation. Both community plugins are
+unloaded during these matched controls. Registration occurs after adoption in
+all observer arms, and the target delivers the same live dimensions first.
+
+| Observer constructor | Notifications in the 1-second sample after frame removal | Next 1-second sample after own-observer disconnect |
+| --- | ---: | ---: |
+| No observer | 0 | 0 |
+| Main document's ResizeObserver | **62** | 0 |
+| Iframe document's ResizeObserver | **0** | 0 |
+
+The main observer's last delivery is 123 x 81; no zero-size delivery follows
+frame removal before disconnect. A separate iframe trial records 61 messages in
+one second and zero after disconnect. Adopting into a frameless HTML document
+instead is quiet and delivers zero size. The retained condition is a main-realm
+observation of an element whose iframe has been removed, not a retained setting
+or event-registration difference. These one-second controls reproduce rapid
+repeated notifications; they do not independently claim five seconds of
+persistence. Historical native storms beyond that unchanged gate remain retained.
+
+An adopted-element popout control also repeats notifications with both plugins
+unloaded using native BrowserWindow.close(), so changing only the close entry
+point is not an evidenced fix. An earlier multi-arm trial was contaminated after
+a loop and is explicitly not independent; another aborted before returning JSON
+and has no invented counts. Guarded recovery/readiness failures are retained.
+
+**Limits and next decision:** all small controls temporarily disabled background
+throttling, matching the native tooling, and restored it. Normal-versus-unthrottled
+scheduling under verified visible conditions was not compared before the cap.
+The traced original workflow did not fail, so its exact responsible observer is
+still unproven. No sole host/browser causation, harmlessness or production fix is
+inferred. A 15-minute untraced scheduling comparison is proposed; permission is
+pending because the approved diagnostic window has ended. No additional full
+acceptance run should precede that distinction and an evidenced resolution.
+
+The [complete bounded control](iframe-ownership-control-source.txt),
+[guarded vault/session runner](guarded-native-probe-source.txt),
+[trace source](approved-observer-trace-source.txt),
+[loader](approved-observer-loader-source.txt) and
+[forwarding/restoration self-check](approved-observer-selfcheck-source.txt) are
+inert source archives for review, not production/acceptance imports. The trace
+deadline is expired. Any fresh interception requires new authorization; the
+untraced control does not replace ResizeObserver or alter production observers.
+Reports include source/artifact hashes, raw notifications and recovery records.
 
 ## Remaining failure and focused evidence
 

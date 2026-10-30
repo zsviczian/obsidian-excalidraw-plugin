@@ -3336,3 +3336,19 @@ remain strict pending maintainer classification; no production changes.
   is pending for a proposed 30-minute diagnostic-only observer-lifetime trace.
   Next risk check is that approved ownership trace with matched controls,
   removal before acceptance, then two fresh full repeats only after resolution.
+
+- 2026-10-30 (#3022 approved observer diagnostic): Completed live work within
+  the 30-minute cap (10:21:04-10:49:39 UTC; deadline 10:51:04). Traced original
+  prefix/lifecycle/Lucide passes; 2,331 observers, one settling notification,
+  no recording errors. Removed interception and cleared captured wrappers by
+  verified saved-baseline renderer-only recovery outside acceptance. A smaller
+  no-workspace/no-popout iframe control, with both plugins unloaded, records
+  0/62/0 notifications for none/main/iframe observer constructors over one second;
+  own-observer disconnect stops it. Frameless adoption is quiet. All controls
+  use unthrottled scheduling, so tooling/host responsibility and the original
+  observer remain unproven. Published raw records, inert source archives,
+  contaminated/aborted control limitations and native restoration checks. No
+  production/PDF change or full acceptance retry. Proposed next risk check:
+  bounded untraced scheduling true/false comparison with verified visibility;
+  time-extension permission pending. Keep PRs draft until resolved and two fresh
+  complete matching-build repeats pass. Physical-device limits remain unchanged.

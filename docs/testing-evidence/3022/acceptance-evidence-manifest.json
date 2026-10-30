@@ -4,8 +4,8 @@
   "files": [
     {
       "name": "acceptance-status.json",
-      "sha256": "21668a97381787fb4c8b8a0772d4321a9bfcdd9bf2172731755a89005f25627a",
-      "bytes": 33811
+      "sha256": "13a9995c167a5b3837c9cee9eb64c536860335f4e51af79d0674141b7259835c",
+      "bytes": 34707
     },
     {
       "name": "acceptance-investigation-2026-10-30.json",
@@ -39,8 +39,43 @@
     },
     {
       "name": "resize-reduction-2026-10-30.json",
-      "sha256": "db7dc11a68721f132b09a40597171788519b7c1e1b56f3884475e15899ef2123",
-      "bytes": 1470569
+      "sha256": "488fc402c5ec448ef508a12655db2374780f913bfeafe101652155230475df78",
+      "bytes": 1470628
+    },
+    {
+      "name": "approved-observer-trace-source.txt",
+      "sha256": "06fbbcfa59e21c05fa7cac4b3071fe3bcbcdb4d6033b80bec8178e716f6d143f",
+      "bytes": 7682
+    },
+    {
+      "name": "iframe-ownership-control-source.txt",
+      "sha256": "d7ea0e0ecf51aeab53fb3a5b56bdc0c9a411492e35c79e1a84edcbc8b4264de6",
+      "bytes": 2804
+    },
+    {
+      "name": "approved-observer-trace-records-2026-10-30.json",
+      "sha256": "a780a34b6f30d0eea1bc3021c659f27496c7dc8c6378dc4faed0b0d7cb23193e",
+      "bytes": 11412429
+    },
+    {
+      "name": "observer-diagnostic-2026-10-30.json",
+      "sha256": "5c57b1772b69177e1551604ff7e65dd7207a12b6215cf0905e57469a973ef657",
+      "bytes": 324063
+    },
+    {
+      "name": "approved-observer-loader-source.txt",
+      "sha256": "6bcee571b710e77076d64cf88a96cc26bfad008a7608a05d85cf0b50294546d1",
+      "bytes": 2787
+    },
+    {
+      "name": "approved-observer-selfcheck-source.txt",
+      "sha256": "776f6292ca924a77cc8f3b41a1d342715706ed4382b3a3d6381e027ea0fe0c15",
+      "bytes": 2293
+    },
+    {
+      "name": "guarded-native-probe-source.txt",
+      "sha256": "1f5c400701abca5093164b1f5c5c4053f7570f8594830a5d47d02675394c196a",
+      "bytes": 1252
     }
   ]
 }

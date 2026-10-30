@@ -1569,10 +1569,11 @@
   },
   "conclusion": "No stable failing reduced sequence isolated. The historical 172-case prefix and fresh-popout failure remain retained. The exact prefix currently passes with passive state snapshots off (two settling notifications) and on (zero). Inspected state returns to baseline. Neither sole instrumentation/host causation nor harmlessness is established; no full native acceptance run is authorized by these controls.",
   "proposedAction": {
-    "status": "maintainer-decision-pending",
+    "status": "approved-and-completed-within-cap",
     "action": "Approve an explicitly bounded diagnostic-only ResizeObserver construction/target-lifetime trace. Forward all behavior unchanged, suppress no notifications, retain only sanitized identities/stacks and weak references, remove tracing before acceptance; no production source change. Requires an exception to the earlier no-patching rule.",
     "acceptanceCredit": false,
-    "timeCapMinutes": 30
+    "timeCapMinutes": 30,
+    "result": "observer-diagnostic-2026-10-30.json"
   },
   "limitations": [
     "First two hidden-document reductions are not matched evidence against the historical visible failure.",

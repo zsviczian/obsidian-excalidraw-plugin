@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';import vm from 'node:vm';import{installResizeTrace}from'./pr3022-resize-trace.mjs';
+const marker=Error('original'),sentinel=Symbol('native return'),callbacks=new Map();
+class Native{constructor(callback){if(typeof callback!=='function')throw TypeError('callback');this.callback=callback;}observe(target){if(target==='invalid')throw marker;return sentinel;}unobserve(){return sentinel;}disconnect(){return sentinel;}fire(entries){return this.callback.call(this,entries,this);}}
+const original={ctor:Native,observe:Native.prototype.observe,unobserve:Native.prototype.unobserve,disconnect:Native.prototype.disconnect};
+const win={ResizeObserver:Native,closed:false,setTimeout:()=>1,clearTimeout:()=>{},addEventListener:(k,fn)=>callbacks.set(k,fn),removeEventListener:(k,fn)=>{if(callbacks.get(k)===fn)callbacks.delete(k);}};
+const app={workspace:{containerEl:{ownerDocument:{defaultView:win}},floatingSplit:{children:[]},on:()=>({}),offref:()=>{}}};
+const context=vm.createContext({app,WeakRef});vm.runInContext('('+installResizeTrace.toString()+')('+String(Date.now()+60000)+')',context);
+let receiver,args;const observer=new win.ResizeObserver(function(...values){receiver=this;args=values;return 99;});
+const target={localName:'div',className:'fixture',isConnected:true,ownerDocument:{defaultView:win}};
+assert.equal(observer.observe(target),sentinel);const entries=[{target,contentRect:{width:10,height:20}}];assert.equal(observer.fire(entries),99);assert.equal(receiver,observer);assert.equal(args[0],entries);assert.equal(args[1],observer);assert.throws(()=>observer.observe('invalid'),e=>e===marker);
+const bad=new win.ResizeObserver(()=>{throw marker;});assert.throws(()=>bad.fire(entries),e=>e===marker);
+assert.throws(()=>new win.ResizeObserver(3),TypeError);context.__excalidrawApprovedResizeTrace.restore();
+assert.equal(win.ResizeObserver,original.ctor);for(const k of ['observe','unobserve','disconnect'])assert.equal(Native.prototype[k],original[k]);assert.equal(callbacks.size,0);assert.equal(context.__excalidrawApprovedResizeTrace.meta().active,false);assert.equal(context.__excalidrawApprovedResizeTrace.meta().failures.length,0);
+console.log('trace self-check passed: native receiver/arguments/return/throw and restoration preserved');

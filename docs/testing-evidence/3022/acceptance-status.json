@@ -107,10 +107,24 @@
     ],
     "conclusion": "No stable failing reduced sequence isolated. The historical 172-case prefix and fresh-popout failure remain retained. The exact prefix currently passes with passive state snapshots off (two settling notifications) and on (zero). Inspected state returns to baseline. Neither sole instrumentation/host causation nor harmlessness is established; no full native acceptance run is authorized by these controls.",
     "proposedAction": {
-      "status": "maintainer-decision-pending",
+      "status": "approved-and-completed-within-cap",
       "action": "Approve an explicitly bounded diagnostic-only ResizeObserver construction/target-lifetime trace. Forward all behavior unchanged, suppress no notifications, retain only sanitized identities/stacks and weak references, remove tracing before acceptance; no production source change. Requires an exception to the earlier no-patching rule.",
       "acceptanceCredit": false,
-      "timeCapMinutes": 30
+      "timeCapMinutes": 30,
+      "result": "observer-diagnostic-2026-10-30.json"
     }
+  },
+  "observerDiagnostic": {
+    "file": "observer-diagnostic-2026-10-30.json",
+    "status": "ownership-mechanism-reproduced-original-observer-unidentified",
+    "acceptanceCredit": false,
+    "traceRemoved": true,
+    "withinApprovedCap": true,
+    "matchedCounts": [
+      {"mode":"none","notifications":0,"afterDisconnect":0},
+      {"mode":"main-constructor","notifications":62,"afterDisconnect":0},
+      {"mode":"owner-constructor","notifications":0,"afterDisconnect":0}
+    ],
+    "nextAction": "Use the minimal untraced reproducer for matched normal/unthrottled scheduling controls with actual visible-state verification. Then determine which original observer has that lifecycle and whether a tooling correction or explicitly approved production/host fix is warranted. Do not spend full acceptance repeats until resolved."
   }
 }

@@ -1,6 +1,6 @@
 # Test findings for maintainer review
 
-**Current evidence: F28 and the [2026-10-30 acceptance report](testing-evidence/3022/README.md).**
+**Current evidence: F29 and the [2026-10-30 acceptance report](testing-evidence/3022/README.md).**
 Earlier findings retain their original hosts and failed attempts as history.
 The required native pair remains incomplete; all three PRs stay draft.
 
@@ -561,7 +561,7 @@ baseline are [published together](testing-evidence/3022/README.md). Final instal
 plugins are ready with no owned work and a quiet passive sample; recovery earns
 no acceptance credit.
 
-## F28 - Ordered reductions and unmatched visibility
+## F28 - Ordered reductions and unmatched visibility (before approved trace)
 
 At 780d1440, main -> split -> lifecycle passes with zero notifications; nested
 split -> popout -> lifecycle passes with one settling notification. Their
@@ -594,3 +594,43 @@ proposed, requiring an explicit exception to the earlier no-patching rule. It is
 not implemented or run. No production/PDF change, suppression, threshold increase
 or mid-run renderer reset was made. [Accessible reductions and boundary state](testing-evidence/3022/resize-reduction-2026-10-30.json)
 include exact source/artifact identities, cases, raw diagnostics and restoration.
+
+## F29 - Approved ownership trace and minimal frame-lifetime control
+
+The explicitly approved 30-minute diagnostic ends live experiments at
+10:49:39 UTC, before 10:51:04. Main/popout observer construction and method calls
+are intercepted only in the diagnostic run; callback receiver/arguments/return/
+throw and restoration checks pass. The traced prefix/lifecycle/Lucide sequence
+passes with one settling notification, 2,331 observer records and no tracer errors.
+It earns no acceptance credit. Interception is removed, followed by a verified
+saved-baseline renderer-only reload to clear captured wrappers. Native methods
+and quiet restored service/layout state are verified afterward. No production or
+printing code is changed; no observer suppression or idle threshold change.
+
+The smaller matched test uses only a native ResizeObserver and same-origin
+iframe DOM, with both community plugins unloaded and no workspace/popout calls.
+An element is adopted into the iframe before registration, and the iframe is
+then removed while the observer remains. No observer: zero notifications in the
+one-second sample. Main-document constructor: 62. Iframe constructor: zero.
+Disconnecting the test-owned main observer stops the iframe notifications. Last
+delivery remains nonzero (123 x 81), with no zero-size delivery before disconnect.
+A separate iframe case records 61 messages; a frameless-HTML-document control is
+quiet and delivers zero size. This isolates a retained cross-frame observation
+mechanism, not the exact responsible observer in the original failing suite.
+
+The popout reproduction also occurs through native BrowserWindow.close with
+both plugins unloaded; replacing DOM window.close alone is not supported as a
+fix. Contaminated/aborted controls and startup/readiness refusals are documented
+without credit or invented counts. Detached WeakRef targets alone are not called
+leaks; available targets at trace end include host workspace containers but no
+available cross-realm target. Missing/collected targets are not miscounted.
+
+All small controls temporarily use backgroundThrottling=false, as existing native
+tooling does. A matched scheduling comparison under verified visible conditions
+remains necessary before classifying tooling versus production/host responsibility.
+No sole host cause or harmlessness is concluded, and the one-second samples are
+not represented as a measured five-second gate failure. Historical long storms
+remain failures. The diagnostic cap is over; a bounded untraced follow-up is
+proposed, with permission pending. Source archives, full observer records, raw
+controls, matching artifacts and removal/recovery proofs are
+[accessible together](testing-evidence/3022/observer-diagnostic-2026-10-30.json).
