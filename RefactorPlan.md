@@ -3296,3 +3296,16 @@ remain strict pending maintainer classification; no production changes.
   Next risk check: isolate retained state before fresh-popout teardown, then
   two fresh full matching-build passes after an evidenced resolution. Physical
   mobile and other native OSes still require separate validation.
+
+- 2026-10-30 (#3022 reduction preparation): Verified the three reviewed heads
+  and clean worktrees. Added opt-in passive context/lifecycle state evidence to
+  compare settings hashes, layouts, active ownership, popouts, event slots and
+  temporary scheduling. Default native execution, assertions and idle policy
+  remain unchanged. Two offline controls verify no state/layout writes and
+  preservation of original case failure and cleanup evidence. Build, 488 fast
+  cases, inventory and production audit pass. Read-only baseline inspection
+  succeeds; test vault is hidden/unfocused, with no roots/popouts/debugger and
+  background throttling restored. Foreground confirmation is pending; no native
+  input or reduction has started. Next risk check is ordered half-prefix native
+  trials with matching artifacts and an instrumentation-off control. No cause or
+  production fix is inferred; physical devices remain a separate environment.

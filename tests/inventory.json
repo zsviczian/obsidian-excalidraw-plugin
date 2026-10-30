@@ -2486,6 +2486,10 @@
       "mode": "direct-module-or-tooling"
     },
     {
+      "path": "scripts/testing/host/nativeStateEvidence.test.mjs",
+      "mode": "isolated-or-extracted"
+    },
+    {
       "path": "scripts/testing/host/pluginDiscovery.test.mjs",
       "mode": "isolated-or-extracted"
     },

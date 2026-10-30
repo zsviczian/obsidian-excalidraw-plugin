@@ -19,6 +19,7 @@ import { exerciseInteractionBehavior } from "./interactionBehavior.mjs";
 import { exerciseCLIBehavior } from "./cliBehavior.mjs";
 import { completeConsoleErrors } from "./debuggerSession.mjs";
 import { splitWindowErrors, settleBrowserDiagnostics } from './browserDiagnostics.mjs';
+import {captureNativeState,stateEvidenceEnabled} from './nativeStateEvidence.mjs';
 
 const methods = new Set([
   "Input.dispatchMouseEvent",
@@ -107,8 +108,9 @@ export async function runBehaviorMatrix({
   );
   const tests = [],
     consoleErrors = [],
-    windowErrors = [], browserIdle = [];
+    windowErrors = [], browserIdle = [], stateEvidence = [];
   for (const id of contexts) {
+    if(stateEvidenceEnabled())stateEvidence.push(captureNativeState(cli,'before:behavior:'+id));
     const rows = behavioralCases([id]).filter(
       (row) => !caseIds || caseIds.includes(row.id),
     );
@@ -171,6 +173,7 @@ export async function runBehaviorMatrix({
     consoleErrors.push(...result.consoleErrors);
     windowErrors.push(...result.windowErrors);
     browserIdle.push(...result.browserIdle);
+    if(stateEvidenceEnabled())stateEvidence.push(captureNativeState(cli,'after:behavior:'+id));
   }
   const classified=splitWindowErrors(windowErrors);
   return {
@@ -192,6 +195,7 @@ export async function runBehaviorMatrix({
     browserDiagnostics:classified.diagnostics,
     unexpectedWindowErrors:classified.unexpected,
     browserIdle,
+    ...(stateEvidence.length?{stateEvidence}:{}),
     expectedConsoleErrors: tests.flatMap(
       (test) => test.expectedConsoleErrors || [],
     ),

@@ -2,13 +2,15 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { runInAppTask } from "./inAppTask.mjs";
+import {stateEvidenceEnabled,readNativeState,installStateEvidence} from './nativeStateEvidence.mjs';
 
 export async function runLifecycleScenario({ cli, drawingPath }, { migrationRoute = "direct" } = {}) {
   assert.ok(["direct", "host-drag"].includes(migrationRoute));
   assert.ok(drawingPath.startsWith("__excalidraw_cli_smoke_"));
   const prefix = drawingPath.replace(/\.(excalidraw\.md|excalidraw|md)$/, "") + "_lifecycle";
   const fixture = readFileSync(new URL("../../../tests/vault/Drawings/Uncompressed.excalidraw.md", import.meta.url), "utf8");
-  const result = await runInAppTask({ cli, execute: exerciseLifecycle, args: [prefix, fixture, migrationRoute], timeoutMs: 180_000 });
+  const execute=stateEvidenceEnabled()?new Function(`return async function(c,...args){const states=(${installStateEvidence.toString()})(c,${readNativeState.toString()});const result=await (${exerciseLifecycle.toString()})(c,...args);return {...result,stateEvidence:states};}`)():exerciseLifecycle;
+  const result = await runInAppTask({ cli, execute, args: [prefix, fixture, migrationRoute], timeoutMs: 180_000 });
   return { id: migrationRoute === "direct" ? "lifecycle" : "lifecycle-host-drag-control", status: "passed", ...result };
 }
 

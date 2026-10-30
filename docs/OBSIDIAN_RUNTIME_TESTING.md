@@ -550,3 +550,33 @@ sidebar state. Native tests therefore do not inherit a previous picker/split
 layout. Behavioral split/popout/device scenarios still construct and assert their
 own declared contexts. Canvas preview scenarios collapse sidebars before fitting
 their multi-node fixture, preserving rendered-preview and independent-resize checks.
+
+### Ordered ResizeObserver reductions
+
+Use focused context/case filters to remove predecessors while retaining their
+original relative order. Compare an evidenced failing sequence with its halves,
+then reduce the failing half or the interaction between halves. A passing subset
+does not clear the complete-sequence failure. Record every trial and its frozen
+artifact hashes, including clean controls; never spend another full run without
+a new hypothesis.
+
+Optional passive state evidence is enabled only by
+`EXCALIDRAW_TEST_STATE_EVIDENCE=1`. It records before/after each behavior context,
+each lifecycle case and lifecycle cleanup: per-setting hashes, workspace/sidebar
+layout, active leaf/editor/document, surviving leaves/popouts, registered event
+slots, main debugger listener count and background-throttling state. It performs
+no geometry measurement, observer patch, focus or scheduling write. Compare
+matched trials with this option off when evaluating instrumentation effects.
+
+```powershell
+$env:EXCALIDRAW_TEST_STATE_EVIDENCE = '1'
+$env:EXCALIDRAW_TEST_REPORT_DIR = Join-Path $PWD '.test-work/reports/reduce-main-split'
+npm.cmd run verify:obsidian -- --behavior-matrix --behavior-context=main,split --lifecycle
+# A separate matched control uses the same ordered cases and artifacts:
+Remove-Item Env:EXCALIDRAW_TEST_STATE_EVIDENCE
+```
+
+The usual preparation, canonical-vault checks, host lock, error/idle gates,
+assertions and cleanup remain active. No native reduction earns full acceptance
+credit. Preserve failed evidence and keep any necessary saved-baseline recovery
+outside the trial; never reset a renderer mid-run to obtain a pass.
