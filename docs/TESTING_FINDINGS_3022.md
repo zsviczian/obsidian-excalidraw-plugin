@@ -1,6 +1,6 @@
 # Test findings for maintainer review
 
-**Current evidence: F29 and the [2026-10-30 acceptance report](testing-evidence/3022/README.md).**
+**Current evidence: F30 and the [2026-10-30 acceptance report](testing-evidence/3022/README.md).**
 Earlier findings retain their original hosts and failed attempts as history.
 The required native pair remains incomplete; all three PRs stay draft.
 
@@ -634,3 +634,52 @@ remain failures. The diagnostic cap is over; a bounded untraced follow-up is
 proposed, with permission pending. Source archives, full observer records, raw
 controls, matching artifacts and removal/recovery proofs are
 [accessible together](testing-evidence/3022/observer-diagnostic-2026-10-30.json).
+
+## F30 - Scheduling comparison complete; original observer still unidentified
+
+The maintainer authorized continuation without further time-extension questions.
+This follow-up uses native observer constructors and methods throughout, with
+no interception. Under verified visible/focused conditions, normal scheduling
+produces 0/62/0 iframe notifications (none/main/owner constructor); unthrottled
+scheduling also produces 0/62/0. Reverse-order repetitions produce 0/62/0 and
+0/61/0. Only the test-owned observer is disconnected; all next-second samples
+are quiet and original scheduling is restored. The smaller mechanism does not
+require the tooling's throttling override. This does not identify the original
+suite observer or establish a five-second failure from one-second samples.
+
+Fresh automatic build/deploy/hash/configuration at plugin `ab1ef6da`, fork
+`053a3b9`, Extras `1cdcb7c` matches all frozen artifacts. The 172-case desktop
+prefix, original lifecycle and six saved/dirty close controls pass all 183 child
+cases with zero notifications. Saved/dirty 2,000-element closes pass. All 40
+profiles plus both 43-case phone/tablet workflows pass, followed by another
+desktop/lifecycle/Lucide replay with two settling notifications and passing
+restoration. A real pending save during a 2,000-element popout close hands off
+persistence successfully, reaches disk and retires its API/root without errors.
+The host-only resize/close timing controls and hidden-popout close are quiet for
+5.5 seconds with both plugins unloaded and no added observers.
+
+The first isolated close probe omitted its parent result status. All six child
+assertions passed, but the parent correctly failed; that failed evidence is
+preserved. The ignored wrapper was corrected before the distinct ordered probe.
+No maintained test assertions or production behavior changed. These are
+diagnostic occurrences, not new canonical coverage or complete native repeats.
+
+Passive evidence confirms the fresh lifecycle popout is visible/focused before
+closing. The real pending-save probe observes a main-realm ToolsPanel observer
+and an API/root still present at the first closed-window check, but no notifications. These
+observations alone do not justify a constructor or lifecycle production change.
+Fresh portable validation passes 666 (68 new / 598 reused), with all source,
+package, build and declaration gates; production audit passes. The installed
+vault is restored, quiet and usable, with no tasks, print roots or popouts.
+
+The original sustained failure remains unresolved. Renewing the earlier
+forwarding-only trace over the full desktop/core sequence was rejected before
+execution by automatic approval review: the original exception expired and the
+later authorization specified untraced controls. No trace was installed or
+rejection bypassed. Explicit trace approval is pending. No full acceptance
+retry, production/PDF change, exception exclusion, timeout increase or diagnostic
+renderer reset was used in this continuation. Required mobile-mode changes and
+restoration reload Obsidian through its normal emulation command. Keep all PRs draft and retain the required
+two fresh matching-build complete passes. [Sanitized case evidence and source
+archives](testing-evidence/3022/observer-scheduling-followup-2026-10-30.json)
+include failed-wrapper evidence, raw notifications and exact artifact hashes.

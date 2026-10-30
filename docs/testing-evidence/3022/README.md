@@ -3,8 +3,9 @@
 At plugin `9b2874ba`, two fresh complete matching-build runs produced **357/357
 passes**, then **350/357 passes with seven failures**. Both execute all **258
 behavioral obligations** and **40 device/layout profiles**. No identity is missing.
-The required pair has not passed. At the subsequent test-diagnostic checkpoint
-`f5d5d217`, focused investigations and portable checks pass where noted below;
+The required pair has not passed. At the subsequent documentation checkpoint
+`ab1ef6da` (maintained test code unchanged from `f5d5d217`), fresh focused native
+and portable checks pass where noted below;
 **two fresh complete native passes remain required** after resolution.
 
 No production behavior changed after reviewed `f240fb86`. The PDF timeout and
@@ -24,6 +25,8 @@ concurrency-lock rollback and all previously approved fixes are preserved.
   ([JSON download](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/refs/heads/2026-10-28-automated-test-coverage/docs/testing-evidence/3022/observer-diagnostic-2026-10-30.json))
 - [Complete sanitized observer records](approved-observer-trace-records-2026-10-30.json)
   ([JSON download](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/refs/heads/2026-10-28-automated-test-coverage/docs/testing-evidence/3022/approved-observer-trace-records-2026-10-30.json))
+- [Scheduling comparison, subsequent native controls and fresh portable results](observer-scheduling-followup-2026-10-30.json)
+  ([JSON download](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/refs/heads/2026-10-28-automated-test-coverage/docs/testing-evidence/3022/observer-scheduling-followup-2026-10-30.json))
 - [Earlier failed attempts and controls](acceptance-investigation-2026-10-29.json),
   [9c08d814](acceptance-failed-9c08d814.json) and
   [098e6ee1](acceptance-failed-098e6ee1.json) remain retained.
@@ -38,7 +41,7 @@ current finite-paging capture is complete.
 
 | Check | Result |
 | --- | --- |
-| Final portable at `f5d5d217` | **666 passed: 68 new / 598 reused**, plus source/package gates |
+| Fresh portable at `ab1ef6da` | **666 passed: 68 new / 598 reused**, plus source/package gates; maintained test code unchanged from `f5d5d217` |
 | Plugin fast | 488 passed: 54 new / 434 reused |
 | Fork source / browser | 127 passed (12 new / 115 reused) / 18 reused passes |
 | Extras source / browser | 29 passed (2 new / 27 reused) / four reused passes |
@@ -157,14 +160,10 @@ point is not an evidenced fix. An earlier multi-arm trial was contaminated after
 a loop and is explicitly not independent; another aborted before returning JSON
 and has no invented counts. Guarded recovery/readiness failures are retained.
 
-**Limits and next decision:** all small controls temporarily disabled background
-throttling, matching the native tooling, and restored it. Normal-versus-unthrottled
-scheduling under verified visible conditions was not compared before the cap.
-The traced original workflow did not fail, so its exact responsible observer is
-still unproven. No sole host/browser causation, harmlessness or production fix is
-inferred. A 15-minute untraced scheduling comparison is proposed; permission is
-pending because the approved diagnostic window has ended. No additional full
-acceptance run should precede that distinction and an evidenced resolution.
+**Limit at that checkpoint:** all small controls temporarily disabled background
+throttling, matching the native tooling, and restored it. Scheduling had not yet
+been compared before the cap. The untraced follow-up below completes that
+comparison; the original workflow's responsible observer remains unproven.
 
 The [complete bounded control](iframe-ownership-control-source.txt),
 [guarded vault/session runner](guarded-native-probe-source.txt),
@@ -175,6 +174,101 @@ inert source archives for review, not production/acceptance imports. The trace
 deadline is expired. Any fresh interception requires new authorization; the
 untraced control does not replace ResizeObserver or alter production observers.
 Reports include source/artifact hashes, raw notifications and recovery records.
+
+## Untraced scheduling and native follow-up
+
+The maintainer authorized continued work without further time-extension
+confirmations. No observer interception was used in this follow-up. The
+[complete sanitized results](observer-scheduling-followup-2026-10-30.json) retain
+case results, source/artifact identities, raw notifications, native window state,
+restoration and the fresh 666-case portable report.
+
+With both plugins unloaded, the iframe control ran with normal and unthrottled
+scheduling, then repeated in reverse order. Every arm verified actual document
+visibility, focus and native window visibility/focus; original scheduling was
+restored in `finally`.
+
+| Scheduling | None / main-constructor / iframe-constructor notifications in one second |
+| --- | --- |
+| Normal, first | 0 / 62 / 0 |
+| Unthrottled, first | 0 / 62 / 0 |
+| Unthrottled, repeated | 0 / 62 / 0 |
+| Normal, repeated | 0 / 61 / 0 |
+
+Every next-second sample after disconnecting only the test-owned observer is
+quiet. Unthrottled scheduling is not required for this smaller mechanism. These
+one-second samples still do not establish the original five-second gate failure.
+
+| Native workflow at clean plugin `ab1ef6da`, fork `053a3b9`, Extras `1cdcb7c` | Result |
+| --- | --- |
+| Host-only open/resize/close, both plugins unloaded, no added observers | Quiet for 5.5 seconds with immediate, 50 ms and 500 ms close timing |
+| Host-only hide then close | Verified hidden popout; quiet for 5.5 seconds |
+| Six isolated saved/dirty drawing closes | All child assertions pass; initial parent fails because the ignored wrapper omitted its result status; failed evidence preserved |
+| 172 desktop behaviors, original five lifecycle cases, then corrected six close controls | All 183 child cases pass; zero notifications; cleanup/restoration pass |
+| Saved and dirty 2,000-element drawing closes | Both pass; zero notifications; disk persistence and retired APIs verified |
+| All 40 device profiles plus 43 phone and 43 tablet behaviors | All 126 pass; zero captured profile notifications; restoration passes |
+| Subsequent 172 desktop behaviors, original lifecycle and Lucide | Pass; two transient notifications settle; cleanup/restoration pass |
+| 2,000-element popout close with a real save already pending | Pass; immutable persistence handoff reaches disk, API/root retire, zero notifications |
+
+The passive lifecycle snapshot verifies that the fresh popout is visible,
+focused, non-minimized and fully loaded before closing. The pending-save control
+also observes a main-realm ToolsPanel observer and an API/root still present at
+the first closed-window check, followed by successful retirement without errors.
+Neither constructor mismatch nor asynchronous retirement alone is therefore
+established as the historical storm's cause. No production fix is inferred.
+
+All automatic coordinator runs freshly build, deploy/configure and hash-check
+the three workspace revisions; their artifact bytes match the earlier frozen
+pair. The initial small scheduling controls reuse the already installed frozen
+build and earn no acceptance credit. Diagnostic repeats create **zero new
+canonical cases**. The four desktop behavioral CLI cases use registered native
+commands; the two mobile CLI cases use public `EA.executeCLI`. The two additional
+desktop CLI core cases were not rerun in these focused profiles.
+
+Portable validation freshly passes **666 cases (68 new / 598 reused)** at these
+revisions, plus source/package gates, builds and declarations. Production audit
+passes; no maintained test source or production/PDF code changed in this
+continuation. The original long storm remains unresolved and no complete native
+357-case acceptance run was spent. All three PRs remain draft.
+
+The proposed next diagnostic is the unchanged forwarding-only observer trace
+over the full desktop/core sequence, which includes workflows omitted from the
+smaller controls. **Automatic approval review rejected restarting it** because
+the original trace exception expired and the subsequent permission covered
+untraced controls. That command did not execute; no new trace was installed or
+workaround attempted. Explicit authorization for a renewed trace is pending.
+Current native constructors/methods, quiet baseline, installed plugins and
+cleanup are verified. No further UI input is running.
+
+Inert control sources are archived alongside the evidence:
+[scheduling](observer-scheduling-control-source.txt),
+[host resize](observer-host-resize-control-source.txt),
+[drawing close](observer-drawing-close-control-source.txt),
+[scenario loader](observer-close-loader-source.txt),
+[passive window state](observer-passive-close-state-source.txt),
+[large drawing](observer-large-close-control-source.txt),
+[pending save](observer-inflight-close-control-source.txt), and
+[hidden host window](observer-hidden-host-control-source.txt).
+
+To repeat the device-predecessor/desktop comparison from the plugin checkout,
+with the same one-time vault prerequisites and exclusive foreground access:
+
+```powershell
+New-Item -ItemType Directory -Force tmp | Out-Null
+Copy-Item -LiteralPath docs/testing-evidence/3022/observer-passive-close-state-source.txt -Destination tmp/pr3022-passive-close-state-loader.mjs
+$env:EXCALIDRAW_TEST_REPORT_DIR = Join-Path $PWD '.test-work/reports/unique-device-predecessor'
+npm.cmd run verify:obsidian -- --profile=devices
+$env:EXCALIDRAW_TEST_STATE_EVIDENCE = '1'
+$env:EXCALIDRAW_TEST_REPORT_DIR = Join-Path $PWD '.test-work/reports/unique-post-device-prefix'
+node --import ./tmp/pr3022-passive-close-state-loader.mjs scripts/testing/host/verify.mjs --behavior-matrix --lifecycle --lucide
+Remove-Item Env:EXCALIDRAW_TEST_STATE_EVIDENCE
+```
+
+The loader adds only the archived passive pre-close snapshot; it does not change
+observer methods, readiness or assertions. Both commands rebuild, deploy and
+verify the workspace artifacts automatically. Use fresh report names, keep the
+revisions fixed, and retain a failed first command rather than interpreting a
+later pass as its replacement. These focused profiles are not full acceptance.
 
 ## Remaining failure and focused evidence
 

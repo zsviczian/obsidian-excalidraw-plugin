@@ -4,8 +4,8 @@
   "files": [
     {
       "name": "acceptance-status.json",
-      "sha256": "13a9995c167a5b3837c9cee9eb64c536860335f4e51af79d0674141b7259835c",
-      "bytes": 34707
+      "sha256": "911fbab6d9e6572d18c9e84ac05f7a5128b838287f8e177a82adfa3a7de28bdc",
+      "bytes": 38292
     },
     {
       "name": "acceptance-investigation-2026-10-30.json",
@@ -76,6 +76,51 @@
       "name": "guarded-native-probe-source.txt",
       "sha256": "c4a0237d0ea24da172d9927c5b4f5fe8a04b6cecc44b03a89ae36149e9a07bd2",
       "bytes": 1251
+    },
+    {
+      "name": "observer-scheduling-followup-2026-10-30.json",
+      "sha256": "70810ac6db52a5add5814407baf551ba7f7ab3dc9ad4e41443bd5ece48444fc2",
+      "bytes": 2138399
+    },
+    {
+      "name": "observer-scheduling-control-source.txt",
+      "sha256": "4e4bad111179bd9f205fe52d241cb796599478218e45adc38c18fa98eae223a6",
+      "bytes": 4440
+    },
+    {
+      "name": "observer-host-resize-control-source.txt",
+      "sha256": "cbbe6643c2e7c896c7053b44721512810df5d4e328ef7ce85264dd4e6e66bc03",
+      "bytes": 2845
+    },
+    {
+      "name": "observer-drawing-close-control-source.txt",
+      "sha256": "0a08c25f1657a844fa4f6f48bd0f24b6897bccc8229f9ab450ad14c6f413d7ab",
+      "bytes": 4127
+    },
+    {
+      "name": "observer-close-loader-source.txt",
+      "sha256": "40ae55c81e85b2f45504dffd23e6dc72fbe3a5f57bfacf536293df818de29bb9",
+      "bytes": 641
+    },
+    {
+      "name": "observer-passive-close-state-source.txt",
+      "sha256": "7d638b33c4652a53f3fc157b9c13980ae2b37f2712ef3e0193199f10d19d8920",
+      "bytes": 1409
+    },
+    {
+      "name": "observer-large-close-control-source.txt",
+      "sha256": "4259ead1b27c74f944b28f9050868192c8599896acfddfe8faf82fc0c99f80f2",
+      "bytes": 4114
+    },
+    {
+      "name": "observer-inflight-close-control-source.txt",
+      "sha256": "1d7bda8c94f0a2efcdda1d32555831dad538c9811045f079ed1189126a6d8f0c",
+      "bytes": 4990
+    },
+    {
+      "name": "observer-hidden-host-control-source.txt",
+      "sha256": "7efb2d484481c54ec74fb0770a4c17c88c0cd75d6da0576c2f426337742b95df",
+      "bytes": 3072
     }
   ]
 }

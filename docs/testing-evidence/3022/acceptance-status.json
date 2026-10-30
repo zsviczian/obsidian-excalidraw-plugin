@@ -49,7 +49,7 @@
     "status": "passed",
     "cases": 666,
     "sources": {
-      "plugin": {"commit":"f5d5d217ac7779115b820377181a7ced8f1605a1","dirty":false,"diffHash":"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945","lockfileHash":"6a52b4b078cb94835b4c9f11c025aaa132baafb7b0e885c8a91835e80c2cfb5c"},
+      "plugin": {"commit":"ab1ef6da4221a32e30e4c6b7fe96aa9a82e60997","dirty":false,"diffHash":"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945","lockfileHash":"6a52b4b078cb94835b4c9f11c025aaa132baafb7b0e885c8a91835e80c2cfb5c"},
       "fork": {"commit":"053a3b9f9e77917c457fce8ca9453d38b92a303b","dirty":false,"diffHash":"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945","lockfileHash":"5c64a40db44edf20c89888704dd8c2fa073dbc833bdaa5f8a6d0cf162ecaa909"},
       "extras": {"commit":"1cdcb7c425a9b80afdc7b39c88861143b4b85e58","dirty":false,"diffHash":"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945","lockfileHash":"4773e2de84c7606e94b7eddf5a93957d418d1b0e1bd35091553b01b37d35f8ab"}
     },
@@ -87,7 +87,8 @@
     "The second repeat fails lucide-3019 and six early desktop profile idle gates after a 702-event storm. All text-history variants, all six stability cycles and all 15 popout drop variants pass in both complete attempts.",
     "At traced checkpoint 84a30be0 the 172-desktop-plus-core sequence captures 16879 notifications. Its sustained loop first appears during native:lifecycle-new-popout-survivor; one earlier popout Markdown notification is transient. No JavaScript exceptions; all functional cases execute, but strict parent idle/cleanup-idle gates fail.",
     "Isolated Lucide and lifecycle controls pass with zero events. Empty-popout observer controls with both community runtimes unloaded also pass. These clean controls do not exonerate the ordered drawing sequence or justify a production patch.",
-    "Next action: isolate the state retained between the desktop workflows and fresh-popout teardown, then propose a minimal production fix for approval only if evidence supports it. Do not rerun full acceptance without new evidence. Two fresh complete matching-build passes remain required after any implementation change."
+    "Next action: isolate the state retained between the desktop workflows and fresh-popout teardown, then propose a minimal production fix for approval only if evidence supports it. Do not rerun full acceptance without new evidence. Two fresh complete matching-build passes remain required after any implementation change.",
+    "At clean ab1ef6da the matched visible normal/unthrottled iframe control reproduces 0/62/0 under both scheduling conditions; an additional normal repeat records 0/61/0. This does not identify the historical observer. Ordered desktop/lifecycle/close controls, all 40 device profiles and both 43-case mobile workflows, post-device desktop/lifecycle/Lucide, large and pending-save closes pass. No complete acceptance repeat was attempted. The proposed full desktop/core ownership trace was rejected before execution by automatic approval review; explicit trace approval is pending."
   ],
   "limitations": [
     "Desktop emulation is not physical touch/WebView/stylus validation.",
@@ -125,6 +126,53 @@
       {"mode":"main-constructor","notifications":62,"afterDisconnect":0},
       {"mode":"owner-constructor","notifications":0,"afterDisconnect":0}
     ],
-    "nextAction": "Use the minimal untraced reproducer for matched normal/unthrottled scheduling controls with actual visible-state verification. Then determine which original observer has that lifecycle and whether a tooling correction or explicitly approved production/host fix is warranted. Do not spend full acceptance repeats until resolved."
+    "nextAction": "Renew the unchanged previously approved forwarding-only observer trace for the full desktop/core sequence, with a 30-minute safety deadline and no acceptance credit. Explicit renewed-trace approval is pending; no new interception was installed."
+  },
+  "latestVerifiedCheckpoint": {
+    "plugin": {
+      "commit": "ab1ef6da4221a32e30e4c6b7fe96aa9a82e60997",
+      "dirty": false,
+      "diffHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "lockfileHash": "6a52b4b078cb94835b4c9f11c025aaa132baafb7b0e885c8a91835e80c2cfb5c"
+    },
+    "fork": {
+      "commit": "053a3b9f9e77917c457fce8ca9453d38b92a303b",
+      "dirty": false,
+      "diffHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "lockfileHash": "5c64a40db44edf20c89888704dd8c2fa073dbc833bdaa5f8a6d0cf162ecaa909"
+    },
+    "extras": {
+      "commit": "1cdcb7c425a9b80afdc7b39c88861143b4b85e58",
+      "dirty": false,
+      "diffHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "lockfileHash": "4773e2de84c7606e94b7eddf5a93957d418d1b0e1bd35091553b01b37d35f8ab"
+    },
+    "maintainedPluginTestCode": "f5d5d217ac7779115b820377181a7ced8f1605a1",
+    "productionUnchangedSince": "f240fb86"
+  },
+  "observerFollowup": {
+    "file": "observer-scheduling-followup-2026-10-30.json",
+    "status": "scheduling-comparison-complete-original-storm-unresolved",
+    "observerInterception": false,
+    "acceptanceCredit": false,
+    "scheduling": [
+      {"name":"normal-first","backgroundThrottling":true,"counts":[0,62,0],"afterDisconnect":[0,0,0]},
+      {"name":"unthrottled-first","backgroundThrottling":false,"counts":[0,62,0],"afterDisconnect":[0,0,0]},
+      {"name":"unthrottled-repeat","backgroundThrottling":false,"counts":[0,62,0],"afterDisconnect":[0,0,0]},
+      {"name":"normal-repeat","backgroundThrottling":true,"counts":[0,61,0],"afterDisconnect":[0,0,0]}
+    ],
+    "nativeRuns": [
+      {"name":"2026-10-30-popout-close-order-ab1ef6da","status":"failed","tests":6,"events":0,"cleanup":"passed","restored":true},
+      {"name":"2026-10-30-ordered-popout-close-ab1ef6da","status":"passed","tests":183,"events":0,"cleanup":"passed","restored":true},
+      {"name":"2026-10-30-large-popout-close-ab1ef6da","status":"passed","tests":2,"events":0,"cleanup":"passed","restored":true},
+      {"name":"2026-10-30-device-predecessor-ab1ef6da","status":"passed","tests":0,"events":0,"deviceCases":126,"cleanup":"passed","restored":true},
+      {"name":"2026-10-30-post-device-prefix-ab1ef6da","status":"passed","tests":177,"events":2,"cleanup":"passed","restored":true},
+      {"name":"2026-10-30-inflight-popout-close-ab1ef6da","status":"passed","tests":2,"events":0,"cleanup":"passed","restored":true}
+    ],
+    "nextDiagnostic": {
+      "status": "blocked-before-execution-pending-explicit-trace-approval",
+      "action": "Renew the unchanged previously approved forwarding-only observer trace for the full desktop/core sequence, with a 30-minute safety deadline and no acceptance credit.",
+      "approvalReview": "Automatic approval rejected renewing the expired trace: later permission covered untraced controls. The rejected command did not execute and no new observer interception was installed. Explicit authorization was requested; no workaround was attempted."
+    }
   }
 }

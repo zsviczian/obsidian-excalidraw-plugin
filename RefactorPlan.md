@@ -3352,3 +3352,20 @@ remain strict pending maintainer classification; no production changes.
   bounded untraced scheduling true/false comparison with verified visibility;
   time-extension permission pending. Keep PRs draft until resolved and two fresh
   complete matching-build repeats pass. Physical-device limits remain unchanged.
+
+- 2026-10-30 (#3022 untraced follow-up): Verified the minimal iframe ownership
+  mechanism under normal and unthrottled scheduling in both orders (0/62/0,
+  0/62/0, 0/62/0, 0/61/0), with actual visible/focused state and quiet own-observer
+  cleanup. Host-only visible/hidden close controls are quiet. Fresh matching
+  three-repository builds pass the ordered 172 desktop + five lifecycle + six
+  saved/dirty close controls, 2,000-element saved/dirty/pending-save closes, all
+  40 profiles and both 43-case mobile workflows, then desktop/lifecycle/Lucide
+  replay (two settling events). Retained the first ignored wrapper's missing-
+  status failure; no assertions weakened. Portable passes 666 (68 new / 598
+  reused), production audit passes, installed baseline restored. No production,
+  printing or maintained test-source change and no complete native acceptance
+  retry. The original observer remains unidentified. Automatic approval review
+  rejected renewed interception after the original exception expired; no command
+  executed and no bypass attempted. Explicit approval for the full desktop/core
+  diagnostic trace is pending. Next risk check is that ownership trace if
+  authorized, then two fresh full repeats only after an evidenced resolution.
