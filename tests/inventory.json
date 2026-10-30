@@ -2446,6 +2446,10 @@
       "mode": "isolated-or-extracted"
     },
     {
+      "path": "scripts/testing/host/behaviorDecoding.test.mjs",
+      "mode": "isolated-or-extracted"
+    },
+    {
       "path": "scripts/testing/host/browserDiagnostics.test.mjs",
       "mode": "isolated-or-extracted"
     },

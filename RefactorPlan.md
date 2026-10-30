@@ -3259,3 +3259,17 @@ remain strict pending maintainer classification; no production changes.
   explicit maintainer decision, not a presumed fix. Next risk checks are dirty
   migration and popout teardown on an approved host, Lucide idle, and two complete
   matching-build repeats; physical mobile and other native OSes remain separate.
+
+- 2026-10-30 (#3022): Current-host core sequence captures eight Markdown
+  verification failures: canvas pixel reads of vault-resource URLs lack CORS
+  opt-in. Native default/anonymous/fetched-blob comparison proves identical
+  resources decode correctly with CORS (PNG 4x2, two transparent/red/blue pixels;
+  SVG 8216 red and 6718 blue pixels). Corrected only the verifier to request
+  anonymous CORS before loading and create its canvas detached in the owning
+  document. No security bypass or version branch. Missing-asset setup also
+  deleted a source with its editor alive and required an incidental ENOENT log;
+  one context recovered with zero logs. Retire the editor first and remove that
+  error allowance, retaining all reference/recovery/pixel assertions and making
+  every unexpected console error fail. Two actual-helper regressions pass.
+  The first new-runtime run still has storms; no production change or exception
+  waiver. Focused native confirmation precedes another full attempt.

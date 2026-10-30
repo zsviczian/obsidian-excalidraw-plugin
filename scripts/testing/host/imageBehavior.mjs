@@ -147,8 +147,8 @@ export async function exerciseImageBehavior(c, env, rows) {
           ea = p.ea.getAPI(view);
           const drawing = view.file,
             reference = source.path;
-          await app.vault.delete(source);
           await env.leaf.setViewState({ type: "empty", state: {} });
+          await app.vault.delete(source);
           await env.leaf.openFile(drawing);
           await env.ready(env.leaf);
           view = env.leaf.view;
@@ -191,28 +191,6 @@ export async function exerciseImageBehavior(c, env, rows) {
             edited,
             restored,
             missing: { imageIdRetained: true, referenceRetained: true },
-            expectedConsoleErrors: [
-              {
-                containsAll: [
-                  '"value":"EmbeddedFileLoader._getObsidianImage"',
-                  '"value":"' + reference + '"',
-                  '"name":"depth","type":"number","value":"0"',
-                  '"name":"code","type":"string","value":"ENOENT"',
-                  '"name":"syscall","type":"string","value":"open"',
-                  JSON.stringify({
-                    name: "path",
-                    type: "string",
-                    value: require("node:path").join(
-                      app.vault.adapter.getBasePath(),
-                      reference,
-                    ),
-                  }),
-                ],
-                excludes: ["[preview truncated]"],
-                min: 1,
-                max: 1,
-              },
-            ],
           };
         }
         const markdown = await env.create(

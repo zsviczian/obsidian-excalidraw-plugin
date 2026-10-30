@@ -402,10 +402,12 @@ export async function behaviorEnvironment(
       url =
         typeof source === "string" ? source : win.URL.createObjectURL(source);
     try {
+      // Read the actual resource through its CORS contract, without a version branch.
+      image.crossOrigin = "anonymous";
       image.src = url;
       await image.decode();
-      const canvas = doc.body.createEl("canvas");
-      canvas.remove();
+      // Keep verification out of the observed workspace layout in every window.
+      const canvas = doc.adoptNode(createFragment()).createEl("canvas");
       canvas.width = image.naturalWidth;
       canvas.height = image.naturalHeight;
       check(
