@@ -4,8 +4,8 @@
   "files": [
     {
       "name": "acceptance-status.json",
-      "sha256": "306f67183d9505ab0a70f4e915fa6b636613eeef8f1ad2b7001ab89e6400c8b7",
-      "bytes": 31162
+      "sha256": "21668a97381787fb4c8b8a0772d4321a9bfcdd9bf2172731755a89005f25627a",
+      "bytes": 33811
     },
     {
       "name": "acceptance-investigation-2026-10-30.json",
@@ -36,6 +36,11 @@
       "name": "acceptance-failed-098e6ee1.json",
       "sha256": "869a0ca3aec1a1e469bcc6870fbe9078ce193bdc9c7832603a69bcb8dd58e52e",
       "bytes": 1442703
+    },
+    {
+      "name": "resize-reduction-2026-10-30.json",
+      "sha256": "db7dc11a68721f132b09a40597171788519b7c1e1b56f3884475e15899ef2123",
+      "bytes": 1470569
     }
   ]
 }

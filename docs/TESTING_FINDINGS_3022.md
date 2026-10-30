@@ -1,6 +1,6 @@
 # Test findings for maintainer review
 
-**Current evidence: F27 and the [2026-10-30 acceptance report](testing-evidence/3022/README.md).**
+**Current evidence: F28 and the [2026-10-30 acceptance report](testing-evidence/3022/README.md).**
 Earlier findings retain their original hosts and failed attempts as history.
 The required native pair remains incomplete; all three PRs stay draft.
 
@@ -560,3 +560,37 @@ draft. Sanitized cases, raw payloads, source/artifact hashes, controls and resto
 baseline are [published together](testing-evidence/3022/README.md). Final installed
 plugins are ready with no owned work and a quiet passive sample; recovery earns
 no acceptance credit.
+
+## F28 - Ordered reductions and unmatched visibility
+
+At 780d1440, main -> split -> lifecycle passes with zero notifications; nested
+split -> popout -> lifecycle passes with one settling notification. Their
+document visibility is hidden, unlike the historical visible failing prefix.
+They therefore do not clear that failure. Native inspection finds the window
+visible/focused/non-minimized while its document reports hidden. Ordinary native
+show/focus restores visible state in 58 ms without emulation or renderer reset.
+
+The new passive reader initially misclassifies internal registrations. Installed
+source uses Events._ for event-name maps and Component._events for cleanup
+callbacks. The extended actual-shape regression fails before correction and
+passes after; unsupported internals are explicitly unavailable. No production
+observer or callback is patched by this reader, and behavioral errors propagate.
+
+At f5d5d217, the visible nested-split/popout prefix and then a visible
+split/nested-split/popout prefix both pass with one settling notification.
+The exact original 172-case prefix followed by lifecycle passes with snapshots
+off (two settling notifications) and on (zero). All frozen artifacts match the
+historical complete pair. Settings, inspected registrations, layout/sidebar,
+root/popout and temporary scheduling evidence return to their expected baseline.
+No retained leak in these inspected fields or a stable failing reduced sequence
+is demonstrated. No sole instrumentation/host causation or harmlessness follows.
+
+Final portable passes 666 cases (68 new / 598 reused), including 488 plugin fast;
+source/package/build/declaration gates and production audit pass. No new full
+native run is attempted because the intermittent trigger is unresolved. The
+historical failed pair and raw notifications remain unchanged and all PRs stay
+draft. A 30-minute diagnostic-only observer creation/target-lifetime trace is
+proposed, requiring an explicit exception to the earlier no-patching rule. It is
+not implemented or run. No production/PDF change, suppression, threshold increase
+or mid-run renderer reset was made. [Accessible reductions and boundary state](testing-evidence/3022/resize-reduction-2026-10-30.json)
+include exact source/artifact identities, cases, raw diagnostics and restoration.

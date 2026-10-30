@@ -4,7 +4,7 @@ At plugin `9b2874ba`, two fresh complete matching-build runs produced **357/357
 passes**, then **350/357 passes with seven failures**. Both execute all **258
 behavioral obligations** and **40 device/layout profiles**. No identity is missing.
 The required pair has not passed. At the subsequent test-diagnostic checkpoint
-`84a30be0`, focused investigations and portable checks pass where noted below;
+`f5d5d217`, focused investigations and portable checks pass where noted below;
 **two fresh complete native passes remain required** after resolution.
 
 No production behavior changed after reviewed `f240fb86`. The PDF timeout and
@@ -18,6 +18,8 @@ concurrency-lock rollback and all previously approved fixes are preserved.
 - [Sanitized raw notification payloads](native-event-payloads-2026-10-30.jsonl)
   ([JSONL download](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/refs/heads/2026-10-28-automated-test-coverage/docs/testing-evidence/3022/native-event-payloads-2026-10-30.jsonl))
 - [SHA-256 evidence manifest](acceptance-evidence-manifest.json)
+- [Ordered reductions, matched snapshot controls and boundary state](resize-reduction-2026-10-30.json)
+  ([JSON download](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/refs/heads/2026-10-28-automated-test-coverage/docs/testing-evidence/3022/resize-reduction-2026-10-30.json))
 - [Earlier failed attempts and controls](acceptance-investigation-2026-10-29.json),
   [9c08d814](acceptance-failed-9c08d814.json) and
   [098e6ee1](acceptance-failed-098e6ee1.json) remain retained.
@@ -32,8 +34,8 @@ current finite-paging capture is complete.
 
 | Check | Result |
 | --- | --- |
-| Final portable at `84a30be0` | **664 passed: 66 new / 598 reused**, plus source/package gates |
-| Plugin fast | 486 passed: 52 new / 434 reused |
+| Final portable at `f5d5d217` | **666 passed: 68 new / 598 reused**, plus source/package gates |
+| Plugin fast | 488 passed: 54 new / 434 reused |
 | Fork source / browser | 127 passed (12 new / 115 reused) / 18 reused passes |
 | Extras source / browser | 29 passed (2 new / 27 reused) / four reused passes |
 | Full native attempt 1 at `9b2874ba` | **357/357 pass**; 258 behavioral obligations and 40 profiles pass |
@@ -62,6 +64,60 @@ The two new portable cases after the previous 662-case checkpoint exercise the
 actual CORS-enabled detached image decoder and safe missing-source setup. The
 existing runner success case also verifies a future alpha-version string; it is
 reused, not counted as a new case.
+
+Two further offline cases verify the new opt-in passive reader: it does not
+write settings/layout/focus/scheduling or expose setting values, and preserves
+an original behavioral failure and cleanup evidence. Its initial listener-shape
+assumption failed an extended actual-shape regression; the corrected reader
+distinguishes Events maps from Component cleanup callbacks and labels missing
+internals unavailable. This diagnostic correction does not explain the storm.
+
+## Latest ordered reductions
+
+All trials rebuild/deploy/configure through the standard coordinator and match
+every frozen artifact against the earlier complete pair. Each retains its
+original functional, persistence, error/idle and cleanup assertions.
+
+| Ordered predecessors, then unchanged lifecycle | Matrix + lifecycle occurrences | Snapshots | Main document | Result / raw main-window notifications |
+| --- | ---: | --- | --- | --- |
+| Main -> split | 86 + 5 | On, initial reader | Hidden | Pass / 0 |
+| Nested split -> popout | 86 + 5 | On, initial reader | Hidden | Pass / 1 settling |
+| Nested split -> popout | 86 + 5 | On, corrected reader | Visible | Pass / 1 settling |
+| Split -> nested split -> popout | 129 + 5 | On | Visible | Pass / 1 settling |
+| Exact original four-context prefix | 172 + 5 | **Off** | Visible | Pass / 2 settling |
+| Exact original four-context prefix | 172 + 5 | **On** | Visible | Pass / 0 |
+
+These are repeated occurrences of existing IDs, not new native cases or complete
+acceptance repeats. The first two hidden-document runs are not matched controls
+against the historical visible failure. Electron reported a visible/focused,
+non-minimized native window while its document was hidden. Ordinary native
+show/focus restored document visibility in 58 ms, without emulation, observer
+changes or a renderer reset. Subsequent visible trials also pass, so this
+precondition mismatch is not claimed as the original cause or a resolution.
+
+With the corrected reader, all setting digests, workspace/vault/metadata event
+registrations and plugin cleanup-registration counts return to the pre-prefix
+baseline before lifecycle. Layout/sidebar state, roots, popouts and temporary
+main scheduling also return as expected; owned lifecycle additions retire during
+cleanup. Owner identities and scheduling are recorded. Initial-reader listener
+records are explicitly unavailable evidence, not zero registrations. The matched
+original-prefix controls do not establish that passive snapshots cause or cure
+the intermittent failure.
+
+**Precise blocker:** no stable failing reduced sequence or distinguishing
+retained state has been isolated. The historical 172-case prefix/fresh-popout
+storm remains a failure; its current pass is not a fix. No new 357-case run was
+spent and no acceptance gate was weakened.
+
+**Maintainer decision pending:** a bounded 30-minute diagnostic-only observer
+construction/target-lifetime trace is proposed. It would forward all behavior,
+suppress no notifications, retain sanitized ownership/stacks with weak
+references, and be removed before acceptance. It changes no production source
+and earns no acceptance credit. This needs an explicit exception to the earlier
+no-ResizeObserver-patching instruction; the trace has not been implemented or
+run. Until that decision, further native input is held. The installed vault is
+restored, both plugins are ready, no tasks/print roots/popouts remain, and the
+final passive sample is quiet.
 
 ## Remaining failure and focused evidence
 
@@ -129,8 +185,9 @@ Both complete attempts use:
 - Extras `1cdcb7c425a9b80afdc7b39c88861143b4b85e58`
 
 Latest portable/focused code is plugin
-`84a30be09918e4bbbb913eb5212c4e3b137c72e6`; fork and Extras are unchanged.
-The intervening change retains passive test-stage timestamps only. All
+`f5d5d217ac7779115b820377181a7ced8f1605a1`; fork and Extras are unchanged.
+Intervening changes retain passive test-stage timestamps and opt-in state
+evidence, its offline regressions and documentation only. All
 three-repository artifact identities match in the complete pair. Public reports
 include installed/configuration/seed hashes and final file inspection.
 

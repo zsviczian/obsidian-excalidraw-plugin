@@ -3323,3 +3323,16 @@ remain strict pending maintainer classification; no production changes.
   assertions, production and PDF code remain unchanged. Next risk check is the
   second-half prefix with the visible precondition, then ordered interaction
   reductions and instrumentation-off controls.
+
+- 2026-10-30 (#3022 matched reductions): The visible nested/popout and then
+  split/nested/popout prefixes pass. Exact original 172-case prefix plus
+  lifecycle passes with state snapshots off (two settling notifications) and
+  on (zero); all frozen artifact identities match. Corrected-reader settings
+  and inspected registrations return to baseline, with expected layout/root/
+  popout/scheduling cleanup. No stable failing subset is isolated. Final
+  portable passes 666 (68 new / 598 reused), production audit passes, and
+  restored installed vault is quiet. Retain historical failures and draft PRs;
+  no new full native run or production/PDF/observer change. Explicit permission
+  is pending for a proposed 30-minute diagnostic-only observer-lifetime trace.
+  Next risk check is that approved ownership trace with matched controls,
+  removal before acceptance, then two fresh full repeats only after resolution.
