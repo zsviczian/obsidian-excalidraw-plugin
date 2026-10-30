@@ -46,13 +46,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: zsviczian/excalidraw
-          ref: 053a3b9f9e77917c457fce8ca9453d38b92a303b
+          ref: 22f05c1e70b12720a8f73e97d24278282dd5ef06
           path: .test-work/checkouts/fork
           persist-credentials: false
       - uses: actions/checkout@v4
         with:
           repository: zsviczian/obsidian-excalidraw-extras
-          ref: 1cdcb7c425a9b80afdc7b39c88861143b4b85e58
+          ref: 064faf185d1955798836ed9c2b765c4c5e61aa11
           path: .test-work/checkouts/extras
           persist-credentials: false
       - uses: actions/setup-node@v4

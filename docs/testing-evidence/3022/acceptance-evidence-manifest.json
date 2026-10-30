@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "status": "acceptance-incomplete",
+  "status": "evidence-index",
   "files": [
     {
       "name": "acceptance-status.json",
@@ -156,6 +156,12 @@
       "name": "native-pair-audit-source.txt",
       "sha256": "fec11a6586205b7ff55e3ab7a54218333af3bf06a1c1967d3746f8bb8ec10607",
       "bytes": 4505
+    },
+    {
+      "name": "settings-lifecycle-verification-2026-10-30.json",
+      "sha256": "37e00b89a71f0c6b013c54918553057003ccf99a5ca3e4da34456e9a0c63dfd1",
+      "bytes": 137077
     }
-  ]
+  ],
+  "note": "Index only: acceptance-status.json describes the frozen full-repeat checkpoint; settings-lifecycle-verification-2026-10-30.json describes the later scoped follow-up. This index does not assert two full repeats for the follow-up."
 }

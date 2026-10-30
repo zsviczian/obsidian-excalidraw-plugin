@@ -1,4 +1,16 @@
-# Acceptance passed: two complete matching-build native runs
+# Testing acceptance and approved follow-ups
+
+The later maintainer-approved parsed-link history and settings teardown fixes
+are committed in `7e80c1bd76072b9631a0efef6678e30ed97cfe7f`. Verification passes
+**681 portable cases**, including 11 new settings regressions, and all five
+focused native lifecycle cases with cleanup/restoration and matching artifacts.
+[Sanitized follow-up results, case IDs, source/artifact identities and limits](settings-lifecycle-verification-2026-10-30.json)
+keep that evidence separate from the original full-repeat checkpoint below.
+The settings follow-up did not repeat the entire 357-case native matrix twice.
+The maintainer explicitly requested merging the paired source branches while
+deferring fork/Extras releases and version/dependency updates.
+
+## Original complete native acceptance checkpoint
 
 At plugin `fd32ac682e2aadc0f982fa23d36da482011117f9`, fork
 `053a3b9f9e77917c457fce8ca9453d38b92a303b` and Extras
@@ -7,15 +19,16 @@ At plugin `fd32ac682e2aadc0f982fa23d36da482011117f9`, fork
 **40 device/layout profiles**. Cleanup, baseline restoration, source/artifact
 identity and both native error/layout negative controls pass in each run.
 Final portable validation passes **666 cases (68 new / 598 reused)** and the
-production-diff audit passes. Subsequent completion commits change documentation
-and inert diagnostic archives only.
+production-diff audit passes. The original completion commits changed
+documentation and inert diagnostic archives only; the later approved production
+fixes and their scoped verification are described above.
 
 The historical sustained ResizeObserver storm did not recur. Its cause remains
 unidentified, and no production fix or sole host/instrumentation cause is
 claimed. The strict storm gate remains unchanged. Earlier failed attempts,
 including the `9b2874ba` 357-pass / 350-pass pair, remain preserved below.
 
-No production behavior changed after reviewed `f240fb86`. The PDF timeout and
+At that checkpoint, no production behavior changed after reviewed `f240fb86`. The PDF timeout and
 concurrency-lock rollback and all previously approved fixes are preserved.
 
 ## Accessible evidence
