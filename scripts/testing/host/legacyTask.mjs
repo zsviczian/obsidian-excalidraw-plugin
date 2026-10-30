@@ -10,7 +10,7 @@ export async function runLegacyTask({cli,control,execute,cleanup=async()=>{},hel
     if(globalThis[control])throw Error('Existing native controller: '+control);
     const legacy={state:'pending'};globalThis[control]=legacy;
     Object.defineProperty(legacy,'cancelled',{get:()=>c.cancelled});
-    Object.defineProperty(c,'phase',{get:()=>control+': '+(legacy.results?.length??0)+' completed cases'});
+    Object.defineProperty(c,'phase',{get:()=>legacy.phase??control+': '+(legacy.results?.length??0)+' completed cases'});
     c.defer(async()=>{await (${cleanup.toString()})(control);if(legacy.cleanupFailed)throw Error(legacy.cleanupFailed);if(globalThis[control]===legacy)delete globalThis[control];});
     try{c.checkpoint();const result=await (${execute.toString()})(control,...args);return {result,results:legacy.results,reopen:legacy.reopen};}
     catch(error){if(error.cleanupFailed)legacy.cleanupFailed=String(error);throw error;}

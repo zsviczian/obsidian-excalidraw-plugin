@@ -3273,3 +3273,13 @@ remain strict pending maintainer classification; no production changes.
   every unexpected console error fail. Two actual-helper regressions pass.
   The first new-runtime run still has storms; no production change or exception
   waiver. Focused native confirmation precedes another full attempt.
+
+- 2026-10-30 (#3022): At 9b2874ba, the first complete run passes all 357
+  identities; the matching second run fails the Lucide idle gate and six
+  subsequent desktop profiles after a 702-notification storm. Both runs pass
+  all 258 behavioral obligations, text variants, six stability cycles and
+  restoration. Added passive Lucide stage timestamps and exposed the existing
+  legacy task's stage to error evidence; no action, assertion, timing threshold
+  or production code changed. The isolated traced Lucide workflow passes with
+  zero window errors. Next risk check is the same workflow after its desktop
+  and core predecessors, then two fresh matching checkpoint repeats if resolved.
