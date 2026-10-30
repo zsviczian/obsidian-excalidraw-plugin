@@ -1,5 +1,6 @@
 /** #3008: real wheel events must use live plugin zoom limits in each document. */
 import assert from "node:assert/strict";
+import { runLegacyTask } from './legacyTask.mjs';
 
 async function exercise(control, drawingPath) {
   const c = globalThis[control];
@@ -57,17 +58,8 @@ async function exercise(control, drawingPath) {
 
 /** Restores the live settings without persisting test values. */
 export async function runWheelZoomScenario({ cli, drawingPath }) {
+  assert.ok(drawingPath.startsWith('__excalidraw_cli_smoke_'));
   const control = "__excalidrawWheelZoom";
-  const evaluate = code => JSON.parse(cli("eval", `code=${code}`).trim().replace(/^=>\s*/, ""));
-  try {
-    evaluate(`(()=>{if(globalThis.${control})throw Error("wheel controller exists");const c=globalThis.${control}={state:"pending"};(${exercise.toString()})(${JSON.stringify(control)},${JSON.stringify(drawingPath)}).then(()=>c.state="done").catch(e=>{c.state="failed";c.error=e.stack});return JSON.stringify({started:true})})()`);
-    let result;
-    for (let i = 0; i < 200; i++) {
-      result = evaluate(`JSON.stringify({state:globalThis.${control}.state,error:globalThis.${control}.error,results:globalThis.${control}.results})`);
-      if (result.state !== "pending") break;
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
-    assert.equal(result.state, "done", result.error ?? "wheel scenario timed out");
-    return { id: "wheel-zoom-3008", status: "passed", cases: result.results };
-  } finally { cli("eval", `code=delete globalThis.${control}`); }
+  const result=await runLegacyTask({cli,control,execute:exercise,args:[drawingPath]});
+  return { id: "wheel-zoom-3008", status: "passed", cases: result.results };
 }

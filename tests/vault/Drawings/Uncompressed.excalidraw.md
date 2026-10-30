@@ -1,0 +1,96 @@
+---
+excalidraw-plugin: parsed
+tags: [automation-fixture]
+---
+
+User Markdown retained.
+
+# Excalidraw Data
+
+## Text Elements
+
+%%
+## Drawing
+```json
+{
+  "type": "excalidraw",
+  "version": 2,
+  "source": "https://excalidraw.com",
+  "elements": [
+    {
+      "id": "fixture-0",
+      "type": "rectangle",
+      "x": 0,
+      "y": 0,
+      "width": 100,
+      "height": 60,
+      "angle": 0,
+      "strokeColor": "#1e1e1e",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "roundness": null,
+      "seed": 1,
+      "version": 1,
+      "versionNonce": 0,
+      "isDeleted": false,
+      "boundElements": null,
+      "updated": 1,
+      "link": null,
+      "locked": false,
+      "customData": {
+        "fixture": true,
+        "retainedUnknown": {
+          "value": 0
+        }
+      },
+      "index": "a0"
+    },
+    {
+      "id": "fixture-1",
+      "type": "rectangle",
+      "x": 120,
+      "y": 80,
+      "width": 100,
+      "height": 60,
+      "angle": 0.5235987755982988,
+      "strokeColor": "#1e1e1e",
+      "backgroundColor": "#ff0000",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 50,
+      "groupIds": [],
+      "frameId": null,
+      "roundness": null,
+      "seed": 2,
+      "version": 1,
+      "versionNonce": 0,
+      "isDeleted": false,
+      "boundElements": null,
+      "updated": 1,
+      "link": "[[Links/Árvíztűrő 测试|Alias]]",
+      "locked": false,
+      "customData": {
+        "fixture": true,
+        "retainedUnknown": {
+          "value": 1
+        }
+      },
+      "index": "a1"
+    }
+  ],
+  "appState": {
+    "viewBackgroundColor": "#ffffff",
+    "gridSize": null
+  },
+  "files": {}
+}
+```
+%%

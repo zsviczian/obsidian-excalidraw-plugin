@@ -1,0 +1,23 @@
+(async()=>{
+ const throttled=__THROTTLED__,doc=document,win=doc.defaultView,remote=require('@electron/remote'),wc=remote.getCurrentWebContents(),nativeWindow=remote.getCurrentWindow(),originalBg=wc.getBackgroundThrottling(),ids=['obsidian-excalidraw-plugin','excalidraw-extras'],events=[],trials=[],visibility=[];let phase='baseline',observer,iframe,target,error;
+ const snapshot=label=>({label,at:Date.now(),visibility:doc.visibilityState,focused:doc.hasFocus(),windowVisible:nativeWindow.isVisible(),windowFocused:nativeWindow.isFocused(),minimized:nativeWindow.isMinimized(),backgroundThrottling:wc.getBackgroundThrottling()});
+ const listener=e=>events.push({at:Date.now(),phase,message:e.message,isTrusted:e.isTrusted,hasError:e.error!=null,stack:e.error?.stack});
+ const visibilityListener=()=>visibility.push(snapshot('visibilitychange'));win.addEventListener('error',listener);doc.addEventListener('visibilitychange',visibilityListener);
+ const sleep=ms=>new Promise(r=>win.setTimeout(r,ms));const wait=async(fn,label)=>{const until=Date.now()+3000;while(!fn()){if(Date.now()>until)throw Error(label);await sleep(25);}};
+ try{
+  if(globalThis.__pr3022ResizeTrace||!String(win.ResizeObserver).includes('[native code]')||!String(win.ResizeObserver.prototype.observe).includes('[native code]'))throw Error('Observer interception remains');
+  if(app.workspace.floatingSplit.children.length||app.workspace.getLeavesOfType('excalidraw').length)throw Error('Baseline contains drawing/popout');
+  nativeWindow.show();nativeWindow.focus();wc.focus();wc.setBackgroundThrottling(throttled);await wait(()=>doc.visibilityState==='visible'&&doc.hasFocus()&&!nativeWindow.isMinimized(),'Visible foreground required');
+  visibility.push(snapshot('before-disable'));for(const id of ids)await app.plugins.disablePlugin(id);await sleep(500);if(events.length)throw Error('Baseline not quiet');
+  for(const mode of ['none','main-constructor','owner-constructor']){
+   phase=mode;const start=events.length,deliveries=[],before=snapshot('before:'+mode);
+   if(before.visibility!=='visible'||!before.focused)throw Error('Foreground lost before trial');
+   target=createFragment().createDiv();target.setCssStyles({width:'121px',height:'81px'});iframe=createFragment().createEl('iframe');iframe.setCssStyles({position:'fixed',left:'1px',top:'1px',width:'200px',height:'200px'});doc.body.appendChild(iframe);await wait(()=>iframe.contentDocument?.body,'Frame body');const owner=iframe.contentWindow;iframe.contentDocument.body.appendChild(target);
+   if(mode!=='none'){const Ctor=mode==='main-constructor'?win.ResizeObserver:owner.ResizeObserver;observer=new Ctor(entries=>deliveries.push({at:Date.now(),sizes:entries.map(e=>({width:e.contentRect.width,height:e.contentRect.height,hasWindow:!!e.target.ownerDocument.defaultView}))}));observer.observe(target);await wait(()=>deliveries.length,'Initial delivery');target.setCssStyles({width:'123px'});await wait(()=>deliveries.some(d=>d.sizes.some(e=>e.width===123)),'Final live delivery');}
+   const removedAt=Date.now();iframe.remove();await sleep(1000);const sampledAt=Date.now(),during=events.length-start;phase=mode+':after-disconnect';observer?.disconnect();observer=null;await sleep(1000);const endedAt=Date.now(),afterDisconnect=events.length-start-during,after=snapshot('after:'+mode);
+   trials.push({mode,registeredAfterAdoption:true,removedAt,sampledAt,endedAt,during,afterDisconnect,before,after,deliveries,pluginsLoaded:ids.map(id=>!!app.plugins.plugins[id])});target.remove();target=null;iframe=null;
+   if(afterDisconnect>1)throw Error('Control did not settle');if(after.visibility!=='visible'||!after.focused)throw Error('Foreground lost during trial');
+  }
+ }catch(e){error=String(e.stack||e);}finally{observer?.disconnect();target?.remove();iframe?.remove();for(const id of ids)if(!app.plugins.plugins[id])await app.plugins.enablePlugin(id);await wait(()=>app.plugins.plugins[ids[0]]?.isReady&&app.plugins.plugins[ids[1]]?.api,'Restore plugins');wc.setBackgroundThrottling(originalBg);win.removeEventListener('error',listener);doc.removeEventListener('visibilitychange',visibilityListener);visibility.push(snapshot('restored'));}
+ return JSON.stringify({started:visibility[0]?.at,completed:Date.now(),error,throttled,originalBg,trials,events,visibility,acceptanceCredit:false,workspaceOrPopoutAPIsUsed:false,productionObserversModified:false,nativeObserver:String(win.ResizeObserver)});
+})()

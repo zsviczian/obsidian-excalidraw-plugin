@@ -1,0 +1,32 @@
+import {stabilityFixture} from '../scripts/testing/host/stability.mjs';
+import {runInAppTask} from '../scripts/testing/host/inAppTask.mjs';
+export async function runInflightPopoutCloseControl({cli,drawingPath}){
+ const fixture=stabilityFixture(2000);
+ return {id:'diagnostic-inflight-popout-close-order',status:'passed',acceptanceCredit:false,...await runInAppTask({cli,execute:exercise,args:[drawingPath,fixture],timeoutMs:180000})};
+}
+async function exercise(c,drawingPath,fixture){
+ const doc=document,win=doc.defaultView,p=app.plugins.plugins['obsidian-excalidraw-plugin'],events=[],states=[],owned=new Set(),previous=app.workspace.activeLeaf,prefix=drawingPath.replace(/\.(excalidraw\.md|md)$/,'')+'_inflight_close_control';
+ let saveHandle;const check=(ok,message)=>{if(!ok)throw Error(message);};
+ const listener=e=>events.push({at:Date.now(),phase:c.activeCase||c.phase,message:e.message,isTrusted:e.isTrusted,hasError:e.error!=null,stack:e.error?.stack});win.addEventListener('error',listener);
+ c.defer(()=>win.removeEventListener('error',listener));
+ c.defer(async()=>{for(const leaf of owned){const owner=leaf.view.containerEl.ownerDocument.defaultView;if(owner&&owner!==win&&!owner.closed){owner.close();await c.waitForCleanup(()=>owner.closed,'owned control popout close');}}if(previous?.containerEl.isConnected)app.workspace.setActiveLeaf(previous,{focus:true});if(saveHandle&&!saveHandle.settled)await c.waitForCleanup(()=>saveHandle.settled,'pending real save before fixture removal');const folder=app.vault.getFolderByPath(prefix);if(folder)await app.vault.delete(folder,true);});
+ check(String(win.ResizeObserver).includes('[native code]'),'Native observer constructor required');await app.vault.createFolder(prefix);
+ await new Promise(r=>win.setTimeout(r,500));check(!events.length,'Prior ordered workflow did not settle; do not contaminate close controls');
+ for(const [index,dirty] of [false,true].entries()){
+  await c.case('diagnostic:inflight-popout-close-'+index+'-'+(dirty?'dirty':'saved'),['P02','P03'],async()=>{
+   const start=events.length,file=await app.vault.create(prefix+'/Drawing-'+index+'.excalidraw.md',fixture);await c.waitFor(()=>p.isExcalidrawFile(file),'fixture metadata');
+   const leaf=app.workspace.openPopoutLeaf();owned.add(leaf);await c.waitFor(()=>leaf.view.containerEl.ownerDocument!==doc,'empty popout destination');await leaf.openFile(file);await c.waitFor(()=>leaf.view.excalidrawAPI&&leaf.view.isLoaded&&!leaf.view.excalidrawAPI.getAppState().isLoading&&!leaf.view.semaphores.justLoaded,'drawing first commit');
+   const view=leaf.view,owner=view.ownerWindow,api=view.excalidrawAPI,nw=owner.require('@electron/remote').getCurrentWindow();nw.show();nw.focus();app.workspace.setActiveLeaf(leaf,{focus:true});
+   const x=1200+index;api.updateScene({elements:api.getSceneElements().map((e,i)=>i?e:{...e,x,version:e.version+1,versionNonce:e.versionNonce+1}),captureUpdate:'IMMEDIATELY',forceFlushSync:true});await c.waitFor(()=>view.isDirty(),'dirty edit');
+   if(!dirty)check((await view.saveWithOutcome()).status==='persisted','saved control did not persist');
+   if(dirty){saveHandle={settled:false};Promise.resolve(view.saveWithOutcome()).then(outcome=>{saveHandle.outcome=outcome;saveHandle.settled=true;},error=>{saveHandle.error=String(error.stack||error);saveHandle.settled=true;});}
+   const before={at:Date.now(),dirty:view.isDirty(),busy:view.isPersistenceBusy(),pendingSave:saveHandle?{settled:saveHandle.settled}:null,toolsObserverIsMain:view.toolsPanelRef?.current?.props?.observer?.deref()?Object.getPrototypeOf(view.toolsPanelRef.current.props.observer.deref())===win.ResizeObserver.prototype:null,ownerIsMain:owner===win,api:!!view.excalidrawAPI,root:!!view.excalidrawRoot,visibility:owner.document.visibilityState};
+   owner.close();await c.waitFor(()=>owner.closed,'popout closed');const closed={at:Date.now(),api:!!view.excalidrawAPI,root:!!view.excalidrawRoot};await c.waitFor(()=>!view.excalidrawAPI,'closed editor API retired');
+   if(dirty){await c.waitFor(()=>saveHandle.settled,'pending real save completes');check(!saveHandle.error,'Pending real save rejected: '+saveHandle.error);states.push({phase:'save-outcome',outcome:saveHandle.outcome?.status});}await c.waitFor(async()=>{const scene=await p.ea.getSceneFromFile(file);return scene.elements[0].x===x;},'closed drawing physically saved');
+   await new Promise(r=>win.setTimeout(r,5500));const after={at:Date.now(),newEvents:events.length-start,popouts:app.workspace.floatingSplit.children.length,api:!!view.excalidrawAPI};states.push({index,dirty,before,closed,after});owned.delete(leaf);
+   check(events.length===start,'Native close notifications/exceptions: '+JSON.stringify({states,events}));
+   return {dirty,before,closed,after,assertions:['real editor created in popout','scene edit saved on disk','closed API retired','no browser notifications or exceptions for 5.5 seconds']};
+  });
+ }
+ return {tests:c.tests,events,states,acceptanceCredit:false};
+}

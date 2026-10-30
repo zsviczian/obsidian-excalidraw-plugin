@@ -1,0 +1,6 @@
+{
+  "enableMathJaxToSVG": true,
+  "enableMermaidToExcalidraw": true,
+  "enablePDFExport": true,
+  "enableFileSystem": false
+}

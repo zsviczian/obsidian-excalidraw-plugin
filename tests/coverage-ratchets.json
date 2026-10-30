@@ -1,0 +1,10 @@
+[
+  { "path": "src/core/managers/PackageManager.ts", "lines": 89, "branches": 79, "functions": 92 },
+  { "path": "src/core/managers/ViewPersistenceQueue.ts", "lines": 97, "branches": 95, "functions": 89 },
+  { "path": "src/core/settings/SerializedSettingsWriter.ts", "lines": 93, "branches": 95, "functions": 99 },
+  { "path": "src/core/settings/settingsDataValidation.ts", "lines": 100, "branches": 100, "functions": 100 },
+  { "path": "src/core/settings/SettingsPersistenceQueue.ts", "lines": 89, "branches": 85, "functions": 91 },
+  { "path": "src/view/managers/ViewSaveCoordinator.ts", "lines": 74, "branches": 91, "functions": 82 },
+  { "path": "src/view/managers/saveSnapshot.ts", "lines": 98, "branches": 99, "functions": 91 },
+  { "path": "src/view/managers/ViewSceneFileManager.ts", "lines": 53, "branches": 89, "functions": 62 }
+]

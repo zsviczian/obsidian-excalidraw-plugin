@@ -1,0 +1,77 @@
+/** Approved diagnostic only. Never imported by production or ordinary acceptance. */
+export function installResizeTrace(deadline) {
+  const key='__excalidrawApprovedResizeTrace';
+  if(globalThis[key])throw Error('Resize trace already installed');
+  if(Date.now()>=deadline)throw Error('Approved trace deadline expired');
+  const main=app.workspace.containerEl.ownerDocument.defaultView;
+  const observerIds=new WeakMap(),targetIds=new WeakMap(),realmIds=new WeakMap();
+  const records=[],targets=[],realms=[],errors=[],notifications=[],failures=[];
+  let active=true,serial=0,notificationOverflow=0,timer,windowEvent;
+  const safe=fn=>{try{return fn();}catch(e){failures.push(String(e.stack||e));}};
+  const phase=()=>Object.keys(globalThis).filter(k=>k.startsWith('__excalidrawTestTask_')).map(k=>({phase:globalThis[k].activeCase||globalThis[k].phase}));
+  const realmId=win=>{
+    if(!win)return null;
+    let id=realmIds.get(win);if(!id){id=realms.length+1;realmIds.set(win,id);realms.push({id,main:win===main,window:new WeakRef(win),installed:false});}return id;
+  };
+  const targetInfo=target=>{
+    let id=targetIds.get(target);
+    if(!id){id=targets.length+1;targetIds.set(target,id);targets.push({id,ref:new WeakRef(target)});}
+    const ancestors=[];let parent=target;
+    for(let n=0;parent&&n<12;n++,parent=parent.parentElement)ancestors.push({tag:parent.localName,classes:String(parent.className?.baseVal??parent.className??'').slice(0,180)});
+    const win=target.ownerDocument?.defaultView;
+    return {id,tag:target.localName,classes:String(target.className?.baseVal??target.className??'').slice(0,180),connected:target.isConnected,realm:realmId(win),windowClosed:win?.closed,ancestors};
+  };
+  const observerInfo=(observer,realm,created=false,stack)=>{
+    let id=observerIds.get(observer);
+    if(!id){id=records.length+1;observerIds.set(observer,id);records.push({id,realm,created,creationStack:stack,ref:new WeakRef(observer),targets:new Map(),events:[],callbacks:0});}
+    return records[id-1];
+  };
+  const event=(record,kind,data={})=>{if(active)record.events.push({serial:++serial,at:Date.now(),kind,...data});};
+  const live=()=>records.filter(r=>[...r.targets.values()].some(t=>t.observed)).map(r=>({id:r.id,realm:r.realm,alive:!!r.ref.deref(),callbacks:r.callbacks,targets:[...r.targets].filter(([,t])=>t.observed).map(([id,t])=>({id,observed:t.observed,current:(()=>{const node=t.ref.deref();return node?targetInfo(node):null;})()}))}));
+  const patch=win=>{
+    if(!active||!win||win.closed||typeof win.ResizeObserver!=='function')return;
+    const realm=realms[realmId(win)-1];if(realm.installed)return;
+    const Native=win.ResizeObserver,proto=Native.prototype,originals={},wrappers={};
+    realm.installed=true;realm.Native=new WeakRef(Native);realm.originals=originals;realm.wrappers=wrappers;
+    for(const name of ['observe','unobserve','disconnect']){
+      const original=proto[name];originals[name]=new WeakRef(original);
+      const wrapped=function(...args){
+        const result=Reflect.apply(original,this,args);
+        if(active)safe(()=>{const record=observerInfo(this,realm.id);if(name==='disconnect'){for(const t of record.targets.values())t.observed=false;event(record,name);}else{const info=targetInfo(args[0]);record.targets.set(info.id,{ref:new WeakRef(args[0]),observed:name==='observe'});event(record,name,{target:info,stack:name==='observe'?new Error('observe').stack:undefined});}});
+        return result;
+      };
+      proto[name]=wrapped;wrappers[name]=new WeakRef(wrapped);
+    }
+    const ProxyCtor=new Proxy(Native,{construct(Target,args,newTarget){
+      if(typeof args[0]!=='function')return Reflect.construct(Target,args,newTarget);
+      const callback=args[0],stack=new Error('ResizeObserver construction').stack;
+      const wrapped=function(...values){
+        let record;
+        if(active)safe(()=>{record=observerInfo(values[1]||this,realm.id,true,stack);record.callbacks++;record.lastCallbackAt=Date.now();const entries=values[0].map(entry=>({target:targetInfo(entry.target),width:entry.contentRect.width,height:entry.contentRect.height}));if(!record.firstDelivery)record.firstDelivery=entries;record.lastDelivery=entries;});
+        let returned=false;
+        try{const result=Reflect.apply(callback,this,values);returned=true;return result;}
+        finally{if(active&&record)safe(()=>{record.lastCallbackReturned=returned;});}
+      };
+      const result=Reflect.construct(Target,[wrapped,...args.slice(1)],newTarget);
+      safe(()=>observerInfo(result,realm.id,true,stack));return result;
+    }});
+    win.ResizeObserver=ProxyCtor;
+    const onError=e=>safe(()=>{
+      const row={at:Date.now(),realm:realm.id,message:e.message,isTrusted:e.isTrusted,hasError:e.error!=null,stack:e.error?.stack,source:e.filename,line:e.lineno,column:e.colno,phase:phase()};
+      if(notifications.length<15000)notifications.push(row);else notificationOverflow++;
+      realm.notifications=(realm.notifications||0)+1;
+      if(realm.notifications<=3)errors.push({...row,liveObservers:live()});
+    });
+    win.addEventListener('error',onError);
+    realm.installed=true;realm.Native=new WeakRef(Native);realm.Proxy=new WeakRef(ProxyCtor);realm.originals=originals;realm.wrappers=wrappers;realm.listener=new WeakRef(onError);
+  };
+  const restore=()=>{
+    if(!active)return;
+    active=false;if(timer)main.clearTimeout(timer);if(windowEvent)app.workspace.offref(windowEvent);
+    for(const realm of realms)safe(()=>{const win=realm.window.deref(),Native=realm.Native?.deref();if(!win||win.closed||!Native)return;if(win.ResizeObserver===realm.Proxy?.deref())win.ResizeObserver=Native;for(const name of ['observe','unobserve','disconnect'])if(realm.wrappers?.[name]&&Native.prototype[name]===realm.wrappers[name].deref())Native.prototype[name]=realm.originals[name].deref();const listener=realm.listener?.deref();if(listener)win.removeEventListener('error',listener);});
+  };
+  const exportRecord=r=>({id:r.id,realm:r.realm,created:r.created,creationStack:r.creationStack,alive:!!r.ref.deref(),callbacks:r.callbacks,lastCallbackAt:r.lastCallbackAt,lastCallbackReturned:r.lastCallbackReturned,firstDelivery:r.firstDelivery,lastDelivery:r.lastDelivery,events:r.events,targets:[...r.targets].map(([id,t])=>({id,observed:t.observed,current:(()=>{const node=t.ref.deref();return node?targetInfo(node):null;})()}))});
+  globalThis[key]={restore,read:(start,count)=>records.slice(start,start+count).map(exportRecord),readNotifications:(start,count)=>notifications.slice(start,start+count),readErrors:(start,count)=>errors.slice(start,start+count),meta:()=>({active,deadline,now:Date.now(),diagnosticOnly:true,acceptanceCredit:false,observerCount:records.length,targetCount:targets.length,realms:realms.map(r=>({id:r.id,main:r.main,installed:r.installed,alive:!!r.window.deref(),closed:r.window.deref()?.closed,notifications:r.notifications||0})),notificationCount:notifications.length,errorSnapshotCount:errors.length,notificationOverflow,failures,coverage:'Observers created after installation have wrapped callbacks; existing observers encountered by observe/unobserve/disconnect are marked created=false. No size/layout reads beyond already-delivered entry data. All target/window/observer registry references are weak.'})};
+  try{windowEvent=app.workspace.on('window-open',window=>safe(()=>patch(window.doc?.defaultView??window)));patch(main);for(const window of app.workspace.floatingSplit.children)safe(()=>patch(window.doc?.defaultView));timer=main.setTimeout(restore,Math.max(0,deadline-Date.now()));return {installed:true,deadline,realms:realms.length};}
+  catch(error){restore();delete globalThis[key];throw error;}
+}

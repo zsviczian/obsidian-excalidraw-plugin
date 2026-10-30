@@ -6727,10 +6727,8 @@ export default class ExcalidrawView
           }
           return { updatedNextOriginalText: null, nextLink: textElement.link };
         } //There were no links to parse, raw text and parsed text are equivalent
-        // Updating only the cache after undo must not discard the redo stack.
-        if (textChanged) {
-          api.history.clear();
-        }
+        // The fork records raw Markdown and parsed display text in the same edit.
+        // Preserve earlier drawing actions as well as redo on cache-only updates.
         return { updatedNextOriginalText: parseResultOriginal, nextLink: link };
       }
       return { updatedNextOriginalText: null, nextLink: textElement.link };

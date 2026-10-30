@@ -1,0 +1,6 @@
+[
+  "flowchart LR\n A --> B",
+  "sequenceDiagram\n A->>B: Hello",
+  "classDiagram\n Animal <|-- Duck",
+  "not valid mermaid"
+]

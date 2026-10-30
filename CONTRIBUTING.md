@@ -14,7 +14,7 @@ Before spending your valuable time writing code for a new feature or significant
 2. Use Node.js 22 or newer and verify it with `node --version`. A shell that mixes a different Node binary with another installation's Corepack can fail before a build starts.
 3. Run `npm install` in the root directory to install the main dependencies.
    *(Note: The `MathjaxToSVG` sub-component has its own separate dependencies. You do not need to install them manually; the first time you run `npm run build`, it will take care of this automatically).*
-4. Create or locate a dedicated `excalidraw-test` vault, install and enable Excalidraw from **Settings → Community plugins**, and follow [Obsidian runtime testing](docs/OBSIDIAN_RUNTIME_TESTING.md). The CLI runner copies the three built files from `dist/` into this vault; it rejects symlinked plugin targets. For an independent manual development setup, [Obsidian Hot Reload](https://github.com/pjeby/hot-reload) can make reloads faster.
+4. Run `npm run test:native` to prepare and test `.test-work/vaults/excalidraw-auto-test/`; follow [Obsidian runtime testing](docs/OBSIDIAN_RUNTIME_TESTING.md) for the one-time Obsidian opening/trust/CLI prerequisite. The runner builds and installs the current workspace plugin and available Extras files, applies declared settings and enables the plugins automatically. Never use a personal vault or the historical desktop test vault. Generated binaries remain ignored; the immutable seed contains tracked fixtures and configuration.
 
 ## 🛠️ Build and Lint Commands
 
@@ -68,15 +68,14 @@ conflict handling, and the one-time adoption procedure for older workspaces.
 
 ## 🧪 Testing
 
-At this time, the project **has no comprehensive automated test suite**. As a contributor, you are responsible for testing your changes thoroughly.
+Use `npm run test:regression` with the dedicated native test vault, or `npm run test:regression:portable` for hosted checks. Follow the [test guide](docs/TESTING.md) for setup, fixtures, repeatable reports and additional native profiles. The independent suite accepts current fork behavior and protects fork-specific contracts and affected upstream workflows. Historical upstream tests are an optional compatibility investigation, not a required regression gate. Build before focused fast tests because they inspect the shipped bundle. Keep inventory and feature mappings current without treating discovery as behavioral coverage. Report suspected product defects for maintainer review; do not silently change behavior or bless failed snapshots. Focus on core Excalidraw and ExcalidrawAutomate; maintained scripts have their own tests in ea-scripts.
 
 The native CLI lane supports macOS and Windows. Run `npm run test:obsidian:runner`
-for the offline harness tests, then `npm run verify:obsidian:plugin` to build and
-smoke-test this plugin with its installed Excalidraw package. For changes in the
-sibling fork, use `npm run verify:obsidian`, which rebuilds and copies the fork's
-four Obsidian artifacts first. Both native commands require explicit test-vault
-paths and a running Obsidian with CLI access enabled. See the [setup, platform
-commands, reports, and cleanup contract](docs/OBSIDIAN_RUNTIME_TESTING.md).
+for offline harness tests, then `npm run test:native` for the prepared local-vault
+regression profile. Focused `verify:obsidian` commands use the same fixed vault
+and rebuild the current workspace fork, plugin and available Extras before every
+sequence. They apply settings, deploy and hash-check the files automatically.
+See the [one-time opening/trust/CLI prerequisites, reports and cleanup contract](docs/OBSIDIAN_RUNTIME_TESTING.md).
 
 For Markdown embed changes, also run `npm run test:markdown-embeds` and
 `npm run verify:obsidian:plugin -- --embed-recovery`. See the runtime guide for

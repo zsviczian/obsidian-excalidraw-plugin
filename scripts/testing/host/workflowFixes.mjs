@@ -1,36 +1,41 @@
 /** Native #3020 checks, confined to the guarded parent's UUID-owned fixtures. */
 import assert from 'node:assert/strict';
 import {join} from 'node:path';
+import {runInAppTask} from './inAppTask.mjs';
 
 export async function runWorkflowFixesScenario({cli,drawingPath,reportDir}) {
   const prefix=drawingPath.replace(/\.excalidraw\.md$/,'')+'_workflows';
   assert.ok(prefix.startsWith('__excalidraw_cli_smoke_'));
-  const baseline=process.env.EXCALIDRAW_WORKFLOW_BASELINE==='1',key='__workflow3020';
-  const evaluate=code=>JSON.parse(cli('eval','code='+code).trim().replace(/^=>\s*/,''));
-  evaluate(`(()=>{if(globalThis.${key})throw Error('Workflow probe active');globalThis.${key}={state:'pending'};(${probeWorkflows.toString()})(${JSON.stringify(key)},${JSON.stringify(prefix)},${JSON.stringify(drawingPath)},${baseline}).then(result=>Object.assign(globalThis.${key},{state:'done',result})).catch(error=>Object.assign(globalThis.${key},{state:'failed',error:String(error.stack)}));return JSON.stringify({started:true})})()`);
-  let state;
-  for(let i=0;i<1400;i++) {
-    state=evaluate(`JSON.stringify(globalThis.${key})`);
-    if(state.capture){cli('dev:screenshot','path='+join(reportDir,(baseline?'before-':'after-')+state.capture+'.png'));evaluate(`(()=>{delete globalThis.${key}.capture;return JSON.stringify({ok:true})})()`);}
-    if(state.state!=='pending')break;
-    await new Promise(resolve=>setTimeout(resolve,100));
-  }
-  evaluate(`(()=>{delete globalThis.${key};return JSON.stringify({clean:true})})()`);
-  assert.equal(state.state,'done',(state.error??'Workflow timeout')+' '+JSON.stringify(state.observations??{}));
-  return {id:'workflow-fixes-3020',status:'passed',baseline,...state.result};
+  const baseline=process.env.EXCALIDRAW_WORKFLOW_BASELINE==='1';
+  const result=await runInAppTask({cli,execute:probeWorkflows,args:[prefix,drawingPath,baseline],timeoutMs:180000,cleanupMs:60000,onRequest:request=>{
+    if(request.method!=='screenshot'||!/^[a-zA-Z0-9-]+$/.test(request.params.name))throw Error('Unexpected workflow screenshot request');
+    cli('dev:screenshot','path='+join(reportDir,(baseline?'before-':'after-')+request.params.name+'.png'));return {captured:true};
+  }});
+  return {id:'workflow-fixes-3020',status:'passed',baseline,...result};
 }
 
-async function probeWorkflows(key,prefix,drawingPath,baseline) {
-  const c=globalThis[key],p=app.plugins.plugins['obsidian-excalidraw-plugin'];
+async function probeWorkflows(c,prefix,drawingPath,baseline) {
+  const p=app.plugins.plugins['obsidian-excalidraw-plugin'];
   const originalLayout=app.workspace.getLayout(),leaves=[],doc=app.workspace.containerEl.ownerDocument;
   const settings=Object.fromEntries(['templateFilePath','previewImageType','canvasImmersiveEmbed','folder','embedUseExcalidrawFolder','compatibilityMode'].map(key=>[key,p.settings[key]]));
   const check=(condition,message)=>{if(!condition)throw Error(message);};
-  const wait=async(predicate,message)=>{const end=Date.now()+25000;while(!predicate()){if(Date.now()>end)throw Error('Workflow timeout: '+message);await new Promise(r=>setTimeout(r,40));}};
+  const originalWindows=app.workspace.floatingSplit.children.map(win=>win.id).sort();
+  c.defer(()=>check(JSON.stringify(app.workspace.floatingSplit.children.map(win=>win.id).sort())===JSON.stringify(originalWindows),'Workflow leaked a popout window'));
+  const ownedPrompts=new Set();
+  const wait=async(predicate,message)=>{await c.waitFor(predicate,message,25000);if(message.includes('chooser')){const prompt=doc.querySelector('.prompt');if(prompt)ownedPrompts.add(prompt);}};
   const settle=()=>new Promise(r=>setTimeout(r,250));
-  const capture=async name=>{c.capture=name;await wait(()=>!c.capture,'screenshot '+name);};
+  const capture=name=>c.requestHost('screenshot',{name});
   const rect=el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height};};
+  check(!doc.querySelector('.prompt'),'Close existing prompts before the workflow scenario');
   let fullscreenView;
-  try {
+  c.defer(async()=>{const folder=app.vault.getFolderByPath(prefix);if(folder){check(folder.path===prefix&&prefix.startsWith('__excalidraw_cli_smoke_'),'unowned cleanup');await app.vault.delete(folder,true);}});
+  c.defer(()=>Object.assign(p.settings,settings));
+  c.defer(async()=>{await app.workspace.changeLayout(originalLayout);await c.waitForCleanup(()=>app.workspace.getLeavesOfType('excalidraw').some(l=>l.view.file?.path===drawingPath&&l.view.isLoaded&&l.view.excalidrawAPI&&!l.view.semaphores.justLoaded),'restored parent drawing first commit');});
+  c.defer(async()=>{const errors=[];for(const leaf of leaves){try{if(leaf.view.containerEl.isConnected){await leaf.setViewState({type:'empty',state:{}});leaf.detach();}}catch(error){errors.push(error);}}if(errors.length)throw new AggregateError(errors,'Workflow leaf cleanup failed');});
+  c.defer(()=>fullscreenView?.exitFullscreen());
+  c.defer(async()=>{for(const prompt of ownedPrompts){if(prompt.isConnected){doc.dispatchEvent(new doc.defaultView.KeyboardEvent('keydown',{key:'Escape',code:'Escape',bubbles:true,cancelable:true}));await c.waitForCleanup(()=>!prompt.isConnected,'owned chooser cancellation');}}});
+
+
     await app.vault.createFolder(prefix);
     const note=await app.vault.create(prefix+'/Note.md','Workflow fixture.'),draw=app.vault.getFileByPath(drawingPath);
     const uid=()=>crypto.randomUUID().replace(/-/g,'').slice(0,16),drawingId=uid();
@@ -44,7 +49,7 @@ async function probeWorkflows(key,prefix,drawingPath,baseline) {
     for(let el=fullscreenView.contentEl;el;el=el.parentElement)if(el.hasClass('excalidraw-hidden'))hiddenAncestors.push(el.className);
     await capture('fullscreen');fullscreenView.exitFullscreen();await settle();
     const restored=rect(fullscreenView.contentEl);
-    c.observations={fullscreen:{original,fullscreen,restored,hiddenAncestors}};
+    c.observations={...c.observations,fullscreen:{original,fullscreen,restored,hiddenAncestors}};
     if(!baseline) {check(hiddenAncestors.length===0&&fullscreen.width>original.width,'fullscreen hidden/small');check(Math.abs(original.width-restored.width)<2&&Math.abs(original.height-restored.height)<2,'layout not restored');}
 
     const ea=p.ea.getAPI();
@@ -76,22 +81,38 @@ async function probeWorkflows(key,prefix,drawingPath,baseline) {
         await popout.openFile(draw);await wait(()=>popout.view.excalidrawAPI&&popout.view.isLoaded&&!popout.view.isClosingOrMigrating(),'popout drawing');
         const count=doc.body.querySelectorAll('.excalidraw-hidden').length;
         await exercise(popout.view,'popout');check(doc.body.querySelectorAll('.excalidraw-hidden').length===count,'popout changed main document');
-      } finally {await popout.setViewState({type:'empty',state:{}});popout.detach();}
+      } finally {
+        const view=popout.view,owner=view.ownerWindow||view.containerEl.ownerDocument.defaultView;
+        check(owner!==doc.defaultView,'Workflow popout did not migrate');
+        if(view.excalidrawAPI&&view.isDirty())check((await view.saveWithOutcome()).status==='persisted','Workflow popout cleanup save');
+        popout.detach();if(!owner.closed)owner.close();
+        await c.waitForCleanup(()=>owner.closed&&!view.excalidrawAPI,'Workflow popout teardown');
+      }
     }
     c.observations.fullscreen.variants=fullscreenVariants;
+    check(app.internalPlugins.getPluginById('canvas')?.enabled,'Required core Canvas plugin is disabled');
     // A fitted three-node Canvas in an eighth-width pane uses Obsidian's
     // far-zoom placeholders. Measure actual previews in a normal-sized pane.
     await app.workspace.changeLayout({...originalLayout,main:{id:uid(),type:'split',direction:'vertical',children:[tabs(note.path,'markdown')]}});
+    const focusMain=()=>{let anchor;app.workspace.iterateAllLeaves(leaf=>{if(!anchor&&leaf.getRoot()===app.workspace.rootSplit&&leaf.view.containerEl.ownerDocument===doc)anchor=leaf;});check(anchor,'Main workflow anchor missing');app.workspace.setActiveLeaf(anchor,{focus:true});};
+    focusMain();
+    // A saved sidebar layout can leave only a few hundred pixels for Canvas.
+    // Fit previews in the main workspace, rather than testing far-zoom placeholders.
+    app.workspace.leftSplit.collapse();app.workspace.rightSplit.collapse();
+    await settle();
     fullscreenView=null;
     const canvasResults=[];
     for(const mode of ['SVG','SVGIMG','PNG'])for(const immersive of [false,true]) {
       const canvasPath=prefix+'/Preview-'+mode+'-'+immersive+'.canvas';
       await app.vault.create(canvasPath,JSON.stringify({nodes:[{id:'small',type:'file',file:draw.path,x:0,y:0,width:320,height:240},{id:'large',type:'file',file:draw.path,x:420,y:0,width:640,height:480},{id:'tall',type:'file',file:prefix+'/Tall.excalidraw.md',x:1150,y:0,width:320,height:480}],edges:[]}));
       p.settings.previewImageType=mode;p.settings.canvasImmersiveEmbed=immersive;
-      const canvasLeaf=app.workspace.getLeaf('tab');leaves.push(canvasLeaf);await canvasLeaf.openFile(app.vault.getFileByPath(canvasPath));
+      focusMain();const canvasLeaf=app.workspace.getLeaf('tab');leaves.push(canvasLeaf);check(canvasLeaf.view.containerEl.ownerDocument===doc,'Canvas targeted a popout');await canvasLeaf.openFile(app.vault.getFileByPath(canvasPath));
+      app.workspace.setActiveLeaf(canvasLeaf,{focus:true});
       await wait(()=>canvasLeaf.view.canvas?.nodes?.size===3,'Canvas nodes');
       const canvas=canvasLeaf.view.canvas;
+      c.observations.canvasHost={ownerMatches:canvasLeaf.view.containerEl.ownerDocument===doc,active:app.workspace.activeLeaf===canvasLeaf,bounds:rect(canvasLeaf.view.contentEl),zoom:canvas.zoom};
       canvas.zoomToFit?.();await settle();
+      c.observations.canvasHost.zoomAfterFit=canvas.zoom;
       const selector=mode==='SVG'?'.excalidraw-embedded-img svg':'img.excalidraw-embedded-img';
       try {await wait(()=>canvasLeaf.view.containerEl.querySelectorAll(selector).length===3&&[...canvasLeaf.view.containerEl.querySelectorAll(selector)].every(el=>mode==='SVG'||el.complete&&el.naturalWidth>0),'Canvas '+mode+' previews');}
       catch(error){throw Error(error.message+' '+JSON.stringify([...canvas.nodes.values()].map(n=>({id:n.id,connected:n.nodeEl.isConnected,svg:n.nodeEl.querySelectorAll(selector).length,html:n.nodeEl.innerHTML.slice(-1100)}))));}
@@ -134,9 +155,10 @@ async function probeWorkflows(key,prefix,drawingPath,baseline) {
         await wait(()=>app.workspace.getLeavesOfType('excalidraw').some(l=>l.view.file?.path===path&&l.view.isLoaded&&l.view.excalidrawAPI&&!l.view.isClosingOrMigrating()&&!l.view.semaphores.justLoaded),'new drawing first commit');
       };
       const choose=async (operation,choice)=>{
-        let done=false,result,failure;
+        let done=false,result,failure,prompt;
+        c.defer(async()=>{if(!done){if(prompt?.isConnected)doc.dispatchEvent(new doc.defaultView.KeyboardEvent('keydown',{key:'Escape',code:'Escape',bubbles:true,cancelable:true}));await c.waitForCleanup(()=>done,'pending owned drawing creation');}});
         Promise.resolve(operation()).then(value=>{done=true;result=value;}).catch(error=>{done=true;failure=String(error);});
-        await wait(()=>doc.querySelector('.prompt'),'chooser '+choice);
+        await wait(()=>doc.querySelector('.prompt'),'chooser '+choice);prompt=doc.querySelector('.prompt');
         const input=doc.querySelector('.prompt input'),items=()=>[...doc.querySelectorAll('.prompt .suggestion-item')];
         if(choice==='blank') {
           check(items()[0].textContent===p.getLabel('PROMPT_BLANK_DRAWING'),'blank is not first');
@@ -194,12 +216,5 @@ async function probeWorkflows(key,prefix,drawingPath,baseline) {
       Object.assign(extra,{blank:true,filteredDuplicateSelection:true,outsideDismissal:true,embedCancelNoChanges:true,conversionCancelNoChanges:true,fileExplorerCancelNoChanges:true,singleTemplateAutomatic:true,zeroTemplateAutomatic:true,legacy:true,explicitDataNoPrompt:true});
     }
     return {fullscreen:{original,fullscreen,restored,hiddenAncestors,variants:fullscreenVariants},canvas:canvasResults,templates:{labels,created,folderCreated,output:output??null,error:error??null,...extra}};
-  } finally {
-    fullscreenView?.exitFullscreen();Object.assign(p.settings,settings);
-    for(const leaf of leaves){await leaf.setViewState({type:'empty',state:{}});leaf.detach();}
-    await app.workspace.changeLayout(originalLayout);
-    await wait(()=>app.workspace.getLeavesOfType('excalidraw').some(l=>l.view.file?.path===drawingPath&&l.view.isLoaded&&l.view.excalidrawAPI&&!l.view.semaphores.justLoaded),'restored parent drawing first commit');
-    const folder=app.vault.getFolderByPath(prefix);
-    if(folder){check(folder.path===prefix&&prefix.startsWith('__excalidraw_cli_smoke_'),'unowned cleanup');await app.vault.delete(folder,true);}
-  }
+
 }

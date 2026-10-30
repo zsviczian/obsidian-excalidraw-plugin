@@ -531,7 +531,17 @@ export class ViewSaveCoordinator {
             // Preserve the non-blocking save used to avoid lag on large files.
             void this.dependencies
               .requestSave()
-              .then(() => (this.autosaveInProgress = false));
+              .then(
+                () => (this.autosaveInProgress = false),
+                (error: unknown) => {
+                  this.autosaveInProgress = false;
+                  errorlog({
+                    where: "ViewSaveCoordinator.setupAutosaveTimer",
+                    fn: "requestSave",
+                    error,
+                  });
+                },
+              );
           }
           this.autosaveTimer = window.setTimeout(
             timer,

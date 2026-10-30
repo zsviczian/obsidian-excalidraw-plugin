@@ -406,7 +406,7 @@ for (const platform of ["Mac", "Win"]) {
     assert.equal(f.hooks[0].type, "file");
   });
   for (const shiftKey of [false, true]) {
-    test(`${platform}: internal image drag resolves real Shift mapping and tooltip`, async () => {
+    test(`${platform}: internal image drag resolves real Shift mapping and tooltip (Shift=${shiftKey})`, async () => {
       const f = fixture({ "text/plain": "obsidian://open?vault=test&file=inside.png" }, "image-url", "image-import", false, { platform });
       f.app.dragManager.draggable = { type: "file", file: new f.TFile("inside.png") };
       Object.assign(f.event, { shiftKey, ctrlKey: false, altKey: false, metaKey: false });

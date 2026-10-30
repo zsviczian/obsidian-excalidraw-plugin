@@ -1,5 +1,13 @@
 # Incremental refactor assessment and plan
 
+Testing follow-up, 2026-10-30: two complete matching-build native repeats pass
+357/357 each at the recorded acceptance checkpoint (F32). The subsequently
+reported parsed-link undo truncation predates the testing PR. Its approved
+plugin-only fix passes eight new full drawing-history sequences and all 16
+existing text-edit variants (F33). This focused follow-up is separate from the
+earlier full-pair evidence. Host versions remain metadata, never exact-version
+gates; the native runner also verifies a future alpha label.
+
 Status: the `ExcalidrawView`/`main.ts` plan is parked as of 2026-08-13 (see
 "Parked: next steps if resumed" near the end). The active refactor is the
 dual-support migration of `src/core/settings.ts` to Obsidian's declarative
@@ -27,6 +35,9 @@ validated, and what remains uncertain.
 | Phase | Status | Current outcome |
 | --- | --- | --- |
 | Assessment and baseline design | Complete | Initial architecture, risks, sequencing, and validation matrix documented |
+| Automated test coverage (#3022) | Acceptance complete at the frozen checkpoint; PRs ready for review | Plugin fd32ac68 / fork 053a3b9 / Extras 1cdcb7c pass two complete 357/357 native repeats and 666 portable cases, with matching artifacts, cleanup, baseline restoration and strict negative controls. Historical failures remain public; the original observer-storm cause remains unidentified. See F32 and the immutable acceptance report. The later approved link-history fix has separate focused evidence in F33. |
+| Parsed-link drawing history | Implemented; focused source/native regression passes | Preserve earlier shape actions when submitting parsed links. Four new source cases cover plain/wiki/aliased/Markdown links; eight trusted-input sequences undo all seven drawing actions to empty and redo identity, geometry, source, links and bindings. Verify the optional selection-only editor step explicitly; retain all 16 previous text-edit variants. No fork or Extras production change. |
+| Settings teardown safety | Implemented; 11 source regressions and native lifecycle pass | Retire manager reads/writes before clearing settings; reject invalid snapshots and stop deferred recovery/load continuations. Verify non-default/unknown settings and late old-instance saves across actual plugin replacement. Already-started disk writes retain real completion. |
 | Template selection and cancellation (#2649, PR #3020) | Implemented; source and native selection/cancellation checks pass | A dedicated chooser returns template/blank/cancel, displays paths relative to the configured root, and initially selects explicit blank. Interactive callers resolve before folder/file/editor/leaf side effects. Public getBlankDrawing/createDrawing and EA/CLI contracts retain string/file returns and deterministic initData behavior |
 | Nested-split fullscreen (#2743, PR #3020) | Implemented; seven source tests and native lower-right split pass | Keep the complete ancestor path visible; hide surrounding siblings and restore only owned classes. Native 958x641 drawing expands to 2560x1438 and returns to identical bounds. Existing inline styles remain untouched; controls are optional and cleanup retains the entry document across migration |
 | Canvas preview scaling investigation (#2729, PR #3020) | Original SVG-only behavior not reproduced on Windows Obsidian 1.14.5; unresolved | Two nodes sharing a drawing scale independently in SVG, SVG-as-image and PNG with immersive mode on/off. Doubling one node width scales its preview by 2.0063; the other remains unchanged. Tall previews clip in all modes. No speculative rendering/cache change; retain measurements and keep the issue open |
@@ -2900,3 +2911,542 @@ and readiness/menu corrections are recorded in docs/WORKFLOW_FIXES_VALIDATION.md
 no broad lifecycle fix or error suppression was added. Cold/restored popouts,
 annotation/NewFileActions, physical mobile, macOS/Linux and hosted CodeScanner
 remain manual gates. PR stays draft; no issue closure or external-repo changes.
+
+### 2026-10-28 - Automated coverage baseline and portable contract (#3022)
+
+Merged #3020 after maintainer authorization and closed #2743/#2649 with PR
+references; #2729 remains open. Reconciled the existing #3022 branch with master.
+Recorded initial plugin/fork/Extras test/build/type/lint results, including
+ignored historical fork discovery and unresolved inherited failures. Added
+schema-2 artifact/report validation, immutable snapshots, shared application
+session exclusion, a deterministic synthetic corpus, guarded owned-vault
+provision/reset, source-linked surface inventory and aggregate Node discovery.
+All 365 current fast tests pass; a separate 36-test whole-module coverage run
+records 261 unexecuted production modules rather than crediting VM copies.
+Package lease/adapter rollback and settings serialization/recovery tests execute
+whole production modules. No production feature change or release claim.
+Highest risks for the next checkpoint: registration/staging in a fresh vault,
+inherited hook identity/timing, and cancellation before native teardown. Test
+main/new/restored popouts and actual mobile emulation independently; physical
+mobile, legacy hosts and other operating systems remain separate evidence.
+
+### 2026-10-28 - Source, persistence and native lifecycle coverage (#3022)
+
+Added whole-module persistence/snapshot/save/scene-file tests, stable discovery,
+source-map-aware c8 ratchets, JSON/JUnit/human evidence, an owned debugger and
+bounded async native work/cleanup. An unexpected autosave rejection now clears
+the busy flag and logs the error; its regression failed before and passes after.
+Focused lint and the production build pass. Native UUID-owned tests cover three
+formats, backups, external writes, failed saves/retry, rename/delete, split and
+fullscreen, both dirty migrations, fresh popout/survivor and plugin reload.
+Real Extras MathJax/Mermaid and PDF text/media-box/pixel checks pass. Fork-owned
+79 tests and ten real-browser checks pass; inherited 380 failures/47 pending/one
+todo remain visible. Source coverage uses c8 because Node's query-import merger
+produced inconsistent denominators; repeated source ratchets pass. Test work
+remains in progress: full feature registry, package consumers, breakpoint/device extensions,
+soak and CI are not yet accepted. First-attempt failures and guarded recovery
+evidence are retained outside Git.
+Highest-risk follow-up: cancellation while a popout is destroyed, workspace
+restoration across actual mobile-mode reloads, and delayed deletion callbacks.
+Validate main/new/restored popouts, phone/tablet orientation and theme changes;
+macOS/Linux, minimum hosts and physical Android/iOS remain separate gates.
+
+### 2026-10-28 - Core features, frozen producers and device boundaries (#3022)
+
+Added immutable three-repository production/declaration staging, companion byte/path negative controls, per-scenario owned drawings and settle-before-cleanup adapters for legacy probes. Fork checkpoint d04bc1a6 and Extras e37c06fe are pushed independently. Plugin fast discovery passes 414 tests in 42 files; source ratchets pass 59 whole-module tests. Forty native device/breakpoint cases pass. Direct EA shapes/bindings/groups/frames/bound text, isolated edits, image data, SVG import, decoded exports and disposal pass; trusted toolbar/history/custom highlighter/laser cases and six 1000-element reopen cycles also pass cleanly.
+
+All twelve broader native functional scenarios passed on frozen bytes, but that overall diagnostic failed with illegal-access teardown exceptions and two post-delete ENOENT errors. Native Vault-delete retirement fixes the cleanup sequence; a subsequent stability/text/link run has zero errors. Full repeat is pending. Electron 43.3.0 matches a known teardown defect fixed in 43.5.0; this is a host-cause hypothesis until confirmed on a fixed host. No broad error filtering or production teardown workaround was added. Fault-injection notices now dismiss only the exact UUID-owned failed-write notification.
+
+Maintainer direction narrows this PR to core Excalidraw and ExcalidrawAutomate. Removed the exploratory maintained-script scenario from the suite; ea-scripts remains the owner of script-specific tests. Added a source/fixture/test-linked P01-P12 registry with remaining obligations, hosted portable CI and manual exact-SHA isolated-native CI. Neither inventory nor CI configuration is represented as executed behavioral evidence.
+
+Highest-risk follow-up: repeat native main/popout teardown and deletion with the clean-error gate, verify pen state after switching tools and after reload, and run the bounded soak. Main-window and fresh/moved popout workflows need separate checks; macOS/Linux and physical Android/iOS remain separate platform gates. Do not restart the shared application to substitute for an isolated cold-start test.
+
+### 2026-10-28 - Core import, restart guard and acceptance audit (#3022)
+
+Expanded core coverage to direct EA PDF references and decoded pixels, trusted eraser/undo, ten portable local-server URL/import/link/embed cases and five real internal-file payload cases. Specific maintained scripts remain outside scope. The native error negative control is maintained and passes. Parent cancellation now reaches legacy loops; failed cleanup retains recovery ownership. An initial drop driver stalled after native work settled because its HTTP server retained connections. Only the verified owned Node driver was stopped, the exact root/debugger were recovered, the failure was preserved, and explicit server connection teardown passes the repeated native run.
+
+Added guarded fresh-plugin manifest discovery, an isolated cold-start driver with changed main-process identity and durability assertions, schema-linked source/fixture/feature obligations, clean package-evidence adapters and a strict acceptance auditor. Cold-start driver guards pass; this shared session reports blocked before any CLI mutation. Actual isolated restart remains unvalidated. Native source identities are rechecked at completion, device evidence records runtime/fixture/artifact identities, and restoration checks normal/current bounds as well as mode/theme/preferences.
+
+424 fast tests in 45 files pass. The reviewed-code Linux hosted workflow and Extras validation/build/CodeQL workflows pass. Fork-owned source/coverage and both packed consumers pass again at their pushed commits. The current inherited fork run remains 2264 passing, 380 failing, 47 pending and one todo; its console also reports 37 unhandled errors. No snapshots or expectations were accepted. Final exact-source native/device/soak and source-coverage refresh is pending this checkpoint commit.
+
+Highest-risk follow-up: verify window bounds restoration across emulation reloads, repeat the complete core native profile with error capture, and confirm popout teardown on an Electron host containing the upstream fix. Main and new/moved/restored popouts are separate checks. macOS/Linux, minimum/legacy Obsidian and physical Android/iOS remain release matrix limits; the shared application must not be used for cold restart.
+
+### 2026-10-28 - Final exact-source core test evidence (#3022)
+
+Completed available verification at clean code checkpoint eb616f363e7da356e3e848d26b4ded859948451b with clean fork d04bc1a6 and Extras e37c06fe. 424 discovered fast cases and 59 whole-module source cases/ratchets pass. All 18 core native functional scenarios pass, including the direct EA, trusted eraser/highlighter/laser and PDF/drop additions. All 40 device/breakpoint cases pass with exact runtime/fixture/artifact metadata and verified current/normal bounds restoration. The 25-cycle 1000-element native soak and maintained actual unhandled-error negative control pass with zero unexpected errors and clean owned cleanup. Source-stability checks pass. Hosted Linux portable CI passes, including clean packed consumers.
+
+Overall acceptance deliberately remains failed: the inherited fork lane retains 380 failures, 47 pending and one todo, with 37 console-reported unhandled errors; the full native run captures 12 primitive illegal-access exceptions during popout teardown; isolated cold start is blocked before CLI mutation. The audit accounts for 3341 canonical cases with zero missing required cases, suites, gates or producer/source mismatches. Whole-module source coverage transparently lists 235 plugin runtime modules not executed by that layer; native and built-browser evidence is separate.
+
+Removed the obsolete plan-only handoff after transferring maintenance rules, source/fixture/case obligations, report contracts, commands and acceptance limits to the permanent testing guide/registry/checkpoint record. These follow-up documentation changes do not alter the tested runtime code. Companion draft descriptions now describe implementation outcomes, not agent planning. No PR merge, publication, release bump or dependency-pin update is authorized for this testing checkpoint.
+
+Risk-based follow-up: confirm popout teardown on an Electron host containing the upstream fix; execute the guarded whole-app restart on a genuinely isolated owned session; retain separate minimum/legacy host, macOS/Linux and physical Android/iOS checks. The emulator proves measured layouts/input and per-case error capture after readiness, not physical tablet/stylus behavior or a continuous startup exception stream. Review inherited library picker/search and other failed expectations without accepting snapshots or weakening their oracle.
+
+### 2026-10-28 - Current-product regression correction (#3022)
+
+Restored ordinary production and library builds without the test-only type override. Contract tests no longer run as prebuild. Build and test resolution share generated local fork types only for a four-artifact byte-matched handoff; published dependency/version remains deferred by the maintainer. Added a repeatable independent regression command with strict source identity, required native CLI/EA cases, error/cleanup and coverage gates. Historical upstream compatibility is an optional audit rather than the accepted fork baseline; its 380 assertions have individual review records. Removed inherited render/tool-clock adapters from the fork regression configuration and added fixture-backed source plus trusted built-browser guards around scheduled tools, library portals, selection/history and host metadata.
+
+Production fixes already included remain in scope after evidence review, per maintainer direction. Native main-window authoring/persistence passes. A focused fresh-popout close reproduces three primitive illegal-access exceptions while functional migration/save/survivor assertions pass; cause and required disposition remain under review without a production workaround or exception filter. Full final repeat is pending.
+
+Highest-risk follow-up: test a normal popout close with a live editor and distinguish host teardown from harness cleanup. Main/new/moved popouts need separate evidence; isolated cold restart and physical Android/iOS or other desktop operating systems remain separate environments. Tests must leave the ordinary build working.
+
+### 2026-10-28 - Private React scheduler popout trigger (#3022)
+
+Within the maintainer-authorized 30-minute investigation, a controlled source-only change selects React's browser scheduler lexically inside the private payload. Original production scheduler: three illegal-access errors; browser scheduler: zero on two repeats; restoring original: the same three errors. The shipped-bootstrap negative control fails on original bytes and passes on corrected production/development bytes while host globals remain intact. Full corrected production native verification passes all 44 canonical functional cases plus 40 device/layout cases with zero unexpected exceptions, successful restoration/cleanup and stable producer identities. This changes no fork protocol, save ordering or view lifecycle code.
+
+Development-mode dirty migration still reproduces three primitive illegal-access exceptions while functional/cleanup checks pass. Investigation stopped at 27 minutes; retain that residual for separate follow-up per maintainer direction, without filtering exceptions. The required regression now includes the complete production native/device profile. Two complete repeated regression runs are the remaining checkpoint validation.
+
+Highest-risk follow-up: confirm private React scheduling on the maintainer's normal popout-close workflow, and keep development dirty migration visible. Windows production is validated; macOS/Linux, physical mobile and isolated app restart remain separate environments.
+
+### 2026-10-28 - Repeated passing current-product baseline (#3022)
+
+Two complete regression runs pass all 685 canonical cases: 434 plugin fast, 115 independent fork source, 18 fork built-browser, 30 Extras source, four Extras built-browser, 44 production native CLI/EA and 40 native device/layout cases. All three additional quality gates pass: plugin whole-module source coverage (59 cases), fork packed consumer and Extras packed consumer. Both runs have identical case IDs, fixture seed and production plugin bytes, zero unexpected native exceptions, successful cleanup and stable source identities. The second run used clean plugin 8d7f4ae4d1d72af3cd87f7d1151c27467b805c7b, fork 5340f04b1b9604ca6d18e478c8f3f2a96c1ac503 and Extras e37c06feff9fef48877f565328762433a676afcc. Raw evidence remains in `.test-work/reports/repair-regression-first` and `repair-regression-second`. The maintained intentional unhandled-error negative control also passes, proving real errors remain rejected.
+
+Ordinary production and library builds pass without a test-only override. Production `main.js` is 5,029,887 bytes, leaving 212,993 bytes under the release ceiling. Hosted Linux portable regression, ordinary build/contracts and CodeQL pass at the plugin code checkpoint. The final follow-up changes only documentation and CI checkout references: fork e0cf824c6225d02f48b98c30c5b79d6ab8536c35 scopes legacy upstream web-app workflows to upstream; its independent regression remains required. Package versions and the deferred published dependency are unchanged.
+
+The earlier failed acceptance records above are historical diagnostics, superseded for this task by the independent current-product baseline. Development-mode dirty popout migration still produces three illegal-access exceptions and remains a separate finding under the maintainer's 30-minute cap; no error filtering was added. Isolated cold restart, other native desktop operating systems and physical mobile remain separate environments.
+
+Highest-risk manual check: close a fresh production drawing popout and move a dirty drawing back to main, then confirm the surviving editor saves normally. Repeat separately on macOS/Linux and physical mobile when those environments are available; desktop emulation does not establish native touch behavior.
+
+
+### 2026-10-28 - Expanded acceptance and targeted PDF rollback (#3022, in progress)
+
+Removed only the introduced PDF completion timeout and per-document export lock in Extras. The completion listener now owns the wait. Controlled-clock evidence proves print DOM, styles and the listener survive more than two minutes and remain until real completion; synchronous failure cleanup remains covered. All 29 Extras source cases pass. No other production behavior changes are authorized or introduced in this follow-up.
+
+Added a fixed repository-local working-vault preparation entry point (`npm run test:native`), immutable configuration/fixtures and actual hash-verified plugin/Extras deployment. Repeated preparation applies live application/core-plugin settings as well as plugin settings, with canonical CLI/session checks and the shared lock. The first prepared build exists under `.test-work/vaults/excalidraw-auto-test/`; registration/trust still requires opening it once in Obsidian.
+
+Defined 252 required behavioral cases across main, split, nested split, popout, emulated phone and tablet, plus 15 previously omitted popout drop cases. These cases are implemented but unexecuted: inventory, screenshots and the historical 685 cases do not satisfy them. Nine new fork image-restoration cases bring its independent suite to 124 passing source cases; no upstream tests were edited. Current source enumerators discover 187 settings, 24 frontmatter keys, 161 public EA entries, 76 commands and 14 hooks without inferring coverage.
+
+Remaining gates: refresh current three-repository builds in the local vault, actual single native PDF output/decoded-page inspection, debug and run the expanded behavior matrix, two complete native runs, final accounting/production-diff review and existing PR updates. Native work must not use the historical desktop vault. Highest-risk validation: settings precedence and persistence, active Live Preview rendering, shared-image crops/refresh and trusted interactions across popout and emulated layouts. Physical touch and macOS/Linux need their own environments.
+
+
+### 2026-10-28 - Clean portable checkpoint and native prerequisite (#3022)
+
+Pushed the existing branches: plugin `d7d9a355efdf07fe1f47ded0f7e32f5c6b1225bf`, fork `6fc8f6b7176b93e098c75f3d8846c06c4cfb3106`, Extras `1cdcb7c425a9b80afdc7b39c88861143b4b85e58`. The clean matching portable aggregate passes all 633 canonical cases (35 new identities, 598 reused), the overlapping 73-case plugin source gate and both packed consumers. Fork inventory passes 263 reviewed paths. Source/runtime diff audit still permits only the PDF rollback. Test deadlines also preserve companion services when native work is unsettled.
+
+A subsequent native-only assertion review removes a substituted PNG padding: every export row now uses its actual requested padding, compares SVG dimension changes against an independent padding control, and checks decoded PNG dimensions within integer pixel rounding. These strengthened assertions are syntax-checked but remain unexecuted. The required native denominator is 351 IDs, including seven actual plugin-command cases; all require fresh evidence.
+
+The installed repository-local vault still awaits one-time Obsidian opening/trust/CLI registration. No native workflow, real PDF inspection or complete repeated native run is claimed. All three PRs remain draft and their bodies explain this unfinished state. Highest-risk checks remain active Live Preview, zero/false precedence, asynchronous source/crop updates and trusted command/EA targeting in popouts and phone/tablet emulation. Physical devices and other desktop operating systems remain separate environments.
+
+### 2026-10-29 - Local-vault native execution and test-tooling corrections (#3022)
+
+The maintainer completed local-vault registration/trust. A fresh real plugin?Extras
+PDF passed completion, cleanup, PDF.js text/page/pixel checks and independent
+visual inspection (10,610 bytes, one 288 x 216 pt page). The initial occluded-display
+render deadline remains failed evidence; test PDF decoding now uses print intent.
+The plugin fast suite passes 462 cases. The current denominator is 258 behavioral
+cases and 357 native cases overall, including the accepted frame-padding policy.
+
+Corrected test-only metadata readiness, supported EA zoom use, opacity-aware
+pixel assertions, visible Markdown-root selection, individual wheel completion,
+command labels/shortcut badges, wrapped-link hit targets and native console-object
+inspection. Renderer scheduling and focus emulation are scoped and recorded.
+Desktop execution exposed the already-known destroyed-popout promise hazard;
+recovery and failed evidence are retained. Behavior cleanup now uses the existing
+lifecycle close-window pattern. A focused eight-case split/popout run passes
+business assertions and cleanup but fails the ResizeObserver error gate. No
+errors were filtered. Plain PDF TFile input and Helvetica Markdown-image diagnostics
+are reported for maintainer classification. Production-diff audit still permits
+only the Extras PDF timeout/lock rollback; plugin/fork runtime is unchanged.
+
+Remaining: complete mobile/core workflows, fresh full portable verification, two
+complete matching-build native passes, final evidence/counts and PR updates. The
+highest-risk checks are trusted palette/shortcuts and actual embed/settings flows
+in narrow/mobile panes, plus popout teardown and error-free surviving-editor saves.
+Physical devices and macOS/Linux remain separate environments.
+
+### 2026-10-29 ? Broad desktop run and closed-window guard (#3022)
+
+The clean b8b22739 run retained all 172 desktop case records: 171 passed; the
+nested-split context-menu test exhausted its three empty-space candidates.
+Cleanup then failed on an already-destroyed view whose document.defaultView was
+null. The task genuinely completed with failed cleanup; exact owned paths were
+recovered under the shared lock and the baseline restored without a renderer
+reload. The strict overall run remains failed; the final error gate was not
+reached. The next test-only checkpoint scans a larger grid of actual empty canvas
+points, verifies an already-destroyed window has no live editor, and uses the
+existing close-window pattern in the newly required popout drop variants too.
+No runtime source changes. Highest-risk validation remains nested-split input,
+final-popout teardown, all drop variants, and phone/tablet feature workflows.
+
+### 2026-10-29 - Approved plain-PDF and system-font fixes (#3022/#477)
+
+The maintainer confirmed both native findings are defects and requested immediate
+fixes. Added optional access for the absent PDF crop reference so the existing
+page-1 default can render; five actual-method simulations pass, including explicit
+page/crop preservation and the original-failure negative control. The fork font
+CSS helper now skips metadata.local, matching existing font registration; local
+no-fetch and bundled-content regressions bring its independent suite to 127 passes.
+Fork artifact/declarations and full typecheck pass; focused plugin/fork lint pass.
+Broad plugin lint retains 119 unrelated baseline diagnostics. The exact-patch
+production audit includes only these two fixes/release notes and the PDF rollback.
+Native embeds again use plain PDFs and Helvetica. Behavior cleanup now retires all
+owned tabs in each shared popout before window closure and waits for actual API
+teardown. Remaining highest-risk checks are the multi-drawing popout, valid
+PDF/Helvetica decoded output and mobile interaction/settings/embed workflows.
+
+### 2026-10-29 - Native approved-fix confirmation and strict device error evidence (#3022)
+
+The clean e3f421b3/053a3b9f9/1cdcb7c popout build passes all five focused business
+workflows and owned cleanup. A plain PDF TFile decodes its page-1 blue content
+(800 x 640, 102270 blue pixels); Helvetica Markdown frontmatter renders without
+the former empty-source fetch diagnostic. The overall run correctly fails on
+ResizeObserver window errors. Those errors are not suppressed or classified as
+accepted behavior. Added workflow-phase window-error evidence, per-device CLI
+error gates and continued evidence only after settled device profiles. Actual
+phone/tablet editor classification and fullscreen restoration are required.
+Popout drop cleanup now detaches owned tabs and waits for API teardown. The next
+complete run covers all core/mobile/drop obligations; two complete passes remain
+required. Most likely remaining failures are native layout errors and context-
+specific interaction assumptions; no further production edits are authorized.
+
+### 2026-10-29 - Remove test-induced focus loop and enable required Canvas
+
+The full current build passes 172 desktop case assertions plus lifecycle (5),
+real Extras (3) and data integrity (7). Canvas coverage exposed an omitted core
+plugin in the seed; added Canvas to deterministic activation and asserted it
+before any .canvas opening. Recovered exact owned paths/markers after the failed
+workflow. The persistent ResizeObserver error was reproduced with both community
+runtimes unloaded; explicit CDP focus emulation triggers it, while ordinary
+debugger attachment does not. Removed that unnecessary tooling and reopened only
+the verified local vault after settling all work. Fresh renderer baseline: zero
+errors, both plugins loaded, Canvas enabled. Added an error-free startup gate;
+no filtering or additional production edits. Portable CI passes all 645 cases,
+with only a subsequent artifact-finalization ECONNRESET failure. Remaining risks
+are old core-case integration assumptions and phone/tablet feature workflows;
+complete error/cleanup-gated runs must still pass twice.
+
+### 2026-10-29 - Correct mobile CLI transport and capture Canvas renderer evidence
+
+The ordinary-focus desktop matrix passes all 172 cases with zero window errors.
+Lifecycle, real PDF/MathJax/Mermaid, and data integrity pass. Canvas nodes now load
+but their drawing previews are empty; added a passive, owned-path-only Markdown
+postprocessor observer and retained failed-task observations for diagnosis.
+Phone tests reached the CLI workflow and exposed a harness assumption: native
+command registration is desktop-only; public EA.executeCLI remains supported on
+mobile. The same atomic read/apply assertions now use that in-process API there,
+with nativeCLI=false verified and evidenceKind distinguishing transport. No cases
+were removed. Native CLI transport has five applicable cases, not seven; the two
+mobile protocol cases remain in the required matrix. Device error notifications
+remain strict pending maintainer classification; no production changes.
+
+- 2026-10-29 (#3022): Applied maintainer-approved exact browser diagnostic policy
+  only in native tooling, with bounded idle/geometry checks and failure controls.
+  Corrected workflow popout teardown and explicit main-window Canvas targeting;
+  preview/resize assertions retained. Production diff remains unchanged. Focused
+  and complete repeated native validation pending. Highest-risk checks: Canvas
+  previews/independent resizing, popout teardown, mobile targeting and save/reopen;
+  physical mobile and other desktop OSes remain separate environments.
+
+- 2026-10-29 (#3022): Verified deterministic 22-file seed/workspace baseline,
+  all 59 independent core cases plus focused nested-pane input, all 15 popout drop
+  variants, real PDF output and two native negative controls. Fresh portable gate:
+  650 canonical cases, 52 new / 598 reused. Published sanitized checkpoint evidence
+  and manifests. Full acceptance remains incomplete pending the explicit F17 mobile
+  focus decision and two complete native repeats. Production remains within the
+  accepted scope. Full native CLI accounting is six cases including Lucide;
+  phone/tablet EA protocol cases remain separate. Highest-risk next checks are
+  mobile embedded-note focus and fresh complete matrix/cleanup repeats.
+
+- 2026-10-29 (#3022): Implemented the explicitly approved internal Canvas-node
+  `focus: false` correction. Four actual-method regressions pass, including the
+  old-path negative control and preservation of explicit editing activation.
+  Retained all `patchMobileView` visibility handling. The exact production-diff
+  audit now permits only this additional flag/type and release note. Highest-risk
+  validation is phone/tablet embedded Markdown loading and deliberate editing;
+  desktop/popout embedding remains in the complete native repeats. Physical mobile
+  touch behavior remains a separate validation environment.
+
+- 2026-10-29 (#3022): Confirmed the approved focus correction natively in the
+  isolated phone embedding case at clean plugin 38bf80fb, with no window errors,
+  rendering/save/reopen assertions and device/baseline restoration passing. Fresh
+  portable gate passes 654 canonical cases (56 new / 598 reused); hosted checks
+  pass. Stopped the subsequent full native attempt for maintainer foreground use,
+  preserved its input failures, settled owned work and restored the test vault.
+  Published sanitized focused evidence. Two full matching-build repeats remain
+  unfinished; rerun unchanged input assertions with exclusive access. No further
+  production changes. Highest-risk next checks remain complete phone/tablet and
+  popout workflows; physical touch and other desktop OSes remain separate.
+
+- 2026-10-29 (#3022): Exclusive unchanged rerun passes all 16 text-history variants
+  and the first trusted desktop-pointer profile. Full attempt at 9c08d814 passes
+  all 258 behavior cases and 40 device/layout cases, but stability cycle 3 times
+  out and strict capture records eight illegal-access exceptions plus one host
+  onDelete parent-null exception. Cleanup/restoration and negative controls pass;
+  acceptance remains zero of two. Corrected the demonstrated test-only file-delete
+  cleanup race with an actual-function regression, and added passive load-state
+  evidence/focused stability selection. No production changes or gate waivers.
+  Highest-risk next checks are the large-scene reopen timeout and real popout
+  teardown exceptions; fresh full matching-build repeats remain required.
+
+- 2026-10-29 (#3022): Final checkpoint 098e6ee1 passes 655 portable cases and
+  source/package gates. Focused corrected popout-drop/stability passes all six
+  large-scene cycles with no unexpected errors. The following full attempt passes
+  all 258 behavior and 40 device cases but aborts at the text-history button; four
+  primitive illegal-access exceptions occur during dirty popout-to-main migration.
+  There are 336 required passes and 21 missing identities, not a full pass. Retained
+  both failed full attempts, raw error/idle data and exact source/artifact hashes
+  in accessible summaries. Production diff from reviewed 9c08d814 is empty and
+  the exact accepted-scope audit passes. Restored the installed vault; stopped UI
+  work and left all PRs draft. Highest-risk next checks are exact text-action DOM
+  readiness and migration on an approved host containing the related Electron
+  fix; physical touch and other native desktop OSes remain separate validation.
+
+- 2026-10-29 (#3022): Verified clean reviewed heads f240fb86 / 053a3b9 / 1cdcb7c
+  and exclusive foreground access. Added read-only text-history snapshots for
+  exact variant/action, owning window, active target/layout, control state and
+  actual owning-App stack lengths. The immediate control check and every text/
+  history assertion remain unchanged. Failure-only passive samples observe late
+  readiness without retrying input or turning failure into success. Two offline
+  diagnostics tests and the unchanged production build pass. Focused prefix
+  reproduction, migration comparison and large-scene sequence diagnosis remain
+  in progress; production behavior and the PDF rollback remain untouched.
+
+- 2026-10-29 (#3022): Prefix reproduction at 65f63a30 identifies raw/button/wikilink
+  second undo consuming an enabled, visible control's real history entry without
+  restoring text. The isolated legacy setup then proves every raw variant leaves
+  the view raw while its data model remains parsed. Corrected only test setup to
+  await the normal save/reload mode transition before clearing the next fixture;
+  two regressions enforce synchronization and ordering. Added bounded read-only
+  delta/model evidence and a focused ordinary-host-tab-drag migration control;
+  it is explicitly synthetic and outside full-profile coverage. Every original
+  text/history, migration and cleanup assertion remains. Production and PDF
+  rollback unchanged. Next risk checks: full predecessor text sequence, both
+  migration routes and all six large-scene cycles before complete repeats.
+
+- 2026-10-29 (#3022): Clean e4a36a6b migration controls both pass with no
+  exceptions. The full-predecessor core sequence passes all 16 text variants and
+  all six 1000-element cycles, preserving every original assertion and deadline.
+  The subsequent full attempt fails the unchanged idle gate: roughly 60 exact
+  browser notifications per second start at web drop and persist through desktop
+  cleanup despite stable sampled pane geometry. All 258 behavioral obligations
+  execute; the run is not an acceptance pass. Desktop raw-event retrieval exceeds
+  the CLI buffer, leaving counts/idle samples and CLI tail but incomplete raw
+  payloads. Added finite snapshot pagination with an over-4-MB regression and
+  guaranteed device observer disposal on capture errors. No observer is patched,
+  excluded or silenced. Baseline restoration and native negative controls pass.
+  Next check: focused storm reproduction with complete raw evidence; no second
+  full retry until this strict blocker is understood. Production remains exact.
+
+- 2026-10-29 (#3022): Post-run baseline is usable and a two-second passive
+  no-input/no-layout-sampling/no-debugger observation records no notifications.
+  The failed desktop sequence retained an open Markdown-image sidepanel. Added
+  read-only active-owner/grace/save snapshots around its existing close/save/
+  retirement steps to distinguish pending native cleanup from a product loop.
+  Existing delays, actions, assertions and deadlines remain unchanged pending
+  evidence. Focused image/web-drop predecessor reproduction is next.
+
+- 2026-10-29 (#3022): Read-only native evidence at 4199a3dd proves the crop
+  helper retires its drawing with a live Markdown-image owner; the non-crop
+  helper's 100-ms sample has already released ownership. Replaced only this
+  test overlap with bounded ownership/persistence completion, including error
+  cleanup and a preserve-unsettled-work deadline regression. Existing geometry,
+  crop, save/reopen/export assertions remain. Both migration routes after the
+  full desktop predecessors pass, while the preceding reproduction captures
+  four direct-route illegal-access exceptions. Cause remains intermittent and
+  unproven. Added one bounded six-cycle host-only Markdown control with both
+  community runtimes unloaded, outside acceptance coverage. No installer,
+  production behavior, observer or diagnostic exclusion changed.
+
+- 2026-10-29 (#3022): Final code checkpoint 9cb6c5eb passes 662 portable cases
+  (64 new / 598 reused), source/package gates, production build and exact scope
+  audit. Corrected core confirms owner release before retirement in both image
+  cases, all 16 text variants and all six large-scene cycles; strict gates still
+  fail a Lucide storm and Obsidian updateStatus/getZoomFactor popout-close error.
+  Captured all 675 current window events. A no-input/no-debugger/no-layout-sampling
+  control records 112 notifications in two seconds with both community runtimes
+  unloaded; original trigger remains unproven. Retained evidence then reloaded
+  only the verified, fully saved test-vault renderer for recovery, earning no
+  acceptance credit. Baseline/plugins are restored and the passive sample is
+  quiet. Published sanitized case results, raw payload references and checksums;
+  both complete native repeats remain outstanding. Installer comparison is an
+  explicit maintainer decision, not a presumed fix. Next risk checks are dirty
+  migration and popout teardown on an approved host, Lucide idle, and two complete
+  matching-build repeats; physical mobile and other native OSes remain separate.
+
+- 2026-10-30 (#3022): Current-host core sequence captures eight Markdown
+  verification failures: canvas pixel reads of vault-resource URLs lack CORS
+  opt-in. Native default/anonymous/fetched-blob comparison proves identical
+  resources decode correctly with CORS (PNG 4x2, two transparent/red/blue pixels;
+  SVG 8216 red and 6718 blue pixels). Corrected only the verifier to request
+  anonymous CORS before loading and create its canvas detached in the owning
+  document. No security bypass or version branch. Missing-asset setup also
+  deleted a source with its editor alive and required an incidental ENOENT log;
+  one context recovered with zero logs. Retire the editor first and remove that
+  error allowance, retaining all reference/recovery/pixel assertions and making
+  every unexpected console error fail. Two actual-helper regressions pass.
+  The first new-runtime run still has storms; no production change or exception
+  waiver. Focused native confirmation precedes another full attempt.
+
+- 2026-10-30 (#3022): At 9b2874ba, the first complete run passes all 357
+  identities; the matching second run fails the Lucide idle gate and six
+  subsequent desktop profiles after a 702-notification storm. Both runs pass
+  all 258 behavioral obligations, text variants, six stability cycles and
+  restoration. Added passive Lucide stage timestamps and exposed the existing
+  legacy task's stage to error evidence; no action, assertion, timing threshold
+  or production code changed. The isolated traced Lucide workflow passes with
+  zero window errors. Next risk check is the same workflow after its desktop
+  and core predecessors, then two fresh matching checkpoint repeats if resolved.
+
+- 2026-10-30 (#3022): Traced ordered replay retains 16,879 exact notifications;
+  sustained failure first appears during fresh-popout teardown, before Lucide.
+  No unrelated exceptions. Isolated Lucide/lifecycle and a 43-popout-case prefix
+  followed by lifecycle are clean apart from one settling notification. Empty
+  popout observer controls do not support the suspected ownership fix. No
+  production change or broadened error exclusion. Final portable passes 664
+  cases (66 new / 598 reused); production audit passes. Published the historical
+  matching full pair (357 pass, then 350 pass / seven fail), raw payloads and
+  controls; acceptance remains incomplete. Restored installed vault is quiet.
+  Next risk check: isolate retained state before fresh-popout teardown, then
+  two fresh full matching-build passes after an evidenced resolution. Physical
+  mobile and other native OSes still require separate validation.
+
+- 2026-10-30 (#3022 reduction preparation): Verified the three reviewed heads
+  and clean worktrees. Added opt-in passive context/lifecycle state evidence to
+  compare settings hashes, layouts, active ownership, popouts, event slots and
+  temporary scheduling. Default native execution, assertions and idle policy
+  remain unchanged. Two offline controls verify no state/layout writes and
+  preservation of original case failure and cleanup evidence. Build, 488 fast
+  cases, inventory and production audit pass. Read-only baseline inspection
+  succeeds; test vault is hidden/unfocused, with no roots/popouts/debugger and
+  background throttling restored. Foreground confirmation is pending; no native
+  input or reduction has started. Next risk check is ordered half-prefix native
+  trials with matching artifacts and an instrumentation-off control. No cause or
+  production fix is inferred; physical devices remain a separate environment.
+
+- 2026-10-30 (#3022 initial reductions): Main/split -> lifecycle passes with
+  zero notifications; nested-split/popout -> lifecycle passes with one settling
+  notification. Artifacts match the prior complete pair; settings return exactly
+  to baseline and roots/popouts retire. Their document visibility is hidden,
+  unlike the historical visible failing prefix, so they are not matched proof
+  against that failure. Ordinary native show/focus restores visible state in
+  58 ms without emulation or reset. Also corrected the new passive reader's
+  demonstrated Events/Component shape mismatch, retaining an offline failing
+  then passing regression. Unknown internals are explicitly unavailable; owner
+  scheduling and vault/metadata registrations are now recorded. Functional
+  assertions, production and PDF code remain unchanged. Next risk check is the
+  second-half prefix with the visible precondition, then ordered interaction
+  reductions and instrumentation-off controls.
+
+- 2026-10-30 (#3022 matched reductions): The visible nested/popout and then
+  split/nested/popout prefixes pass. Exact original 172-case prefix plus
+  lifecycle passes with state snapshots off (two settling notifications) and
+  on (zero); all frozen artifact identities match. Corrected-reader settings
+  and inspected registrations return to baseline, with expected layout/root/
+  popout/scheduling cleanup. No stable failing subset is isolated. Final
+  portable passes 666 (68 new / 598 reused), production audit passes, and
+  restored installed vault is quiet. Retain historical failures and draft PRs;
+  no new full native run or production/PDF/observer change. Explicit permission
+  is pending for a proposed 30-minute diagnostic-only observer-lifetime trace.
+  Next risk check is that approved ownership trace with matched controls,
+  removal before acceptance, then two fresh full repeats only after resolution.
+
+- 2026-10-30 (#3022 approved observer diagnostic): Completed live work within
+  the 30-minute cap (10:21:04-10:49:39 UTC; deadline 10:51:04). Traced original
+  prefix/lifecycle/Lucide passes; 2,331 observers, one settling notification,
+  no recording errors. Removed interception and cleared captured wrappers by
+  verified saved-baseline renderer-only recovery outside acceptance. A smaller
+  no-workspace/no-popout iframe control, with both plugins unloaded, records
+  0/62/0 notifications for none/main/iframe observer constructors over one second;
+  own-observer disconnect stops it. Frameless adoption is quiet. All controls
+  use unthrottled scheduling, so tooling/host responsibility and the original
+  observer remain unproven. Published raw records, inert source archives,
+  contaminated/aborted control limitations and native restoration checks. No
+  production/PDF change or full acceptance retry. Proposed next risk check:
+  bounded untraced scheduling true/false comparison with verified visibility;
+  time-extension permission pending. Keep PRs draft until resolved and two fresh
+  complete matching-build repeats pass. Physical-device limits remain unchanged.
+
+- 2026-10-30 (#3022 untraced follow-up): Verified the minimal iframe ownership
+  mechanism under normal and unthrottled scheduling in both orders (0/62/0,
+  0/62/0, 0/62/0, 0/61/0), with actual visible/focused state and quiet own-observer
+  cleanup. Host-only visible/hidden close controls are quiet. Fresh matching
+  three-repository builds pass the ordered 172 desktop + five lifecycle + six
+  saved/dirty close controls, 2,000-element saved/dirty/pending-save closes, all
+  40 profiles and both 43-case mobile workflows, then desktop/lifecycle/Lucide
+  replay (two settling events). Retained the first ignored wrapper's missing-
+  status failure; no assertions weakened. Portable passes 666 (68 new / 598
+  reused), production audit passes, installed baseline restored. No production,
+  printing or maintained test-source change and no complete native acceptance
+  retry. The original observer remains unidentified. Automatic approval review
+  rejected renewed interception after the original exception expired; no command
+  executed and no bypass attempted. Explicit approval for the full desktop/core
+  diagnostic trace is pending. Next risk check is that ownership trace if
+  authorized, then two fresh full repeats only after an evidenced resolution.
+
+- 2026-10-30 (#3022 acceptance completion): Under the maintainer's instruction
+  to proceed autonomously within PR scope, the full desktop/core ownership trace
+  passes all 231 required identities, recording 3,511 observers/1,478 targets and
+  two settling notifications, with no overflow or recording failures. Available
+  closed-document observations have final zero-size delivery; the historical
+  storm's exact observer remains unidentified. Removed the trace and cleared
+  captured wrappers after the diagnostic; the matching untraced core also passes
+  231/231. Both focused runs earn no complete acceptance credit. Then two normal
+  `npm.cmd run test:native` repeats at plugin fd32ac68/fork 053a3b9/Extras 1cdcb7c
+  pass 357/357 each: all 258 behavioral obligations, all 40 device profiles,
+  six native CLI-bearing/two mobile EA CLI cases, cleanup/restoration and both
+  negative controls. Artifact/config/seed hashes match, with no diagnostic hooks
+  or reset between full repeats. One/two main-window transient notifications
+  settle; profile captures are quiet. Final portable passes 666 (68 new/598
+  reused), production audit passes, real single-PDF output is decoded and visually
+  inspected, and the installed vault is restored/usable. Completion changes are
+  documentation and inert evidence only; no production/PDF/threshold/upstream
+  test/version change. Historical failures remain preserved. Review evidence is
+  complete; highest remaining risk is intermittent observer recurrence, retained
+  under the strict gate. Physical mobile, native macOS/Linux, real OS drag and
+  isolated whole-app cold start remain separate validation environments.
+
+- 2026-10-30 (approved parsed-link history fix): Reproduced the maintainer's
+  shape/label/B sequence with real input: after undoing B and the text, five
+  rectangles remain with zero undo depth. Removed only the ordinary parsed-link
+  submission history reset; the fork already records raw/display/link values
+  together. Four source regressions and all eight new plus 16 existing native
+  text sequences pass, with strict errors, cleanup and baseline restoration.
+  Retained the initial failed expectation about the editor's selection-only
+  entry; explicitly verify that entry without skipping drawing edits. Updated
+  the feature map, reviewed the new test inventory entry and scoped the exact
+  production audit to this authorized patch. Touched production files introduce
+  no lint diagnostics. Risk checks: replay the maintainer's sequence in the main
+  window; separately exercise popout and physical mobile label editing. The
+  earlier complete 357-case pair remains evidence for its frozen checkpoint,
+  not for this later patch. Repeat portable/build checks before deployment.
+
+- 2026-10-30 (link-history verification follow-up): The normal standalone fork
+  browser suite exposed an independent setup error: pointer-clicking its already
+  active Selection tool deliberately switches to Lasso. Passive state capture
+  confirms the cause. Guard the redundant click in the fork-owned fixture;
+  retain every grouping/deletion/history assertion. All 18 browser cases pass.
+  The new history fix is deployed and ready; an unexpected deployment settings
+  rewrite was recovered from the exact pre-reload backup and remains unassigned.
+  No settings production fix, fork runtime change or printing change is included.
+
+- 2026-10-30 (test-maintenance policy and settings incident assessment): Made
+  test authoring and focused/PR-ready/release/upstream/Obsidian-alpha execution
+  requirements explicit in all three agent guides; clarified automatic portable
+  CI versus manually invoked native profiles. Read-only saved-evidence analysis
+  identifies a defaults-like settings replacement. Isolated actual-manager code
+  reproduces a save after destruction with null settings persisting an empty
+  object. The original callback is not captured, so incident attribution remains
+  a leading hypothesis. Recorded the combined custom-settings/unload/reload
+  coverage gap in F34. No settings production changes or personal-vault reload
+  experiments. Documentation/inventory checks apply to this checkpoint; the
+  code-validation evidence remains the prior 670-case portable and focused
+  native run. Highest next risk is a delayed settings save after plugin teardown;
+  reproduce it in the repository-local vault before a separately approved fix.
+
+- 2026-10-30 (authorized settings teardown fix): Committed the existing work
+  first in plugin 2e378198, fork 22f05c1e7 and Extras 064faf1. Added per-manager
+  retirement guards at save/load and asynchronous storage/recovery boundaries,
+  invalid-snapshot protection and null checks for retired startup continuations.
+  No new queue, timeout or storage migration. Eleven whole-module regressions
+  pass; initial evidence retains eight failures before the fix. The repository-
+  local native lifecycle run passes all five lifecycle cases, strict error gates,
+  cleanup and baseline restoration, including non-default/unknown settings and
+  retired-instance saves before/after replacement. Full portable validation
+  passes 681 canonical cases with builds, source coverage and package/browser
+  gates; native and portable plugin artifact hashes match. All three touched
+  production files have zero lint diagnostics. The scoped production audit
+  verifies the exact reviewed settings patch and preserves all earlier accepted
+  changes. The original incident callback remains untraced; the reproduced unsafe
+  path is closed. Main/popout behavior is covered; physical mobile reload and
+  user-specific delayed startup callbacks remain separate risk checks. No new
+  personal-vault deployment or reload was performed for this fix.

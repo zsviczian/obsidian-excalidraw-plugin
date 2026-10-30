@@ -32,6 +32,7 @@ interface ObsidianCanvas {
     file: TFile;
     subpath: string;
     save: boolean;
+    focus: boolean;
   }) => ObsidianCanvasNode;
   removeNode: (node: ObsidianCanvasNode) => void;
 }
@@ -148,6 +149,8 @@ export class CanvasNodeFactory {
       file,
       subpath,
       save: false,
+      // Internal preview creation must not take the workspace's active editor.
+      focus: false,
     });
     node.setFilePath(file.path, subpath);
     node.render();

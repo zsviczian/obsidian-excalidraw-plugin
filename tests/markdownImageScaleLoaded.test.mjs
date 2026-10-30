@@ -165,7 +165,7 @@ for (const markdown of [false, true]) {
     { x: 0, y: 0, width: 400, height: 60, naturalWidth: 400, naturalHeight: 120 },
     { x: 100, y: 0, width: 300, height: 120, naturalWidth: 400, naturalHeight: 120 },
   ]) {
-    test(`${markdown ? "Markdown" : "ordinary"} edge-aligned crop stays finite after an intrinsic size change`, () => {
+    test(`${markdown ? "Markdown" : "ordinary"} edge-aligned crop stays finite after an intrinsic size change (${crop.width}x${crop.height}@${crop.x},${crop.y})`, () => {
       const element = markdownImage("shared", { id: "crop", version: 3, x: 10, y: 20, width: crop.width, height: crop.height }, { width: 400, height: 120 }, { ...crop });
       if (!markdown) element.customData = {};
       scaleLoadedImage({ elements: [element] }, [{ id: "shared", size: { width: 600, height: 180 }, shouldScale: true }]);

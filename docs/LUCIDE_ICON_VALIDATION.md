@@ -66,7 +66,7 @@ this worktree. Their independent evidence is in
 | --- | --- |
 | Node | 22.22.3 |
 | Production plugin and public library builds | Pass |
-| Canonical generated local-fork host declarations | Pass using `EXCALIDRAW_TEST_FORK_TYPES_ROOT` |
+| Canonical generated local-fork host declarations | Pass using `EXCALIDRAW_FORK_ROOT` |
 | `npm run test:lucide` | 38 tests pass (31 CLI, seven constructor/EA) |
 | `npm run test:svg-import` | 55 tests pass |
 | `npm run test:bundle` | Four tests pass |
@@ -106,7 +106,7 @@ maintainer under `TestAssets` and retained unchanged.
 $env:EXCALIDRAW_TEST_VAULT_NAME='excalidraw-test'
 $env:EXCALIDRAW_TEST_VAULT_PATH='C:/Obsidian/excalidraw-test'
 $env:EXCALIDRAW_TEST_CONFIG_DIR='C:/Obsidian/excalidraw-test/.obsidian'
-$env:EXCALIDRAW_TEST_FORK_TYPES_ROOT='C:/Users/viczi/GitHub/excalidraw'
+$env:EXCALIDRAW_FORK_ROOT='C:/Users/viczi/GitHub/excalidraw'
 npm run verify:obsidian:plugin -- --lucide --svg-import --native-cli
 ```
 

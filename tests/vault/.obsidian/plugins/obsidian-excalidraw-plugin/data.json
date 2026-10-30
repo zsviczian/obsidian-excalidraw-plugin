@@ -1,0 +1,17 @@
+{
+  "showReleaseNotes": false,
+  "showNewVersionNotification": false,
+  "showSplashscreen": false,
+  "compareManifestToPluginVersion": false,
+  "folder": "Drawings",
+  "scriptFolderPath": "Scripts",
+  "libraryFolderPath": "Libraries",
+  "compress": false,
+  "onceOffCompressFlagReset": true,
+  "useExcalidrawExtension": true,
+  "allowImageCache": true,
+  "embedUseExcalidrawFolder": false,
+  "autoexportSVG": false,
+  "autoexportPNG": false,
+  "autoexportExcalidraw": false
+}

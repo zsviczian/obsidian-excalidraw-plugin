@@ -1,160 +1,146 @@
 # Obsidian runtime testing on macOS and Windows
 
-This desktop lane builds the real plugin, deploys its exact artifacts to the named
-`excalidraw-test` vault, opens a disposable drawing, and checks that the Excalidraw
-API and editor mount in the main application document. It supplements source
-tests and change-specific manual checks.
+Current acceptance is **2/2 complete matching-build passes**, each with all
+**357 required native cases**, including 258 behavioral obligations and 40
+device/layout profiles. Final portable validation passes **666 cases** and the
+production audit passes. See [case results, exact revisions/hashes, diagnostic
+limits and restoration](testing-evidence/3022/README.md). Historical observer
+storms remain recorded; their original cause is not claimed fixed, and the
+unchanged strict gate must still reject a recurrence.
 
-## Prepare the test vault
+The suite tests the currently running Obsidian, including alpha releases. There
+is no exact Obsidian/Electron version allowlist or version-specific pass baseline.
+CLI/app version, installer version, Electron/Chromium/Node versions and user agent
+are recorded as evidence. Required capabilities and behavioral, persistence,
+rendering, exception and cleanup assertions determine success. A host update
+must not cause automatic skips, weaker assertions or refreshed expected results.
+Historical runtime findings below are diagnostic context, not version requirements.
 
-1. Look for an existing vault named `excalidraw-test` in Obsidian's vault switcher
-   or registry (`~/Library/Application Support/obsidian/obsidian.json` on macOS;
-   `%APPDATA%\obsidian\obsidian.json` on Windows). Confirm its absolute path.
-2. If it is missing, ask the user to create it and install and enable Excalidraw
-   through **Settings → Community plugins**. A fresh empty vault is sufficient
-   for this smoke. Agents need consent to create or download a replacement vault.
-3. Open the vault in Obsidian. For a downloaded/copied vault, complete any
-   first-open trust prompt, then close and reopen that vault. Finish plugin
-   onboarding before automated testing.
-4. Use an Obsidian installer with CLI support and enable **Settings → General →
-   Command line interface**. Follow its registration prompt; see the official
-   [CLI installation and troubleshooting guide](https://obsidian.md/help/cli).
-5. Keep Obsidian running and select the test vault's main window. Ensure its
-   Excalidraw drawing template does not open a chooser. Avoid simultaneous edits
-   or another CLI runner in that vault during testing.
-6. Use Node.js 22 or newer and install this repository's dependencies with
-   `npm install`. Check `node --version` in the same terminal used for testing.
+Use the repository-local, marker-owned vault:
 
-The runner requires all three environment variables below. It accepts only the
-name `excalidraw-test`, checks canonical vault and configuration paths against the
-running app, requires the initial enabled Community plugin installation, and
-rejects symlinked plugin directories/artifacts. There is no default-vault fallback.
-Use the actual configuration directory if it differs from `.obsidian`.
+`obsidian-excalidraw-plugin/.test-work/vaults/excalidraw-auto-test/`
 
-## Run on Windows
-
-For PR #3020, `npm run test:workflow-fixes` runs the focused fullscreen/template
-regressions. Add `-- --workflow-fixes` to `verify:obsidian:plugin` for native
-nested-split/popout geometry, actual template selection/cancellation, and Canvas
-preview measurements. The probe restores the test workspace/settings and deletes
-only its UUID-owned fixture folder. Canvas width-scaling measurements are an
-investigation result, not proof that issue #2729 is fixed; see
-[workflow validation](WORKFLOW_FIXES_VALIDATION.md). The file-explorer check uses
-the actual Obsidian menu and registered folder action.
-
-From this plugin checkout in PowerShell, substitute your actual vault path:
+From the plugin checkout, the preparation-and-test entry point is:
 
 ```powershell
-$env:EXCALIDRAW_TEST_VAULT_NAME = 'excalidraw-test'
-$env:EXCALIDRAW_TEST_VAULT_PATH = 'C:\Obsidian\excalidraw-test'
-$env:EXCALIDRAW_TEST_CONFIG_DIR = 'C:\Obsidian\excalidraw-test\.obsidian'
-npm.cmd run test:obsidian:runner
-npm.cmd run verify:obsidian:plugin
+npm.cmd run test:native
 ```
 
-The launcher discovers `Obsidian.com` under `%LOCALAPPDATA%\Obsidian`,
-`%PROGRAMFILES%\Obsidian`, or `%PROGRAMFILES(X86)%\Obsidian`, then falls back to
-`obsidian` on PATH. For another installation, set an executable path:
+On macOS use `npm run test:native`. This builds current selected workspace
+revisions, freezes them, installs the real plugin and available Extras binaries,
+hash-verifies deployment, applies deterministic settings, enables both plugins,
+verifies the running CLI-selected canonical vault/config paths, runs the expanded
+native suite and restores the declared baseline. Every CLI call explicitly uses
+`vault=excalidraw-auto-test`. Conflicting inherited vault environment variables
+are rejected before mutation. There is no personal/default/desktop-vault fallback.
+
+## One-time preparation
+
+1. Install this checkout's npm dependencies, the sibling fork's Yarn dependencies
+   and available Extras npm dependencies. Use Node 22.22.3 or newer.
+2. Run `npm run test:native -- --prepare-only` to build and install the working
+   vault before opening it. This is the same entry point with execution omitted;
+   a copied seed without binaries is not a prepared installation.
+3. Open that exact folder as a vault in Obsidian once. Accept the community-plugin
+   trust prompt and enable/register **Settings ? General ? Command line interface**.
+   Leave the vault open. The runner never edits the global vault registry.
+4. Repeat `npm run test:native`. Subsequent runs require no manual copying,
+   plugin enabling or Extras service configuration.
+
+The immutable seed in `tests/vault/` contains synthetic CC0 notes, drawings and
+assets plus `.obsidian` configuration and both plugins' `data.json`. The runner
+copies current builds into the working vault's plugin directories:
+
+- `.obsidian/plugins/obsidian-excalidraw-plugin/{main.js,manifest.json,styles.css,data.json}`
+- `.obsidian/plugins/excalidraw-extras/{main.js,manifest.json,styles.css,data.json}`
+
+Executable builds, installed manifests and runtime work are ignored, never
+committed as fixtures. `.excalidraw-automation.json` records ownership/seed
+identity; `.excalidraw-installed-build.json` records installed hashes and frozen
+producer provenance. Latest means these selected workspace revisions, including
+recorded dirty-diff and lock hashes. Missing Extras is explicit and cannot count
+as passed service coverage.
+
+## Focused and complete commands
+
+The current acceptance remains failed; see the [accessible closeout evidence](testing-evidence/3022/README.md).
+The unchanged exclusive recheck and focused corrected stability/drop run used:
 
 ```powershell
-$env:EXCALIDRAW_OBSIDIAN_CLI = 'C:\Program Files\Obsidian\Obsidian.com'
+npm.cmd run verify:obsidian -- --text-undo --devices --device-profiles=desktop-wide-full-light
+npm.cmd run verify:obsidian -- --internal-drop --stability
 ```
 
-Use the console launcher `.com` to capture output. The driver passes argument
-arrays directly to native processes. It launches npm/Yarn JavaScript entries
-through the current Node binary, avoiding `.cmd` shims and shell quoting.
-PowerShell environment assignments apply to the current terminal session. Use
-`npm.cmd` in PowerShell if its execution policy blocks `npm.ps1`; no global policy
-change is necessary. The same applies to `npm.cmd install` and the fork lane's
-`npm.cmd run verify:obsidian`.
+These focused passes do not count as complete repeats. The full profile still
+requires all 357 identities and strict exception/cleanup gates. Text-history
+readiness and dirty-migration exceptions must be diagnosed before another full
+attempt; retain the exact failed evidence and make no unapproved product changes.
 
-For additional eval probes, import `spawnNativeSync` from
-`scripts/testing/host/processTools.mjs` in a Node script and pass
-`['vault=excalidraw-test', 'eval', 'code=' + code]`. Windows PowerShell can alter
-embedded native quotes, and large/multiline inline evals can corrupt Obsidian's
-console IPC JSON. The helper moves those payloads to an owned UTF-8 script in the
-system temporary directory, sends a short file-reading eval, and removes the
-directory after success or failure. This local file bridge exists only in test
-tooling; no production plugin feature reads external test scripts.
+| Command | Work |
+| --- | --- |
+| `npm run test:native` | Preparation, complete native core and expanded behavior matrix, popout drop variants and device workflows |
+| `npm run test:native -- --prepare-only` | Build/freeze/install/apply configuration; report first-open prerequisite or verify live readiness |
+| `npm run test:regression` | Complete native work plus independent portable/source/browser/package gates |
+| `npm run verify:obsidian:smoke` | Same current-workspace preparation, then focused editor startup |
+| `npm run verify:obsidian -- --extras-services` | Same preparation; real MathJax/Mermaid gateways and a single native PDF export |
+| `npm run verify:obsidian -- --behavior-matrix` | Same preparation; expanded desktop/main/split/nested/popout behavioral workflows |
+| `npm run verify:obsidian -- --stability` | Same preparation; unchanged six large-scene save/reopen cycles with passive first-commit state snapshots |
+| `npm run verify:obsidian:diagnostics` | Same fresh-build preparation, then the real unhandled-error negative control |
 
-## Run on macOS
+The historical `verify:obsidian:plugin` name is retained as a command alias; it
+now prepares current workspace inputs too. `--plugin-only` is rejected. No native
+sequence silently consumes a previous installed artifact. Set
+`EXCALIDRAW_FORK_ROOT` / `EXCALIDRAW_EXTRAS_ROOT` only for non-sibling checkouts;
+the dedicated target vault remains local to this plugin repository.
 
-From this plugin checkout in a shell, substitute your actual vault path:
+For portable checks install the fork's pinned Chromium once (`yarn playwright
+install chromium`, with `--with-deps` on Linux CI). Native input uses the real
+Obsidian Electron host and its owned debugger, not Playwright's Chromium.
 
-```bash
-export EXCALIDRAW_TEST_VAULT_NAME=excalidraw-test
-export EXCALIDRAW_TEST_VAULT_PATH="$HOME/Obsidian/excalidraw-test"
-export EXCALIDRAW_TEST_CONFIG_DIR="$EXCALIDRAW_TEST_VAULT_PATH/.obsidian"
-npm run test:obsidian:runner
-npm run verify:obsidian:plugin
-```
+## Transport, ownership and safe cleanup
 
-The launcher discovers `/Applications/Obsidian.app/Contents/MacOS/obsidian-cli`,
-then the application binary `/Applications/Obsidian.app/Contents/MacOS/Obsidian`,
-then `obsidian` on PATH. Set `EXCALIDRAW_OBSIDIAN_CLI` to an executable path for a
-nonstandard installation. Do not include command arguments in the override.
-macOS evals use native argument arrays without the Windows temporary-file bridge.
+Reserve foreground access for native input/device sequences. Another Obsidian
+vault shares the application session and can change focus while trusted keyboard
+or pointer input is in flight. If the maintainer needs the machine, stop further
+UI dispatch, preserve unsettled native work, complete owned cleanup and restoration,
+and record the run as interrupted. Resume with a fresh full run after availability
+is confirmed; do not reinterpret input failures or count a partial run as a repeat.
+Portable source/package checks and headless browser tests can continue separately.
 
-## Choose the build
+The Windows launcher discovers `Obsidian.com` under the standard installation
+locations; use `EXCALIDRAW_OBSIDIAN_CLI` for another executable path. macOS uses
+the installed Obsidian CLI/application binary. See the official
+[CLI installation guide](https://obsidian.md/help/cli). The driver launches
+npm/Yarn through the current Node binary and passes native argument arrays.
+Long Windows evals use an owned temporary UTF-8 script cleaned after each call.
 
-| Command | Component input | Prerequisites |
-| --- | --- | --- |
-| `npm run test:obsidian:runner` | Fake host fixtures | Node; no Obsidian required |
-| `npm run verify:obsidian:plugin` | Installed `@zsviczian/excalidraw` artifacts | Plugin dependencies and prepared test vault |
-| `npm run verify:obsidian` | Fresh sibling fork build | Both repositories' dependencies, Yarn, prepared test vault |
+All native work is serial under the application-user-data lock, including build,
+preparation, staging, debugger ownership and cleanup. Never detach another
+owner's debugger or restart a shared application. Whole-app cold restart remains
+an optional, separately guarded isolated-session workflow.
 
-The plugin-only lane checks the installed component version against the exact
-declared dependency, hashes its four Obsidian artifacts, and runs the real
-production `npm run build`. It does not require the sibling fork checkout. If you
-previously copied unpublished fork artifacts into `node_modules`, this lane uses
-those bytes; version equality alone does not prove published provenance. Run
-`npm install` to restore the published dependency before a release smoke.
+Every scenario owns its exact UUID files/controllers. It waits for asynchronous
+work and physical save acknowledgement before deleting owned data. Successful
+runs restore declared settings/theme, fixture content and preferences, retain the
+installed working vault for inspection and record cleanup/restoration evidence.
+Reports live under `.test-work/reports` or `EXCALIDRAW_TEST_REPORT_DIR`.
 
-For a fork integration check, use `npm run verify:obsidian`. It runs
-`yarn build:obsidian` in `../excalidraw/packages/excalidraw`, copies only the four
-generated Obsidian JavaScript/CSS files into the ignored installed package,
-checks their hashes, then builds the plugin. Set `EXCALIDRAW_FORK_ROOT` to an
-absolute checkout path when the fork is elsewhere. This temporary handoff does
-not change dependencies or lockfiles and remains in `node_modules` afterward.
+A tooling deadline is a failed test, not cancellation of native printing.
+Unsettled native work retains its resources/controller/files and recovery record.
+Do not delete or reload it while a native promise is pending. The single-export
+PDF scenario waits for real completion, verifies its header/page geometry/text
+and decoded pixels, and retains `native-single-export.pdf` plus its rendered page
+in the report directory. There is no native concurrent-print acceptance test.
 
-Windows resolves Yarn's JavaScript entry from the Node installation, the user's
-global npm installation, or Corepack. For a different installation, set
-`EXCALIDRAW_YARN_CLI` to the absolute `yarn.js` path. Use the fork's declared Yarn
-version. npm must be discoverable through its `npm_execpath` or a standard Node
-installation; launching through `npm run` supplies that entry automatically.
+The expanded matrix records actual mobile mode, measured geometry, scene state,
+saved/reopened data, decoded output, errors and cleanup. Trusted CDP interaction
+and synthetic drag payloads are labeled separately. Phone/tablet emulation is
+not physical Android/iOS, native OS drag or stylus evidence.
 
-## Assertions, deployment and cleanup
+## Earlier focused scenario details
 
-After CLI capability and target checks, the runner:
-
-1. Builds the selected inputs and validates the plugin manifest ID.
-2. Disables Excalidraw in the test vault, copies `dist/main.js`, `styles.css` and
-   `manifest.json`, checks deployed SHA-256 hashes, and enables the plugin.
-3. Waits for the live plugin instance and stable drawing command registration.
-4. Creates a UUID-named `__excalidraw_cli_smoke_*` drawing in the vault root through
-   the plugin, opens it in a new tab, and waits for an API and editor wrapper with
-   the correct owning document.
-5. Rejects captured JavaScript errors, closes/deletes its own drawing, removes its
-   temporary controller, and writes `report.json`. Cleanup failure fails the run.
-
-Every CLI call explicitly starts with `vault=excalidraw-test`. A CLI `Error:`
-payload is failure even when the process exits zero. Internal plugin access via
-CLI eval belongs only in these host scripts, never in production modules.
-
-Deployment replaces the test vault's installed plugin build and leaves it enabled;
-it does not restore the Community release afterward. The runner does not overwrite
-`data.json`, existing notes, or other plugins. Normal plugin startup/drawing
-creation may persist its own settings. Opening the temporary tab can change focus
-and workspace history; use a disposable test vault. It clears the test vault's
-developer error buffer to attribute errors to this run.
-
-The printed report path is in a unique temporary directory unless you set
-`EXCALIDRAW_TEST_REPORT_DIR`. Reports include source revisions/dirty flags, build
-mode, component version, Node/platform/Obsidian versions, component and deployed
-plugin hashes, bundle size, scenarios, the exact temporary drawing path, and
-cleanup. The runner awaits an empty view transition before deleting its drawing
-so a pending close/save cannot recreate it. Inspect both `status` and
-`cleanup`; keep reports outside the checkout and review local paths before sharing.
+The following scenario notes retain their feature-specific assertions. Their
+native execution now uses the preparation and local vault contract above.
 
 ## Troubleshooting and further coverage
 
@@ -162,7 +148,7 @@ For the Lucide picker, run `npm run test:lucide`, then the guarded
 `npm run verify:obsidian:plugin -- --lucide`. Protocol 3 requires the matching
 component artifacts and declarations. For a temporary paired checkout, build the
 fork, copy its four Obsidian artifacts as described above, and set
-`EXCALIDRAW_TEST_FORK_TYPES_ROOT` to the fork root for the generated declaration
+`EXCALIDRAW_FORK_ROOT` to the fork root for the generated declaration
 preflight. This is local integration, not published dependency verification.
 
 The Lucide lane checks read-only paginated discovery, atomic create/apply,
@@ -224,7 +210,7 @@ For wheel zoom limits (#3008), run
 dispatches actual wheel events with deliberately changed live minimum/maximum
 settings, including scroll constraints and zoom above 3000%, in the main window
 and a popout. Test settings are restored without saving them. This option can
-be combined with `--image-geometry`. Use the plugin-only lane only after the
+be combined with `--image-geometry`. Use the current-workspace lane only after the
 installed component contains the fix. Unpublished artifact copies remain a
 local integration checkpoint; the declared published dependency is unchanged.
 
@@ -371,6 +357,26 @@ and legacy/empty source handling. The matrix includes plain text, `[[link]]`,
 and JavaScript error checks. The scenario uses the toolbar's stable test IDs, so
 labels may be localized. Physical mobile and popout checks remain separate.
 
+For settings teardown changes, run `npm.cmd run verify:obsidian -- --lifecycle --diagnostics`.
+Its plugin-reload case persists non-default values and unknown
+nested settings, checks late retired-instance saves before/after replacement,
+and verifies disk and loaded preferences alongside the existing drawing/runtime
+assertions. Source timing controls run with `node --test scripts/testing/settings/settingsManagerLifecycle.source.test.mjs`.
+A write
+already inside native storage is awaited as real work; the tests do not claim
+it was cancelled by destroying a manager.
+
+It also draws four earlier shapes, A, a `[[link]]` label and B using trusted
+pointer/keyboard input. Eight additional sequences cover bound/standalone text,
+raw/parsed mode and keyboard/toolbar history. They undo B, the text, A and every
+earlier shape to an empty scene, then redo the full sequence and compare element
+identity, geometry, Markdown source, link metadata and bindings. Evidence is
+written to `text-creation-history.json`; these sequences extend the existing
+`text-undo-2976` identity rather than adding new canonical native case IDs.
+An optional selection-only editor entry is verified separately: it must have
+no element delta, consume exactly one history entry and leave the scene unchanged.
+Every drawing-action entry must still undo in the specified order.
+
 For the native Excalidraw authoring protocol, run:
 
 ```sh
@@ -450,9 +456,10 @@ the parent runner owns the disposable drawing and final JavaScript-error check.
 This input regression supplies a deterministic local SVG renderer through the
 MathJax gateway. It requires no Extras installation or network access and does
 not test MathJax rendering, its activation flow, or Latex Suite extensions.
-For real Extras formula rendering and Latex Suite preview positioning, install
-and enable both companions in the test vault, enable Extras MathJax-to-SVG and
-Latex Suite math previews, then run:
+For the optional Latex Suite preview-positioning gate, install that separate
+extension in the local working vault and enable its math previews once. The
+coordinator installs/configures Extras MathJax automatically. Latex Suite is not
+a dependency of the required core profile. Then run:
 
 ```bash
 npm run verify:obsidian:plugin -- --latex-preview
@@ -495,10 +502,105 @@ force-close the application while other vaults are open. After interrupted clean
 review the report/controller's exact drawing path before removing leftovers; never
 delete notes by prefix alone.
 
-The default smoke covers one newly created main-window drawing. It does not validate
+The historical default smoke covers one newly created main-window drawing. For the
+current reproducible workspace smoke/full/device/soak profiles, source and fixture
+guards, see [the maintained testing guide](TESTING.md). A smoke alone does not validate
 saved scenes, clipboard, text editing, fonts/images, export, custom pens, popout
 migration, offline assets, or physical mobile touch. For affected features, follow
 the fork's [native validation procedure](https://github.com/zsviczian/excalidraw/blob/master/dev-docs/Obsidian/OBSIDIAN_RUNTIME_TESTING.md)
 and its V03–V11 gates (also available in the sibling checkout). Record macOS and
 Windows live results separately, along with artifact identity and unavailable
 gates. A test of platform argument construction is not a live macOS smoke.
+
+### Exact browser diagnostic policy (2026-10-29)
+
+The native coordinator retains the exact browser ResizeObserver notification as
+raw diagnostic evidence, including timing and affected task/case phases. It does
+not suppress events or patch observers. Every context/profile and post-cleanup
+host must reach one second of unchanged geometry with no new notifications within
+five seconds. Persistent storms, unstable geometry, JavaScript exceptions, other
+errors, failed behavior and failed cleanup fail acceptance. The exact message is
+`ResizeObserver loop completed with undelivered notifications.`; messages carrying
+an Error/stack or broader exception text are not eligible. Instrumentation
+triggered one reproduced loop; sole causation of every notification is unproven.
+Full runs include uncaught-exception and deliberately incorrect-layout negative
+controls, reported separately from the 357 required feature cases.
+
+Desktop behavioral editing uses registered native plugin CLI commands. Phone and
+tablet workflows use public `EA.executeCLI`; those two in-process workflows are
+not counted as native CLI command invocations. The current plan therefore has
+six native CLI-bearing feature cases (five editing plus Lucide) and two mobile EA CLI cases.
+
+### Two complete matching-build repeats and shareable evidence
+
+Keep all three selected workspace revisions unchanged between repeats:
+
+```powershell
+$env:EXCALIDRAW_TEST_REPORT_DIR = Join-Path $PWD '.test-work/reports/native-repeat-1'
+npm.cmd run test:native
+$env:EXCALIDRAW_TEST_REPORT_DIR = Join-Path $PWD '.test-work/reports/native-repeat-2'
+npm.cmd run test:native
+node scripts/testing/summarizeNativeEvidence.mjs .test-work/reports/native-repeat-1 .test-work/reports/native-repeat-2
+$env:EXCALIDRAW_TEST_REPORT_DIR = Join-Path $PWD '.test-work/reports/final-portable'
+npm.cmd run test:regression:portable
+node scripts/testing/review3022ProductionDiff.mjs
+```
+
+The full native profile enforces all 357 required feature identities, including
+258 behavioral cases. Diagnostic negative controls are additional and separate.
+The evidence exporter refuses incomplete repeats, failed cleanup/baseline
+restoration, dirty source revisions, changed build manifests or mismatched
+artifacts. It writes sanitized case results, geometry, notification records,
+PDF/Canvas evidence and artifact/source manifests to `docs/testing-evidence/3022/`.
+These small documents may be committed and linked from the existing PRs; generated
+plugin binaries and full local reports remain ignored. No publication is needed.
+
+Focused device diagnosis can use `--profile=devices --device-profiles=phone-portrait-light,tablet-portrait-full-light`.
+The profile still runs all 43 workflows in each selected context. Full/regression
+profiles reject this filter and continue to require all 40 device profiles and
+all 258 behavioral obligations.
+
+Independent core diagnosis: `node scripts/testing/host/verify.mjs --core --diagnostics`
+builds/deploys the same three repositories and requires all 59 non-matrix core
+identities, including popout drops. It does not satisfy the full 357-case profile.
+Returned, fully cleaned scenarios may retain failures while independent scenarios
+continue; pending task/print resources stop the sequence. Existing report evidence
+cannot be overwritten: select a fresh report directory for each attempt.
+
+The immutable seed now declares a single main reading-view tab and collapsed
+sidebars in `.obsidian/workspace.json`. Preparation and baseline restoration apply
+that layout through Obsidian's live workspace API and verify the active leaf and
+sidebar state. Native tests therefore do not inherit a previous picker/split
+layout. Behavioral split/popout/device scenarios still construct and assert their
+own declared contexts. Canvas preview scenarios collapse sidebars before fitting
+their multi-node fixture, preserving rendered-preview and independent-resize checks.
+
+### Ordered ResizeObserver reductions
+
+Use focused context/case filters to remove predecessors while retaining their
+original relative order. Compare an evidenced failing sequence with its halves,
+then reduce the failing half or the interaction between halves. A passing subset
+does not clear the complete-sequence failure. Record every trial and its frozen
+artifact hashes, including clean controls; never spend another full run without
+a new hypothesis.
+
+Optional passive state evidence is enabled only by
+`EXCALIDRAW_TEST_STATE_EVIDENCE=1`. It records before/after each behavior context,
+each lifecycle case and lifecycle cleanup: per-setting hashes, workspace/sidebar
+layout, active leaf/editor/document, surviving leaves/popouts, registered event
+slots, main debugger listener count and background-throttling state. It performs
+no geometry measurement, observer patch, focus or scheduling write. Compare
+matched trials with this option off when evaluating instrumentation effects.
+
+```powershell
+$env:EXCALIDRAW_TEST_STATE_EVIDENCE = '1'
+$env:EXCALIDRAW_TEST_REPORT_DIR = Join-Path $PWD '.test-work/reports/reduce-main-split'
+npm.cmd run verify:obsidian -- --behavior-matrix --behavior-context=main,split --lifecycle
+# A separate matched control uses the same ordered cases and artifacts:
+Remove-Item Env:EXCALIDRAW_TEST_STATE_EVIDENCE
+```
+
+The usual preparation, canonical-vault checks, host lock, error/idle gates,
+assertions and cleanup remain active. No native reduction earns full acceptance
+credit. Preserve failed evidence and keep any necessary saved-baseline recovery
+outside the trial; never reset a renderer mid-run to obtain a pass.

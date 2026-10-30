@@ -3,6 +3,7 @@ export async function exerciseMarkdownCrop(control, drawingPath) {
   const c = globalThis[control], plugin = app.plugins.plugins["obsidian-excalidraw-plugin"];
   const leaf = app.workspace.getLeavesOfType("excalidraw").find(l => l.view.file?.path === drawingPath);
   const view = leaf.view;
+  c.editorView = view;
   c.previous = app.workspace.activeLeaf;
   const waitFor = async (predicate, label) => {
     for (let i = 0; i < 400; i++) {
@@ -95,8 +96,10 @@ export async function exerciseMarkdownCrop(control, drawingPath) {
   const png = await view.ownerWindow.ExcalidrawLib.exportToBlob({ ...exportOptions, mimeType: "image/png" });
   if (!png?.size) throw Error("PNG crop export failed");
   const expected = copies().map(element => ({ id: element.id, crop: { ...element.crop }, width: element.width, height: element.height }));
-  c.tab.close(); c.tab = null;
+  const closeEvidence = { beforeClose: { active: view.sameFileEditGate.hasActiveOwners, grace: view.sameFileEditGate.isInGracePeriod, saving: view.isSaveInProgress() } };
+  await closeMarkdownImageTab(c, view);
   await view.forceSave(true, true);
+  closeEvidence.beforeRetire = { active: view.sameFileEditGate.hasActiveOwners, grace: view.sameFileEditGate.isInGracePeriod, saving: view.isSaveInProgress() };
   await leaf.setViewState({ type: "empty", state: {} });
   await leaf.setViewState({ type: "excalidraw", state: { file: drawingPath } });
   await waitFor(() => leaf.view.excalidrawAPI && croppedIds.every(id => leaf.view.getViewElements().some(element => element.id === id)), "cropped shared image reopen");
@@ -105,6 +108,6 @@ export async function exerciseMarkdownCrop(control, drawingPath) {
   reopened.forEach((element, index) => {
     if (element.width !== expected[index].width || element.height !== expected[index].height || JSON.stringify(element.crop) !== JSON.stringify(expected[index].crop)) throw Error("crop geometry changed on reopen");
   });
-  c.results = [{ kind: "markdown-shared-crops", crops: 2, widths, diskSave: true, svgExport: true, pngExport: true, finite: true }];
+  c.results = [{ kind: "markdown-shared-crops", crops: 2, widths, diskSave: true, svgExport: true, pngExport: true, finite: true, closeEvidence }];
   c.reopen = true;
 }

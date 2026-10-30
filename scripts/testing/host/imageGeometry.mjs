@@ -1,6 +1,7 @@
 /** #3014/#2947: real formula bounds and resized Markdown sidepanel edits. */
-import assert from "node:assert/strict";
+import { runLegacyTask } from "./legacyTask.mjs";
 import { exerciseMarkdownCrop } from "./markdownImageCrop.mjs";
+import { closeMarkdownImageTab } from "./markdownImageClose.mjs";
 
 const CONTROL = "__excalidrawImageGeometry";
 
@@ -77,6 +78,7 @@ async function exerciseMarkdown(control, drawingPath) {
   const c = globalThis[control], plugin = app.plugins.plugins["obsidian-excalidraw-plugin"];
   const leaf = app.workspace.getLeavesOfType("excalidraw").find(l => l.view.file?.path === drawingPath);
   const view = leaf.view, doc = view.ownerDocument;
+  c.editorView = view;
   c.previous = app.workspace.activeLeaf;
   if (doc.querySelector(".excalidraw-markdown-image-editor .cm-content")) throw Error("close the existing Markdown-image editor before testing");
   const waitFor = async (predicate, label) => {
@@ -145,9 +147,11 @@ async function exerciseMarkdown(control, drawingPath) {
   await setContent("Shorter shared content");
   const sharedBounds = checkSharedWidth();
   c.results.push({ kind: "markdown-shared-width", copies: 2, previousWidth, nextWidth, displayed: sharedBounds, fileId: image.fileId });
-  c.tab.close(); c.tab = null;
-  await new Promise(resolve => setTimeout(resolve, 100));
+  const closeEvidence = { kind: "markdown-image-close-evidence", beforeClose: { active: view.sameFileEditGate.hasActiveOwners, grace: view.sameFileEditGate.isInGracePeriod, saving: view.isSaveInProgress() } };
+  c.results.push(closeEvidence);
+  await closeMarkdownImageTab(c, view);
   await view.forceSave(true, true);
+  closeEvidence.beforeRetire = { active: view.sameFileEditGate.hasActiveOwners, grace: view.sameFileEditGate.isInGracePeriod, saving: view.isSaveInProgress() };
   await leaf.setViewState({ type: "empty", state: {} });
   await leaf.setViewState({ type: "excalidraw", state: { file: drawingPath } });
   await waitFor(() => leaf.view.excalidrawAPI && leaf.view.getViewElements().some(el => el.id === image.id), "Markdown image reopen");
@@ -164,32 +168,22 @@ async function cleanup(control) {
     if (c.hadOwn) c.gateway.getMathJax = c.original;
     else delete c.gateway.getMathJax;
   }
-  c.tab?.close();
-  if (c.pop) { await c.pop.setViewState({ type: "empty", state: {} }); c.pop.detach(); }
-  if (c.previous && c.previous !== c.pop) app.workspace.setActiveLeaf(c.previous, { focus: true });
+  if(c.tab || c.closingView) await closeMarkdownImageTab(c, c.closingView || c.editorView);
+  if (c.pop) {
+    const win=c.pop.view.containerEl.ownerDocument.defaultView;
+    if(win===app.workspace.containerEl.ownerDocument.defaultView){await c.pop.setViewState({type:'empty',state:{}});c.pop.detach();}
+    else {if(c.pop.view.isDirty?.())await c.pop.view.saveWithOutcome();win.close();const end=Date.now()+10000;while(!win.closed){if(Date.now()>end)throw Error('Geometry popout did not close');await new Promise(resolve=>setTimeout(resolve,25));}}
+  }
+  if (c.previous?.view.containerEl.isConnected && c.previous !== c.pop) app.workspace.setActiveLeaf(c.previous, { focus: true });
   delete globalThis[control];
 }
 
 /** Uses only the parent runner's disposable drawing and restores its gateway. */
 export async function runImageGeometryScenario({ cli, drawingPath, realRenderer = false }) {
-  const evaluate = code => JSON.parse(cli("eval", `code=${code}`).trim().replace(/^=>\s*/, ""));
-  const cases = [];
-  for (const [popout, scenario] of [[false, exercise], [true, exercise], [false, exerciseMarkdown], [false, exerciseMarkdownCrop]]) {
-    let result;
-    try {
-      evaluate(`(()=>{if(globalThis.${CONTROL})throw Error("geometry controller exists");const c=globalThis.${CONTROL}={state:"pending"};(${scenario.toString()})(${JSON.stringify(CONTROL)},${JSON.stringify(drawingPath)},${popout},${realRenderer}).then(()=>c.state="done").catch(e=>{c.error=e.stack;c.state="failed"});return JSON.stringify({started:true})})()`);
-      for (let i = 0; i < 600; i++) {
-        result = evaluate(`JSON.stringify({state:globalThis.${CONTROL}.state,error:globalThis.${CONTROL}.error,results:globalThis.${CONTROL}.results,reopen:globalThis.${CONTROL}.reopen})`);
-        if (result.state !== "pending") break;
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
-      assert.equal(result.state, "done", result.error ?? "geometry scenario timed out");
-      cases.push({ window: popout ? "popout" : "main", ...result });
-    } catch (error) {
-      throw new Error(`${error.message}; scenario: ${scenario.name}; completed: ${cases.length}; last state: ${JSON.stringify(result)}`, { cause: error });
-    } finally {
-      cli("eval", `code=(${cleanup.toString()})(${JSON.stringify(CONTROL)})`);
-    }
+  const cases=[];
+  for(const [popout,scenario] of [[false,exercise],[true,exercise],[false,exerciseMarkdown],[false,exerciseMarkdownCrop]]){
+    const result=await runLegacyTask({cli,control:CONTROL,execute:scenario,cleanup,helpers:[closeMarkdownImageTab],args:[drawingPath,popout,realRenderer],timeoutMs:90000,cleanupMs:120000});
+    cases.push({window:popout?'popout':'main',...result});
   }
-  return { id: realRenderer ? "image-geometry-real-3014" : "image-geometry-3014", renderer: realRenderer ? "extras-mathjax" : "deterministic-svg", status: "passed", cases };
+  return {id:realRenderer?'image-geometry-real-3014':'image-geometry-3014',renderer:realRenderer?'extras-mathjax':'deterministic-svg',status:'passed',cases};
 }

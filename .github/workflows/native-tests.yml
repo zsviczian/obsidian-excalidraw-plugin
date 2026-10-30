@@ -1,0 +1,86 @@
+name: Trusted isolated native tests
+# Manual exact-SHA approval only. Never use pull_request_target or an untrusted
+# PR trigger on a persistent desktop. Configure the protected environment and
+# an isolated runner with no personal vaults/secrets before enabling this lane.
+on:
+  workflow_dispatch:
+    inputs:
+      tested_sha:
+        description: Exact 40-character plugin commit approved for this run
+        required: true
+      profile:
+        type: choice
+        options: [regression, smoke, full, devices, soak, cold]
+        default: smoke
+permissions:
+  contents: read
+jobs:
+  native:
+    environment: native-test-approval
+    runs-on: [self-hosted, Windows, excalidraw-isolated]
+    timeout-minutes: 90
+    env:
+      EXCALIDRAW_TEST_VAULT_NAME: excalidraw-auto-test
+      EXCALIDRAW_TEST_VAULT_PATH: ${{ github.workspace }}/.test-work/vaults/excalidraw-auto-test
+      EXCALIDRAW_TEST_CONFIG_DIR: ${{ github.workspace }}/.test-work/vaults/excalidraw-auto-test/.obsidian
+      EXCALIDRAW_TEST_AUTOMATION_ROOT: ${{ github.workspace }}/.test-work/vaults
+      EXCALIDRAW_TEST_USER_DATA_PATH: ${{ vars.EXCALIDRAW_TEST_USER_DATA_PATH }}
+      EXCALIDRAW_TEST_REPORT_DIR: ${{ github.workspace }}/.test-work/reports/native-ci
+      EXCALIDRAW_FORK_ROOT: ${{ github.workspace }}/.test-work/checkouts/fork
+      EXCALIDRAW_EXTRAS_ROOT: ${{ github.workspace }}/.test-work/checkouts/extras
+    steps:
+      - name: Require an exact approved commit
+        env:
+          TESTED_SHA: ${{ inputs.tested_sha }}
+        run: if ($env:TESTED_SHA -notmatch '^[a-f0-9]{40}$') { throw 'Supply an exact approved commit SHA' }
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tested_sha }}
+          persist-credentials: false
+          # Preserve the registered, marker-owned working vault across runs.
+          clean: false
+      - name: Reject tracked source drift in the persistent checkout
+        run: |
+          git diff --exit-code
+          git diff --cached --exit-code
+      - uses: actions/checkout@v4
+        with:
+          repository: zsviczian/excalidraw
+          ref: 22f05c1e70b12720a8f73e97d24278282dd5ef06
+          path: .test-work/checkouts/fork
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: zsviczian/obsidian-excalidraw-extras
+          ref: 064faf185d1955798836ed9c2b765c4c5e61aa11
+          path: .test-work/checkouts/extras
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.22.3'
+      - name: Prove session ownership before any native mutation
+        run: node scripts/testing/host/requireIsolatedSession.mjs
+      - run: npm ci
+      - run: corepack enable
+      - run: yarn --cwd .test-work/checkouts/fork install --frozen-lockfile
+      - run: npm ci --prefix .test-work/checkouts/extras
+      - name: Run approved native profile
+        env:
+          TEST_PROFILE: ${{ inputs.profile }}
+        run: |
+          if ($env:TEST_PROFILE -eq 'cold') {
+            node scripts/testing/host/verify.mjs --profile=smoke
+            if ($LASTEXITCODE -ne 0) { throw 'Cold-start prerequisite smoke failed' }
+            $coldSmoke = Get-Content -LiteralPath (Join-Path $env:EXCALIDRAW_TEST_REPORT_DIR 'report.json') -Raw | ConvertFrom-Json
+            $env:EXCALIDRAW_TEST_COMBINATION_PATH = Join-Path $coldSmoke.combination.output 'combination.json'
+            $env:EXCALIDRAW_TEST_REPORT_DIR = Join-Path $env:EXCALIDRAW_TEST_REPORT_DIR 'cold'
+            node scripts/testing/host/coldStart.mjs
+          } else {
+            node scripts/testing/host/verify.mjs "--profile=$env:TEST_PROFILE"
+          }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-${{ inputs.profile }}-${{ inputs.tested_sha }}
+          path: .test-work/reports
+          if-no-files-found: error

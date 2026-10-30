@@ -2197,8 +2197,7 @@ export class EmbeddedFilesLoader {
       }
 
       const scale = requestedScale;
-      const cropRect = linkParts.ref
-        .split("rect=")[1]
+      const cropRect = linkParts.ref?.split("rect=")[1]
         ?.split(",")
         .map((x) => parseInt(x));
       const validRect =
