@@ -152,7 +152,7 @@ export async function runObsidianSmoke({ projectRoot, vaultName, vaultPath, conf
     }
     if (ownedDebugger) { debuggerSession = acquireDebuggerSession(cli); report.capabilities.scheduling = debuggerSession.scheduling; }
     if (ownedDebugger) browserSession=acquireBrowserDiagnostics(cli,'native-main');
-    if (ownedDebugger) report.capabilities.runtime = parseEval(cli("eval", "code=JSON.stringify({versions:require('process').versions,platform:require('process').platform,userAgent:navigator.userAgent})"));
+    if (ownedDebugger) report.capabilities.runtime = parseEval(cli("eval", "code=JSON.stringify({installer:require('@electron/remote').app.getVersion(),versions:require('process').versions,platform:require('process').platform,userAgent:navigator.userAgent})"));
 
     phase = "build";
     const buildResult = await runBuild();

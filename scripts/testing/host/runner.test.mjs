@@ -71,7 +71,8 @@ test("stages exact artifacts, asserts an editor and cleans its test drawing", as
   let commandReads = 0, activeDrawing="__excalidraw_cli_smoke_1.excalidraw.md";
   const runCli = (_vault, command, ...args) => {
     commands.push(command);
-    if (command === "version") return "1.13.0";
+    // A future alpha label is report metadata, never an acceptance allowlist.
+    if (command === "version") return "1.99.0-alpha.3";
     if (command === "help") return "version vault plugin:enable plugin:disable commands eval dev:errors";
     if (command === "vault") return input.vaultPath;
     if (command === "commands") {
@@ -112,6 +113,7 @@ test("stages exact artifacts, asserts an editor and cleans its test drawing", as
     deployCompanions: ({target}) => { assert.equal(target.config,input.configDir); return {evidence:{paired:true},cleanup:()=>{assert.equal(cleanupStarted,true);companionCleaned++;}}; } };
   const report = await runObsidianSmoke({ ...options, scenarios: [featureScenario,({drawingPath})=>{assert.equal(cleanupStarted,true,'Previous feature fixture must be retired first');assert.equal(drawingPath,'__excalidraw_cli_smoke_1_case1.excalidraw.md');return {id:'independent-feature',status:'passed'};}] });
   assert.equal(report.status, "passed", report.error);
+  assert.equal(report.capabilities.version, "1.99.0-alpha.3");
   assert.equal(report.cleanup, "passed");
   assert.equal(report.target.drawingPath, "__excalidraw_cli_smoke_1_case1.excalidraw.md");
   assert.deepEqual(report.artifacts.sourceHashes, report.artifacts.installedHashes);

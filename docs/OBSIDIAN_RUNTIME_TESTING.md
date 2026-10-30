@@ -4,6 +4,14 @@ Current acceptance is **0/2 complete passes**. See the [current evidence and
 blockers](testing-evidence/3022/README.md) before repeating the full suite. Portable
 validation passes 662 cases; it does not establish native acceptance.
 
+The suite tests the currently running Obsidian, including alpha releases. There
+is no exact Obsidian/Electron version allowlist or version-specific pass baseline.
+CLI/app version, installer version, Electron/Chromium/Node versions and user agent
+are recorded as evidence. Required capabilities and behavioral, persistence,
+rendering, exception and cleanup assertions determine success. A host update
+must not cause automatic skips, weaker assertions or refreshed expected results.
+Historical runtime findings below are diagnostic context, not version requirements.
+
 Use the repository-local, marker-owned vault:
 
 `obsidian-excalidraw-plugin/.test-work/vaults/excalidraw-auto-test/`

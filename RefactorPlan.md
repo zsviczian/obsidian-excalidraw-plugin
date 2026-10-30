@@ -1,5 +1,12 @@
 # Incremental refactor assessment and plan
 
+Testing follow-up, 2026-10-30: maintainer installed Obsidian 1.14.5; runtime
+inspection confirms Electron 43.8.3. Current product branches remain unchanged.
+Host versions remain evidence, never exact-version gates; the existing runner
+success control now uses a future alpha label, and automatic runtime metadata
+also records installer identity. Exclusive foreground access is confirmed for
+focused blocker reruns and the two still-required complete native repeats.
+
 Status: the `ExcalidrawView`/`main.ts` plan is parked as of 2026-08-13 (see
 "Parked: next steps if resumed" near the end). The active refactor is the
 dual-support migration of `src/core/settings.ts` to Obsidian's declarative
