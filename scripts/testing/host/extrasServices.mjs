@@ -1,7 +1,7 @@
 /** Real plugin gateway, real Extras renderers and native Electron PDF output. */
 import assert from "node:assert/strict";
 import { runInAppTask } from "./inAppTask.mjs";
-import { copyFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { copyFileSync, mkdirSync, writeFileSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileHash, ownedPath } from "../contracts.mjs";
 
@@ -13,34 +13,66 @@ export async function runExtrasServicesScenario({
   assert.ok(drawingPath.startsWith("__excalidraw_cli_smoke_"));
   const prefix =
     drawingPath.replace(/\.(excalidraw\.md|excalidraw|md)$/, "") + "_extras";
-  const result = await runInAppTask({
-    cli,
-    execute: exerciseExtras,
-    args: [prefix],
-    timeoutMs: 180_000,
-    cleanupMs: 135_000,
-    onProgress: (phase) =>
-      writeFileSync(
-        join(reportDir, "native-single-export-progress.json"),
-        JSON.stringify({ phase, at: new Date().toISOString() }) + "\n",
-      ),
-    onRequest: (request) => {
-      assert.equal(request.method, "pdf-evidence");
-      assert.equal(request.params.path, prefix + "/Output.pdf");
-      const vault = cli("vault", "info=path").trim(),
-        source = ownedPath(vault, request.params.path);
-      mkdirSync(reportDir, { recursive: true });
-      const pdf = join(reportDir, "native-single-export.pdf"),
-        png = join(reportDir, "native-single-export-page.png");
-      copyFileSync(source, pdf);
-      writeFileSync(png, Buffer.from(request.params.pngBase64, "base64"));
-      return { pdf, png, sha256: fileHash(pdf), pageSha256: fileHash(png) };
-    },
-  });
+  const fixtures = JSON.parse(
+    readFileSync(
+      new URL("../../../tests/fixtures/mermaid-diagrams.json", import.meta.url),
+      "utf8",
+    ),
+  );
+  let offlineOwned = false;
+  const network = (offline) => {
+    cli("dev:cdp", "method=Network.enable", "params={}");
+    cli(
+      "dev:cdp",
+      "method=Network.emulateNetworkConditions",
+      "params=" +
+        JSON.stringify({
+          offline,
+          latency: 0,
+          downloadThroughput: offline ? 0 : -1,
+          uploadThroughput: offline ? 0 : -1,
+        }),
+    );
+    offlineOwned = offline;
+    return { offline };
+  };
+  let result;
+  try {
+    result = await runInAppTask({
+      cli,
+      execute: exerciseExtras,
+      args: [prefix, fixtures, drawingPath],
+      timeoutMs: 180_000,
+      cleanupMs: 135_000,
+      onProgress: (phase) =>
+        writeFileSync(
+          join(reportDir, "native-single-export-progress.json"),
+          JSON.stringify({ phase, at: new Date().toISOString() }) + "\n",
+        ),
+      onRequest: (request) => {
+        if (request.method === "mermaid-network") {
+          assert.equal(typeof request.params.offline, "boolean");
+          return network(request.params.offline);
+        }
+        assert.equal(request.method, "pdf-evidence");
+        assert.equal(request.params.path, prefix + "/Output.pdf");
+        const vault = cli("vault", "info=path").trim(),
+          source = ownedPath(vault, request.params.path);
+        mkdirSync(reportDir, { recursive: true });
+        const pdf = join(reportDir, "native-single-export.pdf"),
+          png = join(reportDir, "native-single-export-page.png");
+        copyFileSync(source, pdf);
+        writeFileSync(png, Buffer.from(request.params.pngBase64, "base64"));
+        return { pdf, png, sha256: fileHash(pdf), pageSha256: fileHash(png) };
+      },
+    });
+  } finally {
+    if (offlineOwned) network(false);
+  }
   return { id: "extras-services", status: "passed", ...result };
 }
 
-async function exerciseExtras(c, prefix) {
+async function exerciseExtras(c, prefix, fixtures, drawingPath) {
   c.phase = "extras-services";
   const plugin = app.plugins.plugins["obsidian-excalidraw-plugin"],
     extras = app.plugins.plugins["excalidraw-extras"];
@@ -100,26 +132,101 @@ async function exerciseExtras(c, prefix) {
     },
   );
   await c.case("native:extras-mermaid-gateway", ["P09", "P11"], async () => {
-    const service = await plugin.extrasGateway.getMermaid();
-    check(service, "plugin gateway did not obtain Mermaid");
-    const module = await service.getModule();
-    const converted = await module.parseMermaidToExcalidraw(
-      "flowchart LR\n A[Start] --> B[End]",
-    );
-    check(
-      converted.elements.some((e) => e.type === "arrow") &&
-        converted.elements.some(
-          (e) => e.label?.text === "Start" || e.text === "Start",
-        ),
-      "Mermaid source is not editable",
-    );
-    return {
-      assertions: [
-        "real plugin gateway resolves Mermaid",
-        "actual converter returns editable labels and arrow",
-      ],
-      elements: converted.elements.length,
-    };
+    await c.requestHost("mermaid-network", { offline: true });
+    try {
+      check(!navigator.onLine, "Mermaid offline control was not applied");
+      const service = await plugin.extrasGateway.getMermaid();
+      check(service, "plugin gateway did not obtain Mermaid");
+      const module = await service.getModule();
+      const converted = await module.parseMermaidToExcalidraw(
+        "flowchart LR\n A[Start] --> B[End]",
+      );
+      check(
+        converted.elements.some((e) => e.type === "arrow") &&
+          converted.elements.some(
+            (e) => e.label?.text === "Start" || e.text === "Start",
+          ),
+        "Mermaid source is not editable",
+      );
+      const diagrams = [];
+      for (const fixture of fixtures) {
+        const result = await module.parseMermaidToExcalidraw(
+          fixture.definition,
+        );
+        const view = app.workspace
+          .getLeavesOfType("excalidraw")
+          .find((leaf) => leaf.view.file?.path === drawingPath)?.view;
+        check(view?.excalidrawAPI, "Mermaid owning test drawing unavailable");
+        const elements =
+          view.packages.excalidrawLib.convertToExcalidrawElements(
+            result.elements,
+          );
+        check(
+          elements.length > 0 &&
+            elements.every((e) =>
+              [e.x, e.y, e.width, e.height].every(Number.isFinite),
+            ),
+          fixture.id + " invalid normalized geometry",
+        );
+        check(
+          fixture.editable
+            ? elements.every((e) => e.type !== "image")
+            : elements.some((e) => e.type === "image"),
+          fixture.id + " representation changed",
+        );
+        if (fixture.editable) {
+          const text = elements
+            .filter((e) => e.type === "text")
+            .map((e) => e.text)
+            .join("\n");
+          for (const label of fixture.labels)
+            check(text.includes(label), fixture.id + " lost label " + label);
+        } else {
+          const image = elements.find((e) => e.type === "image"),
+            file = result.files[image.fileId];
+          check(file?.dataURL, fixture.id + " missing SVG");
+          const decoded = new Image();
+          decoded.src = file.dataURL;
+          await decoded.decode();
+          check(
+            decoded.naturalWidth > 0 && decoded.naturalHeight > 0,
+            fixture.id + " image failed to decode",
+          );
+        }
+        diagrams.push({
+          id: fixture.id,
+          elements: elements.length,
+          types: [...new Set(elements.map((e) => e.type))],
+        });
+      }
+      let rejected = false;
+      try {
+        await module.parseMermaidToExcalidraw("flowchart TD\n A[");
+      } catch {
+        rejected = true;
+      }
+      check(rejected, "invalid Mermaid source was accepted");
+      const recovered = await module.parseMermaidToExcalidraw(
+        "sequenceDiagram\n Alice->>Bob: Recovered",
+      );
+      check(
+        recovered.elements.length > 0,
+        "Mermaid did not recover after invalid source",
+      );
+      return {
+        assertions: [
+          "real plugin gateway resolves Mermaid",
+          "actual converter returns editable labels and arrow",
+          "twelve diagram types load offline with finite normalized geometry and preserved representation",
+          "editable labels and decoded image dimensions survive lazy loading",
+          "syntax rejects and next diagram recovers",
+        ],
+        elements: converted.elements.length,
+        diagrams,
+      };
+    } finally {
+      await c.requestHost("mermaid-network", { offline: false });
+    }
   });
   await c.case("native:extras-pdf-output", ["P05", "P09"], async () => {
     const service = await plugin.extrasGateway.getExportToPDF();

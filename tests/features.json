@@ -894,7 +894,17 @@
           "cases": [
             "native:extras-mermaid-gateway",
             "native:extras-pdf-output"
-          ]
+          ],
+          "assertions": [
+            "real plugin-to-Extras gateway",
+            "twelve diagram kinds load offline from the installed single bundle",
+            "finite normalized scene geometry",
+            "editable text labels and image representation remain",
+            "decoded SVG dimensions",
+            "invalid source rejects and another diagram recovers",
+            "network and scenario cleanup"
+          ],
+          "fixtureSource": "tests/fixtures/mermaid-diagrams.json"
         },
         {
           "layer": "native",
@@ -1189,6 +1199,23 @@
           "cases": [
             "native:diagnostics-rejects-unhandled"
           ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/extrasServices.mjs",
+          "cases": [
+            "native:extras-mermaid-gateway"
+          ],
+          "assertions": [
+            "real plugin-to-Extras gateway",
+            "twelve diagram kinds load offline from the installed single bundle",
+            "finite normalized scene geometry",
+            "editable text labels and image representation remain",
+            "decoded SVG dimensions",
+            "invalid source rejects and another diagram recovers",
+            "network and scenario cleanup"
+          ],
+          "fixtureSource": "tests/fixtures/mermaid-diagrams.json"
         }
       ],
       "fixtures": [

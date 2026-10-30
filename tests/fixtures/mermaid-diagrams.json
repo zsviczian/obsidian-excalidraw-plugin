@@ -1,0 +1,14 @@
+[
+  { "id": "flowchart", "definition": "flowchart LR\n A[Start] --> B[Finish]", "editable": true, "labels": ["Start", "Finish"] },
+  { "id": "sequence", "definition": "sequenceDiagram\n Alice->>Bob: Hello", "editable": true, "labels": ["Alice", "Bob", "Hello"] },
+  { "id": "class", "definition": "classDiagram\n Animal <|-- Duck", "editable": true, "labels": ["Animal", "Duck"] },
+  { "id": "state", "definition": "stateDiagram-v2\n [*] --> Idle\n Idle --> [*]", "editable": true, "labels": ["Idle"] },
+  { "id": "er", "definition": "erDiagram\n CUSTOMER ||--o{ ORDER : places", "editable": true, "labels": ["CUSTOMER", "ORDER"] },
+  { "id": "pie", "definition": "pie title Example\n \"One\" : 60\n \"Two\" : 40", "editable": false, "labels": ["One", "Two"] },
+  { "id": "mindmap", "definition": "mindmap\n root((Example))\n  Branch", "editable": false, "labels": ["Example", "Branch"] },
+  { "id": "gantt", "definition": "gantt\n title Example\n dateFormat YYYY-MM-DD\n section Work\n Task :a1, 2026-01-01, 3d", "editable": false, "labels": ["Example", "Task"] },
+  { "id": "journey", "definition": "journey\n title Example\n section Work\n Task: 5: Alice", "editable": false, "labels": ["Task", "Alice"] },
+  { "id": "timeline", "definition": "timeline\n title Example\n 2026 : Start", "editable": false, "labels": ["Start"] },
+  { "id": "git", "definition": "gitGraph\n commit", "editable": false, "labels": [] },
+  { "id": "quadrant", "definition": "quadrantChart\n title Example\n A: [0.3, 0.6]", "editable": false, "labels": ["Example", "A"] }
+]
