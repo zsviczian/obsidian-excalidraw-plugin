@@ -886,7 +886,8 @@
           "path": "scripts/testing/svg.source.test.mjs",
           "cases": [
             "node:scripts/testing/svg.source.test.mjs::whole-module SVG conversion preserves opacity, transforms and open strokes",
-            "node:scripts/testing/svg.source.test.mjs::whole-module SVG fixture imports without mutating source bytes"
+            "node:scripts/testing/svg.source.test.mjs::whole-module SVG fixture imports without mutating source bytes",
+            "node:scripts/testing/svg.source.test.mjs::whole-module SVG and Mermaid HTML labels become measured editable text with block-safe IDs"
           ]
         },
         {

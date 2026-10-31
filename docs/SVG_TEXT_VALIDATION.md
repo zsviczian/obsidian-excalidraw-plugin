@@ -24,6 +24,38 @@ Images/effects are still limited by the converter's
 Mermaid's semantic graph are not reconstructed. Keep the SVG image when exact
 appearance matters more than editing.
 
+## Verified checkpoint — 2026-10-31
+
+The final native build uses plugin `0c994859ed8b8aa0c5a80c111815a5b8413ece5b`,
+fork `745d62f7071be4da192f595bb75e140a7b741fc0` and Extras
+`df1f2b5659259c43780c5ef07cd433fa6c3e14fa`, all clean at build time.
+[Sanitized cases, source identities and artifact manifests](testing-evidence/svg-text/results.json)
+record the exact build and assertions without publishing the supplied SVG or
+its rendered image.
+
+- **69 focused SVG tests** and **518 full fast tests** pass. The fast total
+  includes 11 new text tests; the measured whole-module subset passes 85 tests
+  and its existing coverage ratchets. CLI wrapper checks separately pass 25.
+- **10 focused native cases** pass: two new text workflows plus eight reused
+  paint/real-Extras workflows, with expected editable-label assertions added to
+  the Mermaid conversions. No full-matrix acceptance credit is inferred.
+- The supplied mindmap yields 41 native elements, including all ten labels
+  and its footer as 11 editable text elements. A text-only export contains
+  5,607 visible glyph pixels. Editing, acknowledged saving, exact IDs/text after
+  reopen, popout loading/export, cleanup, settling and baseline restoration pass.
+  The source hash is unchanged. Visual inspection confirms the labels render.
+- Production/library builds, five packaging checks, inventory and feature
+  mappings pass. All 18 touched TypeScript files lint clean. Whole-repository
+  lint still reports the same 118 unrelated errors; it is not a passing gate.
+- No captured console/JavaScript errors or browser notifications occurred.
+  `main.js` is 5,033,282 bytes, leaving 209,598 bytes below the 5 MiB target.
+  Its deployed hash matches
+  `bf05168f57e66718452b010e770d57722ff11135584de17877dcdf8b90d6f004`.
+
+No version, dependency, fork, Extras or PDF production changes are included.
+This build was installed in the prepared test vault; the personal-vault build
+is not updated by these checks.
+
 ## Repeatable checks
 
 Use Node 22+ from the plugin checkout. Native runs use only
