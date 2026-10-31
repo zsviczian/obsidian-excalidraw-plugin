@@ -128,6 +128,7 @@ export default {
   SVG_IMPORT_STROKE: "部分筆畫端點、接合、縮放或虛線樣式採用近似處理。",
   SVG_IMPORT_UNSUPPORTED: "已省略不支援的功能，例如文字、漸層或裁切。",
   SVG_IMPORT_CSS: "不支援進階 CSS 或外部樣式表。",
+  SVG_IMPORT_PAINT: "不支援的 SVG 色彩已使用 SVG 的目前色彩或黑色近似替代。",
   SVG_IMPORT_VIEWPORT: "不會重現檢視區域裁切。",
   IMPORT_SVG: "匯入 SVG 檔案為線條（暫不支援文字元素）",
   IMPORT_SVG_CONTEXTMENU: "轉換 SVG 為線條 - 有限制",

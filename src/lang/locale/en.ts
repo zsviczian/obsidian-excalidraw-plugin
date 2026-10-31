@@ -147,6 +147,7 @@ export default {
   SVG_IMPORT_STROKE: "Some stroke caps, joins, scaling or dash patterns are approximated.",
   SVG_IMPORT_UNSUPPORTED: "Unsupported features (such as text, gradients or clipping) were omitted.",
   SVG_IMPORT_CSS: "Advanced CSS or external stylesheets are not supported.",
+  SVG_IMPORT_PAINT: "Unsupported SVG colors were approximated using the SVG's current color or black.",
   SVG_IMPORT_VIEWPORT: "Viewport clipping is not reproduced.",
   IMPORT_SVG:
     "Import an SVG file as Excalidraw strokes (limited SVG support, TEXT currently not supported)",

@@ -76,6 +76,24 @@ test("fatal import cannot partially append or clear an existing workbench", () =
   assert.equal(JSON.stringify(ea.elementsDict), before);
   assert.match(notices.at(-1), /SVG_IMPORT_ERROR/);
 });
+test("ea.importSVG publishes all geometry and a paint approximation notice for unsupported colors", () => {
+  const ea = workbench(),
+    before = JSON.stringify(ea.elementsDict.sentinel);
+  assert.equal(
+    ea.importSVG(
+      '<svg color="blue"><rect width="20" height="10" fill="color(display-p3 1 0 0)"/><rect x="25" width="20" height="10" fill="red"/></svg>',
+    ),
+    true,
+  );
+  assert.equal(JSON.stringify(ea.elementsDict.sentinel), before);
+  const imported = Object.values(ea.elementsDict).filter(
+    (e) => e.id !== "sentinel",
+  );
+  assert.equal(imported.length, 2);
+  assert.equal(imported[0].backgroundColor, "#0000ff");
+  assert.equal(imported[1].backgroundColor, "#ff0000");
+  assert.match(notices.at(-1), /SVG_IMPORT_PAINT/);
+});
 test("partial/approximate conversions show diagnostics, while transparent SVG remains valid", () => {
   const ea = workbench();
   assert.equal(

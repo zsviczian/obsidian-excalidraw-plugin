@@ -56,6 +56,21 @@ per-piece approximation; it does not introduce isolated group compositing.
 
 ## Input and resource limits
 
+Unsupported solid color syntax is approximated using the SVG's own `color`
+(the source of `currentColor`), or black when that is also unsupported. A
+localized paint notice accompanies successful publication; it no longer aborts
+the complete SVG. Explicit `none`, transparency and independent alpha remain
+intact. Paint-server URLs are never fetched: an explicit solid/`none` fallback
+is used, otherwise that paint stays transparent. Gradients and patterns are
+still not native fills. This follows the fallback syntax in
+[SVG 2 paint](https://www.w3.org/TR/SVG2/painting.html#SpecifyingPaint), while
+the unknown-color substitution is an intentional import approximation.
+
+An SVG generated for an image-only Mermaid diagram can use this same route,
+but only supported geometry becomes editable. It does not recover a semantic
+diagram or bound labels/connectors; SVG text, images and unsupported effects
+retain the limitations above. Preserve the original image when fidelity matters.
+
 SVG is parsed as inert XML and is never attached as active source markup. Scripts,
 event handlers, external use targets and CSS URLs are never executed/resolved.
 Document types/entities are rejected. Unsupported material content is diagnosed;
@@ -72,6 +87,9 @@ work/memory bounds, not a wall-clock latency guarantee on every device.
 ## Validation
 
 Run `npm run test:svg-import` for the real converter and importer boundary tests.
+The focused `npm run verify:obsidian:plugin -- --svg-paint` path verifies paint
+fallback pixels, save/reopen and real Extras Mermaid SVG geometry; see
+[paint validation](../../../docs/SVG_PAINT_VALIDATION.md).
 With the configured test vault, run:
 
 ```sh

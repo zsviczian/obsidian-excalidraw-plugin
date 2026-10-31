@@ -30,6 +30,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 - Added opt-in image inventory, bounded image labels/tags, mixed-fidelity SVG/PNG previews and output limits. Originals remain untouched and full fidelity stays the default. [#3004](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3004)
 
 ## Fixed
+- SVG-to-stroke imports no longer abort on unsupported colors. They use the SVG's current color or black with an approximation notice; paint-server references retain an explicit solid-color or \`none\` fallback.
 - Plugin reload no longer lets late settings saves replace custom preferences with an empty record or defaults.
 - Adding a link to a text element or shape label no longer discards undo history for earlier drawing actions.
 - Embedded Markdown previews no longer take editor focus when they load, avoiding a mobile toolbar error. [#3022](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/3022)

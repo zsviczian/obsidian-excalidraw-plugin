@@ -211,19 +211,29 @@ export function paint(
   color: string,
   state: SVGConversionState,
 ): string {
-  if (value.trim().toLowerCase() === "none") return "transparent";
-  const resolved =
-    value.trim().toLowerCase() === "currentcolor"
+  let resolved = value.trim();
+  if (/url\(/i.test(resolved)) {
+    state.warnings.add("unsupported");
+    // Paint servers cannot be native fills. Honor SVG's optional solid/none
+    // fallback without resolving or fetching the URL, including quoted URLs.
+    resolved =
+      resolved
+        .match(/^url\(\s*(?:"[^"]*"|'[^']*'|[^)]*)\s*\)\s*(.*)$/i)?.[1]
+        ?.trim() || "none";
+  }
+  if (resolved.toLowerCase() === "none") return "transparent";
+  resolved =
+    resolved.toLowerCase() === "currentcolor"
       ? color.trim().toLowerCase() === "currentcolor"
         ? "black"
         : color
-      : value;
-  if (/url\(/i.test(resolved)) {
-    state.warnings.add("unsupported");
-    return "transparent";
+      : resolved;
+  if (!chroma.valid(resolved)) {
+    // Unsupported colors are a local approximation, not a fatal geometry
+    // error. Use only this SVG's color (or black), never the host's theme.
+    state.warnings.add("paint");
+    resolved = chroma.valid(color) ? color : "black";
   }
-  if (!chroma.valid(resolved))
-    throw Error(`Unsupported SVG paint: ${resolved}`);
   const parsed = chroma(resolved),
     a = parsed.alpha() * alpha(opacity);
   return a === 0

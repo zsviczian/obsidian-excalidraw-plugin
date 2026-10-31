@@ -178,6 +178,46 @@ test("paint precedence and independent alpha do not depend on attribute order", 
   );
   assert.equal(e.backgroundColor, "#008000");
 });
+test("unsupported SVG colors use the SVG current color without aborting other geometry", () => {
+  const result = convert(
+    svg(
+      '<g color="#2468ac"><rect width="20" height="10" fill="color(display-p3 1 0 0)" fill-opacity="0.5" stroke="context-stroke" stroke-opacity="0.25"/><circle cx="30" cy="5" r="4" fill="red"/></g>',
+    ),
+  );
+  assert.equal(result.hasErrors, false, result.errors);
+  assert.equal(result.content.length, 2);
+  assert.equal(result.content[0].backgroundColor, "#2468ac80");
+  assert.equal(result.content[0].strokeColor, "#2468ac40");
+  assert.equal(result.content[1].backgroundColor, "#ff0000");
+  assert.ok(result.warnings.includes("paint"));
+});
+
+test("unsupported current colors fall back to black while explicit none and zero alpha stay transparent", () => {
+  const result = convert(
+    svg(
+      '<g color="var(--host-theme-color)"><rect width="10" height="10" fill="currentColor"/><rect x="15" width="10" height="10" fill="none" stroke="color(display-p3 1 0 0)" stroke-opacity="0"/><rect x="30" width="10" height="10" fill="unrecognized-paint" fill-opacity="0"/></g>',
+    ),
+  );
+  assert.equal(result.hasErrors, false, result.errors);
+  assert.equal(result.content[0].backgroundColor, "#000000");
+  assert.equal(result.content[1].backgroundColor, "transparent");
+  assert.equal(result.content[1].strokeColor, "transparent");
+  assert.equal(result.content[2].backgroundColor, "transparent");
+  assert.ok(result.warnings.includes("paint"));
+});
+
+test("unsupported paint servers honor an explicit SVG fallback without fetching resources", () => {
+  const result = convert(
+    svg(
+      '<g color="green"><rect width="10" height="10" fill="url(https://example.test/gradient.svg#x) #123456" fill-opacity="0.5"/><rect x="15" width="10" height="10" fill="url(&quot;#missing&quot;) currentColor"/><rect x="30" width="10" height="10" fill="url(#missing) none"/></g>',
+    ),
+  );
+  assert.equal(result.hasErrors, false, result.errors);
+  assert.equal(result.content[0].backgroundColor, "#12345680");
+  assert.equal(result.content[1].backgroundColor, "#008000");
+  assert.equal(result.content[2].backgroundColor, "transparent");
+  assert.ok(result.warnings.includes("unsupported"));
+});
 test("local CSS resolves class, ID, descendant and inline precedence without host CSS", () => {
   const [e] = elements(
     '<style>rect{fill:red}.box{fill:blue}g .box{fill:green}#one{fill:yellow}</style><g><rect id="one" class="box" width="10" height="10" style="fill:purple"/></g>',

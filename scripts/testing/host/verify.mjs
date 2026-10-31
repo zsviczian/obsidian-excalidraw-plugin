@@ -17,6 +17,7 @@ import { runWebDropScenario } from "./webDrop.mjs";
 import { runInternalDropScenario } from "./internalDrop.mjs";
 import { runYouTubeDropScenario } from "./youtubeDrop.mjs";
 import { runSvgImportScenario } from "./svgImport.mjs";
+import { runSvgPaintScenario } from "./svgPaint.mjs";
 import { runLucideScenario } from "./lucideIcons.mjs";
 import { runWorkflowFixesScenario } from "./workflowFixes.mjs";
 import { acquireHostLock } from "./hostLock.mjs";
@@ -90,6 +91,7 @@ const webDrop = coreScenarios || process.argv.includes("--web-drop");
 const internalDrop = coreScenarios || process.argv.includes("--internal-drop");
 const youtubeDrop = process.argv.includes("--youtube-drop");
 const svgImport = process.argv.includes("--svg-import");
+const svgPaint = process.argv.includes("--svg-paint");
 const lucide = coreScenarios || process.argv.includes("--lucide");
 const workflowFixes = coreScenarios || process.argv.includes("--workflow-fixes");
 const behaviorMatrix =
@@ -149,6 +151,7 @@ const flags = [
   "--internal-drop",
   "--youtube-drop",
   "--svg-import",
+  "--svg-paint",
 ];
 const unknown = process.argv
   .slice(2)
@@ -285,6 +288,7 @@ try {
         ...(dataIntegrity ? [runDataIntegrityScenario] : []),
         ...(workflowFixes ? [runWorkflowFixesScenario] : []),
         ...(svgImport ? [runSvgImportScenario] : []),
+        ...(svgPaint ? [runSvgPaintScenario] : []),
         ...(wheelZoom ? [runWheelZoomScenario] : []),
         ...(imageGeometry
           ? [

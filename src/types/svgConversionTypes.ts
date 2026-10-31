@@ -14,6 +14,7 @@ export type SVGMatrix = readonly [
 export type SVGWarning =
   | "compositing"
   | "stroke"
+  | "paint"
   | "unsupported"
   | "css"
   | "viewport";
