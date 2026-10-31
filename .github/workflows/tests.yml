@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: zsviczian/excalidraw
-          ref: d22f8ec1758a79fea6e106c9d1a80bf589d34f27
+          ref: 801c17c372cf3f9f18b3f253844348b8b9a67570
           path: .test-work/checkouts/fork
           persist-credentials: false
       - uses: actions/checkout@v4
