@@ -140,6 +140,7 @@ export default {
   INSERT_LINK_TO_ELEMENT_ERROR: "Selecciona un solo elemento en la escena",
   INSERT_LINK_TO_ELEMENT_READY:
     "El enlace está LISTO y disponible en el portapapeles",
+  PADDING_ZOOM_ARIA: "Ajusta el relleno de este embed area=",
   INSERT_LINK: "Insertar enlace al archivo",
   INSERT_COMMAND: "Insertar comando de Obsidian como enlace",
   INSERT_IMAGE: "Insertar imagen o bosquejo de Excalidraw desde tu bóveda",
