@@ -874,6 +874,10 @@
         {
           "path": "src/shared/svgToExcalidraw/paint.ts",
           "symbol": "export function paint"
+        },
+        {
+          "path": "src/shared/svgToExcalidraw/text.ts",
+          "symbol": "export function emitSVGText"
         }
       ],
       "tests": [
@@ -1083,6 +1087,29 @@
             "node:scripts/testing/pdfImport.test.mjs::PDF loader renders explicit PDF page",
             "node:scripts/testing/pdfImport.test.mjs::PDF loader renders explicit PDF crop",
             "node:scripts/testing/pdfImport.test.mjs::the previous plain-PDF null-reference path fails the loader evidence"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/svgText.test.mjs",
+          "cases": [
+            "node:scripts/testing/svgText.test.mjs::SVG text remains editable text with inherited color, alpha, anchor and baseline",
+            "node:scripts/testing/svgText.test.mjs::positioned tspan lines retain text, relative font units and baseline offsets",
+            "node:scripts/testing/svgText.test.mjs::uniform SVG transforms scale and rotate text with its group",
+            "node:scripts/testing/svgText.test.mjs::Mermaid foreignObject labels import as native text rather than empty SVG placeholders",
+            "node:scripts/testing/svgText.test.mjs::plain HTML label line breaks survive without executing or importing active content",
+            "node:scripts/testing/svgText.test.mjs::empty or hidden SVG/HTML text does not manufacture visible labels",
+            "node:scripts/testing/svgText.test.mjs::excessive text fails atomically instead of publishing a partial drawing",
+            "node:scripts/testing/svgText.test.mjs::text visibility can be restored by a child without exposing hidden siblings",
+            "node:scripts/testing/svgText.test.mjs::unsupported font sizes do not abort ordinary geometry and zero-size text stays hidden"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/svgText.mjs",
+          "cases": [
+            "native:svg-text:labels-render-edit-save-reopen",
+            "native:svg-text:popout-reopen"
           ]
         }
       ],

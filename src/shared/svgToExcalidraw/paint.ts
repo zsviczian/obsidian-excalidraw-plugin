@@ -1,5 +1,6 @@
 /** Bounded, document-local SVG presentation cascade; never consult the host theme. */
 import chroma from "chroma-js";
+import { fontSize } from "./textStyle";
 import type {
   SVGConversionState,
   SVGStyle,
@@ -19,6 +20,16 @@ export const initialStyle: SVGStyle = {
   "stroke-dashoffset": "0",
   visibility: "visible",
   "paint-order": "normal",
+  "font-family": "sans-serif",
+  "font-size": "16",
+  "font-weight": "normal",
+  "font-style": "normal",
+  "text-anchor": "start",
+  "dominant-baseline": "auto",
+  "alignment-baseline": "auto",
+  "text-align": "start",
+  "line-height": "normal",
+  "white-space": "normal",
 };
 const properties = new Set([
   ...Object.keys(initialStyle),
@@ -177,6 +188,16 @@ export function resolveStyle(
           ? initialStyle[key]
           : value;
   }
+  if (own["font-size"] && !["inherit", "unset"].includes(own["font-size"])) {
+    try {
+      style["font-size"] = String(fontSize(style["font-size"], Number(parent["font-size"] ?? 16)));
+    } catch {
+      state.warnings.add("text");
+      style["font-size"] = parent["font-size"] ?? "16";
+    }
+  }
+  if (el.getAttribute("xml:space") === "preserve") style["white-space"] = "pre";
+  else if (el.getAttribute("xml:space") === "default") style["white-space"] = "normal";
   for (const key of [
     "clip-path",
     "mask",

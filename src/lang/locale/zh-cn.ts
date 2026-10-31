@@ -129,6 +129,7 @@ export default {
   SVG_IMPORT_UNSUPPORTED: "已省略不支持的功能，例如文本、渐变或裁剪。",
   SVG_IMPORT_CSS: "不支持高级 CSS 或外部样式表。",
   SVG_IMPORT_PAINT: "不支持的 SVG 颜色已使用 SVG 的当前颜色或黑色近似替代。",
+  SVG_IMPORT_TEXT: "已使用可用字体导入文本。复杂的格式和位置可能有所不同。",
   SVG_IMPORT_VIEWPORT: "不会重现视口裁剪。",
   IMPORT_SVG: "导入 SVG 文件为线条（暂不支持文本元素）",
   IMPORT_SVG_CONTEXTMENU: "转换 SVG 为线条 - 有限制",

@@ -13,6 +13,8 @@ import {
   viewportMatrix,
 } from "./transform";
 import { emitGeometry } from "./emitGeometry";
+import { emitSVGText } from "./text";
+import { emitForeignText } from "./foreignText";
 import { randomId } from "./utils";
 import { exceedsViewport } from "./viewportBounds";
 
@@ -36,9 +38,7 @@ const definitions = new Set([
   "radialGradient",
 ]);
 const omitted = new Set([
-  "text",
   "image",
-  "foreignObject",
   "script",
   "animate",
   "animateTransform",
@@ -175,6 +175,10 @@ function visit(
     }
     if (ownOpacity < 1 && state.elements.length - start > 1)
       state.warnings.add("compositing");
+    return;
+  }
+  if (tag === "text" || tag === "foreignObject") {
+    (tag === "text" ? emitSVGText : emitForeignText)(el, context, state);
     return;
   }
   if (shapes.has(tag)) {

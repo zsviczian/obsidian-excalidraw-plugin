@@ -1,5 +1,10 @@
 # SVG paint fallback — 2026-10-31
 
+This records the original paint-only checkpoint. The subsequent
+[editable-text follow-up](SVG_TEXT_VALIDATION.md) adds SVG and plain Mermaid
+HTML labels in the same PR; its current results supersede the text-omission
+limitation below. The original artifact hashes remain historical evidence.
+
 An unsupported solid color, including `color(display-p3 ...)`, previously made
 `ea.importSVG()` return `false` and discard the whole conversion. Paint now
 uses the SVG's own current color, or black when that is unsupported, and emits

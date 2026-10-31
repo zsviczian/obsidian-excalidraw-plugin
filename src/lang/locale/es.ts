@@ -150,6 +150,7 @@ export default {
   SVG_IMPORT_UNSUPPORTED: "Se omitieron funciones no compatibles, como texto, degradados o recortes.",
   SVG_IMPORT_CSS: "No se admiten CSS avanzado ni hojas de estilo externas.",
   SVG_IMPORT_PAINT: "Los colores SVG no compatibles se aproximaron con el color actual del SVG o con negro.",
+  SVG_IMPORT_TEXT: "El texto se importó con las fuentes disponibles. El formato y la posición complejos pueden variar.",
   SVG_IMPORT_VIEWPORT: "No se reproduce el recorte del área de visualización.",
   IMPORT_SVG:
     "Importar un archivo SVG como trazos de Excalidraw (soporte SVG limitado, TEXTO no es compatible actualmente)",

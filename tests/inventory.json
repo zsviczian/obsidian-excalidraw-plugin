@@ -1171,22 +1171,22 @@
     {
       "name": "addLucideIcon",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 5504
+      "line": 5510
     },
     {
       "name": "getCM6",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 5519
+      "line": 5525
     },
     {
       "name": "getMathEditorExtensions",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 5545
+      "line": 5551
     },
     {
       "name": "destroy",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 5573
+      "line": 5579
     }
   ],
   "settings": [
@@ -2596,6 +2596,10 @@
     {
       "path": "scripts/testing/svgImporter.test.mjs",
       "mode": "isolated-or-extracted"
+    },
+    {
+      "path": "scripts/testing/svgText.test.mjs",
+      "mode": "direct-module-or-tooling"
     },
     {
       "path": "scripts/testing/templateWorkflow.test.mjs",

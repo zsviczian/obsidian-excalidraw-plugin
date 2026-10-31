@@ -5461,7 +5461,7 @@ export class ExcalidrawAutomate {
   }
 
   /**
-   * Appends editable SVG geometry to this workbench synchronously. Does not insert
+   * Appends editable SVG geometry and text (including plain HTML labels) synchronously. Does not insert
    * into a view or save. Fatal errors leave existing workbench elements untouched;
    * supported portions of limited SVG features import with a diagnostic notice.
    * Unsupported colors use the SVG's current color or black with a notice.
@@ -5471,7 +5471,12 @@ export class ExcalidrawAutomate {
    * matrix for approximations and deliberately omitted unsupported features.
    */
   importSVG(svgString: string): boolean {
-    const res: ConversionResult = svgToExcalidraw(svgString);
+    const res: ConversionResult = svgToExcalidraw(svgString, {
+      measureText: (text, fontSize, fontFamily, lineHeight) => {
+        const { w, h } = _measureText(text, fontSize, fontFamily, lineHeight);
+        return { width: w, height: h };
+      },
+    });
     if (res.hasErrors) {
       new Notice(`${t("SVG_IMPORT_ERROR")}\n${res.errors}`);
       return false;
@@ -5482,6 +5487,7 @@ export class ExcalidrawAutomate {
         compositing: "SVG_IMPORT_COMPOSITING",
         stroke: "SVG_IMPORT_STROKE",
         paint: "SVG_IMPORT_PAINT",
+        text: "SVG_IMPORT_TEXT",
         unsupported: "SVG_IMPORT_UNSUPPORTED",
         css: "SVG_IMPORT_CSS",
         viewport: "SVG_IMPORT_VIEWPORT",

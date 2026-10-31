@@ -171,20 +171,23 @@ async function probePaint(c, path) {
           requireValue(bench.importSVG(svg), name + " SVG import failed");
           const native = bench.getElements();
           requireValue(
-            native.length > 0 &&
-              native.every((e) => e.type !== "image" && e.type !== "text"),
+          native.length > 0 &&
+            native.every((e) => e.type !== "image"),
             name + " did not produce native geometry",
           );
-          return {
+        const expected = { pie: ["One", "Two"], mindmap: ["Example", "Branch"], gantt: ["Task"], journey: ["Task", "Alice"], timeline: ["Start"], git: [], quadrant: ["Example", "A"] }[name];
+        const labels = native.filter(e => e.type === "text").map(e => e.text).join("\n");
+        requireValue(expected.every(label => labels.includes(label)), name + " lost native SVG labels");
+        return {
             assertions: [
               "real Extras returns SVG-backed image",
               "actual SVG imports through EA",
-              "nonempty native geometry without an image fallback",
+            "nonempty native geometry without an image fallback",
+            "expected SVG labels retained as editable text",
             ],
             nativeElements: native.length,
-            limitations: [
-              "SVG labels/effects are not preserved as editable text or semantic bindings",
-            ],
+          textElements: native.filter(e => e.type === "text").length,
+          limitations: ["Fonts/complex text layout may differ; effects and semantic bindings are not reconstructed"],
           };
         } finally {
           bench.destroy();

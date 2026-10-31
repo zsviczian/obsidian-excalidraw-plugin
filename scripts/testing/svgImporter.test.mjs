@@ -35,6 +35,7 @@ function loadMethod(file, name, scope) {
 const notices = [];
 const Subject = loadMethod("shared/ExcalidrawAutomate.ts", "importSVG", {
   svgToExcalidraw: loadConverter(),
+  _measureText: (text, size, _family, lineHeight) => ({ w: text.length * size / 2, h: size * lineHeight }),
   t: (key) => key,
   Notice: class {
     constructor(message) {
@@ -98,7 +99,7 @@ test("partial/approximate conversions show diagnostics, while transparent SVG re
   const ea = workbench();
   assert.equal(
     ea.importSVG(
-      '<svg><text>unsupported</text><rect width="10" height="10"/></svg>',
+      '<svg><image href="https://example.test/omitted.png"/><rect width="10" height="10"/></svg>',
     ),
     true,
   );
@@ -108,6 +109,16 @@ test("partial/approximate conversions show diagnostics, while transparent SVG re
     true,
   );
   assert.ok(Object.values(ea.elementsDict).some((e) => e.opacity === 0));
+});
+
+test("ea.importSVG supplies real-font metrics to editable text staging and reports text limits", () => {
+  const ea = workbench();
+  assert.equal(ea.importSVG('<svg><text x="40" y="30" font-size="20" text-anchor="middle">Hello</text></svg>'), true);
+  const text = Object.values(ea.elementsDict).find(e => e.type === "text");
+  assert.equal(text.text, "Hello");
+  assert.equal(text.width, 50);
+  assert.equal(text.x, 15);
+  assert.match(notices.at(-1), /SVG_IMPORT_TEXT/);
 });
 
 function dialogFixture({

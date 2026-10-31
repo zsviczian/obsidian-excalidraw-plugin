@@ -42,7 +42,8 @@ picker, icon catalog API, new CLI operation, or insertion preset.
 | Stroke semantics | Native round caps/joins and preset dashed styles. Other cap/join/dash patterns and nonuniform stroke scaling are approximations with a notice. `non-scaling-stroke` retains its constant width; zero-length round-cap strokes become editable dots. |
 | Local CSS limits | Simple tag/class/ID compounds and descendant selectors, with lexicographic ID/class/type specificity and source order for ties. Repeated selectors cannot carry into a higher specificity component. Advanced selectors, at-rules, `!important`, CSS variables and geometric CSS properties are diagnosed. Variables/unsupported rules are not evaluated against the host document. No external stylesheet is loaded. |
 | Clipping, gradients, patterns, filters, blending, markers | Unsupported effects/paint are diagnosed and omitted. Viewport clipping is not destructively applied to native geometry; nested/slice viewports and painted bounds outside the outer viewport produce a notice. |
-| Text and embedded images | Omitted with a notice. Import the SVG as an image when preserving these unsupported features matters more than native editability. |
+| Text and plain HTML labels | SVG `text`/positioned `tspan` content and plain Mermaid `foreignObject` labels become editable native text, retaining ancestor groups, colors, alpha, basic anchors and transforms. EA supplies real font metrics. Available font substitutions, rich inline styling, exact glyph baselines, wrapping, skew/nonuniform scaling and complex HTML layout are approximations with a notice. No source HTML is mounted or executed. |
+| Embedded images and active content | Images and unsupported foreign HTML content are omitted with a notice. Scripts, handlers and remote resources never execute or load. |
 
 The result remains editable: fill/background colors recolor fill pieces, and
 stroke colors recolor original outline pieces. Roughness, grouping, ungrouping,
@@ -67,9 +68,10 @@ still not native fills. This follows the fallback syntax in
 the unknown-color substitution is an intentional import approximation.
 
 An SVG generated for an image-only Mermaid diagram can use this same route,
-but only supported geometry becomes editable. It does not recover a semantic
-diagram or bound labels/connectors; SVG text, images and unsupported effects
-retain the limitations above. Preserve the original image when fidelity matters.
+including its supported SVG text and plain HTML labels. It does not recover a
+semantic diagram or automatic label/connector bindings. Images, rich HTML and
+unsupported effects retain the limitations above. Preserve the original image
+when exact rendering matters.
 
 SVG is parsed as inert XML and is never attached as active source markup. Scripts,
 event handlers, external use targets and CSS URLs are never executed/resolved.
@@ -84,12 +86,20 @@ and after transformation. Point budgets include intermediate geometry; there is
 no promise that every SVG below one individual limit is supported. These are
 work/memory bounds, not a wall-clock latency guarantee on every device.
 
+Visible text adds a 100,000-character budget and at most 1,000 lines per native
+text element. Excessive text fails atomically. Direct internal parser users can
+provide a synchronous `measureText` adapter; without it, approximate font-unit
+measurements are diagnosed. `ea.importSVG()` always supplies real host metrics.
+
 ## Validation
 
 Run `npm run test:svg-import` for the real converter and importer boundary tests.
 The focused `npm run verify:obsidian:plugin -- --svg-paint` path verifies paint
 fallback pixels, save/reopen and real Extras Mermaid SVG geometry; see
 [paint validation](../../../docs/SVG_PAINT_VALIDATION.md).
+Add `--svg-text` for measured editable labels, text-only export pixels,
+editing, save/reopen and popout loading; see
+[text validation](../../../docs/SVG_TEXT_VALIDATION.md).
 With the configured test vault, run:
 
 ```sh
