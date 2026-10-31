@@ -848,6 +848,15 @@ export default {
   SHOW_PEN_MODE_FREEDRAW_CROSSHAIR_DESC:
     "Show crosshair in pen mode when using the freedraw tool. <b><u>Toggle ON:</u></b> SHOW <b><u>Toggle OFF:</u></b> HIDE<br>" +
     "The effect depends on the device. Crosshair is typically visible on drawing tablets, MS Surface, but not on iOS.",
+  SHOW_HIGHLIGHTER_TOOLBAR_NAME: "Show highlighter button in toolbar",
+  SHOW_HIGHLIGHTER_TOOLBAR_DESC:
+    "Add a dedicated highlighter tool button to the Excalidraw toolbar for quick access.",
+  KEEP_DRAWING_TOOLS_NAME: "Keep drawing tools active after drawing",
+  KEEP_DRAWING_TOOLS_DESC:
+    "Automatically keep drawing tools (Line, Arrow, Rectangle, etc.) locked active after drawing, so you can draw multiple lines or shapes continuously without switching back to the selection tool. Press Escape or V to return to selection.",
+  HIGHLIGHTER_TOOL_NAME: "Highlighter",
+  TOGGLE_HIGHLIGHTER_COMMAND: "Toggle highlighter tool",
+  TOGGLE_KEEP_DRAWING_TOOLS_COMMAND: "Toggle keep drawing tools active (Tool Lock)",
   SHOW_DRAWING_OR_MD_IN_HOVER_PREVIEW_NAME:
     "Render Excalidraw file as an image in hover preview...",
   SHOW_DRAWING_OR_MD_IN_HOVER_PREVIEW_DESC:
