@@ -1,4 +1,5 @@
 import { ExcalidrawExtrasGateway } from "../utils/ExcalidrawExtrasGateway";
+import { openSVGImportForEditor } from "src/shared/svgConversionActions";
 import { ExcalidrawCLI } from "./managers/ExcalidrawCLI";
 import type { ExcalidrawCLIRequest, ExcalidrawCLIResult } from "src/types/excalidrawCliTypes";
 import type { ExactDrawingCreationOptions, PreparedDrawing } from "src/types/drawingCreationTypes";
@@ -160,6 +161,7 @@ const EXCALIDRAW_EXTERNAL_GET_LABEL_KEYS = [
   "COMP_IMG_ANY_FILE",
   "INSERT_CARD",
   "COMP_IMG_LaTeX",
+  "IMPORT_SVG_AS_ELEMENTS",
   "ABOUT_LIBRARIES",
 ] as const satisfies readonly (keyof typeof en)[];
 
@@ -1450,6 +1452,7 @@ export default class ExcalidrawPlugin extends Plugin {
   //used by obsidianUtils in the Excalidraw Pacakge
   //aweful coding, but does the job
   public runAction(action: Parameters<ObsidianExcalidrawHostAdapter["runAction"]>[0], editorId?: string) {
+    if (action === "importSVG") { openSVGImportForEditor(this, editorId); return; }
     if (action === "lucide") { this.lucidePicker.openForEditor(editorId); return; }
     if (!this.activeExcalidrawView) {
       return;

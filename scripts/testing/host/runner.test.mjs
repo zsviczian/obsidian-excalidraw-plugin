@@ -82,7 +82,7 @@ test("stages exact artifacts, asserts an editor and cleans its test drawing", as
     if (command === "dev:errors") return "No errors captured.";
     if (command === "eval") {
       const code = args[0];
-      if (code.includes("getCLIRuntime")) return '{"valid":true,"protocol":3}';
+      if (code.includes("getCLIRuntime")) return '{"valid":true,"protocol":4}';
       if (code.includes("app.vault.configDir")) return '{"configDir":".obsidian"}';
       if (code.includes("createAndOpenDrawing")) {
         activeDrawing=code.includes("_case1")?"__excalidraw_cli_smoke_1_case1.excalidraw.md":"__excalidraw_cli_smoke_1.excalidraw.md";

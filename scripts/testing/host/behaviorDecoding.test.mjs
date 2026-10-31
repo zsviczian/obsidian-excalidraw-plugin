@@ -4,6 +4,64 @@ import vm from "node:vm";
 import { readFileSync } from "node:fs";
 import ts from "typescript";
 
+function clickHarness(replace) {
+  const source = readFileSync(new URL("./behaviorEnvironment.mjs", import.meta.url), "utf8");
+  const file = ts.createSourceFile("behaviorEnvironment.mjs", source, ts.ScriptTarget.Latest, true);
+  let initializer;
+  function visit(node) {
+    if (ts.isVariableDeclaration(node) && node.name.getText(file) === "click") initializer = node.initializer;
+    ts.forEachChild(node, visit);
+  }
+  visit(file);
+  assert.ok(initializer);
+  const events = [], rect = { x: 10, y: 20, width: 40, height: 20 };
+  let hit;
+  const element = (visible) => ({
+    outerHTML: "<button>Convert</button>", isConnected: visible,
+    getClientRects: () => visible ? [rect] : [],
+    getBoundingClientRect: () => ({ toJSON: () => rect }),
+    contains(value) { return value === this; }, scrollIntoView() {},
+  });
+  const old = element(false), live = element(true);
+  hit = live;
+  let current = old;
+  const click = vm.runInNewContext(`(${initializer.getText(file)})`, {
+    doc: { elementFromPoint: () => hit }, context: { input: "mouse" },
+    input: async (method, params) => events.push({ method, params }),
+    check: (value, label) => assert.ok(value, label),
+    c: { async waitFor(predicate, label) {
+      for (let i = 0; i < 3; i++) {
+        if (predicate()) return;
+        if (replace) current = live;
+      }
+      throw new Error(label);
+    } },
+  });
+  return { click, resolve: () => current, old, events, cover: () => { hit = { outerHTML: "<div>Covered</div>" }; } };
+}
+
+test("trusted click reacquires a replaced menu button and hits the live control", async () => {
+  const h = clickHarness(true);
+  await h.click(h.resolve);
+  assert.equal(h.events.length, 2);
+  assert.equal(h.events[0].params.x, 30);
+  assert.equal(h.events[0].params.y, 30);
+});
+
+test("trusted click still rejects detached and covered controls", async () => {
+  const h = clickHarness(true);
+  await assert.rejects(h.click(h.old), /visible uncovered/);
+  h.cover();
+  await assert.rejects(h.click(h.resolve), /visible uncovered/);
+  assert.equal(h.events.length, 0);
+});
+
+test("trusted click still fails when a menu resolver finds no control", async () => {
+  const h = clickHarness(false);
+  await assert.rejects(h.click(() => null), /visible uncovered/);
+  assert.equal(h.events.length, 0);
+});
+
 test("actual behavior decoder requests CORS before loading and never attaches a canvas to the workspace", async () => {
   const text = readFileSync(new URL("./behaviorEnvironment.mjs", import.meta.url), "utf8");
   const file = ts.createSourceFile("behaviorEnvironment.mjs", text, ts.ScriptTarget.Latest, true);

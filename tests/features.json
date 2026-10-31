@@ -870,6 +870,26 @@
         {
           "path": "src/shared/svgToExcalidraw/walker.ts",
           "symbol": "walk"
+        },
+        {
+          "path": "src/shared/svgToExcalidraw/paint.ts",
+          "symbol": "export function paint"
+        },
+        {
+          "path": "src/shared/svgToExcalidraw/text.ts",
+          "symbol": "export function emitSVGText"
+        },
+        {
+          "path": "src/shared/svgConversionActions.ts",
+          "symbol": "prepareMermaidSVGInsert"
+        },
+        {
+          "path": "src/shared/svgToExcalidraw/cssVariables.ts",
+          "symbol": "resolveLocalVariables"
+        },
+        {
+          "path": "src/utils/svgFilePicker.ts",
+          "symbol": "openSVGFilePicker"
         }
       ],
       "tests": [
@@ -878,7 +898,38 @@
           "path": "scripts/testing/svg.source.test.mjs",
           "cases": [
             "node:scripts/testing/svg.source.test.mjs::whole-module SVG conversion preserves opacity, transforms and open strokes",
-            "node:scripts/testing/svg.source.test.mjs::whole-module SVG fixture imports without mutating source bytes"
+            "node:scripts/testing/svg.source.test.mjs::whole-module SVG fixture imports without mutating source bytes",
+            "node:scripts/testing/svg.source.test.mjs::whole-module SVG and Mermaid HTML labels become measured editable text with block-safe IDs"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/svgImport.test.mjs",
+          "cases": [
+            "node:scripts/testing/svgImport.test.mjs::unsupported SVG colors use the SVG current color without aborting other geometry",
+            "node:scripts/testing/svgImport.test.mjs::unsupported current colors fall back to black while explicit none and zero alpha stay transparent",
+            "node:scripts/testing/svgImport.test.mjs::unsupported paint servers honor an explicit SVG fallback without fetching resources"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/svgImporter.test.mjs",
+          "cases": [
+            "node:scripts/testing/svgImporter.test.mjs::ea.importSVG publishes all geometry and a paint approximation notice for unsupported colors"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/svgPaint.mjs",
+          "cases": [
+            "native:svg-paint:render-save-reopen",
+            "native:svg-paint:mermaid-pie",
+            "native:svg-paint:mermaid-mindmap",
+            "native:svg-paint:mermaid-gantt",
+            "native:svg-paint:mermaid-journey",
+            "native:svg-paint:mermaid-timeline",
+            "native:svg-paint:mermaid-git",
+            "native:svg-paint:mermaid-quadrant"
           ]
         },
         {
@@ -1049,6 +1100,70 @@
             "node:scripts/testing/pdfImport.test.mjs::PDF loader renders explicit PDF page",
             "node:scripts/testing/pdfImport.test.mjs::PDF loader renders explicit PDF crop",
             "node:scripts/testing/pdfImport.test.mjs::the previous plain-PDF null-reference path fails the loader evidence"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/svgText.test.mjs",
+          "cases": [
+            "node:scripts/testing/svgText.test.mjs::SVG text remains editable text with inherited color, alpha, anchor and baseline",
+            "node:scripts/testing/svgText.test.mjs::positioned tspan lines retain text, relative font units and baseline offsets",
+            "node:scripts/testing/svgText.test.mjs::uniform SVG transforms scale and rotate text with its group",
+            "node:scripts/testing/svgText.test.mjs::Mermaid foreignObject labels import as native text rather than empty SVG placeholders",
+            "node:scripts/testing/svgText.test.mjs::plain HTML label line breaks survive without executing or importing active content",
+            "node:scripts/testing/svgText.test.mjs::empty or hidden SVG/HTML text does not manufacture visible labels",
+            "node:scripts/testing/svgText.test.mjs::excessive text fails atomically instead of publishing a partial drawing",
+            "node:scripts/testing/svgText.test.mjs::text visibility can be restored by a child without exposing hidden siblings",
+            "node:scripts/testing/svgText.test.mjs::unsupported font sizes do not abort ordinary geometry and zero-size text stays hidden"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/svgText.mjs",
+          "cases": [
+            "native:svg-text:labels-render-edit-save-reopen",
+            "native:svg-text:popout-reopen"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/svgConversionActions.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/svgConversionActions.source.test.mjs::Mermaid conversion retains editable Unicode labels, image viewport, groups and opacity",
+            "node:scripts/testing/svgConversionActions.source.test.mjs::context conversion replaces one image with a single guarded publication, retaining source bytes",
+            "node:scripts/testing/svgConversionActions.source.test.mjs::SVG image placement does not duplicate root styles or create CSS ancestor matches"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/svgEntryPoints.mjs",
+          "cases": [
+            "native:svg-entry:main:image-menu-import",
+            "native:svg-entry:main:mermaid-convert",
+            "native:svg-entry:main:mermaid-image",
+            "native:svg-entry:main:mermaid-cancel",
+            "native:svg-entry:main:scene-convert-undo-reopen",
+            "native:svg-entry:popout:image-menu-import",
+            "native:svg-entry:popout:mermaid-convert",
+            "native:svg-entry:popout:mermaid-image",
+            "native:svg-entry:popout:mermaid-cancel",
+            "native:svg-entry:popout:scene-convert-undo-reopen"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/svgFilePicker.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/svgFilePicker.source.test.mjs::system SVG picker opens synchronously with SVG filter and returns the selected File",
+            "node:scripts/testing/svgFilePicker.source.test.mjs::system SVG picker cancellation and empty selection leave no input or callback"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/svgImport.test.mjs",
+          "cases": [
+            "node:scripts/testing/svgImport.test.mjs::attached Mermaid mindmap retains local variable colors, alpha and labels",
+            "node:scripts/testing/svgImport.test.mjs::cyclic and missing SVG variables use their call-site fallback or inherited presentation"
           ]
         }
       ],

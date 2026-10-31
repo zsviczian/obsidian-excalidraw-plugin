@@ -2,6 +2,8 @@ import type { ExcalidrawGenericElement } from "./elements/ExcalidrawElement";
 import type {
   SVGConversionState,
   SVGWarning,
+  SVGTextMeasurer,
+  SVGMatrix,
 } from "src/types/svgConversionTypes";
 import { walkSVG } from "./walker";
 
@@ -13,7 +15,14 @@ export type ConversionResult = {
 };
 
 /** Synchronously stages a bounded conversion; failure never publishes partial elements. */
-export const svgToExcalidraw = (svgString: string): ConversionResult => {
+export const svgToExcalidraw = (
+  svgString: string,
+  options: {
+    measureText?: SVGTextMeasurer;
+    transform?: SVGMatrix;
+    boundsViewport?: { width: number; height: number };
+  } = {},
+): ConversionResult => {
   try {
     if (typeof svgString !== "string" || svgString.length > 2000000)
       throw Error("SVG input size limit exceeded");
@@ -32,6 +41,8 @@ export const svgToExcalidraw = (svgString: string): ConversionResult => {
     )
       throw Error("Invalid SVG XML document");
     const state: SVGConversionState = {
+      textCharacters: 0,
+      measureText: options.measureText,
       elements: [],
       warnings: new Set(),
       nodes: 0,
@@ -42,7 +53,7 @@ export const svgToExcalidraw = (svgString: string): ConversionResult => {
       rules: [],
     };
     if (/<\?xml-stylesheet/i.test(svgString)) state.warnings.add("css");
-    walkSVG(root, state);
+    walkSVG(root, state, options.transform, options.boundsViewport);
     return {
       hasErrors: false,
       errors: "",

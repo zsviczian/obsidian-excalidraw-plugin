@@ -12,6 +12,7 @@ import {
   HoverParent,
   HoverPopover,
 } from "obsidian";
+import { convertSVGImage, getSVGImageData } from "src/shared/svgConversionActions";
 import {
   ExcalidrawElement,
   ExcalidrawImageElement,
@@ -5105,6 +5106,7 @@ export default class ExcalidrawView
     shouldRestoreElements = false,
     captureUpdate = CaptureUpdateAction.IMMEDIATELY,
     validateBeforePublish,
+    insertAtElementId,
   }: {
     newElements: ExcalidrawElement[];
     repositionToCursor?: boolean;
@@ -5114,6 +5116,8 @@ export default class ExcalidrawView
     shouldRestoreElements?: boolean;
     captureUpdate?: CaptureUpdateActionType;
     validateBeforePublish?: () => void;
+    /** Place newly staged geometry at an existing element's layer (for image conversion). */
+    insertAtElementId?: string;
   }): Promise<boolean> {
     const api = this.excalidrawAPI;
     if (!api) {
@@ -5185,9 +5189,14 @@ export default class ExcalidrawView
     }
 
     const newElementsToInsert = newElements.filter((e) => !removeSet.has(e.id));
-    const elements = newElementsOnTop
+    let elements = newElementsOnTop
       ? updatedSceneElements.concat(newElementsToInsert)
       : newElementsToInsert.concat(updatedSceneElements);
+    if (insertAtElementId) {
+      const index = updatedSceneElements.findIndex(e => e.id === insertAtElementId);
+      if (index < 0) return false;
+      elements = [...updatedSceneElements.slice(0, index), ...newElementsToInsert, ...updatedSceneElements.slice(index)];
+    }
 
     if (!shouldRefreshArrows) {
       shouldRefreshArrows = newElements.some(
@@ -7297,32 +7306,13 @@ export default class ExcalidrawView
         ]);
       }
 
-      if (
-        img?.embeddedFile?.mimeType === "image/svg+xml" &&
-        (!img.embeddedFile.file ||
-          (img.embeddedFile.file &&
-            !this.plugin.isExcalidrawFile(img.embeddedFile.file)))
-      ) {
+      if (img && !img.imageEl.locked && getSVGImageData(this, img.imageEl)) {
         contextMenuActions.push([
           renderContextMenuAction(
             React,
             t("IMPORT_SVG_CONTEXTMENU"),
             () => {
-              void (async () => {
-                const base64Content = img.embeddedFile
-                  .getImage(false)
-                  .split(",")[1];
-                // Decoding the base64 content
-                const svg = atob(base64Content);
-                if (!svg || svg === "") {
-                  return;
-                }
-                const ea = getEA(this);
-                ea.importSVG(svg);
-                ea.addToGroup(ea.getElements().map((el) => el.id));
-                await ea.addElementsToView(true, true, true, true);
-                ea.destroy();
-              })();
+              void convertSVGImage(this, img.imageEl.id);
             },
             onClose,
             "convertSvgToStrokes",

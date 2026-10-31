@@ -14,6 +14,8 @@ export type SVGMatrix = readonly [
 export type SVGWarning =
   | "compositing"
   | "stroke"
+  | "paint"
+  | "text"
   | "unsupported"
   | "css"
   | "viewport";
@@ -27,6 +29,8 @@ export type SVGContext = {
   viewport: { width: number; height: number };
 };
 export type SVGConversionState = {
+  textCharacters: number;
+  measureText?: SVGTextMeasurer;
   elements: ExcalidrawGenericElement[];
   warnings: Set<SVGWarning>;
   nodes: number;
@@ -41,3 +45,8 @@ export type SVGConversionState = {
     order: number;
   }[];
 };
+
+/** Host font metrics keep conversion synchronous without importing another renderer. */
+export type SVGTextMeasurer = (
+  text: string, fontSize: number, fontFamily: number, lineHeight: number,
+) => { width: number; height: number };

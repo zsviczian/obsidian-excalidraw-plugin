@@ -1,0 +1,296 @@
+{
+  "date": "2026-10-31",
+  "suiteId": "svg-paint-fallback",
+  "status": "passed",
+  "nativeCases": [
+    {
+      "testId": "native:svg-paint:render-save-reopen",
+      "featureIds": [
+        "P03",
+        "P09"
+      ],
+      "status": "passed",
+      "assertions": [
+        "EA import succeeds",
+        "all geometry retained",
+        "decoded export has fallback and normal colors",
+        "save acknowledged",
+        "exact IDs/colors survive reopen"
+      ],
+      "bluePixels": 400,
+      "redPixels": 400
+    },
+    {
+      "testId": "native:svg-paint:mermaid-pie",
+      "featureIds": [
+        "P03",
+        "P09"
+      ],
+      "status": "passed",
+      "assertions": [
+        "real Extras returns SVG-backed image",
+        "actual SVG imports through EA",
+        "nonempty native geometry without an image fallback"
+      ],
+      "nativeElements": 6,
+      "limitations": [
+        "SVG labels/effects are not preserved as editable text or semantic bindings"
+      ]
+    },
+    {
+      "testId": "native:svg-paint:mermaid-mindmap",
+      "featureIds": [
+        "P03",
+        "P09"
+      ],
+      "status": "passed",
+      "assertions": [
+        "real Extras returns SVG-backed image",
+        "actual SVG imports through EA",
+        "nonempty native geometry without an image fallback"
+      ],
+      "nativeElements": 2,
+      "limitations": [
+        "SVG labels/effects are not preserved as editable text or semantic bindings"
+      ]
+    },
+    {
+      "testId": "native:svg-paint:mermaid-gantt",
+      "featureIds": [
+        "P03",
+        "P09"
+      ],
+      "status": "passed",
+      "assertions": [
+        "real Extras returns SVG-backed image",
+        "actual SVG imports through EA",
+        "nonempty native geometry without an image fallback"
+      ],
+      "nativeElements": 10,
+      "limitations": [
+        "SVG labels/effects are not preserved as editable text or semantic bindings"
+      ]
+    },
+    {
+      "testId": "native:svg-paint:mermaid-journey",
+      "featureIds": [
+        "P03",
+        "P09"
+      ],
+      "status": "passed",
+      "assertions": [
+        "real Extras returns SVG-backed image",
+        "actual SVG imports through EA",
+        "nonempty native geometry without an image fallback"
+      ],
+      "nativeElements": 14,
+      "limitations": [
+        "SVG labels/effects are not preserved as editable text or semantic bindings"
+      ]
+    },
+    {
+      "testId": "native:svg-paint:mermaid-timeline",
+      "featureIds": [
+        "P03",
+        "P09"
+      ],
+      "status": "passed",
+      "assertions": [
+        "real Extras returns SVG-backed image",
+        "actual SVG imports through EA",
+        "nonempty native geometry without an image fallback"
+      ],
+      "nativeElements": 6,
+      "limitations": [
+        "SVG labels/effects are not preserved as editable text or semantic bindings"
+      ]
+    },
+    {
+      "testId": "native:svg-paint:mermaid-git",
+      "featureIds": [
+        "P03",
+        "P09"
+      ],
+      "status": "passed",
+      "assertions": [
+        "real Extras returns SVG-backed image",
+        "actual SVG imports through EA",
+        "nonempty native geometry without an image fallback"
+      ],
+      "nativeElements": 4,
+      "limitations": [
+        "SVG labels/effects are not preserved as editable text or semantic bindings"
+      ]
+    },
+    {
+      "testId": "native:svg-paint:mermaid-quadrant",
+      "featureIds": [
+        "P03",
+        "P09"
+      ],
+      "status": "passed",
+      "assertions": [
+        "real Extras returns SVG-backed image",
+        "actual SVG imports through EA",
+        "nonempty native geometry without an image fallback"
+      ],
+      "nativeElements": 5,
+      "limitations": [
+        "SVG labels/effects are not preserved as editable text or semantic bindings"
+      ]
+    }
+  ],
+  "cleanup": "passed",
+  "baselineRestoration": {
+    "restored": true,
+    "pluginEnabled": true,
+    "extrasEnabled": true,
+    "theme": "moonstone",
+    "restoredFixturePaths": []
+  },
+  "settlingStatus": "passed",
+  "diagnostics": {
+    "cliErrors": {
+      "raw": "No errors captured.",
+      "diagnostics": [],
+      "unexpected": []
+    },
+    "consoleErrors": [],
+    "unexpectedConsoleErrors": [],
+    "cleanupCLIErrors": {
+      "raw": "No errors captured.",
+      "diagnostics": [],
+      "unexpected": []
+    },
+    "windowErrors": [],
+    "browserDiagnostics": {
+      "diagnostics": [],
+      "unexpected": []
+    }
+  },
+  "sources": {
+    "fork": {
+      "repository": "zsviczian/excalidraw",
+      "commit": "745d62f7071be4da192f595bb75e140a7b741fc0",
+      "dirty": false,
+      "diffHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "lockfileHash": "e170c0e3c4feedc65a336746b033423a05e7401845ff51f75ec6a7c71d234bf2",
+      "buildCommand": "yarn build:esm && yarn build:obsidian",
+      "toolchain": {
+        "node": "v22.22.3",
+        "platform": "win32"
+      },
+      "artifacts": [
+        {
+          "role": "production-js",
+          "relativePath": "packages/excalidraw/dist/obsidian/excalidraw.production.min.js",
+          "sha256": "38edbad784def40c82bca432ee38592995468778fe413504fff860c9607b532e",
+          "bytes": 6507773
+        },
+        {
+          "role": "production-css",
+          "relativePath": "packages/excalidraw/dist/obsidian/excalidraw.production.min.css",
+          "sha256": "0337e307594435b5125d216c9570aad9b5d4460908f3f0e716baf1daa87ac002",
+          "bytes": 309492
+        },
+        {
+          "role": "development-js",
+          "relativePath": "packages/excalidraw/dist/obsidian/excalidraw.development.js",
+          "sha256": "5fbb5f15c1135eb64a3b3b6091fd99e3395be0f79ee1c3a4c3dac431964f714a",
+          "bytes": 29985663
+        },
+        {
+          "role": "development-css",
+          "relativePath": "packages/excalidraw/dist/obsidian/excalidraw.development.css",
+          "sha256": "192fb4463825f0b870d9f59862f6ae54056e591226546608958fe9e3c937b883",
+          "bytes": 350666
+        }
+      ]
+    },
+    "extras": {
+      "repository": "zsviczian/obsidian-excalidraw-extras",
+      "commit": "df1f2b5659259c43780c5ef07cd433fa6c3e14fa",
+      "dirty": false,
+      "diffHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "lockfileHash": "a24120b8bb7df3ca07f10ad20893355160f0f335332e9f915c97cb207160f64f",
+      "buildCommand": "npm run build && npm run build:api",
+      "toolchain": {
+        "node": "v22.22.3",
+        "platform": "win32"
+      },
+      "artifacts": [
+        {
+          "role": "main",
+          "relativePath": "dist/main.js",
+          "sha256": "c377df5b7f286c7306604827fadcb363313cebc5a9953b7d77e106fdb611f7d8",
+          "bytes": 2540802
+        },
+        {
+          "role": "manifest",
+          "relativePath": "dist/manifest.json",
+          "sha256": "d7615e0322673617a59ca067dde4a59624fe2d947c93c025ea631da7ad920611",
+          "bytes": 303
+        },
+        {
+          "role": "styles",
+          "relativePath": "dist/styles.css",
+          "sha256": "3de04a6882b3e43b48f81231962c5f52afbd7146cc986fb0c86631ac5de30eda",
+          "bytes": 1427
+        }
+      ]
+    },
+    "plugin": {
+      "repository": "zsviczian/obsidian-excalidraw-plugin",
+      "commit": "ed99e793168a601a6151969ec80ce7232d9af5b0",
+      "dirty": true,
+      "diffHash": "ef735b4d91a0952d7bee6aa645e111310e01eb9e08e0c5efc75e91457039e9e9",
+      "lockfileHash": "6a52b4b078cb94835b4c9f11c025aaa132baafb7b0e885c8a91835e80c2cfb5c",
+      "buildCommand": "npm run build",
+      "toolchain": {
+        "node": "v22.22.3",
+        "platform": "win32"
+      },
+      "artifacts": [
+        {
+          "role": "main",
+          "relativePath": "dist/main.js",
+          "sha256": "f73848b0216b2971c88b746e55e6e724ed0823f9249ce979d0e93fb9b4a8e18d",
+          "bytes": 5031850
+        },
+        {
+          "role": "manifest",
+          "relativePath": "dist/manifest.json",
+          "sha256": "4880b885c50643ef848d31cea829776ca2e96747353aee334d71e875f79d31c0",
+          "bytes": 470
+        },
+        {
+          "role": "styles",
+          "relativePath": "dist/styles.css",
+          "sha256": "4f71f6598b45de2e1ae94c20b7a190397a8b1150cd78b29e10fdf4638b6e6c7d",
+          "bytes": 354364
+        }
+      ]
+    }
+  },
+  "portable": {
+    "focusedSVG": {
+      "passed": 59,
+      "newCases": 4,
+      "failedBeforeFix": 4
+    },
+    "pluginFast": 507,
+    "wholeModuleCoverage": 84,
+    "cliOffline": 25,
+    "productionBuild": "passed",
+    "publicLibraryBuild": "passed",
+    "touchedTypescriptLint": "9 files passed with zero warnings",
+    "wholeRepositoryLint": "118 errors; no edits were made to unrelated lint failures",
+    "inventory": "passed",
+    "featureRegistry": "passed"
+  },
+  "limitations": [
+    "Focused main-window native run; full 357-case acceptance profile not rerun.",
+    "Mermaid SVG conversion checks nonempty geometry, not preservation of text, effects or semantic bindings.",
+    "Physical mobile and macOS/Linux not run."
+  ]
+}

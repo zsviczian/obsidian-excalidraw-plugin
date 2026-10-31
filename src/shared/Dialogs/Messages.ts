@@ -18,43 +18,19 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
 "2.29.1": `
-## New
-- **Insert Lucide icon** opens a searchable sidepanel from the command palette or image menu. Insert editable grouped strokes at the visible canvas center in small, medium or large sizes, using the drawing's current color, roughness and opacity. [#3019](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/3019)
-
-## Mermaid diagrams
-- Mermaid conversion now uses Pele through Excalidraw Extras. Update Extras to a build providing Mermaid component 3.0.0. Existing Mermaid image source remains editable.
-
-## Excalidraw CLI
-- Discover installed Lucide names with \`icons\`, then insert native groups through \`create.icons\` or \`apply\`'s \`lucide\` operation. Returned \`groupMap\` handles include every member ID; ordinary icon insertion needs no trusted script. [#3019](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/3019)
-- Fixed image-heavy drawing revisions without concatenating image data, and corrected image-insertion scale validation. Refused operations can retry the same request ID only when no work started. [#3004](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3004)
-- Added opt-in image inventory, bounded image labels/tags, mixed-fidelity SVG/PNG previews and output limits. Originals remain untouched and full fidelity stays the default. [#3004](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3004)
+## New and improved
+- **Editable Lucide icons.** Search and insert icons from the command palette or image menu. Also available to CLI agents and scripts through \`ea.addLucideIcon()\`. [#3019](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/3019)
+- **Mermaid diagrams.** Improved conversion and previews, with a choice to convert SVG output into editable elements. Update **Excalidraw Extras** to use the updated converter.
+- **SVG imports.** Import editable shapes and text from the image menu, or convert an SVG image already in your drawing. [#3018](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3018)
+- **CLI image previews.** Agents can inspect images and request smaller previews without changing the originals. [#3004](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3004)
+- **Mindmap Builder.** Paste copied branches with their links, images and grouped notes. [#2996](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2996)
 
 ## Fixed
-- Plugin reload no longer lets late settings saves replace custom preferences with an empty record or defaults.
-- Adding a link to a text element or shape label no longer discards undo history for earlier drawing actions.
-- Embedded Markdown previews no longer take editor focus when they load, avoiding a mobile toolbar error. [#3022](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/3022)
-- Importing a PDF file through ExcalidrawAutomate loads page 1 when no page reference is supplied. [#3022](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/3022)
-- Markdown images using Helvetica no longer try to fetch a nonexistent font file. [#3022](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/3022)
-- Autosave recovers after an unexpected save error instead of remaining busy. [#3022](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/3022)
-- The private React runtime uses browser scheduling to avoid Node event-loop errors when closing popout windows. [#3022](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/3022)
-- Template choices show their folder paths and offer **Blank drawing** first. Escape or dismissal cancels interactive creation without creating a drawing, folder or embed. [#2649](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2649)
-- Fullscreen now works from nested workspace splits and restores the surrounding panes on exit. [#2743](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2743)
-- SVG-to-stroke imports preserve inherited colors, transparency, open lines, transparent holes and SVG transforms more faithfully. Local CSS keeps ID/class/tag precedence even with repeated selectors; opacity approximation notices include reused SVG groups. Unsupported features and approximations produce a notice; failed imports leave the drawing untouched. [#3018](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3018)
-- Text elements keep their full text when a linter removes blank lines between entries. [#3013](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3013)
-- Edited LaTeX formulas immediately respond to clicks across their new size. [#3014](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3014)
-- Editing a resized Markdown image keeps its canvas size. Untouched images still grow with their content. Changing the editor's **Width** setting updates every copy sharing that image, preserving cropped copies without distortion. Cropped Markdown images save correctly. [#2947](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2947)
-- Browser image drops honor the displayed modifier action, including mixed file/URL payloads. Interactive-frame drops use Excalidraw's provider-specific sizing, including portrait YouTube Shorts. YouTube thumbnails load from the correct image URL; importing one saves it to the vault and keeps its video link. Internal file drops advertise only supported actions; unsupported files show Insert link. [#2967](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2967)
-- Drawing-load warnings now name the affected file. Select **More information** to learn about missing or malformed drawing data and device-local backups, and see the reported error. Warnings without a local backup also include a **Dismiss** button. Existing recovery actions are unchanged. [#2995](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2995)
-- **Settings backup noise.** Settings are now written with canonically sorted keys and unchanged saves are skipped, ending the endless data.json rewrite loop that flooded Obsidian Git vault backups with no-change commits.
-
-## Excalidraw Automate
-- Construct a grouped editable Lucide icon in the EA workbench without opening or saving a drawing. Defaults use the EA style; size is the longest nominal viewport side and strokeWidth is an optional final scene width. Returns group/member IDs and approximation warnings; call addElementsToView separately. [#3019](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/3019)
-\`\`\`ts
-addLucideIcon(options: LucideIconOptions): LucideIconResult;
-\`\`\`
-- Mindmap Builder is now distributed as a readable script, with its modular source maintained in the EA Scripts workspace. Closing its sidepanel no longer lets delayed hotkey callbacks affect a newly opened instance.
-- Mindmap Builder's existing Paste action can attach a natively copied branch while preserving its links, images, and grouped notes. [#2996](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2996)
-- Closing or docking a script input with an open link suggester no longer leaves Enter intercepted in Markdown editors. Mindmap Builder also releases hotkey recording and overrides when it closes.
+- Adding links to text or shape labels no longer breaks undo history.
+- Resized and cropped Markdown images retain their dimensions and crops when edited. [#2947](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2947)
+- Fullscreen works in nested workspace splits and restores the surrounding panes on exit. [#2743](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2743)
+- Image drops honor modifier-key actions, and YouTube thumbnails retain their video links. [#2967](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2967)
+- Settings no longer create unnecessary backup or Git updates when nothing has changed.
 
 `,
 "2.29.0": `

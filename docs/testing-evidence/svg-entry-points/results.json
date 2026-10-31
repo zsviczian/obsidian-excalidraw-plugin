@@ -1,0 +1,654 @@
+{
+  "date": "2026-10-31",
+  "suiteId": "svg-conversion-entry-points",
+  "status": "passed",
+  "vault": ".test-work/vaults/excalidraw-auto-test/",
+  "startedAt": "2026-10-31T11:00:07.007Z",
+  "completedAt": "2026-10-31T11:01:05.554Z",
+  "environment": {
+    "platform": "win32",
+    "node": "v22.22.3",
+    "obsidian": "1.14.5 (installer 1.14.5)",
+    "electron": "43.8.3"
+  },
+  "sources": {
+    "fork": {
+      "repository": "zsviczian/excalidraw",
+      "commit": "745d62f7071be4da192f595bb75e140a7b741fc0",
+      "dirty": true,
+      "diffHash": "262413527ca155b26a7605556a25d4d9a8a71bc65529be99f621727d78fb1285",
+      "lockfileHash": "e170c0e3c4feedc65a336746b033423a05e7401845ff51f75ec6a7c71d234bf2",
+      "buildCommand": "yarn build:esm && yarn build:obsidian",
+      "toolchain": {
+        "node": "v22.22.3",
+        "platform": "win32"
+      },
+      "artifacts": [
+        {
+          "role": "production-js",
+          "relativePath": "packages/excalidraw/dist/obsidian/excalidraw.production.min.js",
+          "sha256": "0d7c29af51230d5c5a34865c2b42c1e5708e19c2e2b6f7c2f28fa7191731190a",
+          "bytes": 6508320
+        },
+        {
+          "role": "production-css",
+          "relativePath": "packages/excalidraw/dist/obsidian/excalidraw.production.min.css",
+          "sha256": "0337e307594435b5125d216c9570aad9b5d4460908f3f0e716baf1daa87ac002",
+          "bytes": 309492
+        },
+        {
+          "role": "development-js",
+          "relativePath": "packages/excalidraw/dist/obsidian/excalidraw.development.js",
+          "sha256": "e055fb6ce4345eccf9434334978560041f60086abc996296981e61a2e7bb5ca3",
+          "bytes": 29991496
+        },
+        {
+          "role": "development-css",
+          "relativePath": "packages/excalidraw/dist/obsidian/excalidraw.development.css",
+          "sha256": "192fb4463825f0b870d9f59862f6ae54056e591226546608958fe9e3c937b883",
+          "bytes": 350666
+        }
+      ]
+    },
+    "extras": {
+      "repository": "zsviczian/obsidian-excalidraw-extras",
+      "commit": "df1f2b5659259c43780c5ef07cd433fa6c3e14fa",
+      "dirty": false,
+      "diffHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "lockfileHash": "a24120b8bb7df3ca07f10ad20893355160f0f335332e9f915c97cb207160f64f",
+      "buildCommand": "npm run build && npm run build:api",
+      "toolchain": {
+        "node": "v22.22.3",
+        "platform": "win32"
+      },
+      "artifacts": [
+        {
+          "role": "main",
+          "relativePath": "dist/main.js",
+          "sha256": "c377df5b7f286c7306604827fadcb363313cebc5a9953b7d77e106fdb611f7d8",
+          "bytes": 2540802
+        },
+        {
+          "role": "manifest",
+          "relativePath": "dist/manifest.json",
+          "sha256": "d7615e0322673617a59ca067dde4a59624fe2d947c93c025ea631da7ad920611",
+          "bytes": 303
+        },
+        {
+          "role": "styles",
+          "relativePath": "dist/styles.css",
+          "sha256": "3de04a6882b3e43b48f81231962c5f52afbd7146cc986fb0c86631ac5de30eda",
+          "bytes": 1427
+        }
+      ]
+    },
+    "plugin": {
+      "repository": "zsviczian/obsidian-excalidraw-plugin",
+      "commit": "ae661c0ee8fa64df584864c3cc7af3df426e486f",
+      "dirty": true,
+      "diffHash": "1ceedb3fa9aec302b150ceac65536b9eba967f272c7b14211b9afd40327f141f",
+      "lockfileHash": "6a52b4b078cb94835b4c9f11c025aaa132baafb7b0e885c8a91835e80c2cfb5c",
+      "buildCommand": "npm run build",
+      "toolchain": {
+        "node": "v22.22.3",
+        "platform": "win32"
+      },
+      "artifacts": [
+        {
+          "role": "main",
+          "relativePath": "dist/main.js",
+          "sha256": "a6704eef12dd47ba3de9cd217639ddf1c69546dbf693246559f063aaf5a0fb59",
+          "bytes": 5042947
+        },
+        {
+          "role": "manifest",
+          "relativePath": "dist/manifest.json",
+          "sha256": "4880b885c50643ef848d31cea829776ca2e96747353aee334d71e875f79d31c0",
+          "bytes": 470
+        },
+        {
+          "role": "styles",
+          "relativePath": "dist/styles.css",
+          "sha256": "4f71f6598b45de2e1ae94c20b7a190397a8b1150cd78b29e10fdf4638b6e6c7d",
+          "bytes": 354364
+        }
+      ]
+    }
+  },
+  "installedPluginHashes": {
+    "main.js": "a6704eef12dd47ba3de9cd217639ddf1c69546dbf693246559f063aaf5a0fb59",
+    "manifest.json": "4880b885c50643ef848d31cea829776ca2e96747353aee334d71e875f79d31c0",
+    "styles.css": "4f71f6598b45de2e1ae94c20b7a190397a8b1150cd78b29e10fdf4638b6e6c7d"
+  },
+  "mainBytes": 5042947,
+  "releaseHeadroomBytes": 199933,
+  "nativeCases": [
+    {
+      "testId": "native:svg-paint:render-save-reopen",
+      "featureIds": [
+        "P03",
+        "P09"
+      ],
+      "status": "passed",
+      "assertions": [
+        "EA import succeeds",
+        "all geometry retained",
+        "decoded export has fallback and normal colors",
+        "save acknowledged",
+        "exact IDs/colors survive reopen"
+      ],
+      "bluePixels": 400,
+      "redPixels": 400
+    },
+    {
+      "testId": "native:svg-paint:mermaid-pie",
+      "featureIds": [
+        "P03",
+        "P09"
+      ],
+      "status": "passed",
+      "assertions": [
+        "real Extras returns SVG-backed image",
+        "actual SVG imports through EA",
+        "nonempty native geometry without an image fallback",
+        "expected SVG labels retained as editable text"
+      ],
+      "nativeElements": 11,
+      "textElements": 5,
+      "limitations": [
+        "Fonts/complex text layout may differ; effects and semantic bindings are not reconstructed"
+      ]
+    },
+    {
+      "testId": "native:svg-paint:mermaid-mindmap",
+      "featureIds": [
+        "P03",
+        "P09"
+      ],
+      "status": "passed",
+      "assertions": [
+        "real Extras returns SVG-backed image",
+        "actual SVG imports through EA",
+        "nonempty native geometry without an image fallback",
+        "expected SVG labels retained as editable text"
+      ],
+      "nativeElements": 4,
+      "textElements": 2,
+      "limitations": [
+        "Fonts/complex text layout may differ; effects and semantic bindings are not reconstructed"
+      ]
+    },
+    {
+      "testId": "native:svg-paint:mermaid-gantt",
+      "featureIds": [
+        "P03",
+        "P09"
+      ],
+      "status": "passed",
+      "assertions": [
+        "real Extras returns SVG-backed image",
+        "actual SVG imports through EA",
+        "nonempty native geometry without an image fallback",
+        "expected SVG labels retained as editable text"
+      ],
+      "nativeElements": 17,
+      "textElements": 7,
+      "limitations": [
+        "Fonts/complex text layout may differ; effects and semantic bindings are not reconstructed"
+      ]
+    },
+    {
+      "testId": "native:svg-paint:mermaid-journey",
+      "featureIds": [
+        "P03",
+        "P09"
+      ],
+      "status": "passed",
+      "assertions": [
+        "real Extras returns SVG-backed image",
+        "actual SVG imports through EA",
+        "nonempty native geometry without an image fallback",
+        "expected SVG labels retained as editable text"
+      ],
+      "nativeElements": 23,
+      "textElements": 9,
+      "limitations": [
+        "Fonts/complex text layout may differ; effects and semantic bindings are not reconstructed"
+      ]
+    },
+    {
+      "testId": "native:svg-paint:mermaid-timeline",
+      "featureIds": [
+        "P03",
+        "P09"
+      ],
+      "status": "passed",
+      "assertions": [
+        "real Extras returns SVG-backed image",
+        "actual SVG imports through EA",
+        "nonempty native geometry without an image fallback",
+        "expected SVG labels retained as editable text"
+      ],
+      "nativeElements": 9,
+      "textElements": 3,
+      "limitations": [
+        "Fonts/complex text layout may differ; effects and semantic bindings are not reconstructed"
+      ]
+    },
+    {
+      "testId": "native:svg-paint:mermaid-git",
+      "featureIds": [
+        "P03",
+        "P09"
+      ],
+      "status": "passed",
+      "assertions": [
+        "real Extras returns SVG-backed image",
+        "actual SVG imports through EA",
+        "nonempty native geometry without an image fallback",
+        "expected SVG labels retained as editable text"
+      ],
+      "nativeElements": 6,
+      "textElements": 2,
+      "limitations": [
+        "Fonts/complex text layout may differ; effects and semantic bindings are not reconstructed"
+      ]
+    },
+    {
+      "testId": "native:svg-paint:mermaid-quadrant",
+      "featureIds": [
+        "P03",
+        "P09"
+      ],
+      "status": "passed",
+      "assertions": [
+        "real Extras returns SVG-backed image",
+        "actual SVG imports through EA",
+        "nonempty native geometry without an image fallback",
+        "expected SVG labels retained as editable text"
+      ],
+      "nativeElements": 7,
+      "textElements": 2,
+      "limitations": [
+        "Fonts/complex text layout may differ; effects and semantic bindings are not reconstructed"
+      ]
+    },
+    {
+      "testId": "native:svg-text:labels-render-edit-save-reopen",
+      "featureIds": [
+        "P03",
+        "P09"
+      ],
+      "status": "passed",
+      "assertions": [
+        "all source labels become native text",
+        "raw/editable text and positive measured geometry",
+        "real native preview export",
+        "decoded text-only export contains visible glyphs",
+        "native text edit",
+        "acknowledged save and exact IDs/text after reopen"
+      ],
+      "labels": 2,
+      "nativeElements": 3,
+      "glyphPixels": 1028
+    },
+    {
+      "testId": "native:svg-text:popout-reopen",
+      "featureIds": [
+        "P03",
+        "P09"
+      ],
+      "status": "passed",
+      "assertions": [
+        "saved editable labels load in popout",
+        "edited value preserved",
+        "owning-window preview export"
+      ]
+    },
+    {
+      "testId": "native:svg-entry:main:image-menu-import",
+      "featureIds": [
+        "P03",
+        "P09"
+      ],
+      "status": "passed",
+      "systemChooserEvents": 3,
+      "cancellationTransport": "synthetic cancel event; OS chooser intercepted",
+      "selectionTransport": "CDP DOM.setFileInputFiles after trusted menu clicks and Page.fileChooserOpened",
+      "mindmapBluePixels": 18120,
+      "mindmapBlueReference": [
+        77,
+        118,
+        168,
+        56
+      ],
+      "assertions": [
+        "trusted image-menu entry",
+        "system chooser event and SVG filter",
+        "synthetic picker cancellation leaves drawing unchanged",
+        "exact system SVG file selection outside vault",
+        "supplied mindmap colors/transparency and decoded pixels",
+        "native geometry and editable Unicode text",
+        "physical save/reopen"
+      ],
+      "trustedClicks": 6
+    },
+    {
+      "testId": "native:svg-entry:main:mermaid-convert",
+      "featureIds": [
+        "P03",
+        "P09"
+      ],
+      "status": "passed",
+      "assertions": [
+        "real Extras SVG preview",
+        "trusted Insert and explicit convert choice",
+        "correct scene representation",
+        "physical save/reopen"
+      ],
+      "trustedClicks": 3
+    },
+    {
+      "testId": "native:svg-entry:main:mermaid-image",
+      "featureIds": [
+        "P03",
+        "P09"
+      ],
+      "status": "passed",
+      "assertions": [
+        "real Extras SVG preview",
+        "trusted Insert and explicit image choice",
+        "correct scene representation",
+        "physical save/reopen"
+      ],
+      "trustedClicks": 3
+    },
+    {
+      "testId": "native:svg-entry:main:mermaid-cancel",
+      "featureIds": [
+        "P03",
+        "P09"
+      ],
+      "status": "passed",
+      "assertions": [
+        "real Extras SVG preview",
+        "trusted Insert and explicit cancel choice",
+        "correct scene representation",
+        "physical save/reopen"
+      ],
+      "trustedClicks": 3
+    },
+    {
+      "testId": "native:svg-entry:main:scene-convert-undo-reopen",
+      "featureIds": [
+        "P03",
+        "P09"
+      ],
+      "status": "passed",
+      "assertions": [
+        "trusted right-click on generated embedded SVG",
+        "in-place grouped replacement at original layer",
+        "shared source and independent sizes preserved",
+        "decoded output pixels",
+        "one-step undo/redo",
+        "physical save/reopen",
+        "source SVG root/ancestor styles apply once",
+        "decoded red pixels retain 30 percent opacity"
+      ],
+      "nativeElements": 11,
+      "paintedPixels": 47635,
+      "cssRedPixels": 20000,
+      "trustedClicks": 2
+    },
+    {
+      "testId": "native:svg-entry:popout:image-menu-import",
+      "featureIds": [
+        "P03",
+        "P09"
+      ],
+      "status": "passed",
+      "systemChooserEvents": 3,
+      "cancellationTransport": "synthetic cancel event; OS chooser intercepted",
+      "selectionTransport": "CDP DOM.setFileInputFiles after trusted menu clicks and Page.fileChooserOpened",
+      "mindmapBluePixels": 18120,
+      "mindmapBlueReference": [
+        77,
+        118,
+        168,
+        56
+      ],
+      "assertions": [
+        "trusted image-menu entry",
+        "system chooser event and SVG filter",
+        "synthetic picker cancellation leaves drawing unchanged",
+        "exact system SVG file selection outside vault",
+        "supplied mindmap colors/transparency and decoded pixels",
+        "native geometry and editable Unicode text",
+        "physical save/reopen"
+      ],
+      "trustedClicks": 6
+    },
+    {
+      "testId": "native:svg-entry:popout:mermaid-convert",
+      "featureIds": [
+        "P03",
+        "P09"
+      ],
+      "status": "passed",
+      "assertions": [
+        "real Extras SVG preview",
+        "trusted Insert and explicit convert choice",
+        "correct scene representation",
+        "physical save/reopen"
+      ],
+      "trustedClicks": 3
+    },
+    {
+      "testId": "native:svg-entry:popout:mermaid-image",
+      "featureIds": [
+        "P03",
+        "P09"
+      ],
+      "status": "passed",
+      "assertions": [
+        "real Extras SVG preview",
+        "trusted Insert and explicit image choice",
+        "correct scene representation",
+        "physical save/reopen"
+      ],
+      "trustedClicks": 3
+    },
+    {
+      "testId": "native:svg-entry:popout:mermaid-cancel",
+      "featureIds": [
+        "P03",
+        "P09"
+      ],
+      "status": "passed",
+      "assertions": [
+        "real Extras SVG preview",
+        "trusted Insert and explicit cancel choice",
+        "correct scene representation",
+        "physical save/reopen"
+      ],
+      "trustedClicks": 3
+    },
+    {
+      "testId": "native:svg-entry:popout:scene-convert-undo-reopen",
+      "featureIds": [
+        "P03",
+        "P09"
+      ],
+      "status": "passed",
+      "assertions": [
+        "trusted right-click on generated embedded SVG",
+        "in-place grouped replacement at original layer",
+        "shared source and independent sizes preserved",
+        "decoded output pixels",
+        "one-step undo/redo",
+        "physical save/reopen",
+        "source SVG root/ancestor styles apply once",
+        "decoded red pixels retain 30 percent opacity"
+      ],
+      "nativeElements": 11,
+      "paintedPixels": 47637,
+      "cssRedPixels": 20000,
+      "trustedClicks": 2
+    }
+  ],
+  "counts": {
+    "native": {
+      "passed": 20,
+      "newUI": 10,
+      "reusedConverter": 10
+    },
+    "pluginFast": {
+      "passed": 549,
+      "newUIController": 15,
+      "newTooling": 3,
+      "newColorsAndPicker": 13,
+      "reused": 518
+    },
+    "measuredSourceSubset": 105,
+    "focusedSVG": 96,
+    "forkOwned": {
+      "passed": 146,
+      "newInsertionTests": 7
+    },
+    "forkBrowser": {
+      "passed": 20,
+      "reused": 20
+    }
+  },
+  "portable": {
+    "pluginBuild": "passed",
+    "libraryBuild": "passed",
+    "bundleChecks": 5,
+    "forkBuild": "passed",
+    "forkFullTypes": "passed",
+    "cleanPackedConsumer": "passed",
+    "audit": "268 paths and 15 checker tests pass",
+    "inventory": "passed",
+    "features": "passed",
+    "lint": "No new findings with matching local declarations; unchanged 16 plugin view errors and one fork ImageMenu import-order warning remain. No exclusions/suppressions added."
+  },
+  "regressions": {
+    "rootCSS": {
+      "failedBefore": {
+        "color": "#0000ff",
+        "opacity": 15
+      },
+      "passedAfter": {
+        "color": "#ff0000",
+        "opacity": 30
+      },
+      "reason": "Initial affine placement preserves the original SVG tree; no wrapper-created selector matches."
+    },
+    "tooling": [
+      "A Chromium solid-color control proves premultiplied alpha quantization; decoded translucent-blue pixels use that independent reference.",
+      "Trusted context-menu input reacquires rerendered buttons; detached, covered and missing targets still fail, verified by three regression cases.",
+      "Obsolete test-only scrollToContent call corrected to supported zoomToFit; assertions retained.",
+      "Packed consumer ignores Yarn npm_execpath and selects the actual npm CLI.",
+      "Artifact-producing builds and artifact readers run in dependency order; cached pinned Chromium selected explicitly."
+    ],
+    "localVariables": {
+      "fixture": "tests/fixtures/mermaid-mindmap-css-variables.svg",
+      "strokeColors": [
+        "#4c78a8",
+        "#f58518",
+        "#54a24b",
+        "#e45756"
+      ],
+      "rootFill": "#f3f3f3",
+      "blueFill": "#4c78a838",
+      "editableLabels": 13,
+      "scope": "SVG-local variables and fallback tokens; never host theme styles",
+      "limits": {
+        "customPropertiesPerElement": 1024,
+        "chainDepth": 32,
+        "valueCharacters": 8192,
+        "workBudget": 8000000
+      }
+    }
+  },
+  "cleanup": "passed",
+  "baselineRestoration": {
+    "restored": true,
+    "pluginEnabled": true,
+    "extrasEnabled": true,
+    "theme": "moonstone",
+    "restoredFixturePaths": []
+  },
+  "settling": [
+    {
+      "id": "svg-paint-fallback",
+      "status": "passed"
+    },
+    {
+      "id": "svg-editable-text",
+      "status": "passed"
+    },
+    {
+      "id": "svg-entry-points",
+      "status": "passed",
+      "contexts": [
+        {
+          "label": "behavior:main",
+          "status": "passed"
+        },
+        {
+          "label": "behavior:popout",
+          "status": "passed"
+        }
+      ]
+    }
+  ],
+  "diagnostics": {
+    "consoleErrors": [],
+    "unexpectedConsoleErrors": [],
+    "cliErrors": {
+      "raw": "No errors captured.",
+      "diagnostics": [],
+      "unexpected": []
+    },
+    "cleanupCLIErrors": {
+      "raw": "No errors captured.",
+      "diagnostics": [],
+      "unexpected": []
+    },
+    "windowErrors": [],
+    "browserDiagnostics": {
+      "diagnostics": [],
+      "unexpected": []
+    }
+  },
+  "uiDiagnostics": {
+    "consoleErrors": [],
+    "windowErrors": [],
+    "browserNotifications": []
+  },
+  "productionScope": {
+    "forkFiles": 4,
+    "hostProtocol": 4,
+    "extrasAPI": "unchanged",
+    "versionsAndDependencies": "unchanged",
+    "PDF": "unchanged"
+  },
+  "limitations": [
+    "Focused Windows main/popout UI run; complete 357-case native profile not rerun.",
+    "Physical mobile, other desktop hosts, restored/cold-start popouts and live AI providers not run.",
+    "System chooser is intercepted for automation; selection uses CDP and cancellation uses an explicitly synthetic cancel event. Physical OS-dialog and mobile chooser navigation remain manual checks.",
+    "Reset image crops before conversion; advanced CSS/font/layout/effect limits still apply.",
+    "Unpublished paired protocol-4 checkpoint; install/publish matching fork package before release."
+  ],
+  "followUpNewPortableCases": 16,
+  "installedExtrasHashes": {
+    "main": "c377df5b7f286c7306604827fadcb363313cebc5a9953b7d77e106fdb611f7d8",
+    "manifest": "d7615e0322673617a59ca067dde4a59624fe2d947c93c025ea631da7ad920611",
+    "styles": "3de04a6882b3e43b48f81231962c5f52afbd7146cc986fb0c86631ac5de30eda"
+  },
+  "visualInspection": {
+    "main": "Converted pie retains blue/orange sectors, labels and white percentage text",
+    "popout": "Same decoded color distribution as main"
+  }
+}

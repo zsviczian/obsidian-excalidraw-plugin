@@ -417,9 +417,19 @@ Backwards compatibility is a strong requirement in this repository.
 
 ## User-Facing Change Workflow
 
-- Every user-visible change intended for the next release should be documented in `src/shared/Dialogs/Messages.ts` under the next upcoming version key.
-- Keep `Messages.ts` entries concise, user-facing, and focused on observable behavior, not implementation detail.
-- If a change affects scripting, API behavior, settings, or migration, mention that explicitly in the release-note entry.
+### Release notes in `Messages.ts`
+
+`src/shared/Dialogs/Messages.ts` is shown directly to end users. Treat the upcoming version entry as a short, curated account of the final release, not a commit log or an implementation checklist.
+
+- Select significant new capabilities, useful workflow improvements, important fixes to released behavior, and actions users must take. A code change does not automatically need an entry.
+- Consolidate related work into one concise outcome. When refining an unreleased feature, update its existing description; do not add separate bullets for interim bugs, test discoveries, edge cases or follow-up fixes that users never received.
+- Omit internal refactors, test/build work, lifecycle mechanisms and routine defensive fixes such as autosave rejection recovery. Keep technical reasoning and incremental history in PRs, issues, tests and developer documentation.
+- Lead with what users can do or what noticeable problem is resolved. Prefer one short sentence per bullet; add a second only for a necessary action, compatibility warning or important limitation. Avoid repeating one feature under UI, CLI and API headings.
+- Mention API or scripting changes only when they provide a meaningful capability or require users to adapt. Keep signatures, parameters, protocol versions, return structures and code examples in API documentation and `SuggesterInfo.ts`, not release notes.
+- Edit only the upcoming release entry unless historical corrections are explicitly requested. Before handoff, reread that entire entry and remove duplication and implementation detail. Preserve useful issue links without requiring one bullet per issue.
+
+### Localized interface strings
+
 - Every new user-visible language string must be added first in `src/lang/locale/en.ts`.
 - The same change must also update `src/lang/locale/ru.ts`, `src/lang/locale/es.ts`, `src/lang/locale/zh-cn.ts`, and `src/lang/locale/zh-tw.ts`.
 - These maintained locales are part of the build-time localized bundle path, so they are not optional follow-up work.
@@ -495,10 +505,10 @@ The plugin supports Obsidian 1.8.7 while optionally using the declarative settin
 
 ### ExcalidrawAutomate Change Checklist
 
-Whenever a function is added to or changed in `src/shared/ExcalidrawAutomate.ts`, three additional files must be updated in the same change:
+When public automation behavior changes, review these documentation surfaces; update only those affected:
 
 1. **`src/shared/Dialogs/SuggesterInfo.ts`** — Add or update the corresponding entry in `EXCALIDRAW_AUTOMATE_INFO`. The `field` must match the function or property name exactly. The `desc` should explain behavior clearly, including any important limitations or session-scoped constraints. The `code` should reflect the actual TypeScript signature.
-2. **`src/shared/Dialogs/Messages.ts`** — Document the new or changed function under the upcoming release version key. Include a brief user-facing description and the TypeScript signature in a fenced code block.
+2. **`src/shared/Dialogs/Messages.ts`** — Apply the release-note selection rules above. Mention a meaningful new scripting capability or required migration concisely; do not add an entry for every API fix or unreleased refinement, and do not include TypeScript signatures or code blocks.
 3. **`src/lang/locale/en.ts`** (and maintained locales) — Only required if the change introduces new user-visible strings. Follow the existing locale workflow described in the User-Facing Change Workflow section.
 
 ## High-Risk Areas
@@ -809,7 +819,7 @@ When you are asked to modify this repository:
 - maintain backwards compatibility unless the task explicitly authorizes a breaking change
 - validate with build plus lint-aware checks before declaring success
 - do not introduce new lint violations in touched code, even if the full repo lint command still fails
-- document user-visible changes in `src/shared/Dialogs/Messages.ts`
+- curate significant release outcomes in `src/shared/Dialogs/Messages.ts` using the release-note selection rules above; do not log every incremental change
 - add new language keys in `src/lang/locale/en.ts` and update `ru.ts`, `es.ts`, `zh-cn.ts`, and `zh-tw.ts` in the same change
 - be especially careful around startup, build plumbing, localization tokenization, settings migration, and popout-window behavior
 

@@ -1,9 +1,11 @@
 import { randomId, randomInteger } from "../utils";
+import { nanoid } from "src/constants/constants";
 
 import type {
   ExcalidrawEllipseElement,
   ExcalidrawLineElement,
   ExcalidrawRectangleElement,
+  ExcalidrawTextElement,
 } from "@zsviczian/excalidraw/types/element/src/types";
 import type { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import type { LocalPoint } from "@zsviczian/excalidraw/types/math/src/types";
@@ -33,11 +35,13 @@ export type ExcalidrawRectangle = Mutable<ExcalidrawRectangleElement>;
 export type ExcalidrawEllipse = Mutable<ExcalidrawEllipseElement>;
 
 export type ExcalidrawLine = Mutable<ExcalidrawLineElement>;
+export type ExcalidrawText = Mutable<ExcalidrawTextElement>;
 
 export type ExcalidrawGenericElement =
   | ExcalidrawRectangle
   | ExcalidrawEllipse
-  | ExcalidrawLine;
+  | ExcalidrawLine
+  | ExcalidrawText;
 
 /**
  * Reimplements the fork's `pointFrom<LocalPoint>(x, y)` locally instead of
@@ -94,6 +98,29 @@ export function createExEllipse(): ExcalidrawEllipse {
   return {
     ...createExElement(),
     type: "ellipse",
+  };
+}
+
+/** Native editable text; imported labels remain independent of shape bindings. */
+export function createExText(text: string): ExcalidrawText {
+  return {
+    ...createExElement(),
+    // Match EA text IDs so Markdown saving does not replace the staged identity.
+    id: nanoid(),
+    type: "text",
+    text,
+    originalText: text,
+    rawText: text,
+    fontFamily: 2,
+    fontSize: 16,
+    baseFontSize: null,
+    lineHeight: 1.25 as ExcalidrawText["lineHeight"],
+    textAlign: "left",
+    verticalAlign: "top",
+    containerId: null,
+    autoResize: true,
+    backgroundColor: "transparent",
+    strokeWidth: 0,
   };
 }
 

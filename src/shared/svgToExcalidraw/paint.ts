@@ -1,5 +1,7 @@
 /** Bounded, document-local SVG presentation cascade; never consult the host theme. */
 import chroma from "chroma-js";
+import { fontSize } from "./textStyle";
+import { resolveLocalVariables } from "./cssVariables";
 import type {
   SVGConversionState,
   SVGStyle,
@@ -19,6 +21,16 @@ export const initialStyle: SVGStyle = {
   "stroke-dashoffset": "0",
   visibility: "visible",
   "paint-order": "normal",
+  "font-family": "sans-serif",
+  "font-size": "16",
+  "font-weight": "normal",
+  "font-style": "normal",
+  "text-anchor": "start",
+  "dominant-baseline": "auto",
+  "alignment-baseline": "auto",
+  "text-align": "start",
+  "line-height": "normal",
+  "white-space": "normal",
 };
 const properties = new Set([
   ...Object.keys(initialStyle),
@@ -52,7 +64,8 @@ function declarations(text: string, state: SVGConversionState): SVGStyle {
   for (const part of text.split(";")) {
     const colon = part.indexOf(":");
     if (colon < 0) continue;
-    const key = part.slice(0, colon).trim().toLowerCase();
+    const name = part.slice(0, colon).trim();
+    const key = name.startsWith("--") ? name : name.toLowerCase();
     if (
       [
         "x",
@@ -69,10 +82,9 @@ function declarations(text: string, state: SVGConversionState): SVGStyle {
       ].includes(key)
     )
       state.warnings.add("css");
-    if (properties.has(key)) {
+    if (properties.has(key) || /^--[\w-]+$/.test(key)) {
       const value = part.slice(colon + 1).trim();
-      if (/!important|var\(/i.test(value)) state.warnings.add("css");
-      if (/var\(/i.test(value)) continue;
+      if (/!important/i.test(value)) state.warnings.add("css");
       result[key] = value.replace(/\s*!important\s*$/i, "");
     }
   }
@@ -169,7 +181,12 @@ export function resolveStyle(
     if (matches(el, rule.selector)) Object.assign(own, rule.declarations);
   }
   Object.assign(own, declarations(el.getAttribute("style") ?? "", state));
-  for (const [key, value] of Object.entries(own)) {
+  const resolved = resolveLocalVariables(parent, own, state);
+  for (const [key, value] of Object.entries(resolved)) {
+    if (key.startsWith("--")) {
+      style[key] = value;
+      continue;
+    }
     style[key] =
       value === "inherit" || (value === "unset" && !nonInherited.has(key))
         ? (parent[key] ?? initialStyle[key])
@@ -177,6 +194,16 @@ export function resolveStyle(
           ? initialStyle[key]
           : value;
   }
+  if (own["font-size"] && !["inherit", "unset"].includes(own["font-size"])) {
+    try {
+      style["font-size"] = String(fontSize(style["font-size"], Number(parent["font-size"] ?? 16)));
+    } catch {
+      state.warnings.add("text");
+      style["font-size"] = parent["font-size"] ?? "16";
+    }
+  }
+  if (el.getAttribute("xml:space") === "preserve") style["white-space"] = "pre";
+  else if (el.getAttribute("xml:space") === "default") style["white-space"] = "normal";
   for (const key of [
     "clip-path",
     "mask",
@@ -211,19 +238,29 @@ export function paint(
   color: string,
   state: SVGConversionState,
 ): string {
-  if (value.trim().toLowerCase() === "none") return "transparent";
-  const resolved =
-    value.trim().toLowerCase() === "currentcolor"
+  let resolved = value.trim();
+  if (/url\(/i.test(resolved)) {
+    state.warnings.add("unsupported");
+    // Paint servers cannot be native fills. Honor SVG's optional solid/none
+    // fallback without resolving or fetching the URL, including quoted URLs.
+    resolved =
+      resolved
+        .match(/^url\(\s*(?:"[^"]*"|'[^']*'|[^)]*)\s*\)\s*(.*)$/i)?.[1]
+        ?.trim() || "none";
+  }
+  if (resolved.toLowerCase() === "none") return "transparent";
+  resolved =
+    resolved.toLowerCase() === "currentcolor"
       ? color.trim().toLowerCase() === "currentcolor"
         ? "black"
         : color
-      : value;
-  if (/url\(/i.test(resolved)) {
-    state.warnings.add("unsupported");
-    return "transparent";
+      : resolved;
+  if (!chroma.valid(resolved)) {
+    // Unsupported colors are a local approximation, not a fatal geometry
+    // error. Use only this SVG's color (or black), never the host's theme.
+    state.warnings.add("paint");
+    resolved = chroma.valid(color) ? color : "black";
   }
-  if (!chroma.valid(resolved))
-    throw Error(`Unsupported SVG paint: ${resolved}`);
   const parsed = chroma(resolved),
     a = parsed.alpha() * alpha(opacity);
   return a === 0

@@ -34,7 +34,7 @@
     "test:obsidian:runner": "node --test scripts/testing/host/runner.test.mjs scripts/testing/host/processTools.test.mjs",
     "test:settings": "node --experimental-transform-types --test scripts/testing/settings/settingsWriter.test.mjs",
     "test:markdown-embeds": "node --test scripts/testing/markdownEmbeds.test.mjs",
-    "test:svg-import": "node --test scripts/testing/svgImport.test.mjs scripts/testing/svgImporter.test.mjs",
+    "test:svg-import": "node --experimental-transform-types --test scripts/testing/svgImport.test.mjs scripts/testing/svgImporter.test.mjs scripts/testing/svgText.test.mjs scripts/testing/svgConversionActions.source.test.mjs scripts/testing/svgFilePicker.source.test.mjs",
     "test:lucide": "node --test scripts/testing/lucideIcons.test.mjs scripts/testing/cli.test.mjs",
     "test:workflow-fixes": "node --test scripts/testing/fullscreen.test.mjs scripts/testing/templateWorkflow.test.mjs",
     "test:image-geometry": "node --experimental-strip-types --test tests/markdownImage*.test.mjs scripts/testing/textElementParsing.test.mjs",
