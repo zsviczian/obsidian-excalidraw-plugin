@@ -3,6 +3,7 @@ import type {
   SVGConversionState,
   SVGWarning,
   SVGTextMeasurer,
+  SVGMatrix,
 } from "src/types/svgConversionTypes";
 import { walkSVG } from "./walker";
 
@@ -16,7 +17,11 @@ export type ConversionResult = {
 /** Synchronously stages a bounded conversion; failure never publishes partial elements. */
 export const svgToExcalidraw = (
   svgString: string,
-  options: { measureText?: SVGTextMeasurer } = {},
+  options: {
+    measureText?: SVGTextMeasurer;
+    transform?: SVGMatrix;
+    boundsViewport?: { width: number; height: number };
+  } = {},
 ): ConversionResult => {
   try {
     if (typeof svgString !== "string" || svgString.length > 2000000)
@@ -48,7 +53,7 @@ export const svgToExcalidraw = (
       rules: [],
     };
     if (/<\?xml-stylesheet/i.test(svgString)) state.warnings.add("css");
-    walkSVG(root, state);
+    walkSVG(root, state, options.transform, options.boundsViewport);
     return {
       hasErrors: false,
       errors: "",

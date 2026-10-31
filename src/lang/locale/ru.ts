@@ -143,6 +143,11 @@ export default {
   IMPORT_SVG:
     "Импорт SVG-файла в виде редактируемых элементов (ограниченная поддержка SVG)",
   IMPORT_SVG_CONTEXTMENU: "Преобразовать SVG в редактируемые элементы - с ограничениями",
+  IMPORT_SVG_AS_ELEMENTS: "Импортировать SVG как Excalidraw",
+  SVG_CONVERT_ELEMENTS: "Преобразовать в элементы",
+  SVG_KEEP_IMAGE: "Оставить SVG-изображение",
+  MERMAID_SVG_CONVERSION_PROMPT: "Эта диаграмма — SVG-изображение. Преобразовать её в редактируемые фигуры и текст? Шрифты, оформление и некоторые эффекты могут отличаться.",
+  SVG_CONVERSION_CROP: "Перед преобразованием в элементы сбросьте обрезку изображения.",
   INSERT_MD: "Вставка файла markdown из хранилища",
   INSERT_MARKDOWN_IMAGE: "Вставить редактируемое Markdown-изображение",
   EDIT_MARKDOWN_IMAGE: "Редактировать Markdown-изображение",

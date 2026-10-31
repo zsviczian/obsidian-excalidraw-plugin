@@ -1,9 +1,95 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { loadConverter } from "./svgConverterHarness.mjs";
+import { readFileSync } from "node:fs";
 
 const convert = loadConverter();
 const svg = (body) => `<svg xmlns="http://www.w3.org/2000/svg">${body}</svg>`;
+
+test("attached Mermaid mindmap retains local variable colors, alpha and labels", () => {
+  const source = readFileSync(new URL("../../tests/fixtures/mermaid-mindmap-css-variables.svg", import.meta.url), "utf8");
+  const result = convert(source);
+  assert.equal(result.hasErrors, false, result.errors);
+  for (const color of ["#4c78a8", "#f58518", "#54a24b", "#e45756"])
+    assert.ok(result.content.some(e => e.strokeColor === color), color);
+  assert.ok(result.content.some(e => e.backgroundColor === "#f3f3f3"));
+  assert.ok(result.content.some(e => e.backgroundColor === "#4c78a838"));
+  const labels = result.content.filter(e => e.type === "text");
+  assert.equal(labels.length, 13);
+  assert.ok(labels.every(e => e.strokeColor === "#1f1f1f"));
+});
+
+test("CSS variables inherit computed values and preserve case, specificity and inline precedence", () => {
+  const result = convert(svg(`<style>.a{--Tone:red;fill:var(--Tone)} #box{--Tone:blue}</style>
+    <g style="--base:green;--alias:var(--base)"><g style="--base:purple">
+    <rect class="a" id="box" width="10" height="10" style="--Tone:orange;stroke:var(--alias);color:var(--tone,#123456)"/>
+    </g></g>`));
+  assert.equal(result.hasErrors, false, result.errors);
+  assert.equal(result.content[0].backgroundColor, "#ffa500");
+  assert.equal(result.content[0].strokeColor, "#008000");
+});
+
+test("CSS var fallbacks support nested functions, inherited color and local overrides", () => {
+  const result = convert(svg(`<g style="--base:#2468ac;color:var(--base)">
+    <rect width="10" height="10" fill="var(--missing, rgb(255, 0, 0))" stroke="var(--missing, var(--other, currentColor))"/>
+    <rect x="20" width="10" height="10" style="--base:blue;fill:var(--base);opacity:var(--opacity,.5)"/>
+    </g>`));
+  assert.equal(result.hasErrors, false, result.errors);
+  assert.equal(result.content[0].backgroundColor, "#ff0000");
+  assert.equal(result.content[0].strokeColor, "#2468ac");
+  assert.equal(result.content[1].backgroundColor, "#0000ff");
+  assert.equal(result.content[1].opacity, 50);
+});
+
+test("cyclic and missing SVG variables use their call-site fallback or inherited presentation", () => {
+  const result = convert(svg(`<g fill="green" style="--a:var(--b,red);--b:var(--a,blue)">
+    <rect width="10" height="10" fill="var(--a,orange)"/>
+    <rect x="20" width="10" height="10" fill="var(--b)"/>
+    <rect x="40" width="10" height="10" fill="var(--absent)"/>
+    </g>`));
+  assert.equal(result.hasErrors, false, result.errors);
+  assert.deepEqual(Array.from(result.content, e => e.backgroundColor), ["#ffa500", "#008000", "#008000"]);
+  assert.ok(result.warnings.includes("css"));
+});
+
+test("SVG-local variable initial/unset and prototype-like names remain isolated", () => {
+  const result = convert(svg(`<g style="--v:red;--__proto__:purple">
+    <rect width="10" height="10" style="--v:initial;fill:var(--v,blue);stroke:var(--__proto__)"/>
+    <rect x="20" width="10" height="10" style="--v:unset;fill:var(--v)"/>
+    </g>`));
+  assert.equal(result.hasErrors, false, result.errors);
+  assert.equal(result.content[0].backgroundColor, "#0000ff");
+  assert.equal(result.content[0].strokeColor, "#800080");
+  assert.equal(result.content[1].backgroundColor, "#ff0000");
+});
+
+test("variable dependencies include unused fallbacks and defined empty values do not use fallback", () => {
+  const result = convert(svg(`<g style="--base:red;--loop:var(--base,var(--loop));--empty:">
+    <rect width="10" height="10" fill="var(--loop,blue)"/>
+    <rect x="20" width="10" height="10" fill="var(--empty,red)"/>
+    </g>`));
+  assert.equal(result.hasErrors,false,result.errors);
+  assert.equal(result.content[0].backgroundColor,"#0000ff");
+  assert.equal(result.content[1].backgroundColor,"#000000");
+});
+
+test("excessive SVG variable chains and expansion fail atomically", () => {
+  for (const style of [
+    Array.from({length:40},(_,i)=>`--v${i}:var(--v${i+1})`).join(';')+';fill:var(--v0)',
+    '--v0:red;'+Array.from({length:16},(_,i)=>`--v${i+1}:var(--v${i})var(--v${i})`).join(';')+';fill:var(--v16)',
+  ]) {
+    const result = convert(svg(`<rect width="10" height="10" style="${style}"/>`));
+    assert.equal(result.hasErrors, true);
+    assert.equal(result.content.length, 0);
+    assert.ok(result.errors);
+  }
+});
+
+test("excessive per-element custom property storage fails before descendant expansion", () => {
+  const style=Array.from({length:1025},(_,i)=>`--v${i}:red`).join(';');
+  const result=convert(svg(`<g style="${style}"><rect width="10" height="10"/></g>`));
+  assert.equal(result.hasErrors,true);assert.equal(result.content.length,0);
+});
 test("SVG alpha uses percent units and preserves zero and near-zero opacity", () => {
   for (const opacity of [0, 0.005, 0.5, 1]) {
     const result = convert(

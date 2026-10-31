@@ -155,6 +155,11 @@ export default {
   IMPORT_SVG:
     "Importar un archivo SVG como elementos editables (soporte SVG limitado)",
   IMPORT_SVG_CONTEXTMENU: "Convertir SVG a elementos editables - con limitaciones",
+  IMPORT_SVG_AS_ELEMENTS: "Importar SVG como Excalidraw",
+  SVG_CONVERT_ELEMENTS: "Convertir a elementos",
+  SVG_KEEP_IMAGE: "Mantener imagen SVG",
+  MERMAID_SVG_CONVERSION_PROMPT: "Este diagrama es una imagen SVG. ¿Convertirlo en formas y texto editables? Las fuentes, el formato y algunos efectos pueden variar.",
+  SVG_CONVERSION_CROP: "Restablece el recorte de la imagen antes de convertirla en elementos.",
   INSERT_MD: "Insertar archivo Markdown desde la bóveda",
   INSERT_MARKDOWN_IMAGE: "Insertar imagen Markdown editable",
   EDIT_MARKDOWN_IMAGE: "Editar imagen Markdown",

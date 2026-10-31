@@ -2590,6 +2590,14 @@
       "mode": "direct-module-or-tooling"
     },
     {
+      "path": "scripts/testing/svgConversionActions.source.test.mjs",
+      "mode": "direct-module-or-tooling"
+    },
+    {
+      "path": "scripts/testing/svgFilePicker.source.test.mjs",
+      "mode": "direct-module-or-tooling"
+    },
+    {
       "path": "scripts/testing/svgImport.test.mjs",
       "mode": "direct-module-or-tooling"
     },

@@ -40,7 +40,7 @@ picker, icon catalog API, new CLI operation, or insertion preset.
 | Local references | `<defs>` and `<use>` including referenced groups/SVG/symbol viewports, instance dimensions and inherited styling. Repeated instances have fresh identities. Missing, cyclic and external references fail conversion. |
 | Group/object compositing | **Approximation with a notice.** Native groups do not isolate paint into an offscreen compositing layer. Child opacity multiplication cannot reproduce overlapping group opacity; separately emitted fill/stroke or subpath strokes can also differ under object opacity. These are not counted as exact fidelity passes. |
 | Stroke semantics | Native round caps/joins and preset dashed styles. Other cap/join/dash patterns and nonuniform stroke scaling are approximations with a notice. `non-scaling-stroke` retains its constant width; zero-length round-cap strokes become editable dots. |
-| Local CSS limits | Simple tag/class/ID compounds and descendant selectors, with lexicographic ID/class/type specificity and source order for ties. Repeated selectors cannot carry into a higher specificity component. Advanced selectors, at-rules, `!important`, CSS variables and geometric CSS properties are diagnosed. Variables/unsupported rules are not evaluated against the host document. No external stylesheet is loaded. |
+| Local CSS limits | Simple tag/class/ID compounds and descendant selectors, with lexicographic ID/class/type specificity and source order for ties. Repeated selectors cannot carry into a higher specificity component. SVG-local custom properties and nested `var()` fallbacks retain inheritance, case-sensitive names and local overrides. Cyclic/missing values use call-site fallback or inherited/initial presentation. Advanced selectors, at-rules, `!important` and geometric CSS properties are diagnosed. No host theme or external variable environment is consulted. No external stylesheet is loaded. |
 | Clipping, gradients, patterns, filters, blending, markers | Unsupported effects/paint are diagnosed and omitted. Viewport clipping is not destructively applied to native geometry; nested/slice viewports and painted bounds outside the outer viewport produce a notice. |
 | Text and plain HTML labels | SVG `text`/positioned `tspan` content and plain Mermaid `foreignObject` labels become editable native text, retaining ancestor groups, colors, alpha, basic anchors and transforms. EA supplies real font metrics. Available font substitutions, rich inline styling, exact glyph baselines, wrapping, skew/nonuniform scaling and complex HTML layout are approximations with a notice. No source HTML is mounted or executed. |
 | Embedded images and active content | Images and unsupported foreign HTML content are omitted with a notice. Scripts, handlers and remote resources never execute or load. |
@@ -90,6 +90,15 @@ Visible text adds a 100,000-character budget and at most 1,000 lines per native
 text element. Excessive text fails atomically. Direct internal parser users can
 provide a synchronous `measureText` adapter; without it, approximate font-unit
 measurements are diagnosed. `ea.importSVG()` always supplies real host metrics.
+Image conversion may supply an initial affine matrix and transformed bounds
+viewport internally. These change placement without wrapping or editing the
+source tree, so supported root/ancestor CSS selectors retain their meaning.
+
+Custom properties are limited to 1,024 names per element, reference/fallback
+depth 32 and 8,192 characters per expanded value. Inherited-map work counts
+toward the existing stylesheet budget; excessive input fails before scene
+publication. The supplied Mermaid mindmap regression retains four branch
+colors, translucent fills, the light root and editable labels.
 
 ## Validation
 

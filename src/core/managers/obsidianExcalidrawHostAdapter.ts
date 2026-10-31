@@ -1,5 +1,6 @@
 import type ExcalidrawPlugin from "src/core/main";
 import { ExcalidrawLib } from "../../types/excalidrawLib";
+import { prepareMermaidSVGInsert } from "src/shared/svgConversionActions";
 
 /**
  * Creates the plugin-wide capability adapter consumed by the evaluated
@@ -30,6 +31,7 @@ export const createObsidianExcalidrawHostAdapter = (
   loadFontFromFile: (filename) => plugin.loadFontFromFile(filename),
   getMermaid: () => plugin.getMermaid(),
   runAction: (action, editorId?: string) => plugin.runAction(action, editorId),
+  prepareMermaidSVGInsert: (editorId, diagram) => prepareMermaidSVGInsert(plugin, editorId, diagram),
   getLabel: (key) =>
     plugin.getLabel(key as Parameters<ExcalidrawPlugin["getLabel"]>[0]),
   attachInlineLinkSuggester: (

@@ -1,6 +1,7 @@
 /** Bounded, document-local SVG presentation cascade; never consult the host theme. */
 import chroma from "chroma-js";
 import { fontSize } from "./textStyle";
+import { resolveLocalVariables } from "./cssVariables";
 import type {
   SVGConversionState,
   SVGStyle,
@@ -63,7 +64,8 @@ function declarations(text: string, state: SVGConversionState): SVGStyle {
   for (const part of text.split(";")) {
     const colon = part.indexOf(":");
     if (colon < 0) continue;
-    const key = part.slice(0, colon).trim().toLowerCase();
+    const name = part.slice(0, colon).trim();
+    const key = name.startsWith("--") ? name : name.toLowerCase();
     if (
       [
         "x",
@@ -80,10 +82,9 @@ function declarations(text: string, state: SVGConversionState): SVGStyle {
       ].includes(key)
     )
       state.warnings.add("css");
-    if (properties.has(key)) {
+    if (properties.has(key) || /^--[\w-]+$/.test(key)) {
       const value = part.slice(colon + 1).trim();
-      if (/!important|var\(/i.test(value)) state.warnings.add("css");
-      if (/var\(/i.test(value)) continue;
+      if (/!important/i.test(value)) state.warnings.add("css");
       result[key] = value.replace(/\s*!important\s*$/i, "");
     }
   }
@@ -180,7 +181,12 @@ export function resolveStyle(
     if (matches(el, rule.selector)) Object.assign(own, rule.declarations);
   }
   Object.assign(own, declarations(el.getAttribute("style") ?? "", state));
-  for (const [key, value] of Object.entries(own)) {
+  const resolved = resolveLocalVariables(parent, own, state);
+  for (const [key, value] of Object.entries(resolved)) {
+    if (key.startsWith("--")) {
+      style[key] = value;
+      continue;
+    }
     style[key] =
       value === "inherit" || (value === "unset" && !nonInherited.has(key))
         ? (parent[key] ?? initialStyle[key])

@@ -2,6 +2,7 @@
 import type {
   SVGContext,
   SVGConversionState,
+  SVGMatrix,
 } from "src/types/svgConversionTypes";
 import { initialStyle, resolveStyle, alpha, readStyleRules } from "./paint";
 import {
@@ -208,13 +209,18 @@ function visit(
 }
 
 /** Converts one parsed SVG document without publishing anything to EA or the scene. */
-export function walkSVG(root: Element, state: SVGConversionState): void {
+export function walkSVG(
+  root: Element,
+  state: SVGConversionState,
+  transform: SVGMatrix = identity,
+  boundsViewport?: { width: number; height: number },
+): void {
   collect(root, state);
   readStyleRules(root, state);
   visit(
     root,
     {
-      matrix: identity,
+      matrix: transform,
       style: initialStyle,
       opacity: 1,
       groups: [],
@@ -228,6 +234,12 @@ export function walkSVG(root: Element, state: SVGConversionState): void {
     : null;
   const width = length(root.getAttribute("width"), box?.[2] ?? 300, 300),
     height = length(root.getAttribute("height"), box?.[3] ?? 150, 150);
-  if (exceedsViewport(state.elements, width, height))
+  if (
+    exceedsViewport(
+      state.elements,
+      boundsViewport?.width ?? width,
+      boundsViewport?.height ?? height,
+    )
+  )
     state.warnings.add("viewport");
 }
