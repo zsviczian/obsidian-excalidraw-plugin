@@ -296,8 +296,10 @@ async function exerciseExtras(c, prefix, fixtures, drawingPath) {
     c.phase = "pdf-text";
     const text = (await first.getTextContent()).items
       .map((item) => item.str || "")
-      .join(" ");
-    check(text.includes("EXCALIDRAW_OWNED_PDF"), "PDF lost printable text");
+      // PDF.js may split one printed token into multiple glyph runs. Keep
+      // spaces present in the actual strings without inventing run separators.
+      .join("");
+    c.observations = {...c.observations, nativePDF: {text, width: viewport.width, height: viewport.height, bytes: byteLength}};
     const canvas = createFragment().createEl("canvas");
     canvas.width = Math.ceil(viewport.width);
     canvas.height = Math.ceil(viewport.height);
@@ -312,12 +314,15 @@ async function exerciseExtras(c, prefix, fixtures, drawingPath) {
     let red = 0;
     for (let i = 0; i < pixels.length; i += 4)
       if (pixels[i] > 180 && pixels[i + 1] < 80 && pixels[i + 2] < 80) red++;
-    check(red > 100, "PDF lost SVG content");
     c.phase = "pdf-retain-evidence";
     const evidence = await c.requestHost("pdf-evidence", {
       path,
       pngBase64: canvas.toDataURL("image/png").split(",")[1],
     });
+    // Retain the actual failing output before assertions so diagnosis never
+    // depends on fixtures that cleanup must remove.
+    check(text.includes("EXCALIDRAW_OWNED_PDF"), "PDF lost printable text");
+    check(red > 100, "PDF lost SVG content");
     return {
       assertions: [
         "actual Electron PDF completion",

@@ -89,6 +89,19 @@ test("owned console and exception capture is removed with its exact attachment",
     1,
   );
 });
+test("a lost listener-install acknowledgement still removes the exact owned capture", () => {
+  const h=host();let lost=false;
+  const cli=(command,...args)=>{
+    const result=h.cli(command,...args);
+    if(!lost&&command==='eval'&&args[0].includes("c.debugger.on('message',c.listener)")){lost=true;throw Error('CLI ETIMEDOUT after installation');}
+    return result;
+  };
+  assert.throws(()=>acquireDebuggerSession(cli),/ETIMEDOUT/);
+  assert.equal(h.debuggerInstance.listenerCount('message'),0);
+  assert.equal(Object.keys(h.context).some(key=>key.startsWith('__excalidrawTestConsole_')),false);
+  assert.equal(h.background(),true);
+  assert.equal(h.debuggerInstance.isAttached(),false);
+});
 test("expected fault injection cannot hide another error or an incorrect count", () => {
   const expected = [{ contains: "OWNED_WRITE_FAILURE", min: 1, max: 1 }],
     error = { kind: "console", messages: ["OWNED_WRITE_FAILURE"] };

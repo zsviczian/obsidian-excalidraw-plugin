@@ -269,7 +269,7 @@ export async function behaviorEnvironment(
         block: element.tagName === "A" ? "center" : "nearest",
         inline: "nearest",
       });
-    let x, y;
+    let x, y, stableRect, stableSince;
     await c.waitFor(() => {
       element = resolve();
       if (!element) return false;
@@ -281,8 +281,14 @@ export async function behaviorEnvironment(
           r.width > 0 &&
           r.height > 0 &&
           element.contains(doc.elementFromPoint(x, y))
-        )
-          return true;
+        ) {
+          // Mobile prompts slide into place. A hit test during their entrance
+          // can become stale before the host delivers trusted input.
+          const signature = [r.x,r.y,r.width,r.height].map(value=>Math.round(value*10)).join(":");
+          if (stableRect !== signature) {stableRect=signature;stableSince=Date.now();}
+          if (Date.now()-stableSince >= 120) return true;
+          return false;
+        }
       }
       c.caseTrace = {
         ...c.caseTrace,
@@ -295,6 +301,7 @@ export async function behaviorEnvironment(
       };
       return false;
     }, "visible uncovered behavior control");
+    c.caseTrace={...c.caseTrace, lastClick:{x,y,bounds:element.getBoundingClientRect().toJSON(),html:element.outerHTML.slice(0,400)}};
     if (context.input === "touch" && button === "left") {
       await input("Input.dispatchTouchEvent", {
         type: "touchStart",
@@ -370,9 +377,18 @@ export async function behaviorEnvironment(
   const saveReopen = async (view) => {
     const ids = view.excalidrawAPI.getSceneElements().map((e) => e.id),
       file = view.file;
+    // External frontmatter can reach view.data before synchronization releases
+    // persistence ownership. Respect that boundary instead of requesting a
+    // forced save that the view intentionally skips while it is still busy.
+    await c.waitFor(()=>{
+      check(view.leaf===leaf&&leaf.view===view&&view.file===file&&view.excalidrawAPI,"Save/reopen owner changed before persistence");
+      return !view.isSaveInProgress();
+    },"owned drawing save/synchronization readiness");
+    const saveOutcome=await view.saveWithOutcome();
+    c.caseTrace={...c.caseTrace,saveOutcome};
     check(
-      (await view.saveWithOutcome()).status === "persisted",
-      "Behavior save not physically acknowledged",
+      saveOutcome.status === "persisted",
+      "Behavior save not physically acknowledged: "+JSON.stringify(saveOutcome),
     );
     const disk = await p.ea.getSceneFromFile(file);
     check(

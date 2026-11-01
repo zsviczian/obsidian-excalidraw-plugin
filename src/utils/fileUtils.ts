@@ -549,6 +549,7 @@ export const getAnnotationFileNameAndFolder = async (
 export const getListOfTemplateFiles = (
   plugin: ExcalidrawPlugin,
 ): TFile[] | null => {
+  if (!plugin.settings.templateFilePath.trim()) return null;
   const normalizedTemplatePath = normalizePath(
     plugin.settings.templateFilePath,
   );
@@ -558,7 +559,7 @@ export const getListOfTemplateFiles = (
   if (template && template instanceof TFolder) {
     return plugin.app.vault
       .getFiles()
-      .filter((f) => f.path.startsWith(template.path))
+      .filter((f) => template.path === "/" || f.path.startsWith(`${template.path}/`))
       .filter((f) => plugin.isExcalidrawFile(f))
       .sort((a, b) => a.path.localeCompare(b.path));
   }

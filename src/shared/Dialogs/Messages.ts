@@ -19,11 +19,12 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 `,
 "2.29.1": `
 ## New and improved
-- **Editable Lucide icons.** Search and insert icons from the command palette or image menu. Also available to CLI agents and scripts through \`ea.addLucideIcon()\`. [#3019](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/3019)
-- **Mermaid diagrams.** Improved conversion and previews, with a choice to convert SVG output into editable elements. Update **Excalidraw Extras** to use the updated converter.
+- **Choose new-file destinations.** The new-file dialog includes editable folder and filename fields. Companion plugins can also build template selectors through ExcalidrawAutomate.
+- **Editable Lucide icons.** Obsidian uses [Lucide](${URLs.LUCIDE_DEV}) icons, now available as editable Excalidraw strokes. Search and insert them from the command palette or image menu. Also available to CLI agents and scripts through \`ea.addLucideIcon()\`. [#3019](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/3019)
+- **Mermaid diagrams.** Migrated to Obsidian's new [Pele](${URLs.GITHUB_COM_OBSIDIANMD_PELE}) library. Thank you, [kepano](${URLs.GITHUB_COM_OBSIDIANMD_PELE_COMMITS_AUTHOR_KEPANO})! The new SVG importer brings diagram types not yet supported by Mermaid-to-Excalidraw into your scene as editable Excalidraw strokes. Update **Excalidraw Extras** to use the updated converter.
 - **SVG imports.** Import editable shapes and text from the image menu, or convert an SVG image already in your drawing. [#3018](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3018)
 - **CLI image previews.** Agents can inspect images and request smaller previews without changing the originals. [#3004](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3004)
-- **Mindmap Builder.** Paste copied branches with their links, images and grouped notes. [#2996](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2996)
+- **Mindmap Builder.** Copy your K-Plex canvas as Mindmap Builder Markdown, ready to paste into Excalidraw. Mindmap Builder also accepts Mermaid mindmap syntax from the clipboard. [#2996](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2996) Its floating input hides in view mode and returns when editing resumes.
 
 ## Fixed
 - Adding links to text or shape labels no longer breaks undo history.

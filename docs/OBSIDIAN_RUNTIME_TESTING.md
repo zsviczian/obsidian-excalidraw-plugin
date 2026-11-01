@@ -97,6 +97,95 @@ For portable checks install the fork's pinned Chromium once (`yarn playwright
 install chromium`, with `--with-deps` on Linux CI). Native input uses the real
 Obsidian Electron host and its owned debugger, not Playwright's Chromium.
 
+## Recovering from native test failures
+
+A prepared vault must contain fresh, compatible plugin **and Extras** artifacts.
+When a run fails, continue diagnosis and repair within the authorized test scope;
+an available workspace build or a repairable harness error is not an unavailable
+environment. Preserve the first failed report and rerun the failed scenarios and
+every profile blocked by them. A later focused pass does not overwrite a failed
+full-profile result.
+
+1. Verify the selected repository revisions and locked dependency installations.
+   After changing checkouts, use `npm ci` in the plugin/Extras repositories and
+   `yarn install --frozen-lockfile` in the fork when installations are stale.
+   A new `package.json` alongside old `node_modules` can silently bundle an old
+   converter. Build Extras `main.js`, `styles.css` and `manifest.json` together;
+   use the normal coordinator to deploy/hash-verify them, enable services and
+   check the actual live API versions against the plugin gateway. Do not fake a
+   version or relax a version handshake to accept mismatched components.
+   The converter package version and Extras service-contract version are distinct:
+   current Extras bundles converter 3.1.0 while advertising service contract 3.0.0.
+   Verify each at its own boundary rather than changing the handshake to match a
+   package version.
+2. For `Concurrent host requests`, inspect the outstanding request ID, method,
+   target renderer, acknowledgement and original error. Distinguish UI-readiness
+   waits from transport completion. Settle or explicitly cancel the exact owned
+   request before another input step; preserve genuine dispatch failures and
+   strict case assertions. Never clear a pending native operation to hide it.
+   A lost response to a read-only state poll may be retried within the existing
+   task deadline (at most two retries), with every timeout retained as transport
+   evidence. Never replay input, writes or other mutations under this policy.
+   The coordinator also retains a uniquely owned last-operation receipt for eval
+   and CDP calls. If their response is lost, adopt only that exact completed
+   receipt; never execute the operation again. Missing, mismatched or still-pending
+   receipts remain failures and preserve native resources. Actual operation errors
+   remain errors. Remove the receipt after the sequence and record every recovered
+   acknowledgement. Real plugin CLI commands continue through the actual CLI.
+   Response waiting is bounded separately from operation completion: eval/CDP
+   replies have a one-second transport deadline, then the exact owned receipt is
+   polled within the original 60-second operation budget. Timing out the CLI
+   launcher does not cancel the renderer job. Do not spend the full UI scenario
+   deadline waiting for a lost acknowledgement. A timed-out error-buffer clear
+   may be accepted only after reading an empty buffer; never clear again and erase
+   newly captured errors. Known read-only CLI commands use bounded read retries.
+   A screenshot reply may be recovered only from its uniquely owned, previously
+   absent artifact after the native image decoder confirms a complete image.
+   Never capture again to obtain a replacement acknowledgement, and never treat
+   the image as behavioral coverage. Preserve foreign/existing destinations.
+3. Check current UI labels at their registration/localization source and in the
+   running host. The file-menu label is **New drawing** (`CREATE_NEW`). A DOM
+   menu assertion must use `Menu.setUseNativeMenu(false)` and wait for mounting;
+   macOS native menu rendering cannot be found with a DOM selector. Record which
+   renderer was exercised. Do not diagnose a renamed action from a failure label.
+4. A retained Electron window proxy can report `closed === false` after Obsidian
+   retires a popout. Save owned edits, detach owned leaves, and verify all editor
+   APIs are unmounted, DOM is disconnected and workspace registration is gone.
+   Preserve shared/unowned leaves and all resources of genuinely pending work.
+   Never delete fixtures or reload services while printing/saving remains pending.
+5. Investigate error/trust dialogs after timeouts. Ask for human assistance when
+   needed; identify the exact action and reason. Never force-close a shared app.
+   Successful guarded recovery permits a fresh run; it does not turn the original
+   cleanup failure or blocked profiles into passes.
+
+Device profiles retain their declared CSS viewport sizes. If the OS clamps a
+native window to the display work area, use owned CDP device-metrics emulation
+to fit that exact viewport, record both the actual native dimensions and transport,
+and clear the override before detaching the debugger. Keep the same geometry,
+breakpoint and input assertions; do not shrink profiles or substitute CSS widths.
+An unexplained mismatch within the available display must still fail readiness.
+Oversized evals on every desktop platform use an owned temporary UTF-8 script;
+Windows also uses it for multiline/long console payloads. Preserve the argument
+arrays, remove owned scripts after each launcher call, and never solve E2BIG by
+truncating the scenario or removing assertions.
+PDF.js can split a printed token into multiple text items: concatenate their
+actual strings without inserting spaces, and retain the PDF/rendered page before
+content assertions so a failure can be inspected after fixture cleanup. The fitted surface also changes the
+coordinate space used by CDP input: scale mouse/touch coordinates by the recorded
+surface scale, then assert that trusted pointer events arrive at the original
+CSS hit-test point. Keep the unchanged viewport and classification assertions.
+Wait for sliding modal controls to hold a stable uncovered rectangle before
+trusted input; a hit test during their entrance animation is not readiness. For
+keyboard tool changes, focus the actual editor and wait for the requested tool
+state before clicking the canvas; protocol delivery does not establish a React
+commit. Keep the original editing, undo/redo and persistence assertions. When
+frontmatter changes externally, observing the new view text does not establish
+that synchronization has released persistence ownership. Wait for the exact
+view's save/synchronization busy state to clear before requesting a forced save.
+Still require a persisted receipt, retain its revision fields on failure, compare
+the physical scene and reopen it. Never count skipped/failed saves as durable.
+
+
 ## Transport, ownership and safe cleanup
 
 Reserve foreground access for native input/device sequences. Another Obsidian
@@ -604,3 +693,10 @@ The usual preparation, canonical-vault checks, host lock, error/idle gates,
 assertions and cleanup remain active. No native reduction earns full acceptance
 credit. Preserve failed evidence and keep any necessary saved-baseline recovery
 outside the trial; never reset a renderer mid-run to obtain a pass.
+
+An imperative editor setter may schedule React state without committing it
+synchronously. After `setActiveTool()` (as after a keyboard tool shortcut), wait
+for the exact captured API's `getAppState().activeTool.type` before dispatching
+native drawing/text input. Bound that wait and fail if the API, view or file
+owner changes. Do not accept a successful setter call as input readiness or add
+blind delays; keep the actual editing/history/persistence assertions unchanged.

@@ -301,6 +301,15 @@ export const URL_REGISTRY = {
     "https://github.com/lbragile/ColorMaster",
     UrlPurpose.DOCS,
   ),
+  LUCIDE_DEV: defineUrl("https://lucide.dev/", UrlPurpose.RELEASE_LOG),
+  GITHUB_COM_OBSIDIANMD_PELE: defineUrl(
+    "https://github.com/obsidianmd/pele",
+    UrlPurpose.RELEASE_LOG,
+  ),
+  GITHUB_COM_OBSIDIANMD_PELE_COMMITS_AUTHOR_KEPANO: defineUrl(
+    "https://github.com/obsidianmd/pele/commits?author=kepano",
+    UrlPurpose.RELEASE_LOG,
+  ),
   GITHUB_COM_OBSIDIANMD_OBSIDIAN_API_BLOB_MASTER_OBSIDIAN_D_TS: defineUrl(
     "https://github.com/obsidianmd/obsidian-api/blob/master/obsidian.d.ts",
     UrlPurpose.DOCS,

@@ -14,7 +14,8 @@ vm.runInNewContext(code, {
     ? { t: key => key } : {},
 });
 
-for (const [version, accepted] of [["2.2.2", false], ["3.0.0", true], ["3.0.1", false]]) {
+// This is the Extras service contract, independent of its bundled converter's version.
+for (const [version, accepted] of [["2.2.2", false], ["3.0.0", true], ["3.0.1", false], ["3.1.0", false]]) {
   test(`Mermaid ${version} is ${accepted ? "accepted" : "rejected"} by the exact-version handshake`, () => {
     const gateway = new exports.ExcalidrawExtrasGateway({
       plugins: { manifests: { "excalidraw-extras": { version: "0.1.2" } } },

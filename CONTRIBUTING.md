@@ -25,6 +25,13 @@ Before spending your valuable time writing code for a new feature or significant
    *(Note: The `MathjaxToSVG` sub-component has its own separate dependencies. You do not need to install them manually; the first time you run `npm run build`, it will take care of this automatically).*
 4. Run `npm run test:native` to prepare and test `.test-work/vaults/excalidraw-auto-test/`; follow [Obsidian runtime testing](docs/OBSIDIAN_RUNTIME_TESTING.md) for the one-time Obsidian opening/trust/CLI prerequisite. The runner builds and installs the current workspace plugin and available Extras files, applies declared settings and enables the plugins automatically. Never use a personal vault or the historical desktop test vault. Generated binaries remain ignored; the immutable seed contains tracked fixtures and configuration.
 
+After changing checkouts, refresh locked producer dependencies too: `npm ci` in
+Extras and `yarn install --frozen-lockfile` in the fork. A freshly rebuilt bundle
+can still contain an old dependency from stale `node_modules`. Native preparation
+checks the installed converter package and live Extras service contract separately.
+Follow [native failure recovery](docs/OBSIDIAN_RUNTIME_TESTING.md#recovering-from-native-test-failures)
+to resolve recoverable blockers and rerun affected cases.
+
 ## 🛠️ Build and Lint Commands
 
 ### Dependency scanner warnings

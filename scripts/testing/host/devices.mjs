@@ -15,6 +15,8 @@ import { waitForNativeReady } from "./hostReadiness.mjs";
 import { mainWindowExpression, restoreDeviceState } from "./deviceRecovery.mjs";
 import { runBehaviorMatrix } from "./behaviorMatrix.mjs";
 import {acquireBrowserDiagnostics,classifyCLIErrorText,splitWindowErrors} from './browserDiagnostics.mjs';
+import { constrainedViewportMetrics, viewportInput } from "./deviceViewport.mjs";
+import { retryReadOnly } from "./readOnlyTransport.mjs";
 
 /** The caller owns the application-session lock and exact build staging. */
 export async function runDeviceMatrix({
@@ -41,8 +43,10 @@ export async function runDeviceMatrix({
     "Device CLI selected another vault",
   );
   const evaluate = (code) => parseCLIJSON(cli("eval", "code=" + code));
+  const transportDiagnostics=[];
+  const read=code=>retryReadOnly(()=>evaluate(code),{operation:"device window snapshot",diagnostics:transportDiagnostics});
   const owner = mainWindowExpression;
-  const original = evaluate(
+  const original = read(
     `JSON.stringify((()=>{const w=${owner};if(w.webContents.debugger.isAttached())throw Error('Existing debugger owner');return{mobile:app.isMobile===true,theme:app.vault.getConfig('theme'),layout:app.workspace.getLayout(),desktopMode:localStorage.getItem('excalidraw.desktopUIMode'),id:w.id,bounds:w.getBounds(),normalBounds:w.getNormalBounds(),minimum:w.getMinimumSize(),maximized:w.isMaximized(),fullscreen:w.isFullScreen(),zoom:w.webContents.getZoomFactor(),touch:{maxTouchPoints:navigator.maxTouchPoints,coarse:matchMedia('(pointer: coarse)').matches,hover:matchMedia('(hover: hover)').matches}};})())`,
   );
   const path = `__excalidraw_cli_smoke_devices_${randomUUID()}.excalidraw.md`;
@@ -59,6 +63,7 @@ export async function runDeviceMatrix({
     status: "failed",
     cleanup: "not-started",
     tests: [],
+    transportDiagnostics,
     requestedProfile: "devices",
     actualProfile: profiles.map((profile) => profile.id),
     limitations: [
@@ -80,7 +85,7 @@ export async function runDeviceMatrix({
     join(reportDir, "recovery.json"),
     JSON.stringify({ vaultName, path, original }, null, 2),
   );
-  let debuggerSession, browserSession,
+  let debuggerSession, browserSession, viewportMetrics,
     currentMobile = original.mobile,
     created = false;
   report.reloadDiagnostics = [];
@@ -113,9 +118,13 @@ export async function runDeviceMatrix({
         await ready();
       }
       evaluate(
-        `(()=>{app.changeTheme(${JSON.stringify(profile.theme === "dark" ? "obsidian" : "moonstone")});return JSON.stringify(true);})()`,
+        `(()=>{const theme=${JSON.stringify(profile.theme === "dark" ? "obsidian" : "moonstone")};if(app.vault.getConfig('theme')!==theme)app.changeTheme(theme);return JSON.stringify(true);})()`,
       );
       debuggerSession = acquireDebuggerSession(cli);
+      const nativeViewport = read(`JSON.stringify((()=>{const w=${owner},win=app.workspace.containerEl.ownerDocument.defaultView;return {width:win.innerWidth,height:win.innerHeight,workArea:win.require('@electron/remote').screen.getDisplayMatching(w.getBounds()).workArea}})())`);
+      viewportMetrics = constrainedViewportMetrics(profile, nativeViewport);
+      const viewportEmulated = viewportMetrics !== null;
+      if (viewportMetrics) cli("dev:cdp", "method=Emulation.setDeviceMetricsOverride", "params="+JSON.stringify(viewportMetrics));
       browserSession=acquireBrowserDiagnostics(cli,profile.id);
       cli("dev:errors", "clear");
       const expectedConsoleErrors = [];
@@ -135,7 +144,10 @@ export async function runDeviceMatrix({
             Number.isSafeInteger(request.params.delta) &&
             Math.abs(request.params.delta) <= 32
           ) {
-            evaluate(
+            if (viewportMetrics) {
+              viewportMetrics = {...viewportMetrics, width: viewportMetrics.width + request.params.delta};
+              cli("dev:cdp", "method=Emulation.setDeviceMetricsOverride", "params="+JSON.stringify(viewportMetrics));
+            } else evaluate(
               `(()=>{const w=${owner};if(w.id!==${original.id})throw Error('Main owner changed');const [width,height]=w.getContentSize();w.setContentSize(width+${request.params.delta},height);return JSON.stringify(true);})()`,
             );
             return { resized: true };
@@ -160,7 +172,7 @@ export async function runDeviceMatrix({
           cli(
             "dev:cdp",
             "method=" + request.params.method,
-            "params=" + JSON.stringify(request.params.params),
+            "params=" + JSON.stringify(viewportInput(request.params.method,request.params.params,viewportMetrics?.scale ?? 1)),
           );
           return { dispatched: true };
         },
@@ -177,12 +189,17 @@ export async function runDeviceMatrix({
           drawingPath: path,
           contexts: [profile.id.startsWith("phone-") ? "phone" : "tablet"],
           input: "touch",
+          viewportScale: viewportMetrics?.scale ?? 1,
           reportDir,
           ...(featureCases ? {caseIds:featureCases} : {}),
         });
         report.tests.push(...workflows.tests);
+        if(workflows.transportDiagnostics?.length)(report.transportDiagnostics||=[]).push(...workflows.transportDiagnostics);
         expectedConsoleErrors.push(...(workflows.expectedConsoleErrors || []));
       }
+      // Clearing viewport emulation resizes the real host again. Include that
+      // teardown in the quiet/error gate before starting the next profile.
+      if (viewportMetrics) {cli("dev:cdp", "method=Emulation.clearDeviceMetricsOverride", "params={}");viewportMetrics=null;}
       const browserIdle=await browserSession.settle();
       const errors = [
         ...debuggerSession.read(),
@@ -195,18 +212,22 @@ export async function runDeviceMatrix({
         unexpected.length === 0 &&
         classified.unexpected.length===0 && cliErrors.unexpected.length===0 && browserIdle.status==='passed' && (!workflows||workflows.status==='passed');
       browserSession.dispose();browserSession=null;
+      if(debuggerSession.transportDiagnostics?.length)report.transportDiagnostics.push(...debuggerSession.transportDiagnostics.map(item=>({profile:profile.id,...item})));
       debuggerSession.dispose();
       debuggerSession = null;
       report.tests.push({
         testId: "native:device:" + profile.id,
         featureIds: ["P07", "P08"],
         ...result,
+        viewportTransport: viewportEmulated ? "CDP viewport fitted to constrained display" : "native window",
+        nativeViewport,
         status: errorGatePassed ? "passed" : "failed",
         windowEvents,browserDiagnostics:classified.diagnostics,cliErrors,browserIdle,
         ...(errorGatePassed
           ? {}
           : {
-              reason: "Unexpected native device errors",
+              reason: workflows?.status==='failed'?"Required native device workflow failed":"Unexpected native device errors",
+              failedWorkflowTests:workflows?.tests.filter(test=>test.status!=='passed').map(test=>test.testId),
               unexpectedConsoleErrors: unexpected,
               windowErrorText,
               windowErrors: workflows?.windowErrors || [],
@@ -218,6 +239,7 @@ export async function runDeviceMatrix({
       : "failed";
   } catch (error) {
     report.error = String(error.stack || error);
+    if(error.observations)report.observations=error.observations;
     report.tests.push(...(error.evidence || []));
     report.tests.push({
       testId: "native:device:" + (report.activeProfile || "setup"),
@@ -236,6 +258,7 @@ export async function runDeviceMatrix({
       }
       if (debuggerSession) {
         try {
+          if (viewportMetrics) {cli("dev:cdp", "method=Emulation.clearDeviceMetricsOverride", "params={}");viewportMetrics=null;}
           debuggerSession.dispose();
         } catch (error) {
           debuggerError = error;
@@ -273,7 +296,10 @@ async function exerciseDevice(c, path, fixture, profile) {
   const p = app.plugins.plugins["obsidian-excalidraw-plugin"],
     doc = app.workspace.containerEl.ownerDocument;
   await c.waitFor(
-    () => innerWidth === profile.width && innerHeight === profile.height,
+    () => {
+      c.observations = {...c.observations, viewport:{requested:[profile.width,profile.height],actual:[innerWidth,innerHeight]}};
+      return innerWidth === profile.width && innerHeight === profile.height;
+    },
     "actual requested viewport",
   );
   const check = (condition, message) => {
@@ -447,6 +473,10 @@ async function exerciseDevice(c, path, fixture, profile) {
     doc.elementFromPoint(x, y)?.closest("button") === button,
     "Rectangle tool is covered",
   );
+  c.observations={...c.observations,toolbarTap:{requested:{x,y},bounds,events:[]}};
+  const observeTap=event=>c.observations.toolbarTap.events.push({type:event.type,x:event.clientX,y:event.clientY,trusted:event.isTrusted,pointerType:event.pointerType,target:event.target?.closest('button')?.outerHTML.slice(0,350)});
+  doc.addEventListener('pointerdown',observeTap,true);
+  c.defer(()=>doc.removeEventListener('pointerdown',observeTap,true));
   const input = async (type, x, y) => {
     if (profile.input === "touch")
       await c.requestHost("cdp", {
@@ -475,6 +505,8 @@ async function exerciseDevice(c, path, fixture, profile) {
     () => api.getAppState().activeTool.type === "rectangle",
     "trusted toolbar selection",
   );
+  const deliveredTap=c.observations.toolbarTap.events.find(event=>event.pointerType===profile.input);
+  check(deliveredTap && Math.abs(deliveredTap.x-x)<2 && Math.abs(deliveredTap.y-y)<2,"Trusted input missed the CSS hit-test coordinates");
   if (!profile.boundary)
     await c.waitFor(() => {
       const root = view.containerEl.querySelector(".excalidraw"),

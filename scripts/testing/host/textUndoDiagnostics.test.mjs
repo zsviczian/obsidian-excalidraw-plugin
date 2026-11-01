@@ -130,6 +130,7 @@ test("text fixture awaits the normal mode reload before clearing the replacement
     updateScene: () => calls.push("clear scene"),
     history: { clear: () => calls.push("clear history") },
     setActiveTool: () => calls.push("text tool"),
+    getAppState:()=>({activeTool:{type:'text'}}),
   };
   const view = { textMode: "parsed", excalidrawData: { textMode: "parsed" },
     excalidrawAPI: {}, containerEl: { querySelector: () => ({ getBoundingClientRect: () => ({ x: 0, y: 0, width: 100, height: 80 }) }) },
@@ -149,4 +150,13 @@ test("incoherent text modes fail before scene or history mutation", async () => 
   const view = { textMode: "raw", excalidrawData: { textMode: "parsed" },
     async changeTextMode() {} };
   await assert.rejects(prepareTextUndoFixture(view, "raw"), /did not synchronize/);
+});
+
+
+test("text fixture waits for the imperative tool update to commit before returning an input target",async()=>{
+  const original=globalThis.window;globalThis.window={setTimeout};let active='selection',timer;
+  const api={updateScene(){},history:{clear(){}},setActiveTool(){timer=setTimeout(()=>{active='text';},25);},getAppState:()=>({activeTool:{type:active}})};
+  const view={textMode:'parsed',excalidrawData:{textMode:'parsed'},excalidrawAPI:api,containerEl:{querySelector:()=>({getBoundingClientRect:()=>({x:0,y:0,width:100,height:80})})}};
+  try{const result=await prepareTextUndoFixture(view,'parsed');assert.equal(active,'text');assert.equal(result.x,50);}
+  finally{clearTimeout(timer);if(original===undefined)delete globalThis.window;else globalThis.window=original;}
 });

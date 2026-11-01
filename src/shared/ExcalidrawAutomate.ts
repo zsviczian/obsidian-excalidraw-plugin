@@ -26,6 +26,7 @@ import {
 import { ColorMap, MimeType } from "../types/embeddedFileLoaderTypes";
 import {
   Editor,
+  normalizePath,
   MarkdownView,
   Notice,
   OpenViewState,
@@ -678,6 +679,28 @@ export class ExcalidrawAutomate {
    */
   public getListOfTemplateFiles(): TFile[] | null {
     return getListOfTemplateFiles(this.plugin);
+  }
+
+  /** The live configured Excalidraw template file or folder path (read-only). */
+  public get templateFilePath(): string {
+    return this.plugin.settings.templateFilePath;
+  }
+
+  /**
+   * Resolve a new drawing's vault path using the current compatibility and extension settings.
+   * Does not create a file, add a collision suffix, or use the configured default drawing folder.
+   * @param filename - A filename stem without folder separators or a drawing extension.
+   * @param foldername - Explicit vault-relative destination; empty means the vault root.
+   * @returns The path suitable for `create({ exactPath })`; creation fails if it is occupied.
+   */
+  public getDrawingFilePath(filename: string, foldername = ""): string {
+    if (!filename.trim() || /[\\/]/.test(filename)) {
+      throw new Error("Drawing filename must be a non-empty filename stem");
+    }
+    const extension = this.plugin.settings.compatibilityMode
+      ? ".excalidraw"
+      : this.plugin.settings.useExcalidrawExtension ? ".excalidraw.md" : ".md";
+    return normalizePath(`${foldername ? `${foldername}/` : ""}${filename}${extension}`);
   }
 
   /**

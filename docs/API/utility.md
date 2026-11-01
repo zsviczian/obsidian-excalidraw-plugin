@@ -219,3 +219,24 @@ ea.onDropHook = (data) => {
   return false;
 }
 ```
+
+### Drawing templates and destination paths (2.29.1)
+
+```typescript
+readonly templateFilePath: string;
+getListOfTemplateFiles(): TFile[] | null;
+getDrawingFilePath(filename: string, foldername?: string): string;
+```
+
+`templateFilePath` reads the live configured template file or folder. Resolve it
+with `getListOfTemplateFiles()` to populate a dropdown, retaining complete paths
+as option values. Folder results include descendants, excluding sibling folders
+with a similar prefix. No configuration returns `null`.
+
+`getDrawingFilePath()` accepts a filename stem and explicit vault folder (empty
+means root). It applies the current compatibility/extension preference without
+creating anything or adding collision suffixes. Use a fresh `getAPI()` instance
+and `create({ exactPath, templatePath, silent: true })` to create the selected
+format without a chooser or opening a leaf. Omit `templatePath` for a blank
+workbench. Destroy that instance in `finally`; do not reset a shared EA instance.
+Check `verifyMinimumPluginVersion("2.29.1")` before using these additions.

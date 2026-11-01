@@ -208,6 +208,7 @@ export default {
   MARKDOWN_IMAGE_CHANGE_SOURCE_ERROR: "Не удалось изменить источник Markdown-изображения",
   MARKDOWN_IMAGE_LOCAL_COPY_ERROR: "Не удалось создать локальную копию Markdown",
   MARKDOWN_IMAGE_EXTRACT_TITLE: "Извлечь Markdown-изображение в заметку",
+  PROMPT_ERROR_INVALID_FILE_PATH: "Укажите допустимое имя файла и папку хранилища.",
   FILE_AND_FOLDER_SELECTOR_FOLDER: "Папка",
   FILE_AND_FOLDER_SELECTOR_FILENAME: "Имя файла",
   FILE_AND_FOLDER_SELECTOR_EXPORT_TITLE: "Экспорт в хранилище",

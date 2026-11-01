@@ -17,6 +17,7 @@ export async function exerciseInteractionBehavior(c, env, rows, modifier) {
             at: e.timeStamp,
             trusted: e.isTrusted,
             pointerType: e.pointerType,
+            x:e.clientX,y:e.clientY,target:e.target?.outerHTML?.slice(0,250),
           });
       for (const type of ["keydown", "pointerdown", "contextmenu"])
         doc.addEventListener(type, listener, true);
@@ -33,10 +34,14 @@ export async function exerciseInteractionBehavior(c, env, rows, modifier) {
               () => doc.querySelector(".prompt input.prompt-input"),
               "trusted command-palette opening",
             );
-            const input = doc.querySelector(".prompt input.prompt-input");
-            await click(input);
+            let input;
+            await click(()=>doc.querySelector(".prompt input.prompt-input"));
             await c.waitFor(
-              () => doc.activeElement === input,
+              () => {
+                input=doc.querySelector(".prompt input.prompt-input");
+                c.caseTrace={paletteFocus:{input:input?.outerHTML,active:doc.activeElement?.outerHTML?.slice(0,500),focused:doc.hasFocus(),events}};
+                return input && doc.activeElement === input;
+              },
               "palette input focus",
             );
             await env.input("Input.insertText", { text: selected.name });

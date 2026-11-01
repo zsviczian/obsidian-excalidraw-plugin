@@ -983,6 +983,18 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field: "templateFilePath",
+    code: "readonly templateFilePath: string;",
+    desc: "Live configured template file or folder path. Use getListOfTemplateFiles() to resolve its drawings.",
+    after: "",
+  },
+  {
+    field: "getDrawingFilePath",
+    code: 'getDrawingFilePath(filename: string, foldername?: string): string;',
+    desc: "Resolve a filename stem in an explicit vault folder using current compatibility/extension settings. Empty folder means vault root. No file is created or collision suffix added. Pass the result to create({ exactPath }).",
+    after: "",
+  },
+  {
     field: "getListOfTemplateFiles",
     code: "getListOfTemplateFiles(): TFile[] | null",
     desc:
@@ -1156,7 +1168,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "newFilePrompt",
     code: "async newFilePrompt(newFileNameOrPath: string, shouldOpenNewFile: boolean, targetPane?: PaneTarget, parentFile?: TFile): Promise<TFile | null>;",
-    desc: "",
+    desc: "The dialog offers editable folder and filename fields and never overwrites an existing file.",
     after: "",
   },
   {

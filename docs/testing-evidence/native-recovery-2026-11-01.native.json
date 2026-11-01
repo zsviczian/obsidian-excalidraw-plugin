@@ -1,0 +1,2866 @@
+{
+  "status": "passed",
+  "reportDirectory": "native-b329000b-8a0d-4b2a-b244-4245ae9c01c8",
+  "counts": {
+    "passed": 357,
+    "failed": 0,
+    "missing": 0,
+    "deviceProfilesPassed": 40
+  },
+  "source": {
+    "pluginRevision": "ebb7916b9b17008033f685c509b61875001341bf",
+    "pluginDirty": true,
+    "forkRevision": "80df3c48f215d71e0f703874cc05eb2c8fca834d",
+    "forkDirty": false,
+    "buildMode": "workspace-frozen",
+    "requestedProfile": "regression",
+    "node": "v22.22.2",
+    "platform": "darwin"
+  },
+  "producers": {
+    "fork": {
+      "repository": "zsviczian/excalidraw",
+      "commit": "80df3c48f215d71e0f703874cc05eb2c8fca834d",
+      "dirty": false,
+      "diffHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "lockfileHash": "3ab96fd4e62db27d08c1af952b3a93baccab5ab466e5b8b4bb61a48fa706f34f",
+      "toolchain": {
+        "node": "v22.22.2",
+        "platform": "darwin"
+      },
+      "artifacts": [
+        {
+          "role": "production-js",
+          "relativePath": "packages/excalidraw/dist/obsidian/excalidraw.production.min.js",
+          "sha256": "6df755b18257ff43b4ae7cc9f3f814d1ef32b6c6c66eba4e5d6ea9b7b7e055d3",
+          "bytes": 6507782
+        },
+        {
+          "role": "production-css",
+          "relativePath": "packages/excalidraw/dist/obsidian/excalidraw.production.min.css",
+          "sha256": "0337e307594435b5125d216c9570aad9b5d4460908f3f0e716baf1daa87ac002",
+          "bytes": 309492
+        },
+        {
+          "role": "development-js",
+          "relativePath": "packages/excalidraw/dist/obsidian/excalidraw.development.js",
+          "sha256": "5343c0d597975d310abc04b62156ae7e1f62ec9003c8084242c3ea65f8c13d8a",
+          "bytes": 29987268
+        },
+        {
+          "role": "development-css",
+          "relativePath": "packages/excalidraw/dist/obsidian/excalidraw.development.css",
+          "sha256": "192fb4463825f0b870d9f59862f6ae54056e591226546608958fe9e3c937b883",
+          "bytes": 350666
+        }
+      ]
+    },
+    "extras": {
+      "repository": "zsviczian/obsidian-excalidraw-extras",
+      "commit": "df1f2b5659259c43780c5ef07cd433fa6c3e14fa",
+      "dirty": false,
+      "diffHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "lockfileHash": "a24120b8bb7df3ca07f10ad20893355160f0f335332e9f915c97cb207160f64f",
+      "toolchain": {
+        "node": "v22.22.2",
+        "platform": "darwin"
+      },
+      "artifacts": [
+        {
+          "role": "main",
+          "relativePath": "dist/main.js",
+          "sha256": "c377df5b7f286c7306604827fadcb363313cebc5a9953b7d77e106fdb611f7d8",
+          "bytes": 2540802
+        },
+        {
+          "role": "manifest",
+          "relativePath": "dist/manifest.json",
+          "sha256": "d7615e0322673617a59ca067dde4a59624fe2d947c93c025ea631da7ad920611",
+          "bytes": 303
+        },
+        {
+          "role": "styles",
+          "relativePath": "dist/styles.css",
+          "sha256": "3de04a6882b3e43b48f81231962c5f52afbd7146cc986fb0c86631ac5de30eda",
+          "bytes": 1427
+        }
+      ]
+    },
+    "plugin": {
+      "repository": "zsviczian/obsidian-excalidraw-plugin",
+      "commit": "ebb7916b9b17008033f685c509b61875001341bf",
+      "dirty": true,
+      "diffHash": "3f71b85207ead657c1bee86a955467b7de34c99cbcb9bb8e748b15f561cd9e68",
+      "lockfileHash": "6a52b4b078cb94835b4c9f11c025aaa132baafb7b0e885c8a91835e80c2cfb5c",
+      "toolchain": {
+        "node": "v22.22.2",
+        "platform": "darwin"
+      },
+      "artifacts": [
+        {
+          "role": "main",
+          "relativePath": "dist/main.js",
+          "sha256": "5e9d881ee9a04564d855f457bbb2c90439c9c9b0069eefbb0072d2a881edc652",
+          "bytes": 5048739
+        },
+        {
+          "role": "manifest",
+          "relativePath": "dist/manifest.json",
+          "sha256": "4880b885c50643ef848d31cea829776ca2e96747353aee334d71e875f79d31c0",
+          "bytes": 470
+        },
+        {
+          "role": "styles",
+          "relativePath": "dist/styles.css",
+          "sha256": "4f71f6598b45de2e1ae94c20b7a190397a8b1150cd78b29e10fdf4638b6e6c7d",
+          "bytes": 354364
+        }
+      ]
+    }
+  },
+  "companionVersions": {
+    "ready": true,
+    "versions": {
+      "mathjax": "1.1.1",
+      "mermaid": "3.0.0",
+      "pdf": "1.0.0",
+      "filesystem": "1.0.0"
+    },
+    "checks": {
+      "mathjax": {
+        "valid": true
+      },
+      "mermaid": {
+        "valid": true
+      },
+      "pdf": {
+        "valid": true
+      },
+      "filesystem": {
+        "valid": true
+      }
+    }
+  },
+  "cleanup": {
+    "native": "passed",
+    "devices": "passed",
+    "baselineRestored": true
+  },
+  "transportRecoveryCounts": {
+    "completed receipt": 72
+  },
+  "tests": [
+    {
+      "id": "plugin-load",
+      "status": "passed"
+    },
+    {
+      "id": "drawing-main-window",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:main:settings-01",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:main:settings-02",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:main:settings-03",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:main:settings-04",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:main:settings-05",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:main:settings-06",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:main:settings-07",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:main:settings-08",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:main:settings-09",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:main:settings-10",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:main:settings-11",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:main:settings-12",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:main:settings-13",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:main:settings-14",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:main:settings-15",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:main:settings-16",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:main:export-01",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:main:export-02",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:main:export-03",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:main:export-04",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:main:export-05",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:main:export-06",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:main:export-07",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:main:export-08",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:main:export-09",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:main:export-10",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:main:export-11",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:main:export-12",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:main:export-frame-padding-policy",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:main:settings-live-persistence",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:main:frontmatter-prefixes-theme-scale",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:main:cli-atomic-targeted-edit",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:main:markdown-reading",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:main:markdown-live-preview",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:main:markdown-source-edit",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:main:raw-parsed-text",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:main:images-shared-crops",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:main:images-source-edit-missing",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:main:drawing-and-markdown-embeds",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:main:ea-selection-groups-bindings-frames",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:main:ea-hooks-targeting-invalid",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:main:command-palette-selection-cancel",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:main:toolbar-context-shortcuts",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:split:settings-01",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:split:settings-02",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:split:settings-03",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:split:settings-04",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:split:settings-05",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:split:settings-06",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:split:settings-07",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:split:settings-08",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:split:settings-09",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:split:settings-10",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:split:settings-11",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:split:settings-12",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:split:settings-13",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:split:settings-14",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:split:settings-15",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:split:settings-16",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:split:export-01",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:split:export-02",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:split:export-03",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:split:export-04",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:split:export-05",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:split:export-06",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:split:export-07",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:split:export-08",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:split:export-09",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:split:export-10",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:split:export-11",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:split:export-12",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:split:export-frame-padding-policy",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:split:settings-live-persistence",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:split:frontmatter-prefixes-theme-scale",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:split:cli-atomic-targeted-edit",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:split:markdown-reading",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:split:markdown-live-preview",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:split:markdown-source-edit",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:split:raw-parsed-text",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:split:images-shared-crops",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:split:images-source-edit-missing",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:split:drawing-and-markdown-embeds",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:split:ea-selection-groups-bindings-frames",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:split:ea-hooks-targeting-invalid",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:split:command-palette-selection-cancel",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:split:toolbar-context-shortcuts",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:nested-split:settings-01",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:nested-split:settings-02",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:nested-split:settings-03",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:nested-split:settings-04",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:nested-split:settings-05",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:nested-split:settings-06",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:nested-split:settings-07",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:nested-split:settings-08",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:nested-split:settings-09",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:nested-split:settings-10",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:nested-split:settings-11",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:nested-split:settings-12",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:nested-split:settings-13",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:nested-split:settings-14",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:nested-split:settings-15",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:nested-split:settings-16",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:nested-split:export-01",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:nested-split:export-02",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:nested-split:export-03",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:nested-split:export-04",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:nested-split:export-05",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:nested-split:export-06",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:nested-split:export-07",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:nested-split:export-08",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:nested-split:export-09",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:nested-split:export-10",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:nested-split:export-11",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:nested-split:export-12",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:nested-split:export-frame-padding-policy",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:nested-split:settings-live-persistence",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:nested-split:frontmatter-prefixes-theme-scale",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:nested-split:cli-atomic-targeted-edit",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:nested-split:markdown-reading",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:nested-split:markdown-live-preview",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:nested-split:markdown-source-edit",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:nested-split:raw-parsed-text",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:nested-split:images-shared-crops",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:nested-split:images-source-edit-missing",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:nested-split:drawing-and-markdown-embeds",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:nested-split:ea-selection-groups-bindings-frames",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:nested-split:ea-hooks-targeting-invalid",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:nested-split:command-palette-selection-cancel",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:nested-split:toolbar-context-shortcuts",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:popout:settings-01",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:popout:settings-02",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:popout:settings-03",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:popout:settings-04",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:popout:settings-05",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:popout:settings-06",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:popout:settings-07",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:popout:settings-08",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:popout:settings-09",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:popout:settings-10",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:popout:settings-11",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:popout:settings-12",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:popout:settings-13",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:popout:settings-14",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:popout:settings-15",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:popout:settings-16",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:popout:export-01",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:popout:export-02",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:popout:export-03",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:popout:export-04",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:popout:export-05",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:popout:export-06",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:popout:export-07",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:popout:export-08",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:popout:export-09",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:popout:export-10",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:popout:export-11",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:popout:export-12",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:popout:export-frame-padding-policy",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:popout:settings-live-persistence",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:popout:frontmatter-prefixes-theme-scale",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:popout:cli-atomic-targeted-edit",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:popout:markdown-reading",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:popout:markdown-live-preview",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:popout:markdown-source-edit",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:popout:raw-parsed-text",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:popout:images-shared-crops",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:popout:images-source-edit-missing",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:popout:drawing-and-markdown-embeds",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:popout:ea-selection-groups-bindings-frames",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:popout:ea-hooks-targeting-invalid",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:popout:command-palette-selection-cancel",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:popout:toolbar-context-shortcuts",
+      "status": "passed"
+    },
+    {
+      "id": "native:lifecycle-two-split-fullscreen",
+      "status": "passed"
+    },
+    {
+      "id": "native:lifecycle-dirty-main-to-popout",
+      "status": "passed"
+    },
+    {
+      "id": "native:lifecycle-dirty-popout-to-main",
+      "status": "passed"
+    },
+    {
+      "id": "native:lifecycle-new-popout-survivor",
+      "status": "passed"
+    },
+    {
+      "id": "native:lifecycle-plugin-reload",
+      "status": "passed"
+    },
+    {
+      "id": "native:extras-mathjax-gateway",
+      "status": "passed"
+    },
+    {
+      "id": "native:extras-mermaid-gateway",
+      "status": "passed"
+    },
+    {
+      "id": "native:extras-pdf-output",
+      "status": "passed"
+    },
+    {
+      "id": "native:data-roundtrip:Uncompressed.excalidraw.md",
+      "status": "passed"
+    },
+    {
+      "id": "native:data-roundtrip:Compressed.excalidraw.md",
+      "status": "passed"
+    },
+    {
+      "id": "native:data-roundtrip:Legacy.excalidraw",
+      "status": "passed"
+    },
+    {
+      "id": "native:data-backup",
+      "status": "passed"
+    },
+    {
+      "id": "native:data-external-change",
+      "status": "passed"
+    },
+    {
+      "id": "native:data-write-failure",
+      "status": "passed"
+    },
+    {
+      "id": "native:data-rename-delete",
+      "status": "passed"
+    },
+    {
+      "id": "workflow-fixes-3020",
+      "status": "passed"
+    },
+    {
+      "id": "wheel-zoom-3008",
+      "status": "passed"
+    },
+    {
+      "id": "image-geometry-real-3014",
+      "status": "passed"
+    },
+    {
+      "id": "web-drop-2967",
+      "status": "passed"
+    },
+    {
+      "id": "native:drop:web:popout:uri:image-url",
+      "status": "passed"
+    },
+    {
+      "id": "native:drop:web:popout:linked-image:image-url",
+      "status": "passed"
+    },
+    {
+      "id": "native:drop:web:popout:extensionless:image-url",
+      "status": "passed"
+    },
+    {
+      "id": "native:drop:web:popout:blob:image-url",
+      "status": "passed"
+    },
+    {
+      "id": "native:drop:web:popout:uri:image-import",
+      "status": "passed"
+    },
+    {
+      "id": "native:drop:web:popout:linked-image:image-import",
+      "status": "passed"
+    },
+    {
+      "id": "native:drop:web:popout:extensionless:image-import",
+      "status": "passed"
+    },
+    {
+      "id": "native:drop:web:popout:blob:image-import",
+      "status": "passed"
+    },
+    {
+      "id": "native:drop:web:popout:linked-page:link",
+      "status": "passed"
+    },
+    {
+      "id": "native:drop:web:popout:linked-page:embeddable",
+      "status": "passed"
+    },
+    {
+      "id": "internal-drop-tooltip",
+      "status": "passed"
+    },
+    {
+      "id": "native:drop:internal:popout:0",
+      "status": "passed"
+    },
+    {
+      "id": "native:drop:internal:popout:1",
+      "status": "passed"
+    },
+    {
+      "id": "native:drop:internal:popout:2",
+      "status": "passed"
+    },
+    {
+      "id": "native:drop:internal:popout:3",
+      "status": "passed"
+    },
+    {
+      "id": "native:drop:internal:popout:4",
+      "status": "passed"
+    },
+    {
+      "id": "text-undo-2976",
+      "status": "passed"
+    },
+    {
+      "id": "native-cli-authoring",
+      "status": "passed"
+    },
+    {
+      "id": "markdown-embed-recovery-2953",
+      "status": "passed"
+    },
+    {
+      "id": "grouped-link-click",
+      "status": "passed"
+    },
+    {
+      "id": "latex-input-2970",
+      "status": "passed"
+    },
+    {
+      "id": "native:ea-shapes-bindings-and-isolation",
+      "status": "passed"
+    },
+    {
+      "id": "native:ea-edit-image-and-decoded-export",
+      "status": "passed"
+    },
+    {
+      "id": "native:ea-svg-import-and-disposal",
+      "status": "passed"
+    },
+    {
+      "id": "native:core-toolbar-draw-history",
+      "status": "passed"
+    },
+    {
+      "id": "native:core-custom-highlighter",
+      "status": "passed"
+    },
+    {
+      "id": "native:core-eraser-and-undo",
+      "status": "passed"
+    },
+    {
+      "id": "native:core-laser-transient",
+      "status": "passed"
+    },
+    {
+      "id": "native:pdf-reference-and-decoded-content",
+      "status": "passed"
+    },
+    {
+      "id": "native:stability-roundtrip:0",
+      "status": "passed"
+    },
+    {
+      "id": "native:stability-roundtrip:1",
+      "status": "passed"
+    },
+    {
+      "id": "native:stability-roundtrip:2",
+      "status": "passed"
+    },
+    {
+      "id": "native:stability-roundtrip:3",
+      "status": "passed"
+    },
+    {
+      "id": "native:stability-roundtrip:4",
+      "status": "passed"
+    },
+    {
+      "id": "native:stability-roundtrip:5",
+      "status": "passed"
+    },
+    {
+      "id": "lucide-3019",
+      "status": "passed"
+    },
+    {
+      "id": "javascript-errors",
+      "status": "passed"
+    },
+    {
+      "id": "source-stability",
+      "status": "passed"
+    },
+    {
+      "id": "native:device:desktop-wide-full-light",
+      "status": "passed"
+    },
+    {
+      "id": "native:device:desktop-wide-tray-light",
+      "status": "passed"
+    },
+    {
+      "id": "native:device:desktop-wide-compact-light",
+      "status": "passed"
+    },
+    {
+      "id": "native:device:desktop-narrow-full-light",
+      "status": "passed"
+    },
+    {
+      "id": "native:device:desktop-narrow-tray-light",
+      "status": "passed"
+    },
+    {
+      "id": "native:device:desktop-narrow-compact-light",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:phone:settings-01",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:phone:settings-02",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:phone:settings-03",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:phone:settings-04",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:phone:settings-05",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:phone:settings-06",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:phone:settings-07",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:phone:settings-08",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:phone:settings-09",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:phone:settings-10",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:phone:settings-11",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:phone:settings-12",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:phone:settings-13",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:phone:settings-14",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:phone:settings-15",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:phone:settings-16",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:phone:export-01",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:phone:export-02",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:phone:export-03",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:phone:export-04",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:phone:export-05",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:phone:export-06",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:phone:export-07",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:phone:export-08",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:phone:export-09",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:phone:export-10",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:phone:export-11",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:phone:export-12",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:phone:export-frame-padding-policy",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:phone:settings-live-persistence",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:phone:frontmatter-prefixes-theme-scale",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:phone:cli-atomic-targeted-edit",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:phone:markdown-reading",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:phone:markdown-live-preview",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:phone:markdown-source-edit",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:phone:raw-parsed-text",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:phone:images-shared-crops",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:phone:images-source-edit-missing",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:phone:drawing-and-markdown-embeds",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:phone:ea-selection-groups-bindings-frames",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:phone:ea-hooks-targeting-invalid",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:phone:command-palette-selection-cancel",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:phone:toolbar-context-shortcuts",
+      "status": "passed"
+    },
+    {
+      "id": "native:device:phone-portrait-light",
+      "status": "passed"
+    },
+    {
+      "id": "native:device:phone-landscape-light",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:tablet:settings-01",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:tablet:settings-02",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:tablet:settings-03",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:tablet:settings-04",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:tablet:settings-05",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:tablet:settings-06",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:tablet:settings-07",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:tablet:settings-08",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:tablet:settings-09",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:tablet:settings-10",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:tablet:settings-11",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:tablet:settings-12",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:tablet:settings-13",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:tablet:settings-14",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:tablet:settings-15",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:tablet:settings-16",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:tablet:export-01",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:tablet:export-02",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:tablet:export-03",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:tablet:export-04",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:tablet:export-05",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:tablet:export-06",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:tablet:export-07",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:tablet:export-08",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:tablet:export-09",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:tablet:export-10",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:tablet:export-11",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:tablet:export-12",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:tablet:export-frame-padding-policy",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:tablet:settings-live-persistence",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:tablet:frontmatter-prefixes-theme-scale",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:tablet:cli-atomic-targeted-edit",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:tablet:markdown-reading",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:tablet:markdown-live-preview",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:tablet:markdown-source-edit",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:tablet:raw-parsed-text",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:tablet:images-shared-crops",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:tablet:images-source-edit-missing",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:tablet:drawing-and-markdown-embeds",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:tablet:ea-selection-groups-bindings-frames",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:tablet:ea-hooks-targeting-invalid",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:tablet:command-palette-selection-cancel",
+      "status": "passed"
+    },
+    {
+      "id": "native:behavior:tablet:toolbar-context-shortcuts",
+      "status": "passed"
+    },
+    {
+      "id": "native:device:tablet-portrait-full-light",
+      "status": "passed"
+    },
+    {
+      "id": "native:device:tablet-portrait-tray-light",
+      "status": "passed"
+    },
+    {
+      "id": "native:device:tablet-portrait-compact-light",
+      "status": "passed"
+    },
+    {
+      "id": "native:device:tablet-landscape-full-light",
+      "status": "passed"
+    },
+    {
+      "id": "native:device:tablet-landscape-tray-light",
+      "status": "passed"
+    },
+    {
+      "id": "native:device:tablet-landscape-compact-light",
+      "status": "passed"
+    },
+    {
+      "id": "native:device:desktop-wide-full-dark",
+      "status": "passed"
+    },
+    {
+      "id": "native:device:desktop-wide-tray-dark",
+      "status": "passed"
+    },
+    {
+      "id": "native:device:desktop-wide-compact-dark",
+      "status": "passed"
+    },
+    {
+      "id": "native:device:desktop-narrow-full-dark",
+      "status": "passed"
+    },
+    {
+      "id": "native:device:desktop-narrow-tray-dark",
+      "status": "passed"
+    },
+    {
+      "id": "native:device:desktop-narrow-compact-dark",
+      "status": "passed"
+    },
+    {
+      "id": "native:device:phone-portrait-dark",
+      "status": "passed"
+    },
+    {
+      "id": "native:device:phone-landscape-dark",
+      "status": "passed"
+    },
+    {
+      "id": "native:device:tablet-portrait-full-dark",
+      "status": "passed"
+    },
+    {
+      "id": "native:device:tablet-portrait-tray-dark",
+      "status": "passed"
+    },
+    {
+      "id": "native:device:tablet-portrait-compact-dark",
+      "status": "passed"
+    },
+    {
+      "id": "native:device:tablet-landscape-full-dark",
+      "status": "passed"
+    },
+    {
+      "id": "native:device:tablet-landscape-tray-dark",
+      "status": "passed"
+    },
+    {
+      "id": "native:device:tablet-landscape-compact-dark",
+      "status": "passed"
+    },
+    {
+      "id": "native:device:breakpoint-mobile-width-598",
+      "status": "passed"
+    },
+    {
+      "id": "native:device:breakpoint-mobile-width-599",
+      "status": "passed"
+    },
+    {
+      "id": "native:device:breakpoint-mobile-width-600",
+      "status": "passed"
+    },
+    {
+      "id": "native:device:breakpoint-sidebar-width-799",
+      "status": "passed"
+    },
+    {
+      "id": "native:device:breakpoint-sidebar-width-800",
+      "status": "passed"
+    },
+    {
+      "id": "native:device:breakpoint-sidebar-width-801",
+      "status": "passed"
+    },
+    {
+      "id": "native:device:breakpoint-landscape-width-999",
+      "status": "passed"
+    },
+    {
+      "id": "native:device:breakpoint-landscape-width-1000",
+      "status": "passed"
+    },
+    {
+      "id": "native:device:breakpoint-landscape-width-1001",
+      "status": "passed"
+    },
+    {
+      "id": "native:device:breakpoint-landscape-height-499",
+      "status": "passed"
+    },
+    {
+      "id": "native:device:breakpoint-landscape-height-500",
+      "status": "passed"
+    },
+    {
+      "id": "native:device:breakpoint-landscape-height-501",
+      "status": "passed"
+    }
+  ],
+  "devices": [
+    {
+      "id": "native:device:desktop-wide-full-light",
+      "status": "passed",
+      "requested": {
+        "id": "desktop-wide-full-light",
+        "mobile": false,
+        "width": 1200,
+        "height": 900,
+        "mode": "full",
+        "theme": "light",
+        "formFactor": "desktop",
+        "input": "mouse",
+        "pane": "fullscreen"
+      },
+      "actualViewport": {
+        "width": 1200,
+        "height": 900
+      },
+      "editorInterface": {
+        "formFactor": "desktop",
+        "desktopUIMode": "full",
+        "userAgent": {
+          "isMobileDevice": false,
+          "platform": "other"
+        },
+        "isTouchScreen": false,
+        "canFitSidebar": true,
+        "isLandscape": true
+      },
+      "transport": "CDP viewport fitted to constrained display"
+    },
+    {
+      "id": "native:device:desktop-wide-tray-light",
+      "status": "passed",
+      "requested": {
+        "id": "desktop-wide-tray-light",
+        "mobile": false,
+        "width": 1200,
+        "height": 900,
+        "mode": "tray",
+        "theme": "light",
+        "formFactor": "desktop",
+        "input": "mouse",
+        "pane": "fullscreen"
+      },
+      "actualViewport": {
+        "width": 1200,
+        "height": 900
+      },
+      "editorInterface": {
+        "formFactor": "desktop",
+        "desktopUIMode": "tray",
+        "userAgent": {
+          "isMobileDevice": false,
+          "platform": "other"
+        },
+        "isTouchScreen": false,
+        "canFitSidebar": true,
+        "isLandscape": true
+      },
+      "transport": "CDP viewport fitted to constrained display"
+    },
+    {
+      "id": "native:device:desktop-wide-compact-light",
+      "status": "passed",
+      "requested": {
+        "id": "desktop-wide-compact-light",
+        "mobile": false,
+        "width": 1200,
+        "height": 900,
+        "mode": "compact",
+        "theme": "light",
+        "formFactor": "desktop",
+        "input": "mouse",
+        "pane": "fullscreen"
+      },
+      "actualViewport": {
+        "width": 1200,
+        "height": 900
+      },
+      "editorInterface": {
+        "formFactor": "desktop",
+        "desktopUIMode": "compact",
+        "userAgent": {
+          "isMobileDevice": false,
+          "platform": "other"
+        },
+        "isTouchScreen": false,
+        "canFitSidebar": true,
+        "isLandscape": true
+      },
+      "transport": "CDP viewport fitted to constrained display"
+    },
+    {
+      "id": "native:device:desktop-narrow-full-light",
+      "status": "passed",
+      "requested": {
+        "id": "desktop-narrow-full-light",
+        "mobile": false,
+        "width": 900,
+        "height": 875,
+        "mode": "full",
+        "theme": "light",
+        "formFactor": "desktop",
+        "input": "mouse",
+        "pane": "fullscreen"
+      },
+      "actualViewport": {
+        "width": 900,
+        "height": 875
+      },
+      "editorInterface": {
+        "formFactor": "desktop",
+        "desktopUIMode": "full",
+        "userAgent": {
+          "isMobileDevice": false,
+          "platform": "other"
+        },
+        "isTouchScreen": false,
+        "canFitSidebar": true,
+        "isLandscape": true
+      },
+      "transport": "native window"
+    },
+    {
+      "id": "native:device:desktop-narrow-tray-light",
+      "status": "passed",
+      "requested": {
+        "id": "desktop-narrow-tray-light",
+        "mobile": false,
+        "width": 900,
+        "height": 875,
+        "mode": "tray",
+        "theme": "light",
+        "formFactor": "desktop",
+        "input": "mouse",
+        "pane": "fullscreen"
+      },
+      "actualViewport": {
+        "width": 900,
+        "height": 875
+      },
+      "editorInterface": {
+        "formFactor": "desktop",
+        "desktopUIMode": "tray",
+        "userAgent": {
+          "isMobileDevice": false,
+          "platform": "other"
+        },
+        "isTouchScreen": false,
+        "canFitSidebar": true,
+        "isLandscape": true
+      },
+      "transport": "native window"
+    },
+    {
+      "id": "native:device:desktop-narrow-compact-light",
+      "status": "passed",
+      "requested": {
+        "id": "desktop-narrow-compact-light",
+        "mobile": false,
+        "width": 900,
+        "height": 875,
+        "mode": "compact",
+        "theme": "light",
+        "formFactor": "desktop",
+        "input": "mouse",
+        "pane": "fullscreen"
+      },
+      "actualViewport": {
+        "width": 900,
+        "height": 875
+      },
+      "editorInterface": {
+        "formFactor": "desktop",
+        "desktopUIMode": "compact",
+        "userAgent": {
+          "isMobileDevice": false,
+          "platform": "other"
+        },
+        "isTouchScreen": false,
+        "canFitSidebar": true,
+        "isLandscape": true
+      },
+      "transport": "native window"
+    },
+    {
+      "id": "native:device:phone-portrait-light",
+      "status": "passed",
+      "requested": {
+        "id": "phone-portrait-light",
+        "mobile": true,
+        "width": 390,
+        "height": 844,
+        "mode": "mobile",
+        "theme": "light",
+        "formFactor": "phone",
+        "input": "touch",
+        "pane": "fullscreen"
+      },
+      "actualViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "editorInterface": {
+        "formFactor": "phone",
+        "desktopUIMode": "mobile",
+        "userAgent": {
+          "isMobileDevice": true,
+          "platform": "other"
+        },
+        "isTouchScreen": true,
+        "canFitSidebar": false,
+        "isLandscape": false
+      },
+      "transport": "native window"
+    },
+    {
+      "id": "native:device:phone-landscape-light",
+      "status": "passed",
+      "requested": {
+        "id": "phone-landscape-light",
+        "mobile": true,
+        "width": 844,
+        "height": 390,
+        "mode": "mobile",
+        "theme": "light",
+        "formFactor": "phone",
+        "input": "touch",
+        "pane": "fullscreen"
+      },
+      "actualViewport": {
+        "width": 844,
+        "height": 390
+      },
+      "editorInterface": {
+        "formFactor": "phone",
+        "desktopUIMode": "mobile",
+        "userAgent": {
+          "isMobileDevice": true,
+          "platform": "other"
+        },
+        "isTouchScreen": true,
+        "canFitSidebar": true,
+        "isLandscape": true
+      },
+      "transport": "native window"
+    },
+    {
+      "id": "native:device:tablet-portrait-full-light",
+      "status": "passed",
+      "requested": {
+        "id": "tablet-portrait-full-light",
+        "mobile": true,
+        "width": 900,
+        "height": 1100,
+        "mode": "full",
+        "theme": "light",
+        "formFactor": "tablet",
+        "input": "touch",
+        "pane": "fullscreen"
+      },
+      "actualViewport": {
+        "width": 900,
+        "height": 1100
+      },
+      "editorInterface": {
+        "formFactor": "tablet",
+        "desktopUIMode": "full",
+        "userAgent": {
+          "isMobileDevice": true,
+          "platform": "other"
+        },
+        "isTouchScreen": true,
+        "canFitSidebar": true,
+        "isLandscape": false
+      },
+      "transport": "CDP viewport fitted to constrained display"
+    },
+    {
+      "id": "native:device:tablet-portrait-tray-light",
+      "status": "passed",
+      "requested": {
+        "id": "tablet-portrait-tray-light",
+        "mobile": true,
+        "width": 900,
+        "height": 1100,
+        "mode": "tray",
+        "theme": "light",
+        "formFactor": "tablet",
+        "input": "touch",
+        "pane": "fullscreen"
+      },
+      "actualViewport": {
+        "width": 900,
+        "height": 1100
+      },
+      "editorInterface": {
+        "formFactor": "tablet",
+        "desktopUIMode": "tray",
+        "userAgent": {
+          "isMobileDevice": true,
+          "platform": "other"
+        },
+        "isTouchScreen": true,
+        "canFitSidebar": true,
+        "isLandscape": false
+      },
+      "transport": "CDP viewport fitted to constrained display"
+    },
+    {
+      "id": "native:device:tablet-portrait-compact-light",
+      "status": "passed",
+      "requested": {
+        "id": "tablet-portrait-compact-light",
+        "mobile": true,
+        "width": 900,
+        "height": 1100,
+        "mode": "compact",
+        "theme": "light",
+        "formFactor": "tablet",
+        "input": "touch",
+        "pane": "fullscreen"
+      },
+      "actualViewport": {
+        "width": 900,
+        "height": 1100
+      },
+      "editorInterface": {
+        "formFactor": "tablet",
+        "desktopUIMode": "compact",
+        "userAgent": {
+          "isMobileDevice": true,
+          "platform": "other"
+        },
+        "isTouchScreen": true,
+        "canFitSidebar": true,
+        "isLandscape": false
+      },
+      "transport": "CDP viewport fitted to constrained display"
+    },
+    {
+      "id": "native:device:tablet-landscape-full-light",
+      "status": "passed",
+      "requested": {
+        "id": "tablet-landscape-full-light",
+        "mobile": true,
+        "width": 1100,
+        "height": 900,
+        "mode": "full",
+        "theme": "light",
+        "formFactor": "tablet",
+        "input": "touch",
+        "pane": "fullscreen"
+      },
+      "actualViewport": {
+        "width": 1100,
+        "height": 900
+      },
+      "editorInterface": {
+        "formFactor": "tablet",
+        "desktopUIMode": "full",
+        "userAgent": {
+          "isMobileDevice": true,
+          "platform": "other"
+        },
+        "isTouchScreen": true,
+        "canFitSidebar": true,
+        "isLandscape": true
+      },
+      "transport": "CDP viewport fitted to constrained display"
+    },
+    {
+      "id": "native:device:tablet-landscape-tray-light",
+      "status": "passed",
+      "requested": {
+        "id": "tablet-landscape-tray-light",
+        "mobile": true,
+        "width": 1100,
+        "height": 900,
+        "mode": "tray",
+        "theme": "light",
+        "formFactor": "tablet",
+        "input": "touch",
+        "pane": "fullscreen"
+      },
+      "actualViewport": {
+        "width": 1100,
+        "height": 900
+      },
+      "editorInterface": {
+        "formFactor": "tablet",
+        "desktopUIMode": "tray",
+        "userAgent": {
+          "isMobileDevice": true,
+          "platform": "other"
+        },
+        "isTouchScreen": true,
+        "canFitSidebar": true,
+        "isLandscape": true
+      },
+      "transport": "CDP viewport fitted to constrained display"
+    },
+    {
+      "id": "native:device:tablet-landscape-compact-light",
+      "status": "passed",
+      "requested": {
+        "id": "tablet-landscape-compact-light",
+        "mobile": true,
+        "width": 1100,
+        "height": 900,
+        "mode": "compact",
+        "theme": "light",
+        "formFactor": "tablet",
+        "input": "touch",
+        "pane": "fullscreen"
+      },
+      "actualViewport": {
+        "width": 1100,
+        "height": 900
+      },
+      "editorInterface": {
+        "formFactor": "tablet",
+        "desktopUIMode": "compact",
+        "userAgent": {
+          "isMobileDevice": true,
+          "platform": "other"
+        },
+        "isTouchScreen": true,
+        "canFitSidebar": true,
+        "isLandscape": true
+      },
+      "transport": "CDP viewport fitted to constrained display"
+    },
+    {
+      "id": "native:device:desktop-wide-full-dark",
+      "status": "passed",
+      "requested": {
+        "id": "desktop-wide-full-dark",
+        "mobile": false,
+        "width": 1200,
+        "height": 900,
+        "mode": "full",
+        "theme": "dark",
+        "formFactor": "desktop",
+        "input": "mouse",
+        "pane": "fullscreen"
+      },
+      "actualViewport": {
+        "width": 1200,
+        "height": 900
+      },
+      "editorInterface": {
+        "formFactor": "desktop",
+        "desktopUIMode": "full",
+        "userAgent": {
+          "isMobileDevice": false,
+          "platform": "other"
+        },
+        "isTouchScreen": false,
+        "canFitSidebar": true,
+        "isLandscape": true
+      },
+      "transport": "CDP viewport fitted to constrained display"
+    },
+    {
+      "id": "native:device:desktop-wide-tray-dark",
+      "status": "passed",
+      "requested": {
+        "id": "desktop-wide-tray-dark",
+        "mobile": false,
+        "width": 1200,
+        "height": 900,
+        "mode": "tray",
+        "theme": "dark",
+        "formFactor": "desktop",
+        "input": "mouse",
+        "pane": "fullscreen"
+      },
+      "actualViewport": {
+        "width": 1200,
+        "height": 900
+      },
+      "editorInterface": {
+        "formFactor": "desktop",
+        "desktopUIMode": "tray",
+        "userAgent": {
+          "isMobileDevice": false,
+          "platform": "other"
+        },
+        "isTouchScreen": false,
+        "canFitSidebar": true,
+        "isLandscape": true
+      },
+      "transport": "CDP viewport fitted to constrained display"
+    },
+    {
+      "id": "native:device:desktop-wide-compact-dark",
+      "status": "passed",
+      "requested": {
+        "id": "desktop-wide-compact-dark",
+        "mobile": false,
+        "width": 1200,
+        "height": 900,
+        "mode": "compact",
+        "theme": "dark",
+        "formFactor": "desktop",
+        "input": "mouse",
+        "pane": "fullscreen"
+      },
+      "actualViewport": {
+        "width": 1200,
+        "height": 900
+      },
+      "editorInterface": {
+        "formFactor": "desktop",
+        "desktopUIMode": "compact",
+        "userAgent": {
+          "isMobileDevice": false,
+          "platform": "other"
+        },
+        "isTouchScreen": false,
+        "canFitSidebar": true,
+        "isLandscape": true
+      },
+      "transport": "CDP viewport fitted to constrained display"
+    },
+    {
+      "id": "native:device:desktop-narrow-full-dark",
+      "status": "passed",
+      "requested": {
+        "id": "desktop-narrow-full-dark",
+        "mobile": false,
+        "width": 900,
+        "height": 875,
+        "mode": "full",
+        "theme": "dark",
+        "formFactor": "desktop",
+        "input": "mouse",
+        "pane": "fullscreen"
+      },
+      "actualViewport": {
+        "width": 900,
+        "height": 875
+      },
+      "editorInterface": {
+        "formFactor": "desktop",
+        "desktopUIMode": "full",
+        "userAgent": {
+          "isMobileDevice": false,
+          "platform": "other"
+        },
+        "isTouchScreen": false,
+        "canFitSidebar": true,
+        "isLandscape": true
+      },
+      "transport": "native window"
+    },
+    {
+      "id": "native:device:desktop-narrow-tray-dark",
+      "status": "passed",
+      "requested": {
+        "id": "desktop-narrow-tray-dark",
+        "mobile": false,
+        "width": 900,
+        "height": 875,
+        "mode": "tray",
+        "theme": "dark",
+        "formFactor": "desktop",
+        "input": "mouse",
+        "pane": "fullscreen"
+      },
+      "actualViewport": {
+        "width": 900,
+        "height": 875
+      },
+      "editorInterface": {
+        "formFactor": "desktop",
+        "desktopUIMode": "tray",
+        "userAgent": {
+          "isMobileDevice": false,
+          "platform": "other"
+        },
+        "isTouchScreen": false,
+        "canFitSidebar": true,
+        "isLandscape": true
+      },
+      "transport": "native window"
+    },
+    {
+      "id": "native:device:desktop-narrow-compact-dark",
+      "status": "passed",
+      "requested": {
+        "id": "desktop-narrow-compact-dark",
+        "mobile": false,
+        "width": 900,
+        "height": 875,
+        "mode": "compact",
+        "theme": "dark",
+        "formFactor": "desktop",
+        "input": "mouse",
+        "pane": "fullscreen"
+      },
+      "actualViewport": {
+        "width": 900,
+        "height": 875
+      },
+      "editorInterface": {
+        "formFactor": "desktop",
+        "desktopUIMode": "compact",
+        "userAgent": {
+          "isMobileDevice": false,
+          "platform": "other"
+        },
+        "isTouchScreen": false,
+        "canFitSidebar": true,
+        "isLandscape": true
+      },
+      "transport": "native window"
+    },
+    {
+      "id": "native:device:phone-portrait-dark",
+      "status": "passed",
+      "requested": {
+        "id": "phone-portrait-dark",
+        "mobile": true,
+        "width": 390,
+        "height": 844,
+        "mode": "mobile",
+        "theme": "dark",
+        "formFactor": "phone",
+        "input": "touch",
+        "pane": "fullscreen"
+      },
+      "actualViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "editorInterface": {
+        "formFactor": "phone",
+        "desktopUIMode": "mobile",
+        "userAgent": {
+          "isMobileDevice": true,
+          "platform": "other"
+        },
+        "isTouchScreen": true,
+        "canFitSidebar": false,
+        "isLandscape": false
+      },
+      "transport": "native window"
+    },
+    {
+      "id": "native:device:phone-landscape-dark",
+      "status": "passed",
+      "requested": {
+        "id": "phone-landscape-dark",
+        "mobile": true,
+        "width": 844,
+        "height": 390,
+        "mode": "mobile",
+        "theme": "dark",
+        "formFactor": "phone",
+        "input": "touch",
+        "pane": "fullscreen"
+      },
+      "actualViewport": {
+        "width": 844,
+        "height": 390
+      },
+      "editorInterface": {
+        "formFactor": "phone",
+        "desktopUIMode": "mobile",
+        "userAgent": {
+          "isMobileDevice": true,
+          "platform": "other"
+        },
+        "isTouchScreen": true,
+        "canFitSidebar": true,
+        "isLandscape": true
+      },
+      "transport": "native window"
+    },
+    {
+      "id": "native:device:tablet-portrait-full-dark",
+      "status": "passed",
+      "requested": {
+        "id": "tablet-portrait-full-dark",
+        "mobile": true,
+        "width": 900,
+        "height": 1100,
+        "mode": "full",
+        "theme": "dark",
+        "formFactor": "tablet",
+        "input": "touch",
+        "pane": "fullscreen"
+      },
+      "actualViewport": {
+        "width": 900,
+        "height": 1100
+      },
+      "editorInterface": {
+        "formFactor": "tablet",
+        "desktopUIMode": "full",
+        "userAgent": {
+          "isMobileDevice": true,
+          "platform": "other"
+        },
+        "isTouchScreen": true,
+        "canFitSidebar": true,
+        "isLandscape": false
+      },
+      "transport": "CDP viewport fitted to constrained display"
+    },
+    {
+      "id": "native:device:tablet-portrait-tray-dark",
+      "status": "passed",
+      "requested": {
+        "id": "tablet-portrait-tray-dark",
+        "mobile": true,
+        "width": 900,
+        "height": 1100,
+        "mode": "tray",
+        "theme": "dark",
+        "formFactor": "tablet",
+        "input": "touch",
+        "pane": "fullscreen"
+      },
+      "actualViewport": {
+        "width": 900,
+        "height": 1100
+      },
+      "editorInterface": {
+        "formFactor": "tablet",
+        "desktopUIMode": "tray",
+        "userAgent": {
+          "isMobileDevice": true,
+          "platform": "other"
+        },
+        "isTouchScreen": true,
+        "canFitSidebar": true,
+        "isLandscape": false
+      },
+      "transport": "CDP viewport fitted to constrained display"
+    },
+    {
+      "id": "native:device:tablet-portrait-compact-dark",
+      "status": "passed",
+      "requested": {
+        "id": "tablet-portrait-compact-dark",
+        "mobile": true,
+        "width": 900,
+        "height": 1100,
+        "mode": "compact",
+        "theme": "dark",
+        "formFactor": "tablet",
+        "input": "touch",
+        "pane": "fullscreen"
+      },
+      "actualViewport": {
+        "width": 900,
+        "height": 1100
+      },
+      "editorInterface": {
+        "formFactor": "tablet",
+        "desktopUIMode": "compact",
+        "userAgent": {
+          "isMobileDevice": true,
+          "platform": "other"
+        },
+        "isTouchScreen": true,
+        "canFitSidebar": true,
+        "isLandscape": false
+      },
+      "transport": "CDP viewport fitted to constrained display"
+    },
+    {
+      "id": "native:device:tablet-landscape-full-dark",
+      "status": "passed",
+      "requested": {
+        "id": "tablet-landscape-full-dark",
+        "mobile": true,
+        "width": 1100,
+        "height": 900,
+        "mode": "full",
+        "theme": "dark",
+        "formFactor": "tablet",
+        "input": "touch",
+        "pane": "fullscreen"
+      },
+      "actualViewport": {
+        "width": 1100,
+        "height": 900
+      },
+      "editorInterface": {
+        "formFactor": "tablet",
+        "desktopUIMode": "full",
+        "userAgent": {
+          "isMobileDevice": true,
+          "platform": "other"
+        },
+        "isTouchScreen": true,
+        "canFitSidebar": true,
+        "isLandscape": true
+      },
+      "transport": "CDP viewport fitted to constrained display"
+    },
+    {
+      "id": "native:device:tablet-landscape-tray-dark",
+      "status": "passed",
+      "requested": {
+        "id": "tablet-landscape-tray-dark",
+        "mobile": true,
+        "width": 1100,
+        "height": 900,
+        "mode": "tray",
+        "theme": "dark",
+        "formFactor": "tablet",
+        "input": "touch",
+        "pane": "fullscreen"
+      },
+      "actualViewport": {
+        "width": 1100,
+        "height": 900
+      },
+      "editorInterface": {
+        "formFactor": "tablet",
+        "desktopUIMode": "tray",
+        "userAgent": {
+          "isMobileDevice": true,
+          "platform": "other"
+        },
+        "isTouchScreen": true,
+        "canFitSidebar": true,
+        "isLandscape": true
+      },
+      "transport": "CDP viewport fitted to constrained display"
+    },
+    {
+      "id": "native:device:tablet-landscape-compact-dark",
+      "status": "passed",
+      "requested": {
+        "id": "tablet-landscape-compact-dark",
+        "mobile": true,
+        "width": 1100,
+        "height": 900,
+        "mode": "compact",
+        "theme": "dark",
+        "formFactor": "tablet",
+        "input": "touch",
+        "pane": "fullscreen"
+      },
+      "actualViewport": {
+        "width": 1100,
+        "height": 900
+      },
+      "editorInterface": {
+        "formFactor": "tablet",
+        "desktopUIMode": "compact",
+        "userAgent": {
+          "isMobileDevice": true,
+          "platform": "other"
+        },
+        "isTouchScreen": true,
+        "canFitSidebar": true,
+        "isLandscape": true
+      },
+      "transport": "CDP viewport fitted to constrained display"
+    },
+    {
+      "id": "native:device:breakpoint-mobile-width-598",
+      "status": "passed",
+      "requested": {
+        "id": "breakpoint-mobile-width-598",
+        "width": 598,
+        "height": 900,
+        "formFactor": "phone",
+        "editorWidth": 598,
+        "boundary": true,
+        "mobile": true,
+        "mode": "mobile",
+        "theme": "light",
+        "input": "touch",
+        "pane": "fullscreen"
+      },
+      "actualViewport": {
+        "width": 600,
+        "height": 900
+      },
+      "editorInterface": {
+        "formFactor": "phone",
+        "desktopUIMode": "mobile",
+        "userAgent": {
+          "isMobileDevice": true,
+          "platform": "other"
+        },
+        "isTouchScreen": true,
+        "canFitSidebar": false,
+        "isLandscape": false
+      },
+      "transport": "CDP viewport fitted to constrained display"
+    },
+    {
+      "id": "native:device:breakpoint-mobile-width-599",
+      "status": "passed",
+      "requested": {
+        "id": "breakpoint-mobile-width-599",
+        "width": 599,
+        "height": 900,
+        "formFactor": "phone",
+        "editorWidth": 599,
+        "boundary": true,
+        "mobile": true,
+        "mode": "mobile",
+        "theme": "light",
+        "input": "touch",
+        "pane": "fullscreen"
+      },
+      "actualViewport": {
+        "width": 601,
+        "height": 900
+      },
+      "editorInterface": {
+        "formFactor": "phone",
+        "desktopUIMode": "mobile",
+        "userAgent": {
+          "isMobileDevice": true,
+          "platform": "other"
+        },
+        "isTouchScreen": true,
+        "canFitSidebar": false,
+        "isLandscape": false
+      },
+      "transport": "CDP viewport fitted to constrained display"
+    },
+    {
+      "id": "native:device:breakpoint-mobile-width-600",
+      "status": "passed",
+      "requested": {
+        "id": "breakpoint-mobile-width-600",
+        "width": 600,
+        "height": 900,
+        "formFactor": "tablet",
+        "editorWidth": 600,
+        "boundary": true,
+        "mobile": true,
+        "mode": "compact",
+        "theme": "light",
+        "input": "touch",
+        "pane": "fullscreen"
+      },
+      "actualViewport": {
+        "width": 602,
+        "height": 900
+      },
+      "editorInterface": {
+        "formFactor": "tablet",
+        "desktopUIMode": "mobile",
+        "userAgent": {
+          "isMobileDevice": true,
+          "platform": "other"
+        },
+        "isTouchScreen": true,
+        "canFitSidebar": false,
+        "isLandscape": false
+      },
+      "transport": "CDP viewport fitted to constrained display"
+    },
+    {
+      "id": "native:device:breakpoint-sidebar-width-799",
+      "status": "passed",
+      "requested": {
+        "id": "breakpoint-sidebar-width-799",
+        "width": 799,
+        "height": 900,
+        "formFactor": "tablet",
+        "canFitSidebar": false,
+        "editorWidth": 799,
+        "boundary": true,
+        "mobile": true,
+        "mode": "compact",
+        "theme": "light",
+        "input": "touch",
+        "pane": "fullscreen"
+      },
+      "actualViewport": {
+        "width": 801,
+        "height": 900
+      },
+      "editorInterface": {
+        "formFactor": "tablet",
+        "desktopUIMode": "mobile",
+        "userAgent": {
+          "isMobileDevice": true,
+          "platform": "other"
+        },
+        "isTouchScreen": true,
+        "canFitSidebar": false,
+        "isLandscape": false
+      },
+      "transport": "CDP viewport fitted to constrained display"
+    },
+    {
+      "id": "native:device:breakpoint-sidebar-width-800",
+      "status": "passed",
+      "requested": {
+        "id": "breakpoint-sidebar-width-800",
+        "width": 800,
+        "height": 900,
+        "formFactor": "tablet",
+        "canFitSidebar": false,
+        "editorWidth": 800,
+        "boundary": true,
+        "mobile": true,
+        "mode": "compact",
+        "theme": "light",
+        "input": "touch",
+        "pane": "fullscreen"
+      },
+      "actualViewport": {
+        "width": 802,
+        "height": 900
+      },
+      "editorInterface": {
+        "formFactor": "tablet",
+        "desktopUIMode": "mobile",
+        "userAgent": {
+          "isMobileDevice": true,
+          "platform": "other"
+        },
+        "isTouchScreen": true,
+        "canFitSidebar": false,
+        "isLandscape": false
+      },
+      "transport": "CDP viewport fitted to constrained display"
+    },
+    {
+      "id": "native:device:breakpoint-sidebar-width-801",
+      "status": "passed",
+      "requested": {
+        "id": "breakpoint-sidebar-width-801",
+        "width": 801,
+        "height": 900,
+        "formFactor": "tablet",
+        "canFitSidebar": true,
+        "editorWidth": 801,
+        "boundary": true,
+        "mobile": true,
+        "mode": "compact",
+        "theme": "light",
+        "input": "touch",
+        "pane": "fullscreen"
+      },
+      "actualViewport": {
+        "width": 803,
+        "height": 900
+      },
+      "editorInterface": {
+        "formFactor": "tablet",
+        "desktopUIMode": "mobile",
+        "userAgent": {
+          "isMobileDevice": true,
+          "platform": "other"
+        },
+        "isTouchScreen": true,
+        "canFitSidebar": true,
+        "isLandscape": false
+      },
+      "transport": "CDP viewport fitted to constrained display"
+    },
+    {
+      "id": "native:device:breakpoint-landscape-width-999",
+      "status": "passed",
+      "requested": {
+        "id": "breakpoint-landscape-width-999",
+        "width": 999,
+        "height": 499,
+        "formFactor": "phone",
+        "editorWidth": 999,
+        "boundary": true,
+        "mobile": true,
+        "mode": "mobile",
+        "theme": "light",
+        "input": "touch",
+        "pane": "fullscreen"
+      },
+      "actualViewport": {
+        "width": 1001,
+        "height": 499
+      },
+      "editorInterface": {
+        "formFactor": "phone",
+        "desktopUIMode": "mobile",
+        "userAgent": {
+          "isMobileDevice": true,
+          "platform": "other"
+        },
+        "isTouchScreen": true,
+        "canFitSidebar": true,
+        "isLandscape": true
+      },
+      "transport": "native window"
+    },
+    {
+      "id": "native:device:breakpoint-landscape-width-1000",
+      "status": "passed",
+      "requested": {
+        "id": "breakpoint-landscape-width-1000",
+        "width": 1000,
+        "height": 499,
+        "formFactor": "desktop",
+        "editorWidth": 1000,
+        "boundary": true,
+        "mobile": true,
+        "mode": "compact",
+        "theme": "light",
+        "input": "touch",
+        "pane": "fullscreen"
+      },
+      "actualViewport": {
+        "width": 1002,
+        "height": 499
+      },
+      "editorInterface": {
+        "formFactor": "desktop",
+        "desktopUIMode": "mobile",
+        "userAgent": {
+          "isMobileDevice": true,
+          "platform": "other"
+        },
+        "isTouchScreen": true,
+        "canFitSidebar": true,
+        "isLandscape": true
+      },
+      "transport": "native window"
+    },
+    {
+      "id": "native:device:breakpoint-landscape-width-1001",
+      "status": "passed",
+      "requested": {
+        "id": "breakpoint-landscape-width-1001",
+        "width": 1001,
+        "height": 499,
+        "formFactor": "desktop",
+        "editorWidth": 1001,
+        "boundary": true,
+        "mobile": true,
+        "mode": "compact",
+        "theme": "light",
+        "input": "touch",
+        "pane": "fullscreen"
+      },
+      "actualViewport": {
+        "width": 1003,
+        "height": 499
+      },
+      "editorInterface": {
+        "formFactor": "desktop",
+        "desktopUIMode": "mobile",
+        "userAgent": {
+          "isMobileDevice": true,
+          "platform": "other"
+        },
+        "isTouchScreen": true,
+        "canFitSidebar": true,
+        "isLandscape": true
+      },
+      "transport": "native window"
+    },
+    {
+      "id": "native:device:breakpoint-landscape-height-499",
+      "status": "passed",
+      "requested": {
+        "id": "breakpoint-landscape-height-499",
+        "width": 999,
+        "height": 499,
+        "formFactor": "phone",
+        "editorWidth": 999,
+        "boundary": true,
+        "mobile": true,
+        "mode": "mobile",
+        "theme": "light",
+        "input": "touch",
+        "pane": "fullscreen"
+      },
+      "actualViewport": {
+        "width": 1001,
+        "height": 499
+      },
+      "editorInterface": {
+        "formFactor": "phone",
+        "desktopUIMode": "mobile",
+        "userAgent": {
+          "isMobileDevice": true,
+          "platform": "other"
+        },
+        "isTouchScreen": true,
+        "canFitSidebar": true,
+        "isLandscape": true
+      },
+      "transport": "native window"
+    },
+    {
+      "id": "native:device:breakpoint-landscape-height-500",
+      "status": "passed",
+      "requested": {
+        "id": "breakpoint-landscape-height-500",
+        "width": 999,
+        "height": 500,
+        "formFactor": "desktop",
+        "editorWidth": 999,
+        "boundary": true,
+        "mobile": true,
+        "mode": "compact",
+        "theme": "light",
+        "input": "touch",
+        "pane": "fullscreen"
+      },
+      "actualViewport": {
+        "width": 1001,
+        "height": 500
+      },
+      "editorInterface": {
+        "formFactor": "desktop",
+        "desktopUIMode": "mobile",
+        "userAgent": {
+          "isMobileDevice": true,
+          "platform": "other"
+        },
+        "isTouchScreen": true,
+        "canFitSidebar": true,
+        "isLandscape": true
+      },
+      "transport": "native window"
+    },
+    {
+      "id": "native:device:breakpoint-landscape-height-501",
+      "status": "passed",
+      "requested": {
+        "id": "breakpoint-landscape-height-501",
+        "width": 999,
+        "height": 501,
+        "formFactor": "desktop",
+        "editorWidth": 999,
+        "boundary": true,
+        "mobile": true,
+        "mode": "compact",
+        "theme": "light",
+        "input": "touch",
+        "pane": "fullscreen"
+      },
+      "actualViewport": {
+        "width": 1001,
+        "height": 501
+      },
+      "editorInterface": {
+        "formFactor": "desktop",
+        "desktopUIMode": "mobile",
+        "userAgent": {
+          "isMobileDevice": true,
+          "platform": "other"
+        },
+        "isTouchScreen": true,
+        "canFitSidebar": true,
+        "isLandscape": true
+      },
+      "transport": "native window"
+    }
+  ],
+  "limits": [
+    "macOS Obsidian desktop mobile emulation, not physical Android/iOS touch or Windows acceptance",
+    "Unpublished local fork artifact handoff; published dependency handoff remains pending",
+    "K-Plex template dropdown requires Excalidraw 2.29.1+; these plugin manifests remain at 2.29.0"
+  ],
+  "additionalChecks": {
+    "fast": {
+      "passed": 600,
+      "failed": 0
+    },
+    "libraryBuild": "passed",
+    "forkPackedConsumer": "passed",
+    "extrasPackedConsumer": "passed",
+    "registryRecovery": "Official npm metadata revalidated converter 3.1.0; identical consumer command rerun after stale cache refresh."
+  }
+}

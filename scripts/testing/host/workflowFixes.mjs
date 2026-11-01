@@ -190,10 +190,13 @@ async function probeWorkflows(c,prefix,drawingPath,baseline) {
       await wait(()=>doc.querySelector('.prompt'),'convert chooser');
       doc.dispatchEvent(new doc.defaultView.KeyboardEvent('keydown',{key:'Escape',code:'Escape',bubbles:true,cancelable:true}));await settle();
       check((await app.vault.read(note))===beforeText&&noteLeaf.view.getViewType()==='markdown','cancelled conversion changed note/view');
-      const menu=new p.ea.obsidian.Menu();
+      // DOM assertions require the public DOM renderer, including on macOS.
+      const menu=new p.ea.obsidian.Menu().setUseNativeMenu(false);
+      c.defer(()=>menu.hide());
       app.workspace.trigger('file-menu',menu,app.vault.getFolderByPath(prefix),'file-explorer');menu.showAtPosition({x:80,y:180});
-      const title=[...doc.querySelectorAll('.menu-item-title')].find(el=>el.textContent===p.getLabel('CREATE_NEW'));
-      check(title,'file-explorer new drawing action missing');title.click();
+      let title;
+      await wait(()=>{title=[...doc.querySelectorAll('.menu-item-title')].find(el=>el.textContent===p.getLabel('CREATE_NEW'));return title;},'file-explorer New drawing action');
+      c.observations.fileExplorerMenu={renderer:'DOM',title:title.textContent};title.click();
       await wait(()=>doc.querySelector('.prompt'),'file-explorer chooser');
       doc.dispatchEvent(new doc.defaultView.KeyboardEvent('keydown',{key:'Escape',code:'Escape',bubbles:true,cancelable:true}));await settle();menu.hide();
       check(app.vault.getFiles().length===beforeFiles&&app.vault.getAllLoadedFiles().length===beforeFolders,'file-explorer cancel created data');

@@ -170,6 +170,51 @@ test("host requests are acknowledged in order and produce explicit evidence", as
   assert.deepEqual(requests, ["trusted-input"]);
   assert.equal(result.response.dispatched, true);
 });
+test("host transport acknowledgements are independent of the UI readiness timeout", async () => {
+  const { cli, state } = host();
+  let clock = 0;
+  state.Date = { now: () => clock };
+  const requests = [];
+  const result = await runInAppTask({
+    cli,
+    execute: async c => [await c.requestHost("first", {}), await c.requestHost("second", {})],
+    onRequest: async request => {
+      requests.push(request.method);
+      clock += 21000;
+      await new Promise(resolve => setTimeout(resolve, 35));
+      return request.method;
+    },
+  });
+  assert.deepEqual(result, ["first", "second"]);
+  assert.deepEqual(requests, ["first", "second"]);
+});
+
+test("failed host dispatch releases its request and preserves the transport error", async () => {
+  const { cli, state } = host();
+  await assert.rejects(runInAppTask({
+    cli,
+    execute: async c => {
+      c.defer(() => events.push("cleaned"));
+      await c.requestHost("broken-input", {});
+    },
+    onRequest: () => { throw Error("CDP target retired"); },
+  }), error => error.cleanupVerified === true && /CDP target retired/.test(error.message));
+  assert.deepEqual(state.events, ["cleaned"]);
+  assert.equal(Object.keys(state).some(key => key.startsWith("__excalidrawTestTask_")), false);
+});
+test("a lost read-only CLI response does not cancel live work or replay native input", async () => {
+  const fixture = host();let lost = false, dispatches = 0;
+  const result = await runInAppTask({
+    cli: (command, code) => {
+      if (!lost && code.includes("state:c.state,result:c.result")) {lost=true;throw Error("spawnSync CLI ETIMEDOUT");}
+      return fixture.cli(command, code);
+    },
+    execute: async c => {events.push("started once");return {input:await c.requestHost("input",{})};},
+    onRequest: () => {dispatches++;return "acknowledged";},
+  });
+  assert.equal(result.input,"acknowledged");assert.equal(dispatches,1);assert.deepEqual(fixture.state.events,["started once"]);
+  assert.equal(result.transportDiagnostics.length,1);
+});
 test("CLI Error output is failure even with exit zero or preceding output", () => {
   for (const output of [
     "Error: unavailable",

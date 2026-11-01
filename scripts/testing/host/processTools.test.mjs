@@ -52,7 +52,7 @@ test("temporary eval scripts are removed if native spawning throws", () => {
   assert.equal(existsSync(directory), false);
 });
 
-test("short Windows calls and all macOS calls keep their native arguments", () => {
+test("short Windows calls and ordinary macOS calls keep their native arguments", () => {
   for (const [platform, code] of [["win32", "1+1"], ["darwin", "1\n+1"]]) {
     const args = ["vault=excalidraw-test", "eval", `code=${code}`];
     spawnNativeSync("obsidian", args, {}, { platform, spawn: (_file, received) => assert.equal(received, args) });
@@ -72,4 +72,18 @@ test("package managers launch JavaScript entries through the current Node withou
     env: {}, node, platform: "darwin", exists: () => false,
   }), { file: "yarn", args: ["build:obsidian"] });
   assert.throws(() => packageManagerInvocation("yarn", [], { env: {}, node, platform: "win32", exists: () => false }), /EXCALIDRAW_YARN_CLI/);
+});
+
+
+test("oversized macOS and Linux evals use owned scripts and avoid E2BIG",()=>{
+  const code=`JSON.stringify(${JSON.stringify("x".repeat(180_000))})`;
+  for(const platform of ['darwin','linux']) {
+    let script;
+    const result=spawnNativeSync('obsidian',['vault=excalidraw-test','eval','code='+code],{timeout:1000},{platform,spawn:(_file,args)=>{
+      assert.ok(args[2].length<1000);
+      const value=runInNewContext(args[2].slice(5),{require:()=>({readFileSync:path=>{script=path;return readFileSync(path,'utf8');}})});
+      assert.equal(value,runInNewContext(code));return {status:0};
+    }});
+    assert.equal(result.status,0);assert.equal(existsSync(dirname(script)),false);
+  }
 });

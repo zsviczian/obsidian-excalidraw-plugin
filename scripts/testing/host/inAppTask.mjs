@@ -1,5 +1,6 @@
 /** Test-only async tasks: cancel, await owned cleanup, then permit fixture deletion. */
 import { randomUUID } from "node:crypto";
+import { retryReadOnly } from "./readOnlyTransport.mjs";
 
 export function parseCLIJSON(output) {
   const value = output.trim().replace(/^=>\s*/, "");
@@ -29,15 +30,17 @@ export async function runInAppTask({
   evaluate(
     `(${installTask.toString()})(${JSON.stringify(key)},${execute.toString()},${JSON.stringify(args)})`,
   );
-  const read = () =>
+  const transportDiagnostics = [];
+  const readOnce = () =>
     evaluate(
       `JSON.stringify((()=>{const c=globalThis[${JSON.stringify(key)}];return c?{state:c.state,result:c.result,error:c.error,tests:c.tests,observations:c.observations,cleanup:c.cleanup,cleanupErrors:c.cleanupErrors,cleanupPending:c.cleanupPending,phase:c.phase,request:c.request}:{state:'missing'}})())`,
     );
+  const read = deadline => retryReadOnly(readOnce,{operation:"read-only task state",diagnostics:transportDiagnostics,deadline,now});
   let state, originalError, previousPhase;
   try {
     const end = now() + timeoutMs;
     for (;;) {
-      state = read();
+      state = await read(end);
       if (
         onProgress &&
         (state.phase !== previousPhase || state.state === "done")
@@ -55,7 +58,8 @@ export async function runInAppTask({
           throw Error(
             "Native task cleanup failed: " + state.cleanupErrors.join("; "),
           );
-        return state.result;
+        return transportDiagnostics.length && state.result && typeof state.result === "object" && !Array.isArray(state.result)
+          ? {...state.result, transportDiagnostics} : state.result;
       }
       if (state.state === "cleaning" && state.error) {
         const error = Error(state.error);
@@ -68,9 +72,16 @@ export async function runInAppTask({
       if (state.request) {
         if (!onRequest)
           throw Error("No trusted-input/screenshot driver available");
-        const response = await onRequest(state.request);
+        let response;
+        try {
+          response = await onRequest(state.request);
+        } catch (error) {
+          error.observations = { ...state.observations, hostRequest: state.request };
+          evaluate(`(()=>{const c=globalThis[${JSON.stringify(key)}];c?.cancel(${JSON.stringify(String(error.message || error))});return JSON.stringify({cancelled:true})})()`);
+          throw error;
+        }
         evaluate(
-          `(()=>{const c=globalThis[${JSON.stringify(key)}];if(c?.request?.id!==${JSON.stringify(state.request.id)})throw Error('Task request ownership changed');c.response=${JSON.stringify(response ?? null)};delete c.request;return JSON.stringify({acknowledged:true})})()`,
+          `(()=>{const c=globalThis[${JSON.stringify(key)}];c.acknowledge(${JSON.stringify(state.request.id)},${JSON.stringify(response ?? null)});return JSON.stringify({acknowledged:true})})()`,
         );
       }
       await wait(50);
@@ -84,10 +95,10 @@ export async function runInAppTask({
     const end = now() + cleanupMs;
     try {
       evaluate(
-        `(()=>{const c=globalThis[${JSON.stringify(key)}];if(c)c.cancelled=true;return JSON.stringify({cancelled:!!c})})()`,
+        `(()=>{const c=globalThis[${JSON.stringify(key)}];c?.cancel();return JSON.stringify({cancelled:!!c})})()`,
       );
       for (;;) {
-        state = read();
+        state = await read(end);
         if (state.state === "done") break;
         if (state.state === "missing" || now() >= end)
           throw Error(
@@ -103,7 +114,7 @@ export async function runInAppTask({
       evaluate(
         `(()=>{delete globalThis[${JSON.stringify(key)}];return JSON.stringify({removed:true})})()`,
       );
-      if(originalError){originalError.cleanupVerified=true;originalError.observations=state.observations;}
+      if(originalError){originalError.cleanupVerified=true;originalError.observations={...originalError.observations,...state.observations,...(transportDiagnostics.length?{transportDiagnostics}:{})};}
     } catch (cleanupError) {
       const error = new Error(
         `${originalError?.message || "Native task"}; ${cleanupError.message}`,
@@ -151,12 +162,31 @@ function installTask(key, execute, args) {
       await new Promise((resolve) => setTimeout(resolve, 25));
     }
   };
+  let pendingRequest;
+  c.acknowledge = (id, response) => {
+    if (c.request?.id !== id || !pendingRequest) throw Error("Task request ownership changed");
+    const pending = pendingRequest;
+    delete c.request;
+    pendingRequest = null;
+    pending.resolve(response);
+  };
+  c.cancel = (message = "Native task cancelled") => {
+    c.cancelled = true;
+    if (pendingRequest) {
+      const pending = pendingRequest;
+      pendingRequest = null;
+      delete c.request;
+      pending.reject(Error(message));
+    }
+  };
   c.requestHost = async (method, params) => {
     c.checkpoint();
     if (c.request) throw Error("Concurrent host requests are not supported");
+    // A host acknowledgement is a transport lifetime, not a UI readiness poll.
+    // The driver owns its deadline; cancellation explicitly settles this wait.
+    const response = new Promise((resolve, reject) => { pendingRequest = { resolve, reject }; });
     c.request = { id: ++c.requestId, method, params };
-    await c.waitFor(() => !c.request, `host ${method}`);
-    return c.response;
+    return await response;
   };
   c.defer = (callback) => c.disposers.push(callback);
   c.case = async (testId, featureIds, executeCase) => {

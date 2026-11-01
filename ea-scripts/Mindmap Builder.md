@@ -5,6 +5,8 @@
 
 Mind Map Builder turns the Obsidian Excalidraw canvas into a keyboard-driven brainstorming environment. Add children and siblings, arrange branches, pin nodes, fold subtrees, customize colors and grouping, and copy or paste Markdown outlines. Controls live in a persistent sidepanel and can be undocked into a floating input.
 
+The floating input hides in Excalidraw view mode and returns when you switch back to editing. Switching to another kind of tab also hides it without changing your docking preference.
+
 To reuse a branch with its links, images, and grouped notes, select the complete branch on the canvas and use native Excalidraw copy. Select a destination Mindmap node, then use the existing Builder **Paste** button or hotkey. The branch attaches as a child; with no destination selected, it becomes an independent map. Builder **Copy** continues to export Markdown outlines.
 
 Pasted branches retain their styles, folds, pinned nodes, and nested submap settings. Copied whole maps become submaps when attached. Auto-layout remains disabled where you disabled it. Builder's input Undo/Redo groups a completed branch paste; the canvas Undo/Redo controls follow native paste, attachment, and layout history steps.
@@ -32,13 +34,13 @@ Requires Excalidraw 2.23.4 or newer. Excalidraw 2.27.0 or newer caches compiled 
 
 If you find MindMap Builder helpful, [buy me a coffee](https://ko-fi.com/zsolt).
 
-Build version: 2026-10-31T10:25:48.996Z
+Build version: 2026-11-01T06:47:17.528Z
 
 ```javascript
 */
 
 // Configuration constants
-const VERSION = "v26.10.13";
+const VERSION = "v26.11.01";
 
 // Script bundle
 /* EA Script — mindmap-builder | ea-scripts v1.0.0 */
@@ -10311,6 +10313,25 @@ ${runtimeContext.t("INSTRUCTIONS")}
     return { registerStyles, removeStyles };
   }
 
+  // src/scripts/mindmap-builder/floatingVisibility.js
+  function updateFloatingVisibility(context, view = context.ea.targetView, state) {
+    const modal = context.floatingInputModal?.modalEl;
+    if (!context.isUndocked || !modal) return;
+    const active = context.ea.plugin.app.workspace.activeLeaf?.view;
+    const drawingActive = active === view || active?.getViewType() === "excalidraw-sidepanel";
+    const viewMode = state?.viewModeEnabled ?? context.ea.getExcalidrawAPI()?.getAppState()?.viewModeEnabled;
+    const visible = drawingActive && context.ea.isExcalidrawView(view) && !viewMode && !context.isExcaliBrainView();
+    modal.style.display = visible ? "" : "none";
+  }
+  function watchFloatingVisibility(context, view) {
+    const api = context.ea.getExcalidrawAPI();
+    updateFloatingVisibility(context, view, api?.getAppState());
+    return api?.onChange((_elements, state) => {
+      if (context.ea.targetView === view) updateFloatingVisibility(context, view, state);
+    }) ?? (() => {
+    });
+  }
+
   // src/scripts/mindmap-builder/floatingInput.js
   function createFloatingInput(runtimeContext) {
     const toggleDock = async ({ silent = false, forceDock = false, saveSetting = false } = {}) => {
@@ -10365,9 +10386,7 @@ ${runtimeContext.t("INSTRUCTIONS")}
           modalEl.style.width = "fit-content";
           modalEl.style.height = "auto";
           modalEl.style.maxHeight = runtimeContext.FLOAT_MODAL_MAX_HEIGHT;
-          if (runtimeContext.isExcaliBrainView()) {
-            modalEl.style.display = "none";
-          }
+          updateFloatingVisibility(runtimeContext);
           const container = runtimeContext.floatingInputModal.contentEl.createDiv();
           runtimeContext.renderInput(container, true);
           const dragHandle = modalEl.createDiv("mindmap-drag-handle");
@@ -11185,6 +11204,8 @@ ${runtimeContext.t("INSTRUCTIONS")}
     };
     const removeEventListeners = () => {
       removeKeydownHandlers();
+      window.MindmapBuilder?.removeFloatingVisibilityListener?.();
+      if (window.MindmapBuilder) delete window.MindmapBuilder.removeFloatingVisibilityListener;
       try {
         window.MindmapBuilder?.popObsidianHotkeyScope?.();
       } catch (e) {
@@ -13294,6 +13315,8 @@ ${runtimeContext.t("INSTRUCTIONS")}
       };
       const setupEventListeners = (view) => {
         if (!view || !view.ownerWindow) return;
+        window.MindmapBuilder?.removeFloatingVisibilityListener?.();
+        window.MindmapBuilder.removeFloatingVisibilityListener = watchFloatingVisibility(runtimeContext, view);
         window.MindmapBuilder?.removePointerDownHandler?.();
         const win = view.ownerWindow;
         win.addEventListener("pointerdown", runtimeContext.handleCanvasPointerDown);
@@ -13327,7 +13350,7 @@ ${runtimeContext.t("INSTRUCTIONS")}
       tab.onFocus = (view) => onFocus(view);
       const onActiveLeafChange = (leaf) => {
         if (runtimeContext.cancelHotkeyRecording) runtimeContext.cancelHotkeyRecording();
-        if (runtimeContext.ea.targetView !== leaf.view && runtimeContext.ea.isExcalidrawView(leaf.view)) {
+        if (runtimeContext.ea.targetView !== leaf?.view && runtimeContext.ea.isExcalidrawView(leaf?.view)) {
           runtimeContext.mostRecentlySelectedNodeID = null;
           if (runtimeContext.ea.targetView)
             runtimeContext.removeEventListeners(runtimeContext.ea.targetView);
@@ -13336,6 +13359,7 @@ ${runtimeContext.t("INSTRUCTIONS")}
           setupEventListeners(leaf.view);
         }
         runtimeContext.registerObsidianHotkeyOverrides();
+        updateFloatingVisibility(runtimeContext);
         if (!runtimeContext.isUndocked || !runtimeContext.floatingInputModal || !leaf) {
           return;
         }
@@ -13343,7 +13367,7 @@ ${runtimeContext.t("INSTRUCTIONS")}
           runtimeContext.ensureNodeSelected();
           runtimeContext.updateUI();
           const { modalEl } = runtimeContext.floatingInputModal;
-          if (runtimeContext.isExcaliBrainView()) {
+          if (runtimeContext.isExcaliBrainView() || runtimeContext.ea.getExcalidrawAPI()?.getAppState()?.viewModeEnabled) {
             modalEl.style.display = "none";
           } else {
             if (modalEl.style.display === "none") {

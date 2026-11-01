@@ -1,4 +1,5 @@
 /** Prepare the repository-local vault from current workspace builds, then run guarded native profiles. */
+import {createAcknowledgedCLI} from "./acknowledgedCLI.mjs";
 import { randomUUID } from "node:crypto";
 import { existsSync, mkdirSync } from "node:fs";
 import { homedir } from "node:os";
@@ -49,6 +50,7 @@ import {
 import { runBehaviorMatrix } from "./behaviorMatrix.mjs";
 import { runErrorOracle } from "./errorOracle.mjs";
 import {requiredNativeCases,requiredDeviceCases} from '../regression.mjs';
+import { assertCompanionVersions } from "./companionVersions.mjs";
 
 const pluginRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const target = configureLocalVaultEnvironment(pluginRoot);
@@ -195,7 +197,7 @@ function command(file, args, cwd, timeout = 60_000, inherit = false) {
     maxBuffer: 4 * 1024 * 1024,
     stdio: inherit ? "inherit" : "pipe",
   });
-  if (result.error) throw new Error(`${file}: ${result.error.message}`);
+  if (result.error) throw new Error(`${file} ${args[1]||""} ${args.find(arg=>arg.startsWith("method="))||""}: ${result.error.message}`);
   if (result.status !== 0)
     throw new Error(
       `${file} ${args.join(" ")} failed (${result.status}): ${(result.stderr || result.stdout || "").trim().slice(0, 1000)}`,
@@ -227,7 +229,7 @@ const userDataPath =
           "obsidian",
         ));
 const hostLock = acquireHostLock({ userDataPath });
-let report, combination, deviceReport;
+let report, combination, deviceReport, acknowledgedCLI;
 try {
   combination = produceCombination({
     pluginRoot,
@@ -235,12 +237,9 @@ try {
     extrasRoot,
     output: join(pluginRoot, ".test-work/frozen/combination-" + randomUUID()),
   });
-  const localCLI = (name, ...args) =>
-    command(
-      obsidianCliExecutable(),
-      [`vault=${target.vaultName}`, name, ...args],
-      pluginRoot,
-    );
+  const invokeCLI=(name,args,timeout)=>command(obsidianCliExecutable(),[`vault=${target.vaultName}`,name,...args],pluginRoot,timeout);
+  acknowledgedCLI=createAcknowledgedCLI((name,...args)=>invokeCLI(name,args),{invoke:invokeCLI,screenshotRoot:reportDir});
+  const localCLI=acknowledgedCLI.cli;
   const preparation = await prepareLocalVault({
     projectRoot: pluginRoot,
     combination,
@@ -248,6 +247,12 @@ try {
     cli: localCLI,
   });
   mkdirSync(reportDir, { recursive: true });
+  try {
+    if (preparation.ready && combination.manifests.extras) preparation.companionVersions = assertCompanionVersions(localCLI);
+  } catch (error) {
+    writeFileSync(join(reportDir,"preparation.json"),JSON.stringify({...preparation,companionVersionError:error.message},null,2)+"\n");
+    throw error;
+  }
   writeFileSync(
     join(reportDir, "preparation.json"),
     JSON.stringify(preparation, null, 2) + "\n",
@@ -346,12 +351,10 @@ try {
         // The catalogue/picker workflow runs after independent core scenarios.
         ...(lucide ? [runLucideScenario] : []),
       ],
-      runCli: (vault, commandName, ...args) =>
-        command(
-          obsidianCliExecutable(),
-          [`vault=${vault}`, commandName, ...args],
-          pluginRoot,
-        ),
+      runCli: (vault, commandName, ...args) => {
+        if(vault!==target.vaultName)throw Error("CLI receipt target changed");
+        return localCLI(commandName,...args);
+      },
       runBuild: () => ({
         pluginArtifactRoot: join(combination.output, "plugin"),
         forkArtifacts: Object.fromEntries(
@@ -372,12 +375,7 @@ try {
     // A completed functional run can retain an error-gate failure while device
     // cases execute independently. Unsettled cleanup must never enter this lane.
     if (devices && report.cleanup === "passed") {
-      const cli = (name, ...args) =>
-        command(
-          obsidianCliExecutable(),
-          [`vault=${process.env.EXCALIDRAW_TEST_VAULT_NAME}`, name, ...args],
-          pluginRoot,
-        );
+      const cli=localCLI;
       deviceReport = await runDeviceMatrix({
         cli,
         reportDir: join(reportDir, "devices"),
@@ -469,6 +467,8 @@ try {
       }
     }
     if(coreOnly){const audit=aggregateReports([adaptSmokeReport(report)],requiredNativeCases.filter(id=>!id.startsWith('native:behavior:')));report.coreAudit={status:audit.status,missing:audit.missing};if(audit.status!=='passed')report.status='failed';}
+    acknowledgedCLI.dispose();
+    report.transportDiagnostics=acknowledgedCLI.diagnostics;
     writeFileSync(
       join(reportDir, "report.json"),
       JSON.stringify(report, null, 2) + "\n",
@@ -496,7 +496,8 @@ try {
     }
   }
 } finally {
-  hostLock.release();
+  try {acknowledgedCLI?.dispose();}
+  finally {hostLock.release();}
 }
 
 const log = (message) => process.stdout.write(`${message}\n`);
