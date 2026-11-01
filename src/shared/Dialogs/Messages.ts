@@ -20,7 +20,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 "2.29.1": `
 ## New and improved
 - **Choose new-file destinations.** The new-file dialog includes editable folder and filename fields. Companion plugins can also build template selectors through ExcalidrawAutomate.
-- **Editable Lucide icons.** Obsidian uses [Lucide](${URLs.LUCIDE_DEV}) icons, now available as editable Excalidraw strokes. Search and insert them from the command palette or image menu. Also available to CLI agents and scripts through \`ea.addLucideIcon()\`. [#3019](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/3019)
+- **Editable Lucide icons.** Obsidian uses [Lucide](${URLs.LUCIDE_DEV}) icons, now available as editable Excalidraw strokes. Search and insert them from the command palette "Insert Lucide Icon" or image menu. Also available to CLI agents and scripts through \`ea.addLucideIcon()\`. [#3019](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/3019)
 - **Mermaid diagrams.** Migrated to Obsidian's new [Pele](${URLs.GITHUB_COM_OBSIDIANMD_PELE}) library. Thank you, [kepano](${URLs.GITHUB_COM_OBSIDIANMD_PELE_COMMITS_AUTHOR_KEPANO})! The new SVG importer brings diagram types not yet supported by Mermaid-to-Excalidraw into your scene as editable Excalidraw strokes. Update **Excalidraw Extras** to use the updated converter.
 - **SVG imports.** Import editable shapes and text from the image menu, or convert an SVG image already in your drawing. [#3018](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3018)
 - **CLI image previews.** Agents can inspect images and request smaller previews without changing the originals. [#3004](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3004)
@@ -32,7 +32,6 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 - Fullscreen works in nested workspace splits and restores the surrounding panes on exit. [#2743](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2743)
 - Image drops honor modifier-key actions, and YouTube thumbnails retain their video links. [#2967](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2967)
 - Settings no longer create unnecessary backup or Git updates when nothing has changed.
-
 `,
 "2.29.0": `
 ${getYouTubeDiv("H64AW1l-ae4")}
