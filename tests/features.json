@@ -1281,6 +1281,18 @@
             "node:scripts/testing/pdfImport.test.mjs::PDF loader renders explicit PDF crop",
             "node:scripts/testing/pdfImport.test.mjs::the previous plain-PDF null-reference path fails the loader evidence"
           ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/drawingCreationIntegration.test.mjs",
+          "cases": [
+            "drawing destination follows live compatibility/extension preferences and exposes the live template setting",
+            "new-file destination rejects traversal and invalid filenames before normalization",
+            "new-file form applies editable folder/name, creates missing folders and refuses to overwrite a collision",
+            "template cancellation and invalid destinations leave the new-file form open without file writes",
+            "template folder scanning includes descendants and excludes similarly prefixed sibling folders",
+            "relocated creation updates only the clicked link, preserving aliases and other links, and retires its workbench"
+          ]
         }
       ],
       "fixtures": [],

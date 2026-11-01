@@ -197,6 +197,21 @@ npm run test:fast
 npm run test:source-coverage
 ```
 
+On macOS, use a canonical temporary directory for guarded fixtures, for example
+`TMPDIR=/private/tmp npm run test:fast` (and the same environment for native
+commands). A shell-provided `/var/...` alias may traverse a symlink and correctly
+trip the redirected-path guard. Keep the guard; correct the fixture environment
+rather than accepting redirected vault/config paths.
+
+If a fresh packed consumer reports `ETARGET` while using `--prefer-offline`,
+inspect its registry log before assuming the declared version is unpublished.
+Revalidate the exact package/version with `npm view <package>@<version> version
+--prefer-online --json`, then rerun the unchanged consumer command. A lockfile
+can install a valid cached tarball while independent resolution still sees stale
+registry metadata. Do not downgrade, edit the package manifest or substitute a
+local dependency merely to make that check pass. If the official registry truly
+lacks the version, retain that failure as a publication blocker.
+
 Build first: the fast command includes production-bundle assertions. Every
 repository-owned `.test.mjs` is discovered; zero discovery, missing files,
 duplicate IDs, failed/todo/skipped cases and ratchet regressions fail. Regenerate

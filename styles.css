@@ -378,6 +378,10 @@ textarea.excalidraw-wysiwyg {
   flex-wrap: wrap;
 }
 
+.excalidraw-new-file .setting-item-info {
+  flex: 0 1 auto;
+}
+
 .excalidraw-file-and-folder-selector__field {
   flex-wrap: wrap;
 }

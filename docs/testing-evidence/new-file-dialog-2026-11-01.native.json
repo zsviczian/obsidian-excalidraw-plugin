@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "result": {
+    "standardModal": true,
+    "fullWidthFields": [
+      {
+        "rowWidth": 526,
+        "inputWidth": 471.6796875
+      },
+      {
+        "rowWidth": 526,
+        "inputWidth": 452.1640625
+      }
+    ],
+    "initialSuggestionsClosed": true,
+    "typingSuggestionsOpened": true,
+    "refocusSuggestionsClosed": true,
+    "cancelledWithoutCreation": true,
+    "limits": "Desktop dialog inspection; physical mobile keyboard not exercised."
+  },
+  "cleanup": "passed",
+  "artifacts": {
+    "main.js": "d61840d6e607b2a713fa1311188a5df3d26c1231387dbb693fa18bdea4d6fbf8",
+    "styles.css": "b17f13b7aa10832a6d5728217ca11486ca06ef454aa2e06827cbb99e7d38c417",
+    "manifest.json": "4880b885c50643ef848d31cea829776ca2e96747353aee334d71e875f79d31c0"
+  },
+  "nativeManifestVersion": "2.29.0"
+}

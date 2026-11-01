@@ -48,7 +48,11 @@ export async function runTextCreationHistory({ cli, drawingPath, reportDir, prep
         const center = { x: points[4].x + width / 2, y: y + 35 };
         click(center); click(center, 2);
       } else {
-        key("t", "KeyT", 84); click({ x: points[4].x, y: y + 150 });
+        focus();key("t", "KeyT", 84);
+        // Native dispatch acknowledges delivery before React necessarily commits
+        // the tool switch. Clicking earlier can only select empty canvas.
+        await poll(s=>s.state.activeTool?.type==='text', "trusted text-tool shortcut", state);
+        click({ x: points[4].x, y: y + 150 });
       }
       await poll((s) => s.editor !== null, "open text editor", state);
       cdp("Input.insertText", { text: "[[link]]" }); key("Escape", "Escape", 27);

@@ -1,5 +1,6 @@
 /** Required core workflows across actual workspace contexts; no screenshots count as behavioral passes. */
 import assert from "node:assert/strict";
+import {viewportInput} from "./deviceViewport.mjs";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { behavioralCases } from "../behaviorPlan.mjs";
@@ -58,7 +59,7 @@ export function collectBehaviorCases(c) {
     }
   };
 }
-export function behaviorInputDriver(cli) {
+export function behaviorInputDriver(cli, viewportScale=1) {
   return (request) => {
     if (request.method === "behavior-plugin-cli") {
       assert.ok(["read", "apply"].includes(request.params.command));
@@ -79,7 +80,7 @@ export function behaviorInputDriver(cli) {
         Number.isSafeInteger(request.params.contentsId),
     );
     const { contentsId, method, params } = request.params;
-    const sequence=Array.isArray(params)?params:[params];
+    const sequence=(Array.isArray(params)?params:[params]).map(params=>viewportInput(method,params,viewportScale));
     assert.ok(sequence.length>0&&sequence.length<=4,'Bounded trusted input sequence required');
     return parseCLIJSON(
       cli(
@@ -96,6 +97,7 @@ export async function runBehaviorMatrix({
   drawingPath,
   contexts = ["main", "split", "nested-split", "popout"],
   input = "mouse",
+  viewportScale = 1,
   caseIds,
   reportDir,
 }) {
@@ -108,7 +110,7 @@ export async function runBehaviorMatrix({
   );
   const tests = [],
     consoleErrors = [],
-    windowErrors = [], browserIdle = [], stateEvidence = [];
+    windowErrors = [], browserIdle = [], stateEvidence = [], transportDiagnostics = [];
   for (const id of contexts) {
     if(stateEvidenceEnabled())stateEvidence.push(captureNativeState(cli,'before:behavior:'+id));
     const rows = behavioralCases([id]).filter(
@@ -147,7 +149,7 @@ export async function runBehaviorMatrix({
       ],
       timeoutMs: 600000,
       cleanupMs: 60000,
-      onRequest: behaviorInputDriver(cli),
+      onRequest: behaviorInputDriver(cli,viewportScale),
       onProgress: (phase, state) => {
         if (reportDir)
           writeFileSync(
@@ -170,6 +172,7 @@ export async function runBehaviorMatrix({
       "Behavioral obligations missing from " + id,
     );
     tests.push(...result.tests);
+    transportDiagnostics.push(...(result.transportDiagnostics||[]).map(item=>({context:id,...item})));
     consoleErrors.push(...result.consoleErrors);
     windowErrors.push(...result.windowErrors);
     browserIdle.push(...result.browserIdle);
@@ -200,5 +203,6 @@ export async function runBehaviorMatrix({
       (test) => test.expectedConsoleErrors || [],
     ),
     scope: { contexts, caseIds: caseIds || "all" },
+    ...(transportDiagnostics.length?{transportDiagnostics}:{}),
   };
 }

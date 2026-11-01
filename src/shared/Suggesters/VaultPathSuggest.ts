@@ -1,3 +1,4 @@
+/** Vault-backed path completion; callers may require typing before opening suggestions. */
 import {
   AbstractInputSuggest,
   App,
@@ -12,15 +13,26 @@ type VaultPathSuggestionKind = "file" | "folder" | "file-or-folder";
 export class VaultPathSuggest extends AbstractInputSuggest<TAbstractFile> {
   private readonly candidates: TAbstractFile[];
   private readonly input: HTMLInputElement;
+  private readonly openOnFocus: boolean;
+  private inputStarted = false;
+  private readonly onInput = (): void => { this.inputStarted = true; };
+  private readonly onBlur = (): void => { this.inputStarted = false; };
 
   constructor(
     app: App,
     inputEl: HTMLInputElement,
     kind: VaultPathSuggestionKind,
     extensions?: readonly string[],
+    options: {openOnFocus?: boolean} = {},
   ) {
     super(app, inputEl);
     this.input = inputEl;
+    this.openOnFocus = options.openOnFocus !== false;
+    if (!this.openOnFocus) {
+      // Capture precedes AbstractInputSuggest's input listener, including the first edit.
+      inputEl.addEventListener("input", this.onInput, true);
+      inputEl.addEventListener("blur", this.onBlur);
+    }
     const normalizedExtensions = extensions?.map((extension) =>
       extension.toLowerCase().replace(/^\./, ""),
     );
@@ -36,6 +48,18 @@ export class VaultPathSuggest extends AbstractInputSuggest<TAbstractFile> {
       );
     });
     this.limit = 30;
+  }
+
+  /** Preserve a displayed default folder on focus; actual input enables the native dropdown. */
+  open(): void {
+    if (this.openOnFocus || this.inputStarted) super.open();
+  }
+
+  /** Release optional input gates when an owning modal closes. */
+  destroy(): void {
+    this.close();
+    this.input.removeEventListener("input", this.onInput, true);
+    this.input.removeEventListener("blur", this.onBlur);
   }
 
   protected getSuggestions(query: string): TAbstractFile[] {

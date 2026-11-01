@@ -19,6 +19,7 @@ import {
 import { packageManagerInvocation } from "./processTools.mjs";
 import { parseCLIJSON } from "./inAppTask.mjs";
 import { discoverStagedPlugin } from "./pluginDiscovery.mjs";
+import { assertConverterInstallation } from "./companionVersions.mjs";
 export function produceCombination({
   pluginRoot,
   forkRoot,
@@ -56,6 +57,7 @@ export function produceCombination({
   for (const kind of ["fork", "extras"]) {
     if (kind === "extras" && !existsSync(join(roots.extras, "package.json")))
       continue;
+    assertConverterInstallation(roots[kind], kind);
     manifests[kind] = produceArtifacts({
       root: roots[kind],
       kind,

@@ -220,6 +220,7 @@ export default {
   MARKDOWN_IMAGE_CHANGE_SOURCE_ERROR: "No se pudo cambiar la fuente de la imagen Markdown",
   MARKDOWN_IMAGE_LOCAL_COPY_ERROR: "No se pudo crear una copia Markdown local",
   MARKDOWN_IMAGE_EXTRACT_TITLE: "Extraer imagen Markdown a una nota",
+  PROMPT_ERROR_INVALID_FILE_PATH: "Introduce un nombre de archivo y una carpeta de bóveda válidos.",
   FILE_AND_FOLDER_SELECTOR_FOLDER: "Carpeta",
   FILE_AND_FOLDER_SELECTOR_FILENAME: "Nombre del archivo",
   FILE_AND_FOLDER_SELECTOR_EXPORT_TITLE: "Exportar a la bóveda",

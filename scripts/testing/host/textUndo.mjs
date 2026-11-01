@@ -22,6 +22,15 @@ export async function prepareTextUndoFixture(view, mode) {
   api.updateScene({ elements: [], appState: { viewModeEnabled: false, selectedElementIds: {} }, captureUpdate: "NEVER" });
   api.history.clear();
   api.setActiveTool({ type: "text" });
+  // The imperative setter schedules React state. Native input must target the
+  // committed tool, including repeated fixtures in the same live editor.
+  const toolDeadline=Date.now()+5_000;
+  for(;;) {
+    if(view.excalidrawAPI!==api)throw Error("Text fixture API changed during tool setup");
+    if(api.getAppState().activeTool.type==='text')break;
+    if(Date.now()>=toolDeadline)throw Error("Text fixture tool did not commit");
+    await new Promise(resolve=>window.setTimeout(resolve,10));
+  }
   const canvas = view.containerEl.querySelector("canvas.interactive");
   if (!canvas) throw Error("interactive canvas missing");
   const r = canvas.getBoundingClientRect();

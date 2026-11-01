@@ -219,6 +219,7 @@ export default {
     "Could not change the Markdown image source",
   MARKDOWN_IMAGE_LOCAL_COPY_ERROR: "Could not create a local Markdown copy",
   MARKDOWN_IMAGE_EXTRACT_TITLE: "Extract Markdown image to note",
+  PROMPT_ERROR_INVALID_FILE_PATH: "Enter a valid file name and vault folder.",
   FILE_AND_FOLDER_SELECTOR_FOLDER: "Folder",
   FILE_AND_FOLDER_SELECTOR_FILENAME: "File name",
   FILE_AND_FOLDER_SELECTOR_EXPORT_TITLE: "Export to Vault",

@@ -2,6 +2,7 @@
 import { runLegacyTask } from "./legacyTask.mjs";
 import { exerciseMarkdownCrop } from "./markdownImageCrop.mjs";
 import { closeMarkdownImageTab } from "./markdownImageClose.mjs";
+import { closeOwnedPopout } from "./closeOwnedPopout.mjs";
 
 const CONTROL = "__excalidrawImageGeometry";
 
@@ -172,7 +173,7 @@ async function cleanup(control) {
   if (c.pop) {
     const win=c.pop.view.containerEl.ownerDocument.defaultView;
     if(win===app.workspace.containerEl.ownerDocument.defaultView){await c.pop.setViewState({type:'empty',state:{}});c.pop.detach();}
-    else {if(c.pop.view.isDirty?.())await c.pop.view.saveWithOutcome();win.close();const end=Date.now()+10000;while(!win.closed){if(Date.now()>end)throw Error('Geometry popout did not close');await new Promise(resolve=>setTimeout(resolve,25));}}
+    else await closeOwnedPopout({waitForCleanup:async(predicate,label)=>{const end=Date.now()+10000;while(!predicate()){if(Date.now()>end)throw Error(label);await new Promise(resolve=>setTimeout(resolve,25));}}},c.pop);
   }
   if (c.previous?.view.containerEl.isConnected && c.previous !== c.pop) app.workspace.setActiveLeaf(c.previous, { focus: true });
   delete globalThis[control];
@@ -182,7 +183,7 @@ async function cleanup(control) {
 export async function runImageGeometryScenario({ cli, drawingPath, realRenderer = false }) {
   const cases=[];
   for(const [popout,scenario] of [[false,exercise],[true,exercise],[false,exerciseMarkdown],[false,exerciseMarkdownCrop]]){
-    const result=await runLegacyTask({cli,control:CONTROL,execute:scenario,cleanup,helpers:[closeMarkdownImageTab],args:[drawingPath,popout,realRenderer],timeoutMs:90000,cleanupMs:120000});
+    const result=await runLegacyTask({cli,control:CONTROL,execute:scenario,cleanup,helpers:[closeMarkdownImageTab,closeOwnedPopout],args:[drawingPath,popout,realRenderer],timeoutMs:90000,cleanupMs:120000});
     cases.push({window:popout?'popout':'main',...result});
   }
   return {id:realRenderer?'image-geometry-real-3014':'image-geometry-3014',renderer:realRenderer?'extras-mathjax':'deterministic-svg',status:'passed',cases};

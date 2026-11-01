@@ -1,17 +1,20 @@
 /** One coordinator-owned debugger. Never detach an existing user's attachment. */
 import { randomUUID } from "node:crypto";
 import { parseCLIJSON } from "./inAppTask.mjs";
+import { retryReadOnly } from "./readOnlyTransport.mjs";
 
 export function acquireDebuggerSession(cli) {
   const evaluate = (code) => parseCLIJSON(cli("eval", "code=" + code));
-  const attached = evaluate(
+  const transportDiagnostics=[];
+  const read=code=>retryReadOnly(()=>evaluate(code),{operation:"debugger state read",diagnostics:transportDiagnostics});
+  const attached = read(
     'JSON.stringify(require("@electron/remote").getCurrentWebContents().debugger.isAttached())',
   );
   if (attached !== false)
     throw Error(
       "Native debugger is already attached; close the existing DevTools/debugger before this owned run",
     );
-  const originalBackgroundThrottling = evaluate(
+  const originalBackgroundThrottling = read(
     'JSON.stringify(require("@electron/remote").getCurrentWebContents().getBackgroundThrottling())',
   );
   if (typeof originalBackgroundThrottling !== "boolean")
@@ -27,7 +30,6 @@ export function acquireDebuggerSession(cli) {
   };
   const key = "__excalidrawTestConsole_" + randomUUID().replaceAll("-", "");
   let attachedByUs = false,
-    installed = false,
     disposed = false;
   try {
     // The real renderer can be occluded even while CLI reports a focused window.
@@ -41,16 +43,16 @@ export function acquireDebuggerSession(cli) {
     cli("dev:cdp", "method=Runtime.disable", "params={}");
     cli("dev:cdp", "method=Runtime.discardConsoleEntries", "params={}");
     evaluate(
-      `(()=>{if(globalThis[${JSON.stringify(key)}])throw Error('Console controller collision');const c={errors:[],contexts:{}};c.debugger=require('@electron/remote').getCurrentWebContents().debugger;c.listener=(_event,method,params)=>{if(method==='Runtime.executionContextCreated')c.contexts[params.context.id]=params.context;if(method==='Runtime.consoleAPICalled'&&params.type==='error')c.errors.push({kind:'console',overflowArgs:params.args.some(arg=>arg.preview?.overflow)?params.args:undefined,messages:params.args.map(arg=>String(arg.description??arg.value??arg.type)+(arg.preview?.properties?' '+JSON.stringify(arg.preview.properties):'')+(arg.preview?.overflow?' [preview truncated]':''))});if(method==='Runtime.exceptionThrown')c.errors.push({kind:'exception',timestamp:params.timestamp,context:c.contexts[params.exceptionDetails.executionContextId],tasks:Object.keys(globalThis).filter(key=>key.startsWith('__excalidrawTestTask_')).map(key=>({key,phase:globalThis[key].phase,activeCase:globalThis[key].activeCase,lastCase:globalThis[key].tests.at(-1)?.testId})),details:params.exceptionDetails,messages:[String(params.exceptionDetails.exception?.description??params.exceptionDetails.exception?.value??params.exceptionDetails.text)]});};c.debugger.on('message',c.listener);globalThis[${JSON.stringify(key)}]=c;return JSON.stringify({installed:true});})()`,
+      `(()=>{if(globalThis[${JSON.stringify(key)}])throw Error('Console controller collision');const c={owner:${JSON.stringify(key)},errors:[],contexts:{}};c.debugger=require('@electron/remote').getCurrentWebContents().debugger;c.listener=(_event,method,params)=>{if(method==='Runtime.executionContextCreated')c.contexts[params.context.id]=params.context;if(method==='Runtime.consoleAPICalled'&&params.type==='error')c.errors.push({kind:'console',overflowArgs:params.args.some(arg=>arg.preview?.overflow)?params.args:undefined,messages:params.args.map(arg=>String(arg.description??arg.value??arg.type)+(arg.preview?.properties?' '+JSON.stringify(arg.preview.properties):'')+(arg.preview?.overflow?' [preview truncated]':''))});if(method==='Runtime.exceptionThrown')c.errors.push({kind:'exception',timestamp:params.timestamp,context:c.contexts[params.exceptionDetails.executionContextId],tasks:Object.keys(globalThis).filter(key=>key.startsWith('__excalidrawTestTask_')).map(key=>({key,phase:globalThis[key].phase,activeCase:globalThis[key].activeCase,lastCase:globalThis[key].tests.at(-1)?.testId})),details:params.exceptionDetails,messages:[String(params.exceptionDetails.exception?.description??params.exceptionDetails.exception?.value??params.exceptionDetails.text)]});};c.debugger.on('message',c.listener);globalThis[${JSON.stringify(key)}]=c;return JSON.stringify({installed:true});})()`,
     );
-    installed = true;
     cli("dev:cdp", "method=Runtime.enable", "params={}");
   } catch (error) {
     try {
-      if (installed)
-        evaluate(
-          `(()=>{const c=globalThis[${JSON.stringify(key)}];c.debugger.removeListener('message',c.listener);delete globalThis[${JSON.stringify(key)}];return JSON.stringify(true);})()`,
-        );
+      // The install may have run even when its CLI acknowledgement was lost.
+      // Probe the unique ownership token instead of trusting a local flag.
+      evaluate(
+        `(()=>{const c=globalThis[${JSON.stringify(key)}];if(c){if(c.owner!==${JSON.stringify(key)})throw Error('Unowned console controller');c.debugger.removeListener('message',c.listener);delete globalThis[${JSON.stringify(key)}];}return JSON.stringify(true);})()`,
+      );
     } finally {
       try {
         restoreScheduling();
@@ -61,12 +63,13 @@ export function acquireDebuggerSession(cli) {
     throw error;
   }
   return {
+    transportDiagnostics,
     scheduling: {
       originalBackgroundThrottling,
       scopedBackgroundThrottling: false,
     },
     read: () => {
-      const errors = evaluate(
+      const errors = read(
         `JSON.stringify(globalThis[${JSON.stringify(key)}].errors)`,
       );
       if (!errors.some((error) => error.overflowArgs)) return errors;

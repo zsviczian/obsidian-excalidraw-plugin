@@ -4,7 +4,7 @@ import vm from "node:vm";
 import { readFileSync } from "node:fs";
 import ts from "typescript";
 
-function clickHarness(replace) {
+function clickHarness(replace, moving = false) {
   const source = readFileSync(new URL("./behaviorEnvironment.mjs", import.meta.url), "utf8");
   const file = ts.createSourceFile("behaviorEnvironment.mjs", source, ts.ScriptTarget.Latest, true);
   let initializer;
@@ -15,10 +15,10 @@ function clickHarness(replace) {
   visit(file);
   assert.ok(initializer);
   const events = [], rect = { x: 10, y: 20, width: 40, height: 20 };
-  let hit;
+  let hit, clock=0, reads=0;
   const element = (visible) => ({
     outerHTML: "<button>Convert</button>", isConnected: visible,
-    getClientRects: () => visible ? [rect] : [],
+    getClientRects: () => {reads++;if(moving&&reads<=6)rect.y+=10;return visible ? [rect] : [];},
     getBoundingClientRect: () => ({ toJSON: () => rect }),
     contains(value) { return value === this; }, scrollIntoView() {},
   });
@@ -26,11 +26,12 @@ function clickHarness(replace) {
   hit = live;
   let current = old;
   const click = vm.runInNewContext(`(${initializer.getText(file)})`, {
-    doc: { elementFromPoint: () => hit }, context: { input: "mouse" },
+    Date: {now:()=>clock}, doc: { elementFromPoint: () => hit }, context: { input: "mouse" },
     input: async (method, params) => events.push({ method, params }),
     check: (value, label) => assert.ok(value, label),
     c: { async waitFor(predicate, label) {
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < 20; i++) {
+        clock+=50;
         if (predicate()) return;
         if (replace) current = live;
       }
@@ -113,4 +114,33 @@ test("missing-source setup retires the old editor before deleting its file", asy
     app: { vault: { async delete(value) { assert.equal(value, asset); assert.equal(retired, true, "Live file deletion creates an incidental loader race"); removed = true; } } },
   });
   await execute(); assert.equal(opened, true);
+});
+
+test("trusted click waits for a sliding mobile control to settle before dispatch",async()=>{
+  const h=clickHarness(true,true);
+  await h.click(h.resolve);
+  assert.equal(h.events[0].params.y,90);
+});
+
+function saveHarness({failed=false,mismatch=false}={}) {
+  const source=readFileSync(new URL('./behaviorEnvironment.mjs',import.meta.url),'utf8');
+  const file=ts.createSourceFile('behaviorEnvironment.mjs',source,ts.ScriptTarget.Latest,true);let initializer;
+  function visit(node){if(ts.isVariableDeclaration(node)&&node.name.getText(file)==='saveReopen')initializer=node.initializer;ts.forEachChild(node,visit);}visit(file);
+  assert.ok(initializer);let busy=true,saves=0,opens=0;
+  const drawing={path:'owned.md'},api={getSceneElements:()=>[{id:'a'}]};
+  const view={file:drawing,excalidrawAPI:api,isSaveInProgress:()=>busy,async saveWithOutcome(){saves++;return{status:busy?'skipped':failed?'failed':'persisted',requestedRevision:1,acknowledgedRevision:failed?null:1,currentRevision:1};}};
+  const leaf={view,async setViewState(){},async openFile(value){assert.equal(value,drawing);opens++;}};view.leaf=leaf;
+  const c={caseTrace:{},async waitFor(predicate){if(!predicate())busy=false;assert.equal(predicate(),true);}};
+  const saveReopen=vm.runInNewContext(`(${initializer.getText(file)})`,{c,leaf,context:{id:'main'},app:{workspace:{setActiveLeaf(value){assert.equal(value,leaf);}}},check:(condition,label)=>assert.ok(condition,label),ready:async()=>{},p:{ea:{getSceneFromFile:async()=>({elements:[{id:mismatch?'wrong':'a'}]})}}});
+  return{saveReopen,view,c,saves:()=>saves,opens:()=>opens};
+}
+
+test('native save/reopen waits for external synchronization before requiring physical persistence',async()=>{
+  const h=saveHarness();assert.equal(await h.saveReopen(h.view),h.view);assert.equal(h.saves(),1);assert.equal(h.opens(),1);assert.equal(h.c.caseTrace.saveOutcome.status,'persisted');
+});
+
+test('native save/reopen still refuses failed acknowledgements and mismatched physical scenes',async()=>{
+  for(const options of [{failed:true},{mismatch:true}]){
+    const h=saveHarness(options);await assert.rejects(h.saveReopen(h.view),/not physically acknowledged|scene IDs differ on disk/);assert.equal(h.saves(),1);assert.equal(h.opens(),0);
+  }
 });

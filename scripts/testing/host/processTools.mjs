@@ -17,15 +17,16 @@ export function obsidianCliExecutable(env = process.env, platform = process.plat
 }
 
 /**
- * Preserve argument arrays and process results. Long/multiline Windows evals pass through
- * an owned UTF-8 script: the console transport can otherwise truncate or corrupt its IPC JSON.
+ * Preserve argument arrays and process results. Windows multiline and oversized desktop evals
+ * use owned UTF-8 scripts, avoiding console truncation and OS argument-size limits.
  * This local file bridge is test-only and is removed even when the launcher fails.
  */
 export function spawnNativeSync(file, args, options, { platform = process.platform, spawn = spawnSync } = {}) {
   const codeIndex = args.findIndex(arg => arg.startsWith("code="));
   const lengthBound = file.length + args.reduce((length, arg) => length + arg.length * 2 + 3, 0);
   const inlineSafe = codeIndex >= 0 && !/[\r\n]/.test(args[codeIndex]) && lengthBound < 8_000;
-  if (platform !== "win32" || args[1] !== "eval" || !args[0]?.startsWith("vault=") || codeIndex < 0 || inlineSafe) {
+  const needsScript = platform === "win32" ? !inlineSafe : lengthBound >= 64_000;
+  if (!needsScript || args[1] !== "eval" || !args[0]?.startsWith("vault=") || codeIndex < 0) {
     return spawn(file, args, options);
   }
   const directory = mkdtempSync(join(tmpdir(), "excalidraw-cli-eval-"));
