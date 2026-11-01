@@ -35,8 +35,8 @@ class MarkdownEmbedRenderChild extends MarkdownRenderChild {
       this.pending = null;
       this.ready = false;
       this.containerEl.removeAttribute("ready");
-      if (this.timer !== null) ownerWindow.clearTimeout(this.timer);
-      this.timer = ownerWindow.setTimeout(() => {
+      if (this.timer !== null) window.clearTimeout(this.timer);
+      this.timer = window.setTimeout(() => {
         this.timer = null;
         void this.render();
       }, 500);
@@ -47,7 +47,7 @@ class MarkdownEmbedRenderChild extends MarkdownRenderChild {
     });
     this.register(() => {
       observer.disconnect();
-      if (this.timer !== null) ownerWindow.clearTimeout(this.timer);
+      if (this.timer !== null) window.clearTimeout(this.timer);
       this.timer = null;
     });
     void this.render();

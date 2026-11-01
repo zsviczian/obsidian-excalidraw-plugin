@@ -37,6 +37,7 @@ validated, and what remains uncertain.
 | Assessment and baseline design | Complete | Initial architecture, risks, sequencing, and validation matrix documented |
 | Automated test coverage (#3022) | Acceptance complete at the frozen checkpoint; PRs ready for review | Plugin fd32ac68 / fork 053a3b9 / Extras 1cdcb7c pass two complete 357/357 native repeats and 666 portable cases, with matching artifacts, cleanup, baseline restoration and strict negative controls. Historical failures remain public; the original observer-storm cause remains unidentified. See F32 and the immutable acceptance report. The later approved link-history fix has separate focused evidence in F33. |
 | Parsed-link drawing history | Implemented; focused source/native regression passes | Preserve earlier shape actions when submitting parsed links. Four new source cases cover plain/wiki/aliased/Markdown links; eight trusted-input sequences undo all seven drawing actions to empty and redo identity, geometry, source, links and bindings. Verify the optional selection-only editor step explicitly; retain all 16 previous text-edit variants. No fork or Extras production change. |
+| Timer ownership and coding standards | Implemented; focused/source checks pass; full-suite prerequisites remain | Main-window coordination timers settle conversion/restore/migration waits; teardown cancels conversion and restoration, and Markdown preview debounce survives migration. Cross-cutting rules now live in CODING_STANDARDS.md, linked from both entry guides. |
 | Settings teardown safety | Implemented; 11 source regressions and native lifecycle pass | Retire manager reads/writes before clearing settings; reject invalid snapshots and stop deferred recovery/load continuations. Verify non-default/unknown settings and late old-instance saves across actual plugin replacement. Already-started disk writes retain real completion. |
 | Template selection and cancellation (#2649, PR #3020) | Implemented; source and native selection/cancellation checks pass | A dedicated chooser returns template/blank/cancel, displays paths relative to the configured root, and initially selects explicit blank. Interactive callers resolve before folder/file/editor/leaf side effects. Public getBlankDrawing/createDrawing and EA/CLI contracts retain string/file returns and deterministic initData behavior |
 | Nested-split fullscreen (#2743, PR #3020) | Implemented; seven source tests and native lower-right split pass | Keep the complete ancestor path visible; hide surrounding siblings and restore only owned classes. Native 958x641 drawing expands to 2560x1438 and returns to identical bounds. Existing inline styles remain untouched; controls are optional and cleanup retains the entry document across migration |
@@ -3450,3 +3451,55 @@ remain strict pending maintainer classification; no production changes.
   path is closed. Main/popout behavior is covered; physical mobile reload and
   user-specific delayed startup callbacks remain separate risk checks. No new
   personal-vault deployment or reload was performed for this fix.
+
+## Timer ownership and coding standards checkpoint — 2026-11-01
+
+- Moved cross-cutting requirements from AGENTS.md and CONTRIBUTING.md into
+  [CODING_STANDARDS.md](CODING_STANDARDS.md), preserving subsystem architecture and
+  execution workflows in the entry guides. Added explicit timer ownership,
+  cancellation, promise settlement, and post-await identity requirements.
+- Moved the conversion fallback, sidepanel restore yield, migration delays, and
+  Markdown embed debounce to main-window timers. Conversion teardown removes its
+  listener and settles its wait; restored tabs stop launching scripts on close.
+  Migration retains synchronous snapshot/unmount ordering and rejects retired
+  destination leaves before continuing or reconstructing UI.
+- Regression evidence: the same 14 new tests against an isolated HEAD-source
+  snapshot produce eight assertion failures and six pending-promise cancellations;
+  all 14 pass against the changed code. The combined affected embed, loader, save,
+  and timer run passes 48/48; the whole-module source-coverage gate passes 95/95.
+- Node 22.22.2 production and library builds, bundle syntax, and inventory checks
+  pass. Touched-file lint has no new findings; ExcalidrawView retains its existing
+  16 errors and the repository-wide lint command reports 118 existing errors.
+  The existing TS2367 Lucide warning also remains. The 5,026,913-byte main.js is
+  215,967 bytes below the release target.
+- Full plugin tests with canonical TMPDIR=/private/tmp pass 513/517. Three existing
+  acceptance/feature-map failures reference the absent companion file
+  tests/obsidian/unit/coreRegression.test.tsx; the fourth is the unchanged host
+  contract mismatch (plugin protocol 3 versus fork protocol 2). The portable
+  aggregate stops at that contract gate after workspace and library builds.
+  macOS's /var temporary-path alias caused additional harness failures in the
+  initial run; the canonical temporary root resolves those without changing code
+  or weakening path checks.
+- npm install restored the already-declared 0.18.145 package from an installed
+  0.18.144. No dependency or lockfile change remains. Both companion source trees
+  remain clean. Production code introduces no new fork API.
+- The native regression command builds, freezes and installs the exact workspace
+  artifacts into the repository-local test vault, then exits with prerequisite
+  status 2: Obsidian is not running with this vault opened/trusted and CLI enabled.
+  Zero native runtime cases are claimed. No personal vault was used.
+- Evidence: .test-work/reports/regression-f176f662-c429-4fbc-9c9b-61fe84ea0adb/,
+  .test-work/reports/fast/report.json, .test-work/reports/coverage/report.json,
+  and frozen combination-a5bea295-ef3a-457f-afc9-25ffc7dc8903. Subsequent edits
+  to this record and the standards introduction are documentation-only; runtime
+  source is unchanged from those builds and focused/source checks.
+- Risk checks: highest risk is dirty drawing migration and concurrent Markdown
+  editor teardown. Exercise main → popout and popout → main with an active same-file
+  editor, rapidly close a destination popout, verify saved contents and released
+  listeners/restore flags, and resize a Markdown preview after moving its view.
+  Main-window, popout, plugin reload, and cold restoration need distinct coverage.
+  Shared timer logic also needs physical Android/iOS smoke testing; desktop
+  emulation and this macOS source run do not establish other OS/device behavior.
+
+- PR #3028 integration, 2026-11-01: resolved documentation conflicts with current
+  master by retaining its newer release-note editorial rules in CODING_STANDARDS.md.
+  The maintainer requested immediate merge without waiting for CI or additional checks.

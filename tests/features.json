@@ -56,6 +56,15 @@
             "teardown during recovery persistence prevents an old instance from overwriting replacement settings",
             "active storage errors still reject and a later retry preserves custom settings"
           ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/windowMigrationTimers.test.mjs",
+          "cases": [
+            "dirty migration unmounts synchronously and completes after the source popout closes",
+            "destination closure during migration grace settles without recreating a retired leaf",
+            "destination closure during migration replacement yield settles without recreating a retired leaf"
+          ]
         }
       ],
       "fixtures": [],
@@ -845,6 +854,18 @@
           "path": "scripts/testing/host/devices.mjs",
           "cases": [
             "native:device:desktop-wide-full-light"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/windowTimers.source.test.mjs",
+          "cases": [
+            "file-modification fallback settles and releases its vault listener after the popout closes",
+            "view unload settles a pending conversion wait and removes timers and listeners",
+            "sidepanel restore finishes and releases global silence when its popout timer source closes",
+            "closing the sidepanel cancels its restore yield without executing another script",
+            "a current conversion finishes after its main-window fallback and saves the converted section",
+            "Markdown embed debounce follows a live render context into another window"
           ]
         }
       ],
