@@ -1,3 +1,4 @@
+/** Shared customData contracts and guarded image-annotation edits preserve unrelated namespaces. */
 import type { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import type {
   ExcalidrawElement,
@@ -104,12 +105,19 @@ export function getCLIImageMetadata(element: ExcalidrawImageElement): CLIImageMe
 export function cliImageMetadataPatch(element: ExcalidrawImageElement, label: unknown, tags: unknown): ExcalidrawCustomData {
   const customData = element.customData as ExcalidrawCustomData | undefined;
   const previous = customData?.[CLI_IMAGE_CUSTOM_DATA_KEY];
-  if (previous !== undefined && (!previous || typeof previous !== "object" || Array.isArray(previous) || previous.version !== 1)) throw new Error("Unsupported image metadata version; existing annotations were preserved.");
-  const next: Record<string, ExcalidrawCustomDataValue> = { ...(previous as Record<string, ExcalidrawCustomDataValue> | undefined), version: 1 };
+  let previousRecord: ExcalidrawCustomData = {};
+  if (previous !== undefined) {
+    if (previous && typeof previous === "object" && !Array.isArray(previous) && previous.version === 1) previousRecord = previous;
+    else throw new Error("Unsupported image metadata version; existing annotations were preserved.");
+  }
+  const next: Record<string, ExcalidrawCustomDataValue> = { ...previousRecord, version: 1 };
   if (label !== undefined) {
-    if (label !== null && (typeof label !== "string" || !label.trim() || label.length > 80)) throw new Error("Image label must be 1–80 characters or null to clear.");
-    if (label === null) delete next.label;
-    else next.label = label as string;
+    const invalidLabel = "Image label must be 1–80 characters or null to clear.";
+    if (typeof label === "string") {
+      if (!label.trim() || label.length > 80) throw new Error(invalidLabel);
+      next.label = label;
+    } else if (label === null) delete next.label;
+    else throw new Error(invalidLabel);
   }
   if (tags !== undefined) {
     if (tags !== null && (!Array.isArray(tags) || tags.length > 12 || tags.some(tag => typeof tag !== "string" || !tag.trim() || tag.length > 32) || new Set(tags).size !== tags.length)) throw new Error("Image tags must be a list of up to 12 unique short strings or null to clear.");
