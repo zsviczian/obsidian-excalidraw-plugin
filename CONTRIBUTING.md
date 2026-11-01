@@ -4,6 +4,15 @@ First off, thank you for considering contributing to the Obsidian Excalidraw plu
 
 Because this is not a generic React canvas app, but rather a deeply integrated Obsidian plugin with popout window support, mobile compatibility constraints, and performance optimizations, please read the following guidelines carefully before making any changes.
 
+## Coding requirements
+
+Read [CODING_STANDARDS.md](CODING_STANDARDS.md) before implementing or reviewing
+changes. It is the canonical source for mandatory coding practices, including
+[timer and window ownership](CODING_STANDARDS.md#timers-window-ownership-and-asynchronous-work),
+DOM helpers, cleanup, security, compatibility, logging, localization, and validation.
+Add future cross-cutting rules there. See [AGENTS.md](AGENTS.md) for architecture,
+subsystem constraints, and agent workflows.
+
 ## 💬 Discuss First
 
 Before spending your valuable time writing code for a new feature or significant refactor, please **open an issue** to discuss it first. This ensures your idea aligns with the project's roadmap and architecture, and helps prevent wasted effort or complex merge conflicts later.
@@ -97,26 +106,6 @@ Use a risk-based test plan rather than a generic smoke test. Every change should
 - plugin reload and cold application startup
 - desktop and mobile layouts
 - offline mode, when the change affects packaged assets or runtime loading
-
-For UI and CSS changes:
-
-- Use semantic controls and Obsidian's event helpers. Link-like navigation should use a real anchor; custom navigation handlers should use `onClickEvent`.
-- Keep accessible names in `aria-label`. If a styled tooltip is already present, omit the HTML `title` attribute to avoid a second native browser tooltip.
-- Run Obsidian CodeScanner and resolve compatibility warnings against the supported Obsidian baseline. Prefer simple, broadly supported CSS when advanced styling is only decorative.
-
-Timers, observers, autosave coordination, and undocumented Obsidian API workarounds may exist for platform behavior outside the plugin's control. Trace their purpose before simplifying them.
-
-## 🪵 Logging Requirement
-
-- **Do not use direct `console.log(...)` calls in project code.** Use the shared logging helper exported as `log` from `src/utils/debugHelper.ts`.
-- If you are working in a Node script where importing `src/utils/debugHelper.ts` is not practical, define and use a local `log` wrapper instead of calling `console.log(...)` directly.
-- Temporary performance diagnostics must use a unique searchable prefix and
-  produce copyable string lines rather than expandable console objects. Keep
-  instrumentation separate from functional behavior, avoid vault contents,
-  and include filenames only when per-file attribution is explicitly needed.
-- Remove temporary diagnostics before committing. Search both `src/` and the
-  built `dist/main.js` for the prefix so timing callbacks and bundled log code
-  are not left behind.
 
 ## 🏗️ Architecture & Sub-components
 
@@ -229,13 +218,12 @@ The plugin keeps Obsidian 1.8.7 compatibility while using searchable declarative
 
 ## 🌍 Localization & User-Facing Text
 
-- **No hardcoded strings:** There should be no hardcoded English strings directly in the UI components or logic.
-- **Language files:** All strings must be added to the localization files located in `src/lang/locale/`.
-- **Translations:** Add every new key and string to `en.ts` and the actively maintained translations (`es.ts`, `ru.ts`, `zh-cn.ts`, `zh-tw.ts`) in the same change.
+Follow the [user-facing change workflow](CODING_STANDARDS.md#user-facing-change-workflow)
+for release notes, localization keys, and maintained translations.
 
 ## 📦 Pull Requests & Versioning
 
 - **Do NOT bump versions:** Please do not bump the version numbers in `manifest.json`, `manifest-beta.json`, or `package.json` in your Pull Requests. Version bumping and release coordination are handled exclusively by the maintainer during the final GitHub Release workflow.
-- **Release Notes:** If you are adding a feature or fixing a bug that users need to know about, please document it in `src/shared/Dialogs/Messages.ts` under the upcoming version key.
+- **Release notes:** Follow the [user-facing change workflow](CODING_STANDARDS.md#user-facing-change-workflow).
 
 Once again, thank you for contributing to the plugin!

@@ -1898,6 +1898,15 @@ export default class ExcalidrawView
           const f = this.file;
           const l = this.leaf;
           const plugin = this.plugin;
+          const migrationTargetIsCurrent = () =>
+            !destinationWindow.closed &&
+            !this.semaphores?.viewunload &&
+            this.file === f &&
+            l.view === this;
+          const abandonMigration = () => {
+            plugin.discardViewMigrationPersistenceHandoff(l.id);
+            plugin.completeMigrationAutoexport(l.id, f.path, false);
+          };
           const activeSetViewDataLoad = this.activeSetViewDataLoad?.promise;
           this.invalidateSetViewDataLoad();
           const sameFileEditWasBlocked = this.isSameFileEditingActive();
@@ -1910,6 +1919,7 @@ export default class ExcalidrawView
           // unload callbacks select detached-view persistence. Capture every
           // API-owned value synchronously, then unmount before the first await.
           this.semaphores.windowMigrating = true;
+          this.markdownImageController.cancelPendingConversion();
           this.clearExcalidrawInitializeTimer();
           this.sceneFileManager.terminateActiveLoaders();
           this.windowMigrationSaveSnapshot = null;
@@ -1929,6 +1939,10 @@ export default class ExcalidrawView
           this.unmountExcalidrawRoot();
           if (markdownImageEditorUnload !== null) {
             await markdownImageEditorUnload;
+            if (!migrationTargetIsCurrent()) {
+              abandonMigration();
+              return;
+            }
           }
           if (migrationSaveRequired) {
             if (mustRefreshMigrationSourceText) {
@@ -1940,18 +1954,31 @@ export default class ExcalidrawView
               // then read after the mandatory synchronous source unmount.
               if (sameFileEditWasBlocked) {
                 await new Promise<void>((resolve) => {
-                  destinationWindow.setTimeout(
+                  window.setTimeout(
                     resolve,
                     EMBEDDABLE_SEMAPHORE_TIMEOUT,
                   );
                 });
+                if (!migrationTargetIsCurrent()) {
+                  abandonMigration();
+                  return;
+                }
               }
-              this.data = await plugin.app.vault.read(f);
+              const sourceText = await plugin.app.vault.read(f);
+              if (!migrationTargetIsCurrent()) {
+                abandonMigration();
+                return;
+              }
+              this.data = sourceText;
             }
             await this.saveCoordinator.flush();
           }
           if (activeSetViewDataLoad !== undefined) {
             await activeSetViewDataLoad;
+          }
+          if (!migrationTargetIsCurrent()) {
+            abandonMigration();
+            return;
           }
           if (this.isDirty()) {
             this.semaphores.windowMigrating = false;
@@ -1964,11 +1991,18 @@ export default class ExcalidrawView
           this.windowMigrationSaveSnapshot = null;
           // "Open in popout" invokes this callback while the new leaf's own
           // setViewData() is still loading. Wait for that concrete load, then
-          // yield one destination task so its surrounding view-state
+          // yield one task so its surrounding view-state
           // transition can settle before closing and recreating this view.
           await new Promise<void>((resolve) => {
-            destinationWindow.setTimeout(resolve, 0);
+            window.setTimeout(resolve, 0);
           });
+          // The destination may have closed while the main-window timer ran.
+          // Never reconstruct a view in a retired leaf; the plugin-owned
+          // persistence coordinator releases abandoned reservations explicitly.
+          if (!migrationTargetIsCurrent()) {
+            abandonMigration();
+            return;
+          }
           try {
             await closeLeafView(l);
           } catch (error: unknown) {
@@ -1977,6 +2011,10 @@ export default class ExcalidrawView
             this.setDirty();
             this.semaphores.windowMigrating = false;
             throw error;
+          }
+          if (destinationWindow.closed) {
+            abandonMigration();
+            return;
           }
           const handoffToken = migrationDrawingState
             ? plugin.registerViewMigrationHandoff({
@@ -2341,6 +2379,7 @@ export default class ExcalidrawView
   async onUnloadFile(): Promise<void> {
     //deliberately not calling super.onUnloadFile() to avoid autosave (saved in unload)
     this.invalidateSetViewDataLoad();
+    this.markdownImageController.cancelPendingConversion();
     await handleMarkdownImageEditorViewUnload(this);
     let counter = 0;
     while (
