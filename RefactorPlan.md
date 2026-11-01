@@ -3499,3 +3499,7 @@ remain strict pending maintainer classification; no production changes.
   Main-window, popout, plugin reload, and cold restoration need distinct coverage.
   Shared timer logic also needs physical Android/iOS smoke testing; desktop
   emulation and this macOS source run do not establish other OS/device behavior.
+
+- PR #3028 integration, 2026-11-01: resolved documentation conflicts with current
+  master by retaining its newer release-note editorial rules in CODING_STANDARDS.md.
+  The maintainer requested immediate merge without waiting for CI or additional checks.

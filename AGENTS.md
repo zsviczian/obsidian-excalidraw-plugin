@@ -332,11 +332,11 @@ The plugin supports Obsidian 1.8.7 while optionally using the declarative settin
 
 ### ExcalidrawAutomate Change Checklist
 
-Whenever a function is added to or changed in `src/shared/ExcalidrawAutomate.ts`, three additional files must be updated in the same change:
+When public automation behavior changes, review these documentation surfaces; update only those affected:
 
 1. **`src/shared/Dialogs/SuggesterInfo.ts`** — Add or update the corresponding entry in `EXCALIDRAW_AUTOMATE_INFO`. The `field` must match the function or property name exactly. The `desc` should explain behavior clearly, including any important limitations or session-scoped constraints. The `code` should reflect the actual TypeScript signature.
-2. **`src/shared/Dialogs/Messages.ts`** — Document the new or changed function under the upcoming release version key. Include a brief user-facing description and the TypeScript signature in a fenced code block.
-3. **`src/lang/locale/en.ts`** (and maintained locales) — Only required if the change introduces new user-visible strings. Follow the existing locale workflow described in the User-Facing Change Workflow section.
+2. **`src/shared/Dialogs/Messages.ts`** — Apply the [release-note selection rules](CODING_STANDARDS.md#user-facing-change-workflow). Mention a meaningful new scripting capability or required migration concisely; do not add an entry for every API fix or unreleased refinement, and do not include TypeScript signatures or code blocks.
+3. **`src/lang/locale/en.ts`** (and maintained locales) — Only required if the change introduces new user-visible strings. Follow the [user-facing change workflow](CODING_STANDARDS.md#user-facing-change-workflow).
 
 ## High-Risk Areas
 

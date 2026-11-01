@@ -9,8 +9,8 @@ export function exceedsViewport(
 ): boolean {
   const epsilon = Math.max(1, width, height) * 1e-6;
   for (const element of elements) {
-    const fill = element.backgroundColor !== "transparent",
-      stroke = element.strokeColor !== "transparent" && element.strokeWidth > 0;
+    const fill = (element.type === "text" ? element.strokeColor : element.backgroundColor) !== "transparent",
+      stroke = element.type !== "text" && element.strokeColor !== "transparent" && element.strokeWidth > 0;
     if (element.opacity === 0 || (!fill && !stroke)) continue;
     let minX: number, minY: number, maxX: number, maxY: number;
     if (element.type === "line") {

@@ -23,7 +23,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "importSVG",
     code: "importSVG(svgString: string): boolean;",
-    desc: "Synchronously appends editable SVG geometry to this EA workbench. Does not insert, save or clear existing elements. Returns false without appending on malformed, unsafe or excessive input. Some SVG features import with approximation/omission notices: see src/shared/svgToExcalidraw/readme.md. Call addElementsToView() separately to insert.",
+    desc: "Synchronously appends editable SVG geometry and text (including plain Mermaid HTML labels) to this EA workbench. Does not insert, save or clear existing elements. Returns false without appending on malformed, unsafe or excessive input. Fonts, complex text layout and other limited SVG features import with approximation/omission notices: see src/shared/svgToExcalidraw/readme.md. Call addElementsToView() separately to insert.",
     after: "",
   },
   {

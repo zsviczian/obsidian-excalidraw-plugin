@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test, { after } from "node:test";
 import { readFileSync } from "node:fs";
 import { DOMParser as XMLParser } from "@xmldom/xmldom";
+import { customAlphabet } from "nanoid";
 import { sourceHarness } from "./sourceHarness.mjs";
 const before = globalThis.DOMParser;
 globalThis.DOMParser = class {
@@ -12,7 +13,7 @@ globalThis.DOMParser = class {
 };
 const graph = sourceHarness({
   "roughjs/bin/math": { Random: class { next() { return 0.5; } } },
-  "src/constants/constants": { ROUNDNESS: { LEGACY: 1 } },
+  "src/constants/constants": { ROUNDNESS: { LEGACY: 1 }, nanoid: customAlphabet("1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ", 8) },
   "src/constants/safeUrls": { URLs: { GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES_TAG: "https://example.test/releases" } },
   "src/utils/debugHelper": { log() {} },
 });
@@ -31,7 +32,32 @@ test("whole-module SVG fixture imports without mutating source bytes", () => {
   assert.equal(first.content.length, 3); assert.equal(first.content[0].opacity, 50);
   assert.equal(readFileSync(new URL("../../tests/vault/Assets/Layers.svg", import.meta.url), "utf8"), bytes);
 });
+
+test("whole-module supplied Mermaid mindmap resolves SVG-local colors and transparent fills", () => {
+  const source = readFileSync(new URL("../../tests/fixtures/mermaid-mindmap-css-variables.svg", import.meta.url), "utf8");
+  const result = convert(source);
+  assert.equal(result.hasErrors,false,result.errors);
+  for(const color of ['#4c78a8','#f58518','#54a24b','#e45756'])
+    assert.ok(result.content.some(e=>e.strokeColor===color),color);
+  assert.ok(result.content.some(e=>e.backgroundColor==='#f3f3f3'));
+  assert.ok(result.content.some(e=>e.backgroundColor==='#4c78a838'));
+});
 test("malformed SVG reports a failed conversion and a later request still works", () => {
   assert.equal(convert("not an SVG").hasErrors, true);
   assert.equal(convert('<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="5"/></svg>').hasErrors, false);
+});
+
+test("whole-module SVG and Mermaid HTML labels become measured editable text with block-safe IDs", () => {
+  const result = convert('<svg xmlns="http://www.w3.org/2000/svg" xmlns:h="http://www.w3.org/1999/xhtml"><text x="10" y="20">SVG label</text><foreignObject x="20" y="40" width="120" height="30"><h:div style="text-align:center;line-height:1.5"><h:p>HTML label</h:p></h:div></foreignObject></svg>', {
+    measureText: (text, fontSize, family, lineHeight) => ({width: text.length * fontSize / 2, height: fontSize * lineHeight}),
+  });
+  assert.equal(result.hasErrors, false, result.errors);
+  assert.deepEqual(result.content.map(e => e.text), ["SVG label", "HTML label"]);
+  for (const element of result.content) {
+    assert.equal(element.type, "text");
+    assert.match(element.id, /^[a-zA-Z0-9]{8}$/);
+    assert.equal(element.rawText, element.text);
+    assert.equal(element.originalText, element.text);
+    assert.ok(element.width > 0 && element.height > 0);
+  }
 });

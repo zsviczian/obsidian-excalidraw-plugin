@@ -51,7 +51,10 @@ export function loadConverter() {
     const require = (name) => {
       if (externals[name]) return externals[name];
       if (name.endsWith("constants/constants"))
-        return { ROUNDNESS: { LEGACY: 1 } };
+        return {
+          ROUNDNESS: { LEGACY: 1 },
+          nanoid: () => String(++identity).padStart(8, "0"),
+        };
       if (name.endsWith("constants/safeUrls"))
         return {
           URLs: {

@@ -180,8 +180,8 @@ export async function runObsidianSmoke({ projectRoot, vaultName, vaultPath, conf
     await poll(() => ({ state: cli("commands", `filter=${PLUGIN_ID}`).includes(`${PLUGIN_ID}:excalidraw-autocreate`)
       ? "registered" : "pending" }), (value) => value.state === "registered", wait, now);
     const runtime = parseEval(cli("eval", `code=JSON.stringify((()=>{const lib=app.plugins.plugins[${JSON.stringify(PLUGIN_ID)}].getCLIRuntime();return {valid:typeof lib.Excalidraw==="object"&&typeof lib.loadSceneFonts==="function"&&typeof lib.exportToBlob==="function",protocol:lib.OBSIDIAN_EXCALIDRAW_HOST_PROTOCOL_VERSION}})())`));
-    if (!runtime.valid || runtime.protocol !== 3) throw new Error("Plugin commands registered but its drawing runtime is unavailable or incompatible");
-    report.scenarios.push({ id: "plugin-load", status: "passed", assertions: ["commands registered", "drawing/font/export runtime available", "host protocol 3"] });
+    if (!runtime.valid || runtime.protocol !== 4) throw new Error("Plugin commands registered but its drawing runtime is unavailable or incompatible");
+    report.scenarios.push({ id: "plugin-load", status: "passed", assertions: ["commands registered", "drawing/font/export runtime available", "host protocol 4"] });
 
     phase = "drawing";
     const name = `${PREFIX}${unique()}`;

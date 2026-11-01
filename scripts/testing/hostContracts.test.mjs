@@ -32,7 +32,7 @@ test(`plugin host and public Mermaid declarations match the ${typesSource} fork`
     declare const canonical: Host.ObsidianExcalidrawHostAdapter;
     declare const canonicalLoader: typeof Utils.loadMermaid;
     declare const canonicalConfigure: typeof Host.configureObsidianExcalidrawHost;
-    const coordinatedProtocol: typeof Host.OBSIDIAN_EXCALIDRAW_HOST_PROTOCOL_VERSION = 3;
+    const coordinatedProtocol: typeof Host.OBSIDIAN_EXCALIDRAW_HOST_PROTOCOL_VERSION = 4;
     const namedAction: Host.ObsidianExcalidrawHostAdapter["runAction"] =
       (action, editorId) => plugin.runAction(action, editorId);
     const adapter: Host.ObsidianExcalidrawHostAdapter =

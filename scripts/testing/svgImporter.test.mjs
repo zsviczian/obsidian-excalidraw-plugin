@@ -35,6 +35,7 @@ function loadMethod(file, name, scope) {
 const notices = [];
 const Subject = loadMethod("shared/ExcalidrawAutomate.ts", "importSVG", {
   svgToExcalidraw: loadConverter(),
+  _measureText: (text, size, _family, lineHeight) => ({ w: text.length * size / 2, h: size * lineHeight }),
   t: (key) => key,
   Notice: class {
     constructor(message) {
@@ -76,11 +77,29 @@ test("fatal import cannot partially append or clear an existing workbench", () =
   assert.equal(JSON.stringify(ea.elementsDict), before);
   assert.match(notices.at(-1), /SVG_IMPORT_ERROR/);
 });
+test("ea.importSVG publishes all geometry and a paint approximation notice for unsupported colors", () => {
+  const ea = workbench(),
+    before = JSON.stringify(ea.elementsDict.sentinel);
+  assert.equal(
+    ea.importSVG(
+      '<svg color="blue"><rect width="20" height="10" fill="color(display-p3 1 0 0)"/><rect x="25" width="20" height="10" fill="red"/></svg>',
+    ),
+    true,
+  );
+  assert.equal(JSON.stringify(ea.elementsDict.sentinel), before);
+  const imported = Object.values(ea.elementsDict).filter(
+    (e) => e.id !== "sentinel",
+  );
+  assert.equal(imported.length, 2);
+  assert.equal(imported[0].backgroundColor, "#0000ff");
+  assert.equal(imported[1].backgroundColor, "#ff0000");
+  assert.match(notices.at(-1), /SVG_IMPORT_PAINT/);
+});
 test("partial/approximate conversions show diagnostics, while transparent SVG remains valid", () => {
   const ea = workbench();
   assert.equal(
     ea.importSVG(
-      '<svg><text>unsupported</text><rect width="10" height="10"/></svg>',
+      '<svg><image href="https://example.test/omitted.png"/><rect width="10" height="10"/></svg>',
     ),
     true,
   );
@@ -90,6 +109,16 @@ test("partial/approximate conversions show diagnostics, while transparent SVG re
     true,
   );
   assert.ok(Object.values(ea.elementsDict).some((e) => e.opacity === 0));
+});
+
+test("ea.importSVG supplies real-font metrics to editable text staging and reports text limits", () => {
+  const ea = workbench();
+  assert.equal(ea.importSVG('<svg><text x="40" y="30" font-size="20" text-anchor="middle">Hello</text></svg>'), true);
+  const text = Object.values(ea.elementsDict).find(e => e.type === "text");
+  assert.equal(text.text, "Hello");
+  assert.equal(text.width, 50);
+  assert.equal(text.x, 15);
+  assert.match(notices.at(-1), /SVG_IMPORT_TEXT/);
 });
 
 function dialogFixture({

@@ -247,12 +247,16 @@ export async function behaviorEnvironment(
         modifiers,
       });
   };
-  const click = async (element, button = "left") => {
-    check(element, "Missing interaction target");
+  const click = async (target, button = "left") => {
+    // Menus may replace a button while positioning. Reacquire only when the
+    // caller supplies a resolver; every candidate still needs a real hit test.
+    const resolve = () => typeof target === "function" ? target() : target;
+    let element = resolve();
+    check(element || typeof target === "function", "Missing interaction target");
     // Leave already-visible controls in place. Scrolling a fixed toolbar or
     // modal input can disturb the surrounding Obsidian workspace layout.
     const uncovered = () =>
-      [...element.getClientRects()].some(
+      element && [...element.getClientRects()].some(
         (r) =>
           r.width > 0 &&
           r.height > 0 &&
@@ -260,13 +264,15 @@ export async function behaviorEnvironment(
             doc.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2),
           ),
       );
-    if (!uncovered())
+    if (element && !uncovered())
       element.scrollIntoView({
         block: element.tagName === "A" ? "center" : "nearest",
         inline: "nearest",
       });
     let x, y;
     await c.waitFor(() => {
+      element = resolve();
+      if (!element) return false;
       // Wrapped inline links have a bounding-box center outside their text.
       for (const r of element.getClientRects()) {
         x = r.x + r.width / 2;
@@ -282,6 +288,7 @@ export async function behaviorEnvironment(
         ...c.caseTrace,
         clickTarget: {
           html: element.outerHTML.slice(0, 700),
+          connected: element.isConnected,
           bounds: element.getBoundingClientRect().toJSON(),
           hit: doc.elementFromPoint(x, y)?.outerHTML.slice(0, 400),
         },
