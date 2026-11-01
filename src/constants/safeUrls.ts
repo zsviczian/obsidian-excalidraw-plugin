@@ -40,6 +40,10 @@ const defineUrl = (url: string, purpose: string) => ({ url, purpose });
  * Single source of truth for all external URLs and their security/audit justifications.
  */
 export const URL_REGISTRY = {
+  GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_CLI: defineUrl(
+    "https://github.com/zsviczian/obsidian-excalidraw-cli",
+    UrlPurpose.DOCS,
+  ),
   RAW_GITHUBUSERCONTENT_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_MASTER_EA_SCRIPTS_DIRECTORY_INFO_JSON:
     defineUrl(
       "https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/directory-info.json",

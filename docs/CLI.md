@@ -7,7 +7,8 @@ simply omit native handlers. The same JSON dispatcher is available to scripts as
 `await ea.executeCLI(request)` on every supported version.
 
 Select **Excalidraw: Show CLI and agent instructions** in the command palette to
-read or copy the offline instructions. The portable [agent skill](AITrainingData/excalidraw-cli/SKILL.md)
+copy a short prompt linking to the CLI documentation, then replace the user-instructions
+placeholder with your task. The portable [agent skill](AITrainingData/excalidraw-cli/SKILL.md)
 can be installed in your agent's normal skill directory manually. Excalidraw
 does not install agent configuration or require a particular model provider.
 

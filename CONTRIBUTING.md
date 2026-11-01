@@ -41,6 +41,7 @@ dependency graph rather than suppressing the warning. Check with
 - **Build the project:** Run `npm run build`
   *(Note: Our Rollup build is non-trivial as it merges CSS, handles MathjaxToSVG dependencies, and embeds runtime payloads. Run this command frequently to validate your changes).*
 - **Build readable development payloads:** Run `npm run dev`
+- **Check production packaging:** Run `npm run test:bundle` after `npm run build` to verify the private React bootstrap, bundled font bytes, compressed locales, and release size target.
 - **Build the public library API:** Run `npm run lib` when changing exports or ExcalidrawAutomate APIs
 - **Run ESLint:** Run `npm run code`
 - **Fix ESLint Warnings:** Run `node ./scripts/fix-eslint-warnings.mjs`
@@ -76,6 +77,9 @@ commands, reports, and cleanup contract](docs/OBSIDIAN_RUNTIME_TESTING.md).
 For Markdown embed changes, also run `npm run test:markdown-embeds` and
 `npm run verify:obsidian:plugin -- --embed-recovery`. See the runtime guide for
 fixture ownership, deferred rendering, popout coverage, and remaining manual checks.
+
+For drawing-load warning changes, run `npm run test:drawing-load-error` to check
+file identity, read-only details, filename truncation, and unchanged confirmation results.
 
 Because Obsidian runs across a variety of environments, please manually test your changes on as many of the following platforms as possible to avoid breaking the plugin for other users:
 - Desktop: Mac, Windows, Linux
