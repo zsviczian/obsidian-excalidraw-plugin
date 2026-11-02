@@ -236,6 +236,10 @@ The extraction case checks the actual dialog, root/nested/Unicode drawing folder
 another active drawing, explicit destination changes, cancellation, collisions,
 content and external-source persistence after reopen, and a popout. The same
 cases are required by the complete native profile.
+The Zen case measures exit/zoom bounds and hit targets, repeatedly activates both
+controls at wide/narrow widths and 125% UI scale in main/popout windows. Device
+profiles also exercise applicable full/compact footers with trusted mouse/touch
+input; phone/tray chrome retains its existing separate controls.
 
 ## Troubleshooting and further coverage
 

@@ -876,6 +876,11 @@
         },
         {
           "layer": "native",
+          "path": "scripts/testing/host/workflowBundle.mjs",
+          "cases": ["native:workflow-zen-controls-3000"]
+        },
+        {
+          "layer": "native",
           "path": "scripts/testing/host/devices.mjs",
           "cases": [
             "native:device:desktop-wide-full-light"

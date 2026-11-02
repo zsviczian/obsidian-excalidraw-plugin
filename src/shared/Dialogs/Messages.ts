@@ -21,6 +21,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 ## Fixed
 - Empty settings records now trigger recovery instead of silently resetting preferences and script settings.
 - Extracting a local Markdown image to a note now defaults to the drawing's folder. You can still choose another destination. [#3009](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3009)
+- The exit-Zen button no longer overlaps the zoom indicator, including in narrow panes. [#3000](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3000)
 `,
 "2.29.1": `
 ## New and improved
