@@ -351,6 +351,22 @@
         },
         {
           "layer": "native",
+          "path": "scripts/testing/host/codeCards.mjs",
+          "cases": ["native:workflow-code-card-2894:main", "native:workflow-code-card-2894:popout"]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/pastedCodeCardSizing.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/pastedCodeCardSizing.source.test.mjs::initial code fit clamps short and long content and preserves width, other cards and insertion history",
+            "node:scripts/testing/pastedCodeCardSizing.source.test.mjs::initial code fit accounts for owning preview scale and scroll",
+            "node:scripts/testing/pastedCodeCardSizing.source.test.mjs::manual resizing before or during rendering cancels the initial fit",
+            "node:scripts/testing/pastedCodeCardSizing.source.test.mjs::retired APIs, changed files and closing views cannot resize a replacement editor",
+            "node:scripts/testing/pastedCodeCardSizing.source.test.mjs::missing or detached previews have a bounded wait and no resize side effects"
+          ]
+        },
+        {
+          "layer": "native",
           "path": "scripts/testing/host/embedRecovery.mjs",
           "cases": [
             "markdown-embed-recovery-2953"

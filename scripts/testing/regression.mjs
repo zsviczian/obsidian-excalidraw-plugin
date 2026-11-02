@@ -20,6 +20,7 @@ import { behavioralCases } from "./behaviorPlan.mjs";
 import { coverageChanges } from "./coverageChanges.mjs";
 import { workflowBundleCaseIds } from "./host/workflowBundle.mjs";
 import { textSaveShortcutCaseIds } from "./host/textSaveShortcut.mjs";
+import { codeCardCaseIds } from "./host/codeCards.mjs";
 
 export const requiredDeviceCases = [
   ...deviceProfiles(),
@@ -29,6 +30,7 @@ export const requiredDeviceCases = [
 export const requiredNativeCases = [
   ...workflowBundleCaseIds,
   ...textSaveShortcutCaseIds,
+  ...codeCardCaseIds,
   ...behavioralCases().map((row) => row.testId),
   ...["image-url", "image-import"].flatMap((action) =>
     ["uri", "linked-image", "extensionless", "blob"].map(

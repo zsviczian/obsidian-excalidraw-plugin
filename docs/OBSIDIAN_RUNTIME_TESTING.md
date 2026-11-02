@@ -247,6 +247,13 @@ in memory, both as a failing-before guard for Ctrl/Cmd+S and to prove Shift+S
 still uses its existing route without opening an OS dialog or creating a file.
 Use `--text-save-shortcut` to run those cases independently during diagnosis;
 the complete native profiles always include them.
+Use `--code-cards` for native pasted-code sizing: short/multiple/long lines,
+bounded long blocks and scrolling, plain/fenced input, CR/LF normalization,
+duplicate titles, unchanged EA/shared-card defaults, and initial/manual dimensions
+after save/reopen in main/popout windows. Initial fitting runs only from the
+paste-code command, preserves the insertion center and width, and stops after a
+user resize or a file/API/lifecycle change. Desktop testing does not establish
+physical mobile keyboard, touch or WebView behavior.
 
 ## Troubleshooting and further coverage
 

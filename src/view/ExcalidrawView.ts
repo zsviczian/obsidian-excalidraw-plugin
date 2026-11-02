@@ -13,6 +13,7 @@ import {
   HoverPopover,
 } from "obsidian";
 import { convertSVGImage, getSVGImageData } from "src/shared/svgConversionActions";
+import { fitPastedCodeBlockCard } from "./managers/pastedCodeCardSizing";
 import {
   ExcalidrawElement,
   ExcalidrawImageElement,
@@ -7118,7 +7119,11 @@ export default class ExcalidrawView
         }
         title = `${title} ${i}`;
       }
-      await addBackOfTheNoteCard(this, title, false, data);
+      const id = await addBackOfTheNoteCard(
+        this, title, false, data, undefined, false, undefined,
+        CaptureUpdateAction.EVENTUALLY,
+      );
+      await fitPastedCodeBlockCard(this, id);
     } catch (error) {
       console.error(
         "unexpected error in pasteCodeBlock",

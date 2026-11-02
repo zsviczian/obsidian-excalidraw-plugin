@@ -2576,6 +2576,10 @@
       "mode": "direct-module-or-tooling"
     },
     {
+      "path": "scripts/testing/pastedCodeCardSizing.source.test.mjs",
+      "mode": "direct-module-or-tooling"
+    },
+    {
       "path": "scripts/testing/pdfImport.test.mjs",
       "mode": "isolated-or-extracted"
     },

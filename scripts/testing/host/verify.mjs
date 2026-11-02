@@ -25,6 +25,7 @@ import { runLucideScenario } from "./lucideIcons.mjs";
 import { runWorkflowFixesScenario } from "./workflowFixes.mjs";
 import { runWorkflowBundleScenario } from "./workflowBundle.mjs";
 import { runTextSaveShortcutScenario } from "./textSaveShortcut.mjs";
+import { runCodeCardScenario } from "./codeCards.mjs";
 import { acquireHostLock } from "./hostLock.mjs";
 import { runDataIntegrityScenario } from "./dataIntegrity.mjs";
 import { runLifecycleScenario } from "./lifecycle.mjs";
@@ -104,6 +105,7 @@ const lucide = coreScenarios || process.argv.includes("--lucide");
 const workflowFixes = coreScenarios || process.argv.includes("--workflow-fixes");
 const workflowBundle = coreScenarios || process.argv.includes("--workflow-bundle");
 const textSaveShortcut = workflowBundle || process.argv.includes("--text-save-shortcut");
+const codeCards = workflowBundle || process.argv.includes("--code-cards");
 const behaviorMatrix =
   fullProfile || process.argv.includes("--behavior-matrix");
 const dataIntegrity = coreScenarios || process.argv.includes("--data-integrity");
@@ -148,6 +150,7 @@ const flags = [
   "--workflow-fixes",
   "--workflow-bundle",
   "--text-save-shortcut",
+  "--code-cards",
   "--lucide",
   "--text-undo",
   "--stability",
@@ -356,6 +359,7 @@ try {
           : []),
         ...(workflowBundle ? [runWorkflowBundleScenario] : []),
         ...(textSaveShortcut ? [runTextSaveShortcutScenario] : []),
+        ...(codeCards ? [runCodeCardScenario] : []),
         // The catalogue/picker workflow runs after independent core scenarios.
         ...(lucide ? [runLucideScenario] : []),
       ],
