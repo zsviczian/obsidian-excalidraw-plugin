@@ -231,6 +231,12 @@ not physical Android/iOS, native OS drag or stylus evidence.
 The following scenario notes retain their feature-specific assertions. Their
 native execution now uses the preparation and local vault contract above.
 
+For the workflow fixes in PR #3030, run `npm.cmd run verify:obsidian -- --workflow-bundle --diagnostics`.
+The extraction case checks the actual dialog, root/nested/Unicode drawing folders,
+another active drawing, explicit destination changes, cancellation, collisions,
+content and external-source persistence after reopen, and a popout. The same
+cases are required by the complete native profile.
+
 ## Troubleshooting and further coverage
 
 For the Lucide picker, run `npm run test:lucide`, then the guarded

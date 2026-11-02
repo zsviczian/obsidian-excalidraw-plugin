@@ -23,6 +23,7 @@ import { runSvgTextScenario } from "./svgText.mjs";
 import { runSVGEntryPointsScenario } from "./svgEntryPoints.mjs";
 import { runLucideScenario } from "./lucideIcons.mjs";
 import { runWorkflowFixesScenario } from "./workflowFixes.mjs";
+import { runWorkflowBundleScenario } from "./workflowBundle.mjs";
 import { acquireHostLock } from "./hostLock.mjs";
 import { runDataIntegrityScenario } from "./dataIntegrity.mjs";
 import { runLifecycleScenario } from "./lifecycle.mjs";
@@ -100,6 +101,7 @@ const svgText = process.argv.includes("--svg-text");
 const svgEntryPoints = process.argv.includes("--svg-entry-points");
 const lucide = coreScenarios || process.argv.includes("--lucide");
 const workflowFixes = coreScenarios || process.argv.includes("--workflow-fixes");
+const workflowBundle = coreScenarios || process.argv.includes("--workflow-bundle");
 const behaviorMatrix =
   fullProfile || process.argv.includes("--behavior-matrix");
 const dataIntegrity = coreScenarios || process.argv.includes("--data-integrity");
@@ -142,6 +144,7 @@ const flags = [
   "--devices",
   "--data-integrity",
   "--workflow-fixes",
+  "--workflow-bundle",
   "--lucide",
   "--text-undo",
   "--stability",
@@ -348,6 +351,7 @@ try {
                 }),
             ]
           : []),
+        ...(workflowBundle ? [runWorkflowBundleScenario] : []),
         // The catalogue/picker workflow runs after independent core scenarios.
         ...(lucide ? [runLucideScenario] : []),
       ],

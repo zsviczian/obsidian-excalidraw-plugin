@@ -18,6 +18,7 @@ import { runPackageConsumer } from "./packageConsumers.mjs";
 import { deviceProfiles, breakpointProfiles } from "./host/deviceProfiles.mjs";
 import { behavioralCases } from "./behaviorPlan.mjs";
 import { coverageChanges } from "./coverageChanges.mjs";
+import { workflowBundleCaseIds } from "./host/workflowBundle.mjs";
 
 export const requiredDeviceCases = [
   ...deviceProfiles(),
@@ -25,6 +26,7 @@ export const requiredDeviceCases = [
 ].map((profile) => "native:device:" + profile.id);
 
 export const requiredNativeCases = [
+  ...workflowBundleCaseIds,
   ...behavioralCases().map((row) => row.testId),
   ...["image-url", "image-import"].flatMap((action) =>
     ["uri", "linked-image", "extensionless", "blob"].map(

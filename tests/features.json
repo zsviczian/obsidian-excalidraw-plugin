@@ -331,6 +331,11 @@
         },
         {
           "layer": "native",
+          "path": "scripts/testing/host/workflowBundle.mjs",
+          "cases": ["native:workflow-markdown-extraction-3009"]
+        },
+        {
+          "layer": "native",
           "path": "scripts/testing/host/embedRecovery.mjs",
           "cases": [
             "markdown-embed-recovery-2953"
