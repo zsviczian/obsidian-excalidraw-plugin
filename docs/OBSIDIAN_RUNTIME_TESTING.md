@@ -240,6 +240,13 @@ The Zen case measures exit/zoom bounds and hit targets, repeatedly activates bot
 controls at wide/narrow widths and 125% UI scale in main/popout windows. Device
 profiles also exercise applicable full/compact footers with trusted mouse/touch
 input; phone/tray chrome retains its existing separate controls.
+The text-save cases use trusted keyboard input with autosave disabled and read
+the physical drawing: raw/parsed and bound/plain text, undo/redo, canvas save,
+save/reopen and main/popout ownership. Standalone save attempts are intercepted
+in memory, both as a failing-before guard for Ctrl/Cmd+S and to prove Shift+S
+still uses its existing route without opening an OS dialog or creating a file.
+Use `--text-save-shortcut` to run those cases independently during diagnosis;
+the complete native profiles always include them.
 
 ## Troubleshooting and further coverage
 

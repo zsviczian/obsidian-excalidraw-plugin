@@ -119,6 +119,21 @@
         },
         {
           "layer": "native",
+          "path": "scripts/testing/host/textSaveShortcut.mjs",
+          "cases": ["native:workflow-text-save-2941:main", "native:workflow-text-save-2941:popout"]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/textSaveShortcut.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/textSaveShortcut.source.test.mjs::ctrlKey save submits and commits before forced persistence, waiting for busy saves",
+            "node:scripts/testing/textSaveShortcut.source.test.mjs::metaKey save submits and commits before forced persistence, waiting for busy saves",
+            "node:scripts/testing/textSaveShortcut.source.test.mjs::unrelated shortcuts, Shift+S and embedded Markdown editors retain their handlers",
+            "node:scripts/testing/textSaveShortcut.source.test.mjs::submission cannot save a replacement file, API or retiring view"
+          ]
+        },
+        {
+          "layer": "native",
           "path": "scripts/testing/host/coldStart.mjs",
           "cases": [
             "native:cold-durable-restoration"

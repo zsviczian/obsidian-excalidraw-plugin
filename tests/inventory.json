@@ -2652,6 +2652,10 @@
       "mode": "isolated-or-extracted"
     },
     {
+      "path": "scripts/testing/textSaveShortcut.source.test.mjs",
+      "mode": "direct-module-or-tooling"
+    },
+    {
       "path": "scripts/testing/textSubmissionHistory.test.mjs",
       "mode": "isolated-or-extracted"
     },
