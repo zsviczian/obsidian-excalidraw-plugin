@@ -12,7 +12,7 @@ export async function exerciseCodeBlockImageLayout(c, env) {
       { name: "long", body: "const token = '" + "x".repeat(260) + "';\nconsole.log(token);", wrapped: true },
       { name: "tabs-unicode", body: "\t// Unicode: 漢字 Ελληνικά café\n\tconsole.log('" + "long text ".repeat(22) + "');", wrapped: true },
     ];
-    const records = [], images = [];
+    const records = [];
     const inspect = async (element, variant) => {
       const svg = await (await win.fetch(view.excalidrawAPI.getFiles()[element.fileId].dataURL)).text();
       const iframe = doc.createElement("iframe");
@@ -30,10 +30,13 @@ export async function exerciseCodeBlockImageLayout(c, env) {
         const codeStyle = frameWin.getComputedStyle(code), preStyle = frameWin.getComputedStyle(pre);
         record = { name: variant.name, width: element.width, flowWidth: element.customData.markdownImage.render.width,
           svgWidth: parsed.documentElement.getAttribute("width"), height: element.height,
+          svgBytes: new win.TextEncoder().encode(svg).length,
           codeHeight: code.getBoundingClientRect().height, lineHeight: Number.parseFloat(codeStyle.lineHeight),
           pre: { clientWidth: pre.clientWidth, scrollWidth: pre.scrollWidth, clientHeight: pre.clientHeight, scrollHeight: pre.scrollHeight, whiteSpace: preStyle.whiteSpace, overflowX: preStyle.overflowX },
           code: { clientWidth: code.clientWidth, scrollWidth: code.scrollWidth, whiteSpace: codeStyle.whiteSpace, overflowX: codeStyle.overflowX } };
-        c.observations = { ...c.observations, codeImageLayout: [...records, record], codeImageSVG: svg };
+        // Embedded fonts make each SVG large; keep geometry evidence in the
+        // polled controller instead of repeatedly transporting the full payload.
+        c.observations = { ...c.observations, codeImageLayout: [...records, record] };
         check(element.width >= 180 && element.width <= 800 && record.flowWidth === element.width, "code image width is outside adaptive bounds or differs from its layout width");
         if (variant.name === "medium") check(element.width > 180 && element.width < 800, "medium code still inherits the narrow 180-pixel Markdown default");
         if (variant.name === "short") check(element.width < records[0].width, "short code is not narrower than medium code");
@@ -46,7 +49,7 @@ export async function exerciseCodeBlockImageLayout(c, env) {
           check(record.codeHeight > record.lineHeight * variant.body.split("\n").length + 1, "long code did not grow into additional visual lines");
         }
       } finally { iframe.remove(); }
-      return { svg, record };
+      return record;
     };
     for (const variant of bodies) {
       const api = view.excalidrawAPI, before = new Set(api.getSceneElements().map(element => element.id));
@@ -54,8 +57,8 @@ export async function exerciseCodeBlockImageLayout(c, env) {
       await view.pasteCodeBlock(source);
       const element = api.getSceneElements().find(element => !before.has(element.id) && element.type === "image");
       check(element, "pasted code image missing");
-      let { svg, record } = await inspect(element, variant);
-      images.push({ name: variant.name, svg }); records.push(record);
+      let record = await inspect(element, variant);
+      records.push(record);
       if (variant.name === "long") {
         app.workspace.setActiveLeaf(view.leaf, { focus: true });
         api.updateScene({ appState: { selectedElementIds: { [element.id]: true } }, captureUpdate: "NEVER", forceFlushSync: true });
@@ -86,9 +89,8 @@ export async function exerciseCodeBlockImageLayout(c, env) {
           app.workspace.setActiveLeaf(view.leaf, { focus: true });
         }
         const resized = view.excalidrawAPI.getSceneElements().find(item => item.id === element.id);
-        const result = await inspect(resized, { ...variant, name: "long-at-600", expectedWidth: 600 });
-        svg = result.svg; record = result.record;
-        images.push({ name: "long-at-600", svg }); records.push(record);
+        record = await inspect(resized, { ...variant, name: "long-at-600", expectedWidth: 600 });
+        records.push(record);
       }
       const expected = { id: element.id, width: record.width, height: record.height, flowWidth: record.flowWidth };
       // Closing the same-file editor queues one final Vault synchronization.
@@ -104,6 +106,6 @@ export async function exerciseCodeBlockImageLayout(c, env) {
       check(view.excalidrawData.getMarkdownImage(restored.fileId)?.markdown === source, "reopen lost editable code source");
     }
     check(p.settings.markdownImageSettings.defaults.width === 180, "code insertion changed the general Markdown image default");
-    return { assertions: ["initial code width adapts to actual rendered content from a 180px global default", "short code remains compact; long lines cap at 800px", "long tokens, tabs and Unicode wrap without exported scrollbars or clipping", "explicit editor width 600 reflows existing code without clipping or scrollbars", "editable source and adaptive/manual dimensions survive save/reopen", "general Markdown image defaults remain unchanged"], records, images };
+    return { assertions: ["initial code width adapts to actual rendered content from a 180px global default", "short code remains compact; long lines cap at 800px", "long tokens, tabs and Unicode wrap without exported scrollbars or clipping", "explicit editor width 600 reflows existing code without clipping or scrollbars", "editable source and adaptive/manual dimensions survive save/reopen", "general Markdown image defaults remain unchanged"], records };
   });
 }
