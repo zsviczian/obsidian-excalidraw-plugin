@@ -145,7 +145,7 @@ async function exerciseLifecycle(c, prefix, fixture, migrationRoute) {
     const oldPlugin = plugin, oldViews = [main.view, survivor.view], oldRuntime = plugin.getCLIRuntime();
     const settingsPath = app.vault.configDir + "/plugins/obsidian-excalidraw-plugin/data.json";
     const markerKey = "__excalidrawReloadRegression";
-    const settingsKeys = ["zoomMax", "linkOpacity", "exportPaddingSVG", markerKey];
+    const settingsKeys = ["zoomMax", "linkOpacity", "exportPaddingSVG", "allowWheelZoom", "pinnedScripts", "scriptEngineSettings", markerKey];
     const originalSettings = Object.fromEntries(settingsKeys.map(key => [key, {
       present: Object.prototype.hasOwnProperty.call(plugin.settings, key),
       value: plugin.settings[key],
@@ -160,7 +160,10 @@ async function exerciseLifecycle(c, prefix, fixture, migrationRoute) {
       await live.saveSettings();
     });
     const marker = { retained: true, zero: 0, flag: false, paths: ["custom/settings"] };
-    Object.assign(plugin.settings, { zoomMax: 7, linkOpacity: 0.37, exportPaddingSVG: 0, [markerKey]: marker });
+    const scriptKey = "__excalidrawReloadCaptureNote";
+    const noteTypes = { Custom: { template: "Templates/Custom.md", enabled: false, padding: 0 } };
+    Object.assign(plugin.settings, { zoomMax: 7, linkOpacity: 0.37, exportPaddingSVG: 0, allowWheelZoom: true,
+      pinnedScripts: [scriptKey], scriptEngineSettings: { ...plugin.settings.scriptEngineSettings, [scriptKey]: { noteTypes } }, [markerKey]: marker });
     await plugin.saveSettings();
     const persistedBeforeUnload = await app.vault.adapter.read(settingsPath);
     c.defer(async () => {
@@ -187,11 +190,31 @@ async function exerciseLifecycle(c, prefix, fixture, migrationRoute) {
     const replacementSettings = await app.vault.adapter.read(settingsPath);
     await oldPlugin.saveSettings();
     check(await app.vault.adapter.read(settingsPath) === replacementSettings, "retired callback overwrote replacement plugin settings");
+    // Simulate the outgoing 2.29.0 writer's empty record while the plugin is
+    // disabled. The replacement must load real IndexedDB recovery on startup.
+    // Retain synthetic before/after data in failure evidence before restoration.
+    c.observations ??= {};
+    c.observations.emptySettingsRecovery = { before: replacementSettings };
+    await app.plugins.disablePlugin("obsidian-excalidraw-plugin");
+    await app.vault.adapter.write(settingsPath, "{}");
+    await app.plugins.enablePlugin("obsidian-excalidraw-plugin");
+    await c.waitFor(() => app.plugins.plugins["obsidian-excalidraw-plugin"]?.isReady, "empty-record startup recovery");
+    plugin = app.plugins.plugins["obsidian-excalidraw-plugin"];
+    const recoveredSettings = await app.vault.adapter.read(settingsPath);
+    c.observations.emptySettingsRecovery.after = recoveredSettings;
+    check(recoveredSettings === replacementSettings, "empty-record startup replaced custom settings or unknown keys");
+    const recoveredType = plugin.settings.scriptEngineSettings[scriptKey]?.noteTypes?.Custom;
+    check(plugin.settings.allowWheelZoom === true && plugin.settings.pinnedScripts[0] === scriptKey &&
+      recoveredType?.template === noteTypes.Custom.template && recoveredType?.enabled === false && recoveredType?.padding === 0,
+      "empty-record recovery lost wheel zoom, pinned tools or custom note types");
+    check(plugin.settings[markerKey]?.replacementInstance === true && plugin.settings[markerKey]?.flag === false &&
+      plugin.settings[markerKey]?.zero === 0, "empty-record recovery lost the latest unknown nested settings");
     main = await open(first); survivor = await open(second);
     check(main.view.excalidrawAPI.getSceneElements()[0].x === 654 && survivor.view.excalidrawAPI.getSceneElements()[0].x === 777, "reload lost drawing data");
     check(Object.keys(app.commands.commands).filter(id => id === "obsidian-excalidraw-plugin:excalidraw-autocreate").length === 1, "command registration duplicated");
     return { assertions: ["disable unmounts editor APIs and retires runtime", "reload obtains a new plugin and runtime", "both saved drawings reopen", "stable command registered once",
-      "custom settings, zero/false and unknown nested keys survive reload", "late old-instance saves preserve disk before and after replacement"] };
+      "custom settings, zero/false and unknown nested keys survive reload", "late old-instance saves preserve disk before and after replacement",
+      "empty data.json record recovers from real device-local storage during plugin startup", "recovered disk bytes, wheel zoom, pinned tools and custom note types match the last valid save"] };
   });
   return { tests: c.tests };
 }
