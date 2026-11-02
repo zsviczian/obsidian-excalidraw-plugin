@@ -1,6 +1,6 @@
 import type ExcalidrawView from "../ExcalidrawView";
 import { GenericInputPrompt, MultiOptionConfirmationPrompt } from "../../shared/Dialogs/Prompt";
-import { insertMarkdownImage } from "../../shared/MarkdownImage";
+import { insertCodeBlockMarkdownImage } from "../../shared/MarkdownImage";
 import type { CodeBlockInsertionPreference } from "../../types/codeBlockTypes";
 import { t } from "../../lang/helpers";
 import { addBackOfTheNoteCard } from "../../utils/excalidrawViewUtils";
@@ -55,7 +55,7 @@ export async function insertCodeBlock(view: ExcalidrawView, data: string): Promi
     }
   }
   if (format === "markdown-image") {
-    await insertMarkdownImage(view, data, position);
+    await insertCodeBlockMarkdownImage(view, data, position);
     return;
   }
   const result = await input(t("PASTE_CODEBLOCK_TITLE"), t("PASTE_CODEBLOCK_TITLE_PLACEHOLDER"));

@@ -2429,6 +2429,10 @@
       "mode": "direct-module-or-tooling"
     },
     {
+      "path": "scripts/testing/codeBlockMarkdownImageSizing.source.test.mjs",
+      "mode": "direct-module-or-tooling"
+    },
+    {
       "path": "scripts/testing/contracts.test.mjs",
       "mode": "direct-module-or-tooling"
     },

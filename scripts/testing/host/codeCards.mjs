@@ -7,8 +7,9 @@ import { behaviorInputDriver } from "./behaviorMatrix.mjs";
 import { completeConsoleErrors } from "./debuggerSession.mjs";
 import { settleBrowserDiagnostics, splitWindowErrors } from "./browserDiagnostics.mjs";
 import { exerciseCodeBlockFormats } from "./codeBlockFormats.mjs";
+import { exerciseCodeBlockImageLayout } from "./codeBlockImageLayout.mjs";
 
-export const codeCardCaseIds = ["main", "popout"].flatMap(context => ["native:workflow-code-card-2894:" + context, "native:code-block-format:" + context]);
+export const codeCardCaseIds = ["main", "popout"].flatMap(context => ["native:workflow-code-card-2894:" + context, "native:code-block-format:" + context, "native:code-block-image-layout:" + context]);
 
 export async function runCodeCardScenario({ cli, drawingPath }) {
   const template = readFileSync(new URL("../../../tests/vault/Drawings/Uncompressed.excalidraw.md", import.meta.url), "utf8");
@@ -16,6 +17,7 @@ export async function runCodeCardScenario({ cli, drawingPath }) {
   for (const id of ["main", "popout"]) {
     const execute = new Function(`return async function(c,path,context,template,modifier){
       const env=await (${behaviorEnvironment.toString()})(c,path,context,template,${completeConsoleErrors.toString()},${settleBrowserDiagnostics.toString()});
+      await (${exerciseCodeBlockImageLayout.toString()})(c,env);
       await (${exerciseCodeCards.toString()})(c,env,modifier);
       await (${exerciseCodeBlockFormats.toString()})(c,env,modifier);
       return {tests:c.tests,consoleErrors:c.externalConsoleErrors||[],windowErrors:env.windowErrors,browserIdle:env.browserIdle};

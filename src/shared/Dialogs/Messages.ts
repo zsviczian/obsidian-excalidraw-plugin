@@ -19,7 +19,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 `,
 "2.29.2": `
 ## New and improved
-- Paste code blocks as interactive embeddables or editable Markdown images, and optionally remember your choice in Excalidraw settings.
+- Paste code blocks as interactive embeddables or editable Markdown images, and optionally remember your choice. Code images adapt to their content up to 800 px wide and wrap long lines without scrollbars.
 
 ## Fixed
 - Empty settings records now trigger recovery instead of silently resetting preferences and script settings.

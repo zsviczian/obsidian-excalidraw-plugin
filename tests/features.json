@@ -483,7 +483,8 @@
           "path": "scripts/testing/markdownImageInsertion.source.test.mjs",
           "cases": [
             "node:scripts/testing/markdownImageInsertion.source.test.mjs::Markdown image insertion retains editable local text and commits once",
-            "node:scripts/testing/markdownImageInsertion.source.test.mjs::Markdown image render and decode cannot insert into a replaced file, API or migrating view"
+            "node:scripts/testing/markdownImageInsertion.source.test.mjs::Markdown image render and decode cannot insert into a replaced file, API or migrating view",
+            "node:scripts/testing/markdownImageInsertion.source.test.mjs::pasted code requests adaptive width once and persists the actual flow width without changing general defaults"
           ]
         },
         {
@@ -492,6 +493,21 @@
           "cases": [
             "native:code-block-format:main",
             "native:code-block-format:popout"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/codeBlockMarkdownImageSizing.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/codeBlockMarkdownImageSizing.source.test.mjs::code width uses natural layout plus border, bounded to compact and maximum sizes"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/codeBlockImageLayout.mjs",
+          "cases": [
+            "native:code-block-image-layout:main",
+            "native:code-block-image-layout:popout"
           ]
         }
       ],

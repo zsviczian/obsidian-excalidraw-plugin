@@ -15,7 +15,7 @@ const harness = sourceHarness({
       }
     },
   },
-  "../../shared/MarkdownImage": { insertMarkdownImage: async (...args) => fixture.images.push(args) },
+  "../../shared/MarkdownImage": { insertCodeBlockMarkdownImage: async (...args) => fixture.images.push(args) },
   "../../utils/excalidrawViewUtils": { addBackOfTheNoteCard: async (...args) => { fixture.cards.push(args); return "card"; } },
   "../../constants/constants": { CaptureUpdateAction: { EVENTUALLY: "EVENTUALLY" } },
   "./pastedCodeCardSizing": { fitPastedCodeBlockCard: async (...args) => fixture.fits.push(args) },
