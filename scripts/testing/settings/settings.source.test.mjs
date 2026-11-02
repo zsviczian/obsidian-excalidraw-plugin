@@ -7,8 +7,11 @@ test("missing first-install settings are distinct from corruption and synchroniz
   for (const value of [null, undefined]) for (const fileState of ["missing", "empty", "present", "unknown"]) for (const loadFailed of [false, true]) for (const isInitialLoad of [false, true]) {
     assert.equal(classifySettingsDataLoad({ value, fileState, loadFailed, isInitialLoad }), fileState === "missing" && !loadFailed && isInitialLoad ? "first-installation" : "invalid");
   }
-  for (const value of [[], "corrupt", 10, true]) assert.equal(isSettingsDataRecord(value), false);
-  for (const value of [{}, { unknownFutureSetting: { retained: true } }]) {
+  for (const value of [{}, Object.create(null), [], "corrupt", 10, true]) assert.equal(isSettingsDataRecord(value), false);
+  for (const fileState of ["missing", "empty", "present", "unknown"]) for (const isInitialLoad of [false, true]) {
+    assert.equal(classifySettingsDataLoad({ value: {}, fileState, loadFailed: false, isInitialLoad }), "invalid");
+  }
+  for (const value of [{ unknownFutureSetting: { retained: true } }, { allowWheelZoom: false }, { zoomMax: 0 }]) {
     assert.equal(classifySettingsDataLoad({ value, fileState: "present", loadFailed: false, isInitialLoad: false }), "valid");
   }
 });

@@ -447,6 +447,9 @@ and JavaScript error checks. The scenario uses the toolbar's stable test IDs, so
 labels may be localized. Physical mobile and popout checks remain separate.
 
 For settings teardown changes, run `npm.cmd run verify:obsidian -- --lifecycle --diagnostics`.
+The reload case also replaces `data.json` with `{}` while the plugin is disabled,
+then verifies startup recovery from real device-local IndexedDB, byte-identical
+settings on disk, wheel zoom, pinned tools, custom note types and unknown keys.
 Its plugin-reload case persists non-default values and unknown
 nested settings, checks late retired-instance saves before/after replacement,
 and verifies disk and loaded preferences alongside the existing drawing/runtime
