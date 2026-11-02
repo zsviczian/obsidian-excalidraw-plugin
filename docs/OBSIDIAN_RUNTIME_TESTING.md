@@ -236,10 +236,11 @@ The extraction case checks the actual dialog, root/nested/Unicode drawing folder
 another active drawing, explicit destination changes, cancellation, collisions,
 content and external-source persistence after reopen, and a popout. The same
 cases are required by the complete native profile.
-The Zen case measures exit/zoom bounds and hit targets, repeatedly activates both
-controls at wide/narrow widths and 125% UI scale in main/popout windows. Device
-profiles also exercise applicable full/compact footers with trusted mouse/touch
-input; phone/tray chrome retains its existing separate controls.
+The Zen case measures exit/zoom bounds inside the editor and hit targets,
+repeatedly activates both controls in LTR/RTL at wide/narrow widths and 125% UI
+scale in main/popout windows. Device
+profiles also exercise applicable full/compact footers in both directions with
+trusted mouse/touch input; phone/tray chrome retains its existing separate controls.
 The text-save cases use trusted keyboard input with autosave disabled and read
 the physical drawing: raw/parsed and bound/plain text, undo/redo, canvas save,
 save/reopen and main/popout ownership. Standalone save attempts are intercepted

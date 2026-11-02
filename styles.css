@@ -2204,7 +2204,7 @@ button.excalidraw-font-picker {
   display: none;
 }
 
-.excalidraw.excalidraw--zen-mode .reset-zoom-button-wrapper {
+:root .excalidraw.excalidraw--zen-mode .layer-ui__wrapper .reset-zoom-button-wrapper {
   transform: none;
 }
 

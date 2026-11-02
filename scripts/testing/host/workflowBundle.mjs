@@ -147,42 +147,51 @@ async function exerciseWorkflows(c, prefix, fixture) {
       const leaf = await open(prefix + "/Zen-" + popout + ".excalidraw.md", popout), view = leaf.view, api = view.excalidrawAPI;
       const doc = view.ownerDocument, win = view.ownerWindow;
       view.setUIMode("full");
+      const root = view.containerEl.querySelector(".excalidraw");
+      const originalRootDirection = root.getAttribute("dir"), originalDocumentDirection = doc.documentElement.getAttribute("dir");
       const originalWidth = view.contentEl.style.width;
       const originalMaxWidth = view.contentEl.style.maxWidth;
       const contents = win.require("@electron/remote").getCurrentWebContents(), originalZoom = contents.getZoomFactor();
       try {
-        for (const [width, scale] of [[900, 1], [360, 1], [240, 1], [360, 1.25]]) {
-          contents.setZoomFactor(scale);
-          view.contentEl.setCssProps({ width: width + "px", "max-width": "100%" });
-          api.updateScene({ appState: { zenModeEnabled: true, zoom: { value: 1.7 } }, captureUpdate: "NEVER" });
-          await c.waitFor(() => api.getAppState().zenModeEnabled && view.containerEl.querySelector(".disable-zen-mode--visible"), "Zen exit control");
-          const exit = view.containerEl.querySelector(".disable-zen-mode--visible"), zoom = view.containerEl.querySelector(".reset-zoom-button");
-          check(zoom, "Zen zoom indicator missing");
-          await c.waitFor(() => win.getComputedStyle(exit).visibility === "visible" && Number(win.getComputedStyle(exit).opacity) > 0.99, "Zen exit transition completes");
-          const a = exit.getBoundingClientRect(), b = zoom.getBoundingClientRect();
-          const intersects = Math.min(a.right, b.right) - Math.max(a.left, b.left) > 1 && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 1;
-          const record = { popout, width, scale, exit: a.toJSON(), zoom: b.toJSON(), intersects };
-          c.observations.zen = [...(c.observations.zen || []), record];
-          check(!intersects, "Zen exit overlaps zoom indicator: " + JSON.stringify(record));
-          for (const button of [exit, zoom]) {
-            const bounds = button.getBoundingClientRect();
-            record.hit = { button: button.className, target: doc.elementFromPoint(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2)?.outerHTML.slice(0, 800), viewport: [win.innerWidth, win.innerHeight] };
-            check(bounds.width > 0 && bounds.height > 0 && bounds.left >= 0 && bounds.right <= win.innerWidth &&
-              doc.elementFromPoint(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2)?.closest("button") === button,
-              "Zen control is clipped or covered");
+        for (const direction of ["ltr", "rtl"]) {
+          doc.documentElement.setAttribute("dir", direction); root.setAttribute("dir", direction);
+          for (const [width, scale] of [[900, 1], [360, 1], [240, 1], [360, 1.25]]) {
+            contents.setZoomFactor(scale);
+            view.contentEl.setCssProps({ width: width + "px", "max-width": "100%" });
+            api.updateScene({ appState: { zenModeEnabled: true, zoom: { value: 1.7 } }, captureUpdate: "NEVER" });
+            await c.waitFor(() => api.getAppState().zenModeEnabled && view.containerEl.querySelector(".disable-zen-mode--visible"), "Zen exit control");
+            const exit = view.containerEl.querySelector(".disable-zen-mode--visible"), zoom = view.containerEl.querySelector(".reset-zoom-button");
+            check(zoom, "Zen zoom indicator missing");
+            await c.waitFor(() => win.getComputedStyle(exit).visibility === "visible" && Number(win.getComputedStyle(exit).opacity) > 0.99, "Zen exit transition completes");
+            const a = exit.getBoundingClientRect(), b = zoom.getBoundingClientRect();
+            const intersects = Math.min(a.right, b.right) - Math.max(a.left, b.left) > 1 && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 1;
+            const editor = root.getBoundingClientRect();
+            const record = { popout, direction, width, scale, editor: editor.toJSON(), exit: a.toJSON(), zoom: b.toJSON(), intersects };
+            c.observations.zen = [...(c.observations.zen || []), record];
+            check(!intersects, "Zen exit overlaps zoom indicator: " + JSON.stringify(record));
+            for (const button of [exit, zoom]) {
+              const bounds = button.getBoundingClientRect();
+              record.hit = { button: button.className, target: doc.elementFromPoint(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2)?.outerHTML.slice(0, 800), viewport: [win.innerWidth, win.innerHeight] };
+              check(bounds.width > 0 && bounds.height > 0 && bounds.left >= editor.left && bounds.right <= editor.right &&
+                bounds.top >= editor.top && bounds.bottom <= editor.bottom && bounds.left >= 0 && bounds.right <= win.innerWidth &&
+                doc.elementFromPoint(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2)?.closest("button") === button,
+                "Zen control is clipped or covered");
+            }
+            zoom.click(); await c.waitFor(() => api.getAppState().zoom.value === 1, "Zen zoom action");
+            exit.click(); await c.waitFor(() => !api.getAppState().zenModeEnabled, "Zen exit action");
+            variants.push(record);
           }
-          zoom.click(); await c.waitFor(() => api.getAppState().zoom.value === 1, "Zen zoom action");
-          exit.click(); await c.waitFor(() => !api.getAppState().zenModeEnabled, "Zen exit action");
-          variants.push(record);
         }
       } finally {
+        if (originalRootDirection === null) root.removeAttribute("dir"); else root.setAttribute("dir", originalRootDirection);
+        if (originalDocumentDirection === null) doc.documentElement.removeAttribute("dir"); else doc.documentElement.setAttribute("dir", originalDocumentDirection);
         contents.setZoomFactor(originalZoom);
         view.contentEl.setCssProps({ width: originalWidth, "max-width": originalMaxWidth });
         api.updateScene({ appState: { zenModeEnabled: false }, captureUpdate: "NEVER" });
       }
       await closeLeaf(leaf);
     }
-    return { assertions: ["Zen exit and zoom indicator do not intersect", "both controls are visible and uncovered", "zoom and exit actions activate repeatedly", "wide/narrow panes and UI scale", "main/popout document ownership"], variants };
+    return { assertions: ["Zen exit and zoom indicator do not intersect", "both controls remain inside the editor and uncovered", "zoom and exit actions activate repeatedly", "LTR/RTL wide/narrow panes and UI scale", "main/popout document ownership"], variants };
   });
   return { tests: c.tests };
 }
