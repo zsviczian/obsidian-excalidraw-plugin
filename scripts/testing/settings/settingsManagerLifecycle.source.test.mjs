@@ -10,9 +10,11 @@ const deferred = () => {
 };
 const defaults = {
   libraryStorageMode: "vault", libraryMigrationStatus: "not-required",
-  markdownImageSettings: { defaults: { border: {}, transclusion: { border: {} } } },
+  mdSVGwidth: 500, mdFont: "Virgil", mdFontColor: "#000000", mdBorderColor: "#000000",
+  markdownImageSettings: { defaults: { width: 500, fontFamily: "Virgil", fontColor: "#000000",
+    border: { enabled: false, color: "#000000" }, css: "", transclusion: { border: {} } } },
   markdownImageDeletionPreference: "keep", previewImageType: "SVGIMG",
-  oEmbedAllowed: false, zoomMax: 3,
+  oEmbedAllowed: false, zoomMax: 3, allowWheelZoom: false, pinnedScripts: [], scriptEngineSettings: {},
 };
 async function fixture(t, options = {}) {
   const harness = sourceHarness({
@@ -27,9 +29,11 @@ async function fixture(t, options = {}) {
   t.after(() => harness.close());
   const { PluginSettingsManager } = await harness.importModule("src/core/managers/PluginSettingsManager.ts");
   const original = { ...structuredClone(defaults), zoomMax: 7, templateFilePath: "Templates/Custom.md",
+    allowWheelZoom: true, pinnedScripts: ["Capture Note"],
+    scriptEngineSettings: { "Capture Note": { noteTypes: { Custom: { template: "Templates/Note.md" } } } },
     futureSetting: { flag: false, zero: 0, paths: ["custom"] } };
   const state = { disk: structuredClone(original), writes: [], reads: 0, stats: 0,
-    recoveryWrites: [], destroyed: 0, prompts: 0 };
+    recoveryWrites: [], recoveryReads: 0, destroyed: 0, prompts: 0, promptModes: [] };
   const host = {
     app: { appId: "isolated-settings-test", vault: { adapter: { stat: async () => {
       state.stats++; return options.stat ? options.stat() : { size: 100 };
@@ -44,12 +48,13 @@ async function fixture(t, options = {}) {
     },
   };
   const recovery = {
-    load: async () => options.recoveryLoad ? options.recoveryLoad() : null,
+    load: async () => { state.recoveryReads++; return options.recoveryLoad ? options.recoveryLoad() : null; },
     save: async (data) => { state.recoveryWrites.push(structuredClone(data)); if (options.recoverySave) await options.recoverySave(data); },
     destroy: () => { state.destroyed++; },
   };
-  const manager = new PluginSettingsManager(host, recovery, async () => {
+  const manager = new PluginSettingsManager(host, recovery, async (mode) => {
     state.prompts++;
+    state.promptModes.push(mode);
     if (options.prompt) return options.prompt();
     throw Error("Unexpected recovery prompt");
   });
@@ -67,7 +72,7 @@ test("late save after settings teardown cannot replace a custom configuration wi
 
 test("invalid runtime settings cannot be serialized into an empty or malformed configuration", async (t) => {
   const { manager, host, state, original } = await fixture(t);
-  for (const invalid of [null, undefined, [], 3, "invalid"]) {
+  for (const invalid of [{}, null, undefined, [], 3, "invalid"]) {
     host.settings = invalid; await manager.saveSettings();
   }
   assert.deepEqual(state.disk, original); assert.equal(state.writes.length, 0);
@@ -157,4 +162,104 @@ test("active storage errors still reject and a later retry preserves custom sett
   await assert.rejects(manager.saveSettings(), /disk failure/);
   fail = false; await manager.saveSettings();
   assert.deepEqual(state.disk, original);
+});
+
+test("empty startup settings restore custom preferences and unknown keys from recovery", async (t) => {
+  let backup;
+  const { manager, host, state, original } = await fixture(t, { recoveryLoad: async () => structuredClone(backup),
+    recoverySave: async data => { backup = structuredClone(data); } });
+  backup = structuredClone(original); state.disk = {}; host.settings = null;
+  assert.equal(await manager.loadSettings(), false);
+  assert.deepEqual(host.settings, original); assert.deepEqual(state.disk, original);
+  assert.deepEqual(backup, original); assert.equal(state.recoveryReads, 1);
+  assert.equal(state.prompts, 0); assert.equal(state.writes.length, 1);
+});
+
+test("empty startup settings without recovery wait for a valid file without persisting defaults", async (t) => {
+  const { manager, host, state, original } = await fixture(t, { prompt: async () => "wait-for-file" });
+  state.disk = {}; host.settings = null;
+  assert.equal(await manager.loadSettings(), false);
+  await manager.saveSettings();
+  assert.deepEqual(state.disk, {}); assert.equal(state.writes.length, 0);
+  assert.equal(state.recoveryWrites.length, 0);
+  assert.deepEqual(state.promptModes, ["invalid-without-recovery"]);
+  state.disk = structuredClone(original);
+  assert.equal(await manager.loadSettings(), true);
+  assert.deepEqual(host.settings, original); assert.deepEqual(state.disk, original);
+});
+
+test("empty recovery snapshots cannot silently reset empty startup settings", async (t) => {
+  const { manager, state } = await fixture(t, { recoveryLoad: async () => ({}), prompt: async () => "wait-for-file" });
+  state.disk = {};
+  assert.equal(await manager.loadSettings(), false);
+  assert.deepEqual(state.promptModes, ["invalid-without-recovery"]);
+  assert.equal(state.writes.length, 0); assert.equal(state.recoveryWrites.length, 0);
+});
+
+test("empty startup settings reset to defaults only after the explicit recovery choice", async (t) => {
+  const { manager, host, state } = await fixture(t, { prompt: async () => "reset-defaults" });
+  state.disk = {};
+  assert.equal(await manager.loadSettings(), false);
+  assert.deepEqual(state.promptModes, ["invalid-without-recovery"]);
+  assert.deepEqual(host.settings, defaults); assert.deepEqual(state.disk, defaults);
+  assert.deepEqual(state.recoveryWrites, [defaults]);
+});
+
+test("missing first-install settings still initialize defaults without prompting", async (t) => {
+  const { manager, host, state } = await fixture(t, { stat: async () => null, load: async () => null });
+  assert.equal(await manager.loadSettings(), true);
+  assert.deepEqual(host.settings, defaults); assert.deepEqual(state.disk, defaults);
+  assert.equal(state.prompts, 0);
+});
+
+test("missing settings with recovery retain the restore-or-defaults choice", async (t) => {
+  for (const choice of ["restore-recovery", "reset-defaults"]) {
+    let backup;
+    const { manager, host, state, original } = await fixture(t, { stat: async () => null, load: async () => null,
+      recoveryLoad: async () => backup, prompt: async () => choice });
+    backup = structuredClone(original);
+    assert.equal(await manager.loadSettings(), true);
+    assert.deepEqual(state.promptModes, ["missing-with-recovery"]);
+    const expected = choice === "restore-recovery" ? original : defaults;
+    assert.deepEqual(host.settings, expected); assert.deepEqual(state.disk, expected);
+  }
+});
+
+test("empty synchronized settings repair disk from live preferences even when the snapshot is unchanged", async (t) => {
+  const { manager, host, state, original } = await fixture(t);
+  await manager.loadSettings();
+  state.disk = {};
+  assert.equal(await manager.loadSettings(), false);
+  assert.deepEqual(host.settings, original); assert.deepEqual(state.disk, original);
+  assert.equal(state.prompts, 0); assert.equal(state.recoveryReads, 0);
+  assert.deepEqual(state.recoveryWrites.at(-1), original);
+});
+
+test("an empty synchronized record during a pending save preserves the latest settings", async (t) => {
+  const started = deferred(), release = deferred(); let delay = false;
+  const { manager, host, state, original } = await fixture(t, { recoverySave: async () => {
+    if (delay) { started.resolve(); await release.promise; }
+  } });
+  await manager.loadSettings(); delay = true;
+  host.settings.zoomMax = 9;
+  const saving = manager.saveSettings(); await started.promise;
+  host.settings.futureSetting.flag = true; state.disk = {};
+  const repairing = manager.loadSettings();
+  // Allow the empty read to complete while the earlier immutable save is paused.
+  while (state.reads < 2) await new Promise(resolve => setImmediate(resolve));
+  release.resolve(); await saving;
+  assert.equal(await repairing, false);
+  const expected = { ...original, zoomMax: 9, futureSetting: { ...original.futureSetting, flag: true } };
+  assert.deepEqual(host.settings, expected); assert.deepEqual(state.disk, expected);
+  assert.deepEqual(state.recoveryWrites.at(-1), expected);
+});
+
+test("nonempty settings containing only unknown keys remain valid and preserved", async (t) => {
+  const { manager, host, state } = await fixture(t);
+  const unknown = { futureSetting: { flag: false, zero: 0, paths: ["custom"] } };
+  state.disk = structuredClone(unknown);
+  assert.equal(await manager.loadSettings(), true);
+  assert.deepEqual(host.settings.futureSetting, unknown.futureSetting);
+  assert.deepEqual(state.disk.futureSetting, unknown.futureSetting);
+  assert.equal(state.recoveryReads, 0); assert.equal(state.prompts, 0);
 });

@@ -459,6 +459,26 @@
       "tests": [
         {
           "layer": "source",
+          "path": "scripts/testing/settings/settingsManagerLifecycle.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/settings/settingsManagerLifecycle.source.test.mjs::empty startup settings restore custom preferences and unknown keys from recovery",
+            "node:scripts/testing/settings/settingsManagerLifecycle.source.test.mjs::empty startup settings without recovery wait for a valid file without persisting defaults",
+            "node:scripts/testing/settings/settingsManagerLifecycle.source.test.mjs::empty recovery snapshots cannot silently reset empty startup settings",
+            "node:scripts/testing/settings/settingsManagerLifecycle.source.test.mjs::empty startup settings reset to defaults only after the explicit recovery choice",
+            "node:scripts/testing/settings/settingsManagerLifecycle.source.test.mjs::missing first-install settings still initialize defaults without prompting",
+            "node:scripts/testing/settings/settingsManagerLifecycle.source.test.mjs::missing settings with recovery retain the restore-or-defaults choice",
+            "node:scripts/testing/settings/settingsManagerLifecycle.source.test.mjs::empty synchronized settings repair disk from live preferences even when the snapshot is unchanged",
+            "node:scripts/testing/settings/settingsManagerLifecycle.source.test.mjs::an empty synchronized record during a pending save preserves the latest settings",
+            "node:scripts/testing/settings/settingsManagerLifecycle.source.test.mjs::nonempty settings containing only unknown keys remain valid and preserved"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/lifecycle.mjs",
+          "cases": ["native:lifecycle-plugin-reload"]
+        },
+        {
+          "layer": "source",
           "path": "scripts/testing/settings/settings.source.test.mjs",
           "cases": [
             "node:scripts/testing/settings/settings.source.test.mjs::missing first-install settings are distinct from corruption and synchronized records",

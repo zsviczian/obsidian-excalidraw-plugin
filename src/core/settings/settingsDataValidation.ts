@@ -13,11 +13,18 @@ export type SettingsDataLoadClassification =
   | "first-installation"
   | "invalid";
 
-/** Returns true for the object shape accepted as persisted settings data. */
+/**
+ * Accepts nonempty settings records, including unknown forward-compatible keys.
+ * An empty object can be produced by a late save after teardown; accepting it
+ * would replace both user preferences and their recovery snapshot with defaults.
+ */
 export const isSettingsDataRecord = (
   value: unknown,
 ): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
+  typeof value === "object" &&
+  value !== null &&
+  !Array.isArray(value) &&
+  Object.keys(value).length > 0;
 
 /**
  * Distinguishes a genuine first installation from an empty, malformed, or
