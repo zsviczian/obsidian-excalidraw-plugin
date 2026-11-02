@@ -311,6 +311,7 @@ async function exerciseDevice(c, path, fixture, profile) {
       "tabletUIMode",
       "phoneUIMode",
       "penModeSingleFingerPanning",
+      "pasteCodeBlockAs",
     ].map((key) => [key, p.settings[key]]),
   );
   const desktopMode = localStorage.getItem("excalidraw.desktopUIMode");
@@ -685,6 +686,42 @@ async function exerciseDevice(c, path, fixture, profile) {
       api.updateScene({ appState: { zenModeEnabled: false }, captureUpdate: "NEVER" });
     }
   }
+  // The shared chooser must wrap and remain tappable in each actual host mode.
+  p.settings.pasteCodeBlockAs = "ask";
+  const codeSource = "```js\nconsole.log('device code');\n```";
+  const insertion = view.pasteCodeBlock(codeSource);
+  let codeModal;
+  c.defer(() => { if (codeModal?.isConnected) codeModal.querySelector(".modal-close-button")?.click(); });
+  let lastGeometry, stableSince;
+  await c.waitFor(() => {
+    codeModal = [...doc.querySelectorAll(".modal")].find(modal => modal.querySelector(".excalidraw-multiOptionConfirmationPrompt-message")?.textContent.includes("Insert this code block"));
+    if (!codeModal) return false;
+    const geometry = JSON.stringify([...codeModal.querySelectorAll("button,.checkbox-container")].map(element => rect(element)));
+    if (geometry !== lastGeometry) { lastGeometry = geometry; stableSince = Date.now(); }
+    return Date.now() - stableSince > 150;
+  }, "stable code format chooser");
+  const codeControls = [...codeModal.querySelectorAll("button,.checkbox-container")];
+  const tapCodeControl = async element => {
+    const bounds = rect(element), x = bounds.x + bounds.width / 2, y = bounds.y + bounds.height / 2;
+    check(bounds.width > 0 && bounds.height > 0 && bounds.x >= 0 && bounds.right <= innerWidth && bounds.y >= 0 && bounds.bottom <= innerHeight && element.contains(doc.elementFromPoint(x, y)), "Code format control clipped or covered");
+    if (profile.input === "mouse") await input("mouseMoved", x, y);
+    await input(profile.input === "touch" ? "touchStart" : "mousePressed", x, y);
+    await input(profile.input === "touch" ? "touchEnd" : "mouseReleased", x, y);
+  };
+  for (const control of codeControls) {
+    const bounds = rect(control), x = bounds.x + bounds.width / 2, y = bounds.y + bounds.height / 2;
+    check(bounds.width > 0 && bounds.height > 0 && bounds.x >= 0 && bounds.right <= innerWidth && bounds.y >= 0 && bounds.bottom <= innerHeight && control.contains(doc.elementFromPoint(x, y)), "Code format option or remember toggle is unusable");
+  }
+  const toggle = codeModal.querySelector(".checkbox-container");
+  await tapCodeControl(toggle); check(toggle.classList.contains("is-enabled"), "Code format remember toggle did not enable");
+  await tapCodeControl(toggle); check(!toggle.classList.contains("is-enabled"), "Code format remember toggle did not disable");
+  const markdownButton = [...codeModal.querySelectorAll("button")].find(button => button.textContent === "Markdown image");
+  const codeFormat = { bounds: rect(codeModal), controls: codeControls.map(element => ({ text: element.textContent, bounds: rect(element) })), trustedInput: profile.input };
+  await tapCodeControl(markdownButton); await insertion;
+  const codeImage = api.getSceneElements().find(element => element.type === "image" && element.customData?.markdownImage?.source === "local");
+  check(codeImage && view.excalidrawData.getMarkdownImage(codeImage.fileId)?.markdown === codeSource, "Device code choice did not insert an editable Markdown image");
+  check((await view.saveWithOutcome()).status === "persisted", "Device code image did not save");
+  check((await p.ea.getSceneFromFile(file)).elements.some(element => element.id === codeImage.id), "Device code image missing from disk");
   await c.requestHost("screenshot", { id: profile.id });
   return {
     assertions: [
@@ -695,6 +732,8 @@ async function exerciseDevice(c, path, fixture, profile) {
       "trusted pointer selects and draws",
       "device edit saves to disk",
       "applicable Zen footer controls do not overlap and accept trusted input",
+      "code format options and remember toggle fit and accept trusted input",
+      "chosen code image preserves editable source and saves",
     ],
     requested: profile,
     actual: {
@@ -712,6 +751,7 @@ async function exerciseDevice(c, path, fixture, profile) {
       coarsePointer: matchMedia("(pointer: coarse)").matches,
       events,
       zenControls,
+      codeFormat,
     },
   };
 }

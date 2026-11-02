@@ -13,7 +13,7 @@ const defaults = {
   mdSVGwidth: 500, mdFont: "Virgil", mdFontColor: "#000000", mdBorderColor: "#000000",
   markdownImageSettings: { defaults: { width: 500, fontFamily: "Virgil", fontColor: "#000000",
     border: { enabled: false, color: "#000000" }, css: "", transclusion: { border: {} } } },
-  markdownImageDeletionPreference: "keep", previewImageType: "SVGIMG",
+  markdownImageDeletionPreference: "keep", pasteCodeBlockAs: "ask", previewImageType: "SVGIMG",
   oEmbedAllowed: false, zoomMax: 3, allowWheelZoom: false, pinnedScripts: [], scriptEngineSettings: {},
 };
 async function fixture(t, options = {}) {
@@ -262,4 +262,20 @@ test("nonempty settings containing only unknown keys remain valid and preserved"
   assert.deepEqual(host.settings.futureSetting, unknown.futureSetting);
   assert.deepEqual(state.disk.futureSetting, unknown.futureSetting);
   assert.equal(state.recoveryReads, 0); assert.equal(state.prompts, 0);
+});
+
+test("code block format defaults to asking and remembered formats survive a fresh settings manager", async (t) => {
+  for (const preference of ["markdown-image", "embeddable"]) {
+    const initial = await fixture(t);
+    delete initial.state.disk.pasteCodeBlockAs;
+    await initial.manager.loadSettings();
+    assert.equal(initial.host.settings.pasteCodeBlockAs, "ask");
+    initial.host.settings.pasteCodeBlockAs = preference;
+    await initial.manager.saveSettings();
+    const reloaded = await fixture(t, { load: async () => structuredClone(initial.state.disk) });
+    await reloaded.manager.loadSettings();
+    assert.equal(reloaded.host.settings.pasteCodeBlockAs, preference);
+    assert.deepEqual(reloaded.host.settings.futureSetting, initial.original.futureSetting);
+    assert.equal(reloaded.state.prompts, 0);
+  }
 });

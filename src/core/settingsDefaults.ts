@@ -10,6 +10,7 @@
  * array binds directly against these same keys and defaults.
  */
 import { Modifier } from "obsidian";
+import type { CodeBlockInsertionPreference } from "src/types/codeBlockTypes";
 import { PenStyle } from "src/types/penTypes";
 import { DynamicStyle, GridSettings } from "src/types/types";
 import { PreviewImageType } from "src/types/utilTypes";
@@ -182,6 +183,7 @@ export interface ExcalidrawSettings {
   mdCSS: string;
   markdownImageSettings: MarkdownImageSettings;
   markdownImageDeletionPreference: MarkdownImageDeletionPreference;
+  pasteCodeBlockAs: CodeBlockInsertionPreference;
   scriptEngineSettings: {
     [key: string]: {
       [key: string]: ScriptSettingValue | string | number | boolean;
@@ -653,6 +655,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
     },
   },
   markdownImageDeletionPreference: "ask",
+  pasteCodeBlockAs: "ask",
   scriptEngineSettings: {},
   autostartScripts: {},
   autostartScriptFailures: {},

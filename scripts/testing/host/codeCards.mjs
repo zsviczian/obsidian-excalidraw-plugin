@@ -6,8 +6,9 @@ import { behaviorEnvironment } from "./behaviorEnvironment.mjs";
 import { behaviorInputDriver } from "./behaviorMatrix.mjs";
 import { completeConsoleErrors } from "./debuggerSession.mjs";
 import { settleBrowserDiagnostics, splitWindowErrors } from "./browserDiagnostics.mjs";
+import { exerciseCodeBlockFormats } from "./codeBlockFormats.mjs";
 
-export const codeCardCaseIds = ["main", "popout"].map(context => "native:workflow-code-card-2894:" + context);
+export const codeCardCaseIds = ["main", "popout"].flatMap(context => ["native:workflow-code-card-2894:" + context, "native:code-block-format:" + context]);
 
 export async function runCodeCardScenario({ cli, drawingPath }) {
   const template = readFileSync(new URL("../../../tests/vault/Drawings/Uncompressed.excalidraw.md", import.meta.url), "utf8");
@@ -16,11 +17,12 @@ export async function runCodeCardScenario({ cli, drawingPath }) {
     const execute = new Function(`return async function(c,path,context,template,modifier){
       const env=await (${behaviorEnvironment.toString()})(c,path,context,template,${completeConsoleErrors.toString()},${settleBrowserDiagnostics.toString()});
       await (${exerciseCodeCards.toString()})(c,env,modifier);
+      await (${exerciseCodeBlockFormats.toString()})(c,env,modifier);
       return {tests:c.tests,consoleErrors:c.externalConsoleErrors||[],windowErrors:env.windowErrors,browserIdle:env.browserIdle};
     }`)();
     const result = await runInAppTask({ cli, execute,
       args: [drawingPath, { id, input: "mouse" }, template, process.platform === "darwin" ? 4 : 2],
-      timeoutMs: 180000, cleanupMs: 60000, onRequest: behaviorInputDriver(cli),
+      timeoutMs: 240000, cleanupMs: 60000, onRequest: behaviorInputDriver(cli),
     }).catch(error => { error.evidence = [...tests, ...(error.evidence || [])]; throw error; });
     tests.push(...result.tests); consoleErrors.push(...result.consoleErrors); windowErrors.push(...result.windowErrors); browserIdle.push(...result.browserIdle);
   }
@@ -34,6 +36,7 @@ export async function runCodeCardScenario({ cli, drawingPath }) {
 async function exerciseCodeCards(c, env, modifier) {
   const { p, doc, win, check, openDrawing, saveReopen, geometry, click, key } = env;
   await c.case("native:workflow-code-card-2894:" + geometry().requested.id, ["P02", "P05"], async () => {
+    p.settings.pasteCodeBlockAs = "embeddable";
     let view = await openDrawing("pasted-code");
     view.excalidrawAPI.updateScene({ elements: [], captureUpdate: "NEVER" });
     const ea = p.ea.getAPI(view);
@@ -61,7 +64,7 @@ async function exerciseCodeCards(c, env, modifier) {
       const api = view.excalidrawAPI, before = new Set(api.getSceneElements().map(element => element.id));
       const source = variant.plain ? variant.body : (variant.whitespace ? " \r\n  " : "") + "```" + variant.type + "\r\n" + variant.body + "\r\n```" + (variant.whitespace ? "  \r\n" : "");
       const pending = view.pasteCodeBlock(source);
-      if (variant.plain) await prompt("type codeblock type", variant.type);
+      if (variant.plain) await prompt("Code block language", variant.type);
       await prompt("Code Block Title", "Pasted code");
       await pending;
       let element = api.getSceneElements().find(element => element.type === "embeddable" && !before.has(element.id));

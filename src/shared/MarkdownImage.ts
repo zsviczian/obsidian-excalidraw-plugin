@@ -459,14 +459,17 @@ export async function insertMarkdownImage(
   source: string | TFile | EmbeddedFile = "",
   position: { x: number; y: number } = view.currentPosition,
 ): Promise<ExcalidrawImageElement | null> {
-  if (!view.excalidrawAPI || !view.file) {
+  const { file, excalidrawAPI: api } = view;
+  const isCurrent = () => file && api && view.file === file &&
+    view.excalidrawAPI === api && !view.isClosingOrMigrating();
+  if (!isCurrent()) {
     return null;
   }
   const sourceData =
     typeof source === "string"
       ? { markdown: source, source: "local" as const }
       : await getMarkdownImageSource(view, source);
-  if (!sourceData) {
+  if (!sourceData || !isCurrent()) {
     return null;
   }
   const render = getMarkdownImageRenderSettings(view.plugin);
@@ -477,7 +480,7 @@ export async function insertMarkdownImage(
     render,
     sourceFile,
   );
-  if (!rendered.dataURL || rendered.size.height <= 0) {
+  if (!isCurrent() || !rendered.dataURL || rendered.size.height <= 0) {
     return null;
   }
   const ea = getEA(view);
@@ -489,7 +492,7 @@ export async function insertMarkdownImage(
     false,
     false,
   );
-  if (!id) {
+  if (!id || !isCurrent()) {
     ea.destroy();
     return null;
   }
@@ -514,8 +517,9 @@ export async function insertMarkdownImage(
   if (!committed) {
     return null;
   }
+  if (!isCurrent()) return null;
   view.setDirty();
-  view.excalidrawAPI.selectElements([element]);
+  api.selectElements([element]);
   rememberRenderedMarkdownImage(
     view,
     element.id,
