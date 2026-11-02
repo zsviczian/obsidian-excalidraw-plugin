@@ -37,7 +37,9 @@ export async function fitPastedCodeBlockCard(
         return;
       }
       const host = view.getEmbeddableLeafElementById(id);
-      const container = host?.node?.containerEl ?? host?.leaf?.view?.containerEl;
+      // A fallback workspace leaf can render the whole drawing note, including
+      // other code blocks. Only the native section node identifies this card.
+      const container = host?.node?.containerEl;
       const preview = container?.querySelector<HTMLElement>(".markdown-preview-view");
       const pre = preview?.querySelector<HTMLElement>("pre");
       if (container?.isConnected && container.ownerDocument === view.ownerDocument && pre) {

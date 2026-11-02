@@ -58,6 +58,7 @@ test("retired APIs, changed files and closing views cannot resize a replacement 
 });
 test("missing or detached previews have a bounded wait and no resize side effects", async () => {
   for (const configure of [f => f.view.excalidrawAPI = null, f => f.view.file = null, f => f.view.getEmbeddableLeafElementById = () => null,
+    f => f.view.getEmbeddableLeafElementById = () => ({ leaf: { view: { containerEl: f.container } } }),
     f => f.container.isConnected = false, f => f.container.ownerDocument = {}, f => f.container.querySelector = () => null,
     f => f.container.getBoundingClientRect = () => ({ top: 0, width: 0 }), f => f.pre.getBoundingClientRect = () => ({ bottom: 0, height: 0 })]) {
     await exercise(configure, f => {
