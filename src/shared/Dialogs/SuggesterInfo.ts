@@ -1147,7 +1147,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "attachInlineLinkSuggester",
     code: "attachInlineLinkSuggester(inputEl: HTMLInputElement, widthWrapper?: HTMLElement): KeyBlocker;",
-    desc: "Attaches an inline [[link]] suggester to an input. Optionally align width to a wrapper element. Returns a KeyBlocker so host scripts can skip their own keydown handlers while the suggester is active via isBlockingKeys(); call close() on the returned suggester to detach.",
+    desc: "Attaches the shared inline link/tag suggester to an input, including optional ontology completion from a compatible enabled K-Plex. Ontology selection keeps exact field spelling and surrounding parentheses/square brackets, with the caret ready for [[note]] completion. Optionally align width to a wrapper element. Returns a KeyBlocker so host scripts can skip their own keydown handlers while the suggester is active via isBlockingKeys(); call close() on the returned suggester to detach.",
     after: "",
   },
   {

@@ -233,11 +233,68 @@
       "name": "Text, links and history",
       "anchors": [
         {
+          "path": "src/shared/Suggesters/InlineLinkSuggester.ts",
+          "symbol": "class InlineLinkSuggester"
+        },
+        {
           "path": "src/view/ExcalidrawView.ts",
           "symbol": "ExcalidrawView"
         }
       ],
       "tests": [
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/kplexOntology.mjs",
+          "cases": [
+            "native:kplex-ontology-passive:main",
+            "native:kplex-ontology-links:main",
+            "native:kplex-ontology-configuration:main",
+            "native:kplex-ontology-provider:main",
+            "native:kplex-ontology-markdown:main",
+            "native:kplex-ontology-passive:popout",
+            "native:kplex-ontology-links:popout",
+            "native:kplex-ontology-configuration:popout",
+            "native:kplex-ontology-provider:popout",
+            "native:kplex-ontology-markdown:popout",
+            "native:kplex-ontology-passive:phone",
+            "native:kplex-ontology-links:phone",
+            "native:kplex-ontology-configuration:phone",
+            "native:kplex-ontology-provider:phone",
+            "native:kplex-ontology-markdown:phone",
+            "native:kplex-ontology-passive:tablet",
+            "native:kplex-ontology-links:tablet",
+            "native:kplex-ontology-configuration:tablet",
+            "native:kplex-ontology-provider:tablet",
+            "native:kplex-ontology-markdown:tablet"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/inlineLinkSuggester.test.mjs",
+          "cases": [
+            "node:scripts/testing/inlineLinkSuggester.test.mjs::configured public ontology completion uses the existing inline popup owner",
+            "node:scripts/testing/inlineLinkSuggester.test.mjs::ontology insertion preserves exact names, wrappers, closers, suffixes and caret",
+            "node:scripts/testing/inlineLinkSuggester.test.mjs::ontology completion continues into the existing wikilink mode and bracket-containing names",
+            "node:scripts/testing/inlineLinkSuggester.test.mjs::a bracket in a queried filename cannot consume the square ontology wrapper",
+            "node:scripts/testing/inlineLinkSuggester.test.mjs::wrapped bracket filenames retain real alias, heading, block, frame and clipped-frame parsing",
+            "node:scripts/testing/inlineLinkSuggester.test.mjs::provider/configuration/input changes retire captured ontology rows without mutation",
+            "node:scripts/testing/inlineLinkSuggester.test.mjs::missing or incompatible providers leave normal editing and existing suggestion precedence intact",
+            "node:scripts/testing/inlineLinkSuggester.test.mjs::composition and selections do not call the provider or submit link-editor Enter",
+            "node:scripts/testing/inlineLinkSuggester.test.mjs::ontology annotations render as inert text and two inputs cannot choose each other's rows"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/kplexOntology.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/kplexOntology.source.test.mjs::optional completion reads only the public owning-window API and returns detached inert fields",
+            "node:scripts/testing/kplexOntology.source.test.mjs::missing, incompatible and throwing optional providers never escape into editing",
+            "node:scripts/testing/kplexOntology.source.test.mjs::bad ranges, oversized results and disabled/unavailable envelopes cannot become offers",
+            "node:scripts/testing/kplexOntology.source.test.mjs::input bounds and noncollapsed or detached selections refuse before the optional call",
+            "node:scripts/testing/kplexOntology.source.test.mjs::selection fences provider, method, configuration and input while ignoring unrelated graph revisions",
+            "node:scripts/testing/kplexOntology.source.test.mjs::wrapper edits preserve suffixes and balanced closers with exact UTF-16 carets"
+          ]
+        },
         {
           "layer": "native",
           "path": "scripts/testing/host/textUndo.mjs",

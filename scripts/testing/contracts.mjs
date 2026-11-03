@@ -10,6 +10,7 @@ export const REQUIRED_ROLES = {
   plugin: ["main", "manifest", "styles"],
   fork: ["production-js", "production-css", "development-js", "development-css", "declarations"],
   extras: ["main", "manifest", "styles", "declarations"],
+  kplex: ["main", "manifest", "styles"],
 };
 export const sha256 = value => createHash("sha256").update(value).digest("hex");
 export const fileHash = path => sha256(readFileSync(path));

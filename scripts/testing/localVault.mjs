@@ -10,6 +10,7 @@ import {
 } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileHash, ownedPath, validateArtifactManifest } from "./contracts.mjs";
+import { nativeRepositoryRoot } from "./nativeRepositoryRoot.mjs";
 import {
   provisionVault,
   validateOwnedVault,
@@ -24,8 +25,9 @@ import {
 } from "./host/debuggerSession.mjs";
 
 export const LOCAL_VAULT_NAME = "excalidraw-auto-test";
+const KPLEX_FIXTURE = "tests/fixtures/kplex-ontology/data.json";
 export function localVaultTarget(projectRoot) {
-  const automationRoot = resolve(projectRoot, ".test-work/vaults");
+  const automationRoot = resolve(nativeRepositoryRoot(projectRoot), ".test-work/vaults");
   const vaultPath = join(automationRoot, LOCAL_VAULT_NAME);
   return {
     vaultName: LOCAL_VAULT_NAME,
@@ -171,6 +173,7 @@ export function installLocalVault({
   for (const [kind, id] of [
     ["plugin", "obsidian-excalidraw-plugin"],
     ["extras", "excalidraw-extras"],
+    ...(combination.manifests.kplex ? [["kplex", "k-plex"]] : []),
   ]) {
     if (!combination.manifests[kind]) {
       assert.equal(kind, "extras", "Plugin producer is required");
@@ -212,6 +215,11 @@ export function installLocalVault({
     );
     assert.equal(installed.id, id);
     const data = join(target.configDir, "plugins", id, "data.json");
+    if (kind === "kplex") {
+      const fixture = ownedPath(projectRoot, KPLEX_FIXTURE);
+      copyFileSync(fixture, data);
+      assert.equal(fileHash(data), fileHash(fixture), "Installed K-Plex fixture changed");
+    }
     assert.ok(existsSync(data), "Missing declared plugin settings: " + id);
     installations[kind] = {
       status: "installed",
@@ -249,6 +257,15 @@ export function installLocalVault({
 }
 
 /** The caller holds the shared application-session lock throughout preparation and scenarios. */
+/** Await Obsidian's pending native layout writer before copying the immutable working seed.
+ * Closing leaves and unloading companions schedule a debounced write; it must not race the
+ * seed's workspace hash check. The public Debouncer.run() drains and awaits that exact write. */
+export async function flushNativeWorkspaceSave() {
+  if(typeof app.workspace.requestSaveLayout?.run!=="function")throw Error("Native workspace-save flush unavailable");
+  await app.workspace.requestSaveLayout.run();
+  return {workspaceSaveCompleted:true};
+}
+
 export async function prepareLocalVault({
   projectRoot,
   combination,
@@ -326,7 +343,7 @@ export async function prepareLocalVault({
           return { quiescent: true, mobile: app.isMobile === true,closedPopouts:popouts.length };
         },
       });
-      for (const id of ["obsidian-excalidraw-plugin", "excalidraw-extras"]) {
+      for (const id of ["obsidian-excalidraw-plugin", "excalidraw-extras", "k-plex"]) {
         const loaded = parseCLIJSON(
           cli(
             "eval",
@@ -338,6 +355,7 @@ export async function prepareLocalVault({
         if (loaded) cli("plugin:disable", "id=" + id);
       }
     }
+    if(opened)await runInAppTask({cli,execute:flushNativeWorkspaceSave});
     const evidence = installLocalVault({ projectRoot, combination, target });
     if (!opened)
       return {
@@ -353,7 +371,7 @@ export async function prepareLocalVault({
       execute: applyDeclaredHostConfiguration,
       args: declaredHostConfiguration(projectRoot),
     });
-    for (const id of ["excalidraw-extras", "obsidian-excalidraw-plugin"]) {
+    for (const id of ["excalidraw-extras", "k-plex", "obsidian-excalidraw-plugin"]) {
       if (!Object.values(evidence.installations).some((i) => i.id === id))
         continue;
       await discoverStagedPlugin(cli, id);
@@ -410,6 +428,24 @@ export async function prepareLocalVault({
         [true, true, true],
         "Workspace Extras services must be active automatically",
       );
+    if (evidence.installations.kplex?.status === "installed") {
+      await runInAppTask({cli, args: [JSON.parse(readFileSync(ownedPath(projectRoot, KPLEX_FIXTURE), "utf8"))],
+        execute: async (c, fixture) => {
+          await c.waitFor(() => !!app.plugins.plugins["k-plex"] && window.kplexApi?.version === 1, "K-Plex public API after settings load");
+          const plugin = app.plugins.plugins["k-plex"], capabilities = window.kplexApi.v1.capabilities();
+          if (!capabilities.ok || !capabilities.value.operations.includes("completeOntology")) throw Error("Selected K-Plex build lacks ontology completion");
+          // The deliberately small fixture exercises K-Plex's real upgrade path. Acknowledge
+          // only its owned migration dialog through the canonical settings action before UI input.
+          const migrationAcknowledged = !!plugin.appearanceMigrationDialog;
+          if (migrationAcknowledged) {
+            plugin.appearanceMigrationDialog.close();
+            await c.waitFor(() => !plugin.appearanceMigrationDialog && plugin.settings.appearanceThemes?.migrationNotice === false, "K-Plex migration acknowledgment");
+          }
+          for (const [key, value] of Object.entries(fixture)) if (JSON.stringify(plugin.settings[key]) !== JSON.stringify(value))
+            throw Error("K-Plex declared setting not applied: " + key);
+          return {enabled: true, completion: true, migrationAcknowledged};
+        }});
+    }
     return { ...evidence, hostConfiguration, ready: true };
   } finally {
     if (session) {
@@ -453,6 +489,9 @@ export async function restoreLocalVaultBaseline({ projectRoot, cli }) {
     );
     const corpus = verifySeed(),
       target = localVaultTarget(projectRoot);
+    const installed = JSON.parse(readFileSync(join(target.vaultPath, ".excalidraw-installed-build.json"), "utf8"));
+    const kplex = installed.installations.kplex?.status === "installed"
+      ? JSON.parse(readFileSync(ownedPath(projectRoot, KPLEX_FIXTURE), "utf8")) : null;
     const content = corpus.manifest.fixtures.filter(
       (f) => !f.path.startsWith(".obsidian/"),
     );
@@ -468,8 +507,8 @@ export async function restoreLocalVaultBaseline({ projectRoot, cli }) {
       }));
     const result = await runInAppTask({
       cli,
-      args: [plugin, extras, changed],
-      execute: async (_c, plugin, extras, changed) => {
+      args: [plugin, extras, changed, kplex],
+      execute: async (_c, plugin, extras, changed, kplex) => {
         const pending = Object.keys(globalThis).filter((k) =>
           k.startsWith("__excalidrawTestTask_"),
         );
@@ -485,6 +524,15 @@ export async function restoreLocalVaultBaseline({ projectRoot, cli }) {
         if (e) {
           Object.assign(e.settings, extras);
           await e.saveSettings();
+        }
+        if (kplex) {
+          const owner = app.plugins.plugins["k-plex"];
+          if (!owner || !window.kplexApi) throw Error("K-Plex was not restored after lifecycle testing");
+          Object.assign(owner.settings, kplex);
+          await owner.saveSettings(false, false);
+          const saved = await owner.loadData();
+          for (const [key, value] of Object.entries(kplex)) if (JSON.stringify(saved[key]) !== JSON.stringify(value))
+            throw Error("K-Plex baseline not persisted: " + key);
         }
         app.changeTheme("moonstone");
         for (const [key, value] of Object.entries(plugin))
@@ -526,6 +574,7 @@ export async function restoreLocalVaultBaseline({ projectRoot, cli }) {
           restored: true,
           pluginEnabled: true,
           extrasEnabled: !!e,
+          kplexEnabled: !!kplex,
           theme: app.vault.getConfig("theme"),
           restoredFixturePaths: changed.map((f) => f.path),
         };

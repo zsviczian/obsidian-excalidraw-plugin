@@ -1,5 +1,16 @@
 # Obsidian runtime testing on macOS and Windows
 
+The optional [K-Plex ontology completion lane](KPLEX_ONTOLOGY_COMPLETION.md)
+builds and stages the companion K-Plex alongside the selected plugin/fork/Extras
+artifacts. Use `npm run test:kplex-ontology` for focused main/popout coverage;
+add `-- --devices --device-profiles=phone-portrait-light,tablet-portrait-full-light`
+for the two responsive integration layouts. Full/regression profiles require
+both. `EXCALIDRAW_KPLEX_ROOT` selects a non-sibling source checkout. The guarded
+runner supplies and verifies all three `KPLEX_TEST_*` vault identity variables.
+Build manifests and baseline restoration include K-Plex; missing capability or
+producer artifacts cannot satisfy these cases. Source worktrees share only their
+verified primary checkout's marker-owned test vault, under the same host lock.
+
 Current acceptance is **2/2 complete matching-build passes**, each with all
 **357 required native cases**, including 258 behavioral obligations and 40
 device/layout profiles. Final portable validation passes **666 cases** and the

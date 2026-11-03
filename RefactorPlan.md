@@ -3503,3 +3503,21 @@ remain strict pending maintainer classification; no production changes.
 - PR #3028 integration, 2026-11-01: resolved documentation conflicts with current
   master by retaining its newer release-note editorial rules in CODING_STANDARDS.md.
   The maintainer requested immediate merge without waiting for CI or additional checks.
+
+- PR #3033 optional ontology completion, 2026-11-03: keep the existing typed
+  attachment, input-owned InlineLinkSuggester popup/scope and fork unchanged.
+  K-Plex owns shared native/public matching and ordered physical candidates;
+  Excalidraw owns wrapper/caret mutation and rejects stale provider/configuration
+  selections. Balanced filename brackets retain their own closers. A linked
+  source worktree shares only its verified primary checkout's marker-owned test
+  vault, with both actual plugin builds frozen, hashed, enabled and restored.
+  Focused acceptance passes 20 Windows Obsidian 1.14.5 native cases across
+  main/popout and emulated phone/tablet, including input Undo/Redo, scripted IME,
+  provider lifecycle, saved links and native Markdown insertion. Strict error
+  gates/cleanup pass; earlier discovery, migration, seed-write and delayed-read
+  failures remain recorded. Source helpers have whole-module protocol/bounds
+  tests and the actual class covers subpaths, aliases and wrapper insertion.
+  Final combined portable/full-native source and artifact identities belong to
+  the coordinated PR handoff. Highest-risk manual follow-up: physical OS IME
+  composition/Undo, physical mobile text entry, and macOS popout save/reopen;
+  desktop emulation does not establish those platforms.

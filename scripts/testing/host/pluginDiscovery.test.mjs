@@ -42,3 +42,8 @@ test("missing discovery capability fails with an explicit first-open prerequisit
     false,
   );
 });
+test("combined coverage discovers only the explicitly supported companion", async () => {
+  const h = host({manifests:{"k-plex":{id:"k-plex"}}});
+  assert.equal((await discoverStagedPlugin(h.cli,"k-plex")).discovery,"existing");
+  await assert.rejects(discoverStagedPlugin(h.cli,"personal-plugin"),/Unowned plugin/);
+});

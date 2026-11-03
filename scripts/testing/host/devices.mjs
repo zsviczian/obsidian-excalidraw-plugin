@@ -14,6 +14,7 @@ import { writeReportFiles } from "../reportFiles.mjs";
 import { waitForNativeReady } from "./hostReadiness.mjs";
 import { mainWindowExpression, restoreDeviceState } from "./deviceRecovery.mjs";
 import { runBehaviorMatrix } from "./behaviorMatrix.mjs";
+import { runKplexOntologyScenario } from "./kplexOntology.mjs";
 import {acquireBrowserDiagnostics,classifyCLIErrorText,splitWindowErrors} from './browserDiagnostics.mjs';
 import { constrainedViewportMetrics, viewportInput } from "./deviceViewport.mjs";
 import { retryReadOnly } from "./readOnlyTransport.mjs";
@@ -29,6 +30,7 @@ export async function runDeviceMatrix({
   profiles = deviceProfiles(),
   featureWorkflows = false,
   featureCases,
+  kplexOntology = false,
 }) {
   reportDir = resolve(reportDir);
   const target = validateTarget({
@@ -197,6 +199,11 @@ export async function runDeviceMatrix({
         if(workflows.transportDiagnostics?.length)(report.transportDiagnostics||=[]).push(...workflows.transportDiagnostics);
         expectedConsoleErrors.push(...(workflows.expectedConsoleErrors || []));
       }
+      let ontology;
+      if(kplexOntology && ["phone-portrait-light","tablet-portrait-full-light"].includes(profile.id)) {
+        ontology=await runKplexOntologyScenario({cli,drawingPath:path,contexts:[profile.id.startsWith("phone-")?"phone":"tablet"],inputMode:"touch",viewportScale:viewportMetrics?.scale??1});
+        report.tests.push(...ontology.tests);
+      }
       // Clearing viewport emulation resizes the real host again. Include that
       // teardown in the quiet/error gate before starting the next profile.
       if (viewportMetrics) {cli("dev:cdp", "method=Emulation.clearDeviceMetricsOverride", "params={}");viewportMetrics=null;}
@@ -204,13 +211,14 @@ export async function runDeviceMatrix({
       const errors = [
         ...debuggerSession.read(),
         ...(workflows?.consoleErrors || []),
+        ...(ontology?.consoleErrors || []),
       ];
       const unexpected = unexpectedConsoleErrors(errors, expectedConsoleErrors),
         windowErrorText = cli("dev:errors").trim();
       const windowEvents=browserSession.read(),classified=splitWindowErrors(windowEvents),cliErrors=classifyCLIErrorText(windowErrorText);
       const errorGatePassed =
         unexpected.length === 0 &&
-        classified.unexpected.length===0 && cliErrors.unexpected.length===0 && browserIdle.status==='passed' && (!workflows||workflows.status==='passed');
+        classified.unexpected.length===0 && cliErrors.unexpected.length===0 && browserIdle.status==='passed' && (!workflows||workflows.status==='passed') && (!ontology||ontology.status==='passed');
       browserSession.dispose();browserSession=null;
       if(debuggerSession.transportDiagnostics?.length)report.transportDiagnostics.push(...debuggerSession.transportDiagnostics.map(item=>({profile:profile.id,...item})));
       debuggerSession.dispose();

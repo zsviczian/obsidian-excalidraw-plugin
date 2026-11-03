@@ -1,5 +1,11 @@
 # Maintaining the test lanes
 
+Optional K-Plex ontology completion has a combined fresh-build native lane:
+`npm run test:kplex-ontology`. Its source, API contract, fixture ownership and
+release coordination are documented in [K-Plex ontology completion](KPLEX_ONTOLOGY_COMPLETION.md).
+The full native/regression profiles require its main/popout cases and responsive
+phone/tablet cases. The ordinary portable lane keeps K-Plex optional.
+
 ## Current checkpoint (2026-10-30)
 
 [Accessible sanitized case summaries and artifact manifests](testing-evidence/3022/README.md)
