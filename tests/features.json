@@ -54,7 +54,8 @@
           "cases": [
             "late save after settings teardown cannot replace a custom configuration with an empty record",
             "teardown during recovery persistence prevents an old instance from overwriting replacement settings",
-            "active storage errors still reject and a later retry preserves custom settings"
+            "active storage errors still reject and a later retry preserves custom settings",
+            "node:scripts/testing/settings/settingsManagerLifecycle.source.test.mjs::code block format defaults to asking and remembered formats survive a fresh settings manager"
           ]
         },
         {
@@ -115,6 +116,21 @@
             "native:data-write-failure",
             "native:data-rename-delete",
             "native:data-backup"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/textSaveShortcut.mjs",
+          "cases": ["native:workflow-text-save-2941:main", "native:workflow-text-save-2941:popout"]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/textSaveShortcut.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/textSaveShortcut.source.test.mjs::ctrlKey save submits and commits before forced persistence, waiting for busy saves",
+            "node:scripts/testing/textSaveShortcut.source.test.mjs::metaKey save submits and commits before forced persistence, waiting for busy saves",
+            "node:scripts/testing/textSaveShortcut.source.test.mjs::unrelated shortcuts, Shift+S and embedded Markdown editors retain their handlers",
+            "node:scripts/testing/textSaveShortcut.source.test.mjs::submission cannot save a replacement file, API or retiring view"
           ]
         },
         {
@@ -331,6 +347,27 @@
         },
         {
           "layer": "native",
+          "path": "scripts/testing/host/workflowBundle.mjs",
+          "cases": ["native:workflow-markdown-extraction-3009"]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/codeCards.mjs",
+          "cases": ["native:workflow-code-card-2894:main", "native:workflow-code-card-2894:popout"]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/pastedCodeCardSizing.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/pastedCodeCardSizing.source.test.mjs::initial code fit clamps short and long content and preserves width, other cards and insertion history",
+            "node:scripts/testing/pastedCodeCardSizing.source.test.mjs::initial code fit accounts for owning preview scale and scroll",
+            "node:scripts/testing/pastedCodeCardSizing.source.test.mjs::manual resizing before or during rendering cancels the initial fit",
+            "node:scripts/testing/pastedCodeCardSizing.source.test.mjs::retired APIs, changed files and closing views cannot resize a replacement editor",
+            "node:scripts/testing/pastedCodeCardSizing.source.test.mjs::missing or detached previews have a bounded wait and no resize side effects"
+          ]
+        },
+        {
+          "layer": "native",
           "path": "scripts/testing/host/embedRecovery.mjs",
           "cases": [
             "markdown-embed-recovery-2953"
@@ -425,6 +462,52 @@
             "fork-owned:tests/obsidian/unit/coreRegression.test.tsx::system font CSS uses the local fallback without fetching nonexistent font content",
             "fork-owned:tests/obsidian/unit/coreRegression.test.tsx::bundled font CSS still embeds the registered font content",
             "fork-owned:tests/obsidian/unit/coreRegression.test.tsx::vault-provided Local Font content remains embedded"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/codeBlockInsertion.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/codeBlockInsertion.source.test.mjs::code insertion asks by default and inserts the chosen Markdown image without a card title",
+            "node:scripts/testing/codeBlockInsertion.source.test.mjs::remembering either format serializes the preference and avoids the next prompt",
+            "node:scripts/testing/codeBlockInsertion.source.test.mjs::unremembered choices keep asking and closing the dialog makes no changes",
+            "node:scripts/testing/codeBlockInsertion.source.test.mjs::configured formats bypass the chooser and preserve language, unique card title and initial-fit history",
+            "node:scripts/testing/codeBlockInsertion.source.test.mjs::missing and unfamiliar preferences safely ask without deleting persisted keys",
+            "node:scripts/testing/codeBlockInsertion.source.test.mjs::a file switch, API replacement or migration during a dialog cancels insertion and remembering",
+            "node:scripts/testing/codeBlockInsertion.source.test.mjs::cancelled language and title prompts and empty clipboard content are no-ops",
+            "node:scripts/testing/codeBlockInsertion.source.test.mjs::deferred language, title, settings writes and section lookup retain the exact drawing owner"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/markdownImageInsertion.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/markdownImageInsertion.source.test.mjs::Markdown image insertion retains editable local text and commits once",
+            "node:scripts/testing/markdownImageInsertion.source.test.mjs::Markdown image render and decode cannot insert into a replaced file, API or migrating view",
+            "node:scripts/testing/markdownImageInsertion.source.test.mjs::pasted code requests adaptive width once and persists the actual flow width without changing general defaults"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/codeBlockFormats.mjs",
+          "cases": [
+            "native:code-block-format:main",
+            "native:code-block-format:popout"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/codeBlockMarkdownImageSizing.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/codeBlockMarkdownImageSizing.source.test.mjs::code width uses natural layout plus border, bounded to compact and maximum sizes"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/codeBlockImageLayout.mjs",
+          "cases": [
+            "native:code-block-image-layout:main",
+            "native:code-block-image-layout:popout"
           ]
         }
       ],
@@ -868,6 +951,11 @@
           "cases": [
             "workflow-fixes-3020"
           ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/workflowBundle.mjs",
+          "cases": ["native:workflow-zen-controls-3000"]
         },
         {
           "layer": "native",

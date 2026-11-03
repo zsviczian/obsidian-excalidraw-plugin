@@ -18,8 +18,15 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
 "2.29.2": `
+## New and improved
+- Paste code blocks as interactive embeddables or editable Markdown images, and optionally remember your choice. Code images adapt to their content up to 800 px wide and wrap long lines without scrollbars.
+
 ## Fixed
 - Empty settings records now trigger recovery instead of silently resetting preferences and script settings.
+- Extracting a local Markdown image to a note now defaults to the drawing's folder. You can still choose another destination. [#3009](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3009)
+- The exit-Zen button no longer overlaps the zoom indicator, including in narrow panes. [#3000](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3000)
+- Ctrl/Cmd+S while editing text now submits the text and force-saves the current drawing instead of opening standalone export. [#2941](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2941)
+- Newly pasted code-block cards now fit their rendered content while preserving their width and later manual resizing. [#2894](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2894)
 `,
 "2.29.1": `
 ## New and improved

@@ -145,7 +145,7 @@ async function exerciseLifecycle(c, prefix, fixture, migrationRoute) {
     const oldPlugin = plugin, oldViews = [main.view, survivor.view], oldRuntime = plugin.getCLIRuntime();
     const settingsPath = app.vault.configDir + "/plugins/obsidian-excalidraw-plugin/data.json";
     const markerKey = "__excalidrawReloadRegression";
-    const settingsKeys = ["zoomMax", "linkOpacity", "exportPaddingSVG", "allowWheelZoom", "pinnedScripts", "scriptEngineSettings", markerKey];
+    const settingsKeys = ["zoomMax", "linkOpacity", "exportPaddingSVG", "allowWheelZoom", "pasteCodeBlockAs", "pinnedScripts", "scriptEngineSettings", markerKey];
     const originalSettings = Object.fromEntries(settingsKeys.map(key => [key, {
       present: Object.prototype.hasOwnProperty.call(plugin.settings, key),
       value: plugin.settings[key],
@@ -162,7 +162,7 @@ async function exerciseLifecycle(c, prefix, fixture, migrationRoute) {
     const marker = { retained: true, zero: 0, flag: false, paths: ["custom/settings"] };
     const scriptKey = "__excalidrawReloadCaptureNote";
     const noteTypes = { Custom: { template: "Templates/Custom.md", enabled: false, padding: 0 } };
-    Object.assign(plugin.settings, { zoomMax: 7, linkOpacity: 0.37, exportPaddingSVG: 0, allowWheelZoom: true,
+    Object.assign(plugin.settings, { zoomMax: 7, linkOpacity: 0.37, exportPaddingSVG: 0, allowWheelZoom: true, pasteCodeBlockAs: "markdown-image",
       pinnedScripts: [scriptKey], scriptEngineSettings: { ...plugin.settings.scriptEngineSettings, [scriptKey]: { noteTypes } }, [markerKey]: marker });
     await plugin.saveSettings();
     const persistedBeforeUnload = await app.vault.adapter.read(settingsPath);
@@ -183,6 +183,7 @@ async function exerciseLifecycle(c, prefix, fixture, migrationRoute) {
     check(plugin !== oldPlugin && plugin.getCLIRuntime() !== oldRuntime, "plugin reload reused retired instance");
     check(plugin.settings.zoomMax === 7 && plugin.settings.linkOpacity === 0.37 && plugin.settings.exportPaddingSVG === 0,
       "reload reset non-default or zero settings");
+    check(plugin.settings.pasteCodeBlockAs === "markdown-image", "plugin reload reset the remembered code-block format");
     check(plugin.settings[markerKey]?.retained && plugin.settings[markerKey]?.zero === 0 && plugin.settings[markerKey]?.flag === false &&
       plugin.settings[markerKey]?.paths?.[0] === marker.paths[0], "reload lost unknown nested settings");
     plugin.settings[markerKey].replacementInstance = true;
