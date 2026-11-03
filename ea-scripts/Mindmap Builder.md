@@ -7,6 +7,8 @@ Mind Map Builder turns the Obsidian Excalidraw canvas into a keyboard-driven bra
 
 The floating input hides in Excalidraw view mode and returns when you switch back to editing. Switching to another kind of tab also hides it without changing your docking preference.
 
+Enter a complete equation such as `$$x=5$$` as a node to render it as a LaTeX image. Editing the node restores `$$x=5$$` in the input; changing the formula updates the image, and removing the `$$` delimiters converts it to text. Markdown copy preserves the equation syntax. Inline math mixed with other text stays a text node. Rendering uses Excalidraw's LaTeX support (Excalidraw Extras is required by recent plugin versions).
+
 To reuse a branch with its links, images, and grouped notes, select the complete branch on the canvas and use native Excalidraw copy. Select a destination Mindmap node, then use the existing Builder **Paste** button or hotkey. The branch attaches as a child; with no destination selected, it becomes an independent map. Builder **Copy** continues to export Markdown outlines.
 
 Pasted branches retain their styles, folds, pinned nodes, and nested submap settings. Copied whole maps become submaps when attached. Auto-layout remains disabled where you disabled it. Builder's input Undo/Redo groups a completed branch paste; the canvas Undo/Redo controls follow native paste, attachment, and layout history steps.
@@ -34,13 +36,13 @@ Requires Excalidraw 2.23.4 or newer. Excalidraw 2.27.0 or newer caches compiled 
 
 If you find MindMap Builder helpful, [buy me a coffee](https://ko-fi.com/zsolt).
 
-Build version: 2026-11-01T06:47:17.528Z
+Build version: 2026-11-03T05:55:15.970Z
 
 ```javascript
 */
 
 // Configuration constants
-const VERSION = "v26.11.01";
+const VERSION = "v26.11.03";
 
 // Script bundle
 /* EA Script — mindmap-builder | ea-scripts v1.0.0 */
@@ -1309,6 +1311,10 @@ const VERSION = "v26.11.01";
   }
 
   // src/scripts/mindmap-builder/textParsing.js
+  function parseLatexInput(input) {
+    const match = input.trim().match(/^\$\$((?:(?!\$\$)[\s\S])+)\$\$$/);
+    return match?.[1].trim() ? match[1].trim() : null;
+  }
   function createTextParsing(runtimeContext) {
     const trimText = (text) => {
       if (!text) return text;
@@ -1451,6 +1457,8 @@ const VERSION = "v26.11.01";
         return node.link.startsWith("[[") ? `!${node.link}` : `![](${node.link})`;
       }
       if (node.type === "image") {
+        const latex = runtimeContext.ea.targetView?.excalidrawData?.getEquation?.(node.fileId)?.latex ?? node.customData?.latex;
+        if (typeof latex === "string" && latex.trim()) return `$$${latex}$$`;
         const embeddedFile = runtimeContext.ea.targetView?.excalidrawData?.getFile(node.fileId);
         if (!embeddedFile) return "";
         const file = runtimeContext.ea.getViewFileForImageElement(node);
@@ -5002,6 +5010,7 @@ const VERSION = "v26.11.01";
       let arrowId;
       const imageInfo = runtimeContext.parseImageInput(text);
       const embeddableUrl = runtimeContext.parseEmbeddableInput(text, imageInfo);
+      const latex = parseLatexInput(text);
       const defaultNodeColor = runtimeContext.ea.getCM(st.viewBackgroundColor).invert().stringHEX({
         alpha: false
       });
@@ -5076,7 +5085,14 @@ const VERSION = "v26.11.01";
       };
       let shouldWrap = false;
       let curMaxH = 0;
-      if (!imageInfo?.isImagePath && !imageInfo?.imageFile && !embeddableUrl) {
+      let latexNode = null;
+      if (latex) {
+        runtimeContext.ea.style.strokeColor = parent ? nodeColor : runtimeContext.multicolor ? defaultNodeColor : st.currentItemStrokeColor;
+        newNodeId = await runtimeContext.ea.addLaTex(0, 0, latex);
+        if (!newNodeId) return;
+        latexNode = runtimeContext.ea.getElement(newNodeId);
+        metrics = { width: latexNode.width, height: latexNode.height };
+      } else if (!imageInfo?.isImagePath && !imageInfo?.imageFile && !embeddableUrl) {
         renderedText = await runtimeContext.parseText(text) ?? text;
         metrics = runtimeContext.ea.measureText(renderedText);
         shouldWrap = metrics.width > curMaxW;
@@ -5089,7 +5105,9 @@ const VERSION = "v26.11.01";
       }
       if (!parent) {
         runtimeContext.ea.style.strokeColor = runtimeContext.multicolor ? defaultNodeColor : st.currentItemStrokeColor;
-        if (imageInfo?.isImagePath) {
+        if (latexNode) {
+          newNodeId = latexNode.id;
+        } else if (imageInfo?.isImagePath) {
           newNodeId = await addImage({
             pathOrFile: imageInfo.path,
             width: imageInfo.width,
@@ -5248,7 +5266,11 @@ const VERSION = "v26.11.01";
         const effectiveBaseStrokeWidth = rootCfgForAdd?.baseStrokeWidth ?? runtimeContext.baseStrokeWidth;
         const textAlign = effectiveCenterText ? "center" : isVerticalMode ? "center" : side === 1 ? "left" : "right";
         const boxShape = nodeShape ?? (effectiveBoxChildren ? "rectangle" : false);
-        if (imageInfo?.isImagePath) {
+        if (latexNode) {
+          newNodeId = latexNode.id;
+          latexNode.x = side === -1 && !runtimeContext.autoLayoutDisabled ? px - latexNode.width : px;
+          latexNode.y = py;
+        } else if (imageInfo?.isImagePath) {
           newNodeId = await addImage({
             pathOrFile: imageInfo.path,
             width: imageInfo.width,
@@ -5392,7 +5414,7 @@ const VERSION = "v26.11.01";
       if (isBatchMode) {
         return runtimeContext.ea.getElement(newNodeId);
       }
-      const hasImage = !!imageInfo?.imageFile || imageInfo?.isImagePath;
+      const hasImage = !!latex || !!imageInfo?.imageFile || imageInfo?.isImagePath;
       await runtimeContext.addElementsToView({
         repositionToCursor: !parent,
         save: hasImage,
@@ -8521,8 +8543,9 @@ const VERSION = "v26.11.01";
       }
       const imageInfo = runtimeContext.parseImageInput(textInput);
       const embeddableUrl = runtimeContext.parseEmbeddableInput(textInput, imageInfo);
+      const latex = parseLatexInput(textInput);
       let newType = "text";
-      if (imageInfo?.isImagePath || imageInfo?.imageFile) newType = "image";
+      if (latex || imageInfo?.isImagePath || imageInfo?.imageFile) newType = "image";
       else if (embeddableUrl) newType = "embeddable";
       const isTypeChange = textEl && newType !== "text" || !textEl && newType !== targetNode.type;
       const isNonTextUpdate = !textEl && newType === targetNode.type && textChanged;
@@ -8536,7 +8559,10 @@ const VERSION = "v26.11.01";
         const st = runtimeContext.getAppState();
         runtimeContext.ea.style.strokeColor = targetNode.strokeColor ?? st.currentItemStrokeColor;
         if (newType === "image") {
-          if (imageInfo?.isImagePath) {
+          if (latex) {
+            newNodeId = await runtimeContext.ea.addLaTex(0, 0, latex);
+            if (!newNodeId) return;
+          } else if (imageInfo?.isImagePath) {
             newNodeId = await runtimeContext.addImage({
               pathOrFile: imageInfo.path,
               width: imageInfo.width,
@@ -8598,7 +8624,7 @@ const VERSION = "v26.11.01";
           });
           const newElement = runtimeContext.ea.getElement(newNodeId);
           containerToUpdate = runtimeContext.boxChildren ? newElement : null;
-          newTextElement = runtimeContext.boxChildren ? runtimeContext.ea.getElement(containerToUpdate.boundElements[0].id) : newElement;
+          const newTextElement = runtimeContext.boxChildren ? runtimeContext.ea.getElement(containerToUpdate.boundElements[0].id) : newElement;
           newTextElement.rawText = textInput;
           newTextElement.originalText = renderedText;
           newTextElement.text = finalWrappedText;
@@ -8621,6 +8647,8 @@ const VERSION = "v26.11.01";
         const newNode = runtimeContext.ea.getElement(newNodeId);
         runtimeContext.scaleDecorations(visualNode, newNode, all, info.rootId);
         const keysToCopy = [
+          "presetName",
+          "customPalette",
           "mindmapOrder",
           "isPinned",
           "growthMode",
