@@ -311,6 +311,7 @@ async function exerciseDevice(c, path, fixture, profile) {
       "tabletUIMode",
       "phoneUIMode",
       "penModeSingleFingerPanning",
+      "pasteCodeBlockAs",
     ].map((key) => [key, p.settings[key]]),
   );
   const desktopMode = localStorage.getItem("excalidraw.desktopUIMode");
@@ -474,7 +475,7 @@ async function exerciseDevice(c, path, fixture, profile) {
     "Rectangle tool is covered",
   );
   c.observations={...c.observations,toolbarTap:{requested:{x,y},bounds,events:[]}};
-  const observeTap=event=>c.observations.toolbarTap.events.push({type:event.type,x:event.clientX,y:event.clientY,trusted:event.isTrusted,pointerType:event.pointerType,target:event.target?.closest('button')?.outerHTML.slice(0,350)});
+  const observeTap=event=>c.observations.toolbarTap.events.push({type:event.type,x:event.clientX,y:event.clientY,trusted:event.isTrusted,pointerType:event.pointerType,target:event.target?.outerHTML?.slice(0,500),pointerId:event.pointerId,captured:event.target?.hasPointerCapture?.(event.pointerId),newElement:api.getAppState().newElement?.type});
   doc.addEventListener('pointerdown',observeTap,true);
   c.defer(()=>doc.removeEventListener('pointerdown',observeTap,true));
   const input = async (type, x, y) => {
@@ -640,6 +641,87 @@ async function exerciseDevice(c, path, fixture, profile) {
     (app.isMobile === true) === profile.mobile,
     "Narrow desktop/mobile mode confused",
   );
+  // #3000: full/compact footer controls also run on applicable tablet layouts.
+  // Phone/tray chrome does not render this footer; its existing tool checks above
+  // remain required rather than treating it as a physical mobile Zen test.
+  let zenControls = { footer: false };
+  if (profile.mode !== "tray" && api.getEditorInterface().formFactor !== "phone") {
+    const root = view.containerEl.querySelector(".excalidraw");
+    const originalRootDirection = root.getAttribute("dir"), originalDocumentDirection = doc.documentElement.getAttribute("dir");
+    const variants = [];
+    try {
+      for (const direction of ["ltr", "rtl"]) {
+        doc.documentElement.setAttribute("dir", direction); root.setAttribute("dir", direction);
+        api.updateScene({ appState: { zenModeEnabled: true, zoom: { value: 1.7 } }, captureUpdate: "NEVER" });
+        await c.waitFor(() => {
+          const exit = view.containerEl.querySelector(".disable-zen-mode--visible");
+          return exit && doc.defaultView.getComputedStyle(exit).visibility === "visible" && Number(doc.defaultView.getComputedStyle(exit).opacity) > 0.99;
+        }, "device Zen exit control");
+        const exit = view.containerEl.querySelector(".disable-zen-mode--visible"), zoom = view.containerEl.querySelector(".reset-zoom-button");
+        check(zoom, "Device Zen zoom indicator missing");
+        const a = rect(exit), b = rect(zoom), editor = rect(root);
+        check(!(Math.min(a.right, b.right) - Math.max(a.x, b.x) > 1 && Math.min(a.bottom, b.bottom) - Math.max(a.y, b.y) > 1), "Device Zen controls overlap");
+        for (const button of [exit, zoom]) {
+          const bounds = rect(button);
+          check(bounds.width > 0 && bounds.height > 0 && bounds.x >= editor.x && bounds.right <= editor.right &&
+            bounds.y >= editor.y && bounds.bottom <= editor.bottom && bounds.x >= 0 && bounds.right <= innerWidth &&
+            doc.elementFromPoint(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2)?.closest("button") === button,
+            "Device Zen control clipped or covered");
+        }
+        const tap = async button => {
+          const bounds = rect(button), x = bounds.x + bounds.width / 2, y = bounds.y + bounds.height / 2;
+          if (profile.input === "mouse") await input("mouseMoved", x, y);
+          c.observations.zenTap = { bounds, hit: doc.elementFromPoint(x, y)?.outerHTML.slice(0, 500) };
+          await input(profile.input === "touch" ? "touchStart" : "mousePressed", x, y);
+          await input(profile.input === "touch" ? "touchEnd" : "mouseReleased", x, y);
+        };
+        await tap(zoom); await c.waitFor(() => { c.observations.zenZoom = { zoom: api.getAppState().zoom.value, constraints: api.getAppState().scrollConstraints }; return api.getAppState().zoom.value === 1; }, "device Zen zoom action");
+        await tap(exit); await c.waitFor(() => !api.getAppState().zenModeEnabled, "device Zen exit action");
+        variants.push({ direction, exit: a, zoom: b });
+      }
+      zenControls = { footer: true, exit: variants[0].exit, zoom: variants[0].zoom, trustedInput: profile.input, variants };
+    } finally {
+      if (originalRootDirection === null) root.removeAttribute("dir"); else root.setAttribute("dir", originalRootDirection);
+      if (originalDocumentDirection === null) doc.documentElement.removeAttribute("dir"); else doc.documentElement.setAttribute("dir", originalDocumentDirection);
+      api.updateScene({ appState: { zenModeEnabled: false }, captureUpdate: "NEVER" });
+    }
+  }
+  // The shared chooser must wrap and remain tappable in each actual host mode.
+  p.settings.pasteCodeBlockAs = "ask";
+  const codeSource = "```js\nconsole.log('device code');\n```";
+  const insertion = view.pasteCodeBlock(codeSource);
+  let codeModal;
+  c.defer(() => { if (codeModal?.isConnected) codeModal.querySelector(".modal-close-button")?.click(); });
+  let lastGeometry, stableSince;
+  await c.waitFor(() => {
+    codeModal = [...doc.querySelectorAll(".modal")].find(modal => modal.querySelector(".excalidraw-multiOptionConfirmationPrompt-message")?.textContent.includes("Insert this code block"));
+    if (!codeModal) return false;
+    const geometry = JSON.stringify([...codeModal.querySelectorAll("button,.checkbox-container")].map(element => rect(element)));
+    if (geometry !== lastGeometry) { lastGeometry = geometry; stableSince = Date.now(); }
+    return Date.now() - stableSince > 150;
+  }, "stable code format chooser");
+  const codeControls = [...codeModal.querySelectorAll("button,.checkbox-container")];
+  const tapCodeControl = async element => {
+    const bounds = rect(element), x = bounds.x + bounds.width / 2, y = bounds.y + bounds.height / 2;
+    check(bounds.width > 0 && bounds.height > 0 && bounds.x >= 0 && bounds.right <= innerWidth && bounds.y >= 0 && bounds.bottom <= innerHeight && element.contains(doc.elementFromPoint(x, y)), "Code format control clipped or covered");
+    if (profile.input === "mouse") await input("mouseMoved", x, y);
+    await input(profile.input === "touch" ? "touchStart" : "mousePressed", x, y);
+    await input(profile.input === "touch" ? "touchEnd" : "mouseReleased", x, y);
+  };
+  for (const control of codeControls) {
+    const bounds = rect(control), x = bounds.x + bounds.width / 2, y = bounds.y + bounds.height / 2;
+    check(bounds.width > 0 && bounds.height > 0 && bounds.x >= 0 && bounds.right <= innerWidth && bounds.y >= 0 && bounds.bottom <= innerHeight && control.contains(doc.elementFromPoint(x, y)), "Code format option or remember toggle is unusable");
+  }
+  const toggle = codeModal.querySelector(".checkbox-container");
+  await tapCodeControl(toggle); check(toggle.classList.contains("is-enabled"), "Code format remember toggle did not enable");
+  await tapCodeControl(toggle); check(!toggle.classList.contains("is-enabled"), "Code format remember toggle did not disable");
+  const markdownButton = [...codeModal.querySelectorAll("button")].find(button => button.textContent === "Markdown image");
+  const codeFormat = { bounds: rect(codeModal), controls: codeControls.map(element => ({ text: element.textContent, bounds: rect(element) })), trustedInput: profile.input };
+  await tapCodeControl(markdownButton); await insertion;
+  const codeImage = api.getSceneElements().find(element => element.type === "image" && element.customData?.markdownImage?.source === "local");
+  check(codeImage && view.excalidrawData.getMarkdownImage(codeImage.fileId)?.markdown === codeSource, "Device code choice did not insert an editable Markdown image");
+  check((await view.saveWithOutcome()).status === "persisted", "Device code image did not save");
+  check((await p.ea.getSceneFromFile(file)).elements.some(element => element.id === codeImage.id), "Device code image missing from disk");
   await c.requestHost("screenshot", { id: profile.id });
   return {
     assertions: [
@@ -649,6 +731,9 @@ async function exerciseDevice(c, path, fixture, profile) {
       "visible uncovered tool",
       "trusted pointer selects and draws",
       "device edit saves to disk",
+      "applicable Zen footer controls do not overlap and accept trusted input",
+      "code format options and remember toggle fit and accept trusted input",
+      "chosen code image preserves editable source and saves",
     ],
     requested: profile,
     actual: {
@@ -665,6 +750,8 @@ async function exerciseDevice(c, path, fixture, profile) {
       maxTouchPoints: navigator.maxTouchPoints,
       coarsePointer: matchMedia("(pointer: coarse)").matches,
       events,
+      zenControls,
+      codeFormat,
     },
   };
 }

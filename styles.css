@@ -2179,6 +2179,35 @@ button.excalidraw-font-picker {
   color: var(--interactive-accent);
 }
 
+/* #3000: keep the Zen exit in the footer's flow, alongside the visible zoom UI.
+   Wrapping handles narrow panes without a fixed offset or overlapping hit areas. */
+.excalidraw .layer-ui__wrapper .layer-ui__wrapper__footer {
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  z-index: 1;
+}
+
+.excalidraw .layer-ui__wrapper .layer-ui__wrapper__footer > .disable-zen-mode {
+  position: static;
+  margin-inline-start: auto;
+  align-self: flex-end;
+  max-width: 100%;
+}
+
+.excalidraw .layer-ui__wrapper .layer-ui__wrapper__footer > .disable-zen-mode:not(.disable-zen-mode--visible) {
+  display: none;
+}
+
+/* Hidden zoom buttons must not retain hit-test slots under the shifted label. */
+.excalidraw.excalidraw--zen-mode .zoom-out-button-wrapper,
+.excalidraw.excalidraw--zen-mode .zoom-in-button-wrapper {
+  display: none;
+}
+
+:root .excalidraw.excalidraw--zen-mode .layer-ui__wrapper .reset-zoom-button-wrapper {
+  transform: none;
+}
+
 .excalidraw-script-store__card-footer {
   display: flex;
   align-items: center;

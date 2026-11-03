@@ -33,6 +33,7 @@ import {
 } from "src/utils/markdownImageUtils";
 import { cleanSectionHeading } from "src/utils/pathUtils";
 import { errorlog } from "src/utils/coreUtils";
+import { CODE_BLOCK_IMAGE_MAX_WIDTH } from "src/utils/codeBlockMarkdownImageUtils";
 
 export type MarkdownImageSourceData = {
   markdown: string;
@@ -199,9 +200,10 @@ async function renderMarkdown(
   markdown: string,
   render: MarkdownImageRenderSettings,
   sourceFile = view.file,
+  autoFitCodeBlockWidth = false,
 ) {
   const loader = new EmbeddedFilesLoader(view.plugin, false);
-  return loader.renderMarkdownToSVG(sourceFile, markdown, render);
+  return loader.renderMarkdownToSVG(sourceFile, markdown, render, autoFitCodeBlockWidth);
 }
 
 const rememberRenderedMarkdownImage = (
@@ -459,27 +461,51 @@ export async function insertMarkdownImage(
   source: string | TFile | EmbeddedFile = "",
   position: { x: number; y: number } = view.currentPosition,
 ): Promise<ExcalidrawImageElement | null> {
-  if (!view.excalidrawAPI || !view.file) {
+  return insertMarkdownImageWithLayout(view, source, position);
+}
+
+/** Inserts clipboard code at its natural width, capped before line wrapping. */
+export async function insertCodeBlockMarkdownImage(
+  view: ExcalidrawView,
+  markdown: string,
+  position: { x: number; y: number } = view.currentPosition,
+): Promise<ExcalidrawImageElement | null> {
+  return insertMarkdownImageWithLayout(view, markdown, position, true);
+}
+
+async function insertMarkdownImageWithLayout(
+  view: ExcalidrawView,
+  source: string | TFile | EmbeddedFile,
+  position: { x: number; y: number },
+  autoFitCodeBlockWidth = false,
+): Promise<ExcalidrawImageElement | null> {
+  const { file, excalidrawAPI: api } = view;
+  const isCurrent = () => file && api && view.file === file &&
+    view.excalidrawAPI === api && !view.isClosingOrMigrating();
+  if (!isCurrent()) {
     return null;
   }
   const sourceData =
     typeof source === "string"
       ? { markdown: source, source: "local" as const }
       : await getMarkdownImageSource(view, source);
-  if (!sourceData) {
+  if (!sourceData || !isCurrent()) {
     return null;
   }
   const render = getMarkdownImageRenderSettings(view.plugin);
+  if (autoFitCodeBlockWidth) render.width = CODE_BLOCK_IMAGE_MAX_WIDTH;
   const sourceFile = sourceData.embeddedFile?.file ?? view.file;
   const rendered = await renderMarkdown(
     view,
     sourceData.markdown,
     render,
     sourceFile,
+    autoFitCodeBlockWidth,
   );
-  if (!rendered.dataURL || rendered.size.height <= 0) {
+  if (!isCurrent() || !rendered.dataURL || rendered.size.height <= 0) {
     return null;
   }
+  if (autoFitCodeBlockWidth) render.width = rendered.size.width;
   const ea = getEA(view);
   const fileId = fileid() as FileId;
   const id = await ea.addImage(
@@ -489,7 +515,7 @@ export async function insertMarkdownImage(
     false,
     false,
   );
-  if (!id) {
+  if (!id || !isCurrent()) {
     ea.destroy();
     return null;
   }
@@ -514,8 +540,9 @@ export async function insertMarkdownImage(
   if (!committed) {
     return null;
   }
+  if (!isCurrent()) return null;
   view.setDirty();
-  view.excalidrawAPI.selectElements([element]);
+  api.selectElements([element]);
   rememberRenderedMarkdownImage(
     view,
     element.id,

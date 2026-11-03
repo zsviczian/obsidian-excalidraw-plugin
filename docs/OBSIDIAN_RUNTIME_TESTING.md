@@ -231,6 +231,31 @@ not physical Android/iOS, native OS drag or stylus evidence.
 The following scenario notes retain their feature-specific assertions. Their
 native execution now uses the preparation and local vault contract above.
 
+For the workflow fixes in PR #3030, run `npm.cmd run verify:obsidian -- --workflow-bundle --diagnostics`.
+The extraction case checks the actual dialog, root/nested/Unicode drawing folders,
+another active drawing, explicit destination changes, cancellation, collisions,
+content and external-source persistence after reopen, and a popout. The same
+cases are required by the complete native profile.
+The Zen case measures exit/zoom bounds inside the editor and hit targets,
+repeatedly activates both controls in LTR/RTL at wide/narrow widths and 125% UI
+scale in main/popout windows. Device
+profiles also exercise applicable full/compact footers in both directions with
+trusted mouse/touch input; phone/tray chrome retains its existing separate controls.
+The text-save cases use trusted keyboard input with autosave disabled and read
+the physical drawing: raw/parsed and bound/plain text, undo/redo, canvas save,
+save/reopen and main/popout ownership. Standalone save attempts are intercepted
+in memory, both as a failing-before guard for Ctrl/Cmd+S and to prove Shift+S
+still uses its existing route without opening an OS dialog or creating a file.
+Use `--text-save-shortcut` to run those cases independently during diagnosis;
+the complete native profiles always include them.
+Use `--code-cards` for native pasted-code sizing: short/multiple/long lines,
+bounded long blocks and scrolling, plain/fenced input, CR/LF normalization,
+duplicate titles, unchanged EA/shared-card defaults, and initial/manual dimensions
+after save/reopen in main/popout windows. Initial fitting runs only from the
+paste-code command, preserves the insertion center and width, and stops after a
+user resize or a file/API/lifecycle change. Desktop testing does not establish
+physical mobile keyboard, touch or WebView behavior.
+
 ## Troubleshooting and further coverage
 
 For the Lucide picker, run `npm run test:lucide`, then the guarded
