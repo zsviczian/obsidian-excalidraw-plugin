@@ -11,7 +11,7 @@ on:
       kplex_sha:
         description: Exact K-Plex companion commit approved for ontology integration
         required: true
-        default: 6c9c48cff3054c41b5aac9395ac06f65ddb7f8b4
+        default: c0cea8fa85337cc336ced18f60b6173fcdb219bd
       profile:
         type: choice
         options: [regression, smoke, full, devices, soak, cold]
