@@ -9,7 +9,7 @@ import { packageManagerInvocation } from "./host/processTools.mjs";
 
 export function producerFiles(root, kind) {
   const plugin = ["main.js", "manifest.json", "styles.css"].map((file, i) => ({ role: ["main", "manifest", "styles"][i], relativePath: `dist/${file}` }));
-  if (kind === "plugin") return plugin;
+  if (kind === "plugin" || kind === "kplex") return plugin;
   if (kind === "extras") return [...plugin, ...declarations("api", "api/api/index.d.ts")];
   if (kind === "fork") return [
     ...["production.min.js", "production.min.css", "development.js", "development.css"].map((file, i) => ({ role: ["production-js", "production-css", "development-js", "development-css"][i], relativePath: `packages/excalidraw/dist/obsidian/excalidraw.${file}` })),
@@ -25,14 +25,14 @@ export function producerFiles(root, kind) {
 }
 
 export function produceArtifacts({ root, kind, snapshotRoot, run = runBuild }) {
-  assert.ok(["plugin", "fork", "extras"].includes(kind), "Unknown producer kind");
+  assert.ok(["plugin", "fork", "extras", "kplex"].includes(kind), "Unknown producer kind");
   assert.ok(!existsSync(snapshotRoot), "Snapshot already exists");
   const before = sourceIdentity(root);
   const steps = kind === "fork" ? ["build:esm", "build:obsidian"].map(script => ({ manager: "yarn", args: [script], cwd: join(root, "packages/excalidraw") }))
     : [{ manager: "npm", args: ["run", "build"], cwd: root }, ...(kind === "extras" ? [{ manager: "npm", args: ["run", "build:api"], cwd: root }] : [])];
   for (const step of steps) run(step);
   assert.deepEqual(sourceIdentity(root), before, "Producer source changed while building; discard output and rebuild");
-  const repository = `zsviczian/${kind === "fork" ? "excalidraw" : kind === "extras" ? "obsidian-excalidraw-extras" : "obsidian-excalidraw-plugin"}`;
+  const repository = `zsviczian/${kind === "fork" ? "excalidraw" : kind === "extras" ? "obsidian-excalidraw-extras" : kind === "kplex" ? "kplex" : "obsidian-excalidraw-plugin"}`;
   const manifest = createArtifactManifest({ root, kind, repository, identity: before, buildCommand: steps.map(step => `${step.manager} ${step.args.join(" ")}`).join(" && "), artifacts: producerFiles(root, kind) });
   freezeArtifacts(manifest, root, snapshotRoot);
   writeFileSync(join(snapshotRoot, "producer.json"), JSON.stringify({ ...manifest, sourceRoot: resolve(root) }, null, 2) + "\n");
@@ -46,7 +46,7 @@ function runBuild({ manager, args, cwd }) {
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const args = Object.fromEntries(process.argv.slice(2).map(arg => { const match = arg.match(/^--(kind|root|snapshot)=(.+)$/); if (!match) throw Error("Use --kind=plugin|fork|extras --root=PATH --snapshot=NEW_PATH"); return match.slice(1); }));
+  const args = Object.fromEntries(process.argv.slice(2).map(arg => { const match = arg.match(/^--(kind|root|snapshot)=(.+)$/); if (!match) throw Error("Use --kind=plugin|fork|extras|kplex --root=PATH --snapshot=NEW_PATH"); return match.slice(1); }));
   if (!args.kind || !args.root || !args.snapshot) throw Error("Producer kind, root and new snapshot are required");
   const manifest = produceArtifacts({ kind: args.kind, root: resolve(args.root), snapshotRoot: resolve(args.snapshot) });
   process.stdout.write(`${manifest.kind}: ${manifest.artifacts.length} frozen artifacts, commit ${manifest.commit}, dirty=${manifest.dirty}\n`);

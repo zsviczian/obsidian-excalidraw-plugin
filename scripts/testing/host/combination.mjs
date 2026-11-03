@@ -24,6 +24,7 @@ export function produceCombination({
   pluginRoot,
   forkRoot,
   extrasRoot,
+  kplexRoot,
   output,
 }) {
   output = resolve(output);
@@ -33,6 +34,7 @@ export function produceCombination({
       plugin: resolve(pluginRoot),
       fork: resolve(forkRoot),
       extras: resolve(extrasRoot),
+      ...(kplexRoot ? {kplex: resolve(kplexRoot)} : {}),
     },
     manifests = {};
   const run = ({ manager, args, cwd }) => {
@@ -64,6 +66,10 @@ export function produceCombination({
       snapshotRoot: join(output, kind),
       run,
     });
+  }
+  if (roots.kplex) {
+    assert.ok(existsSync(join(roots.kplex, "package.json")), "K-Plex workspace is required for ontology integration coverage");
+    manifests.kplex = produceArtifacts({root: roots.kplex, kind: "kplex", snapshotRoot: join(output, "kplex"), run});
   }
   const installed = JSON.parse(
     readFileSync(

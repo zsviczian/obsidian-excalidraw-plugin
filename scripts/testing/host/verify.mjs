@@ -26,6 +26,8 @@ import { runWorkflowFixesScenario } from "./workflowFixes.mjs";
 import { runWorkflowBundleScenario } from "./workflowBundle.mjs";
 import { runTextSaveShortcutScenario } from "./textSaveShortcut.mjs";
 import { runCodeCardScenario } from "./codeCards.mjs";
+import { runKplexOntologyScenario } from "./kplexOntology.mjs";
+import { nativeRepositoryRoot } from "../nativeRepositoryRoot.mjs";
 import { acquireHostLock } from "./hostLock.mjs";
 import { runDataIntegrityScenario } from "./dataIntegrity.mjs";
 import { runLifecycleScenario } from "./lifecycle.mjs";
@@ -106,6 +108,7 @@ const workflowFixes = coreScenarios || process.argv.includes("--workflow-fixes")
 const workflowBundle = coreScenarios || process.argv.includes("--workflow-bundle");
 const textSaveShortcut = workflowBundle || process.argv.includes("--text-save-shortcut");
 const codeCards = workflowBundle || process.argv.includes("--code-cards");
+const kplexOntology = coreScenarios || profile === "devices" || process.argv.includes("--kplex-ontology");
 const behaviorMatrix =
   fullProfile || process.argv.includes("--behavior-matrix");
 const dataIntegrity = coreScenarios || process.argv.includes("--data-integrity");
@@ -151,6 +154,7 @@ const flags = [
   "--workflow-bundle",
   "--text-save-shortcut",
   "--code-cards",
+  "--kplex-ontology",
   "--lucide",
   "--text-undo",
   "--stability",
@@ -191,6 +195,14 @@ const extrasRoot = resolve(
 const forkRoot = resolve(
   process.env.EXCALIDRAW_FORK_ROOT || join(pluginRoot, "../excalidraw"),
 );
+const kplexRoot = kplexOntology ? resolve(process.env.EXCALIDRAW_KPLEX_ROOT || join(nativeRepositoryRoot(pluginRoot), "../kplex")) : undefined;
+if (kplexOntology) {
+  for (const [key,value] of Object.entries({KPLEX_TEST_VAULT_NAME:target.vaultName,KPLEX_TEST_VAULT_PATH:target.vaultPath,KPLEX_TEST_CONFIG_DIR:target.configDir})) {
+    const supplied=process.env[key];
+    if(supplied && (key.endsWith("NAME")?supplied!==value:resolve(supplied)!==resolve(value)))throw Error("Combined K-Plex target differs from the owned vault: "+key);
+    process.env[key]=value;
+  }
+}
 const reportDir =
   process.env.EXCALIDRAW_TEST_REPORT_DIR ||
   join(pluginRoot, ".test-work/reports/native-" + randomUUID());
@@ -244,6 +256,7 @@ try {
     pluginRoot,
     forkRoot,
     extrasRoot,
+    kplexRoot,
     output: join(pluginRoot, ".test-work/frozen/combination-" + randomUUID()),
   });
   const invokeCLI=(name,args,timeout)=>command(obsidianCliExecutable(),[`vault=${target.vaultName}`,name,...args],pluginRoot,timeout);
@@ -360,6 +373,7 @@ try {
         ...(workflowBundle ? [runWorkflowBundleScenario] : []),
         ...(textSaveShortcut ? [runTextSaveShortcutScenario] : []),
         ...(codeCards ? [runCodeCardScenario] : []),
+        ...(kplexOntology ? [runKplexOntologyScenario] : []),
         // The catalogue/picker workflow runs after independent core scenarios.
         ...(lucide ? [runLucideScenario] : []),
       ],
@@ -398,6 +412,7 @@ try {
         profiles: selectedDeviceIds ? allDeviceProfiles.filter(profile=>selectedDeviceIds.includes(profile.id)) : allDeviceProfiles,
         featureWorkflows: fullProfile || profile === "devices",
         featureCases:focusedCases,
+        kplexOntology,
       });
       deviceReport.source = combination?.manifests.plugin || source;
       deviceReport.artifacts = report.artifacts.installedHashes;

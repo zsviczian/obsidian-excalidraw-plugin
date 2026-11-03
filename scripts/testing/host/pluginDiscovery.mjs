@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { runInAppTask } from "./inAppTask.mjs";
 export async function discoverStagedPlugin(cli, id) {
   assert.ok(
-    ["obsidian-excalidraw-plugin", "excalidraw-extras"].includes(id),
+    ["obsidian-excalidraw-plugin", "excalidraw-extras", "k-plex"].includes(id),
     "Unowned plugin discovery target",
   );
   return runInAppTask({

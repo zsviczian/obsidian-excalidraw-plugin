@@ -1104,9 +1104,9 @@ export class ExcalidrawAutomate {
   }
 
   /**
-   * Attaches an inline link suggester to the provided input element. The suggester reacts to
-   * "[[" typing, offers vault link choices (including aliases and unresolved links), and inserts
-   * the selected link using relative linktext when the active Excalidraw view is known.
+   * Attaches one popup for [[links]], tags and compatible K-Plex public ontology completion.
+   * Vault choices include aliases/unresolved links and use relative linktext when the target view is known.
+   * Ontology fields preserve exact spelling/wrappers and leave the caret ready for [[note]] completion.
    * @param {HTMLInputElement} inputEl - The input element to enhance.
    * @param {HTMLElement} [widthWrapper] - Optional element to determine suggester width.
    * @returns {KeyBlocker} The suggester instance; call close() to detach; call .isBlockingKeys() to check if suggester dropdown is open.

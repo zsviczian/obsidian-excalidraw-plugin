@@ -1496,7 +1496,7 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   /**
-   * Attaches an inline link suggester to the specified input element.
+   * Attaches one shared link/tag/optional public K-Plex ontology suggester to the input element.
    * @param inputEl The text input element to attach the suggester to.
    * @param widthWrapper Optional HTML element to wrap the width of suggester element.
    * @param containerEl Optional container element used as collision boundary.

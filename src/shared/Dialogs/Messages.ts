@@ -19,6 +19,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 `,
 "2.29.2": `
 ## New and improved
+- With a compatible K-Plex enabled, complete its ontology fields in link inputs using your configured triggers, then continue with \`[[note]]\` completion inside parentheses or square brackets.
 - Paste code blocks as interactive embeddables or editable Markdown images, and optionally remember your choice. Code images adapt to their content up to 800 px wide and wrap long lines without scrollbars.
 
 ## Fixed

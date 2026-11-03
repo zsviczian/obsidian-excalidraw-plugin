@@ -2569,6 +2569,10 @@
       "mode": "isolated-or-extracted"
     },
     {
+      "path": "scripts/testing/kplexOntology.source.test.mjs",
+      "mode": "direct-module-or-tooling"
+    },
+    {
       "path": "scripts/testing/localVault.test.mjs",
       "mode": "isolated-or-extracted"
     },
@@ -2582,6 +2586,10 @@
     },
     {
       "path": "scripts/testing/markdownImageInsertion.source.test.mjs",
+      "mode": "direct-module-or-tooling"
+    },
+    {
+      "path": "scripts/testing/nativeRepositoryRoot.test.mjs",
       "mode": "direct-module-or-tooling"
     },
     {

@@ -19,7 +19,17 @@ import {
   registeredLocalVault,
   configureLocalVaultEnvironment,
   applyDeclaredHostConfiguration,
+  flushNativeWorkspaceSave,
 } from "./localVault.mjs";
+
+test("live preparation awaits the actual pending workspace write before seed copying", async () => {
+  let release,calls=0,completed=false;
+  const pending=new Promise(resolve=>{release=resolve;});
+  const result=runInNewContext("("+flushNativeWorkspaceSave.toString()+")()",{app:{workspace:{requestSaveLayout:{run(){calls++;return pending;}}}}});
+  void result.then(()=>{completed=true;});await Promise.resolve();assert.equal(calls,1);assert.equal(completed,false);
+  release();assert.equal((await result).workspaceSaveCompleted,true);
+  await assert.rejects(runInNewContext("("+flushNativeWorkspaceSave.toString()+")()",{app:{workspace:{requestSaveLayout(){}}}}),/flush unavailable/);
+});
 
 test("live preparation restores core activation and accepts Obsidian's persisted boolean map", async () => {
   const configuration = { livePreview: true, promptDelete: false, zero: 0 };
@@ -91,7 +101,7 @@ test("live preparation restores core activation and accepts Obsidian's persisted
   }
 });
 
-function fixture(t, extras = true) {
+function fixture(t, extras = true, kplex = false) {
   const projectRoot = mkdtempSync(join(tmpdir(), "excalidraw-local-vault-"));
   t.after(() => rmSync(projectRoot, { recursive: true, force: true }));
   const output = join(projectRoot, "frozen"),
@@ -99,6 +109,7 @@ function fixture(t, extras = true) {
   for (const [kind, id] of [
     ["plugin", "obsidian-excalidraw-plugin"],
     ...(extras ? [["extras", "excalidraw-extras"]] : []),
+    ...(kplex ? [["kplex", "k-plex"]] : []),
   ]) {
     const root = join(output, kind);
     mkdirSync(join(root, "dist"), { recursive: true });
@@ -129,6 +140,11 @@ function fixture(t, extras = true) {
         relativePath: "dist/" + name,
       })),
     });
+  }
+  if (kplex) {
+    const directory = join(projectRoot, "tests/fixtures/kplex-ontology");
+    mkdirSync(directory, {recursive: true});
+    writeFileSync(join(directory, "data.json"), readFileSync(new URL("../../tests/fixtures/kplex-ontology/data.json", import.meta.url)));
   }
   return { projectRoot, combination: { output, manifests } };
 }
@@ -194,6 +210,21 @@ test("missing Extras is explicit and cannot masquerade as installed coverage", (
     ),
     ["obsidian-excalidraw-plugin"],
   );
+});
+
+test("the explicit K-Plex fixture stages only the selected frozen build and declared settings", (t) => {
+  const result = installLocalVault(fixture(t, true, true));
+  const installation = result.installations.kplex;
+  assert.equal(installation.status, "installed");
+  assert.equal(installation.id, "k-plex");
+  const directory = join(result.target.configDir, "plugins/k-plex");
+  for (const name of ["main.js", "manifest.json", "styles.css"]) assert.equal(fileHash(join(directory, name)), installation.hashes[name]);
+  const settings = JSON.parse(readFileSync(join(directory, "data.json"), "utf8"));
+  assert.equal(settings.indexingModeDesktop, "on-demand");
+  assert.equal(settings.boldFields, true);
+  assert.equal(settings.allowOntologySuggester, true);
+  assert.deepEqual(settings.__ontologyCompletionUnknown, {preserve: true});
+  assert(JSON.parse(readFileSync(join(result.target.configDir, "community-plugins.json"), "utf8")).includes("k-plex"));
 });
 
 test("corrupt producer bytes and redirected destinations cannot become a prepared installation", (t) => {
