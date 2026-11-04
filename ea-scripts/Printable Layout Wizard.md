@@ -23,7 +23,7 @@ Requires Excalidraw 2.27.0 or newer. PDF export uses the plugin's existing PDF s
 
 If you find this script helpful, consider [buying me a coffee](https://ko-fi.com/zsolt).
 
-Build version: 2026-11-04T06:00:38.532Z
+Build version: 2026-11-04T07:18:10.636Z
 
 ```javascript
 */
