@@ -159,7 +159,7 @@ The note includes every frame slide in sorter order, including excluded slides. 
   Alt/Option.
 - **Open the Slideshow sidepanel:** Hold Cmd on macOS or Ctrl on Windows/Linux while invoking the script.
 
-Build version: 2026-10-23T04:29:05.275Z
+Build version: 2026-11-04T07:18:10.636Z
 
 ```javascript
 */
@@ -2628,6 +2628,58 @@ Build version: 2026-10-23T04:29:05.275Z
     onMouseLeave = () => this.setFadeTimeout();
   };
 
+  // src/sharedUtils/previewUtils.ts
+  var elementFingerprintCache = /* @__PURE__ */ new WeakMap();
+  function cloneWithoutMetadata(element) {
+    const copy = { ...element };
+    const customData = copy.customData;
+    if (typeof customData === "object" && customData !== null && !Array.isArray(customData)) {
+      const visualCustomData = { ...customData };
+      delete visualCustomData.slideshow;
+      if (Object.keys(visualCustomData).length === 0) delete copy.customData;
+      else copy.customData = visualCustomData;
+    }
+    delete copy.version;
+    delete copy.versionNonce;
+    delete copy.updated;
+    if (copy.type === "frame") delete copy.name;
+    return copy;
+  }
+  function getSceneVisualFingerprint(elements) {
+    return `[${elements.map((element) => {
+      const raw = element;
+      const cacheKey = element;
+      if (raw.version === void 0 && raw.versionNonce === void 0) {
+        return JSON.stringify(cloneWithoutMetadata(element));
+      }
+      const cached = elementFingerprintCache.get(cacheKey);
+      if (cached && cached.version === raw.version && cached.versionNonce === raw.versionNonce) {
+        return cached.value;
+      }
+      const value = JSON.stringify(cloneWithoutMetadata(element));
+      elementFingerprintCache.set(cacheKey, {
+        version: raw.version,
+        versionNonce: raw.versionNonce,
+        value
+      });
+      return value;
+    }).join(",")}]`;
+  }
+  function exportAreaPreviewPNG(ea2, options) {
+    const scale = Math.min(2, Math.max(options.targetWidth / Math.max(options.area.width, 1), 0.01));
+    return ea2.createViewPNG({
+      withBackground: true,
+      theme: options.theme,
+      frameRendering: { enabled: true, name: false, outline: false, clip: false },
+      padding: 0,
+      selectedOnly: false,
+      embedScene: false,
+      elementsOverride: options.elements,
+      exportArea: options.area,
+      scale
+    });
+  }
+
   // src/sharedUtils/AsyncTaskQueue.ts
   var AsyncTaskQueue = class {
     constructor(concurrency = 1) {
@@ -2761,50 +2813,13 @@ Build version: 2026-10-23T04:29:05.275Z
   var FALLBACK_BACKGROUND = "#ffffff";
   var PREVIEW_CACHE_BYTES = 64 * 1024 * 1024;
   var DEFAULT_PREVIEW_WIDTH = 960;
-  var MAX_PREVIEW_SCALE = 2;
   var PREVIEW_EXPORT_CONCURRENCY = 2;
-  var elementFingerprintCache = /* @__PURE__ */ new WeakMap();
   function getPreviewNavigationRect(slide, maxZoom, printSlideWidth = 1920, printSlideHeight = 1080) {
     return getNavigationRect(
       slide.rect,
       { width: printSlideWidth, height: printSlideHeight },
       maxZoom
     );
-  }
-  function cloneWithoutMetadata(element) {
-    const copy = { ...element };
-    const customData = copy.customData;
-    if (typeof customData === "object" && customData !== null && !Array.isArray(customData)) {
-      const visualCustomData = { ...customData };
-      delete visualCustomData.slideshow;
-      if (Object.keys(visualCustomData).length === 0) delete copy.customData;
-      else copy.customData = visualCustomData;
-    }
-    delete copy.version;
-    delete copy.versionNonce;
-    delete copy.updated;
-    if (copy.type === "frame") delete copy.name;
-    return copy;
-  }
-  function getSceneVisualFingerprint(elements) {
-    return `[${elements.map((element) => {
-      const raw = element;
-      const cacheKey = element;
-      if (raw.version === void 0 && raw.versionNonce === void 0) {
-        return JSON.stringify(cloneWithoutMetadata(element));
-      }
-      const cached = elementFingerprintCache.get(cacheKey);
-      if (cached && cached.version === raw.version && cached.versionNonce === raw.versionNonce) {
-        return cached.value;
-      }
-      const value = JSON.stringify(cloneWithoutMetadata(element));
-      elementFingerprintCache.set(cacheKey, {
-        version: raw.version,
-        versionNonce: raw.versionNonce,
-        value
-      });
-      return value;
-    }).join(",")}]`;
   }
   function getSlideVisualFingerprint(elements, slide) {
     return getSceneVisualFingerprint(
@@ -2929,25 +2944,11 @@ Build version: 2026-10-23T04:29:05.275Z
         if (opacity === element.opacity) return element;
         return { ...element, opacity };
       });
-      const scale = Math.min(
-        MAX_PREVIEW_SCALE,
-        Math.max(targetWidth / Math.max(exportArea.width, 1), 0.01)
-      );
-      const blob = await this.ea.createViewPNG({
-        withBackground: true,
-        theme: appState.theme,
-        frameRendering: {
-          enabled: true,
-          name: false,
-          outline: false,
-          clip: false
-        },
-        padding: 0,
-        selectedOnly: false,
-        embedScene: false,
-        elementsOverride: exportElements,
-        exportArea,
-        scale
+      const blob = await exportAreaPreviewPNG(this.ea, {
+        elements: exportElements,
+        area: exportArea,
+        targetWidth,
+        theme: appState.theme
       });
       if (generation !== this.generation) return void 0;
       const cached = {
@@ -9768,3 +9769,5 @@ ${slide.notes ?? ""}`.trimEnd();
   // src/scripts/slideshow/main.ts
   void runSlideshow(ea, utils, loadSlideshowConfig(ea));
 })();
+
+/* end of bundle */
