@@ -28,3 +28,7 @@ yarn.lock
 Obsidian
 
 repository.zip
+.test-work/
+!tests/vault/.obsidian/plugins/obsidian-excalidraw-plugin/data.json
+!tests/vault/.obsidian/plugins/excalidraw-extras/data.json
+!tests/fixtures/kplex-ontology/data.json

@@ -1091,10 +1091,14 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       name: t("EMBED_TOEXCALIDRAW_HEAD"),
       description: t("EMBED_TOEXCALIDRAW_DESC"),
       buildDefinitions: () => [
+        ...this.toDeclarativeDefinitions(this.getCodeBlockInsertionSpecs()),
         this.createYouTubeDefinition(t("PDF_TO_IMAGE"), "nB4cOfn0xAs"),
         ...this.toDeclarativeDefinitions(this.getPdfImportSpecs()),
       ],
-      renderLegacy: (container) => this.renderPdfImportSettings(container),
+      renderLegacy: (container) => {
+        this.renderSettingSpecs(container, this.getCodeBlockInsertionSpecs());
+        this.renderPdfImportSettings(container);
+      },
       children: [
         {
           name: t("MD_EMBED_CUSTOMDATA_HEAD_NAME"),
@@ -4623,6 +4627,23 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     });
     this.configureMarkdownFontSetting(new Setting(container));
     this.renderSettingSpecs(container, this.getMarkdownImageStyleSpecs());
+  }
+
+  private getCodeBlockInsertionSpecs(): SettingSpec[] {
+    return [{
+      name: t("PASTE_CODEBLOCK_AS"),
+      desc: t("PASTE_CODEBLOCK_AS_DESC"),
+      aliases: ["clipboard", "paste code", "code block", "Markdown image", "embeddable"],
+      control: {
+        type: "dropdown",
+        key: "pasteCodeBlockAs",
+        options: [
+          { value: "ask", label: t("PASTE_CODEBLOCK_ASK") },
+          { value: "markdown-image", label: t("MARKDOWN_IMAGE_TITLE") },
+          { value: "embeddable", label: t("PASTE_CODEBLOCK_EMBEDDABLE") },
+        ],
+      },
+    }];
   }
 
   private getMarkdownImageDeletionSpecs(): SettingSpec[] {

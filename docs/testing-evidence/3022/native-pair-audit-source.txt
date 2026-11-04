@@ -1,0 +1,26 @@
+import assert from 'node:assert/strict';
+import {readFileSync,writeFileSync,existsSync} from 'node:fs';
+import {requiredNativeCases,requiredDeviceCases} from '../scripts/testing/regression.mjs';
+const root='.test-work/reports/',names=['2026-10-30-native-complete-1-fd32ac68','2026-10-30-native-complete-2-fd32ac68'];
+const required=[...requiredNativeCases,...requiredDeviceCases],read=p=>JSON.parse(readFileSync(p,'utf8'));
+const signature=r=>Object.fromEntries(Object.entries(r.combination.manifests).map(([k,m])=>[k,{commit:m.commit,dirty:m.dirty,diffHash:m.diffHash,lockfileHash:m.lockfileHash,artifacts:m.artifacts.map(a=>({role:a.role,path:a.relativePath,sha256:a.sha256,bytes:a.bytes}))}]));
+let reference;const rows=[];
+for(const name of names){const dir=root+name;if(!existsSync(dir+'/aggregate.json')){rows.push({name,status:'not-complete'});continue;}
+ const r=read(dir+'/report.json'),a=read(dir+'/aggregate.json'),d=read(dir+'/devices/report.json'),p=read(dir+'/preparation.json'),oracle=existsSync(dir+'/error-oracle/report.json')?read(dir+'/error-oracle/report.json'):{status:'not-run'};
+ assert.equal(r.source.requestedProfile,'regression');assert.equal(r.diagnosticOnly,undefined);assert.equal(r.resizeTraceInstrumentation,undefined);assert.equal(r.source.pluginRevision,'fd32ac682e2aadc0f982fa23d36da482011117f9');assert.equal(r.source.pluginDirty,false);assert.equal(r.source.forkRevision,'053a3b9f9e77917c457fce8ca9453d38b92a303b');assert.equal(r.source.forkDirty,false);
+ for(const [kind,commit]of Object.entries({plugin:'fd32ac682e2aadc0f982fa23d36da482011117f9',fork:'053a3b9f9e77917c457fce8ca9453d38b92a303b',extras:'1cdcb7c425a9b80afdc7b39c88861143b4b85e58'})){assert.equal(r.combination.manifests[kind].commit,commit);assert.equal(r.combination.manifests[kind].dirty,false);}
+ const negativeControls=(oracle.tests||[]).map(t=>({id:t.testId,status:t.status}));
+ if(oracle.status==='passed')assert.deepEqual(negativeControls,[{id:'native:diagnostics-rejects-unhandled',status:'passed'},{id:'native:diagnostics-rejects-broken-layout',status:'passed'}]);
+ assert.equal(a.requiredTestIds.length,357);assert.deepEqual([...a.requiredTestIds].sort(),[...required].sort());assert.equal(new Set(a.tests.map(t=>t.testId)).size,a.tests.length);
+ if(reference)assert.deepEqual(signature(r),reference,'Source/artifact identities differ between full repeats');else reference=signature(r);
+ const expected=new Set(required),cases=a.tests.filter(t=>expected.has(t.testId)),failed=cases.filter(t=>t.status!=='passed');
+ const desktopCLI=['main','split','nested-split','popout'].map(c=>'native:behavior:'+c+':cli-atomic-targeted-edit').concat(['native-cli-authoring','lucide-3019']);
+ const mobileCLI=['phone','tablet'].map(c=>'native:behavior:'+c+':cli-atomic-targeted-edit');
+ const row={name,status:r.status,aggregate:a.status,recorded:cases.length,passed:cases.filter(t=>t.status==='passed').length,required:required.length,missing:a.missing,failed:failed.map(t=>({id:t.testId,status:t.status,reason:t.reason})),behavior:cases.filter(t=>t.testId.startsWith('native:behavior:')).length,profiles:cases.filter(t=>t.testId.startsWith('native:device:')).length,cleanup:r.cleanup,deviceCleanup:d.cleanup,restored:r.baselineRestoration?.restored,deviceRestored:d.restoration?.restored,errorOracle:oracle.status,desktopCLI:desktopCLI.map(id=>({id,status:cases.find(t=>t.testId===id)?.status})),mobileCLI:mobileCLI.map(id=>({id,status:cases.find(t=>t.testId===id)?.status,transport:cases.find(t=>t.testId===id)?.transport})),windowEvents:r.windowErrors?.length,profileEvents:d.tests.filter(t=>t.testId.startsWith('native:device:')).reduce((n,t)=>n+(t.windowEvents?.length||0),0),seedHash:p.seedHash,source:r.source,artifacts:signature(r)};
+ row.negativeControls=negativeControls;
+ row.completePass=[r.status,a.status,r.cleanup,d.status,d.cleanup,oracle.status].every(v=>v==='passed')&&cases.length===357&&failed.length===0&&a.missing.length===0&&row.behavior===258&&row.profiles===40&&row.restored&&row.deviceRestored;
+ rows.push(row);
+}
+const result={required:357,requiredFullPasses:2,completePasses:rows.filter(r=>r.completePass).length,matchingBuild:!!reference,rows};
+writeFileSync(root+'2026-10-30-fresh-native-pair-audit.json',JSON.stringify(result,null,2)+'\n');process.stdout.write(JSON.stringify({...result,rows:rows.map(({artifacts,...row})=>row)})+'\n');
+if(process.argv.includes('--require-two'))assert.equal(result.completePasses,2,'Two complete strict matching-build passes are required');

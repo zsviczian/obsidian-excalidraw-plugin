@@ -1,0 +1,14 @@
+(async()=>{
+ const doc=document,win=doc.defaultView,wc=require('@electron/remote').getCurrentWebContents(),bg=wc.getBackgroundThrottling(),ids=['excalidraw-extras','obsidian-excalidraw-plugin'],events=[],trials=[];let phase='baseline',observer,iframe,target,error;
+ const listener=e=>events.push({at:Date.now(),phase,message:e.message,isTrusted:e.isTrusted,hasError:e.error!=null,stack:e.error?.stack});win.addEventListener('error',listener);const sleep=ms=>new Promise(r=>win.setTimeout(r,ms));const wait=async(fn,label)=>{const until=Date.now()+3000;while(!fn()){if(Date.now()>until)throw Error(label);await sleep(25);}};wc.setBackgroundThrottling(false);
+ try{for(const id of [...ids].reverse())await app.plugins.disablePlugin(id);await sleep(500);if(events.length)throw Error('Baseline not quiet');
+  for(const mode of ['none','main-constructor','owner-constructor']){
+   phase=mode;const start=events.length,deliveries=[];
+   target=createFragment().createDiv();target.setCssStyles({width:'121px',height:'81px'});iframe=createFragment().createEl('iframe');iframe.setCssStyles({position:'fixed',left:'1px',top:'1px',width:'200px',height:'200px'});doc.body.appendChild(iframe);await wait(()=>iframe.contentDocument?.body,'Frame body');const owner=iframe.contentWindow;iframe.contentDocument.body.appendChild(target);
+   if(mode!=='none'){const Ctor=mode==='main-constructor'?win.ResizeObserver:owner.ResizeObserver;observer=new Ctor(entries=>deliveries.push({at:Date.now(),sizes:entries.map(e=>({width:e.contentRect.width,height:e.contentRect.height,hasWindow:!!e.target.ownerDocument.defaultView}))}));observer.observe(target);await wait(()=>deliveries.length,'Initial delivery');target.setCssStyles({width:'123px'});await wait(()=>deliveries.some(d=>d.sizes.some(e=>e.width===123)),'Final live delivery');}
+   const removedAt=Date.now();iframe.remove();await sleep(1000);const during=events.length-start;phase=mode+':after-disconnect';observer?.disconnect();observer=null;await sleep(1000);const afterDisconnect=events.length-start-during;
+   trials.push({mode,registeredAfterAdoption:true,removedAt,during,afterDisconnect,deliveries,pluginsLoaded:ids.map(id=>!!app.plugins.plugins[id])});target.remove();target=null;iframe=null;if(afterDisconnect>1)throw Error('Control did not settle');
+  }
+ }catch(e){error=String(e.stack||e);}finally{observer?.disconnect();target?.remove();iframe?.remove();for(const id of ids)if(!app.plugins.plugins[id])await app.plugins.enablePlugin(id);await wait(()=>app.plugins.plugins[ids[1]]?.isReady&&app.plugins.plugins[ids[0]]?.api,'Restore plugins');wc.setBackgroundThrottling(bg);win.removeEventListener('error',listener);}
+ return JSON.stringify({error,trials,events,acceptanceCredit:false,workspaceOrPopoutAPIsUsed:false,productionObserversModified:false});
+})()

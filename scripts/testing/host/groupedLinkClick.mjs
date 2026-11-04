@@ -1,3 +1,4 @@
+import {runHostFunction} from './legacyTask.mjs';
 /** Run only against the guarded runner's disposable drawing. */
 async function exerciseGroupedLinkClicks(view, link, modifier) {
   const api = view.excalidrawAPI;
@@ -128,23 +129,10 @@ async function exerciseGroupedLinkClicks(view, link, modifier) {
 
 /** Synthetic input through the mounted editor; the parent owns deployment and cleanup. */
 export async function runGroupedLinkClickScenario({ cli, drawingPath }) {
-  const evaluate = code => JSON.parse(cli('eval', `code=${code}`).trim().replace(/^=>\s*/, ''));
-  const controller = '__excalidrawGroupedLinkClick';
-  const viewCode = `app.workspace.getLeavesOfType('excalidraw').find(l=>l.view.file?.path===${JSON.stringify(drawingPath)})?.view`;
-  const modifier = process.platform === 'darwin' ? { metaKey: true } : { ctrlKey: true };
-  evaluate(`(()=>{if(globalThis.${controller})throw Error('Controller already present');const c={state:'pending'};globalThis.${controller}=c;(${exerciseGroupedLinkClicks.toString()})(${viewCode},${JSON.stringify(`[[${drawingPath}]]`)},${JSON.stringify(modifier)}).then(assertions=>{c.assertions=assertions;c.state='passed'},error=>{c.error=String(error.stack||error);c.state='failed'});return JSON.stringify({started:true})})()`);
-  try {
-    for (let i = 0; i < 120; i++) {
-      await new Promise(resolve => setTimeout(resolve, 250));
-      const state = evaluate(`JSON.stringify(globalThis.${controller})`);
-      if (state.state === 'failed') throw Error(state.error);
-      if (state.state === 'passed') return {
-        id: 'grouped-link-click', status: 'passed',
-        input: 'owner-window synthetic pointer events', assertions: state.assertions,
-      };
-    }
-    throw Error('Grouped link click scenario timed out');
-  } finally {
-    evaluate(`(()=>{delete globalThis.${controller};return JSON.stringify({clean:true})})()`);
-  }
+  const modifier=process.platform==='darwin'?{metaKey:true}:{ctrlKey:true};
+  const assertions=await runHostFunction({cli,helpers:[exerciseGroupedLinkClicks],args:[drawingPath,modifier],execute:async(path,modifier)=>{
+    const view=app.workspace.getLeavesOfType('excalidraw').find(leaf=>leaf.view.file?.path===path)?.view;
+    if(!view)throw Error('Owned grouped-link editor missing');return exerciseGroupedLinkClicks(view,'[['+path+']]',modifier);
+  }});
+  return {id:'grouped-link-click',status:'passed',input:'owner-window synthetic pointer events',assertions};
 }

@@ -121,6 +121,8 @@ export class ExcalidrawSidepanelView extends ItemView {
   private leafChangeRef: EventRef | null = null;
   private windowMigrationCleanup: (() => void) | null = null;
   private restoreRetryTimer: number | null = null;
+  private closing = false;
+  private finishRestoreSetup: (() => void) | null = null;
 
   constructor(
     leaf: WorkspaceLeaf,
@@ -210,6 +212,8 @@ export class ExcalidrawSidepanelView extends ItemView {
    * Tears down listeners, destroys tabs, and clears UI references when the sidepanel closes.
    */
   protected async onClose() {
+    this.closing = true;
+    this.finishRestoreSetup?.();
     await super.onClose();
     if (this.restoreRetryTimer !== null) {
       window.clearTimeout(this.restoreRetryTimer);
@@ -476,6 +480,9 @@ export class ExcalidrawSidepanelView extends ItemView {
    * Restores persisted tabs on startup without revealing the panel, executing scripts to rebuild content.
    */
   private async restorePersistedTabs(): Promise<void> {
+    if (this.closing) {
+      return;
+    }
     if (this.restorePromise !== null) {
       return this.restorePromise;
     }
@@ -494,6 +501,9 @@ export class ExcalidrawSidepanelView extends ItemView {
           for (const [scriptName, meta] of Array.from(
             this.persistedScripts.entries(),
           )) {
+            if (this.closing) {
+              break;
+            }
             if (!scriptName) {
               continue;
             }
@@ -509,7 +519,9 @@ export class ExcalidrawSidepanelView extends ItemView {
               // Some existing scripts intentionally start createSidepanelTab()
               // without returning its promise and finish setup in .then(). Keep
               // the background-restore ownership through those microtasks.
-              await this.waitForDeferredRestoreSetup();
+              if (!this.closing) {
+                await this.waitForDeferredRestoreSetup();
+              }
             } finally {
               this.restoringScriptNames.delete(scriptName);
             }
@@ -531,12 +543,17 @@ export class ExcalidrawSidepanelView extends ItemView {
 
   private async waitForDeferredRestoreSetup(): Promise<void> {
     await new Promise<void>((resolve) => {
-      const ownerWindow = this.containerEl.ownerDocument.defaultView;
-      if (!ownerWindow) {
+      if (this.closing) {
         resolve();
         return;
       }
-      ownerWindow.setTimeout(resolve, 0);
+      const finish = () => {
+        window.clearTimeout(timer);
+        this.finishRestoreSetup = null;
+        resolve();
+      };
+      const timer = window.setTimeout(finish, 0);
+      this.finishRestoreSetup = finish;
     });
   }
 
@@ -544,7 +561,7 @@ export class ExcalidrawSidepanelView extends ItemView {
    * Re-attempts restore when sidepanel opens before plugin startup prerequisites are ready.
    */
   private queueRestoreRetry(): void {
-    if (this.restoreRetryTimer !== null) {
+    if (this.closing || this.restoreRetryTimer !== null) {
       return;
     }
     this.restoreRetryTimer = window.setTimeout(() => {

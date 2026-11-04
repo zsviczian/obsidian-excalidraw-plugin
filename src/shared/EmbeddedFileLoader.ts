@@ -90,6 +90,10 @@ import {
   type MarkdownImageRenderCacheEntry,
 } from "src/utils/markdownImageUtils";
 import { addAppendUpdateCustomData } from "src/utils/elementCustomDataUtils";
+import {
+  getCodeBlockMarkdownImageWidth,
+  MARKDOWN_IMAGE_CODE_WRAP_CSS,
+} from "src/utils/codeBlockMarkdownImageUtils";
 
 //declared in rollup.config.mjs
 declare const deliberateFetch: (
@@ -178,6 +182,7 @@ type MarkdownRenderOverrides = {
   render: MarkdownImageRenderSettings;
   fullHeight: boolean;
   isTransclusion?: boolean;
+  autoFitCodeBlockWidth?: boolean;
 };
 
 const waitForMarkdownPostProcessors = (
@@ -804,6 +809,8 @@ export class EmbeddedFilesLoader {
   public terminate = false;
   public terminalState: EmbeddedFilesLoaderTerminalState = "idle";
   public uid: string;
+  /** Request-local export guard. Its presence also bypasses stat-keyed rendition caches. */
+  public beforeFileRead?: (file: TFile) => Promise<void>;
 
   constructor(plugin: ExcalidrawPlugin, isDark?: boolean) {
     this.plugin = plugin;
@@ -832,6 +839,7 @@ export class EmbeddedFilesLoader {
     sourceFile: TFile,
     markdown: string,
     render: MarkdownImageRenderSettings,
+    autoFitCodeBlockWidth = false,
   ): Promise<MarkdownSVGRenderResult> {
     if (this.isDark !== false) {
       const lightThemeLoader = new EmbeddedFilesLoader(this.plugin, false);
@@ -840,6 +848,7 @@ export class EmbeddedFilesLoader {
           sourceFile,
           markdown,
           render,
+          autoFitCodeBlockWidth,
         );
       } finally {
         lightThemeLoader.terminate = true;
@@ -853,7 +862,7 @@ export class EmbeddedFilesLoader {
         this.plugin,
         sourceFile,
         linkParts,
-        { markdown, render, fullHeight: true },
+        { markdown, render, fullHeight: true, autoFitCodeBlockWidth },
       );
       return result;
     } finally {
@@ -930,6 +939,7 @@ export class EmbeddedFilesLoader {
       inFile instanceof EmbeddedFile ? inFile.colorMap : null,
     );
     const shouldUseCache =
+      !this.beforeFileRead &&
       !bypassCache &&
       !hasColorMap &&
       this.plugin.settings.allowImageCacheInScene &&
@@ -1159,6 +1169,13 @@ export class EmbeddedFilesLoader {
         inFile instanceof EmbeddedFile ? inFile.isMarkdownSection : false;
       const hyperlink = inFile instanceof EmbeddedFile ? inFile.hyperlink : "";
       const file: TFile = inFile instanceof EmbeddedFile ? inFile.file : inFile;
+      if (this.beforeFileRead) {
+        // Remote/local-machine sources cannot participate in a Vault snapshot.
+        // Let the CLI refuse them rather than claim a current disk artifact.
+        if (isHyperLink || isLocalLink || !file) throw new Error("Export source is not a local Vault file.");
+        await this.beforeFileRead(file);
+        if (this.terminate) return null;
+      }
       if (file && markdownRendererRecursionWatcthdog.has(file)) {
         new Notice(
           `Loading of ${file.path}. Please check if there is an inifinite loop of one file embedded in the other.`,
@@ -1566,7 +1583,7 @@ export class EmbeddedFilesLoader {
             if (loader.terminate) {
               return;
             }
-            const shouldForceReload = forceReloadFileIDs?.has(id);
+            const shouldForceReload = !!loader.beforeFileRead || forceReloadFileIDs?.has(id);
             const deferredValidation = deferredCacheValidation?.get(id);
             if (
               cacheValidation === "validated" &&
@@ -1800,6 +1817,7 @@ export class EmbeddedFilesLoader {
           excalidrawData.scene.elements,
         );
         for (const element of mermaidElements) {
+          if (fileIDWhiteList && !fileIDWhiteList.has(element.fileId)) continue;
           yield createSafeLoadTask(
             async () => {
               if (loader.terminate) {
@@ -2118,7 +2136,7 @@ export class EmbeddedFilesLoader {
       const requestedScale =
         options?.pdfScale ?? this.plugin.settings.pdfScale;
       const shouldUseCache =
-        !options?.bypassCache &&
+        !this.beforeFileRead && !options?.bypassCache &&
         getImageCache().isReady() &&
         (!options || this.plugin.settings.allowImageCacheInScene);
       const cacheKey: ImageKey = {
@@ -2186,8 +2204,7 @@ export class EmbeddedFilesLoader {
       }
 
       const scale = requestedScale;
-      const cropRect = linkParts.ref
-        .split("rect=")[1]
+      const cropRect = linkParts.ref?.split("rect=")[1]
         ?.split(",")
         .map((x) => parseInt(x));
       const validRect =
@@ -2459,7 +2476,7 @@ export class EmbeddedFilesLoader {
       ? `.excalidraw-md-host.theme-light{color-scheme:light;--background-primary:#ffffff;--background-secondary:#f5f5f5;--text-normal:#2e3338;--text-muted:#6b6b6b;--link-color:#086ddd}.excalidraw-md-host.theme-light a{color:var(--link-color)}.excalidraw-md-host.theme-light th{background-color:#dedede}.excalidraw-md-host.theme-light pre[class*=language-],.excalidraw-md-host.theme-light :not(pre)>code[class*=language-]{color:#393a34;background-color:#f5f5f5;border-color:#ddd}.excalidraw-md-host.theme-light blockquote{background-color:rgba(0,0,0,.06)}`
       : "";
     let style: string = overrides
-      ? `${DEFAULT_MD_EMBED_CSS}\n${ISOLATED_MARKDOWN_RENDER_CSS}\n${markdownImageThemeCSS}\n${overrides.render.css}`
+      ? `${DEFAULT_MD_EMBED_CSS}\n${ISOLATED_MARKDOWN_RENDER_CSS}\n${markdownImageThemeCSS}\n${overrides.render.css}\n${MARKDOWN_IMAGE_CODE_WRAP_CSS}`
       : (safeFrontmatter[FRONTMATTER_KEYS["md-css"].name] ?? "");
 
     let frontmatterCSSisAfile = false;
@@ -2792,7 +2809,10 @@ export class EmbeddedFilesLoader {
       // FIX: Force the iframe's body to respect the target width and prevent text inflation
       // Removed `overflow: hidden !important` so we don't accidentally clip valid heights on iOS measurement.
       const bodyReset = deliberateCreateElement(iframeDoc, "style") as HTMLStyleElement;
-      setStyleText(bodyReset, `
+      const resetIframeWidth = () => {
+        setStyle(iframeHost, { width: `${linkParts.width}px` });
+        setStyle(iframe, { width: `${linkParts.width}px` });
+        setStyleText(bodyReset, `
         html, body {
           margin: 0 !important;
           padding: 0 !important;
@@ -2803,6 +2823,8 @@ export class EmbeddedFilesLoader {
           text-size-adjust: none !important;
         }
       `);
+      };
+      resetIframeWidth();
       iframeDoc.head.appendChild(bodyReset);
 
       if (style) {
@@ -2832,6 +2854,15 @@ export class EmbeddedFilesLoader {
       footerDIV.setAttribute("class", "excalidraw-md-footer");
       iframeDoc.body.appendChild(footerDIV);
       await waitForDocumentFonts(iframeDoc);
+
+      if (overrides?.autoFitCodeBlockWidth) {
+        linkParts.width = getCodeBlockMarkdownImageWidth(
+          stylingDIV,
+          overrides.render.width,
+          drawBorder ? 4 : 0,
+        );
+        resetIframeWidth();
+      }
 
       iframeDoc.body.querySelectorAll("*").forEach((el: HTMLElement) => {
         const elementStyle = el.style;

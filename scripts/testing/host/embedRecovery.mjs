@@ -1,3 +1,4 @@
+import {runHostFunction} from './legacyTask.mjs';
 /** Issue #2953: real Markdown embeds and deliberate detachment in a disposable vault. */
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
@@ -161,10 +162,8 @@ export async function runEmbedRecoveryScenario({ cli, drawingPath }) {
       await wait(100);
     }
   }
-  async function act(fn, ...args) {
-    evaluate(`(()=>{const c=globalThis.${CONTROL};c.state="pending";c.error=null;Promise.resolve((${fn.toString()})(${[CONTROL, ...args].map(value => JSON.stringify(value)).join(",")})).then(()=>c.state="done").catch(e=>{c.error=String(e);c.state="failed"});return JSON.stringify({started:true})})()`);
-    await poll(value => value.state === "done", fn.name);
-  }
+  let unsettled=false;
+  async function act(fn,...args){try{return await runHostFunction({cli,execute:fn,args:[CONTROL,...args]});}catch(error){if(error.cleanupFailed)unsettled=true;throw error;}}
   const checks = [];
   invoke(setup, drawingPath, paths);
   try {
@@ -227,6 +226,7 @@ export async function runEmbedRecoveryScenario({ cli, drawingPath }) {
       }
     }
   } finally {
+    if(unsettled)throw Object.assign(Error("Unsettled embed task; preserve owned fixtures"),{cleanupFailed:true});
     await act(cleanup, paths);
     evaluate(`(()=>{delete globalThis.${CONTROL};return JSON.stringify({clean:true})})()`);
   }

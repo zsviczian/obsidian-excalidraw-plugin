@@ -1,7 +1,8 @@
 import { ExcalidrawExtrasGateway } from "../utils/ExcalidrawExtrasGateway";
+import { openSVGImportForEditor } from "src/shared/svgConversionActions";
 import { ExcalidrawCLI } from "./managers/ExcalidrawCLI";
 import type { ExcalidrawCLIRequest, ExcalidrawCLIResult } from "src/types/excalidrawCliTypes";
-import type { ExactDrawingCreationOptions } from "src/types/drawingCreationTypes";
+import type { ExactDrawingCreationOptions, PreparedDrawing } from "src/types/drawingCreationTypes";
 import {
   TFile,
   Plugin,
@@ -100,6 +101,8 @@ import { MonkeyPatchManager } from "./managers/MonkeyPatchManager";
 import ExcalidrawView from "../view/ExcalidrawView";
 import { ExcalidrawSidepanelView } from "../view/sidepanel/Sidepanel";
 import { CommandManager } from "./managers/CommandManager";
+import { LucideIconPicker } from "src/view/sidepanel/LucideIconPicker";
+import type { ObsidianExcalidrawHostAdapter } from "@zsviczian/excalidraw/types/excalidraw/obsidianExcalidrawHost";
 import { EventManager } from "./managers/EventManager";
 import { UniversalInsertFileModal } from "src/shared/Dialogs/UniversalInsertFileModal";
 import en from "src/lang/locale/en";
@@ -159,6 +162,7 @@ const EXCALIDRAW_EXTERNAL_GET_LABEL_KEYS = [
   "COMP_IMG_ANY_FILE",
   "INSERT_CARD",
   "COMP_IMG_LaTeX",
+  "IMPORT_SVG_AS_ELEMENTS",
   "ABOUT_LIBRARIES",
 ] as const satisfies readonly (keyof typeof en)[];
 
@@ -174,6 +178,7 @@ export default class ExcalidrawPlugin extends Plugin {
   private packageManager: PackageManager;
   private monkeyPatchManager: MonkeyPatchManager;
   private commandManager: CommandManager;
+  public lucidePicker: LucideIconPicker;
   private eventManager: EventManager;
   private settingsManager: PluginSettingsManager;
   private settingsTab: ExcalidrawSettingTab;
@@ -486,10 +491,16 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   private async onloadCheckForOnceOffSettingsUpdates() {
+    if (!this.settings) {
+      return;
+    }
     if (!this.settings.onceOffCompressFlagReset) {
       this.settings.compress = true;
       this.settings.onceOffCompressFlagReset = true;
       await this.saveSettings();
+    }
+    if (!this.settings) {
+      return;
     }
     this.settingsTab = new ExcalidrawSettingTab(this.app, this);
     this.addSettingTab(this.settingsTab);
@@ -503,6 +514,9 @@ export default class ExcalidrawPlugin extends Plugin {
       "\n----------------------------------\nWorkspace onLayoutReady event fired (these actions are outside the plugin initialization)",
     );
     await this.awaitSettings();
+    if (!this.settings) {
+      return;
+    }
     this.logStartupEvent("Settings awaited");
     this.extrasGateway = new ExcalidrawExtrasGateway(this.app, this);
     if (!this.settings.overrideObsidianFontSize) {
@@ -514,6 +528,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.observerManager = new ObserverManager(this);
     this.monkeyPatchManager = new MonkeyPatchManager(this);
     this.commandManager = new CommandManager(this);
+    this.lucidePicker = new LucideIconPicker(this);
     this.stencilLibraryManager = new StencilLibraryManager(this);
 
     try {
@@ -1136,6 +1151,11 @@ export default class ExcalidrawPlugin extends Plugin {
     return await this.fileManager.getBlankDrawing();
   }
 
+  /** Internal UI preparation; existing EA/CLI callers supply deterministic initData. */
+  public prepareDrawing(): Promise<PreparedDrawing> {
+    return this.fileManager.prepareDrawing();
+  }
+
   public async createDrawing(
     filename: string,
     foldername?: string,
@@ -1192,6 +1212,11 @@ export default class ExcalidrawPlugin extends Plugin {
     foldername?: string,
     initData?: string,
   ): Promise<string> {
+    if (initData === undefined) {
+      const prepared = await this.fileManager.prepareDrawing();
+      if (prepared.kind === "cancel") return "";
+      initData = prepared.data;
+    }
     const file = await this.createDrawing(filename, foldername, initData);
     this.fileManager.openDrawing(file, location, true, undefined, true);
     return file.path;
@@ -1428,7 +1453,9 @@ export default class ExcalidrawPlugin extends Plugin {
 
   //used by obsidianUtils in the Excalidraw Pacakge
   //aweful coding, but does the job
-  public runAction(action: "anyFile" | "LaTeX" | "card") {
+  public runAction(action: Parameters<ObsidianExcalidrawHostAdapter["runAction"]>[0], editorId?: string) {
+    if (action === "importSVG") { openSVGImportForEditor(this, editorId); return; }
+    if (action === "lucide") { this.lucidePicker.openForEditor(editorId); return; }
     if (!this.activeExcalidrawView) {
       return;
     }
@@ -1471,7 +1498,7 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   /**
-   * Attaches an inline link suggester to the specified input element.
+   * Attaches one shared link/tag/optional public K-Plex ontology suggester to the input element.
    * @param inputEl The text input element to attach the suggester to.
    * @param widthWrapper Optional HTML element to wrap the width of suggester element.
    * @param containerEl Optional container element used as collision boundary.

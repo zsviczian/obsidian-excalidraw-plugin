@@ -8,7 +8,8 @@ export const CLI_OUTPUT_LIMIT = 512 * 1024;
 export class CLIError extends Error {
   public constructor(public readonly code: string, message: string, public readonly field?: string,
     public readonly recovery = "Read the command schema and correct the request.",
-    public readonly outcome: Partial<ExcalidrawCLIResult> = {}) {
+    public readonly outcome: Partial<ExcalidrawCLIResult> = {},
+    public readonly preExecutionBusy = false) {
     super(message);
   }
 }

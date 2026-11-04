@@ -1,0 +1,20 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import {mkdtempSync,mkdirSync,writeFileSync,rmSync,realpathSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join,dirname,basename} from 'node:path';
+import {provisionVault} from '../provision.mjs';
+import {requireIsolatedSession} from './requireIsolatedSession.mjs';
+test('native CI rejects another CLI session, extra registered vaults and mismatched ownership',t=>{
+  const parent=mkdtempSync(join(tmpdir(),'excalidraw-native-isolation-'));
+  t.after(()=>{assert.equal(dirname(realpathSync(parent)),realpathSync(tmpdir()));assert.ok(basename(parent).startsWith('excalidraw-native-isolation-'));rmSync(parent,{recursive:true,force:true});});
+  const workRoot=join(parent,'owned'),vault=provisionVault({workRoot,name:'excalidraw-auto-native-ci'}),userDataPath=join(parent,'user-data');mkdirSync(userDataPath);
+  const marker={schemaVersion:2,owner:'obsidian-excalidraw-tests',vaultId:vault.ownership.vaultId};
+  const registry={vaults:{owned:{path:vault.vaultPath}}};
+  const write=()=>{writeFileSync(join(userDataPath,'.excalidraw-native-session.json'),JSON.stringify(marker));writeFileSync(join(userDataPath,'obsidian.json'),JSON.stringify(registry));};write();
+  const options={workRoot,vaultPath:vault.vaultPath,vaultName:'excalidraw-auto-native-ci',userDataPath,readHostUserData:()=>userDataPath};
+  assert.equal(requireIsolatedSession(options).isolated,true);
+  assert.throws(()=>requireIsolatedSession({...options,readHostUserData:()=>parent}),/another application/);
+  registry.vaults.other={path:parent};write();assert.throws(()=>requireIsolatedSession(options),/exactly one/);delete registry.vaults.other;
+  marker.vaultId='another-vault';write();assert.throws(()=>requireIsolatedSession(options),/another vault/);
+});

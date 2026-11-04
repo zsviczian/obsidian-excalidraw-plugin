@@ -1,0 +1,34 @@
+{
+  "kplexInitialized": true,
+  "indexingMode": "on-demand",
+  "indexingModeDesktop": "on-demand",
+  "indexingModeTablet": "on-demand",
+  "indexingModeMobile": "on-demand",
+  "allowOntologySuggester": true,
+  "ontologySuggesterTrigger": ":::",
+  "ontologySuggesterParentTrigger": "::p",
+  "ontologySuggesterChildTrigger": "::c",
+  "ontologySuggesterLeftFriendTrigger": "::f",
+  "ontologySuggesterRightFriendTrigger": "::r",
+  "ontologySuggesterPreviousTrigger": "::s",
+  "ontologySuggesterNextTrigger": "::n",
+  "ontologySuggesterMidSentenceTrigger": "(",
+  "ontologyPairingVersion": 1,
+  "boldFields": true,
+  "primaryTagField": "Tags",
+  "hierarchy": {
+    "exclusions": [],
+    "parents": ["parent/child", "Parent Exact"],
+    "children": [],
+    "leftFriends": ["friend/ally"],
+    "rightFriends": ["Challenger", "challenge"],
+    "previous": ["before/after"],
+    "next": [],
+    "hidden": ["Hidden"]
+  },
+  "ontologyDescriptions": {
+    "parent": "Literal <b>parent</b> description.",
+    "friend": "Friend description: árvíz 漢字."
+  },
+  "__ontologyCompletionUnknown": {"preserve": true}
+}

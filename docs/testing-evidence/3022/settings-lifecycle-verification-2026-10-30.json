@@ -1,0 +1,2981 @@
+{
+  "schemaVersion": 1,
+  "status": "passed",
+  "scope": "Follow-up parsed-link history and settings teardown fixes: complete portable checks and focused native lifecycle validation, distinct from the earlier two full native repeats.",
+  "implementationCommit": "7e80c1bd76072b9631a0efef6678e30ed97cfe7f",
+  "sourceRegressions": 11,
+  "nativeLifecycle": "passed",
+  "nativeReloadCase": {
+    "testId": "native:lifecycle-plugin-reload",
+    "featureIds": [
+      "P01",
+      "P02",
+      "P03"
+    ],
+    "status": "passed",
+    "assertions": [
+      "disable unmounts editor APIs and retires runtime",
+      "reload obtains a new plugin and runtime",
+      "both saved drawings reopen",
+      "stable command registered once",
+      "custom settings, zero/false and unknown nested keys survive reload",
+      "late old-instance saves preserve disk before and after replacement"
+    ]
+  },
+  "cleanup": "passed",
+  "baselineRestored": true,
+  "portableCases": 681,
+  "artifact": {
+    "role": "main",
+    "relativePath": "dist/main.js",
+    "sha256": "135b073a1bf77c561a0c983a868655cc213de32fee4a5311aabe85900929a105",
+    "bytes": 5031223
+  },
+  "matchingNativePortableArtifact": true,
+  "newLintDiagnostics": 0,
+  "limits": [
+    "Already-started disk writes retain real completion",
+    "The original deployment callback was not captured; the unsafe lifecycle path is fixed and tested",
+    "Physical mobile reload is separate validation"
+  ],
+  "sources": {
+    "fork": {
+      "repository": "zsviczian/excalidraw",
+      "commit": "22f05c1e70b12720a8f73e97d24278282dd5ef06",
+      "dirty": false,
+      "diffHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "lockfileHash": "5c64a40db44edf20c89888704dd8c2fa073dbc833bdaa5f8a6d0cf162ecaa909"
+    },
+    "extras": {
+      "repository": "zsviczian/obsidian-excalidraw-extras",
+      "commit": "064faf185d1955798836ed9c2b765c4c5e61aa11",
+      "dirty": false,
+      "diffHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "lockfileHash": "4773e2de84c7606e94b7eddf5a93957d418d1b0e1bd35091553b01b37d35f8ab"
+    },
+    "plugin": {
+      "repository": "zsviczian/obsidian-excalidraw-plugin",
+      "commit": "2e37819804e4b85904ffaf7b52dd99b83ee94056",
+      "dirty": true,
+      "diffHash": "66e95ab2c33310515d6ae65ec2997d6817016a0c70ec40c5707353c32e3f0445",
+      "lockfileHash": "6a52b4b078cb94835b4c9f11c025aaa132baafb7b0e885c8a91835e80c2cfb5c"
+    }
+  },
+  "artifacts": {
+    "fork": [
+      {
+        "role": "production-js",
+        "relativePath": "packages/excalidraw/dist/obsidian/excalidraw.production.min.js",
+        "sha256": "9ff28736724a15606c6281e69450196b8f5f97ac3bc03eff789c24f42d3b2f14",
+        "bytes": 6507693
+      },
+      {
+        "role": "production-css",
+        "relativePath": "packages/excalidraw/dist/obsidian/excalidraw.production.min.css",
+        "sha256": "0337e307594435b5125d216c9570aad9b5d4460908f3f0e716baf1daa87ac002",
+        "bytes": 309492
+      },
+      {
+        "role": "development-js",
+        "relativePath": "packages/excalidraw/dist/obsidian/excalidraw.development.js",
+        "sha256": "19335273f3d38e82c0c1d416d4a49cda888ed8d2e22aea9fdb5ea3437518ac70",
+        "bytes": 29982449
+      },
+      {
+        "role": "development-css",
+        "relativePath": "packages/excalidraw/dist/obsidian/excalidraw.development.css",
+        "sha256": "192fb4463825f0b870d9f59862f6ae54056e591226546608958fe9e3c937b883",
+        "bytes": 350666
+      }
+    ],
+    "extras": [
+      {
+        "role": "main",
+        "relativePath": "dist/main.js",
+        "sha256": "28f3c966b44bb35881b98d05f3fc327163b170b51bcdb3af13821c427015c8bb",
+        "bytes": 2536224
+      },
+      {
+        "role": "manifest",
+        "relativePath": "dist/manifest.json",
+        "sha256": "d7615e0322673617a59ca067dde4a59624fe2d947c93c025ea631da7ad920611",
+        "bytes": 303
+      },
+      {
+        "role": "styles",
+        "relativePath": "dist/styles.css",
+        "sha256": "3de04a6882b3e43b48f81231962c5f52afbd7146cc986fb0c86631ac5de30eda",
+        "bytes": 1427
+      }
+    ],
+    "plugin": [
+      {
+        "role": "main",
+        "relativePath": "dist/main.js",
+        "sha256": "135b073a1bf77c561a0c983a868655cc213de32fee4a5311aabe85900929a105",
+        "bytes": 5031223
+      },
+      {
+        "role": "manifest",
+        "relativePath": "dist/manifest.json",
+        "sha256": "4880b885c50643ef848d31cea829776ca2e96747353aee334d71e875f79d31c0",
+        "bytes": 470
+      },
+      {
+        "role": "styles",
+        "relativePath": "dist/styles.css",
+        "sha256": "4f71f6598b45de2e1ae94c20b7a190397a8b1150cd78b29e10fdf4638b6e6c7d",
+        "bytes": 354364
+      }
+    ]
+  },
+  "portable": {
+    "status": "passed",
+    "total": 681,
+    "tests": [
+      {
+        "testId": "node:scripts/testing/acceptance.test.mjs::acceptance cannot substitute discovered files or green subsets for required executed cases",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/acceptance.test.mjs::coverage and soak gates do not double-count canonical identities or hide failed cleanup",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/bundle.test.mjs::private React uses browser scheduling when Electron exposes Node setImmediate",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/bundle.test.mjs::production bootstrap supplies matching private React and JSX runtimes",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/bundle.test.mjs::compressed Excalidraw retains every published offline font asset",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/bundle.test.mjs::all maintained language payloads inflate and parse synchronously",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/bundle.test.mjs::production main.js remains below the release size target",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/canvasNodeFocus.test.mjs::internal preview construction preserves the active editor and renders the requested file",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/canvasNodeFocus.test.mjs::replacing an internal preview preserves focus and replaces only its registered node",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/canvasNodeFocus.test.mjs::explicit embedded-note editing still enters the editor and acquires focus",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/canvasNodeFocus.test.mjs::the old default-focus path reproduces the missing-editor toolbar failure",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/cli.test.mjs::registration validates minimum API, optional method and desktop without bumping the baseline",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/cli.test.mjs::icon discovery is read-only, bounded and snapshot-paginated",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/cli.test.mjs::icon staging retains single-element aliases and validates aggregate expanded geometry",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/cli.test.mjs::plain JSON guards reject executable values, prototype keys, nonfinite values and excessive depth",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/cli.test.mjs::vault paths preserve exact root, nested, spaces and Unicode while rejecting traversal and hidden config",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/cli.test.mjs::dispatcher returns stable failures for unknown fields, commands and versions",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/cli.test.mjs::native file/inline JSON is exclusive and values must agree with flags",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/cli.test.mjs::discovery remains available before readiness and never opens a drawing",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/cli.test.mjs::portable skill stays aligned with native output and schema describes finite operations",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/cli.test.mjs::multiple views require explicit identity; disk ignores ambiguity and refuses view selection",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/cli.test.mjs::drawing list pagination rejects stale snapshots instead of mixing pages",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/cli.test.mjs::write receipts require IDs, replay identical requests and reject changed effective content",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/cli.test.mjs::unload rejects new requests and invalidates old session receipts",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/cli.test.mjs::skeleton validation refuses persisted internals, dangling bindings and malformed frames before conversion",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/cli.test.mjs::operation validation and export allocation limits reject unsupported requests",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/cli.test.mjs::delayed text preparation leaves concurrent metadata and the scene intact when publication is rejected",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/cli.test.mjs::existing unguarded text callers retain completion-time metadata ownership",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/cli.test.mjs::trusted script receipt identity includes source content and never interpolates args",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/cli.test.mjs::save outcome reports only an acknowledged captured revision through the existing queue policy",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/cli.test.mjs::CLI scripts clean up their owned EA on success/failure while manual scripts retain their lifetime",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/cli.test.mjs::CLI compilation checks exact source even when file stat matches a cached manual script",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/cli.test.mjs::segmented live revisions retain immutable payloads and catch last-byte or descriptor changes",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/cli.test.mjs::CLI image inventory and policy avoid data URLs, separate shared-symbol representations and reject malformed rules",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/cli.test.mjs::schema distinguishes insertion boolean scale from export number scale and validates metadata fields",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/cli.test.mjs::BUSY before lock retries the same canonical ID while pending/failed and mismatched writes never repeat",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/cli.test.mjs::summary, image inventory and paged elements avoid cloning original file payloads",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/cli.test.mjs::derived PNG dimensions honor requested caps and existing hard limits",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/cli.test.mjs::disk dependencies detect same-stat replacements, restoration, deletion and unload, and release listeners",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/cli.test.mjs::thumbnail preflight rejects huge and unknown raster dimensions before creating or decoding an image",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/cli.test.mjs::real export preparation omits replaced payloads and refuses concurrent live edits and omitted attachment collisions",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/cli.test.mjs::image metadata edits preserve namespace extensions and refuse forward versions",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/contracts.test.mjs::producer artifacts freeze and reject byte changes, duplicate roles and missing artifacts",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/contracts.test.mjs::artifact paths reject escapes, Windows paths, separators, empty segments and redirects",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/contracts.test.mjs::explicit legacy adapter and required outcomes cannot greenwash a report",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/contracts.test.mjs::native host exclusion spans vaults and preserves another controller's lock",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/contracts.test.mjs::stale lock recovery requires positive proof of a dead local owner",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/coverageChanges.test.mjs::new/reused accounting separates plugin CLI commands, host tasks and mobile emulation without inferring passes",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/drawingLoadError.test.mjs::More information preserves the confirmation promise and original OK/Cancel behavior",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/drawingLoadError.test.mjs::concurrent warnings retain their file snapshot and render untrusted error text safely",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/drawingLoadError.test.mjs::no-backup notices stay non-blocking and long Unicode names retain their extension",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/drawingLoadError.test.mjs::all maintained locales include every new error key and the filename placeholder",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::actual YouTube thumbnail resolver: maxresdefault.jpg for https://www.youtube.com/watch?v=p3Qc3Hho_Lc&pp=ugUHEgVlbi1HQg%3D%3D",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::actual YouTube thumbnail resolver: hq720.jpg for https://www.youtube.com/watch?v=p3Qc3Hho_Lc&pp=ugUHEgVlbi1HQg%3D%3D",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::actual YouTube thumbnail resolver: mqdefault.jpg for https://www.youtube.com/watch?v=p3Qc3Hho_Lc&pp=ugUHEgVlbi1HQg%3D%3D",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::actual YouTube thumbnail resolver: default.jpg for https://www.youtube.com/watch?v=p3Qc3Hho_Lc&pp=ugUHEgVlbi1HQg%3D%3D",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::actual YouTube thumbnail resolver: maxresdefault.jpg for https://youtu.be/p3Qc3Hho_Lc?t=42",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::actual YouTube thumbnail resolver: hq720.jpg for https://youtu.be/p3Qc3Hho_Lc?t=42",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::actual YouTube thumbnail resolver: mqdefault.jpg for https://youtu.be/p3Qc3Hho_Lc?t=42",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::actual YouTube thumbnail resolver: default.jpg for https://youtu.be/p3Qc3Hho_Lc?t=42",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::thumbnail resolver does not request an image for an unrecognized video",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Chrome YouTube link: image-url preserves tracking URL navigation",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Chrome YouTube link: image-import preserves tracking URL navigation",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Chrome YouTube thumbnail: image-url preserves tracking URL navigation",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Chrome YouTube thumbnail: image-import preserves tracking URL navigation",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::https://example.com/render?id=1: image-url imports the supplied image without an OS path",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::https://example.com/render?id=1: image-import imports the supplied image without an OS path",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::blob:https://example.com/image-id: image-url imports the supplied image without an OS path",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::blob:https://example.com/image-id: image-import imports the supplied image without an OS path",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::linked image https://example.com/article: image-url chooses the correct target",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::linked image https://example.com/article: image-import chooses the correct target",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::linked image https://example.com/article: link chooses the correct target",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::linked image https://example.com/article: embeddable chooses the correct target",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::linked image https://www.youtube.com/watch?v=abc123: image-url chooses the correct target",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::linked image https://www.youtube.com/watch?v=abc123: image-import chooses the correct target",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::linked image https://www.youtube.com/watch?v=abc123: link chooses the correct target",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::linked image https://www.youtube.com/watch?v=abc123: embeddable chooses the correct target",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::HTML-only linked image: link retains its anchor target",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::HTML-only linked image: embeddable retains its anchor target",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::jpg URLs use production recognition rather than the file fallback",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::webp URLs use production recognition rather than the file fallback",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::svg URLs use production recognition rather than the file fallback",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::avif URLs use production recognition rather than the file fallback",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::hook consumption prevents the blob-file import fallback",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::OS file: duplicate Use preserves import behavior",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::browser fallback: duplicate Use preserves import behavior",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::OS file: duplicate Overwrite preserves import behavior",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::browser fallback: duplicate Overwrite preserves import behavior",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::OS file: duplicate Import preserves import behavior",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::browser fallback: duplicate Import preserves import behavior",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::text/plain: image-url uses the web operation",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::text/plain: image-import uses the web operation",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::text/plain: link uses the web operation",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::text/html: image-url uses the web operation",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::text/html: image-import uses the web operation",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::text/html: link uses the web operation",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::text/uri-list: image-url uses the web operation",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::text/uri-list: image-import uses the web operation",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::text/uri-list: link uses the web operation",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Files+text/plain: image-url uses the web operation",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Files+text/plain: image-import uses the web operation",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Files+text/plain: link uses the web operation",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Files+text/html: image-url uses the web operation",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Files+text/html: image-import uses the web operation",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Files+text/html: link uses the web operation",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Files+text/uri-list: image-url uses the web operation",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Files+text/uri-list: image-import uses the web operation",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Files+text/uri-list: link uses the web operation",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::mixed YouTube thumbnail: image-url retains the source page",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::mixed YouTube thumbnail: image-import retains the source page",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::mixed and URL-only embeddables delegate a URL-only snapshot to the component",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Mac: frame modifier forwards https://www.youtube.com/watch?v=p3Qc3Hho_Lc&pp=ugUHEgVlbi1HQg%3D%3D from text/plain after drag data expires",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Mac: frame modifier forwards https://www.youtube.com/watch?v=p3Qc3Hho_Lc&pp=ugUHEgVlbi1HQg%3D%3D from text/uri-list after drag data expires",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Mac: frame modifier forwards https://www.youtube.com/watch?v=p3Qc3Hho_Lc&pp=ugUHEgVlbi1HQg%3D%3D from text/html after drag data expires",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Mac: frame modifier forwards https://www.youtube.com/watch?v=p3Qc3Hho_Lc&pp=ugUHEgVlbi1HQg%3D%3D from text/plain+text/html after drag data expires",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Mac: frame modifier forwards https://www.youtube.com/watch?v=p3Qc3Hho_Lc&pp=ugUHEgVlbi1HQg%3D%3D from Files+text/plain+text/html after drag data expires",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Mac: frame modifier forwards https://www.youtube.com/shorts/p3Qc3Hho_Lc from text/plain after drag data expires",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Mac: frame modifier forwards https://www.youtube.com/shorts/p3Qc3Hho_Lc from text/uri-list after drag data expires",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Mac: frame modifier forwards https://www.youtube.com/shorts/p3Qc3Hho_Lc from text/html after drag data expires",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Mac: frame modifier forwards https://www.youtube.com/shorts/p3Qc3Hho_Lc from text/plain+text/html after drag data expires",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Mac: frame modifier forwards https://www.youtube.com/shorts/p3Qc3Hho_Lc from Files+text/plain+text/html after drag data expires",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Mac: frame modifier forwards https://vimeo.com/76979871 from text/plain after drag data expires",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Mac: frame modifier forwards https://vimeo.com/76979871 from text/uri-list after drag data expires",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Mac: frame modifier forwards https://vimeo.com/76979871 from text/html after drag data expires",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Mac: frame modifier forwards https://vimeo.com/76979871 from text/plain+text/html after drag data expires",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Mac: frame modifier forwards https://vimeo.com/76979871 from Files+text/plain+text/html after drag data expires",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Mac: frame modifier forwards https://twitter.com/jack/status/20 from text/plain after drag data expires",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Mac: frame modifier forwards https://twitter.com/jack/status/20 from text/uri-list after drag data expires",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Mac: frame modifier forwards https://twitter.com/jack/status/20 from text/html after drag data expires",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Mac: frame modifier forwards https://twitter.com/jack/status/20 from text/plain+text/html after drag data expires",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Mac: frame modifier forwards https://twitter.com/jack/status/20 from Files+text/plain+text/html after drag data expires",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Win: frame modifier forwards https://www.youtube.com/watch?v=p3Qc3Hho_Lc&pp=ugUHEgVlbi1HQg%3D%3D from text/plain after drag data expires",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Win: frame modifier forwards https://www.youtube.com/watch?v=p3Qc3Hho_Lc&pp=ugUHEgVlbi1HQg%3D%3D from text/uri-list after drag data expires",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Win: frame modifier forwards https://www.youtube.com/watch?v=p3Qc3Hho_Lc&pp=ugUHEgVlbi1HQg%3D%3D from text/html after drag data expires",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Win: frame modifier forwards https://www.youtube.com/watch?v=p3Qc3Hho_Lc&pp=ugUHEgVlbi1HQg%3D%3D from text/plain+text/html after drag data expires",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Win: frame modifier forwards https://www.youtube.com/watch?v=p3Qc3Hho_Lc&pp=ugUHEgVlbi1HQg%3D%3D from Files+text/plain+text/html after drag data expires",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Win: frame modifier forwards https://www.youtube.com/shorts/p3Qc3Hho_Lc from text/plain after drag data expires",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Win: frame modifier forwards https://www.youtube.com/shorts/p3Qc3Hho_Lc from text/uri-list after drag data expires",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Win: frame modifier forwards https://www.youtube.com/shorts/p3Qc3Hho_Lc from text/html after drag data expires",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Win: frame modifier forwards https://www.youtube.com/shorts/p3Qc3Hho_Lc from text/plain+text/html after drag data expires",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Win: frame modifier forwards https://www.youtube.com/shorts/p3Qc3Hho_Lc from Files+text/plain+text/html after drag data expires",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Win: frame modifier forwards https://vimeo.com/76979871 from text/plain after drag data expires",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Win: frame modifier forwards https://vimeo.com/76979871 from text/uri-list after drag data expires",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Win: frame modifier forwards https://vimeo.com/76979871 from text/html after drag data expires",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Win: frame modifier forwards https://vimeo.com/76979871 from text/plain+text/html after drag data expires",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Win: frame modifier forwards https://vimeo.com/76979871 from Files+text/plain+text/html after drag data expires",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Win: frame modifier forwards https://twitter.com/jack/status/20 from text/plain after drag data expires",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Win: frame modifier forwards https://twitter.com/jack/status/20 from text/uri-list after drag data expires",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Win: frame modifier forwards https://twitter.com/jack/status/20 from text/html after drag data expires",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Win: frame modifier forwards https://twitter.com/jack/status/20 from text/plain+text/html after drag data expires",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Win: frame modifier forwards https://twitter.com/jack/status/20 from Files+text/plain+text/html after drag data expires",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::hook consumption prevents both insertion and local fallback",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::a consumed frame drop keeps its original event data",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::image actions retain the original transfer",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::pure OS files and mixed payloads without a URL retain the local import path",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::pure OS file: local image-url wins over web image-import",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::pure OS file: local embeddable wins over web image-import",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::pure OS file: local link wins over web image-import",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::OS file: animated image keeps the insertion chooser",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::browser fallback: animated image keeps the insertion chooser",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::URI-only drags are accepted; mixed browser tooltip selects the web action",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::internal vault drag wins over browser payload",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Mac: supported md retains the interactive-frame tooltip",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Mac: supported pdf retains the interactive-frame tooltip",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Mac: supported mp3 retains the interactive-frame tooltip",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Mac: supported mp4 retains the interactive-frame tooltip",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Mac: supported canvas retains the interactive-frame tooltip",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Mac: folder selection does not throw when checking eligible actions",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Mac: unsupported font file advertises only a link for link",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Mac: unsupported font file advertises only a link for image",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Mac: unsupported font file advertises only a link for image-fullsize",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Mac: unsupported font file advertises only a link for embeddable",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Mac: unsupported font files advertises only a link for link",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Mac: unsupported font files advertises only a link for image",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Mac: unsupported font files advertises only a link for image-fullsize",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Mac: unsupported font files advertises only a link for embeddable",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Mac: registered custom file view retains the embeddable action",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Mac: plural internal file payload uses the real Shift image action",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Mac: internal image drag resolves real Shift mapping and tooltip (Shift=false)",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Mac: internal image drag resolves real Shift mapping and tooltip (Shift=true)",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Win: supported md retains the interactive-frame tooltip",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Win: supported pdf retains the interactive-frame tooltip",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Win: supported mp3 retains the interactive-frame tooltip",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Win: supported mp4 retains the interactive-frame tooltip",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Win: supported canvas retains the interactive-frame tooltip",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Win: folder selection does not throw when checking eligible actions",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Win: unsupported font file advertises only a link for link",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Win: unsupported font file advertises only a link for image",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Win: unsupported font file advertises only a link for image-fullsize",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Win: unsupported font file advertises only a link for embeddable",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Win: unsupported font files advertises only a link for link",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Win: unsupported font files advertises only a link for image",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Win: unsupported font files advertises only a link for image-fullsize",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Win: unsupported font files advertises only a link for embeddable",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Win: registered custom file view retains the embeddable action",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Win: plural internal file payload uses the real Shift image action",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Win: internal image drag resolves real Shift mapping and tooltip (Shift=false)",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::Win: internal image drag resolves real Shift mapping and tooltip (Shift=true)",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/dropActions.test.mjs::YouTube import writes the thumbnail and keeps the video navigation link",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/excalidrawTypeSource.test.mjs::local handoff uses one matching canonical declaration graph",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/excalidrawTypeSource.test.mjs::mismatched excalidraw.production.min.js cannot select unrelated local declarations",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/excalidrawTypeSource.test.mjs::mismatched excalidraw.development.js cannot select unrelated local declarations",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/excalidrawTypeSource.test.mjs::mismatched excalidraw.production.min.css cannot select unrelated local declarations",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/excalidrawTypeSource.test.mjs::mismatched excalidraw.development.css cannot select unrelated local declarations",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/excalidrawTypeSource.test.mjs::missing local declaration or runtime leaves installed package resolution intact",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/extrasMermaid.test.mjs::Mermaid 2.2.2 is rejected by the exact-version handshake",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/extrasMermaid.test.mjs::Mermaid 3.0.0 is accepted by the exact-version handshake",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/extrasMermaid.test.mjs::Mermaid 3.0.1 is rejected by the exact-version handshake",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/features.test.mjs::feature map retains the full denominator and public surfaces without inferred execution",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/features.test.mjs::feature drift, missing test files, stale anchors and unowned fixture references fail closed",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/frontmatter.source.test.mjs::prepared export pairwise precedence export-01",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/frontmatter.source.test.mjs::prepared export pairwise precedence export-02",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/frontmatter.source.test.mjs::prepared export pairwise precedence export-03",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/frontmatter.source.test.mjs::prepared export pairwise precedence export-04",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/frontmatter.source.test.mjs::prepared export pairwise precedence export-05",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/frontmatter.source.test.mjs::prepared export pairwise precedence export-06",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/frontmatter.source.test.mjs::prepared export pairwise precedence export-07",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/frontmatter.source.test.mjs::prepared export pairwise precedence export-08",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/frontmatter.source.test.mjs::prepared export pairwise precedence export-09",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/frontmatter.source.test.mjs::prepared export pairwise precedence export-10",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/frontmatter.source.test.mjs::prepared export pairwise precedence export-11",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/frontmatter.source.test.mjs::prepared export pairwise precedence export-12",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/frontmatter.source.test.mjs::export overrides preserve explicit false and zero while invalid scales retain defaults",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/frontmatter.source.test.mjs::autoexport format overrides keep both-theme intent and fall back for missing or unrecognized values",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/fullscreen.test.mjs::fullscreen preserves the complete ancestor path at split depth 0",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/fullscreen.test.mjs::fullscreen preserves the complete ancestor path at split depth 1",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/fullscreen.test.mjs::fullscreen preserves the complete ancestor path at split depth 2",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/fullscreen.test.mjs::fullscreen preserves the complete ancestor path at split depth 3",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/fullscreen.test.mjs::fullscreen restores only its own classes and leaves existing inline styles intact",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/fullscreen.test.mjs::missing optional controls and another window are safe",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/fullscreen.test.mjs::another drawing takes over fullscreen without leaking classes; migration cleanup uses the entry document",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/hostContracts.test.mjs::plugin host and public Mermaid declarations match the byte-matched local fork",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/behaviorDecoding.test.mjs::actual behavior decoder requests CORS before loading and never attaches a canvas to the workspace",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/behaviorDecoding.test.mjs::missing-source setup retires the old editor before deleting its file",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/browserDiagnostics.test.mjs::only the exact browser notification without an Error object is diagnostic",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/browserDiagnostics.test.mjs::large raw notification evidence is retrieved in bounded pages without chasing new events",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/browserDiagnostics.test.mjs::CLI classification retains raw lines and rejects exceptions, suffixes and unknown formats",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/browserDiagnostics.test.mjs::a stable quiet window settles without altering browser events or geometry",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/browserDiagnostics.test.mjs::persistent notification storms fail the bounded idle check",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/browserDiagnostics.test.mjs::unstable geometry fails even without any notification",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/coldStart.test.mjs::cold restart cannot touch the CLI before isolation succeeds",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/coldStart.test.mjs::window reload cannot masquerade as a whole-app restart",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/coldStart.test.mjs::cold restart revalidates isolation after the main process changes",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/combination.test.mjs::corrupt frozen Extras bytes fail before the first native call",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/combination.test.mjs::redirected companion destination fails before disable or deployment",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/combination.test.mjs::companion staging proves installed bytes and restores prior disabled state",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/debuggerSession.test.mjs::an existing debugger is never stolen or detached",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/debuggerSession.test.mjs::owned console and exception capture is removed with its exact attachment",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/debuggerSession.test.mjs::expected fault injection cannot hide another error or an incorrect count",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/debuggerSession.test.mjs::lost console controller fails cleanup but still releases our debugger attachment",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/debuggerSession.test.mjs::renderer scheduling is scoped and restores both original background-throttling values",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/debuggerSession.test.mjs::expected missing-asset diagnostics cannot hide exceptions, extra fields, another source or repeated errors",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/debuggerSession.test.mjs::truncated console objects expose the actual native error and complete own properties",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/deviceProfiles.test.mjs::device obligations retain desktop, both mobile orientations, both themes and all supported layouts",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/hostReadiness.test.mjs::reload polls the temporarily unavailable CLI registry, then verifies the actual runtime",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/hostReadiness.test.mjs::a package failure is not retried as host startup, and missing readiness has a deadline",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/inAppTask.test.mjs::async native work completes cleanup before its controller disappears",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/inAppTask.test.mjs::timeout cancels condition waits, awaits cleanup, then propagates failure",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/inAppTask.test.mjs::collecting independent behavioral failures retains strict failed acceptance",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/inAppTask.test.mjs::failed cleanup retains the controller and cannot become a pass",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/inAppTask.test.mjs::tool deadlines retain unsettled native print resources and never claim cancellation",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/inAppTask.test.mjs::host requests are acknowledged in order and produce explicit evidence",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/inAppTask.test.mjs::CLI Error output is failure even with exit zero or preceding output",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/inAppTask.test.mjs::async readiness predicates settle before the next native step",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/inAppTask.test.mjs::work and cleanup failures retain both causes and case evidence",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/legacyTask.test.mjs::timed-out legacy work settles before cleanup and controller removal",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/legacyTask.test.mjs::failed legacy cleanup retains both controllers for guarded recovery",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/legacyTask.test.mjs::parent cancellation reaches the legacy loop before owned cleanup",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/legacyTask.test.mjs::a legacy operation reports its own failed cleanup and retains recovery ownership",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/markdownImageClose.test.mjs::Markdown-image fixture retirement waits for asynchronous owner release and persistence",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/markdownImageClose.test.mjs::a close deadline fails and retains the live owner without cancelling native work",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/nativeStateEvidence.test.mjs::passive native state reads preserve settings, layout, focus and scheduling without exposing values",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/nativeStateEvidence.test.mjs::passive case evidence preserves original failure and captures cleanup without restoring state",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/pluginDiscovery.test.mjs::fresh staged discovery awaits the actual host scan and cleans its task",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/pluginDiscovery.test.mjs::missing discovery capability fails with an explicit first-open prerequisite",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/processTools.test.mjs::CLI discovery supports both desktop platforms, overrides and PATH fallback",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/processTools.test.mjs::long and multiline Windows evals preserve literal code and remove their temporary scripts",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/processTools.test.mjs::temporary eval scripts are removed if native spawning throws",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/processTools.test.mjs::short Windows calls and all macOS calls keep their native arguments",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/processTools.test.mjs::package managers launch JavaScript entries through the current Node without .cmd shims",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/requireIsolatedSession.test.mjs::native CI rejects another CLI session, extra registered vaults and mismatched ownership",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/runner.test.mjs::requires the named test vault and refuses redirected plugin paths",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/runner.test.mjs::a CLI vault mismatch stops before build or staging",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/runner.test.mjs::requires the initial Community plugin install and enablement",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/runner.test.mjs::a CLI config mismatch stops before build or deployment",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/runner.test.mjs::stages exact artifacts, asserts an editor and cleans its test drawing",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/runner.test.mjs::an eval Error payload fails even when the CLI process reports success",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/runner.test.mjs::a CLI session differing from the held application lock cannot build or deploy",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/stability.test.mjs::large-scene stress stays bounded and deterministic with preserved prose and custom data",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/stability.test.mjs::failed stability loading retires the owned leaf before deleting its file",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/textUndoDiagnostics.test.mjs::text-history diagnostics preserve owning window, leaked active target, controls and actual stack depths without mutation",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/textUndoDiagnostics.test.mjs::missing and hidden history controls remain unavailable evidence and cyclic private fibers stay bounded",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/textUndoDiagnostics.test.mjs::text fixture awaits the normal mode reload before clearing the replacement API",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/host/textUndoDiagnostics.test.mjs::incoherent text modes fail before scene or history mutation",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/inlineLinkSuggester.test.mjs::closing a detached dropdown releases its keyboard scope",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/inlineLinkSuggester.test.mjs::closing an inactive detached scope preserves the modal above it",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/inlineLinkSuggester.test.mjs::connected and repeated closes restore the original scope",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/inlineLinkSuggester.test.mjs::an awaited lookup cannot reopen suggestions after closing the input",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/inlineLinkSuggester.test.mjs::a previous close timer does not unblock a newly opened suggestion session",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/localVault.test.mjs::live preparation restores core activation and accepts Obsidian's persisted boolean map",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/localVault.test.mjs::native entry points reject desktop/personal target overrides before changing any environment value",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/localVault.test.mjs::local working vault contains hash-verified executable plugins and declared settings, idempotently",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/localVault.test.mjs::missing Extras is explicit and cannot masquerade as installed coverage",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/localVault.test.mjs::corrupt producer bytes and redirected destinations cannot become a prepared installation",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/localVault.test.mjs::registration check accepts only the exact open local vault and never modifies the host registry",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/lucideIcons.test.mjs::catalog is installed Lucide-only, canonical and filtered case-insensitively",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/lucideIcons.test.mjs::presets scale nominal geometry and strokes once, independent of canvas zoom",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/lucideIcons.test.mjs::explicit stroke width also controls round-cap dot geometry",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/lucideIcons.test.mjs::aspect, viewBox origin and curve sampling retain intended final scale",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/lucideIcons.test.mjs::repeat calls retain independent identities and do not mutate registry SVGs",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/lucideIcons.test.mjs::unknown/custom/unsafe names, invalid values and partial/empty conversions fail",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/lucideIcons.test.mjs::EA API is synchronous, view-free and preserves unrelated workbench/style/assets on failure",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/markdownEmbeds.test.mjs::ready follows successful insertion; repeated callbacks preserve the image",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/markdownEmbeds.test.mjs::a live, detached context recovers on reattachment (before queue start)",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/markdownEmbeds.test.mjs::a live, detached context recovers on reattachment (during image generation)",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/markdownEmbeds.test.mjs::null releases pending state and allows a later callback to retry",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/markdownEmbeds.test.mjs::throw releases pending state and allows a later callback to retry",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/markdownEmbeds.test.mjs::an obsolete completion cannot insert or clear a newer pending attempt",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/markdownEmbeds.test.mjs::attribute refresh retains the current image and the actual target until replacement",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/markdownEmbeds.test.mjs::a later callback repairs content removed by the host",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/markdownEmbeds.test.mjs::an unloaded context cannot overwrite a replacement context's image",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/markdownEmbeds.test.mjs::plugin unload cancels an in-flight image",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/markdownEmbeds.test.mjs::permanent unload stops queued work and cleans observers/timers",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/markdownEmbeds.test.mjs::permanent unload stops generating work and cleans observers/timers",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/markdownEmbeds.test.mjs::permanent unload stops debounced work and cleans observers/timers",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/markdownEmbeds.test.mjs::ordinary image embeds, text references and code blocks remain native",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/markdownEmbeds.test.mjs::Reading mode skips a detached candidate without suppressing a later live drawing",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/markdownEmbeds.test.mjs::image loader cancellation follows context lifetime and always clears its interval",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/markdownEmbeds.test.mjs::explicit self-images override Markdown preferences and use the containing drawing",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/markdownEmbeds.test.mjs::Reading mode resolves explicit self-images, but ignores empty and ordinary text fragments",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/markdownEmbeds.test.mjs::Reading mode preserves a target's Markdown side unless the link explicitly requests an image",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/markdownEmbeds.test.mjs::nested Markdown-side drawings and PNGs remain visible; drawing metadata stays hidden",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/package.source.test.mjs::one private runtime serves main and two popout leases; only final release removes the alias",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/package.source.test.mjs::destroy clears owned aliases and registrations without clobbering a replacement alias",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/package.source.test.mjs::incompatible component protocol rolls back common host registration and exposes no runtime",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/package.source.test.mjs::failed second adapter registration rolls back the first and permits idempotent teardown",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/pairwise.test.mjs::pairwise cases retain missing, false and zero and cover every factor pair reproducibly",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/pairwise.test.mjs::invalid high-risk rows and unbounded Cartesian spaces fail before generating a partial plan",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/pdfImport.test.mjs::PDF loader renders plain PDF file",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/pdfImport.test.mjs::PDF loader renders missing PDF reference",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/pdfImport.test.mjs::PDF loader renders explicit PDF page",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/pdfImport.test.mjs::PDF loader renders explicit PDF crop",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/pdfImport.test.mjs::the previous plain-PDF null-reference path fails the loader evidence",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/persistence.source.test.mjs::same-path snapshots remain ordered and uncoalesced while another drawing proceeds independently",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/persistence.source.test.mjs::failed writes preserve the failure receipt, never schedule a backup and release the path for retry",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/persistence.source.test.mjs::missing/recreated targets and empty payloads cannot overwrite a different drawing",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/persistence.source.test.mjs::popout migration reserves order without writing until the replacement consumes its exact target",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/persistence.source.test.mjs::wrong-target, expired and discarded migration handoffs release reservations without a source write",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/persistence.source.test.mjs::a live write lease blocks detached saves until its idempotent release",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/persistence.source.test.mjs::backup and completion diagnostics do not undo a successful physical write",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/persistence.source.test.mjs::save snapshots detach mutable scene/custom/image data and exclude rendering caches",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/persistence.source.test.mjs::snapshot export registries retain independent Markdown, equation, image and PDF metadata",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/provision.test.mjs::seed is deterministic, provenance-complete and retains saved data in all formats",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/provision.test.mjs::fresh copies work at independent roots with spaces and Unicode; provisioning is idempotent",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/provision.test.mjs::never adopts an existing arbitrary vault, nonempty root or seed for reset",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/provision.test.mjs::redirected roots, config directories and cross-root ownership are rejected",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/regression.test.mjs::portable regression requires independent suites and never substitutes an upstream result",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/regression.test.mjs::a native regression cannot pass without every declared CLI and EA case",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/regression.test.mjs::unexpected errors, cleanup and coverage failures keep regression red",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/reportFiles.test.mjs::JUnit escapes evidence and represents blocked or cleanup-only failures as failures",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/reportFiles.test.mjs::source coverage ratchets fail on lost modules, missing branch evidence or regressions",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/saveCoordinator.source.test.mjs::failed saves keep dirty state and successful retry acknowledges only captured bytes",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/saveCoordinator.source.test.mjs::an edit during a save queues its own later snapshot instead of clearing the newer dirty revision",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/saveCoordinator.source.test.mjs::handoff is never reported as physically acknowledged, and unconfirmed bytes remain distinguishable",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/saveCoordinator.source.test.mjs::own-write echoes, newer edits, accepted external content and new target generations stay distinct",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/saveCoordinator.source.test.mjs::migration state transfers only settled, nonnegative matching revision baselines",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/saveCoordinator.source.test.mjs::a rejected autosave releases its busy flag and later autosaves can persist",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/sceneFiles.source.test.mjs::late file callbacks reject replacement API for the same path and release PDF resources",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/sceneFiles.source.test.mjs::late file callbacks reject another file and release PDF resources",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/sceneFiles.source.test.mjs::late file callbacks reject window migration and release PDF resources",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/sceneFiles.source.test.mjs::late file callbacks reject view unload and release PDF resources",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/sceneFiles.source.test.mjs::late file callbacks reject destroyed editor and release PDF resources",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/sceneFiles.source.test.mjs::current file callbacks deliver partial and final batches once; teardown cancels all owned loaders",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/sceneFiles.source.test.mjs::viewport prioritization uses scene zoom, scroll and image bounds",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/sceneFiles.source.test.mjs::paint waiting uses two owning-window frames and a bounded fallback",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/settings/settings.source.test.mjs::missing first-install settings are distinct from corruption and synchronized records",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/settings/settings.source.test.mjs::settings queue coalesces writes, waits for in-flight revisions and applies actions after success",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/settings/settings.source.test.mjs::settings write failure rejects waiters, skips actions and permits a successful retry",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/settings/settingsManagerLifecycle.source.test.mjs::late save after settings teardown cannot replace a custom configuration with an empty record",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/settings/settingsManagerLifecycle.source.test.mjs::invalid runtime settings cannot be serialized into an empty or malformed configuration",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/settings/settingsManagerLifecycle.source.test.mjs::settings teardown is idempotent and retired loads perform no storage work",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/settings/settingsManagerLifecycle.source.test.mjs::a queued settings write cannot start storage after its manager is destroyed",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/settings/settingsManagerLifecycle.source.test.mjs::teardown during recovery persistence prevents an old instance from overwriting replacement settings",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/settings/settingsManagerLifecycle.source.test.mjs::teardown while checking the settings file prevents a delayed load from reading or mutating settings",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/settings/settingsManagerLifecycle.source.test.mjs::teardown during a settings read prevents a delayed empty result from applying or persisting defaults",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/settings/settingsManagerLifecycle.source.test.mjs::a recovery choice completing after teardown cannot reset persisted preferences",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/settings/settingsManagerLifecycle.source.test.mjs::an already started disk write completes normally and a fresh manager reloads all custom fields",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/settings/settingsManagerLifecycle.source.test.mjs::a recovery read completing after teardown cannot resume startup or open a prompt",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/settings/settingsManagerLifecycle.source.test.mjs::active storage errors still reject and a later retry preserves custom settings",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/settings/settingsWriter.test.mjs::key order does not change canonical serialization",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/settings/settingsWriter.test.mjs::array order is semantically significant and preserved",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/settings/settingsWriter.test.mjs::toJSON values keep native JSON semantics (Date)",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/settings/settingsWriter.test.mjs::toJSON receives its root, property or array index key exactly once",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/settings/settingsWriter.test.mjs::an object returned by toJSON does not invoke its own toJSON",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/settings/settingsWriter.test.mjs::boxed primitives retain their native JSON values",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/settings/settingsWriter.test.mjs::native JSON omission and array replacement semantics are preserved",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/settings/settingsWriter.test.mjs::an own __proto__ key is data, not prototype pollution",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/settings/settingsWriter.test.mjs::self-returning toJSON uses native one-call semantics",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/settings/settingsWriter.test.mjs::unchanged reordered save is skipped",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/settings/settingsWriter.test.mjs::queued A -> B -> A still persists the final A",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/settings/settingsWriter.test.mjs::failed write is retried on the next save",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/settings/settingsWriter.test.mjs::force bypasses suppression for repair flows",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/settings/settingsWriter.test.mjs::cache seeded from disk suppresses the first unchanged save",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/sourceInventory.test.mjs::the source denominator excludes erased declarations but retains runtime effects",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svg.source.test.mjs::whole-module SVG conversion preserves opacity, transforms and open strokes",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svg.source.test.mjs::whole-module SVG fixture imports without mutating source bytes",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svg.source.test.mjs::malformed SVG reports a failed conversion and a later request still works",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::SVG alpha uses percent units and preserves zero and near-zero opacity",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::root styles inherit to open primitives without closing their strokes",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::compound holes never become white patches",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::holes expose the underlying scene; nested islands and disjoint regions retain fill",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::nonzero and evenodd distinguish same-winding nested contours",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::intersecting contours and self-intersections follow the selected fill rule",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::overlapping nonzero contours produce no doubly painted translucent area",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::opposite overlapping windings cancel only their shared area",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::fill closure does not close an open stroke or draw bridges as strokes",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::paint precedence and independent alpha do not depend on attribute order",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::local CSS resolves class, ID, descendant and inline precedence without host CSS",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::CSS specificity does not carry classes into IDs or types into classes",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::equal CSS specificity uses source order and universal selectors add no weight",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::object/group opacity is not inherited as a presentation value and approximations are explicit",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::use opacity diagnoses compositing for direct and nested referenced children",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::use opacity needs no compositing notice for one emitted piece or opaque reuse",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::rendering-tree paint order and all ancestor groups survive native emission",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::viewBox origins, CSS lengths and preserveAspectRatio map to the requested viewport",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::transforms compose in SVG order and rotate around their explicit center",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::rotated, reflected and skewed primitives retain their affine geometry",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::local use references retain every child, instance styling and fresh identities",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::symbol and nested SVG viewports use instance dimensions",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::curves, relative commands and arcs preserve endpoints with bounded point counts",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::round-cap zero-length strokes remain editable dots; zero dimensions remain empty",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::hidden containers, definition-only nodes and namespace prefixes are traversed deliberately",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::failed conversion is atomic: <rect width=\"10\" height=\"10\"/><path d=\"M0 0Z 1\"/>",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::failed conversion is atomic: <path d=\"M1\"/>",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::failed conversion is atomic: <path d=\"M0 0A1 1 0 2 0 10 10\"/>",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::failed conversion is atomic: <use href=\"https://example.test/a.svg#x\"/>",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::failed conversion is atomic: <use href=\"#missing\"/>",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::failed conversion is atomic: <defs><g id=\"loop\"><use href=\"#loop\"/></g></defs><use h",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::failed conversion is atomic: <g transform=\"scale(1e30)\"><rect width=\"10\" height=\"10\"",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::failed conversion is atomic: <rect width=\"-1\" height=\"10\"/>",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::untrusted scripts/styles/images never execute or fetch and unsupported content is diagnosed",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::document depth and input size are bounded before scene publication",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::repeated imports get new element and group identities",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::primitive stroke-before-fill order is preserved without a stroke seam",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::non-scaling strokes remain constant under nonuniform affine transforms",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::bounded fill topology agrees with independent rectangle winding samples",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::outer image clipping is diagnosed without replacing editable output",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::use without instance dimensions preserves the referenced SVG's own viewport",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::zero-radius and coincident-endpoint arcs follow SVG degeneracy rules",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::paint order accounts for an omitted marker operation",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::unsupported geometric CSS is explicitly diagnosed",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::dense simple filled outlines retain existing import support within bounded work",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImport.test.mjs::dense compound outlines retain transparent holes without quadratic work",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImporter.test.mjs::ea.importSVG stays synchronous, appends fresh elements and leaves unrelated work untouched",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImporter.test.mjs::fatal import cannot partially append or clear an existing workbench",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImporter.test.mjs::partial/approximate conversions show diagnostics, while transparent SVG remains valid",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImporter.test.mjs::dialog declines failed/empty imports and always destroys EA: {\"success\":false}",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImporter.test.mjs::dialog declines failed/empty imports and always destroys EA: {\"empty\":true}",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImporter.test.mjs::dialog declines failed/empty imports and always destroys EA: {\"svg\":\"\"}",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImporter.test.mjs::dialog declines failed/empty imports and always destroys EA: {\"error\":true}",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImporter.test.mjs::dialog inserts only a completed conversion and destroys EA once",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/svgImporter.test.mjs::dialog does not insert into a replaced editor after an awaited read",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/templateWorkflow.test.mjs::zero/single templates keep automatic behavior; a chooser has blank first and unique path labels",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/templateWorkflow.test.mjs::explicit blank and close/dismissal produce different results without rejection",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/templateWorkflow.test.mjs::creation resolves drawing contents before making its destination directory",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/templateWorkflow.test.mjs::interactive cancellation never creates a file or opens a leaf; explicit initialization bypasses the chooser",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/templateWorkflow.test.mjs::public blank data keeps template/theme/compatibility/compression behavior and its string contract",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/textElementParsing.test.mjs::text survives 1 newline separator(s), including single-character list markers",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/textElementParsing.test.mjs::text survives 2 newline separator(s), including single-character list markers",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/textElementParsing.test.mjs::text survives 4 newline separator(s), including single-character list markers",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/textSubmissionHistory.test.mjs::parsed standalone text submission preserves earlier drawing history and Markdown source",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/textSubmissionHistory.test.mjs::parsed bound text submission preserves earlier drawing history and Markdown source",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/textSubmissionHistory.test.mjs::raw standalone text submission preserves earlier drawing history and Markdown source",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/textSubmissionHistory.test.mjs::raw bound text submission preserves earlier drawing history and Markdown source",
+        "status": "passed"
+      },
+      {
+        "testId": "node:tests/markdownImageCache.test.mjs::stored display baseline does not invalidate an unchanged SVG render",
+        "status": "passed"
+      },
+      {
+        "testId": "node:tests/markdownImageGeometry.test.mjs::unresized Markdown image grows to fit edited content",
+        "status": "passed"
+      },
+      {
+        "testId": "node:tests/markdownImageGeometry.test.mjs::canvas enlargement survives content growth",
+        "status": "passed"
+      },
+      {
+        "testId": "node:tests/markdownImageGeometry.test.mjs::canvas reduction and vertical-only resize survive content edits",
+        "status": "passed"
+      },
+      {
+        "testId": "node:tests/markdownImageGeometry.test.mjs::legacy image without old intrinsic size keeps its display bounds",
+        "status": "passed"
+      },
+      {
+        "testId": "node:tests/markdownImageGeometry.test.mjs::explicit Markdown flow-width edit applies new intrinsic geometry",
+        "status": "passed"
+      },
+      {
+        "testId": "node:tests/markdownImageGeometry.test.mjs::each copy sharing one file ID retains its own canvas size",
+        "status": "passed"
+      },
+      {
+        "testId": "node:tests/markdownImageGeometry.test.mjs::flow-width change applies new geometry to a shared image copy",
+        "status": "passed"
+      },
+      {
+        "testId": "node:tests/markdownImageGeometry.test.mjs::content refresh retains a cropped pixel viewport and its canvas scale",
+        "status": "passed"
+      },
+      {
+        "testId": "node:tests/markdownImageGeometry.test.mjs::a crop clamped to a smaller SVG retains its canvas scale",
+        "status": "passed"
+      },
+      {
+        "testId": "node:tests/markdownImageGeometry.test.mjs::non-finite offsets from an earlier edge-crop failure are repaired",
+        "status": "passed"
+      },
+      {
+        "testId": "node:tests/markdownImageMetadata.test.mjs::Markdown image records the last rendered SVG size without changing appearance",
+        "status": "passed"
+      },
+      {
+        "testId": "node:tests/markdownImageSave.test.mjs::saving cropped local Markdown and equations skips file-backed PDF synchronization",
+        "status": "passed"
+      },
+      {
+        "testId": "node:tests/markdownImageScaleLoaded.test.mjs::edited LaTeX updates geometry and its cache version, retaining each copy's scale",
+        "status": "passed"
+      },
+      {
+        "testId": "node:tests/markdownImageScaleLoaded.test.mjs::area-preserving equation refresh invalidates cached bounds; an unchanged refresh does not",
+        "status": "passed"
+      },
+      {
+        "testId": "node:tests/markdownImageScaleLoaded.test.mjs::real scaleLoadedImage keeps resized copies and grows an untouched copy on reload",
+        "status": "passed"
+      },
+      {
+        "testId": "node:tests/markdownImageScaleLoaded.test.mjs::real scaleLoadedImage retains ordinary-image scaling and the existing crop path",
+        "status": "passed"
+      },
+      {
+        "testId": "node:tests/markdownImageScaleLoaded.test.mjs::ordinary edge-aligned crop stays finite after an intrinsic size change (400x60@0,0)",
+        "status": "passed"
+      },
+      {
+        "testId": "node:tests/markdownImageScaleLoaded.test.mjs::ordinary edge-aligned crop stays finite after an intrinsic size change (300x120@100,0)",
+        "status": "passed"
+      },
+      {
+        "testId": "node:tests/markdownImageScaleLoaded.test.mjs::Markdown edge-aligned crop stays finite after an intrinsic size change (400x60@0,0)",
+        "status": "passed"
+      },
+      {
+        "testId": "node:tests/markdownImageScaleLoaded.test.mjs::Markdown edge-aligned crop stays finite after an intrinsic size change (300x120@100,0)",
+        "status": "passed"
+      },
+      {
+        "testId": "node:tests/markdownImageScaleLoaded.test.mjs::a crop-only loader update invalidates the element version once",
+        "status": "passed"
+      },
+      {
+        "testId": "node:tests/markdownImageScaleLoaded.test.mjs::repairing a crop offset marks the Markdown drawing for persistence",
+        "status": "passed"
+      },
+      {
+        "testId": "node:tests/markdownImageUpdate.test.mjs::content edits grow untouched images while each resized copy retains its bounds",
+        "status": "passed"
+      },
+      {
+        "testId": "node:tests/markdownImageUpdate.test.mjs::a resize during rendering uses the live scene dimensions",
+        "status": "passed"
+      },
+      {
+        "testId": "node:tests/markdownImageUpdate.test.mjs::editor width changes resize every copy sharing the file ID",
+        "status": "passed"
+      },
+      {
+        "testId": "node:tests/markdownImageUpdate.test.mjs::a shared copy created during a width render receives the new dimensions",
+        "status": "passed"
+      },
+      {
+        "testId": "node:tests/markdownImageUpdate.test.mjs::a shared width change rescales the cropped viewport without stretching its copy",
+        "status": "passed"
+      },
+      {
+        "testId": "node:tests/markdownImageUpdate.test.mjs::cancelled render and a removed target do not commit or save",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/obsidianExcalidrawHost.test.ts::Obsidian Excalidraw host registry starts without requiring an Obsidian plugin or global app",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/obsidianExcalidrawHost.test.ts::Obsidian Excalidraw host registry uses safe defaults or an explicit error without a configured host",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/obsidianExcalidrawHost.test.ts::Obsidian Excalidraw host registry routes settings production helpers through a structural fake",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/obsidianExcalidrawHost.test.ts::Obsidian Excalidraw host registry routes plugin services through the structural fake",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/obsidianExcalidrawHost.test.ts::Obsidian Excalidraw host registry routes single-finger pen-mode panning through the structural fake",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/obsidianExcalidrawHost.test.ts::Obsidian Excalidraw host registry disposes registrations idempotently without clearing a newer host",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/obsidianExcalidrawHost.test.ts::Obsidian Excalidraw host registry rejects an unsupported runtime protocol",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/obsidianText.test.ts::Obsidian text lifecycle does not record a parsed Markdown round trip as a new history edit",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/obsidianText.test.ts::Obsidian text lifecycle keeps real content, geometry and link changes: { rawText: '[[other]]]' }",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/obsidianText.test.ts::Obsidian text lifecycle keeps real content, geometry and link changes: { width: 123 }",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/obsidianText.test.ts::Obsidian text lifecycle keeps real content, geometry and link changes: { link: '[[other]]' }",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/obsidianText.test.ts::Obsidian text lifecycle opens parsed text as raw Markdown and retains it in the scene",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/obsidianText.test.ts::Obsidian text lifecycle keeps submitted Markdown separate from parsed display text and its link",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/common/src/commonObsidianHost.test.ts::Obsidian common host registry starts without requiring an Obsidian plugin or global app",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/common/src/commonObsidianHost.test.ts::Obsidian common host registry uses safe defaults when no host is configured",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/common/src/commonObsidianHost.test.ts::Obsidian common host registry exposes capabilities from a configured structural fake",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/common/src/commonObsidianHost.test.ts::Obsidian common host registry supplies both render-canvas limits without loading the plugin",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/common/src/commonObsidianHost.test.ts::Obsidian common host registry supplies device capabilities without loading the plugin",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/common/src/commonObsidianHost.test.ts::Obsidian common host registry supplies and normalizes the desktop UI mode without loading the plugin",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/common/src/commonObsidianHost.test.ts::Obsidian common host registry supplies preferred UI modes for every form factor without loading the plugin",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/common/src/commonObsidianHost.test.ts::Obsidian common host registry forwards highlight inputs and default opacity without loading the plugin",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/common/src/commonObsidianHost.test.ts::Obsidian common host registry disposes the active registration idempotently",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/common/src/commonObsidianHost.test.ts::Obsidian common host registry does not let a stale disposer clear a newer registration",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/common/src/commonObsidianHost.test.ts::Obsidian common host registry rejects an unsupported runtime protocol",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/actions/actionToggleFrameRole.test.ts::marker frame role removes frame members and restores them on undo",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/components/App.wheel.obsidian.test.ts::Obsidian wheel minimum (#3008) crosses 10%, stops at 1%, and never snaps back on a further zoom-out",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/components/App.wheel.obsidian.test.ts::Obsidian wheel minimum (#3008) reads settings live and still allows zoom-in from below 10%",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/components/App.wheel.obsidian.test.ts::Obsidian wheel minimum (#3008) retains the standalone 10% default",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/components/App.wheel.obsidian.test.ts::Obsidian wheel minimum (#3008) respects scroll constraints with lockZoom=false",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/components/App.wheel.obsidian.test.ts::Obsidian wheel minimum (#3008) respects scroll constraints with lockZoom=true",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/components/App.wheel.obsidian.test.ts::Obsidian wheel minimum (#3008) honors live host maximum above and below 3000% with constraints null",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/components/App.wheel.obsidian.test.ts::Obsidian wheel minimum (#3008) honors live host maximum above and below 3000% with constraints {\"x\":0,\"y\":0,\"width\":10000,\"height\":10000,\"lockScroll\":false,\"lockZoom\":false,\"zoom\":1,\"overscroll\":0}",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/components/ObsidianRadixPortal.test.tsx::ObsidianRadixPortal portals outside the Excalidraw container while preserving its theme",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/components/ObsidianRadixPortal.test.tsx::ObsidianRadixPortal keeps content mounted while mirroring source-container visibility",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/tests/obsidianExport.test.ts::retains the public root and utility exports",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/tests/obsidianExport.test.ts::preserves legacy raster scale defaults and native dimension truncation",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/tests/obsidianExport.test.ts::preserves independent getDimensions viewport and drawing scale",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/tests/obsidianExport.test.ts::preserves capped raster dimensions and the uncapped exportScale fallback",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/tests/obsidianExport.test.ts::preserves SVG scale, transparent background, links, and embedded scene IDs",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/tests/obsidianExport.test.ts::excludes PDF markers before canvas/SVG bounds and embedded SVG metadata",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/tests/obsidianExport.test.ts::preserves the global frame palette, disabled decorations and custom label color",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/tests/obsidianExport.test.ts::uses the single-frame region with square clipping through the legacy adapter",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/tests/obsidianExport.test.ts::preserves JPEG alias/background/quality and PNG encoding",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/tests/obsidianExport.test.ts::accepts both clipboard option shapes",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/tests/obsidianFonts.test.ts::Obsidian font loading loads into an explicitly supplied document without using the main font set",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/tests/obsidianFonts.test.ts::Obsidian font loading keeps the public Document argument and the new FontFaceSet argument equivalent",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/tests/obsidianFonts.test.ts::Obsidian font loading leaves Local Font registration and loading to the host",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/tests/obsidianPele.test.tsx::retains host label metrics and raw text when aligning bound shapes",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/tests/obsidianRenderEnvironment.test.ts::preserves custom pen outlines through each host's path factory",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/tests/obsidianRenderEnvironment.test.ts::keeps baked link opacity separate when editors share an environment",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/tests/obsidianSelection.test.tsx::Obsidian selection after the upstream extraction selects the topmost unlocked overlap under a locked overlay",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/tests/obsidianSelection.test.tsx::Obsidian selection after the upstream extraction does not select an isolated locked element",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/tests/obsidianSelection.test.tsx::Obsidian selection after the upstream extraction cycles only unlocked overlaps and wraps under a locked overlay",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/tests/obsidianSelection.test.tsx::Obsidian selection after the upstream extraction preserves a host-selected group, then cycles it as one unit",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/tests/obsidianSelection.test.tsx::Obsidian and upstream selection API coexistence keeps host selection synchronous, including locked search results without expanding groups",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/tests/obsidianSelection.test.tsx::Obsidian and upstream selection API coexistence keeps host z-order changes scoped to the requested element",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/tests/obsidianSelection.test.tsx::Obsidian and upstream selection API coexistence exposes detached upstream methods with group and locked-element options",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/tests/obsidianSelection.test.tsx::Obsidian and upstream selection API coexistence keeps marker frames selectable without changing their saved role",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/tests/obsidianSelection.test.tsx::Obsidian and upstream selection API coexistence derives the new API's lone-arrow line editor from the selection",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/tests/obsidianSelection.test.tsx::Obsidian and upstream selection API coexistence shows upstream link selection without changing host search highlighting",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/tests/obsidianWrap.test.tsx::Obsidian wrap link ownership enables W in full layout only when the layout is not mobile",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/tests/obsidianWrap.test.tsx::Obsidian wrap link ownership enables W in tray layout only when the layout is not mobile",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/tests/obsidianWrap.test.tsx::Obsidian wrap link ownership enables W in compact layout only when the layout is not mobile",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/tests/obsidianWrap.test.tsx::Obsidian wrap link ownership enables W in mobile layout only when the layout is not mobile",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/tests/obsidianWrap.test.tsx::Obsidian wrap link ownership moves explicit links through wrap, unwrap, rewrap and history without losing raw Markdown",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/tests/obsidianWrap.test.tsx::Obsidian wrap link ownership merges distinct container/text links once and restores the original container on rewrap",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/tests/obsidianWrap.test.tsx::Obsidian wrap link ownership keeps the dark theme when wrapping and unwrapping a selection in a frame",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/tests/obsidianWrap.test.tsx::frame edge fixes with Obsidian marker guards contains an edge-aligned thick stroke and clips it as a frame child",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/tests/obsidianWrap.test.tsx::frame edge fixes with Obsidian marker guards never captures elements into a marker frame, including resize discovery",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/bootstrap.test.tsx::owned test bootstrap publishes actual App hooks only in the test environment",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/coreRegression.test.tsx::system font CSS uses the local fallback without fetching nonexistent font content",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/coreRegression.test.tsx::bundled font CSS still embeds the registered font content",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/coreRegression.test.tsx::vault-provided Local Font content remains embedded",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/coreRegression.test.tsx::hiding default UI preserves pointer authoring after the scheduled activation",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/coreRegression.test.tsx::pan button 1 forwards the host pointer-down hook before pan ownership",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/coreRegression.test.tsx::pan button 2 forwards the host pointer-down hook before pan ownership",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/coreRegression.test.tsx::public tool activation commits rectangle and returns to selection",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/coreRegression.test.tsx::public tool activation commits diamond and returns to selection",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/coreRegression.test.tsx::public tool activation commits ellipse and returns to selection",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/coreRegression.test.tsx::public tool activation commits arrow and returns to selection",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/coreRegression.test.tsx::public tool activation commits line and returns to selection",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/coreRegression.test.tsx::public tool activation commits freedraw and returns to selection",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/coreRegression.test.tsx::public tool activation commits hand and returns to selection",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/coreRegression.test.tsx::public tool activation commits eraser and returns to selection",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/coreRegression.test.tsx::public tool activation commits laser and returns to selection",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/coreRegression.test.tsx::public tool activation commits text and returns to selection",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/coreRegression.test.tsx::public tool activation commits frame and returns to selection",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/coreRegression.test.tsx::public tool activation commits embeddable and returns to selection",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/coreRegression.test.tsx::public tool activation commits stickynote and returns to selection",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/coreRegression.test.tsx::public tool activation commits autoshape and returns to selection",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/coreRegression.test.tsx::public tool activation commits bucketfill and returns to selection",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/coreRegression.test.tsx::toolbar can select rectangle with real scheduling and one unambiguous control",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/coreRegression.test.tsx::toolbar can select diamond with real scheduling and one unambiguous control",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/coreRegression.test.tsx::toolbar can select ellipse with real scheduling and one unambiguous control",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/coreRegression.test.tsx::toolbar can select arrow with real scheduling and one unambiguous control",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/coreRegression.test.tsx::toolbar can select line with real scheduling and one unambiguous control",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/coreRegression.test.tsx::toolbar can select freedraw with real scheduling and one unambiguous control",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/coreRegression.test.tsx::host-forced tool and scene updates coexist after initialization",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/coreRegression.test.tsx::bound host text, links and unknown data survive JSON restore",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/coreRegression.test.tsx::library updates render independently of the drawing",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/deviceBoundaries.test.ts::classifies mobile editor 598 x 900 as phone",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/deviceBoundaries.test.ts::classifies mobile editor 599 x 900 as phone",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/deviceBoundaries.test.ts::classifies mobile editor 600 x 900 as tablet",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/deviceBoundaries.test.ts::classifies mobile editor 999 x 499 as phone",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/deviceBoundaries.test.ts::classifies mobile editor 1000 x 499 as desktop",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/deviceBoundaries.test.ts::classifies mobile editor 1001 x 499 as desktop",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/deviceBoundaries.test.ts::classifies mobile editor 999 x 500 as desktop",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/deviceBoundaries.test.ts::classifies mobile editor 999 x 501 as desktop",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/deviceBoundaries.test.ts::narrow desktop remains desktop and a tablet host remains tablet beyond width thresholds",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/deviceBoundaries.test.ts::phone preference and allowMobile are live semantic capabilities",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/imageVariants.test.ts::saved host image variants 'raster' opacity=+0 locked=false cropped=false preserves shared-source geometry",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/imageVariants.test.ts::saved host image variants 'raster' opacity=50 locked=true cropped=true preserves shared-source geometry",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/imageVariants.test.ts::saved host image variants 'svg' opacity=100 locked=false cropped=true preserves shared-source geometry",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/imageVariants.test.ts::saved host image variants 'pdf-page' opacity=100 locked=true cropped=false preserves shared-source geometry",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/imageVariants.test.ts::saved host image variants 'svg' opacity=+0 locked=true cropped=false preserves shared-source geometry",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/imageVariants.test.ts::saved host image variants 'pdf-page' opacity=+0 locked=false cropped=true preserves shared-source geometry",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/imageVariants.test.ts::saved host image variants 'svg' opacity=50 locked=false cropped=false preserves shared-source geometry",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/imageVariants.test.ts::saved host image variants 'raster' opacity=100 locked=false cropped=false preserves shared-source geometry",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/imageVariants.test.ts::saved host image variants 'pdf-page' opacity=50 locked=false cropped=false preserves shared-source geometry",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/testIdentities.test.ts::retains each reviewed occurrence and its original status",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:tests/obsidian/unit/testIdentities.test.ts::rejects unknown collisions, changed occurrence counts and obsolete exemptions",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/components/TTDDialog/MermaidToExcalidrawLib.test.ts::host-provided Mermaid loading retains the public loaded/api shape and shares only the host service",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/components/TTDDialog/MermaidToExcalidrawLib.test.ts::host-provided Mermaid loading preserves editable image source without mutating readonly converter skeletons",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/components/TTDDialog/MermaidToExcalidrawLib.test.ts::host-provided Mermaid loading yields to activation and retries after the host is enabled",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/components/TTDDialog/MermaidToExcalidrawLib.test.ts::host-provided Mermaid loading retries a rejected host request without retaining a failed cache",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/components/TTDDialog/MermaidToExcalidrawLib.test.ts::host-provided Mermaid loading releases a rejected host module so a UI retry can obtain a new API",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-owned:packages/excalidraw/components/TTDDialog/MermaidToExcalidrawLib.test.ts::host-provided Mermaid loading forwards config and reports only chunk failures against the exact API",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-browser:production:real-editor-roundtrip",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-browser:production:trusted-pointer-and-undo",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-browser:production:scheduled-tools-still-author",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-browser:production:selection-group-delete-history",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-browser:production:library-search-and-portal-menu",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-browser:production:decoded-png-and-svg",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-browser:production:offline-font-and-unicode-export",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-browser:production:two-owning-documents",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-browser:production:offline-cleanup",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-browser:development:real-editor-roundtrip",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-browser:development:trusted-pointer-and-undo",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-browser:development:scheduled-tools-still-author",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-browser:development:selection-group-delete-history",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-browser:development:library-search-and-portal-menu",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-browser:development:decoded-png-and-svg",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-browser:development:offline-font-and-unicode-export",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-browser:development:two-owning-documents",
+        "status": "passed"
+      },
+      {
+        "testId": "fork-browser:development:offline-cleanup",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/activation.source.test.mjs::all service gates reject disabled operations and permanent activation persists only the chosen setting",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/activation.source.test.mjs::session and timed activation replace timers without writing permanent preferences",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/activation.source.test.mjs::temporary expiry restores the permanent preference rather than disabling a permanent feature",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/activation.source.test.mjs::unload clears temporary state and old API references cannot reactivate a service",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/activation.source.test.mjs::MathJax initialization failure is contained and explicit activation can retry",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/activation.source.test.mjs::unknown settings survive migration and only recognized boolean legacy flags are adopted",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/filesystem.source.test.mjs::actual filesystem reads owned UTF-8 and binary files with spaces/Unicode and exact byte ranges",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/filesystem.source.test.mjs::binary subviews never expose surrounding bytes from a shared buffer",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/filesystem.source.test.mjs::unavailable capability, malformed encoding, callback failures and invalid data reject explicitly",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/filesystem.source.test.mjs::PDF named sizes and custom pixel dimensions retain the documented 96-DPI conversion",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/latexTooltipPositioning.test.mjs::positions previews in main, restored and newly opened windows without duplicate observers",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/latexTooltipPositioning.test.mjs::closing a popout disconnects only its observers; unload disconnects every remaining observer",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/latexTooltipPositioning.test.mjs::a deferred layout callback cannot install observers after plugin unload",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/mermaid.test.mjs::advertises the exact converter version supplied by Extras",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/mermaid.test.mjs::loads flowchart and preserves its headless SVG fallback",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/mermaid.test.mjs::loads sequence and preserves its headless SVG fallback",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/mermaid.test.mjs::reports syntax errors and enforces caller text limits",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/pdf.source.test.mjs::PDF success preserves page options, clones content, and restores only owned resources",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/pdf.source.test.mjs::invalid page dimensions and clone errors cannot leave print DOM or adopted styles behind",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/pdf.source.test.mjs::IPC send failure removes the completion listener as well as DOM and styles",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/pdf.source.test.mjs::PDF remains pending beyond two minutes with resources intact until real completion",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/pdf.source.test.mjs::a popout print uses the content document and its Electron endpoint",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/pdf.source.test.mjs::missing Electron fails before allocating any print resources",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/pdf.source.test.mjs::IPC listener registration failure clears print resources",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/pdf.source.test.mjs::independent owning documents may print concurrently",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/pdf.source.test.mjs::print DOM allocation and append failures release styles and permit a later export",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/pdf.source.test.mjs::non-Error IPC rejection remains an Error and releases the owning document",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/settings.source.test.mjs::actual settings legacy path preserves transient labels and writes explicit permanent choice",
+        "status": "passed"
+      },
+      {
+        "testId": "node:scripts/testing/settings.source.test.mjs::actual settings declarative path preserves transient labels and writes explicit permanent choice",
+        "status": "passed"
+      },
+      {
+        "testId": "extras-browser:activation-and-real-mathjax",
+        "status": "passed"
+      },
+      {
+        "testId": "extras-browser:strict-error-recovery",
+        "status": "passed"
+      },
+      {
+        "testId": "extras-browser:real-mermaid-editable-and-image",
+        "status": "passed"
+      },
+      {
+        "testId": "extras-browser:desktop-capabilities-and-unload",
+        "status": "passed"
+      }
+    ],
+    "gates": [
+      {
+        "suiteId": "plugin-source-coverage",
+        "status": "passed",
+        "cleanup": "passed"
+      },
+      {
+        "suiteId": "fork-package",
+        "status": "passed",
+        "cleanup": "passed"
+      },
+      {
+        "suiteId": "extras-package",
+        "status": "passed",
+        "cleanup": "passed"
+      }
+    ]
+  },
+  "native": {
+    "profile": "focused lifecycle with diagnostics",
+    "status": "passed",
+    "tests": [
+      {
+        "testId": "plugin-load",
+        "status": "passed",
+        "assertions": [
+          "commands registered",
+          "drawing/font/export runtime available",
+          "host protocol 3"
+        ]
+      },
+      {
+        "testId": "drawing-main-window",
+        "status": "passed",
+        "assertions": [
+          "Excalidraw API ready",
+          "wrapper mounted",
+          "owner document matches",
+          "main application document"
+        ]
+      },
+      {
+        "testId": "native:lifecycle-two-split-fullscreen",
+        "status": "passed",
+        "assertions": [
+          "split editors share one runtime and distinct APIs",
+          "one drawing's edit does not affect the other",
+          "fullscreen enters and restores owned classes"
+        ]
+      },
+      {
+        "testId": "native:lifecycle-dirty-main-to-popout",
+        "status": "passed",
+        "assertions": [
+          "dirty edit survives main-to-popout",
+          "retired source API unmounted",
+          "popout retains shared private runtime"
+        ]
+      },
+      {
+        "testId": "native:lifecycle-dirty-popout-to-main",
+        "status": "passed",
+        "assertions": [
+          "dirty edit survives popout-to-main",
+          "retired popout API unmounted",
+          "replacement main window physically saves captured edit"
+        ]
+      },
+      {
+        "testId": "native:lifecycle-new-popout-survivor",
+        "status": "passed",
+        "assertions": [
+          "fresh popout opens persisted scene",
+          "popout window closes",
+          "surviving drawing remains editable and saves",
+          "other drawing stays unchanged"
+        ]
+      },
+      {
+        "testId": "native:lifecycle-plugin-reload",
+        "status": "passed",
+        "assertions": [
+          "disable unmounts editor APIs and retires runtime",
+          "reload obtains a new plugin and runtime",
+          "both saved drawings reopen",
+          "stable command registered once",
+          "custom settings, zero/false and unknown nested keys survive reload",
+          "late old-instance saves preserve disk before and after replacement"
+        ]
+      },
+      {
+        "testId": "javascript-errors",
+        "status": "passed"
+      },
+      {
+        "testId": "source-stability",
+        "status": "passed"
+      }
+    ],
+    "cleanup": "passed",
+    "baselineRestored": true
+  },
+  "vault": ".test-work/vaults/excalidraw-auto-test/",
+  "seedHash": "b231ed99d53d800f730e3ceeec83c53dcac7ba54b76ba67264223be8766c9796",
+  "originalCompleteAcceptance": {
+    "plugin": "fd32ac682e2aadc0f982fa23d36da482011117f9",
+    "fork": "053a3b9f9e77917c457fce8ca9453d38b92a303b",
+    "extras": "1cdcb7c425a9b80afdc7b39c88861143b4b85e58",
+    "completeNativeRepeats": 2,
+    "casesPerRepeat": 357,
+    "reference": "native-acceptance-pair-2026-10-30.json"
+  },
+  "completeNativeRepeatsForSettingsFollowup": 0,
+  "commands": [
+    "node --test scripts/testing/settings/settingsManagerLifecycle.source.test.mjs",
+    "npm.cmd run verify:obsidian -- --lifecycle --diagnostics",
+    "npm.cmd run test:regression:portable",
+    "node scripts/testing/review3022ProductionDiff.mjs"
+  ],
+  "releasePolicy": "Maintainer explicitly requested merging the paired source branches and deferred fork/Extras releases and dependency/version updates."
+}

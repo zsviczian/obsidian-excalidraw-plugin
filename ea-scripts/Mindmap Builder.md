@@ -5,9 +5,31 @@
 
 Mind Map Builder turns the Obsidian Excalidraw canvas into a keyboard-driven brainstorming environment. Add children and siblings, arrange branches, pin nodes, fold subtrees, customize colors and grouping, and copy or paste Markdown outlines. Controls live in a persistent sidepanel and can be undocked into a floating input.
 
+The floating input hides in Excalidraw view mode and returns when you switch back to editing. Switching to another kind of tab also hides it without changing your docking preference.
+
+Enter a complete equation such as `$$x=5$$` as a node to render it as a LaTeX image. Editing the node restores `$$x=5$$` in the input; changing the formula updates the image, and removing the `$$` delimiters converts it to text. Markdown copy preserves the equation syntax. Inline math mixed with other text stays a text node. Rendering uses Excalidraw's LaTeX support (Excalidraw Extras is required by recent plugin versions).
+
 To reuse a branch with its links, images, and grouped notes, select the complete branch on the canvas and use native Excalidraw copy. Select a destination Mindmap node, then use the existing Builder **Paste** button or hotkey. The branch attaches as a child; with no destination selected, it becomes an independent map. Builder **Copy** continues to export Markdown outlines.
 
+A local Markdown image can also be pasted directly with Builder **Paste** (Alt/Option+V), with or without a selected parent. Native paste keeps it editable. The floating input remains available while its embedded Markdown-image editor has focus.
+
+Markdown copy keeps local Markdown-image source in an appendix below the outline. A node references it as `![[#^markdown-image=elementId|width]]`; its source is enclosed by `<!-- excalidraw-markdown-image:elementId -->` and `<!-- /excalidraw-markdown-image:elementId -->`, using the same delimiters as drawing files. An optional HTML comment preserves the image's rendering settings. Builder paste separates these blocks from the outline and recreates editable local images with independent source IDs. Copy, cut and paste therefore work without the original drawing. A local image used as a submap exports its children inline; ordinary submaps retain their section export.
+
 Pasted branches retain their styles, folds, pinned nodes, and nested submap settings. Copied whole maps become submaps when attached. Auto-layout remains disabled where you disabled it. Builder's input Undo/Redo groups a completed branch paste; the canvas Undo/Redo controls follow native paste, attachment, and layout history steps.
+
+Builder **Paste** also accepts Mermaid mindmaps, either as plain text starting with `mindmap` or inside a `mermaid` code block. With a node selected, the imported root becomes its child; otherwise it creates a new map. For example:
+
+```mermaid
+mindmap
+  root((Project))
+    research[Research]
+      question{{Open question}}
+    Next steps
+```
+
+Supported shape labels are `[rectangle]`, `(ellipse)` / `((ellipse))`, and `{diamond}` / `{{diamond}}`, with optional node IDs. Ordinary Markdown paste keeps `[[wiki links]]` and `[alias](link)` intact. Within Mermaid, standalone links also remain links; `[text]` denotes a rectangle. Unshaped nodes follow Builder's current box settings. Comments and standalone icon/class annotations are ignored; Mermaid styling, configuration blocks, and multiline Markdown strings are outside this limited import format. Use `<br/>` for label line breaks.
+
+Select a node and use **Copy as Mermaid** in the sidepanel to copy its branch as a fenced Mermaid code block, including folded children and nested submaps. The floating toolbar and **Alt/Option+C** keep their existing Markdown copy behavior. Export includes hierarchy, labels, and supported node shapes; crosslinks, arrow labels, boundaries, and layout settings are omitted. Images and embeds are represented by their text references. Ellipses export as Mermaid circles `((text))`, and diamonds as Mermaid hexagons `{{text}}`, since Mermaid mindmaps have no diamond shape.
 
 > [!Tip]
 > Become a MindMap Builder Pro with the official [MindMap Builder course](https://www.visual-thinking-workshop.com/mindmap)!
@@ -18,13 +40,13 @@ Requires Excalidraw 2.23.4 or newer. Excalidraw 2.27.0 or newer caches compiled 
 
 If you find MindMap Builder helpful, [buy me a coffee](https://ko-fi.com/zsolt).
 
-Build version: 2026-10-13T15:29:25.764Z
+Build version: 2026-11-04T07:18:10.636Z
 
 ```javascript
 */
 
 // Configuration constants
-const VERSION = "v26.10.13";
+const VERSION = "v26.11.04";
 
 // Script bundle
 /* EA Script — mindmap-builder | ea-scripts v1.0.0 */
@@ -46,10 +68,21 @@ const VERSION = "v26.10.13";
   }
 
   // src/scripts/mindmap-builder/lang/de.ts
-  var de = {};
+  var de = {
+    NOTICE_MARKDOWN_IMAGE_INVALID: "Dieser Markdown-Bildanhang kann nicht importiert oder exportiert werden. Quellbl\xF6cke und Verweise pr\xFCfen.",
+    NOTICE_MARKDOWN_IMAGE_MISSING: "Die Markdown-Bildquelle ist nicht verf\xFCgbar. Es wurde nichts kopiert oder ausgeschnitten.",
+    NOTICE_MERMAID_COPIED: "Als Mermaid-Mindmap kopiert.",
+    NOTICE_MERMAID_INVALID: "Diese Mermaid-Mindmap kann nicht eingef\xFCgt werden. Verwende eine Wurzel und r\xFCcke ihre Unterknoten ein.",
+    LABEL_COPY_MERMAID: "Mermaid-Mindmap",
+    DESC_COPY_MERMAID: "Den ausgew\xE4hlten Zweig mit seinen Unterknoten als Mermaid-Codeblock kopieren.",
+    BUTTON_COPY_MERMAID: "Als Mermaid kopieren",
+    MERMAID_EMPTY_NODE: "Unbenannter Knoten"
+  };
 
   // src/scripts/mindmap-builder/lang/en.ts
   var en = {
+    NOTICE_MARKDOWN_IMAGE_INVALID: "Cannot import or export this Markdown-image appendix. Check its source blocks and references.",
+    NOTICE_MARKDOWN_IMAGE_MISSING: "Markdown-image source is unavailable. Nothing was copied or cut.",
     requiresNewerVersion: "Please update the Excalidraw plugin to version {version} or higher.",
     launchFailed: "Mindmap Builder could not start. See the developer console for details.",
     // Notices
@@ -58,6 +91,12 @@ const VERSION = "v26.10.13";
     NOTICE_BRANCH_CUT: "Branch cut to clipboard.",
     NOTICE_MAP_COPIED: "Map copied as markdown.",
     NOTICE_BRANCH_COPIED: "Branch copied as bullet list.",
+    NOTICE_MERMAID_COPIED: "Copied as a Mermaid mindmap.",
+    NOTICE_MERMAID_INVALID: "Cannot paste this Mermaid mindmap. Use one root and indent its children.",
+    LABEL_COPY_MERMAID: "Mermaid mindmap",
+    DESC_COPY_MERMAID: "Copy the selected branch, including its children, as a Mermaid code block.",
+    BUTTON_COPY_MERMAID: "Copy as Mermaid",
+    MERMAID_EMPTY_NODE: "Untitled node",
     NOTICE_CLIPBOARD_EMPTY: "Clipboard is empty.",
     NOTICE_PASTE_ABORTED: "Paste aborted. Clipboard does not start with a Markdown list or header.",
     NOTICE_NO_LIST: "No valid Markdown list found on clipboard.",
@@ -324,16 +363,51 @@ const VERSION = "v26.10.13";
   };
 
   // src/scripts/mindmap-builder/lang/es.ts
-  var es = {};
+  var es = {
+    NOTICE_MARKDOWN_IMAGE_INVALID: "No se puede importar o exportar este ap\xE9ndice de im\xE1genes Markdown. Revisa los bloques de origen y sus referencias.",
+    NOTICE_MARKDOWN_IMAGE_MISSING: "El origen de la imagen Markdown no est\xE1 disponible. No se ha copiado ni cortado nada.",
+    NOTICE_MERMAID_COPIED: "Copiado como mapa mental de Mermaid.",
+    NOTICE_MERMAID_INVALID: "No se puede pegar este mapa mental de Mermaid. Usa una sola ra\xEDz y sangra sus nodos hijos.",
+    LABEL_COPY_MERMAID: "Mapa mental de Mermaid",
+    DESC_COPY_MERMAID: "Copia la rama seleccionada y sus nodos hijos como bloque de c\xF3digo Mermaid.",
+    BUTTON_COPY_MERMAID: "Copiar como Mermaid",
+    MERMAID_EMPTY_NODE: "Nodo sin t\xEDtulo"
+  };
 
   // src/scripts/mindmap-builder/lang/fr.ts
-  var fr = {};
+  var fr = {
+    NOTICE_MARKDOWN_IMAGE_INVALID: "Impossible d\u2019importer ou d\u2019exporter cette annexe d\u2019images Markdown. V\xE9rifiez les blocs sources et leurs r\xE9f\xE9rences.",
+    NOTICE_MARKDOWN_IMAGE_MISSING: "La source de l\u2019image Markdown est indisponible. Rien n\u2019a \xE9t\xE9 copi\xE9 ni coup\xE9.",
+    NOTICE_MERMAID_COPIED: "Copi\xE9 sous forme de carte mentale Mermaid.",
+    NOTICE_MERMAID_INVALID: "Impossible de coller cette carte mentale Mermaid. Utilisez une seule racine et indentez ses enfants.",
+    LABEL_COPY_MERMAID: "Carte mentale Mermaid",
+    DESC_COPY_MERMAID: "Copier la branche s\xE9lectionn\xE9e et ses enfants dans un bloc de code Mermaid.",
+    BUTTON_COPY_MERMAID: "Copier en Mermaid",
+    MERMAID_EMPTY_NODE: "N\u0153ud sans titre"
+  };
 
   // src/scripts/mindmap-builder/lang/ru.ts
-  var ru = {};
+  var ru = {
+    NOTICE_MARKDOWN_IMAGE_INVALID: "\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u0438\u043C\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u0438\u043B\u0438 \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u0435 Markdown-\u0438\u0437\u043E\u0431\u0440\u0430\u0436\u0435\u043D\u0438\u0439. \u041F\u0440\u043E\u0432\u0435\u0440\u044C\u0442\u0435 \u0438\u0441\u0445\u043E\u0434\u043D\u044B\u0435 \u0431\u043B\u043E\u043A\u0438 \u0438 \u0441\u0441\u044B\u043B\u043A\u0438.",
+    NOTICE_MARKDOWN_IMAGE_MISSING: "\u0418\u0441\u0442\u043E\u0447\u043D\u0438\u043A Markdown-\u0438\u0437\u043E\u0431\u0440\u0430\u0436\u0435\u043D\u0438\u044F \u043D\u0435\u0434\u043E\u0441\u0442\u0443\u043F\u0435\u043D. \u041D\u0438\u0447\u0435\u0433\u043E \u043D\u0435 \u0441\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u043D\u043E \u0438 \u043D\u0435 \u0432\u044B\u0440\u0435\u0437\u0430\u043D\u043E.",
+    NOTICE_MERMAID_COPIED: "\u0421\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u043D\u043E \u043A\u0430\u043A \u0438\u043D\u0442\u0435\u043B\u043B\u0435\u043A\u0442-\u043A\u0430\u0440\u0442\u0430 Mermaid.",
+    NOTICE_MERMAID_INVALID: "\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u0432\u0441\u0442\u0430\u0432\u0438\u0442\u044C \u0438\u043D\u0442\u0435\u043B\u043B\u0435\u043A\u0442-\u043A\u0430\u0440\u0442\u0443 Mermaid. \u0418\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u0439\u0442\u0435 \u043E\u0434\u0438\u043D \u043A\u043E\u0440\u0435\u043D\u044C \u0438 \u043E\u0442\u0441\u0442\u0443\u043F\u044B \u0434\u043B\u044F \u0434\u043E\u0447\u0435\u0440\u043D\u0438\u0445 \u0443\u0437\u043B\u043E\u0432.",
+    LABEL_COPY_MERMAID: "\u0418\u043D\u0442\u0435\u043B\u043B\u0435\u043A\u0442-\u043A\u0430\u0440\u0442\u0430 Mermaid",
+    DESC_COPY_MERMAID: "\u0421\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u0432\u044B\u0431\u0440\u0430\u043D\u043D\u0443\u044E \u0432\u0435\u0442\u0432\u044C \u0441 \u0434\u043E\u0447\u0435\u0440\u043D\u0438\u043C\u0438 \u0443\u0437\u043B\u0430\u043C\u0438 \u0432 \u0431\u043B\u043E\u043A \u043A\u043E\u0434\u0430 Mermaid.",
+    BUTTON_COPY_MERMAID: "\u041A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u043A\u0430\u043A Mermaid",
+    MERMAID_EMPTY_NODE: "\u0423\u0437\u0435\u043B \u0431\u0435\u0437 \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u044F"
+  };
 
   // src/scripts/mindmap-builder/lang/zh-cn.ts
   var zhCn = {
+    NOTICE_MARKDOWN_IMAGE_INVALID: "\u65E0\u6CD5\u5BFC\u5165\u6216\u5BFC\u51FA\u6B64 Markdown \u56FE\u50CF\u9644\u5F55\u3002\u8BF7\u68C0\u67E5\u6E90\u5185\u5BB9\u5757\u548C\u5F15\u7528\u3002",
+    NOTICE_MARKDOWN_IMAGE_MISSING: "Markdown \u56FE\u50CF\u6E90\u4E0D\u53EF\u7528\u3002\u672A\u590D\u5236\u6216\u526A\u5207\u4EFB\u4F55\u5185\u5BB9\u3002",
+    NOTICE_MERMAID_COPIED: "\u5DF2\u590D\u5236\u4E3A Mermaid \u601D\u7EF4\u5BFC\u56FE\u3002",
+    NOTICE_MERMAID_INVALID: "\u65E0\u6CD5\u7C98\u8D34\u6B64 Mermaid \u601D\u7EF4\u5BFC\u56FE\u3002\u8BF7\u4F7F\u7528\u5355\u4E2A\u6839\u8282\u70B9\uFF0C\u5E76\u7F29\u8FDB\u5B50\u8282\u70B9\u3002",
+    LABEL_COPY_MERMAID: "Mermaid \u601D\u7EF4\u5BFC\u56FE",
+    DESC_COPY_MERMAID: "\u5C06\u6240\u9009\u5206\u652F\u53CA\u5176\u5B50\u8282\u70B9\u590D\u5236\u4E3A Mermaid \u4EE3\u7801\u5757\u3002",
+    BUTTON_COPY_MERMAID: "\u590D\u5236\u4E3A Mermaid",
+    MERMAID_EMPTY_NODE: "\u65E0\u6807\u9898\u8282\u70B9",
     // Notices
     NOTICE_SELECT_NODE_TO_COPY: "\u8BF7\u9009\u62E9\u8981\u590D\u5236\u7684\u8282\u70B9\u3002",
     NOTICE_MAP_CUT: "\u5BFC\u56FE\u5DF2\u526A\u5207\u5230\u526A\u8D34\u677F\u3002",
@@ -591,6 +665,14 @@ const VERSION = "v26.10.13";
 
   // src/scripts/mindmap-builder/lang/zh-tw.ts
   var zhTw = {
+    NOTICE_MARKDOWN_IMAGE_INVALID: "\u7121\u6CD5\u532F\u5165\u6216\u532F\u51FA\u6B64 Markdown \u5716\u50CF\u9644\u9304\u3002\u8ACB\u6AA2\u67E5\u4F86\u6E90\u5340\u584A\u548C\u53C3\u7167\u3002",
+    NOTICE_MARKDOWN_IMAGE_MISSING: "Markdown \u5716\u50CF\u4F86\u6E90\u7121\u6CD5\u4F7F\u7528\u3002\u672A\u8907\u88FD\u6216\u526A\u4E0B\u4EFB\u4F55\u5167\u5BB9\u3002",
+    NOTICE_MERMAID_COPIED: "\u5DF2\u8907\u88FD\u70BA Mermaid \u5FC3\u667A\u5716\u3002",
+    NOTICE_MERMAID_INVALID: "\u7121\u6CD5\u8CBC\u4E0A\u6B64 Mermaid \u5FC3\u667A\u5716\u3002\u8ACB\u4F7F\u7528\u55AE\u4E00\u6839\u7BC0\u9EDE\uFF0C\u4E26\u7E2E\u6392\u5B50\u7BC0\u9EDE\u3002",
+    LABEL_COPY_MERMAID: "Mermaid \u5FC3\u667A\u5716",
+    DESC_COPY_MERMAID: "\u5C07\u6240\u9078\u5206\u652F\u53CA\u5176\u5B50\u7BC0\u9EDE\u8907\u88FD\u70BA Mermaid \u7A0B\u5F0F\u78BC\u5340\u584A\u3002",
+    BUTTON_COPY_MERMAID: "\u8907\u88FD\u70BA Mermaid",
+    MERMAID_EMPTY_NODE: "\u672A\u547D\u540D\u7BC0\u9EDE",
     // Notices
     NOTICE_SELECT_NODE_TO_COPY: "\u8ACB\u9078\u64C7\u8981\u8907\u88FD\u7684\u7BC0\u9EDE\u3002",
     NOTICE_MAP_CUT: "\u5C0E\u5716\u5DF2\u526A\u4E0B\u5230\u526A\u8CBC\u7C3F\u3002",
@@ -862,6 +944,13 @@ const VERSION = "v26.10.13";
   }
 
   // src/scripts/mindmap-builder/settings.js
+  function resolvePresetName(presets, name) {
+    if (typeof name !== "string" || !Object.prototype.hasOwnProperty.call(presets, name)) {
+      return "Default";
+    }
+    const preset = presets[name];
+    return preset && typeof preset === "object" && !Array.isArray(preset) ? name : "Default";
+  }
   function createSettings(runtimeContext) {
     const getZoom = (level) => {
       const target = runtimeContext.ZOOM_LEVELS[level ?? runtimeContext.zoomLevel] || runtimeContext.ZOOM_LEVELS.Medium;
@@ -884,8 +973,9 @@ const VERSION = "v26.10.13";
       runtimeContext.dirty = false;
     };
     const setVal = (key, value, hidden = false) => {
+      const existing = runtimeContext.ea.getScriptSettings()?.[key];
       const def = runtimeContext.ea.getScriptSettingValue(key, { value, hidden });
-      const isChanging = def.value !== value || def.hidden !== hidden;
+      const isChanging = !existing || def.value !== value || def.hidden !== hidden;
       def.value = value;
       if (hidden) def.hidden = true;
       runtimeContext.ea.setScriptSettingValue(key, def);
@@ -1014,25 +1104,30 @@ const VERSION = "v26.10.13";
       applyPresetToGlobals(presetName);
       await updateRootNodeCustomData(
         {
-          presetName,
-          growthMode: runtimeContext.currentModalGrowthMode,
-          arrowType: runtimeContext.arrowType,
-          fontsizeScale: runtimeContext.fontsizeScale,
-          multicolor: runtimeContext.multicolor,
-          boxChildren: runtimeContext.boxChildren,
-          roundedCorners: runtimeContext.roundedCorners,
-          maxWrapWidth: runtimeContext.maxWidth,
-          isSolidArrow: runtimeContext.isSolidArrow,
-          centerText: runtimeContext.centerText,
-          fillSweep: runtimeContext.fillSweep,
-          branchScale: runtimeContext.branchScale,
-          baseStrokeWidth: runtimeContext.baseStrokeWidth,
-          layoutSettings: JSON.parse(JSON.stringify(runtimeContext.layoutSettings))
+          ...extractConfigFromGlobals(),
+          presetName
         },
         sel
       );
       await runtimeContext.refreshMapLayout(sel);
       runtimeContext.updateUI();
+    };
+    const initializePresets = () => {
+      if (!runtimeContext.mapPresets || typeof runtimeContext.mapPresets !== "object" || Array.isArray(runtimeContext.mapPresets)) {
+        runtimeContext.mapPresets = {};
+        runtimeContext.dirty = true;
+      }
+      if (!Object.prototype.hasOwnProperty.call(runtimeContext.mapPresets, "Default") || !runtimeContext.mapPresets.Default || typeof runtimeContext.mapPresets.Default !== "object" || Array.isArray(runtimeContext.mapPresets.Default)) {
+        runtimeContext.mapPresets.Default = extractConfigFromGlobals();
+        runtimeContext.dirty = true;
+      }
+      setVal(runtimeContext.K_PRESETS, runtimeContext.mapPresets, true);
+      runtimeContext.activePresetName = resolvePresetName(
+        runtimeContext.mapPresets,
+        runtimeContext.activePresetName
+      );
+      setVal(runtimeContext.K_ACTIVE_PRESET, runtimeContext.activePresetName);
+      applyPresetToGlobals(runtimeContext.activePresetName);
     };
     const refreshPresetDropdown = () => {
       if (!runtimeContext.presetDropdown) {
@@ -1042,7 +1137,9 @@ const VERSION = "v26.10.13";
       Object.keys(runtimeContext.mapPresets).forEach(
         (k) => runtimeContext.presetDropdown.addOption(k, k)
       );
-      runtimeContext.presetDropdown.setValue(runtimeContext.activePresetName);
+      runtimeContext.presetDropdown.setValue(
+        resolvePresetName(runtimeContext.mapPresets, runtimeContext.activePresetName)
+      );
     };
     const calculateStrokeWidth = (depth, baseWidth, scaleMode) => {
       const base = Number.isFinite(baseWidth) ? baseWidth : 6;
@@ -1219,6 +1316,7 @@ const VERSION = "v26.10.13";
       diffMapConfig,
       applyPresetToGlobals,
       applyPresetToMap,
+      initializePresets,
       refreshPresetDropdown,
       calculateStrokeWidth,
       getStrokeWidthForDepth,
@@ -1231,10 +1329,14 @@ const VERSION = "v26.10.13";
   }
 
   // src/scripts/mindmap-builder/textParsing.js
+  function parseLatexInput(input) {
+    const match = input.trim().match(/^\$\$((?:(?!\$\$)[\s\S])+)\$\$$/);
+    return match?.[1].trim() ? match[1].trim() : null;
+  }
   function createTextParsing(runtimeContext) {
     const trimText = (text) => {
       if (!text) return text;
-      return text.match(/^(?:[ \t]*[-\*][ \t])?(?:[ \t]*)(.*?)[ \t]*$/)[1];
+      return text.match(/^(?:[ \t]*[-\*][ \t])?(?:[ \t]*)([\s\S]*?)[ \t]*$/)[1];
     };
     const parseText = async (text) => {
       const trimmed = trimText(text);
@@ -1373,6 +1475,8 @@ const VERSION = "v26.10.13";
         return node.link.startsWith("[[") ? `!${node.link}` : `![](${node.link})`;
       }
       if (node.type === "image") {
+        const latex = runtimeContext.ea.targetView?.excalidrawData?.getEquation?.(node.fileId)?.latex ?? node.customData?.latex;
+        if (typeof latex === "string" && latex.trim()) return `$$${latex}$$`;
         const embeddedFile = runtimeContext.ea.targetView?.excalidrawData?.getFile(node.fileId);
         if (!embeddedFile) return "";
         const file = runtimeContext.ea.getViewFileForImageElement(node);
@@ -4790,6 +4894,106 @@ const VERSION = "v26.10.13";
     return { triggerGlobalLayout, refreshMapLayout };
   }
 
+  // src/scripts/mindmap-builder/markdownImageNodes.js
+  async function addLocalMarkdownImage(ea2, image, x, y) {
+    const view = ea2.targetView;
+    const api = ea2.getExcalidrawAPI();
+    const file = view.file;
+    const alive = () => ea2.targetView === view && view.file === file && ea2.getExcalidrawAPI() === api && !api.isDestroyed && !view.isClosingOrMigrating();
+    const defaults = ea2.plugin.settings.markdownImageSettings.defaults;
+    const stored = image.render ?? {};
+    const render = {
+      ...defaults,
+      ...stored,
+      border: { ...defaults.border, ...stored.border },
+      transclusion: {
+        ...defaults.transclusion,
+        ...stored.transclusion,
+        border: { ...defaults.transclusion.border, ...stored.transclusion?.border }
+      }
+    };
+    const rendered = await ea2.getEmbeddedFilesLoader(false).renderMarkdownToSVG(file, image.markdown, render);
+    if (!alive() || !rendered.dataURL || rendered.size.height <= 0) throw new Error("Markdown-image rendering unavailable");
+    const id = await ea2.addImage(x, y, rendered.dataURL, false, false);
+    if (!id || !alive()) throw new Error("Markdown-image destination changed");
+    const element = ea2.getElement(id);
+    const previousFileId = element.fileId;
+    const fileId = ea2.generateElementId();
+    element.fileId = fileId;
+    element.width = image.width ?? render.width;
+    element.height = rendered.size.height * element.width / rendered.size.width;
+    element.crop = null;
+    element.customData = { ...element.customData, markdownImage: {
+      schemaVersion: 1,
+      version: 1,
+      source: "local",
+      render,
+      renderedSize: { ...rendered.size }
+    } };
+    ea2.imagesDict[fileId] = {
+      id: fileId,
+      dataURL: rendered.dataURL,
+      mimeType: "image/svg+xml",
+      created: Date.now(),
+      size: rendered.size,
+      hasSVGwithBitmap: rendered.hasSVGwithBitmap
+    };
+    if (!ea2.getElements().some((e) => e.fileId === previousFileId)) delete ea2.imagesDict[previousFileId];
+    view.excalidrawData.setMarkdownImage(fileId, { markdown: image.markdown });
+    return id;
+  }
+
+  // src/scripts/mindmap-builder/textContainers.ts
+  function getTextAreaScale(container) {
+    if (container.customData?.legacyTextWrap) return 1;
+    if (container.type === "ellipse") return Math.SQRT2;
+    return container.type === "diamond" ? 2 : 1;
+  }
+  function fitTextContainer(options) {
+    const { container, textElement, lib } = options;
+    const scale = getTextAreaScale(container);
+    const nativePadding = (container.width - lib.getBoundTextMaxWidth({ ...container, type: "rectangle" })) / 2;
+    const padding = Math.max(nativePadding, options.padding);
+    const center = { x: container.x + container.width / 2, y: container.y + container.height / 2 };
+    const font = lib.getFontString(textElement);
+    const naturalWidth = lib.measureText(options.renderedText, font, textElement.lineHeight).width;
+    const textWidth = Math.min(
+      options.maxWidth,
+      Math.ceil(naturalWidth) + 2 * (padding - nativePadding)
+    );
+    container.width = Math.ceil((textWidth + 2 * nativePadding) * scale);
+    const availableWidth = lib.getBoundTextMaxWidth(container);
+    const wrappedText = lib.wrapText(options.renderedText, font, availableWidth);
+    const metrics = lib.measureText(wrappedText, font, textElement.lineHeight);
+    container.height = Math.ceil((Math.ceil(metrics.height) + 2 * padding) * scale);
+    if (options.preserveCenter) {
+      container.x = center.x - container.width / 2;
+      container.y = center.y - container.height / 2;
+    }
+    textElement.originalText = options.renderedText;
+    textElement.text = wrappedText;
+    textElement.width = metrics.width;
+    textElement.height = metrics.height;
+    textElement.autoResize = true;
+    positionBoundText(container, textElement, { scale, nativePadding, availableWidth });
+  }
+  function positionBoundText(container, text, area) {
+    const insetX = container.width * (1 - 1 / area.scale) / 2 + area.nativePadding;
+    const insetY = container.height * (1 - 1 / area.scale) / 2 + area.nativePadding;
+    const availableHeight = Math.round(container.height / area.scale) - 2 * area.nativePadding;
+    const align = text.textAlign === "left" ? 0 : text.textAlign === "right" ? 1 : 0.5;
+    const verticalAlign = text.verticalAlign === "top" ? 0 : text.verticalAlign === "bottom" ? 1 : 0.5;
+    const x = container.x + insetX + align * (area.availableWidth - text.width);
+    const y = container.y + insetY + verticalAlign * (availableHeight - text.height);
+    const cx = container.x + insetX + area.availableWidth / 2;
+    const cy = container.y + insetY + availableHeight / 2;
+    const dx = x + text.width / 2 - cx;
+    const dy = y + text.height / 2 - cy;
+    text.x = cx + dx * Math.cos(container.angle) - dy * Math.sin(container.angle) - text.width / 2;
+    text.y = cy + dx * Math.sin(container.angle) + dy * Math.cos(container.angle) - text.height / 2;
+    text.angle = container.angle;
+  }
+
   // src/scripts/mindmap-builder/nodes.js
   function createNodes(runtimeContext) {
     const addEmbeddableNode = ({ px = 0, py = 0, url, depth }) => {
@@ -4810,6 +5014,12 @@ const VERSION = "v26.10.13";
       y = 0,
       depth = 0
     } = {}) => {
+      if (pathOrFile && typeof pathOrFile === "object" && "markdown" in pathOrFile) {
+        const id = await addLocalMarkdownImage(runtimeContext.ea, pathOrFile, x, y);
+        const element = runtimeContext.ea.getElement(id);
+        if (leftFacing) element.x = x - element.width;
+        return id;
+      }
       const newNodeId = await runtimeContext.ea.addImage(x, y, pathOrFile);
       const el = runtimeContext.ea.getElement(newNodeId);
       const targetWidth = width || (depth === 0 ? runtimeContext.EMBEDED_OBJECT_WIDTH_ROOT : runtimeContext.EMBEDED_OBJECT_WIDTH_CHILD);
@@ -4835,10 +5045,11 @@ const VERSION = "v26.10.13";
         fillSweep: runtimeContext.fillSweep,
         branchScale: runtimeContext.branchScale,
         baseStrokeWidth: runtimeContext.baseStrokeWidth,
+        customPalette: JSON.parse(JSON.stringify(runtimeContext.customPalette || { enabled: false, random: false, colors: [] })),
         layoutSettings: JSON.parse(JSON.stringify(runtimeContext.layoutSettings))
       });
     };
-    const addNode = async (text, follow = false, skipFinalLayout = false, batchModeAllElements = null, batchModeParent = null, pos = null, ontology = null) => {
+    const addNode = async (text, follow = false, skipFinalLayout = false, batchModeAllElements = null, batchModeParent = null, pos = null, ontology = null, nodeShape = null, localMarkdownImage = null) => {
       if (!runtimeContext.isViewSet()) return;
       if (!text || text.trim() === "") return;
       const preGenTextId = runtimeContext.ea.generateElementId();
@@ -4870,8 +5081,9 @@ const VERSION = "v26.10.13";
       }
       let newNodeId;
       let arrowId;
-      const imageInfo = runtimeContext.parseImageInput(text);
-      const embeddableUrl = runtimeContext.parseEmbeddableInput(text, imageInfo);
+      const imageInfo = localMarkdownImage ? { isImagePath: true, path: localMarkdownImage, width: localMarkdownImage.width } : runtimeContext.parseImageInput(text);
+      const embeddableUrl = localMarkdownImage ? null : runtimeContext.parseEmbeddableInput(text, imageInfo);
+      const latex = localMarkdownImage ? null : parseLatexInput(text);
       const defaultNodeColor = runtimeContext.ea.getCM(st.viewBackgroundColor).invert().stringHEX({
         alpha: false
       });
@@ -4936,7 +5148,9 @@ const VERSION = "v26.10.13";
         type: 3
       } : null;
       const effectiveMaxWrap = rootCfgForAdd?.maxWrapWidth ?? runtimeContext.maxWidth;
-      let curMaxW = depth === 0 ? Math.max(400, effectiveMaxWrap) : effectiveMaxWrap;
+      const maxTextWidth = depth === 0 ? Math.max(400, effectiveMaxWrap) : effectiveMaxWrap;
+      const containerPadding = rootCfgForAdd?.layoutSettings?.CONTAINER_PADDING ?? runtimeContext.layoutSettings.CONTAINER_PADDING;
+      let curMaxW = maxTextWidth;
       let renderedText = text;
       let metrics = {
         w: 0,
@@ -4944,7 +5158,14 @@ const VERSION = "v26.10.13";
       };
       let shouldWrap = false;
       let curMaxH = 0;
-      if (!imageInfo?.isImagePath && !imageInfo?.imageFile && !embeddableUrl) {
+      let latexNode = null;
+      if (latex) {
+        runtimeContext.ea.style.strokeColor = parent ? nodeColor : runtimeContext.multicolor ? defaultNodeColor : st.currentItemStrokeColor;
+        newNodeId = await runtimeContext.ea.addLaTex(0, 0, latex);
+        if (!newNodeId) return;
+        latexNode = runtimeContext.ea.getElement(newNodeId);
+        metrics = { width: latexNode.width, height: latexNode.height };
+      } else if (!imageInfo?.isImagePath && !imageInfo?.imageFile && !embeddableUrl) {
         renderedText = await runtimeContext.parseText(text) ?? text;
         metrics = runtimeContext.ea.measureText(renderedText);
         shouldWrap = metrics.width > curMaxW;
@@ -4957,7 +5178,9 @@ const VERSION = "v26.10.13";
       }
       if (!parent) {
         runtimeContext.ea.style.strokeColor = runtimeContext.multicolor ? defaultNodeColor : st.currentItemStrokeColor;
-        if (imageInfo?.isImagePath) {
+        if (latexNode) {
+          newNodeId = latexNode.id;
+        } else if (imageInfo?.isImagePath) {
           newNodeId = await addImage({
             pathOrFile: imageInfo.path,
             width: imageInfo.width,
@@ -4988,17 +5211,28 @@ const VERSION = "v26.10.13";
             0,
             text,
             {
-              box: "rectangle",
+              box: nodeShape ?? "rectangle",
+              boxPadding: containerPadding,
               textAlign: "center",
               textVerticalAlign: "middle",
               // Use a distinct color representation so the frame can be recolored separately from text
               boxStrokeColor: runtimeContext.ea.getCM(runtimeContext.ea.style.strokeColor).stringRGB(),
-              width: shouldWrap ? curMaxW : void 0,
-              height: shouldWrap ? curMaxH : void 0,
+              // An explicit width prevents EA's rectangular box shortcut from
+              // wrapping/shrinking an ellipse or diamond before we size it.
+              width: shouldWrap ? curMaxW : Math.ceil(metrics.width),
+              height: curMaxH,
               autoResize: !shouldWrap
             },
             preGenTextId
           );
+          fitTextContainer({
+            container: runtimeContext.ea.getElement(newNodeId),
+            textElement: runtimeContext.ea.getElement(preGenTextId),
+            renderedText,
+            maxWidth: maxTextWidth,
+            padding: containerPadding,
+            lib: ExcalidrawLib
+          });
           runtimeContext.ea.style.backgroundColor = "transparent";
         }
         initializeRootCustomData(newNodeId);
@@ -5104,7 +5338,12 @@ const VERSION = "v26.10.13";
         const effectiveBranchScale = rootCfgForAdd?.branchScale ?? runtimeContext.branchScale;
         const effectiveBaseStrokeWidth = rootCfgForAdd?.baseStrokeWidth ?? runtimeContext.baseStrokeWidth;
         const textAlign = effectiveCenterText ? "center" : isVerticalMode ? "center" : side === 1 ? "left" : "right";
-        if (imageInfo?.isImagePath) {
+        const boxShape = nodeShape ?? (effectiveBoxChildren ? "rectangle" : false);
+        if (latexNode) {
+          newNodeId = latexNode.id;
+          latexNode.x = side === -1 && !runtimeContext.autoLayoutDisabled ? px - latexNode.width : px;
+          latexNode.y = py;
+        } else if (imageInfo?.isImagePath) {
           newNodeId = await addImage({
             pathOrFile: imageInfo.path,
             width: imageInfo.width,
@@ -5147,15 +5386,26 @@ const VERSION = "v26.10.13";
             py,
             text,
             {
-              box: effectiveBoxChildren ? "rectangle" : false,
+              box: boxShape,
+              boxPadding: containerPadding,
               textAlign,
               textVerticalAlign: "middle",
-              width: shouldWrap ? curMaxW : void 0,
-              height: shouldWrap ? curMaxH : void 0,
+              width: shouldWrap ? curMaxW : boxShape ? Math.ceil(metrics.width) : void 0,
+              height: boxShape || shouldWrap ? curMaxH : void 0,
               autoResize: !shouldWrap
             },
             preGenTextId
           );
+          if (boxShape) {
+            fitTextContainer({
+              container: runtimeContext.ea.getElement(newNodeId),
+              textElement: runtimeContext.ea.getElement(preGenTextId),
+              renderedText,
+              maxWidth: maxTextWidth,
+              padding: containerPadding,
+              lib: ExcalidrawLib
+            });
+          }
         }
         if (depth === 1) {
           runtimeContext.ea.addAppendUpdateCustomData(newNodeId, {
@@ -5237,7 +5487,7 @@ const VERSION = "v26.10.13";
       if (isBatchMode) {
         return runtimeContext.ea.getElement(newNodeId);
       }
-      const hasImage = !!imageInfo?.imageFile || imageInfo?.isImagePath;
+      const hasImage = !!latex || !!imageInfo?.imageFile || imageInfo?.isImagePath;
       await runtimeContext.addElementsToView({
         repositionToCursor: !parent,
         save: hasImage,
@@ -5320,6 +5570,66 @@ const VERSION = "v26.10.13";
     return { addEmbeddableNode, addImage, initializeRootCustomData, addNode };
   }
 
+  // src/scripts/mindmap-builder/markdownImages.ts
+  function isLocalMarkdownImage(element) {
+    const data = element.customData?.markdownImage;
+    return element.type === "image" && !!data && typeof data === "object" && "source" in data && data.source === "local";
+  }
+  var referencePattern = /^!\[\[#\^markdown-image=([\w-]+)(?:\|(\d+))?\]\]$/;
+  function resolveMarkdownImageReference(text, images) {
+    const match = text.match(referencePattern);
+    if (!match) return null;
+    const image = images.get(match[1]);
+    if (!image) throw new Error("Missing Markdown-image source");
+    return { ...image, ...match[2] ? { width: Number(match[2]) } : {} };
+  }
+  function parseMarkdownImageAppendix(text) {
+    const images = /* @__PURE__ */ new Map();
+    const renders = /* @__PURE__ */ new Map();
+    let outline = text.replace(
+      /^<!-- excalidraw-markdown-image:([\w-]+) -->\r?\n\r?\n([\s\S]*?)\r?\n\r?\n<!-- \/excalidraw-markdown-image:\1 -->[ \t]*(?:\r?\n)?/gm,
+      (_block, id, markdown) => {
+        if (images.has(id)) throw new Error("Duplicate Markdown-image source");
+        images.set(id, { markdown });
+        return "";
+      }
+    );
+    outline = outline.replace(
+      /^<!-- mindmap-markdown-image-render:([\w-]+) (.+) -->\r?\n?/gm,
+      (_block, id, json) => {
+        const render = JSON.parse(json);
+        if (!render || typeof render !== "object" || Array.isArray(render) || renders.has(id))
+          throw new Error("Invalid Markdown-image appearance");
+        renders.set(id, render);
+        return "";
+      }
+    );
+    renders.forEach((render, id) => {
+      const image = images.get(id);
+      if (image) image.render = render;
+    });
+    if (/^<!-- \/?excalidraw-markdown-image:|^<!-- mindmap-markdown-image-render:/m.test(outline) || [...renders.keys()].some((id) => !images.has(id)))
+      throw new Error("Invalid Markdown-image appendix");
+    for (const match of outline.matchAll(/!\[\[#\^markdown-image=[\w-]+(?:\|\d+)?\]\]/g))
+      resolveMarkdownImageReference(match[0], images);
+    return { outline, images };
+  }
+  function serializeMarkdownImageAppendix(images) {
+    return [...images].map(([id, image]) => {
+      if (!/^[\w-]+$/.test(id) || /^<!-- \/?excalidraw-markdown-image:/m.test(image.markdown))
+        throw new Error("Reserved Markdown-image delimiter");
+      const appearance = image.render ? `<!-- mindmap-markdown-image-render:${id} ${JSON.stringify(image.render).replace(/</g, "\\u003c").replace(/>/g, "\\u003e")} -->
+` : "";
+      return `
+${appearance}<!-- excalidraw-markdown-image:${id} -->
+
+${image.markdown}
+
+<!-- /excalidraw-markdown-image:${id} -->
+`;
+    }).join("");
+  }
+
   // src/scripts/mindmap-builder/markdownExport.js
   function createMarkdownExport(runtimeContext) {
     const copyMapAsText = async (cut = false, toClipboard = true) => {
@@ -5341,6 +5651,23 @@ const VERSION = "v26.10.13";
       const tabSize = app.vault.getConfig("tabSize");
       const indentVal = useTab ? "	" : " ".repeat(tabSize);
       const branchIds = new Set(runtimeContext.getBranchElementIds(sel.id, all));
+      const markdownImages = /* @__PURE__ */ new Map();
+      for (const node of all) {
+        if (!branchIds.has(node.id) || !isLocalMarkdownImage(node)) continue;
+        const source = runtimeContext.ea.targetView.excalidrawData.getMarkdownImage(node.fileId);
+        if (!source) {
+          new runtimeContext.Notice(runtimeContext.t("NOTICE_MARKDOWN_IMAGE_MISSING"));
+          return;
+        }
+        markdownImages.set(node.id, { markdown: source.markdown, render: node.customData.markdownImage.render });
+      }
+      let imageAppendix;
+      try {
+        imageAppendix = serializeMarkdownImageAppendix(markdownImages);
+      } catch {
+        new runtimeContext.Notice(runtimeContext.t("NOTICE_MARKDOWN_IMAGE_INVALID"));
+        return;
+      }
       const nodeBlockRefs = /* @__PURE__ */ new Map();
       const nodeOutgoingLinks = /* @__PURE__ */ new Map();
       const crossLinkArrows = all.filter(
@@ -5393,6 +5720,9 @@ const VERSION = "v26.10.13";
         }
         let str = "";
         let text = runtimeContext.getTextFromNode(all, node, true);
+        if (isLocalMarkdownImage(node)) {
+          text = `![[#^markdown-image=${node.id}|${Math.round(node.width)}]]`;
+        }
         let ontologyStr = "";
         if (!isRootSelected || depth > 0 || isSubmapChild) {
           const incomingArrow = all.find(
@@ -5422,7 +5752,7 @@ const VERSION = "v26.10.13";
           taskPrefix = taskMatch[0];
           text = text.substring(taskPrefix.length);
         }
-        if (!isPrintRoot && node.customData?.isAdditionalRoot) {
+        if (!isPrintRoot && node.customData?.isAdditionalRoot && !isLocalMarkdownImage(node)) {
           let submapTitle = text;
           if (submapTitle.startsWith("![[") && submapTitle.endsWith("]]")) {
             submapTitle = submapTitle.slice(3, -2).split("|")[0];
@@ -5554,6 +5884,7 @@ const VERSION = "v26.10.13";
           md += buildList(c.id, 0, true, false);
         });
       }
+      md += imageAppendix;
       if (toClipboard) await navigator.clipboard.writeText(md);
       if (cut) {
         const incomingArrow = all.find(
@@ -5594,6 +5925,126 @@ const VERSION = "v26.10.13";
       return md;
     };
     return { copyMapAsText };
+  }
+
+  // src/scripts/mindmap-builder/mermaid.ts
+  function getMermaidMindmapBody(text) {
+    let body = text.trim();
+    const fence = body.match(/^(`{3,}|~{3,})mermaid[^\S\r\n]*\r?\n/i);
+    if (fence) {
+      const marker = fence[1];
+      const closing = new RegExp(`\\r?\\n[ \\t]*${marker[0]}{${marker.length},}[ \\t]*$`);
+      if (!closing.test(body)) return null;
+      body = body.slice(fence[0].length).replace(closing, "").trim();
+    }
+    return /^mindmap(?:[^\S\r\n]*)(?:\r?\n|$)/.test(body) ? body : null;
+  }
+  function decodeLabel(label) {
+    let text = label.trim();
+    if (text.startsWith('"') && text.endsWith('"')) text = text.slice(1, -1);
+    if (text.startsWith("`") && text.endsWith("`")) text = text.slice(1, -1);
+    return text.replace(/<br\s*\/?\s*>/gi, "\n").replace(/#(quot|\d+);/g, (entity, value) => {
+      if (value === "quot") return '"';
+      const code = Number(value);
+      return code <= 1114111 ? String.fromCodePoint(code) : entity;
+    });
+  }
+  function parseNodeLabel(label) {
+    if (/^!?\[\[.*\]\]$/.test(label) || /^!?\[.*\]\(.*\)$/.test(label)) {
+      return { text: label, shape: null };
+    }
+    const match = label.match(/^(?:[\w-]+\s*)?(\(\(|\{\{|\[|\(|\{)([\s\S]*)$/u);
+    const endings = { "((": "))", "{{": "}}", "[": "]", "(": ")", "{": "}" };
+    if (match) {
+      const opening = match[1];
+      const content = match[2];
+      const ending = endings[opening];
+      if (content.endsWith(ending)) {
+        const shape = opening.startsWith("(") ? "ellipse" : opening.startsWith("{") ? "diamond" : "rectangle";
+        return { text: decodeLabel(content.slice(0, -ending.length)), shape };
+      }
+    }
+    return { text: decodeLabel(label), shape: null };
+  }
+  function parseMermaidMindmap(text) {
+    const body = getMermaidMindmapBody(text);
+    if (body === null) return null;
+    const nodes = [];
+    for (const line of body.split(/\r\n|\n|\r/).slice(1)) {
+      const label = line.trim();
+      if (!label || /^(?:%%|::icon\(|:::)/.test(label)) continue;
+      const indent = line.match(/^[ \t]*/)[0].replace(/\t/g, "    ").length;
+      const node = { indent, ...parseNodeLabel(label) };
+      if (!node.text.trim() || nodes.length > 0 && indent <= nodes[0].indent) {
+        throw new Error("Invalid Mermaid mindmap hierarchy");
+      }
+      nodes.push(node);
+    }
+    if (nodes.length === 0) throw new Error("Empty Mermaid mindmap");
+    const rootIndent = nodes[0].indent;
+    return nodes.map((node) => ({ ...node, indent: node.indent - rootIndent }));
+  }
+  function formatMermaidNode(text, shape, index) {
+    let label = text.replace(/[#&"<>\[\](){}:`%\r\n]/g, (char) => {
+      if (char === "\r") return "";
+      return char === "\n" ? "<br/>" : `#${char.codePointAt(0)};`;
+    });
+    const delimiters = {
+      rectangle: ["[", "]"],
+      ellipse: ["((", "))"],
+      diamond: ["{{", "}}"]
+    };
+    const pair = delimiters[shape];
+    if (!pair && /^mindmap$/i.test(label)) label = `#${label.charCodeAt(0)};${label.slice(1)}`;
+    return pair ? `n${index}${pair[0]}"${label}"${pair[1]}` : label;
+  }
+
+  // src/scripts/mindmap-builder/mermaidExport.js
+  function createMermaidExport(runtimeContext) {
+    const copyMapAsMermaid = async () => {
+      if (!runtimeContext.isViewSet()) return;
+      runtimeContext.ensureNodeSelected();
+      const selected = runtimeContext.getMindmapNodeFromSelection();
+      if (!selected) {
+        new runtimeContext.Notice(runtimeContext.t("NOTICE_SELECT_NODE_TO_COPY"));
+        return;
+      }
+      const all = runtimeContext.ea.getViewElements();
+      const { rootId } = runtimeContext.getHierarchy(selected, all);
+      const root = all.find((node) => node.id === rootId);
+      const defaultMode = root?.customData?.growthMode || runtimeContext.currentModalGrowthMode;
+      const lines = ["```mermaid", "mindmap"];
+      const visited = /* @__PURE__ */ new Set();
+      const visit = (node, depth, inheritedMode) => {
+        if (visited.has(node.id)) return;
+        visited.add(node.id);
+        const rawText = runtimeContext.getTextFromNode(all, node, true) || "";
+        const text2 = rawText.trim() ? rawText : runtimeContext.t("MERMAID_EMPTY_NODE");
+        lines.push(`${"  ".repeat(depth + 1)}${formatMermaidNode(text2, node.type, visited.size)}`);
+        const mode = node.customData?.isAdditionalRoot ? node.customData.growthMode || inheritedMode : inheritedMode;
+        const children = [...runtimeContext.getChildrenNodes(node.id, all)];
+        const center = { x: node.x + node.width / 2, y: node.y + node.height / 2 };
+        children.sort((a, b) => {
+          if (mode === "Radial") {
+            return runtimeContext.getAngleFromCenter(center, { x: a.x + a.width / 2, y: a.y + a.height / 2 }) - runtimeContext.getAngleFromCenter(center, { x: b.x + b.width / 2, y: b.y + b.height / 2 });
+          }
+          if (mode === "Right-Left" && (node.id === rootId || node.customData?.isAdditionalRoot)) {
+            const sideA = a.x + a.width / 2 > center.x ? 0 : 1;
+            const sideB = b.x + b.width / 2 > center.x ? 0 : 1;
+            if (sideA !== sideB) return sideA - sideB;
+          }
+          return ["Up-facing", "Down-facing", "Up-Down"].includes(mode) ? a.x - b.x : a.y - b.y;
+        });
+        children.forEach((child) => visit(child, depth + 1, mode));
+      };
+      visit(selected, 0, defaultMode);
+      lines.push("```");
+      const text = lines.join("\n") + "\n";
+      await navigator.clipboard.writeText(text);
+      new runtimeContext.Notice(runtimeContext.t("NOTICE_MERMAID_COPIED"));
+      return text;
+    };
+    return { copyMapAsMermaid };
   }
 
   // src/scripts/mindmap-builder/branchClipboard.ts
@@ -5652,7 +6103,7 @@ const VERSION = "v26.10.13";
     };
     const nodes = /* @__PURE__ */ new Map();
     elements.forEach((e) => {
-      if (isTaggedNode(e)) nodes.set(e.id, e);
+      if (isTaggedNode(e) || elements.length === 1 && isLocalMarkdownImage(e)) nodes.set(e.id, e);
     });
     const incoming = /* @__PURE__ */ new Map();
     const excluded = /* @__PURE__ */ new Set();
@@ -6115,6 +6566,32 @@ const VERSION = "v26.10.13";
     const importTextToMap = async (rawText) => {
       if (!runtimeContext.isViewSet()) return;
       if (!rawText) return;
+      let appendix;
+      try {
+        appendix = parseMarkdownImageAppendix(rawText);
+        rawText = appendix.outline;
+      } catch {
+        new runtimeContext.Notice(runtimeContext.t("NOTICE_MARKDOWN_IMAGE_INVALID"));
+        return;
+      }
+      const addImportedNode = (text, follow, skip, all, parent, pos, ontology, shape) => runtimeContext.addNode(
+        text,
+        follow,
+        skip,
+        all,
+        parent,
+        pos,
+        ontology,
+        shape,
+        resolveMarkdownImageReference(text, appendix.images)
+      );
+      let mermaid;
+      try {
+        mermaid = parseMermaidMindmap(rawText);
+      } catch {
+        new runtimeContext.Notice(runtimeContext.t("NOTICE_MERMAID_INVALID"));
+        return;
+      }
       let sel = runtimeContext.getMindmapNodeFromSelection();
       let currentParent;
       const lines = rawText.split(/\r\n|\n|\r/).filter((l) => {
@@ -6127,7 +6604,7 @@ const VERSION = "v26.10.13";
       const crossLinkRegex = /(?:\(([^):]+)::\s*)?\[\[#\^([a-zA-Z0-9]{8})\|\*\]\](?:\))?/g;
       const ontologyRegex = /^(.+?)::\s*(.*)$/;
       const submapRefRegex = /^!\[\[#([^\]]+)\]\]$/;
-      if (lines.length === 1) {
+      if (!mermaid && lines.length === 1) {
         let text = lines[0];
         const listMatch = text.match(/^(\s*)(?:-|\*|\d+\.)\s+(.*)$/);
         if (listMatch) {
@@ -6136,7 +6613,7 @@ const VERSION = "v26.10.13";
             text = "- " + text;
           }
         } else {
-          text = text.trim();
+          text = text.replace(/^#+\s+/, "").trim();
         }
         text = text.replace(boundaryRegex, "");
         text = text.replace(blockRefRegex, "");
@@ -6148,12 +6625,12 @@ const VERSION = "v26.10.13";
         }
         let isSubmapRef = false;
         const submapRefMatch = text.match(submapRefRegex);
-        if (submapRefMatch) {
+        if (submapRefMatch && !resolveMarkdownImageReference(text, appendix.images)) {
           isSubmapRef = true;
           text = submapRefMatch[1].trim();
         }
         if (text) {
-          currentParent = await runtimeContext.addNode(
+          currentParent = await addImportedNode(
             text.trim(),
             true,
             false,
@@ -6173,11 +6650,19 @@ const VERSION = "v26.10.13";
           return;
         }
       }
-      let parsed = [];
+      let parsed = mermaid?.map((node) => ({
+        ...node,
+        hasBoundary: false,
+        blockRef: null,
+        outgoingRefs: [],
+        ontology: null,
+        isSubmapDef: false,
+        isSubmapRef: false
+      })) ?? [];
       let rootTextFromHeader = null;
       const isHeader = (l) => l.match(/^#+\s/);
       const isListItem = (l) => l.match(/^(\s*)(?:-|\*|\d+\.)\s+(.*)$/);
-      if (!isHeader(lines[0]) && !isListItem(lines[0])) {
+      if (!mermaid && !isHeader(lines[0]) && !isListItem(lines[0])) {
         new runtimeContext.Notice(runtimeContext.t("NOTICE_PASTE_ABORTED"));
         return;
       }
@@ -6186,7 +6671,7 @@ const VERSION = "v26.10.13";
       await sleep(10);
       const blockRefToNodeId = /* @__PURE__ */ new Map();
       const nodeToOutgoingRefs = /* @__PURE__ */ new Map();
-      lines.forEach((line, index) => {
+      if (!mermaid) lines.forEach((line, index) => {
         let text = "";
         let indent = 0;
         let isSubmapDef = false;
@@ -6240,7 +6725,7 @@ const VERSION = "v26.10.13";
           let isSubmapRef = false;
           text = text.trim();
           const submapRefMatch = text.match(submapRefRegex);
-          if (submapRefMatch) {
+          if (submapRefMatch && !resolveMarkdownImageReference(text, appendix.images)) {
             isSubmapRef = true;
             text = submapRefMatch[1].trim();
           }
@@ -6326,21 +6811,22 @@ const VERSION = "v26.10.13";
         if (topLevelItems.length === 1) {
           const rootItem = topLevelItems[0];
           const rootIndex = parsed.indexOf(rootItem);
-          sel = currentParent = await runtimeContext.addNode(
+          sel = currentParent = await addImportedNode(
             rootItem.text,
             true,
             true,
             [],
             null,
             null,
-            rootItem.ontology
+            rootItem.ontology,
+            rootItem.shape
           );
           processRootMeta(rootItem, currentParent.id);
           if (rootIndex !== -1) {
             parsed.splice(rootIndex, 1);
           }
         } else {
-          sel = currentParent = await runtimeContext.addNode(
+          sel = currentParent = await addImportedNode(
             runtimeContext.t("INPUT_TITLE_PASTE_ROOT"),
             true,
             true,
@@ -6381,7 +6867,7 @@ const VERSION = "v26.10.13";
             });
           } else {
             const currentAllElements2 = runtimeContext.ea.getElements();
-            const newNode2 = await runtimeContext.addNode(
+            const newNode2 = await addImportedNode(
               item.text,
               false,
               true,
@@ -6407,14 +6893,15 @@ const VERSION = "v26.10.13";
         }
         const parentNode = stack[stack.length - 1].node;
         const currentAllElements = runtimeContext.ea.getElements();
-        const newNode = await runtimeContext.addNode(
+        const newNode = await addImportedNode(
           item.text,
           false,
           true,
           currentAllElements,
           parentNode,
           null,
-          item.ontology
+          item.ontology,
+          item.shape
         );
         if (item.blockRef) blockRefToNodeId.set(item.blockRef, newNode.id);
         if (item.outgoingRefs.length > 0) nodeToOutgoingRefs.set(newNode.id, item.outgoingRefs);
@@ -6540,6 +7027,10 @@ const VERSION = "v26.10.13";
       }
       const clipboardPayload = parseBranchClipboard(rawText);
       if (clipboardPayload && await pasteBranch(clipboardPayload, sel)) return;
+      if (getMermaidMindmapBody(rawText) !== null) {
+        await importTextToMap(rawText);
+        return;
+      }
       if (!sel) {
         await pasteListToMap(rawText);
         return;
@@ -7389,6 +7880,17 @@ const VERSION = "v26.10.13";
           }
         ];
         rect.groupIds = sel.groupIds ? [...sel.groupIds] : [];
+        const settingsRoot = runtimeContext.getSettingsRootNode(sel, allElements);
+        const config = runtimeContext.getRootConfigForNode(settingsRoot);
+        fitTextContainer({
+          container: rect,
+          textElement: textEl,
+          renderedText: textEl.originalText,
+          maxWidth: config.maxWrapWidth,
+          padding: config.layoutSettings.CONTAINER_PADDING,
+          preserveCenter: true,
+          lib: ExcalidrawLib
+        });
       }
       runtimeContext.ea.getElements().filter((el) => el.type === "arrow").forEach((a) => {
         if (a.startBinding?.elementId === oldBindId) {
@@ -7851,6 +8353,7 @@ const VERSION = "v26.10.13";
       setButtonDisabled(runtimeContext.pinBtn, true);
       setButtonDisabled(runtimeContext.refreshBtn, true);
       setButtonDisabled(runtimeContext.copyBtn, true);
+      runtimeContext.copyMermaidBtn?.setDisabled(true);
       setButtonDisabled(runtimeContext.cutBtn, true);
       setButtonDisabled(runtimeContext.importOutlineBtn, true);
       setButtonDisabled(runtimeContext.boxBtn, true);
@@ -7980,6 +8483,7 @@ const VERSION = "v26.10.13";
         setButtonDisabled(runtimeContext.boundaryBtn, isMasterRootSelected);
         setButtonDisabled(runtimeContext.cutBtn, isMasterRootSelected);
         setButtonDisabled(runtimeContext.copyBtn, false);
+        runtimeContext.copyMermaidBtn?.setDisabled(false);
         setButtonDisabled(runtimeContext.importOutlineBtn, !isLinkedFile);
         if (runtimeContext.refreshBtn) {
           setButtonDisabled(runtimeContext.refreshBtn, cd.autoLayoutDisabled === true);
@@ -8006,12 +8510,12 @@ const VERSION = "v26.10.13";
       }
       const mapPresetName = cd?.presetName;
       if (isMapSelected) {
-        runtimeContext.activePresetName = mapPresetName || "Default";
+        runtimeContext.activePresetName = resolvePresetName(runtimeContext.mapPresets, mapPresetName);
         runtimeContext.setVal(runtimeContext.K_ACTIVE_PRESET, runtimeContext.activePresetName);
       } else {
-        runtimeContext.activePresetName = runtimeContext.getVal(
-          runtimeContext.K_ACTIVE_PRESET,
-          "Default"
+        runtimeContext.activePresetName = resolvePresetName(
+          runtimeContext.mapPresets,
+          runtimeContext.getVal(runtimeContext.K_ACTIVE_PRESET, "Default")
         );
       }
       if (runtimeContext.presetDropdown) {
@@ -8212,8 +8716,9 @@ const VERSION = "v26.10.13";
       }
       const imageInfo = runtimeContext.parseImageInput(textInput);
       const embeddableUrl = runtimeContext.parseEmbeddableInput(textInput, imageInfo);
+      const latex = parseLatexInput(textInput);
       let newType = "text";
-      if (imageInfo?.isImagePath || imageInfo?.imageFile) newType = "image";
+      if (latex || imageInfo?.isImagePath || imageInfo?.imageFile) newType = "image";
       else if (embeddableUrl) newType = "embeddable";
       const isTypeChange = textEl && newType !== "text" || !textEl && newType !== targetNode.type;
       const isNonTextUpdate = !textEl && newType === targetNode.type && textChanged;
@@ -8227,7 +8732,10 @@ const VERSION = "v26.10.13";
         const st = runtimeContext.getAppState();
         runtimeContext.ea.style.strokeColor = targetNode.strokeColor ?? st.currentItemStrokeColor;
         if (newType === "image") {
-          if (imageInfo?.isImagePath) {
+          if (latex) {
+            newNodeId = await runtimeContext.ea.addLaTex(0, 0, latex);
+            if (!newNodeId) return;
+          } else if (imageInfo?.isImagePath) {
             newNodeId = await runtimeContext.addImage({
               pathOrFile: imageInfo.path,
               width: imageInfo.width,
@@ -8289,7 +8797,7 @@ const VERSION = "v26.10.13";
           });
           const newElement = runtimeContext.ea.getElement(newNodeId);
           containerToUpdate = runtimeContext.boxChildren ? newElement : null;
-          newTextElement = runtimeContext.boxChildren ? runtimeContext.ea.getElement(containerToUpdate.boundElements[0].id) : newElement;
+          const newTextElement = runtimeContext.boxChildren ? runtimeContext.ea.getElement(containerToUpdate.boundElements[0].id) : newElement;
           newTextElement.rawText = textInput;
           newTextElement.originalText = renderedText;
           newTextElement.text = finalWrappedText;
@@ -8297,10 +8805,23 @@ const VERSION = "v26.10.13";
             newTextElement.width = finalWidth;
             newTextElement.height = finalHeight;
           }
+          if (containerToUpdate) {
+            fitTextContainer({
+              container: containerToUpdate,
+              textElement: newTextElement,
+              renderedText,
+              maxWidth: runtimeContext.maxWidth,
+              padding: runtimeContext.layoutSettings.CONTAINER_PADDING,
+              preserveCenter: true,
+              lib: ExcalidrawLib
+            });
+          }
         }
         const newNode = runtimeContext.ea.getElement(newNodeId);
         runtimeContext.scaleDecorations(visualNode, newNode, all, info.rootId);
         const keysToCopy = [
+          "presetName",
+          "customPalette",
           "mindmapOrder",
           "isPinned",
           "growthMode",
@@ -8430,23 +8951,39 @@ const VERSION = "v26.10.13";
           eaEl.originalText = renderedText;
           runtimeContext.ea.style.fontFamily = eaEl.fontFamily;
           runtimeContext.ea.style.fontSize = eaEl.fontSize;
-          const metrics = runtimeContext.ea.measureText(renderedText);
-          const shouldWrap = metrics.width > runtimeContext.maxWidth;
-          if (!shouldWrap) {
-            eaEl.autoResize = true;
-            eaEl.width = Math.ceil(metrics.width);
-            eaEl.height = metrics.height;
-            eaEl.text = renderedText;
+          const textContainer = all.find((el) => el.id === eaEl.containerId);
+          if (textContainer && ["rectangle", "ellipse", "diamond"].includes(textContainer.type)) {
+            runtimeContext.ea.copyViewElementsToEAforEditing([textContainer]);
+            const settingsRoot = runtimeContext.getSettingsRootNode(textContainer, all);
+            const config = runtimeContext.getRootConfigForNode(settingsRoot);
+            fitTextContainer({
+              container: runtimeContext.ea.getElement(textContainer.id),
+              textElement: eaEl,
+              renderedText,
+              maxWidth: config.maxWrapWidth,
+              padding: config.layoutSettings.CONTAINER_PADDING,
+              preserveCenter: true,
+              lib: ExcalidrawLib
+            });
           } else {
-            eaEl.autoResize = false;
-            const res = await runtimeContext.getAdjustedMaxWidth(textInput, runtimeContext.maxWidth);
-            eaEl.width = res.width;
-            eaEl.height = res.height;
-            eaEl.text = res.wrappedText;
+            const metrics = runtimeContext.ea.measureText(renderedText);
+            const shouldWrap = metrics.width > runtimeContext.maxWidth;
+            if (!shouldWrap) {
+              eaEl.autoResize = true;
+              eaEl.width = Math.ceil(metrics.width);
+              eaEl.height = metrics.height;
+              eaEl.text = renderedText;
+            } else {
+              eaEl.autoResize = false;
+              const res = await runtimeContext.getAdjustedMaxWidth(textInput, runtimeContext.maxWidth);
+              eaEl.width = res.width;
+              eaEl.height = res.height;
+              eaEl.text = res.wrappedText;
+            }
           }
           runtimeContext.ea.refreshTextElementSize(eaEl.id);
         }
-        const hierarchyNode = targetNode.containerId ? all.find((el) => el.id === targetNode.containerId) : textEl;
+        const hierarchyNode = textEl ? visualNode : null;
         await runtimeContext.addElementsToView({
           captureUpdate: !hierarchyNode || runtimeContext.autoLayoutDisabled ? "IMMEDIATELY" : "EVENTUALLY"
         });
@@ -9250,6 +9787,12 @@ ${runtimeContext.t("INSTRUCTIONS")}
       runtimeContext.bodyContainer = contentEl.createDiv();
       runtimeContext.bodyContainer.style.width = "100%";
       runtimeContext.bodyContainer.createEl("hr");
+      new runtimeContext.ea.obsidian.Setting(runtimeContext.bodyContainer).setName(runtimeContext.t("LABEL_COPY_MERMAID")).setDesc(runtimeContext.t("DESC_COPY_MERMAID")).addButton((button) => {
+        runtimeContext.copyMermaidBtn = button;
+        button.setButtonText(runtimeContext.t("BUTTON_COPY_MERMAID")).onClick(async () => {
+          await runtimeContext.copyMapAsMermaid();
+        });
+      });
       const presetSetting = new runtimeContext.ea.obsidian.Setting(runtimeContext.bodyContainer).setName(runtimeContext.t("PRESET_LABEL")).addDropdown((d) => {
         runtimeContext.presetDropdown = d;
         runtimeContext.refreshPresetDropdown();
@@ -9971,6 +10514,27 @@ ${runtimeContext.t("INSTRUCTIONS")}
     return { registerStyles, removeStyles };
   }
 
+  // src/scripts/mindmap-builder/floatingVisibility.js
+  function updateFloatingVisibility(context, view = context.ea.targetView, state) {
+    const modal = context.floatingInputModal?.modalEl;
+    if (!context.isUndocked || !modal) return;
+    const active = context.ea.plugin.app.workspace.activeLeaf?.view;
+    const embeddedEditor = active?.containerEl;
+    const markdownImageEditorActive = embeddedEditor?.matches?.(".excalidraw-markdown-fragment-view") && context.ea.getSidepanelLeaf?.()?.view?.containerEl?.contains(embeddedEditor);
+    const drawingActive = active === view || active?.getViewType() === "excalidraw-sidepanel" || markdownImageEditorActive;
+    const viewMode = state?.viewModeEnabled ?? context.ea.getExcalidrawAPI()?.getAppState()?.viewModeEnabled;
+    const visible = drawingActive && context.ea.isExcalidrawView(view) && !viewMode && !context.isExcaliBrainView();
+    modal.style.display = visible ? "" : "none";
+  }
+  function watchFloatingVisibility(context, view) {
+    const api = context.ea.getExcalidrawAPI();
+    updateFloatingVisibility(context, view, api?.getAppState());
+    return api?.onChange((_elements, state) => {
+      if (context.ea.targetView === view) updateFloatingVisibility(context, view, state);
+    }) ?? (() => {
+    });
+  }
+
   // src/scripts/mindmap-builder/floatingInput.js
   function createFloatingInput(runtimeContext) {
     const toggleDock = async ({ silent = false, forceDock = false, saveSetting = false } = {}) => {
@@ -10025,9 +10589,7 @@ ${runtimeContext.t("INSTRUCTIONS")}
           modalEl.style.width = "fit-content";
           modalEl.style.height = "auto";
           modalEl.style.maxHeight = runtimeContext.FLOAT_MODAL_MAX_HEIGHT;
-          if (runtimeContext.isExcaliBrainView()) {
-            modalEl.style.display = "none";
-          }
+          updateFloatingVisibility(runtimeContext);
           const container = runtimeContext.floatingInputModal.contentEl.createDiv();
           runtimeContext.renderInput(container, true);
           const dragHandle = modalEl.createDiv("mindmap-drag-handle");
@@ -10845,6 +11407,8 @@ ${runtimeContext.t("INSTRUCTIONS")}
     };
     const removeEventListeners = () => {
       removeKeydownHandlers();
+      window.MindmapBuilder?.removeFloatingVisibilityListener?.();
+      if (window.MindmapBuilder) delete window.MindmapBuilder.removeFloatingVisibilityListener;
       try {
         window.MindmapBuilder?.popObsidianHotkeyScope?.();
       } catch (e) {
@@ -12954,6 +13518,8 @@ ${runtimeContext.t("INSTRUCTIONS")}
       };
       const setupEventListeners = (view) => {
         if (!view || !view.ownerWindow) return;
+        window.MindmapBuilder?.removeFloatingVisibilityListener?.();
+        window.MindmapBuilder.removeFloatingVisibilityListener = watchFloatingVisibility(runtimeContext, view);
         window.MindmapBuilder?.removePointerDownHandler?.();
         const win = view.ownerWindow;
         win.addEventListener("pointerdown", runtimeContext.handleCanvasPointerDown);
@@ -12987,7 +13553,7 @@ ${runtimeContext.t("INSTRUCTIONS")}
       tab.onFocus = (view) => onFocus(view);
       const onActiveLeafChange = (leaf) => {
         if (runtimeContext.cancelHotkeyRecording) runtimeContext.cancelHotkeyRecording();
-        if (runtimeContext.ea.targetView !== leaf.view && runtimeContext.ea.isExcalidrawView(leaf.view)) {
+        if (runtimeContext.ea.targetView !== leaf?.view && runtimeContext.ea.isExcalidrawView(leaf?.view)) {
           runtimeContext.mostRecentlySelectedNodeID = null;
           if (runtimeContext.ea.targetView)
             runtimeContext.removeEventListeners(runtimeContext.ea.targetView);
@@ -12996,6 +13562,7 @@ ${runtimeContext.t("INSTRUCTIONS")}
           setupEventListeners(leaf.view);
         }
         runtimeContext.registerObsidianHotkeyOverrides();
+        updateFloatingVisibility(runtimeContext);
         if (!runtimeContext.isUndocked || !runtimeContext.floatingInputModal || !leaf) {
           return;
         }
@@ -13003,13 +13570,6 @@ ${runtimeContext.t("INSTRUCTIONS")}
           runtimeContext.ensureNodeSelected();
           runtimeContext.updateUI();
           const { modalEl } = runtimeContext.floatingInputModal;
-          if (runtimeContext.isExcaliBrainView()) {
-            modalEl.style.display = "none";
-          } else {
-            if (modalEl.style.display === "none") {
-              modalEl.style.display = "";
-            }
-          }
           if (runtimeContext.ea.targetView && modalEl.ownerDocument !== runtimeContext.ea.targetView.ownerDocument) {
             runtimeContext.ea.targetView.ownerDocument.body.appendChild(modalEl);
             runtimeContext.linkSuggester?.close();
@@ -13021,12 +13581,6 @@ ${runtimeContext.t("INSTRUCTIONS")}
           const { x, y } = runtimeContext.ea.targetView.contentEl.getBoundingClientRect();
           modalEl.style.top = `${y + 5}px`;
           modalEl.style.left = `${x + 5}px`;
-        } else {
-          if (leaf.view?.getViewType() === "excalidraw-sidepanel") return;
-          const { modalEl } = runtimeContext.floatingInputModal;
-          if (modalEl.style.display !== "none") {
-            modalEl.style.display = "none";
-          }
         }
       };
       tab.onClose = async () => {
@@ -13357,6 +13911,15 @@ ${runtimeContext.t("INSTRUCTIONS")}
       },
       get copyMapAsText() {
         return copyMapAsText;
+      },
+      get copyMapAsMermaid() {
+        return copyMapAsMermaid;
+      },
+      get copyMermaidBtn() {
+        return copyMermaidBtn;
+      },
+      set copyMermaidBtn(value) {
+        copyMermaidBtn = value;
       },
       get currentModalGrowthMode() {
         return currentModalGrowthMode;
@@ -14430,6 +14993,7 @@ ${runtimeContext.t("INSTRUCTIONS")}
       diffMapConfig,
       applyPresetToGlobals,
       applyPresetToMap,
+      initializePresets,
       refreshPresetDropdown,
       calculateStrokeWidth,
       getStrokeWidthForDepth,
@@ -14545,14 +15109,8 @@ ${runtimeContext.t("INSTRUCTIONS")}
       },
       hidden: true
     });
-    if (!mapPresets || typeof mapPresets !== "object") {
-      mapPresets = {};
-    }
     let activePresetName = getVal(K_ACTIVE_PRESET, "Default");
-    if (!mapPresets["Default"]) {
-      mapPresets["Default"] = extractConfigFromGlobals();
-      setVal(K_PRESETS, mapPresets, true);
-    }
+    initializePresets();
     const ownerWindow = ea2.targetView?.ownerWindow;
     const isMac = ea2.DEVICE.isMacOS || ea2.DEVICE.isIOS;
     const {
@@ -14588,7 +15146,7 @@ ${runtimeContext.t("INSTRUCTIONS")}
       handleKeydown,
       addSibling
     } = createKeyboard(runtimeContext);
-    dirty = updateUserHotkeys();
+    dirty = updateUserHotkeys() || dirty;
     if (userHotkeys.length !== DEFAULT_HOTKEYS.length) {
       const merged = [...userHotkeys];
       DEFAULT_HOTKEYS.forEach((d) => {
@@ -14676,6 +15234,7 @@ ${runtimeContext.t("INSTRUCTIONS")}
       isBranchPasteBusy
     } = createMarkdownImport(runtimeContext);
     const { copyMapAsText } = createMarkdownExport(runtimeContext);
+    const { copyMapAsMermaid } = createMermaidExport(runtimeContext);
     const {
       updateSubtreeFontSize,
       updateSubtreeStrokeWidth,
@@ -14694,7 +15253,7 @@ ${runtimeContext.t("INSTRUCTIONS")}
     let branchScaleDropdown, baseWidthSlider;
     let colorToggle, widthSlider, centerToggle;
     let fillSweepToggleSetting, fillSweepToggle;
-    let pinBtn, refreshBtn, cutBtn, copyBtn, boxBtn, dockBtn, editBtn;
+    let pinBtn, refreshBtn, cutBtn, copyBtn, copyMermaidBtn, boxBtn, dockBtn, editBtn;
     let toggleGroupBtn, zoomBtn, focusBtn, boundaryBtn, calendarBtn;
     let submapRootBtn;
     let foldBtnL0, foldBtnL1, foldBtnAll;

@@ -1,0 +1,167 @@
+{
+  "schemaVersion": 1,
+  "status": "evidence-index",
+  "files": [
+    {
+      "name": "acceptance-status.json",
+      "sha256": "801b94434cd168deac9cf5cf37892a432053baa150b35d8b9d32b72f9c1908e1",
+      "bytes": 363050
+    },
+    {
+      "name": "acceptance-investigation-2026-10-30.json",
+      "sha256": "13047c5474fcccb825da6db1de29c8ff04d132f533eee72c6f54b29053dd48a1",
+      "bytes": 10165255
+    },
+    {
+      "name": "native-event-payloads-2026-10-30.jsonl",
+      "sha256": "1b953af190410aeb57b9ec8515832cca7d085022b87d2fa10f87c01e9a7c6b36",
+      "bytes": 14754983
+    },
+    {
+      "name": "acceptance-investigation-2026-10-29.json",
+      "sha256": "5383d34d37b4dc0b77df8789ec0ed183a95bc67f0303f184ad2db8328eff1e68",
+      "bytes": 3955148
+    },
+    {
+      "name": "native-event-payloads-2026-10-29.jsonl",
+      "sha256": "c29b7c73c1e74a7e2e0aedea4cbeeb7edbad9033a11931fa6c416a86eb7b674f",
+      "bytes": 3455034
+    },
+    {
+      "name": "acceptance-failed-9c08d814.json",
+      "sha256": "42920c346cb3ac27f69e806f93b9bfc6cdd04fac2338af0b48b54d754d5f943e",
+      "bytes": 1664130
+    },
+    {
+      "name": "acceptance-failed-098e6ee1.json",
+      "sha256": "869a0ca3aec1a1e469bcc6870fbe9078ce193bdc9c7832603a69bcb8dd58e52e",
+      "bytes": 1442703
+    },
+    {
+      "name": "resize-reduction-2026-10-30.json",
+      "sha256": "488fc402c5ec448ef508a12655db2374780f913bfeafe101652155230475df78",
+      "bytes": 1470628
+    },
+    {
+      "name": "approved-observer-trace-source.txt",
+      "sha256": "06fbbcfa59e21c05fa7cac4b3071fe3bcbcdb4d6033b80bec8178e716f6d143f",
+      "bytes": 7682
+    },
+    {
+      "name": "iframe-ownership-control-source.txt",
+      "sha256": "d7ea0e0ecf51aeab53fb3a5b56bdc0c9a411492e35c79e1a84edcbc8b4264de6",
+      "bytes": 2804
+    },
+    {
+      "name": "approved-observer-trace-records-2026-10-30.json",
+      "sha256": "a780a34b6f30d0eea1bc3021c659f27496c7dc8c6378dc4faed0b0d7cb23193e",
+      "bytes": 11412429
+    },
+    {
+      "name": "observer-diagnostic-2026-10-30.json",
+      "sha256": "5c57b1772b69177e1551604ff7e65dd7207a12b6215cf0905e57469a973ef657",
+      "bytes": 324063
+    },
+    {
+      "name": "approved-observer-loader-source.txt",
+      "sha256": "6bcee571b710e77076d64cf88a96cc26bfad008a7608a05d85cf0b50294546d1",
+      "bytes": 2787
+    },
+    {
+      "name": "approved-observer-selfcheck-source.txt",
+      "sha256": "776f6292ca924a77cc8f3b41a1d342715706ed4382b3a3d6381e027ea0fe0c15",
+      "bytes": 2293
+    },
+    {
+      "name": "guarded-native-probe-source.txt",
+      "sha256": "c4a0237d0ea24da172d9927c5b4f5fe8a04b6cecc44b03a89ae36149e9a07bd2",
+      "bytes": 1251
+    },
+    {
+      "name": "observer-scheduling-followup-2026-10-30.json",
+      "sha256": "70810ac6db52a5add5814407baf551ba7f7ab3dc9ad4e41443bd5ece48444fc2",
+      "bytes": 2138399
+    },
+    {
+      "name": "observer-scheduling-control-source.txt",
+      "sha256": "4e4bad111179bd9f205fe52d241cb796599478218e45adc38c18fa98eae223a6",
+      "bytes": 4440
+    },
+    {
+      "name": "observer-host-resize-control-source.txt",
+      "sha256": "cbbe6643c2e7c896c7053b44721512810df5d4e328ef7ce85264dd4e6e66bc03",
+      "bytes": 2845
+    },
+    {
+      "name": "observer-drawing-close-control-source.txt",
+      "sha256": "0a08c25f1657a844fa4f6f48bd0f24b6897bccc8229f9ab450ad14c6f413d7ab",
+      "bytes": 4127
+    },
+    {
+      "name": "observer-close-loader-source.txt",
+      "sha256": "40ae55c81e85b2f45504dffd23e6dc72fbe3a5f57bfacf536293df818de29bb9",
+      "bytes": 641
+    },
+    {
+      "name": "observer-passive-close-state-source.txt",
+      "sha256": "7d638b33c4652a53f3fc157b9c13980ae2b37f2712ef3e0193199f10d19d8920",
+      "bytes": 1409
+    },
+    {
+      "name": "observer-large-close-control-source.txt",
+      "sha256": "4259ead1b27c74f944b28f9050868192c8599896acfddfe8faf82fc0c99f80f2",
+      "bytes": 4114
+    },
+    {
+      "name": "observer-inflight-close-control-source.txt",
+      "sha256": "1d7bda8c94f0a2efcdda1d32555831dad538c9811045f079ed1189126a6d8f0c",
+      "bytes": 4990
+    },
+    {
+      "name": "observer-hidden-host-control-source.txt",
+      "sha256": "7efb2d484481c54ec74fb0770a4c17c88c0cd75d6da0576c2f426337742b95df",
+      "bytes": 3072
+    },
+    {
+      "name": "observer-core-loader-source.txt",
+      "sha256": "b552f1828bf2fe4c6962d8b0bce81279e8b9b43460d408d62d786427ea843226",
+      "bytes": 3030
+    },
+    {
+      "name": "observer-candidate-analysis-source.txt",
+      "sha256": "0c9e1f59dc3193b9a4264ee74bb6b67d34d18d35120f630e9ea69caf927197ad",
+      "bytes": 3432
+    },
+    {
+      "name": "observer-core-removal-source.txt",
+      "sha256": "f621935bbbeed10a03afde9edfd9f105c0f8bc8033a27e2a405906a6733bfd0d",
+      "bytes": 2785
+    },
+    {
+      "name": "observer-core-trace-records-2026-10-30.json",
+      "sha256": "68e29beac911881081efbb515e37db34565c4ed262788eff65c3032852231b4e",
+      "bytes": 17158694
+    },
+    {
+      "name": "observer-core-comparison-2026-10-30.json",
+      "sha256": "b93d26256efa17cf6f9ac8337a06bbf3f53917e5df9789add83038f94fd020ae",
+      "bytes": 1118823
+    },
+    {
+      "name": "native-acceptance-pair-2026-10-30.json",
+      "sha256": "04835f5b4e5464be6b24d37ecd77455c14abbc587a4b0c53accbccf033dea538",
+      "bytes": 3204901
+    },
+    {
+      "name": "native-pair-audit-source.txt",
+      "sha256": "fec11a6586205b7ff55e3ab7a54218333af3bf06a1c1967d3746f8bb8ec10607",
+      "bytes": 4505
+    },
+    {
+      "name": "settings-lifecycle-verification-2026-10-30.json",
+      "sha256": "37e00b89a71f0c6b013c54918553057003ccf99a5ca3e4da34456e9a0c63dfd1",
+      "bytes": 137077
+    }
+  ],
+  "note": "Index only: acceptance-status.json describes the frozen full-repeat checkpoint; settings-lifecycle-verification-2026-10-30.json describes the later scoped follow-up. This index does not assert two full repeats for the follow-up."
+}

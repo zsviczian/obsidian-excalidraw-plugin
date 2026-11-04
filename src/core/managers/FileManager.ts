@@ -1,4 +1,4 @@
-import type { ExactDrawingCreationOptions } from "src/types/drawingCreationTypes";
+import type { ExactDrawingCreationOptions, PreparedDrawing } from "src/types/drawingCreationTypes";
 import {
   App,
   FrontMatterCache,
@@ -21,7 +21,7 @@ import {
   nanoid,
   VIEW_TYPE_EXCALIDRAW,
 } from "src/constants/constants";
-import { templatePromt } from "src/shared/Dialogs/Prompt";
+import { selectDrawingTemplate } from "src/shared/Dialogs/TemplatePrompt";
 import { FileAndFolderSelectorModal } from "src/shared/Dialogs/FileAndFolderSelectorModal";
 import {
   changeThemeOfExcalidrawMD,
@@ -147,6 +147,7 @@ export class PluginFileManager {
     if (exact && (initData === undefined || normalizePath(exact.exactPath) !== exact.exactPath || exact.exactPath.split("/").some(part => !part || part === "." || part === ".." || part.startsWith(".")))) {
       throw new Error("Exact drawing creation requires a visible vault-relative path");
     }
+    const data = initData ?? (await this.plugin.getBlankDrawing());
     const folderpath = normalizePath(
       exact ? exact.exactPath.split("/").slice(0, -1).join("/") : foldername ? foldername : this.settings.folder,
     );
@@ -156,7 +157,7 @@ export class PluginFileManager {
     exact?.validateBeforeCreate?.();
     const file = await this.app.vault.create(
       fname,
-      initData ?? (await this.plugin.getBlankDrawing()),
+      data,
     );
 
     //wait for metadata cache
@@ -181,21 +182,29 @@ export class PluginFileManager {
   }
 
   public async getBlankDrawing(): Promise<string> {
-    const templates = getListOfTemplateFiles(this.plugin);
-    if (templates) {
-      const template = await templatePromt(templates, this.app);
-      if (template && template instanceof TFile) {
-        if (
-          (template.extension == "md" && !this.settings.compatibilityMode) ||
-          (template.extension == "excalidraw" &&
-            this.settings.compatibilityMode)
-        ) {
-          const data = await this.app.vault.read(template);
-          if (data) {
-            return this.settings.matchTheme
-              ? changeThemeOfExcalidrawMD(data)
-              : data;
-          }
+    // Retain the public string-returning script contract, including dismissal.
+    const result = await this.prepareDrawing();
+    return result.kind === "ready" ? result.data : this.getDrawingContent();
+  }
+
+  public async prepareDrawing(): Promise<PreparedDrawing> {
+    const selection = await selectDrawingTemplate(getListOfTemplateFiles(this.plugin), this.app, normalizePath(this.settings.templateFilePath));
+    if (selection.kind === "cancel") return selection;
+    return { kind: "ready", data: await this.getDrawingContent(selection.kind === "template" ? selection.file : undefined) };
+  }
+
+  private async getDrawingContent(template?: TFile): Promise<string> {
+    if (template) {
+      if (
+        (template.extension == "md" && !this.settings.compatibilityMode) ||
+        (template.extension == "excalidraw" &&
+          this.settings.compatibilityMode)
+      ) {
+        const data = await this.app.vault.read(template);
+        if (data) {
+          return this.settings.matchTheme
+            ? changeThemeOfExcalidrawMD(data)
+            : data;
         }
       }
     }

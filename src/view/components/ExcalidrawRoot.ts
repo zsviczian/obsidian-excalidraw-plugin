@@ -4,12 +4,13 @@ import {
   PointerDownState,
 } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/src/types";
-import type { PointerEvent as ReactPointerEvent } from "react";
+import type { KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
 import { DEVICE, obsidianToExcalidrawMap } from "../../constants/constants";
 import { t } from "../../lang/helpers";
 import { isMarkdownImageElement } from "../../shared/MarkdownImage";
 import { shouldRenderMermaid } from "../../utils/mermaidUtils";
 import type ExcalidrawView from "../ExcalidrawView";
+import { handleTextSaveShortcut } from "../managers/textSaveShortcut";
 import { EmbeddableMenu } from "./menu/EmbeddableActionsMenu";
 import { ObsidianMenu } from "./menu/ObsidianMenu";
 import { SelectedElementActionsMenu } from "./menu/SelectedElementActionsMenu";
@@ -155,6 +156,8 @@ export function createExcalidrawRootElement(
         ref: excalidrawWrapperRef,
         key: "abc",
         tabIndex: 0,
+        onKeyDownCapture: (event: ReactKeyboardEvent<HTMLDivElement>) =>
+          handleTextSaveShortcut(view, event.nativeEvent),
         onKeyDown: view.excalidrawDIVonKeyDown.bind(view),
         onKeyUp: view.excalidrawDIVonKeyUp.bind(view),
         onPointerDownCapture: () => {

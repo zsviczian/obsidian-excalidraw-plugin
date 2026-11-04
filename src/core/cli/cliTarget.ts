@@ -6,6 +6,7 @@ import { ExcalidrawData } from "src/shared/ExcalidrawData";
 import { getTextMode } from "src/shared/TextMode";
 import { VIEW_TYPE_EXCALIDRAW } from "src/constants/constants";
 import { CLIError, fingerprint, vaultPath } from "./cliProtocol";
+import { captureCLIIdentity, sameCLIIdentity } from "./cliIdentity";
 
 /** Resolves an exact file; never uses basename/link lookup or the active drawing. */
 export function drawingFile(plugin: ExcalidrawPlugin, value: unknown): TFile {
@@ -36,11 +37,11 @@ export function drawingView(plugin: ExcalidrawPlugin, file: TFile, id?: unknown)
 }
 
 /** Captures authoritative scene, document metadata, assets and settings for optimistic checks. */
-export function liveIdentity(view: ExcalidrawView): string {
+export function liveIdentity(view: ExcalidrawView): unknown {
   if (!view.excalidrawAPI || !view.isLoaded || view.isClosingOrMigrating()) throw new CLIError("BUSY", "Drawing is loading, closing or migrating.", "path");
   const model = view.excalidrawData;
   const exportData = model.exportPreparedSaveData();
-  return JSON.stringify({
+  return captureCLIIdentity({
     elements: view.excalidrawAPI.getSceneElementsIncludingDeleted(),
     files: view.excalidrawAPI.getFiles(),
     scene: view.getScene()?.appState,
@@ -55,16 +56,28 @@ export function liveIdentity(view: ExcalidrawView): string {
 
 /** API identity changes invalidate old revisions even when the content is identical. */
 export class CLITargets {
-  private generations = new WeakMap<object, number>();
+  private observations = new WeakMap<ExcalidrawView, { api: object; model: object; file: object; snapshot: unknown; generation: number; version: number }>();
   private nextGeneration = 1;
   public constructor(private readonly session: string) {}
 
-  /** Opaque session/view/runtime/content marker. */
-  public revision(view: ExcalidrawView, identity = liveIdentity(view)): string {
-    const api = view.excalidrawAPI;
-    if (!this.generations.has(api)) this.generations.set(api, this.nextGeneration++);
-    return `${this.session}:${view.id}:${this.generations.get(api)}:${fingerprint(identity)}`;
+  /** Exact content comparison advances a stable opaque revision without hashing images. */
+  public revision(view: ExcalidrawView, identity: unknown = liveIdentity(view)): string {
+    const api = view.excalidrawAPI, model = view.excalidrawData, file = view.file;
+    const previous = this.observations.get(view);
+    if (!previous || previous.api !== api || previous.model !== model || previous.file !== file) {
+      const generation = this.nextGeneration++;
+      this.observations.set(view, { api, model, file, snapshot: identity, generation, version: 1 });
+      return `${this.session}:${view.id}:${generation}:1`;
+    }
+    if (!sameCLIIdentity(previous.snapshot, identity)) {
+      previous.snapshot = identity;
+      previous.version++;
+    }
+    return `${this.session}:${view.id}:${previous.generation}:${previous.version}`;
   }
+
+  /** A disposed session must release its latest captured image strings promptly. */
+  public destroy(): void { this.observations = new WeakMap(); }
 }
 
 /** Parses a single exact Vault read with the existing drawing model and releases it. */
@@ -80,6 +93,9 @@ export async function diskSnapshot(plugin: ExcalidrawPlugin, file: TFile, isCurr
     return { scene: structuredClone(data.scene), revision: `disk:${fingerprint(text)}`,
       dependencies: [...(data.equations.size ? ["mathjax" as const] : []), ...(data.mermaids.size ? ["mermaid" as const] : [])],
       assetPaths: data.scene.elements.filter(element => element.type === "image").map(element => data.getFile(element.fileId)?.file?.path).filter(Boolean),
+      assetSizes: new Map([...data.getFileEntries()].map(([id, asset]) => [id, asset.file?.stat.size ?? null])),
+      assetFiles: new Map([...data.getFileEntries()].map(([id, asset]) => [id, asset.file])),
+      featureFiles: { mathjax: new Set([...data.equations.keys()]), mermaid: new Set([...data.mermaids.keys()]) },
     };
   } finally { data.destroy(); }
 }

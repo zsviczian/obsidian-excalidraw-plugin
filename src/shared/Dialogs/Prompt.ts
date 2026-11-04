@@ -5,7 +5,6 @@ import {
   FuzzyMatch,
   FuzzySuggestModal,
   Instruction,
-  normalizePath,
   TFile,
   Notice,
   Setting,
@@ -13,9 +12,9 @@ import {
 } from "obsidian";
 import ExcalidrawView from "../../view/ExcalidrawView";
 import ExcalidrawPlugin from "../../core/main";
-import { escapeRegExp } from "../../utils/utils";
+import { errorlog } from "../../utils/utils";
 import { getLeaf, openLeaf } from "../../utils/obsidianUtils";
-import { createOrOverwriteFile } from "src/utils/fileUtils";
+import { checkAndCreateFolder, getLink } from "src/utils/fileUtils";
 import { KeyEvent, isWinCTRLorMacCMD } from "src/utils/modifierkeyHelper";
 import { t } from "src/lang/helpers";
 import { ExcalidrawElement, getEA } from "src/core";
@@ -41,6 +40,9 @@ import { Extension } from "@codemirror/state";
 import { FloatingModal } from "./FloatingModal";
 import { setSanitizedHtml } from "src/utils/htmlUtils";
 import { setStyle } from "src/utils/styleUtils";
+import { selectDrawingTemplate } from "./TemplatePrompt";
+import { VaultPathSuggest } from "src/shared/Suggesters/VaultPathSuggest";
+import { newFileDestination } from "./newFileDestination";
 
 /**
  * Minimal type for obsidian-latex-suite plugin.
@@ -1089,6 +1091,7 @@ export class GenericSuggester<T> extends FuzzySuggestModal<T> {
   }
 }
 
+/** Standard Obsidian modal for creating linked files, with full-row fields and typing-only folder completion. */
 export class NewFileActions extends Modal {
   public waitForClose: Promise<TFile | null>;
   private resolvePromise: (file: TFile | null) => void;
@@ -1102,6 +1105,8 @@ export class NewFileActions extends Modal {
   private parentFile: TFile;
   private sourceElement: ExcalidrawElement;
   private followObsidianNewNoteLocation: boolean;
+  private closed = false;
+  private folderSuggest: VaultPathSuggest | null = null;
 
   constructor({
     plugin,
@@ -1138,10 +1143,12 @@ export class NewFileActions extends Modal {
   }
 
   onOpen(): void {
+    this.closed = false;
     this.createForm();
   }
 
   openFile(file: TFile): void {
+    if (this.closed) return;
     this.newFile = file;
     if (!file || !this.openNewFile) {
       return;
@@ -1155,6 +1162,9 @@ export class NewFileActions extends Modal {
   }
 
   onClose() {
+    this.closed = true;
+    this.folderSuggest?.destroy();
+    this.folderSuggest = null;
     super.onClose();
     this.resolvePromise(this.newFile);
     this.app = null;
@@ -1164,8 +1174,57 @@ export class NewFileActions extends Modal {
     this.sourceElement = null;
   }
 
+  /** Keep the clicked element pointing at an explicitly relocated/renamed new file. */
+  private async retargetSource(file: TFile): Promise<void> {
+    const view = this.view;
+    const api = view?.excalidrawAPI;
+    const sourceFile = view?.file;
+    if (this.closed || !this.sourceElement || !api || !sourceFile
+      || this.app.metadataCache.getFirstLinkpathDest(this.path, sourceFile.path) === file) return;
+    const source = api.getSceneElements().find(element => element.id === this.sourceElement.id);
+    if (!source) return;
+    const originalPath = this.path;
+    const plugin = this.plugin;
+    const rewrite = (text: string): string => {
+      if (!text) return text;
+      let result = text;
+      for (const match of text.matchAll(REGEX_LINK.EXPR)) {
+        const path = match[3] ?? match[6];
+        let decoded = path;
+        try { decoded = decodeURI(path); } catch { /* Literal vault paths may contain a percent sign. */ }
+        if (decoded !== originalPath) continue;
+        result = result.replace(match[0], getLink(plugin, {
+          embed: Boolean(match[1]), path: file.path, alias: match[4] ?? match[5] ?? originalPath,
+        }, Boolean(match[3])));
+      }
+      return result === text && text === originalPath ? `[[${file.path}]]` : result;
+    };
+    const ea = getEA(view);
+    try {
+      const bound = ea.getBoundTextElement(source, true).sceneElement;
+      ea.copyViewElementsToEAforEditing(bound && bound.id !== source.id ? [source, bound] : [source]);
+      for (const element of ea.getElements()) {
+        if (element.link) element.link = rewrite(element.link);
+        if (element.type === "text") {
+          const raw = element.rawText ?? element.originalText ?? element.text;
+          element.rawText = rewrite(raw);
+          element.text = element.originalText = element.rawText;
+        }
+      }
+      await view.addElements({newElements: ea.getElements(), repositionToCursor: false, save: true,
+        validateBeforePublish: () => {
+          if (this.closed || view.excalidrawAPI !== api || view.file !== sourceFile || view.isClosingOrMigrating()
+            || this.app.vault.getFileByPath(sourceFile.path) !== sourceFile
+            || api.getSceneElements().find(element => element.id === source.id)?.version !== source.version) {
+            throw new Error("New-file source drawing retired");
+          }
+        }});
+    } finally { ea.destroy(); }
+  }
+
   createForm(): void {
     this.titleEl.setText(t("PROMPT_TITLE_NEW_FILE"));
+    this.contentEl.addClass("excalidraw-file-and-folder-selector", "excalidraw-new-file");
 
     this.contentEl.createDiv({
       cls: "excalidraw-prompt-center",
@@ -1175,6 +1234,26 @@ export class NewFileActions extends Modal {
       cls: "excalidraw-prompt-center filepath",
       text: this.path,
     });
+
+    const slash = this.path.lastIndexOf("/");
+    let filename = this.path.slice(slash + 1);
+    let folder = slash >= 0 ? this.path.slice(0, slash)
+      : this.followObsidianNewNoteLocation
+        ? this.app.fileManager.getNewFileParent(this.parentFile.path, filename).path
+        : this.parentFile.parent?.path ?? "";
+    if (folder === "/") folder = "";
+    const folderSetting = new Setting(this.contentEl)
+      .setClass("excalidraw-file-and-folder-selector__field")
+      .setName(t("FILE_AND_FOLDER_SELECTOR_FOLDER"))
+      .addText(text => {
+        text.setValue(folder).onChange(value => { folder = value.trim(); });
+        this.folderSuggest = new VaultPathSuggest(this.app, text.inputEl, "folder", undefined, {openOnFocus: false});
+      });
+    folderSetting.controlEl.addClass("excalidraw-folder-path-control");
+    new Setting(this.contentEl)
+      .setClass("excalidraw-file-and-folder-selector__field")
+      .setName(t("FILE_AND_FOLDER_SELECTOR_FILENAME"))
+      .addText(text => text.setValue(filename).onChange(value => { filename = value.trim(); }));
 
     this.contentEl.createDiv({ cls: "excalidraw-prompt-center" }, (el) => {
       //files manually follow one of two options:
@@ -1192,42 +1271,33 @@ export class NewFileActions extends Modal {
         return true;
       };
 
-      const createFile = async (
-        data: string,
-        useObsidianNewNoteLocation: boolean,
-      ): Promise<TFile> => {
-        let path = this.path;
-        if (!path.match(/\.md$/)) {
-          path = `${path}.md`;
+      const createFile = async (data: string): Promise<TFile> => {
+        const path = newFileDestination(folder, filename);
+        const app = this.app;
+        if (!path) {
+          new Notice(t("PROMPT_ERROR_INVALID_FILE_PATH"));
+          return null;
         }
-        if (!path.includes("/")) {
-          if (
-            useObsidianNewNoteLocation &&
-            this.followObsidianNewNoteLocation
-          ) {
-            const newFileLocation = this.app.vault.getConfig("newFileLocation");
-            let targetFolder = this.parentFile.parent?.path ?? "";
-            if (newFileLocation === "root") {
-              targetFolder = "";
-            } else if (newFileLocation === "folder") {
-              const configuredFolder = this.app.vault.getConfig(
-                "newFileFolderPath",
-              );
-              targetFolder =
-                typeof configuredFolder === "string" ? configuredFolder : "";
-            }
-            path = normalizePath(
-              targetFolder ? `${targetFolder}/${path}` : path,
-            );
-          } else {
-            const re = new RegExp(
-              `${escapeRegExp(this.parentFile.name)}$`,
-              "g",
-            );
-            path = this.parentFile.path.replace(re, path);
-          }
+        // Vault.create refuses a concurrent collision instead of overwriting an existing note.
+        const parent = path.slice(0, path.lastIndexOf("/"));
+        if (path.includes("/")) await checkAndCreateFolder(parent);
+        if (this.closed) return null;
+        return await app.vault.create(path, data);
+      };
+      let busy = false;
+      const runCreation = async (operation: () => Promise<void>): Promise<void> => {
+        if (busy || this.closed || !checks()) return;
+        busy = true;
+        const controls = Array.from(this.contentEl.querySelectorAll<HTMLInputElement | HTMLButtonElement>("input, button"));
+        controls.forEach(control => { control.disabled = true; });
+        try { await operation(); }
+        catch (error: unknown) {
+          errorlog({where: "NewFileActions", error});
+          if (!this.closed) new Notice(t("ERROR_TRY_AGAIN"));
+        } finally {
+          busy = false;
+          if (!this.closed) controls.forEach(control => { control.disabled = false; });
         }
-        return await createOrOverwriteFile(this.app, path, data);
       };
 
       if (this.sourceElement) {
@@ -1235,12 +1305,12 @@ export class NewFileActions extends Modal {
           text: t("PROMPT_BUTTON_EMBED_MARKDOWN"),
           attr: { "aria-label": t("PROMPT_BUTTON_EMBED_MARKDOWN_ARIA") },
         });
-        bEmbedMd.onclick = async () => {
-          if (!checks) {
+        bEmbedMd.onclick = () => runCreation(async () => {
+          if (!checks()) {
             return;
           }
-          const f = await createFile("", true);
-          if (f) {
+          const f = await createFile("");
+          if (f && !this.closed) {
             const ea: ExcalidrawAutomate = getEA(this.view);
             ea.copyViewElementsToEAforEditing([this.sourceElement]);
             ea.getElement(this.sourceElement.id).isDeleted = true;
@@ -1255,39 +1325,44 @@ export class NewFileActions extends Modal {
             await ea.addElementsToView();
             ea.destroy();
           }
-          this.close();
-        };
+          if (!this.closed) this.close();
+        });
       }
 
       const bMd = el.createEl("button", {
         text: t("PROMPT_BUTTON_CREATE_MARKDOWN"),
         attr: { "aria-label": t("PROMPT_BUTTON_CREATE_MARKDOWN_ARIA") },
       });
-      bMd.onclick = async () => {
-        if (!checks) {
+      bMd.onclick = () => runCreation(async () => {
+        if (!checks()) {
           return;
         }
-        const f = await createFile("", true);
+        const f = await createFile("");
+        if (!f || this.closed) return;
+        await this.retargetSource(f);
+        if (this.closed) return;
         this.openFile(f);
         this.close();
-      };
+      });
 
       const bEx = el.createEl("button", {
         text: t("PROMPT_BUTTON_CREATE_EXCALIDRAW"),
         attr: { "aria-label": t("PROMPT_BUTTON_CREATE_EXCALIDRAW_ARIA") },
       });
-      bEx.onclick = async () => {
-        if (!checks) {
+      bEx.onclick = () => runCreation(async () => {
+        if (!checks()) {
           return;
         }
-        const f = await createFile(
-          await this.plugin.getBlankDrawing(),
-          false,
-        );
+        const prepared = await this.plugin.prepareDrawing();
+        if (prepared.kind === "cancel" || this.closed) return;
+        const f = await createFile(prepared.data);
         await sleep(200); //wait for metadata cache to update, so file opens as excalidraw
+        if (!f || this.closed) return;
+        await this.retargetSource(f);
+        if (this.closed) return;
         this.openFile(f);
         this.close();
-      };
+      });
 
       const bCancel = el.createEl("button", {
         text: t("PROMPT_BUTTON_NEVERMIND"),
@@ -1544,13 +1619,6 @@ export const templatePromt = async (
   files: TFile[],
   app: App,
 ): Promise<TFile> => {
-  if (files.length === 1) {
-    return files[0];
-  }
-  return ((await linkPrompt(
-    files.map((f) => `[[${f.path}|${f.name}]]`).join(" "),
-    app,
-    undefined,
-    t("PROMPT_SELECT_TEMPLATE"),
-  )) ?? [null, null, null])[0];
+  const result = await selectDrawingTemplate(files, app);
+  return result.kind === "template" ? result.file : null;
 };

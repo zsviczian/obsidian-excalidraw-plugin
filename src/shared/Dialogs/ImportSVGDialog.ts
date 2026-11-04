@@ -1,9 +1,10 @@
-import { FuzzySuggestModal, TFile } from "obsidian";
+import { FuzzySuggestModal, Notice, TFile } from "obsidian";
 import { REG_LINKINDEX_INVALIDCHARS } from "../../constants/constants";
 import ExcalidrawView from "../../view/ExcalidrawView";
 import { t } from "../../lang/helpers";
 import ExcalidrawPlugin from "../../core/main";
 import { getEA } from "src/core";
+import { errorlog } from "src/utils/coreUtils";
 
 export class ImportSVGDialog extends FuzzySuggestModal<TFile> {
   public plugin: ExcalidrawPlugin;
@@ -44,19 +45,24 @@ export class ImportSVGDialog extends FuzzySuggestModal<TFile> {
   }
 
   onChooseItem(item: TFile, _: KeyboardEvent): void {
-    if (!item) {
+    const view = this.view;
+    if (!item || !view?.excalidrawAPI || !view.file) {
       return;
     }
+    const api = view.excalidrawAPI, path = view.file.path, app = this.app;
     void (async () => {
-      const ea = getEA(this.view);
-      const svg = await this.app.vault.read(item);
-      if (!svg || svg === "") {
-        return;
+      const ea = getEA(view);
+      try {
+        const svg = await app.vault.read(item);
+        if (!svg || view.excalidrawAPI !== api || view.file?.path !== path || !ea.importSVG(svg) || !ea.getElements().length) return;
+        ea.addToGroup(ea.getElements().map((el) => el.id));
+        await ea.addElementsToView(true, true, true, true);
+      } catch (error: unknown) {
+        errorlog({where:"ImportSVGDialog.onChooseItem", error});
+        new Notice(t("SVG_IMPORT_ERROR"));
+      } finally {
+        ea.destroy();
       }
-      ea.importSVG(svg);
-      ea.addToGroup(ea.getElements().map((el) => el.id));
-      await ea.addElementsToView(true, true, true, true);
-      ea.destroy();
     })();
   }
 

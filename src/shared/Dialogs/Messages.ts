@@ -17,14 +17,34 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
-"2.29.1": `
-## Fixed
-- Drawing-load warnings now name the affected file. Select **More information** to learn about missing or malformed drawing data and device-local backups, and see the reported error. Warnings without a local backup also include a **Dismiss** button. Existing recovery actions are unchanged. [#2995](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2995)
+"2.29.2": `
+## New and improved
+- With a compatible K-Plex enabled, complete its ontology fields in link inputs using your configured triggers, then continue with \`[[note]]\` completion inside parentheses or square brackets.
+- **Mindmap Builder.** Enter a complete equation as a node to render it as LaTeX; editing the node restores its Markdown equation source.
+- Paste code blocks as interactive embeddables or editable Markdown images, and optionally remember your choice. Code images adapt to their content up to 800 px wide and wrap long lines without scrollbars.
 
-## Excalidraw Automate
-- Mindmap Builder is now distributed as a readable script, with its modular source maintained in the EA Scripts workspace. Closing its sidepanel no longer lets delayed hotkey callbacks affect a newly opened instance.
-- Mindmap Builder's existing Paste action can attach a natively copied branch while preserving its links, images, and grouped notes. [#2996](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2996)
-- Closing or docking a script input with an open link suggester no longer leaves Enter intercepted in Markdown editors. Mindmap Builder also releases hotkey recording and overrides when it closes.
+## Fixed
+- Empty settings records now trigger recovery instead of silently resetting preferences and script settings.
+- Extracting a local Markdown image to a note now defaults to the drawing's folder. You can still choose another destination. [#3009](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3009)
+- The exit-Zen button no longer overlaps the zoom indicator, including in narrow panes. [#3000](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3000)
+- Ctrl/Cmd+S while editing text now submits the text and force-saves the current drawing instead of opening standalone export. [#2941](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2941)
+- Newly pasted code-block cards now fit their rendered content while preserving their width and later manual resizing. [#2894](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2894)
+`,
+"2.29.1": `
+## New and improved
+- **Choose new-file destinations.** The new-file dialog includes editable folder and filename fields. Companion plugins can also build template selectors through ExcalidrawAutomate.
+- **Editable Lucide icons.** Obsidian uses [Lucide](${URLs.LUCIDE_DEV}) icons, now available as editable Excalidraw strokes. Search and insert them from the command palette "Insert Lucide Icon" or image menu. Also available to CLI agents and scripts through \`ea.addLucideIcon()\`. [#3019](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/3019)
+- **Mermaid diagrams.** Migrated to Obsidian's new [Pele](${URLs.GITHUB_COM_OBSIDIANMD_PELE}) library. Thank you, [kepano](${URLs.GITHUB_COM_OBSIDIANMD_PELE_COMMITS_AUTHOR_KEPANO})! The new SVG importer brings diagram types not yet supported by Mermaid-to-Excalidraw into your scene as editable Excalidraw strokes. Update **Excalidraw Extras** to use the updated converter.
+- **SVG imports.** Import editable shapes and text from the image menu, or convert an SVG image already in your drawing. [#3018](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3018)
+- **CLI image previews.** Agents can inspect images and request smaller previews without changing the originals. [#3004](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3004)
+- **Mindmap Builder.** Copy your K-Plex canvas as Mindmap Builder Markdown, ready to paste into Excalidraw. Mindmap Builder also accepts Mermaid mindmap syntax from the clipboard. [#2996](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2996) Its floating input hides in view mode and returns when editing resumes.
+
+## Fixed
+- Adding links to text or shape labels no longer breaks undo history.
+- Resized and cropped Markdown images retain their dimensions and crops when edited. [#2947](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2947)
+- Fullscreen works in nested workspace splits and restores the surrounding panes on exit. [#2743](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2743)
+- Image drops honor modifier-key actions, and YouTube thumbnails retain their video links. [#2967](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2967)
+- Settings no longer create unnecessary backup or Git updates when nothing has changed.
 `,
 "2.29.0": `
 ${getYouTubeDiv("H64AW1l-ae4")}

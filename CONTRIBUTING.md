@@ -4,6 +4,15 @@ First off, thank you for considering contributing to the Obsidian Excalidraw plu
 
 Because this is not a generic React canvas app, but rather a deeply integrated Obsidian plugin with popout window support, mobile compatibility constraints, and performance optimizations, please read the following guidelines carefully before making any changes.
 
+## Coding requirements
+
+Read [CODING_STANDARDS.md](CODING_STANDARDS.md) before implementing or reviewing
+changes. It is the canonical source for mandatory coding practices, including
+[timer and window ownership](CODING_STANDARDS.md#timers-window-ownership-and-asynchronous-work),
+DOM helpers, cleanup, security, compatibility, logging, localization, and validation.
+Add future cross-cutting rules there. See [AGENTS.md](AGENTS.md) for architecture,
+subsystem constraints, and agent workflows.
+
 ## 💬 Discuss First
 
 Before spending your valuable time writing code for a new feature or significant refactor, please **open an issue** to discuss it first. This ensures your idea aligns with the project's roadmap and architecture, and helps prevent wasted effort or complex merge conflicts later.
@@ -14,7 +23,14 @@ Before spending your valuable time writing code for a new feature or significant
 2. Use Node.js 22 or newer and verify it with `node --version`. A shell that mixes a different Node binary with another installation's Corepack can fail before a build starts.
 3. Run `npm install` in the root directory to install the main dependencies.
    *(Note: The `MathjaxToSVG` sub-component has its own separate dependencies. You do not need to install them manually; the first time you run `npm run build`, it will take care of this automatically).*
-4. Create or locate a dedicated `excalidraw-test` vault, install and enable Excalidraw from **Settings → Community plugins**, and follow [Obsidian runtime testing](docs/OBSIDIAN_RUNTIME_TESTING.md). The CLI runner copies the three built files from `dist/` into this vault; it rejects symlinked plugin targets. For an independent manual development setup, [Obsidian Hot Reload](https://github.com/pjeby/hot-reload) can make reloads faster.
+4. Run `npm run test:native` to prepare and test `.test-work/vaults/excalidraw-auto-test/`; follow [Obsidian runtime testing](docs/OBSIDIAN_RUNTIME_TESTING.md) for the one-time Obsidian opening/trust/CLI prerequisite. The runner builds and installs the current workspace plugin and available Extras files, applies declared settings and enables the plugins automatically. Never use a personal vault or the historical desktop test vault. Generated binaries remain ignored; the immutable seed contains tracked fixtures and configuration.
+
+After changing checkouts, refresh locked producer dependencies too: `npm ci` in
+Extras and `yarn install --frozen-lockfile` in the fork. A freshly rebuilt bundle
+can still contain an old dependency from stale `node_modules`. Native preparation
+checks the installed converter package and live Extras service contract separately.
+Follow [native failure recovery](docs/OBSIDIAN_RUNTIME_TESTING.md#recovering-from-native-test-failures)
+to resolve recoverable blockers and rerun affected cases.
 
 ## 🛠️ Build and Lint Commands
 
@@ -56,6 +72,10 @@ refresh its local agent references, generated EA declaration graph and provenanc
 type dependencies, and template update manifest. The template consumes declarations
 only; personal script workspaces no longer need this plugin as a Git dependency.
 
+For a plugin-only reference update, run `npm run lib` followed by
+`node scripts/generate-script-library.mjs --no-template-sync` to leave the sibling
+template untouched. Review generated changes for unrelated stale snapshots.
+
 After generation, run `npm install`, `npm run check`, `npm run build`, and
 `npm run test:template` in the template. Review both repositories separately and
 publish the template's updated `master` so users can receive the snapshot with
@@ -64,15 +84,14 @@ conflict handling, and the one-time adoption procedure for older workspaces.
 
 ## 🧪 Testing
 
-At this time, the project **has no comprehensive automated test suite**. As a contributor, you are responsible for testing your changes thoroughly.
+Use `npm run test:regression` with the dedicated native test vault, or `npm run test:regression:portable` for hosted checks. Follow the [test guide](docs/TESTING.md) for setup, fixtures, repeatable reports and additional native profiles. The independent suite accepts current fork behavior and protects fork-specific contracts and affected upstream workflows. Historical upstream tests are an optional compatibility investigation, not a required regression gate. Build before focused fast tests because they inspect the shipped bundle. Keep inventory and feature mappings current without treating discovery as behavioral coverage. Report suspected product defects for maintainer review; do not silently change behavior or bless failed snapshots. Focus on core Excalidraw and ExcalidrawAutomate; maintained scripts have their own tests in ea-scripts.
 
 The native CLI lane supports macOS and Windows. Run `npm run test:obsidian:runner`
-for the offline harness tests, then `npm run verify:obsidian:plugin` to build and
-smoke-test this plugin with its installed Excalidraw package. For changes in the
-sibling fork, use `npm run verify:obsidian`, which rebuilds and copies the fork's
-four Obsidian artifacts first. Both native commands require explicit test-vault
-paths and a running Obsidian with CLI access enabled. See the [setup, platform
-commands, reports, and cleanup contract](docs/OBSIDIAN_RUNTIME_TESTING.md).
+for offline harness tests, then `npm run test:native` for the prepared local-vault
+regression profile. Focused `verify:obsidian` commands use the same fixed vault
+and rebuild the current workspace fork, plugin and available Extras before every
+sequence. They apply settings, deploy and hash-check the files automatically.
+See the [one-time opening/trust/CLI prerequisites, reports and cleanup contract](docs/OBSIDIAN_RUNTIME_TESTING.md).
 
 For Markdown embed changes, also run `npm run test:markdown-embeds` and
 `npm run verify:obsidian:plugin -- --embed-recovery`. See the runtime guide for
@@ -94,26 +113,6 @@ Use a risk-based test plan rather than a generic smoke test. Every change should
 - plugin reload and cold application startup
 - desktop and mobile layouts
 - offline mode, when the change affects packaged assets or runtime loading
-
-For UI and CSS changes:
-
-- Use semantic controls and Obsidian's event helpers. Link-like navigation should use a real anchor; custom navigation handlers should use `onClickEvent`.
-- Keep accessible names in `aria-label`. If a styled tooltip is already present, omit the HTML `title` attribute to avoid a second native browser tooltip.
-- Run Obsidian CodeScanner and resolve compatibility warnings against the supported Obsidian baseline. Prefer simple, broadly supported CSS when advanced styling is only decorative.
-
-Timers, observers, autosave coordination, and undocumented Obsidian API workarounds may exist for platform behavior outside the plugin's control. Trace their purpose before simplifying them.
-
-## 🪵 Logging Requirement
-
-- **Do not use direct `console.log(...)` calls in project code.** Use the shared logging helper exported as `log` from `src/utils/debugHelper.ts`.
-- If you are working in a Node script where importing `src/utils/debugHelper.ts` is not practical, define and use a local `log` wrapper instead of calling `console.log(...)` directly.
-- Temporary performance diagnostics must use a unique searchable prefix and
-  produce copyable string lines rather than expandable console objects. Keep
-  instrumentation separate from functional behavior, avoid vault contents,
-  and include filenames only when per-file attribution is explicitly needed.
-- Remove temporary diagnostics before committing. Search both `src/` and the
-  built `dist/main.js` for the prefix so timing callbacks and bundled log code
-  are not left behind.
 
 ## 🏗️ Architecture & Sub-components
 
@@ -226,13 +225,12 @@ The plugin keeps Obsidian 1.8.7 compatibility while using searchable declarative
 
 ## 🌍 Localization & User-Facing Text
 
-- **No hardcoded strings:** There should be no hardcoded English strings directly in the UI components or logic.
-- **Language files:** All strings must be added to the localization files located in `src/lang/locale/`.
-- **Translations:** Add every new key and string to `en.ts` and the actively maintained translations (`es.ts`, `ru.ts`, `zh-cn.ts`, `zh-tw.ts`) in the same change.
+Follow the [user-facing change workflow](CODING_STANDARDS.md#user-facing-change-workflow)
+for release notes, localization keys, and maintained translations.
 
 ## 📦 Pull Requests & Versioning
 
 - **Do NOT bump versions:** Please do not bump the version numbers in `manifest.json`, `manifest-beta.json`, or `package.json` in your Pull Requests. Version bumping and release coordination are handled exclusively by the maintainer during the final GitHub Release workflow.
-- **Release Notes:** If you are adding a feature or fixing a bug that users need to know about, please document it in `src/shared/Dialogs/Messages.ts` under the upcoming version key.
+- **Release notes:** Follow the [user-facing change workflow](CODING_STANDARDS.md#user-facing-change-workflow).
 
 Once again, thank you for contributing to the plugin!

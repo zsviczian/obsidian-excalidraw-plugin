@@ -38,9 +38,7 @@ import { EmbeddedFile } from "src/shared/EmbeddedFileLoader";
 import {
   createOrOverwriteFile,
   getNewUniqueFilepath,
-  splitFolderAndFilename,
 } from "src/utils/fileUtils";
-import { getAttachmentsFolderAndFilePath } from "src/utils/pathUtils";
 import { t } from "src/lang/helpers";
 import { showColorPicker } from "src/shared/Dialogs/ColorPicker";
 import { getBinaryFileFromDataURL } from "src/utils/utils";
@@ -1385,24 +1383,13 @@ class MarkdownImageEditorController {
     if (!this.ensureOwnerValid() || !source || source.source !== "local") {
       return;
     }
-    const attachmentLocation = await getAttachmentsFolderAndFilePath(
-      this.app,
-      this.view.file.path,
-      t("MARKDOWN_IMAGE_DEFAULT_NOTE"),
-    );
-    if (!this.ensureOwnerValid()) {
-      return;
-    }
-    const defaultLocation = splitFolderAndFilename(
-      attachmentLocation.filepath,
-    );
     const location = await new FileAndFolderSelectorModal(this.app, {
       title: t("MARKDOWN_IMAGE_EXTRACT_TITLE"),
       folderLabel: t("FILE_AND_FOLDER_SELECTOR_FOLDER"),
       fileNameLabel: t("FILE_AND_FOLDER_SELECTOR_FILENAME"),
       submitButtonText: t("MARKDOWN_IMAGE_EXTRACT"),
-      folderPath: defaultLocation.folderpath,
-      fileName: defaultLocation.filename,
+      folderPath: this.view.file.parent?.path ?? "",
+      fileName: t("MARKDOWN_IMAGE_DEFAULT_NOTE"),
     }).start();
     if (!location || !this.ensureOwnerValid()) {
       return;

@@ -22,75 +22,193 @@ function visit(node, callback) {
 }
 
 function declaration(name) {
-  const matches = ast.body.filter((node) => node.type === "VariableDeclaration" &&
-    node.declarations.some((item) => item.id.name === name));
+  const matches = ast.body.filter(
+    (node) =>
+      node.type === "VariableDeclaration" &&
+      node.declarations.some((item) => item.id.name === name),
+  );
   assert.equal(matches.length, 1, `Expected one injected ${name} declaration`);
   return matches[0];
 }
 
 // Execute only the shipped bootstrap in a browser-like realm. No Obsidian or
 // network is available: synchronous inflation must supply the private runtime.
-const context = createContext({ atob, TextDecoder, Uint8Array, console, document: {} });
+const context = createContext({
+  atob,
+  TextDecoder,
+  Uint8Array,
+  console,
+  document: {},
+});
 runInContext("window = globalThis;", context);
-runInContext(code.slice(declaration("INITIAL_TIMESTAMP").start,
-  declaration("deliberateCreateElement").end), context);
+runInContext(
+  code.slice(
+    declaration("INITIAL_TIMESTAMP").start,
+    declaration("deliberateCreateElement").end,
+  ),
+  context,
+);
 const runtimeSource = runInContext("unpackExcalidraw()", context);
 
 function fontAssets(source) {
   const assets = new Set();
   visit(parseAst(source), (node) => {
-    if (node.type === "Literal" && typeof node.value === "string" &&
-      /^data:(?:font\/|application\/(?:font|x-font))[^,]*;base64,[A-Za-z0-9+/]+=*$/.test(node.value)) {
+    if (
+      node.type === "Literal" &&
+      typeof node.value === "string" &&
+      /^data:(?:font\/|application\/(?:font|x-font))[^,]*;base64,[A-Za-z0-9+/]+=*$/.test(
+        node.value,
+      )
+    ) {
       // Compare font bytes, excluding MIME prefixes used by dynamic font loaders.
       // Hashes also keep a failed assertion from printing megabytes of Base64.
-      const bytes = Buffer.from(node.value.slice(node.value.indexOf(",") + 1), "base64");
+      const bytes = Buffer.from(
+        node.value.slice(node.value.indexOf(",") + 1),
+        "base64",
+      );
       assets.add(createHash("sha256").update(bytes).digest("hex"));
     }
   });
   return [...assets].sort();
 }
 
+test("private React uses browser scheduling when Electron exposes Node setImmediate", () => {
+  let nodeImmediateReads = 0,
+    messageChannels = 0;
+  const nodeImmediate = () => {
+    throw Error("Node event-loop scheduling is unsafe during popout teardown");
+  };
+  const sandbox = {
+    atob,
+    TextDecoder,
+    Uint8Array,
+    console,
+    document: {},
+    MessageChannel: class {
+      constructor() {
+        messageChannels++;
+        this.port1 = {};
+        this.port2 = { postMessage() {} };
+      }
+    },
+  };
+  const getNodeImmediate = () => {
+    nodeImmediateReads++;
+    return nodeImmediate;
+  };
+  Object.defineProperty(sandbox, "setImmediate", {
+    configurable: true,
+    get: getNodeImmediate,
+  });
+  const realm = createContext(sandbox);
+  runInContext("window = globalThis;", realm);
+  runInContext(
+    code.slice(
+      declaration("INITIAL_TIMESTAMP").start,
+      declaration("deliberateCreateElement").end,
+    ),
+    realm,
+  );
+  assert.equal(
+    nodeImmediateReads,
+    0,
+    "The private runtime must not capture Electron's Node scheduler",
+  );
+  assert.ok(
+    messageChannels > 0,
+    "The actual React scheduler must select browser MessageChannel",
+  );
+  assert.equal(
+    Object.getOwnPropertyDescriptor(sandbox, "setImmediate").get,
+    getNodeImmediate,
+    "Host globals must remain untouched",
+  );
+});
+
 test("production bootstrap supplies matching private React and JSX runtimes", () => {
-  const reactVersion = JSON.parse(read("node_modules/react/package.json")).version;
-  const domVersion = JSON.parse(read("node_modules/react-dom/package.json")).version;
+  const reactVersion = JSON.parse(
+    read("node_modules/react/package.json"),
+  ).version;
+  const domVersion = JSON.parse(
+    read("node_modules/react-dom/package.json"),
+  ).version;
   assert.equal(runInContext("React.version", context), reactVersion);
   assert.equal(runInContext("ReactDOM.version", context), domVersion);
-  for (const expression of ["React.createElement", "ReactDOM.createRoot", "ReactDOM.flushSync",
-    "ReactJSXRuntime.jsx", "ReactJSXRuntime.jsxs", "ReactJSXDevRuntime.jsxDEV"]) {
-    assert.equal(runInContext(`typeof ${expression}`, context), "function", expression);
+  for (const expression of [
+    "React.createElement",
+    "ReactDOM.createRoot",
+    "ReactDOM.flushSync",
+    "ReactJSXRuntime.jsx",
+    "ReactJSXRuntime.jsxs",
+    "ReactJSXDevRuntime.jsxDEV",
+  ]) {
+    assert.equal(
+      runInContext(`typeof ${expression}`, context),
+      "function",
+      expression,
+    );
   }
   assert.equal(runInContext("window.React", context), undefined);
   assert.equal(runInContext("window.ReactDOM", context), undefined);
   const dependencies = new Set();
   visit(ast, (node) => {
-    if (node.type === "CallExpression" && node.callee.type === "Identifier" &&
-      node.callee.name === "require") dependencies.add(node.arguments[0]?.value);
+    if (
+      node.type === "CallExpression" &&
+      node.callee.type === "Identifier" &&
+      node.callee.name === "require"
+    )
+      dependencies.add(node.arguments[0]?.value);
   });
-  for (const dependency of ["react", "react-dom", "react-dom/client", "@zsviczian/excalidraw"]) {
-    assert.ok(!dependencies.has(dependency), `Runtime dependency must be bundled: ${dependency}`);
+  for (const dependency of [
+    "react",
+    "react-dom",
+    "react-dom/client",
+    "@zsviczian/excalidraw",
+  ]) {
+    assert.ok(
+      !dependencies.has(dependency),
+      `Runtime dependency must be bundled: ${dependency}`,
+    );
   }
 });
 
 test("compressed Excalidraw retains every published offline font asset", () => {
-  const original = read("node_modules/@zsviczian/excalidraw/dist/obsidian/excalidraw.production.min.js");
+  const original = read(
+    "node_modules/@zsviczian/excalidraw/dist/obsidian/excalidraw.production.min.js",
+  );
   const expected = fontAssets(original);
-  assert.ok(expected.length > 0, "Published artifact must contain offline fonts");
+  assert.ok(
+    expected.length > 0,
+    "Published artifact must contain offline fonts",
+  );
   assert.deepEqual(fontAssets(runtimeSource), expected);
   assert.ok(!runtimeSource.includes("//# sourceMappingURL="));
   assert.ok(!code.includes("//# sourceMappingURL="));
 });
 
 test("all maintained language payloads inflate and parse synchronously", () => {
-  const languages = runInContext("Object.keys(PLUGIN_LANGUAGES).sort()", context);
+  const languages = runInContext(
+    "Object.keys(PLUGIN_LANGUAGES).sort()",
+    context,
+  );
   assert.deepEqual(Array.from(languages), ["es", "ru", "zh-cn", "zh-tw"]);
   for (const language of languages) {
-    const source = runInContext(`unpackBase64Deflate(PLUGIN_LANGUAGES[${JSON.stringify(language)}])`, context);
+    const source = runInContext(
+      `unpackBase64Deflate(PLUGIN_LANGUAGES[${JSON.stringify(language)}])`,
+      context,
+    );
     assert.ok(source.startsWith("x="), `Invalid locale payload: ${language}`);
-    assert.doesNotThrow(() => parseAst(source), `Invalid locale syntax: ${language}`);
+    assert.doesNotThrow(
+      () => parseAst(source),
+      `Invalid locale syntax: ${language}`,
+    );
   }
 });
 
 test("production main.js remains below the release size target", () => {
   const bytes = Buffer.byteLength(code);
-  assert.ok(bytes < 5 * 1024 * 1024, `${fileURLToPath(new URL("dist/main.js", root))}: ${bytes} bytes`);
+  assert.ok(
+    bytes < 5 * 1024 * 1024,
+    `${fileURLToPath(new URL("dist/main.js", root))}: ${bytes} bytes`,
+  );
 });

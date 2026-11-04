@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/zsviczian/obsidian-excalidraw-plugin/scripts/testing/artifact.schema.json",
+  "title": "Excalidraw test producer artifact manifest, version 2",
+  "type": "object",
+  "required": ["schemaVersion", "kind", "repository", "commit", "dirty", "diffHash", "lockfileHash", "buildCommand", "toolchain", "artifacts"],
+  "properties": {
+    "schemaVersion": { "const": 2 },
+    "kind": { "enum": ["plugin", "fork", "extras"] },
+    "repository": { "type": "string", "pattern": "^[\\w.-]+/[\\w.-]+$" },
+    "commit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "dirty": { "type": "boolean" },
+    "diffHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "lockfileHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "buildCommand": { "type": "string", "minLength": 1 },
+    "toolchain": { "type": "object", "required": ["node"], "properties": { "node": { "type": "string", "minLength": 1 } } },
+    "artifacts": {
+      "type": "array", "minItems": 3,
+      "items": {
+        "type": "object", "required": ["role", "relativePath", "sha256", "bytes"],
+        "properties": {
+          "role": { "type": "string", "minLength": 1 },
+          "relativePath": { "type": "string", "minLength": 1 },
+          "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+          "bytes": { "type": "integer", "minimum": 1 }
+        }
+      }
+    }
+  }
+}

@@ -1,4 +1,6 @@
 import type React from "react";
+import { prepareLucideIcon } from "./lucideIcons";
+import type { LucideIconOptions, LucideIconResult } from "src/types/lucideTypes";
 import ExcalidrawPlugin from "src/core/main";
 import LZString from "lz-string";
 import type { ExcalidrawCLIRequest, ExcalidrawCLIResult } from "src/types/excalidrawCliTypes";
@@ -24,6 +26,7 @@ import {
 import { ColorMap, MimeType } from "../types/embeddedFileLoaderTypes";
 import {
   Editor,
+  normalizePath,
   MarkdownView,
   Notice,
   OpenViewState,
@@ -678,6 +681,28 @@ export class ExcalidrawAutomate {
     return getListOfTemplateFiles(this.plugin);
   }
 
+  /** The live configured Excalidraw template file or folder path (read-only). */
+  public get templateFilePath(): string {
+    return this.plugin.settings.templateFilePath;
+  }
+
+  /**
+   * Resolve a new drawing's vault path using the current compatibility and extension settings.
+   * Does not create a file, add a collision suffix, or use the configured default drawing folder.
+   * @param filename - A filename stem without folder separators or a drawing extension.
+   * @param foldername - Explicit vault-relative destination; empty means the vault root.
+   * @returns The path suitable for `create({ exactPath })`; creation fails if it is occupied.
+   */
+  public getDrawingFilePath(filename: string, foldername = ""): string {
+    if (!filename.trim() || /[\\/]/.test(filename)) {
+      throw new Error("Drawing filename must be a non-empty filename stem");
+    }
+    const extension = this.plugin.settings.compatibilityMode
+      ? ".excalidraw"
+      : this.plugin.settings.useExcalidrawExtension ? ".excalidraw.md" : ".md";
+    return normalizePath(`${foldername ? `${foldername}/` : ""}${filename}${extension}`);
+  }
+
   /**
    * Gets all embedded images in a drawing recursively.
    * @param {TFile} [excalidrawFile] - Optional file to check, defaults to ea.targetView.file.
@@ -1079,9 +1104,9 @@ export class ExcalidrawAutomate {
   }
 
   /**
-   * Attaches an inline link suggester to the provided input element. The suggester reacts to
-   * "[[" typing, offers vault link choices (including aliases and unresolved links), and inserts
-   * the selected link using relative linktext when the active Excalidraw view is known.
+   * Attaches one popup for [[links]], tags and compatible K-Plex public ontology completion.
+   * Vault choices include aliases/unresolved links and use relative linktext when the target view is known.
+   * Ontology fields preserve exact spelling/wrappers and leave the caret ready for [[note]] completion.
    * @param {HTMLInputElement} inputEl - The input element to enhance.
    * @param {HTMLElement} [widthWrapper] - Optional element to determine suggester width.
    * @returns {KeyBlocker} The suggester instance; call close() to detach; call .isBlockingKeys() to check if suggester dropdown is open.
@@ -5459,20 +5484,59 @@ export class ExcalidrawAutomate {
   }
 
   /**
-   * Imports an SVG string into ExcalidrawAutomate elements.
+   * Appends editable SVG geometry and text (including plain HTML labels) synchronously. Does not insert
+   * into a view or save. Fatal errors leave existing workbench elements untouched;
+   * supported portions of limited SVG features import with a diagnostic notice.
+   * Unsupported colors use the SVG's current color or black with a notice.
    * @param {string} svgString - The SVG string to import.
-   * @returns {boolean} True if the import was successful, false otherwise.
+   * @returns True for a completed conversion (including a transparent/empty SVG),
+   * false for malformed, unsafe or excessive input. See the SVG converter support
+   * matrix for approximations and deliberately omitted unsupported features.
    */
   importSVG(svgString: string): boolean {
-    const res: ConversionResult = svgToExcalidraw(svgString);
+    const res: ConversionResult = svgToExcalidraw(svgString, {
+      measureText: (text, fontSize, fontFamily, lineHeight) => {
+        const { w, h } = _measureText(text, fontSize, fontFamily, lineHeight);
+        return { width: w, height: h };
+      },
+    });
     if (res.hasErrors) {
-      new Notice(
-        `There were errors while parsing the given SVG:\n${res.errors}`,
-      );
+      new Notice(`${t("SVG_IMPORT_ERROR")}\n${res.errors}`);
       return false;
     }
     this.copyViewElementsToEAforEditing(res.content);
+    if (res.warnings.length) {
+      const messages = {
+        compositing: "SVG_IMPORT_COMPOSITING",
+        stroke: "SVG_IMPORT_STROKE",
+        paint: "SVG_IMPORT_PAINT",
+        text: "SVG_IMPORT_TEXT",
+        unsupported: "SVG_IMPORT_UNSUPPORTED",
+        css: "SVG_IMPORT_CSS",
+        viewport: "SVG_IMPORT_VIEWPORT",
+      } as const;
+      new Notice(`${t("SVG_IMPORT_WARNING")}\n${res.warnings.map(warning => t(messages[warning])).join("\n")}`, 10000);
+    }
     return true;
+  }
+
+  /**
+   * Synchronously appends one installed Lucide icon as grouped editable elements.
+   * Works without a view; never clears, inserts, saves, or changes EA style/images.
+   * Coordinates are the nominal viewport origin; size is its longest side (96 by
+   * default), preserving source aspect ratio/padding. Stroke width scales with size
+   * unless explicitly supplied in final scene units. Color/roughness/opacity default
+   * to this EA's style. Throws before appending on invalid input, empty conversion,
+   * or omitted geometry. Nonfatal native approximations are returned as warning codes.
+   * @returns The canonical name, fresh outer group, every member ID and nominal viewport.
+   */
+  addLucideIcon(options: LucideIconOptions): LucideIconResult {
+    const prepared = prepareLucideIcon(options, {
+      strokeColor: this.style.strokeColor, roughness: this.style.roughness,
+      opacity: this.style.opacity,
+    });
+    this.copyViewElementsToEAforEditing(prepared.elements);
+    return prepared.result;
   }
 
   /**

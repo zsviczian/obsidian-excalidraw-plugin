@@ -37,7 +37,16 @@ export const buildReactRuntime = async ({ isProduction }) => {
     if (!chunk) {
       throw new Error("React runtime build did not emit a JavaScript chunk");
     }
-    return `${chunk.code}
+    // Electron exposes Node's setImmediate in the browser. React otherwise
+    // selects its shared libuv loop, whose callbacks can fail while another
+    // window's Node environment is freed (electron/electron#53041). Keep this
+    // choice lexical to our private runtime so React uses its browser scheduler
+    // without changing the host's globals or the official package entrypoints.
+    return `var ObsidianExcalidrawReactRuntime = (() => {
+const setImmediate = undefined;
+${chunk.code}
+return ObsidianExcalidrawReactRuntime;
+})();
 var { React, ReactDOM, ReactJSXRuntime, ReactJSXDevRuntime } = ObsidianExcalidrawReactRuntime;`;
   } finally {
     await bundle.close();

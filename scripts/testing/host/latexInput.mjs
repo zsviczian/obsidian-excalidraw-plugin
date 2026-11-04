@@ -1,3 +1,4 @@
+import {runHostFunction} from './legacyTask.mjs';
 /** #2970: real CodeMirror input in a main window and an owned Electron popout. */
 import assert from "node:assert/strict";
 
@@ -105,8 +106,8 @@ async function cleanup(control) {
     else delete gateway.getMathJax;
   }
   cancel(control);
-  if (c.pop) { await c.pop.setViewState({ type: "empty", state: {} }); c.pop.detach(); }
-  if (c.previous && c.previous !== c.pop) app.workspace.setActiveLeaf(c.previous, { focus: true });
+  if (c.pop) {const win=c.pop.view.containerEl.ownerDocument.defaultView;if(win===app.workspace.containerEl.ownerDocument.defaultView)throw Error('LaTeX popout owner changed');if(c.pop.view.isDirty?.())await c.pop.view.saveWithOutcome();win.close();const end=Date.now()+10000;while(!win.closed){if(Date.now()>end)throw Error('LaTeX popout did not close');await new Promise(resolve=>setTimeout(resolve,25));}}
+  if (c.previous?.view.containerEl.isConnected && c.previous !== c.pop) app.workspace.setActiveLeaf(c.previous, { focus: true });
   delete globalThis[control];
 }
 
@@ -131,12 +132,9 @@ export async function runLatexInputScenario({ cli, drawingPath, realRenderer = f
     }
     throw Error(`${label}: ${JSON.stringify(current())}`);
   }
-  async function act(fn, ...args) {
-    evaluate(`(()=>{${definitions}const c=globalThis.${CONTROL};c.state="pending";c.error=null;Promise.resolve((${fn.toString()})(${[CONTROL, ...args].map(v => JSON.stringify(v)).join(",")})).then(()=>c.state="done").catch(e=>{c.error=e.stack||String(e);c.state="failed"});return JSON.stringify({started:true})})()`);
-    await poll(v => v.state === "done", fn.name);
-  }
+  async function act(fn,...args){return runHostFunction({cli,execute:fn,helpers:[editor,cancel],args:[CONTROL,...args]});}
   const cdp = (method, params = {}) => JSON.parse(cli("dev:cdp", `method=${method}`, `params=${JSON.stringify(params)}`));
-  let session, request = 0;
+  let session, request = 0, unsettled=false;
   const input = (method, params) => session ? cdp("Target.sendMessageToTarget", {
     sessionId: session, message: JSON.stringify({ id: ++request, method, params }),
   }) : cdp(method, params);
@@ -151,9 +149,7 @@ export async function runLatexInputScenario({ cli, drawingPath, realRenderer = f
     return { ready: true };
   });
   try {
-    // setup must install its controller before starting async fixture work.
-    evaluate(`(()=>{Promise.resolve((${setup.toString()})(${JSON.stringify(CONTROL)},${JSON.stringify(drawingPath)},${JSON.stringify(realRenderer)})).then(()=>globalThis.${CONTROL}.state="done").catch(e=>{const c=globalThis.${CONTROL};if(c){c.error=e.stack;c.state="failed"}else throw e});return JSON.stringify({started:true})})()`);
-    await poll(v => v.state === "done", "setup");
+    await runHostFunction({cli,execute:setup,args:[CONTROL,drawingPath,realRenderer]});
     for (const mode of ["main", "direct-popout", "moved-popout"]) {
       if (mode !== "main") {
         const before = new Set(cdp("Target.getTargets").targetInfos.map(t => t.targetId));
@@ -218,25 +214,18 @@ export async function runLatexInputScenario({ cli, drawingPath, realRenderer = f
       cases.push(mode);
       if (session) {
         cdp("Target.detachFromTarget", { sessionId: session }); session = undefined;
-        await act(async control => { const c = globalThis[control]; await c.pop.setViewState({ type: "empty", state: {} }); c.pop.detach(); c.pop = null; c.current = c.leaf; });
+        await act(async control => { const c = globalThis[control]; const win=c.pop.view.containerEl.ownerDocument.defaultView;if(win===app.workspace.containerEl.ownerDocument.defaultView)throw Error('LaTeX popout owner changed');if(c.pop.view.isDirty?.())await c.pop.view.saveWithOutcome();win.close();const end=Date.now()+10000;while(!win.closed){if(Date.now()>end)throw Error('LaTeX popout did not close');await new Promise(resolve=>setTimeout(resolve,25));} c.pop = null; c.current = c.leaf; });
       }
     }
     return { id: realRenderer ? "latex-preview-2970" : "latex-input-2970", status: "passed", cases,
       renderer: realRenderer ? "real Extras MathJax and Latex Suite preview" : "local SVG stub; MathJax/Extras not tested",
       assertions: ["mounted CodeMirror root", "native clicks/arrows/backspace", "selection replacement/undo", "Mod-Enter/save/reopen", "cancel/destroy",
         ...(realRenderer ? ["visible Latex Suite preview", "preview contains rendered math without errors"] : [])] };
-  } finally {
+  } catch(error) {unsettled=error.cleanupFailed===true;throw error;} finally {
     let detachError;
     try { if (session) cdp("Target.detachFromTarget", { sessionId: session }); }
     catch (error) { detachError = error; }
-    evaluate(`(()=>{${definitions}Promise.resolve((${cleanup.toString()})(${JSON.stringify(CONTROL)})).catch(e=>{globalThis.${CONTROL}.cleanupError=e.stack});return JSON.stringify({started:true})})()`);
-    for (let i = 0; i < 100; i++) {
-      const value = evaluate(`JSON.stringify({exists:!!globalThis.${CONTROL},error:globalThis.${CONTROL}?.cleanupError})`);
-      if (!value.exists) break;
-      if (value.error) throw Error(value.error);
-      if (i === 99) throw Error("LaTeX cleanup timed out");
-      await wait(100);
-    }
+    if(!unsettled)await runHostFunction({cli,execute:cleanup,helpers:[editor,cancel],args:[CONTROL]});
     if (detachError) throw detachError;
   }
 }

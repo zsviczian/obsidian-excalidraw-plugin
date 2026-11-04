@@ -55,11 +55,19 @@ export class MarkdownImageController {
   public pendingMarkdownImageDeletionIds = new Set<ExcalidrawElement["id"]>();
   public markdownImageDeletionPrompt: Promise<void> | null = null;
   private conversionInProgress = false;
+  private cancelModificationWait: (() => void) | null = null;
 
   public constructor(
     private readonly view: ExcalidrawView,
     private readonly dependencies: MarkdownImageControllerDependencies,
-  ) {}
+  ) {
+    this.view.register(() => this.cancelPendingConversion());
+  }
+
+  /** Settles the file wait before the owning view unloads or migrates. */
+  public cancelPendingConversion(): void {
+    this.cancelModificationWait?.();
+  }
 
   /** Queues a locally-sourced Markdown-image element for a keep/delete prompt. */
   public queueMarkdownImageDeletion(element: ExcalidrawImageElement): void {
@@ -308,24 +316,28 @@ export class MarkdownImageController {
     );
   }
 
-  private waitForViewFileModification(timeoutMs: number): Promise<void> {
+  private waitForViewFileModification(timeoutMs: number): Promise<boolean> {
+    const vault = this.view.app.vault;
+    const targetFile = this.view.file;
     return new Promise((resolve) => {
       let settled = false;
-      const finish = () => {
+      const finish = (completed: boolean) => {
         if (settled) {
           return;
         }
         settled = true;
-        this.view.ownerWindow.clearTimeout(timeout);
-        this.view.app.vault.offref(eventRef);
-        resolve();
+        window.clearTimeout(timeout);
+        vault.offref(eventRef);
+        this.cancelModificationWait = null;
+        resolve(completed);
       };
-      const eventRef = this.view.app.vault.on("modify", (file) => {
-        if (file === this.view.file) {
-          finish();
+      const eventRef = vault.on("modify", (file) => {
+        if (file === targetFile) {
+          finish(true);
         }
       });
-      const timeout = this.view.ownerWindow.setTimeout(finish, timeoutMs);
+      const timeout = window.setTimeout(() => finish(true), timeoutMs);
+      this.cancelModificationWait = () => finish(false);
     });
   }
 
@@ -353,6 +365,12 @@ export class MarkdownImageController {
   private async performEmbeddableToMarkdownImage(
     elementId: string,
   ): Promise<void> {
+    const targetFile = this.view.file;
+    const targetAPI = this.view.excalidrawAPI;
+    const isCurrent = () =>
+      this.view.file === targetFile &&
+      this.view.excalidrawAPI === targetAPI &&
+      !this.view.isClosingOrMigrating();
     const element = this.view
       .getViewElements()
       .find(
@@ -366,6 +384,9 @@ export class MarkdownImageController {
       this.view,
       element,
     );
+    if (!isCurrent()) {
+      return;
+    }
     if (!source) {
       new Notice(t("MARKDOWN_IMAGE_CONVERSION_ERROR"));
       return;
@@ -389,7 +410,10 @@ export class MarkdownImageController {
         return;
       }
       try {
-        let persistedData = await this.view.app.vault.read(this.view.file);
+        let persistedData = await this.view.app.vault.read(targetFile);
+        if (!isCurrent()) {
+          return;
+        }
         const shouldWaitForModification =
           node.isEditing &&
           !this.persistedLocalSectionMatches(persistedData, localSection);
@@ -399,8 +423,13 @@ export class MarkdownImageController {
         this.view.canvasNodeFactory.stopEditing(node, element.id);
         this.view.updateScene({ appState: { activeEmbeddable: null } });
         if (shouldWaitForModification) {
-          await modificationPromise;
-          persistedData = await this.view.app.vault.read(this.view.file);
+          if (!(await modificationPromise) || !isCurrent()) {
+            return;
+          }
+          persistedData = await this.view.app.vault.read(targetFile);
+          if (!isCurrent()) {
+            return;
+          }
         }
         if (!this.persistedLocalSectionMatches(persistedData, localSection)) {
           new Notice(t("ERROR_TRY_AGAIN"));
@@ -415,6 +444,8 @@ export class MarkdownImageController {
         });
         new Notice(t("ERROR_TRY_AGAIN"));
         return;
+      } finally {
+        this.cancelPendingConversion();
       }
       const updatedData = this.removeLocalSection(this.view.data, localSection);
       if (updatedData === null) {
@@ -431,6 +462,9 @@ export class MarkdownImageController {
         element,
         source,
       );
+    if (!isCurrent()) {
+      return;
+    }
     if (!converted) {
       new Notice(t("MARKDOWN_IMAGE_CONVERSION_ERROR"));
       return;

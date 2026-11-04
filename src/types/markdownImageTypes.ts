@@ -1,4 +1,4 @@
-export const MARKDOWN_IMAGE_CUSTOM_DATA_KEY = "markdownImage";
+export { MARKDOWN_IMAGE_CUSTOM_DATA_KEY } from "../utils/elementCustomDataUtils";
 export const MARKDOWN_IMAGE_EMBEDDED_FILE_TOKEN = "markdown-image";
 export const MARKDOWN_IMAGE_SCHEMA_VERSION = 1;
 
@@ -32,6 +32,8 @@ export type MarkdownImageRenderSettings = {
 };
 
 export type MarkdownImageCustomData = {
+  /** Intrinsic size of the last SVG rendered for this element. */
+  renderedSize?: { width: number; height: number };
   schemaVersion: typeof MARKDOWN_IMAGE_SCHEMA_VERSION;
   /** Advisory revision for changes made through the Excalidraw UI. */
   version: number;

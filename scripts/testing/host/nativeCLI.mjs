@@ -1,7 +1,8 @@
 /** Native authoring round-trip on fixtures owned by the guarded parent runner. */
 import assert from 'node:assert/strict';
+import { runCLIImagePreviewScenario } from './cliImagePreview.mjs';
 
-export async function runNativeCLIScenario({ cli, drawingPath }) {
+export async function runNativeCLIScenario({ cli, drawingPath, reportDir }) {
   const prefix = drawingPath.replace(/\.(?:excalidraw\.md|excalidraw|md)$/, '') + '_native_cli';
   assert.ok(prefix.split('/').at(-1).startsWith('__excalidraw_cli_smoke_'));
   const idPrefix = prefix.split('/').at(-1).slice(-40);
@@ -14,7 +15,7 @@ export async function runNativeCLIScenario({ cli, drawingPath }) {
   const viewCode = `app.workspace.getLeavesOfType('excalidraw').find(leaf=>leaf.view.file?.path===${JSON.stringify(paths.drawing)})?.view`;
   const control = '__excalidrawNativeCLIRegression';
   let cleanup = false;
-  const artifacts = [];
+  const artifacts = []; let imagePreviews;
   try {
     for (const command of ['help', 'status', 'skill', 'list']) ok(action(command));
     assert.equal(ok(action('schema', { action: 'apply' })).data.command, 'apply');
@@ -38,6 +39,7 @@ export async function runNativeCLIScenario({ cli, drawingPath }) {
     ok(action('create', { requestId: `${idPrefix}-template`, path: paths.template, template: paths.drawing, elements: [{ id: 'new', type: 'text', text: 'Template addition', x: 0, y: 150 }] }));
     assert.equal(evaluate(`(async()=>{const text=await app.vault.read(app.vault.getFileByPath(${JSON.stringify(paths.template)}));return JSON.stringify({preserved:text.includes('Template prose survives.')&&text.includes('Template addition')})})()`).preserved, true);
     ok(action('open', { path: paths.drawing }));
+    await new Promise(resolve => setTimeout(resolve, 250));
     const read = () => ok(action('read', { path: paths.drawing, source: 'live', detail: 'elements' })).data;
     let live = read(); const label = live.elements.find(element => element.type === 'text' && element.text === 'Start');
     const update = { requestId: `${idPrefix}-update`, path: paths.drawing, expectedRevision: live.revision, operations: [{ op: 'update', id: label.id, set: { text: 'Edited via native CLI', strokeColor: '#1971c2' } }] };
@@ -56,6 +58,7 @@ export async function runNativeCLIScenario({ cli, drawingPath }) {
       await new Promise(resolve => setTimeout(resolve, 50));
     }
     assert.equal(delayed.error.code, 'STALE_REVISION'); assert.equal(delayed.mutation, 'not-applied');
+    assert.equal(action('apply', { ...update, requestId: `${idPrefix}-competing`, expectedRevision: live.revision }).error.code, 'STALE_REVISION', 'A pre-execution BUSY receipt must run the identical request once the lock is free');
     assert.equal(read().elements.find(element => element.id === label.id).rawText, 'Edited via native CLI');
     evaluate(`(()=>{delete globalThis.${control};return JSON.stringify({clean:true})})()`);
     // Published edits survive a failed save receipt; no false durability claim.
@@ -85,6 +88,7 @@ export async function runNativeCLIScenario({ cli, drawingPath }) {
     live = read();
     const image = ok(action('apply', { requestId: `${idPrefix}-image`, path: paths.drawing, expectedRevision: live.revision, operations: [{ op: 'image', id: 'preview', asset: paths.png, x: 0, y: 200 }] })); assert.ok(image.data.idMap.preview);
     assert.equal(ok(action('read', { path: paths.drawing, source: 'disk' })).data.types.image, 1);
+    imagePreviews = await runCLIImagePreviewScenario({ cli, drawingPath, reportDir });
     write(paths.script, 'return {input:utils.input,source:utils.executionSource,converter:typeof utils.excalidrawLib.convertToExcalidrawElements};');
     const scriptRequest = { requestId: `${idPrefix}-script`, script: paths.script, trusted: true, args: { x: 0, text: '${literal}' } };
     const script = ok(action('script', scriptRequest)); assert.equal(script.persistence, 'unknown'); assert.deepEqual(script.data.input, scriptRequest.args); assert.equal(script.data.source, 'cli');
@@ -94,11 +98,12 @@ export async function runNativeCLIScenario({ cli, drawingPath }) {
     assert.equal(action('script', { ...scriptRequest, requestId: `${idPrefix}-prompt` }).error.code, 'INTERACTION_REQUIRED');
     const close = evaluate(`(async()=>{for(const leaf of app.workspace.getLeavesOfType('excalidraw').filter(l=>l.view.file?.path===${JSON.stringify(paths.drawing)})){await leaf.setViewState({type:'empty',state:{}});leaf.detach()}return JSON.stringify({closed:true})})()`); assert.equal(close.closed, true);
     ok(action('open', { path: paths.drawing }));
+    await new Promise(resolve => setTimeout(resolve, 250));
     assert.equal(read().elements.find(element => element.id === label.id).rawText, 'Recoverable edit');
   } finally {
     const result = evaluate(`(async()=>{const c=globalThis.${control};if(c){if(c.original)c.model.addTextElement=c.original;if(c.originalSave)c.view.saveWithOutcome=c.originalSave;c.release?.();delete globalThis.${control}}const paths=${JSON.stringify(Object.values(paths))};for(const path of paths){if(!path.startsWith(${JSON.stringify(prefix)}))throw Error('unsafe fixture cleanup');for(const leaf of app.workspace.getLeavesOfType('excalidraw').filter(l=>l.view.file?.path===path)){await leaf.setViewState({type:'empty',state:{}});leaf.detach()}const file=app.vault.getFileByPath(path);if(file)await app.vault.delete(file)}return JSON.stringify({clean:true})})()`);
     cleanup = result.clean;
   }
   assert.equal(cleanup, true);
-  return { id: 'native-cli-authoring', status: 'passed', assertions: ['native discovery/file input', 'stable labels, bindings and frames', 'template prose', 'collision and invalid-batch refusal', 'guarded text save/read-back', 'idempotent receipts', 'competing write BUSY', 'stale async text leaves metadata intact', 'failed save preserves recoverable edit', 'add/connect/group/ungroup/delete and frame child guard', 'live/disk SVG/PNG', 'vault image metadata round-trip', 'trusted script context/source identity/prompt refusal', 'save/reopen', 'owned fixture cleanup'], artifacts };
+  return { id: 'native-cli-authoring', status: 'passed', assertions: ['native discovery/file input', 'stable labels, bindings and frames', 'template prose', 'collision and invalid-batch refusal', 'guarded text save/read-back', 'idempotent receipts', 'competing write BUSY', 'stale async text leaves metadata intact', 'failed save preserves recoverable edit', 'add/connect/group/ungroup/delete and frame child guard', 'live/disk SVG/PNG', 'vault image metadata round-trip', 'trusted script context/source identity/prompt refusal', 'save/reopen', 'owned fixture cleanup'], artifacts, imagePreviews };
 }

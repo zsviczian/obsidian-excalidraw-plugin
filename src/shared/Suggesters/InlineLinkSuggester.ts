@@ -16,6 +16,8 @@ import { t } from "src/lang/helpers";
 import { nanoid } from "src/constants/constants";
 import { getEA } from "src/core";
 import { setStyle } from "src/utils/styleUtils";
+import { readKplexOntologyCompletion, isKplexOntologyOfferCurrent, type OntologyCompletionOffer, type OntologyFieldSuggestion } from "./kplexOntologyProvider";
+import { ontologyLinkEdit } from "./ontologyLinkCompletion";
 
 type HeadingSuggestion = {
   kind: "heading";
@@ -53,10 +55,14 @@ type InlineSuggestion =
   | HeadingSuggestion
   | ParagraphSuggestion
   | TagSuggestion
-  | FrameSuggestion;
+  | FrameSuggestion
+  | OntologySuggestion;
+
+type OntologySuggestion = OntologyFieldSuggestion & {kind: "ontology"; offer: OntologyCompletionOffer};
 
 /**
- * Inline link suggester that attaches to a specific input element.
+ * One input-owned popup for links, metadata, tags and optional public K-Plex ontology fields.
+ * The provider owns matching; this class owns editing, keyboard scope and lookup generations.
  */
 export class InlineLinkSuggester
   extends SuggestionModal<InlineSuggestion>
@@ -83,6 +89,7 @@ export class InlineLinkSuggester
     | "frame"
     | "clippedframe"
     | "tag"
+    | "ontology"
     | null = null;
   private headingItems: HeadingSuggestion[] = [];
   private paragraphItems: ParagraphSuggestion[] = [];
@@ -90,7 +97,13 @@ export class InlineLinkSuggester
   private tagItems: TagSuggestion[] = [];
   private linkItemsLoaded = false;
   private suggestionGeneration = 0;
+  private ontologyOffer: OntologyCompletionOffer | null = null;
+  private ontologyItems: OntologySuggestion[] = [];
+  private composing = false;
+  private readonly handleCompositionStart: () => void;
+  private readonly handleCompositionEnd: () => void;
 
+  /** Attach to the input's event lifetime; closing a dropdown keeps a connected input reusable. */
   constructor(
     app: App,
     plugin: ExcalidrawPlugin,
@@ -114,6 +127,10 @@ export class InlineLinkSuggester
     this.emptyStateText = "No match";
     this.syncWidth();
     this.inputEl.addEventListener("keydown", this.handleBracketKeyDown);
+    this.handleCompositionStart = () => { this.composing = true; this.resetSuggestions(); };
+    this.handleCompositionEnd = () => { this.composing = false; this.onInputChanged(); };
+    this.inputEl.addEventListener("compositionstart", this.handleCompositionStart);
+    this.inputEl.addEventListener("compositionend", this.handleCompositionEnd);
   }
 
   public isBlockingKeys() {
@@ -121,6 +138,11 @@ export class InlineLinkSuggester
   }
 
   private onBracketKeyDown(event: KeyboardEvent) {
+    if (event.isComposing || this.composing) {
+      // Leave native IME defaults intact while keeping Enter/Escape out of the link editor.
+      event.stopPropagation();
+      return;
+    }
     if (
       event.key !== "[" ||
       event.metaKey ||
@@ -185,7 +207,7 @@ export class InlineLinkSuggester
     const anchorRect = hostRect ?? this.inputEl.getBoundingClientRect();
     let availableWidth = this.collisionBoundary
       ? this.collisionBoundary.innerWidth - 16 //SuggestionModal padding
-      : Math.max(0, window.innerWidth - anchorRect.left - 16);
+      : Math.max(0, (this.inputEl.ownerDocument.defaultView?.innerWidth ?? window.innerWidth) - anchorRect.left - 16);
 
     if (!this.hasCustomWidthHost) {
       availableWidth =
@@ -229,6 +251,12 @@ export class InlineLinkSuggester
 
   onInputChanged(): void {
     const generation = ++this.suggestionGeneration;
+    this.ontologyOffer = null;
+    this.ontologyItems = [];
+    if (this.composing) {
+      this.resetSuggestions();
+      return;
+    }
     const inputStr = this.modifyInput(this.inputEl.value);
     this.caretPos = this.inputEl.selectionStart ?? inputStr.length;
 
@@ -293,6 +321,21 @@ export class InlineLinkSuggester
 
     const activeTag = this.findActiveTag(inputStr, this.caretPos);
     if (!activeTag) {
+      const offer = readKplexOntologyCompletion(this.inputEl, this.limit);
+      if (offer && offer.items.length) {
+        this.activeOpen = -1;
+        this.activeClose = -1;
+        this.activeTagStart = -1;
+        this.activeTagEnd = -1;
+        this.activeAlias = null;
+        this.activeFile = null;
+        this.mode = "ontology";
+        this.ontologyOffer = offer;
+        this.ontologyItems = offer.items.map(field => ({...field, kind: "ontology", offer}));
+        this.block = true;
+        super.onInputChanged();
+        return;
+      }
       this.resetSuggestions();
       return;
     }
@@ -339,6 +382,10 @@ export class InlineLinkSuggester
   }
 
   getSuggestions(): FuzzyMatch<InlineSuggestion>[] {
+    if (this.mode === "ontology") {
+      // K-Plex already owns inverse-aware filtering and ordering; never rank the rows again.
+      return this.ontologyItems.map<FuzzyMatch<InlineSuggestion>>(item => ({item, match: {score: 0, matches: []}}));
+    }
     if (this.mode === "tag") {
       return fuzzyMatchTextItems(
         this.activeSearchTerm ?? "",
@@ -395,6 +442,7 @@ export class InlineLinkSuggester
   }
 
   getItemText(item: InlineSuggestion): string {
+    if (this.isOntology(item)) return item.name;
     if (this.isHeading(item)) {
       return item.heading;
     }
@@ -412,6 +460,11 @@ export class InlineLinkSuggester
 
   onChooseItem(item: InlineSuggestion | undefined): void {
     if (!item) {
+      return;
+    }
+
+    if (this.isOntology(item)) {
+      this.insertOntology(item);
       return;
     }
 
@@ -486,6 +539,14 @@ export class InlineLinkSuggester
 
   renderSuggestion(result: FuzzyMatch<InlineSuggestion>, itemEl: HTMLElement) {
     const { item } = result || {};
+
+    if (this.isOntology(item)) {
+      itemEl.addClass("excalidraw-ontology-suggestion");
+      itemEl.createDiv({cls: "suggestion-title", text: item.name});
+      if (item.partner) itemEl.createDiv({cls: "suggestion-note", text: `↔ ${item.partner}`});
+      if (item.description) itemEl.createDiv({cls: "suggestion-note", text: item.description});
+      return;
+    }
 
     if (this.isTag(item)) {
       const tagItem = item;
@@ -581,7 +642,7 @@ export class InlineLinkSuggester
     }
 
     const nextOpen = this.inputEl.value.indexOf("[[", start + 2);
-    const fallbackClose = this.inputEl.value.indexOf("]]", start + 2);
+    const fallbackClose = this.findLinkClose(this.inputEl.value, start);
     const closeBelongsToLink =
       this.activeClose >= 0
         ? true
@@ -622,6 +683,47 @@ export class InlineLinkSuggester
     const newPos = start + tag.length;
     this.inputEl.setSelectionRange(newPos, newPos);
     this.close();
+  }
+
+  /** Distinguish provider fields from file/tag/metadata options without interpreting their names. */
+  private isOntology(item: InlineSuggestion | undefined): item is OntologySuggestion {
+    return Boolean(item && "kind" in item && item.kind === "ontology");
+  }
+
+  /** Validate the offered provider/configuration before applying one exact range through the
+   * host-observed input path. Native insertText preserves the browser input undo group; older
+   * hosts retain the existing value/input-event fallback. This never submits the element link. */
+  private insertOntology(item: OntologySuggestion): void {
+    const offer = item.offer, input = this.inputEl;
+    if (offer !== this.ontologyOffer || this.composing || input.disabled || input.readOnly ||
+      !isKplexOntologyOfferCurrent(input, offer, item.name)) {
+      this.close();
+      return;
+    }
+    const edit = ontologyLinkEdit(input.value, offer.range, item.name);
+    if (!edit) { this.close(); return; }
+    this.close();
+    input.focus();
+    input.setSelectionRange(offer.range.start, offer.range.end);
+    let applied = false;
+    try {
+      // Feature-detect the legacy browser editing command: assigning value/setRangeText cannot
+      // retain the input's native undo stack, and some hosts do not expose editing commands.
+      const nativeCommand: unknown = Reflect.get(input.ownerDocument, "execCommand");
+      if (typeof nativeCommand === "function") {
+        applied = Reflect.apply(nativeCommand, input.ownerDocument, ["insertText", false, edit.insertion]) === true;
+      }
+    } catch {
+      // The documented value/event path also supports hosts without native insertText.
+      applied = false;
+    }
+    if (!applied) {
+      if (input.value !== offer.text && input.value !== edit.value) return;
+      input.value = edit.value;
+    }
+    if (input.value !== edit.value) return;
+    this.dispatchInputChange();
+    input.setSelectionRange(edit.caret, edit.caret);
   }
 
   private resetSuggestions() {
@@ -898,6 +1000,13 @@ export class InlineLinkSuggester
   close(): void {
     // A pending heading/block/frame lookup must not reopen a retired input's scope.
     const generation = ++this.suggestionGeneration;
+    this.ontologyOffer = null;
+    this.ontologyItems = [];
+    if (this.inputEl?.isConnected === false) {
+      this.inputEl.removeEventListener("keydown", this.handleBracketKeyDown);
+      this.inputEl.removeEventListener("compositionstart", this.handleCompositionStart);
+      this.inputEl.removeEventListener("compositionend", this.handleCompositionEnd);
+    }
     // Docking/closing a host can detach the dropdown before its scope is released.
     // popScope is idempotent and uses the scope's acquisition window, not DOM visibility.
     this.app.keymap.popScope(this.scope);
@@ -919,6 +1028,24 @@ export class InlineLinkSuggester
     this.shouldNotOpen = false;
   }
 
+  /** Find this wikilink's delimiter while retaining balanced literal filename brackets.
+   * A filename's final ] next to an outer ontology ] is not a wikilink closer. An independent
+   * subsequent [[ still ends this incomplete context instead of being swallowed on selection. */
+  private findLinkClose(value: string, open: number): number {
+    let depth = 0;
+    for (let index = open + 2; index < value.length; index++) {
+      const char = value[index];
+      if (char === "[") {
+        if (value[index + 1] === "[") return -1;
+        depth++;
+      } else if (char === "]") {
+        if (depth > 0) depth--;
+        else if (value[index + 1] === "]") return index;
+      }
+    }
+    return -1;
+  }
+
   private findActiveLink(
     value: string,
     pos: number,
@@ -931,7 +1058,7 @@ export class InlineLinkSuggester
         break;
       }
       const nextOpen = value.indexOf("[[", open + 2);
-      const closeCandidate = value.indexOf("]]", open + 2);
+      const closeCandidate = this.findLinkClose(value, open);
       const closeBelongsToLink =
         closeCandidate !== -1 && (nextOpen === -1 || closeCandidate < nextOpen);
       const close = closeBelongsToLink ? closeCandidate : -1;
@@ -1008,12 +1135,13 @@ export class InlineLinkSuggester
 
   private dispatchInputChange() {
     const eventInit = { bubbles: true, composed: true, cancelable: true };
+    const ownerWindow = this.inputEl.ownerDocument.defaultView ?? window;
     const inputEvt =
-      typeof InputEvent !== "undefined"
-        ? new InputEvent("input", eventInit)
-        : new Event("input", eventInit);
+      typeof ownerWindow.InputEvent !== "undefined"
+        ? new ownerWindow.InputEvent("input", eventInit)
+        : new ownerWindow.Event("input", eventInit);
     this.inputEl.dispatchEvent(inputEvt);
-    const changeEvt = new Event("change", eventInit);
+    const changeEvt = new ownerWindow.Event("change", eventInit);
     this.inputEl.dispatchEvent(changeEvt);
   }
 }

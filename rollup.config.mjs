@@ -13,6 +13,8 @@ import { minify } from 'uglify-js';
 import json from '@rollup/plugin-json';
 import { parseEnv } from 'node:util';
 import { buildReactRuntime } from './scripts/buildReactRuntime.mjs';
+import { localExcalidrawTypePaths } from './scripts/excalidrawTypeSource.mjs';
+import ts from 'typescript';
 
 function compressDeflateBase64(code) {
   // Compress using Node's native zlib at maximum compression
@@ -308,8 +310,17 @@ const BASE_CONFIG = {
   ],
 };
 
+function pairedTypeOptions(config) {
+  const localPaths = localExcalidrawTypePaths(process.cwd(), process.env.EXCALIDRAW_FORK_ROOT);
+  if (!localPaths) return config;
+  const parsed = ts.getParsedCommandLineOfConfigFile(path.resolve(config.tsconfig), {}, {
+    ...ts.sys, onUnRecoverableConfigFileDiagnostic: diagnostic => { throw Error(ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n')); },
+  });
+  return { ...config, paths: { ...parsed.options.paths, ...localPaths } };
+}
+
 const getRollupPlugins = (tsconfig, ...plugins) => [
-  typescript(tsconfig),
+  typescript(pairedTypeOptions(tsconfig)),
   json(),
   replace({
     preventAssignment: true,

@@ -1,0 +1,16 @@
+(async()=>{
+ const delay=500,doc=document,win=doc.defaultView,ids=['obsidian-excalidraw-plugin','excalidraw-extras'],remote=require('@electron/remote'),wc=remote.getCurrentWebContents(),events=[],states=[];let phase='baseline',leaf,pw,error;
+ const sleep=ms=>new Promise(r=>win.setTimeout(r,ms));const wait=async(fn,label)=>{const end=Date.now()+5000;while(!fn()){if(Date.now()>end)throw Error(label);await sleep(25);}};
+ const listener=e=>events.push({at:Date.now(),phase,message:e.message,isTrusted:e.isTrusted,hasError:e.error!=null,stack:e.error?.stack});win.addEventListener('error',listener);
+ try{
+  if(!String(win.ResizeObserver).includes('[native code]'))throw Error('Native observers required');
+  if(app.workspace.floatingSplit.children.length||app.workspace.getLeavesOfType('excalidraw').length)throw Error('Baseline not restored');
+  for(const id of ids)await app.plugins.disablePlugin(id);await sleep(500);if(events.length)throw Error('Baseline not quiet');
+  phase='open';leaf=app.workspace.openPopoutLeaf();await wait(()=>leaf.view.containerEl.ownerDocument!==doc,'Popout destination');pw=leaf.view.containerEl.ownerDocument.defaultView;
+  await wait(()=>pw.require&&pw.require('@electron/remote').getCurrentWindow(),'Native popout ready');const nw=pw.require('@electron/remote').getCurrentWindow();nw.show();nw.focus();await wait(()=>pw.document.visibilityState==='visible','Visible popout');await sleep(500);
+  states.push({at:Date.now(),phase,pluginsLoaded:ids.map(id=>!!app.plugins.plugins[id]),mainBackgroundThrottling:wc.getBackgroundThrottling(),popoutBackgroundThrottling:pw.require('@electron/remote').getCurrentWebContents().getBackgroundThrottling(),tabClasses:leaf.parent.tabsContainerEl.className,tabOwnerIsPopout:leaf.parent.tabsContainerEl.ownerDocument===pw.document});
+  phase='resize';const [width,height]=nw.getSize();nw.setSize(width+47,height+31);await sleep(delay);
+  phase='hide';nw.hide();await wait(()=>pw.document.visibilityState==='hidden','Hidden native popout');states.push({at:Date.now(),phase,visibility:pw.document.visibilityState,nativeVisible:nw.isVisible(),nativeFocused:nw.isFocused()});phase='close';const closedAt=Date.now();pw.close();await wait(()=>pw.closed,'Popout close');await sleep(5500);states.push({phase,closedAt,completed:Date.now(),afterClose:events.filter(e=>e.at>=closedAt).length,popouts:app.workspace.floatingSplit.children.length});
+ }catch(e){error=String(e.stack||e);}finally{if(pw&&!pw.closed){pw.close();await wait(()=>pw.closed,'Cleanup popout');}for(const id of ids)if(!app.plugins.plugins[id])await app.plugins.enablePlugin(id);await wait(()=>app.plugins.plugins[ids[0]]?.isReady&&app.plugins.plugins[ids[1]]?.api,'Restore plugins');win.removeEventListener('error',listener);}
+ return JSON.stringify({delay,error,states,events,acceptanceCredit:false,addedObservers:0,observerInterception:false,productionObserversModified:false,cleanup:{popouts:app.workspace.floatingSplit.children.length,pluginReady:app.plugins.plugins[ids[0]]?.isReady,extrasReady:!!app.plugins.plugins[ids[1]]?.api}});
+})()

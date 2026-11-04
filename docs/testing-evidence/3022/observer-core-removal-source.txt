@@ -1,0 +1,22 @@
+import assert from 'node:assert/strict';
+import {readFileSync,writeFileSync,realpathSync} from 'node:fs';
+import {join} from 'node:path';
+import {acquireHostLock} from '../scripts/testing/host/hostLock.mjs';
+import {localVaultTarget} from '../scripts/testing/localVault.mjs';
+import {spawnNativeSync,obsidianCliExecutable} from '../scripts/testing/host/processTools.mjs';
+import {parseCLIJSON} from '../scripts/testing/host/inAppTask.mjs';
+import {waitForNativeReady} from '../scripts/testing/host/hostReadiness.mjs';
+const dir=process.argv[2],r=JSON.parse(readFileSync(dir+'/report.json','utf8'));
+assert.equal(r.diagnosticOnly,true);assert.equal(r.acceptanceCredit,false);assert.equal(r.cleanup,'passed');assert.equal(r.baselineRestoration.restored,true);assert.equal(r.resizeTrace.active,false);
+const target=localVaultTarget(process.cwd()),userData=join(process.env.APPDATA,'obsidian'),lock=acquireHostLock({userDataPath:userData});
+const cli=(...args)=>{const p=spawnNativeSync(obsidianCliExecutable(),['vault='+target.vaultName,...args],{encoding:'utf8',timeout:20000,maxBuffer:4*1024*1024});if(p.error||p.status||/^Error:/m.test(p.stdout))throw Error(p.error?.message||p.stdout||p.stderr);return p.stdout;};
+const evaluate=code=>parseCLIJSON(cli('eval','code='+code));
+const identity=()=>{assert.equal(realpathSync(cli('vault','info=path').trim()),realpathSync(target.vaultPath));assert.equal(realpathSync(evaluate("JSON.stringify(require('@electron/remote').app.getPath('userData'))")),realpathSync(userData));};
+try{
+ identity();const started=Date.now(),recovery=evaluate(readFileSync('tmp/pr3022-recover-baseline-window.js','utf8')),readiness=[];
+ await new Promise(resolve=>setTimeout(resolve,300));await waitForNativeReady(cli,{diagnostics:readiness});identity();
+ const native=evaluate(readFileSync('tmp/pr3022-trace-removal-check.js','utf8')),inspection=evaluate(readFileSync('tmp/pr3022-final-inspection.mjs','utf8')),passive=evaluate(readFileSync('tmp/pr3022-post-storm-passive.js','utf8'));
+ assert.equal(native.tracePresent,false);for(const key of ['constructor','observe','unobserve','disconnect'])assert.ok(native[key].includes('[native code]'));
+ assert.deepEqual(native.tasks,[]);assert.equal(native.popouts,0);assert.equal(inspection.pluginReady,true);assert.equal(inspection.extrasReady,true);assert.equal(inspection.printRoots,0);assert.deepEqual(passive.events,[]);
+ const result={started,completed:Date.now(),recovery,readiness,native,inspection,passive,acceptanceCredit:false,separateFromDiagnosticTrial:true};writeFileSync(dir+'/trace-removal-recovery.json',JSON.stringify(result,null,2)+'\n');process.stdout.write(JSON.stringify({status:'passed',traceRemoved:true,baselineRestored:true,quiet:true,acceptanceCredit:false})+'\n');
+}finally{lock.release();}

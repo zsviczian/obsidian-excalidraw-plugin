@@ -1,0 +1,3 @@
+import {registerHooks} from 'node:module';
+const moduleURL=new URL('./pr3022-popout-close-scenario.mjs',import.meta.url).href;
+registerHooks({load(url,context,next){const result=next(url,context);if(!url.endsWith('/scripts/testing/host/verify.mjs'))return result;let source=String(result.source);const anchor='...(lifecycle ? [runLifecycleScenario] : []),';if(source.split(anchor).length!==2)throw Error('Diagnostic scenario anchor drift');source=`import {runPopoutCloseControl} from ${JSON.stringify(moduleURL)};\n`+source.replace(anchor,'...(lifecycle ? [runLifecycleScenario,runPopoutCloseControl] : []),');return {...result,source};}});

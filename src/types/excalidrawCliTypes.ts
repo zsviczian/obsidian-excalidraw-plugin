@@ -1,6 +1,6 @@
 /** Versioned JSON protocol shared by native CLI and Excalidraw Automate. */
 export type CLIJSON = null | boolean | number | string | CLIJSON[] | { [key: string]: CLIJSON };
-export type CLICommand = "help" | "status" | "schema" | "api" | "list" | "read" | "open" | "create" | "apply" | "export" | "script" | "skill" | "result";
+export type CLICommand = "help" | "status" | "schema" | "api" | "icons" | "list" | "read" | "open" | "create" | "apply" | "export" | "script" | "skill" | "result";
 
 /** Command-specific fields are validated against the runtime `schema` action. */
 export interface ExcalidrawCLIRequest {
