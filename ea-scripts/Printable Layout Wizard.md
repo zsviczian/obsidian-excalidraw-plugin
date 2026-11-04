@@ -7,7 +7,7 @@ In **Printing → Pages**, leave the field blank to print all pages or enter a s
 
 The print preview dims excluded pages and shows the chosen margins. The count next to **Export to PDF** updates as you change the range or empty-page option. Previews refresh when the drawing changes; use the refresh button to rebuild them manually.
 
-Frames define print areas; content outside them is excluded. Frame borders and titles do not print. Keep frames the same size and orientation for a uniform PDF. Custom frames retain their size. Existing script preferences are preserved; page selection resets when you close the dialog.
+Frames define print areas; content outside them is excluded. Frame borders and titles do not print. Keep frames the same size and orientation for a uniform PDF. Custom frames retain their size. Existing script preferences are preserved; page selection resets when you close the dialog. The selected Frames or Printing tab is remembered per file until Obsidian restarts.
 
 Requires Excalidraw 2.27.0 or newer. PDF export uses the plugin's existing PDF service (Excalidraw Extras on desktop).
 
@@ -23,7 +23,7 @@ Requires Excalidraw 2.27.0 or newer. PDF export uses the plugin's existing PDF s
 
 If you find this script helpful, consider [buying me a coffee](https://ko-fi.com/zsolt).
 
-Build version: 2026-11-04T05:21:44.183Z
+Build version: 2026-11-04T06:00:38.532Z
 
 ```javascript
 */
@@ -838,7 +838,9 @@ Build version: 2026-11-04T05:21:44.183Z
     const modal = new ea2.FloatingModal(app);
     const settings = loadSettings(ea2.getScriptSettings());
     const originalRendering = api.getAppState().frameRendering;
-    let tab = "frames";
+    const session = window;
+    const tabsByFile = session.__printableLayoutWizardTabs ??= /* @__PURE__ */ new Map();
+    let tab = (file && tabsByFile.get(file.path)) ?? "frames";
     let rotate = false;
     let busy = false;
     let closed = false;
@@ -936,12 +938,18 @@ Build version: 2026-11-04T05:21:44.183Z
         alignItems: "center",
         gap: "10px",
         minWidth: "0",
-        flexWrap: "wrap"
+        flexWrap: "wrap",
+        paddingBottom: key === "margin" ? "12px" : "0"
       });
       const label = t(key === "size" ? "pageSize" : key);
       row.createSpan({ text: label });
       const dropdown = row.createEl("select", { cls: "dropdown", attr: { "aria-label": label } });
-      dropdown.setCssStyles({ flex: "1 1 130px", width: "100%", minWidth: "0", height: "36px" });
+      dropdown.setCssStyles({
+        flex: "1 1 130px",
+        width: "100%",
+        minWidth: "0",
+        height: "var(--input-height, 30px)"
+      });
       for (const entry of entries)
         dropdown.createEl("option", {
           value: entry,
@@ -1096,6 +1104,7 @@ Build version: 2026-11-04T05:21:44.183Z
         for (const name of ["frames", "printing"]) {
           const control = button(tabs, t(name), () => {
             tab = name;
+            if (file) tabsByFile.set(file.path, name);
             render();
           });
           control.setAttribute("role", "tab");
