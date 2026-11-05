@@ -15,6 +15,6 @@ test("stale installed converter fails before a producer can bundle it", () => {
   }finally{rmSync(root,{recursive:true,force:true})}
 });
 test("incompatible live companion cannot be accepted as a prepared vault", () => {
-  assert.throws(()=>assertCompanionVersions(()=>JSON.stringify({ready:true,checks:{mermaid:{valid:false,currentVersion:"2.2.2",reqVersion:"3.0.0"}}})),/Prepared companion version mismatch/);
-  const result=assertCompanionVersions(()=>JSON.stringify({ready:true,versions:{mermaid:"3.0.0"},checks:{mermaid:{valid:true}}}));assert.equal(result.versions.mermaid,"3.0.0");
+  assert.throws(()=>assertCompanionVersions(()=>JSON.stringify({ready:true,checks:{mermaid:{valid:false,currentVersion:"2.2.2",reqVersion:"3.6.0"}}})),/Prepared companion version mismatch/);
+  const result=assertCompanionVersions(()=>JSON.stringify({ready:true,versions:{mermaid:"3.6.0"},checks:{mermaid:{valid:true}}}));assert.equal(result.versions.mermaid,"3.6.0");
 });

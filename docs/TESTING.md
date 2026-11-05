@@ -1,5 +1,20 @@
 # Maintaining the test lanes
 
+## Coordinated Mermaid 3.6 requirement — 2026-11-05
+
+The plugin requires Extras Mermaid service exactly **3.6.0**. Extras must build
+the matching converter 3.6/Pele 1.13 implementation, including legacy caller
+curve compatibility. The handshake rejects older services and unmatched patch
+versions. The component's npm dependency stays at 0.18.146 for the explicitly
+requested intermediate handoff; local integration uses the merged fork source.
+The portable/native workflow source pins select that same fork/Extras pair.
+
+Run the normal portable and native profiles before readiness. A requested
+personal-vault deployment backs up installed binaries and settings, saves open
+drawings before reload, verifies artifact hashes and preserves settings and
+enabled-plugin configuration. It does not run the synthetic native test suite
+inside the personal vault.
+
 Optional K-Plex ontology completion has a combined fresh-build native lane:
 `npm run test:kplex-ontology`. Its source, API contract, fixture ownership and
 release coordination are documented in [K-Plex ontology completion](KPLEX_ONTOLOGY_COMPLETION.md).

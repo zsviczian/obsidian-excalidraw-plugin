@@ -138,6 +138,33 @@ async function exerciseExtras(c, prefix, fixtures, drawingPath) {
       const service = await plugin.extrasGateway.getMermaid();
       check(service, "plugin gateway did not obtain Mermaid");
       const module = await service.getModule();
+      const elbowDiagram = await module.parseMermaidToExcalidraw(
+        "flowchart TD\n A[Start] --> B[End]",
+        { elbow: { flowchart: true } },
+      );
+      check(
+        elbowDiagram.elements.some((e) => e.type === "arrow" && e.elbowed),
+        "Converter 3.6 elbow configuration was not applied",
+      );
+      const legacySource = "flowchart TD\n A --> B\n A --> C\n B --> D\n C --> D";
+      const bench = plugin.ea.getAPI();
+      const legacyEdges = [];
+      try {
+        for (const roundness of [null, { type: 3 }]) {
+          bench.clear();
+          bench.style.roundness = roundness;
+          const ids = await bench.addMermaid(legacySource);
+          check(Array.isArray(ids) && ids.length > 0, "EA Mermaid conversion failed");
+          const arrows = bench.getElements().filter((e) => e.type === "arrow");
+          check(arrows.length === 4, "EA Mermaid lost connectors");
+          legacyEdges.push(JSON.stringify(arrows.map((e) => ({
+            points: e.points, roundness: e.roundness, elbowed: e.elbowed,
+          }))));
+        }
+      } finally {
+        bench.destroy();
+      }
+      check(legacyEdges[0] !== legacyEdges[1], "EA straight/rounded curve preference was ignored");
       const converted = await module.parseMermaidToExcalidraw(
         "flowchart LR\n A[Start] --> B[End]",
       );
@@ -217,6 +244,8 @@ async function exerciseExtras(c, prefix, fixtures, drawingPath) {
         assertions: [
           "real plugin gateway resolves Mermaid",
           "actual converter returns editable labels and arrow",
+          "converter 3.6 applies elbow configuration",
+          "actual EA.addMermaid retains straight/rounded connector behavior",
           "twelve diagram types load offline with finite normalized geometry and preserved representation",
           "editable labels and decoded image dimensions survive lazy loading",
           "syntax rejects and next diagram recovers",
