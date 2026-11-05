@@ -60,7 +60,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: zsviczian/obsidian-excalidraw-extras
-          ref: dea8b3fb0c382d15184c72cca5e30f261e219222
+          ref: c5d07a6ea5e9fb650fee0ecaffb16bf7def70b37
           path: .test-work/checkouts/extras
           persist-credentials: false
       - uses: actions/checkout@v4
