@@ -24,6 +24,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 - Paste code blocks as interactive embeddables or editable Markdown images, and optionally remember your choice. Code images adapt to their content up to 800 px wide and wrap long lines without scrollbars.
 
 ## Fixed
+- Exporting Markdown notes with embedded Excalidraw frames to PDF no longer hangs while preparing the document.
 - Empty settings records now trigger recovery instead of silently resetting preferences and script settings.
 - Extracting a local Markdown image to a note now defaults to the drawing's folder. You can still choose another destination. [#3009](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3009)
 - The exit-Zen button no longer overlaps the zoom indicator, including in narrow panes. [#3000](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3000)

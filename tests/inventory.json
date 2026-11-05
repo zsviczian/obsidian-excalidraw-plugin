@@ -2529,6 +2529,10 @@
       "mode": "direct-module-or-tooling"
     },
     {
+      "path": "scripts/testing/host/nativeKeyboard.test.mjs",
+      "mode": "direct-module-or-tooling"
+    },
+    {
       "path": "scripts/testing/host/nativeStateEvidence.test.mjs",
       "mode": "isolated-or-extracted"
     },

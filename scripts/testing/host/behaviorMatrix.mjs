@@ -1,6 +1,7 @@
 /** Required core workflows across actual workspace contexts; no screenshots count as behavioral passes. */
 import assert from "node:assert/strict";
 import {viewportInput} from "./deviceViewport.mjs";
+import {nativeKeyboardInput} from "./nativeKeyboard.mjs";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { behavioralCases } from "../behaviorPlan.mjs";
@@ -80,7 +81,7 @@ export function behaviorInputDriver(cli, viewportScale=1) {
         Number.isSafeInteger(request.params.contentsId),
     );
     const { contentsId, method, params } = request.params;
-    const sequence=(Array.isArray(params)?params:[params]).map(params=>viewportInput(method,params,viewportScale));
+    const sequence=(Array.isArray(params)?params:[params]).map(params=>viewportInput(method,method === "Input.dispatchKeyEvent" ? nativeKeyboardInput(params) : params,viewportScale));
     assert.ok(sequence.length>0&&sequence.length<=4,'Bounded trusted input sequence required');
     return parseCLIJSON(
       cli(

@@ -51,6 +51,42 @@ async function createHybridFixtures(control) {
   const hybrid = source.replace(/^---\r?\n/, "---\nexcalidraw-open-md: true\n").replace("# Excalidraw Data", `${embeds}# Excalidraw Data`);
   await app.vault.create(c.paths[2], hybrid); c.owned.push(c.paths[2]);
   await app.vault.create(c.paths[4], `![[${c.paths[2]}#^as-image]]\n\n![[${c.paths[2]}]]`); c.owned.push(c.paths[4]);
+  // A native Markdown fallback cannot resolve Excalidraw frame references. It
+  // would parse this entire drawing and recursively encounter the same embed.
+  const recursive = source.replace("# Excalidraw Data", `![[${c.paths[5]}#^frame=PDF frame]]\n\n# Excalidraw Data`);
+  await app.vault.create(c.paths[5], recursive); c.owned.push(c.paths[5]);
+}
+
+async function renderPDFEmbeds(control, imageType) {
+  const c = globalThis[control];
+  c.plugin.settings.previewImageType = imageType;
+  const deadline = Date.now() + 5000;
+  while (!c.plugin.isExcalidrawFile(app.vault.getFileByPath(c.paths[5]))) {
+    if (Date.now() > deadline) throw Error("PDF fixture metadata did not become ready");
+    await new Promise(resolve => window.setTimeout(resolve, 20));
+  }
+  const { Component, MarkdownRenderer } = c.plugin.ea.obsidian;
+  const component = new Component(); component.load();
+  const print = c.leaf.view.contentEl.ownerDocument.body.createDiv("print");
+  const root = print.createDiv("markdown-preview-view markdown-rendered");
+  try {
+    const markdown = [1, 2, 3].map(() => `![[${c.paths[5]}#^frame=PDF frame|100%]]`).join("\n\n") + `\n\n![[${c.paths[3]}|80]]`;
+    await MarkdownRenderer.render(app, markdown, root, c.paths[1], component);
+    const images = Array.from(root.querySelectorAll("[fileSource]"));
+    if (images.length !== 3 || images.some(image => image.getAttribute("fileSource") !== `${c.paths[5]}#^frame=PDF frame`)) throw Error("PDF lost drawing frame images");
+    for (const image of images) {
+      if (image.tagName === "IMG") await image.decode();
+      else if (!image.querySelector("svg")?.textContent.includes("Embed recovery")) throw Error("PDF frame lost its drawing text");
+    }
+    const native = root.querySelector(".internal-embed img");
+    if (!native) throw Error("PDF lost its native PNG embed");
+    await native.decode();
+    if (!native.naturalWidth) throw Error("PDF native PNG did not decode");
+    if (component._children?.some(child => child.file?.path === c.paths[5])) throw Error("Native Markdown renderer took ownership of a drawing frame");
+    return { images: images.length, nativePNG: true, popout: root.ownerDocument !== app.workspace.containerEl.ownerDocument };
+  } finally {
+    component.unload(); print.remove();
+  }
 }
 
 async function openHybrid(control, mode, nested) {
@@ -65,7 +101,9 @@ async function createFixtures(control) {
   const view = app.workspace.getLeavesOfType("excalidraw").find(leaf => leaf.view.file?.path === c.drawingPath)?.view;
   const ea = new c.plugin.ea.constructor(c.plugin, view);
   try {
-    ea.addText(0, 0, "Embed recovery #2953");
+    const text = ea.addText(0, 0, "Embed recovery #2953");
+    const frame = ea.addFrame(-20, -20, 500, 150, "PDF frame");
+    ea.getElement(text).frameId = frame;
     if (!await ea.addElementsToView(false, true)) throw Error("could not populate drawing fixture");
   } finally { ea.destroy(); }
   // Collapse the long note so all three drawing widgets remain in the viewport.
@@ -143,7 +181,7 @@ async function cleanup(control, expectedPaths) {
 }
 
 export async function runEmbedRecoveryScenario({ cli, drawingPath }) {
-  const paths = ["large.md", "note.md", "hybrid.excalidraw.md", "pixel.png", "nested.md"]
+  const paths = ["large.md", "note.md", "hybrid.excalidraw.md", "pixel.png", "nested.md", "pdf.excalidraw.md"]
     .map(kind => `__excalidraw_embed_${randomUUID()}_${kind}`);
   // Test-only CLI boundary: fn is always a function defined in this module, and
   // arguments are JSON literals in JavaScript source, never HTML/script markup.
@@ -168,6 +206,11 @@ export async function runEmbedRecoveryScenario({ cli, drawingPath }) {
   invoke(setup, drawingPath, paths);
   try {
     await act(createFixtures);
+    await act(createHybridFixtures);
+    for (const imageType of ["SVGIMG", "PNG", "SVG"]) {
+      await act(renderPDFEmbeds, imageType);
+      checks.push(`${imageType}: native Markdown PDF preparation completes with three frames and a native PNG, without recursive drawing transclusion`);
+    }
     for (const imageType of ["SVGIMG", "PNG", "SVG"]) {
       await act(openNote, "source", imageType, true);
       await poll(value => value.paused > 0, "embed did not enter image generation");
@@ -211,7 +254,11 @@ export async function runEmbedRecoveryScenario({ cli, drawingPath }) {
     await poll(value => value.images.some(image => image.width === "280" && image.ready && image.decoded), "popout attribute refresh did not finish");
     checks.push("popout: detached context, reattachment and width refresh in the owning document");
     await act(closeNote);
-    await act(createHybridFixtures);
+    for (const imageType of ["SVGIMG", "PNG", "SVG"]) {
+      const result = await act(renderPDFEmbeds, imageType);
+      if (!result.popout) throw Error("PDF preparation did not use the popout document");
+      checks.push(`${imageType}: popout Markdown PDF preparation preserves drawing frames and the native PNG`);
+    }
     for (const mode of ["source", "preview"]) {
       for (const nested of [false, true]) {
         await act(openHybrid, mode, nested);

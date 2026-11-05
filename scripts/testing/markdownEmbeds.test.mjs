@@ -311,3 +311,39 @@ test("nested Markdown-side drawings and PNGs remain visible; drawing metadata st
     }
   }
 });
+
+test("PDF postprocessing claims drawing images before native embed discovery", async () => {
+  const f = fixture();
+  const settings = deferred(); f.plugin.awaitSettings = () => settings.promise;
+  const section = new f.Element();
+  const draw = section.appendChild(new f.Element("internal-embed"));
+  draw.setAttribute("src", "target.excalidraw.md#^frame=Slide with spaces");
+  const plain = section.appendChild(new f.Element("internal-embed")); plain.setAttribute("src", "image.png");
+  section.ownerDocument.body.querySelectorAll = () => [section];
+  const rendered = f.processor.markdownPostProcessor(section, f.ctx);
+  // Obsidian's MarkdownRenderer.postProcess discovers native embeds synchronously,
+  // before awaiting any plugin promises. A frame reference is not a native block:
+  // its fallback would parse the entire drawing, including recursive transclusions.
+  const nativeEmbeds = section.querySelectorAll(".internal-embed").filter(el => !el.hasClass("is-loaded"));
+  assert.deepEqual(nativeEmbeds, [plain], "only the plain image reaches the native renderer");
+  assert.equal(f.requests.length, 0, "claiming an image does not bypass settings readiness");
+  settings.resolve(); await new Promise(resolve => setImmediate(resolve));
+  const job = f.start(); const image = await f.settle(); await job; await rendered;
+  assert.equal(section.children[0], image, "PDF rendering awaits the actual drawing image");
+  assert.equal(section.children[1], plain, "native images remain untouched");
+});
+
+test("synchronous embed ownership preserves native text and hybrid Markdown", async () => {
+  for (const property of [null, "excalidraw-open-md", "excalidraw-embed-md"]) {
+    const f = fixture();
+    if (property) f.frontmatters.set("target.excalidraw.md", { [property]: true });
+    const section = new f.Element();
+    const sources = ["target.excalidraw.md", "target.excalidraw.md#^text", "target.excalidraw.md#Heading", "target.excalidraw.md#^as-image", "target.excalidraw.md#^group=abcdefgh", "target.excalidraw.md#^area=abcdefgh", "target.excalidraw.md#^clippedframe=Slide", "image.png", "missing.md"];
+    const embeds = sources.map(src => { const el = section.appendChild(new f.Element("internal-embed")); el.setAttribute("src", src); return el; });
+    const rendered = f.processor.markdownPostProcessor(section, f.ctx);
+    assert.deepEqual(embeds.map(el => el.hasClass("is-loaded")), [!property, false, false, true, true, true, true, false, false]);
+    await new Promise(resolve => setImmediate(resolve));
+    while (f.jobs.length) { const job = f.start(); await f.settle(); await job; }
+    await rendered;
+  }
+});

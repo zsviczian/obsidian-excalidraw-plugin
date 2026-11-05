@@ -366,6 +366,14 @@
             "native:behavior:tablet:markdown-source-edit",
             "native:behavior:tablet:raw-parsed-text"
           ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/host/nativeKeyboard.test.mjs",
+          "cases": [
+            "node:scripts/testing/host/nativeKeyboard.test.mjs::macOS native editing shortcuts carry browser commands while preserving trusted key parameters",
+            "node:scripts/testing/host/nativeKeyboard.test.mjs::native keyboard transport preserves releases, app shortcuts, other platforms and explicit commands"
+          ]
         }
       ],
       "fixtures": [
@@ -565,6 +573,14 @@
           "cases": [
             "native:code-block-image-layout:main",
             "native:code-block-image-layout:popout"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/markdownEmbeds.test.mjs",
+          "cases": [
+            "node:scripts/testing/markdownEmbeds.test.mjs::PDF postprocessing claims drawing images before native embed discovery",
+            "node:scripts/testing/markdownEmbeds.test.mjs::synchronous embed ownership preserves native text and hybrid Markdown"
           ]
         }
       ],

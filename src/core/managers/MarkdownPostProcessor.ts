@@ -834,6 +834,15 @@ const embedsMarkdown = (file: TFile): boolean => {
   return Boolean(frontmatter["excalidraw-open-md"] || frontmatter["excalidraw-embed-md"]);
 };
 
+const getDrawingImageTarget = (embed: Element, sourcePath: string): TFile | null => {
+  const src = embed.getAttribute("src");
+  const file = resolveEmbedTarget(src, sourcePath);
+  if (!file || !(file instanceof TFile) || !plugin.isExcalidrawFile(file)) return null;
+  if (isTextOnlyEmbed(embed)) return null;
+  if (embedsMarkdown(file) && !isExplicitImageEmbed(src)) return null;
+  return file;
+};
+
 const processReadingMode = async (
   embeddedItems: NodeListOf<Element> | [HTMLElement],
   ctx: MarkdownPostProcessorContext,
@@ -853,19 +862,11 @@ const processReadingMode = async (
     }
 
     //check to see if the file in the src attribute exists
-    const src = maybeDrawing.getAttribute("src");
-    const file = resolveEmbedTarget(src, ctx.sourcePath);
+    const file = getDrawingImageTarget(maybeDrawing, ctx.sourcePath);
 
     //if the embeddedFile exits and it is an Excalidraw file
     //then lets replace the .internal-embed with the generated PNG or SVG image
-    if (file && file instanceof TFile && plugin.isExcalidrawFile(file)) {
-      if (isTextOnlyEmbed(maybeDrawing)) {
-        //legacy reference to a block or section as text
-        //should be embedded as legacy text
-        continue;
-      }
-      if (embedsMarkdown(file) && !isExplicitImageEmbed(src)) continue;
-
+    if (file) {
       promises.push(
         getGlobalTaskQueue(plugin).addTask(async () => {
           if (!maybeDrawing.isConnected) {
@@ -1317,6 +1318,14 @@ export const markdownPostProcessor = async (
   ) {
     return;
   }
+  // MarkdownRenderer discovers native embeds synchronously after invoking its
+  // postprocessors, before awaiting their promises. Claim only our drawing
+  // images before the first await: native frame/group fallback can otherwise
+  // parse the whole drawing and recursively transclude it during PDF export.
+  const embeddedItems = el.querySelectorAll(".internal-embed");
+  for (const embed of embeddedItems) {
+    if (getDrawingImageTarget(embed, ctx.sourcePath)) embed.addClass("is-loaded");
+  }
   await plugin.awaitSettings();
   //Obsidian's Export to PDF renders the document in its own window (main window or a
   //popout), not necessarily mainDocument, so the print marker must be looked up on the
@@ -1355,7 +1364,6 @@ export const markdownPostProcessor = async (
     isHoverPopover &&
     Boolean(safeFrontmatter["excalidraw-open-md"]) &&
     !plugin.settings.renderImageInHoverPreviewForMDNotes;
-  const embeddedItems = el.querySelectorAll(".internal-embed");
 
   //tmpObsidianWYSIWYG only knows how to handle the frontmatter/area-ref section that
   //renders this drawing's own preview. When this section contains real embeds of its
