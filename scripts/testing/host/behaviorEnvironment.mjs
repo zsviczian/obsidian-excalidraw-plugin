@@ -382,7 +382,7 @@ export async function behaviorEnvironment(
     // forced save that the view intentionally skips while it is still busy.
     await c.waitFor(()=>{
       check(view.leaf===leaf&&leaf.view===view&&view.file===file&&view.excalidrawAPI,"Save/reopen owner changed before persistence");
-      return !view.isSaveInProgress();
+      return !view.isSaveInProgress() && !view.isSynchronizing;
     },"owned drawing save/synchronization readiness");
     const saveOutcome=await view.saveWithOutcome();
     c.caseTrace={...c.caseTrace,saveOutcome};

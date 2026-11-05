@@ -122,15 +122,15 @@ test("trusted click waits for a sliding mobile control to settle before dispatch
   assert.equal(h.events[0].params.y,90);
 });
 
-function saveHarness({failed=false,mismatch=false}={}) {
+function saveHarness({failed=false,mismatch=false,synchronizing=false}={}) {
   const source=readFileSync(new URL('./behaviorEnvironment.mjs',import.meta.url),'utf8');
   const file=ts.createSourceFile('behaviorEnvironment.mjs',source,ts.ScriptTarget.Latest,true);let initializer;
   function visit(node){if(ts.isVariableDeclaration(node)&&node.name.getText(file)==='saveReopen')initializer=node.initializer;ts.forEachChild(node,visit);}visit(file);
-  assert.ok(initializer);let busy=true,saves=0,opens=0;
+  assert.ok(initializer);let busy=!synchronizing,saves=0,opens=0;
   const drawing={path:'owned.md'},api={getSceneElements:()=>[{id:'a'}]};
-  const view={file:drawing,excalidrawAPI:api,isSaveInProgress:()=>busy,async saveWithOutcome(){saves++;return{status:busy?'skipped':failed?'failed':'persisted',requestedRevision:1,acknowledgedRevision:failed?null:1,currentRevision:1};}};
+  const view={file:drawing,excalidrawAPI:api,isSynchronizing:synchronizing,isSaveInProgress:()=>busy,async saveWithOutcome(){saves++;return{status:busy||this.isSynchronizing?'skipped':failed?'failed':'persisted',requestedRevision:1,acknowledgedRevision:failed?null:1,currentRevision:1};}};
   const leaf={view,async setViewState(){},async openFile(value){assert.equal(value,drawing);opens++;}};view.leaf=leaf;
-  const c={caseTrace:{},async waitFor(predicate){if(!predicate())busy=false;assert.equal(predicate(),true);}};
+  const c={caseTrace:{},async waitFor(predicate){if(!predicate()){busy=false;view.isSynchronizing=false;}assert.equal(predicate(),true);}};
   const saveReopen=vm.runInNewContext(`(${initializer.getText(file)})`,{c,leaf,context:{id:'main'},app:{workspace:{setActiveLeaf(value){assert.equal(value,leaf);}}},check:(condition,label)=>assert.ok(condition,label),ready:async()=>{},p:{ea:{getSceneFromFile:async()=>({elements:[{id:mismatch?'wrong':'a'}]})}}});
   return{saveReopen,view,c,saves:()=>saves,opens:()=>opens};
 }
@@ -139,8 +139,37 @@ test('native save/reopen waits for external synchronization before requiring phy
   const h=saveHarness();assert.equal(await h.saveReopen(h.view),h.view);assert.equal(h.saves(),1);assert.equal(h.opens(),1);assert.equal(h.c.caseTrace.saveOutcome.status,'persisted');
 });
 
+test('native save/reopen waits for synchronization even when no save is in progress',async()=>{
+  const h=saveHarness({synchronizing:true});assert.equal(h.view.isSaveInProgress(),false);assert.equal(await h.saveReopen(h.view),h.view);assert.equal(h.saves(),1);assert.equal(h.opens(),1);assert.equal(h.c.caseTrace.saveOutcome.status,'persisted');
+});
+
 test('native save/reopen still refuses failed acknowledgements and mismatched physical scenes',async()=>{
   for(const options of [{failed:true},{mismatch:true}]){
     const h=saveHarness(options);await assert.rejects(h.saveReopen(h.view),/not physically acknowledged|scene IDs differ on disk/);assert.equal(h.saves(),1);assert.equal(h.opens(),0);
   }
+});
+
+function extractionModalHarness(active='popout') {
+  const source=readFileSync(new URL('./workflowBundle.mjs',import.meta.url),'utf8');
+  const start=source.indexOf('      // Keep the selected image\'s drawing as the owner.');
+  const end=source.indexOf('      const normalize = path',start);
+  assert.ok(start>=0&&end>start);
+  let modal;
+  const createDocument=()=>({querySelector(){return modal?.ownerDocument===this?modal:null;}});
+  const main=createDocument(),popout=createDocument(),foreign=createDocument();
+  const current={main,popout,foreign}[active];
+  // Obsidian Modal uses the active document, even when a sidepanel button
+  // belongs to the main document and its selected drawing belongs to a popout.
+  const button={click(){modal={ownerDocument:current,querySelectorAll:()=>[]};}};
+  const tab={contentEl:{ownerDocument:main,querySelector:()=>({closest:()=>button})}};
+  const execute=vm.runInNewContext(`(async()=>{${source.slice(start,end)};return {doc,modal};})`,{tab,view:{ownerDocument:popout},activeDocument:current,check:(condition,label)=>assert.ok(condition,label),c:{waitFor:async(predicate,label)=>assert.ok(await predicate(),label)}});
+  return {execute,current};
+}
+
+test('native extraction follows the active modal document across main and popout ownership',async()=>{
+  for(const active of ['main','popout']){const h=extractionModalHarness(active),result=await h.execute();assert.equal(result.doc,h.current);assert.equal(result.modal.ownerDocument,h.current);}
+});
+
+test('native extraction rejects a modal in an unrelated document',async()=>{
+  await assert.rejects(extractionModalHarness('foreign').execute(),/unrelated document/);
 });

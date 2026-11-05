@@ -15,7 +15,7 @@ vm.runInNewContext(code, {
 });
 
 // This is the Extras service contract, independent of its bundled converter's version.
-for (const [version, accepted] of [["2.2.2", false], ["3.0.0", true], ["3.0.1", false], ["3.1.0", false]]) {
+for (const [version, accepted] of [["2.2.2", false], ["3.0.0", false], ["3.1.0", false], ["3.6.0", true], ["3.6.1", false]]) {
   test(`Mermaid ${version} is ${accepted ? "accepted" : "rejected"} by the exact-version handshake`, () => {
     const gateway = new exports.ExcalidrawExtrasGateway({
       plugins: { manifests: { "excalidraw-extras": { version: "0.1.2" } } },
@@ -24,7 +24,7 @@ for (const [version, accepted] of [["2.2.2", false], ["3.0.0", true], ["3.0.1", 
     assert.equal(result.valid, accepted);
     if (!accepted) {
       assert.equal(result.isExact, true);
-      assert.equal(result.reqVersion, "3.0.0");
+      assert.equal(result.reqVersion, "3.6.0");
       assert.equal(result.currentVersion, version);
     }
   });

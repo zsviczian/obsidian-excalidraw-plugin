@@ -125,10 +125,10 @@ full-profile result.
    use the normal coordinator to deploy/hash-verify them, enable services and
    check the actual live API versions against the plugin gateway. Do not fake a
    version or relax a version handshake to accept mismatched components.
-   The converter package version and Extras service-contract version are distinct:
-   current Extras bundles converter 3.1.0 while advertising service contract 3.0.0.
-   Verify each at its own boundary rather than changing the handshake to match a
-   package version.
+   The converter package version and Extras service-contract version are distinct.
+   The coordinated 3.6 upgrade bundles converter 3.6.0 and advertises service
+   contract 3.6.0. Verify both boundaries and keep the producer advertisement and
+   consumer requirement paired.
 2. For `Concurrent host requests`, inspect the outstanding request ID, method,
    target renderer, acknowledgement and original error. Distinguish UI-readiness
    waits from transport completion. Settle or explicitly cancel the exact owned
@@ -150,6 +150,10 @@ full-profile result.
    deadline waiting for a lost acknowledgement. A timed-out error-buffer clear
    may be accepted only after reading an empty buffer; never clear again and erase
    newly captured errors. Known read-only CLI commands use bounded read retries.
+   This includes only the exact exported `nativeReadyCode` reload probe: its
+   renderer may disappear during mobile-mode reload, so it must not depend on
+   that renderer retaining an operation receipt. Other evals and lookalikes
+   retain strict receipt ownership and are never replayed as readiness reads.
    A screenshot reply may be recovered only from its uniquely owned, previously
    absent artifact after the native image decoder confirms a complete image.
    Never capture again to obtain a replacement acknowledgement, and never treat

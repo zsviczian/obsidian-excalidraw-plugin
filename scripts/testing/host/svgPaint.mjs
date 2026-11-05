@@ -155,17 +155,28 @@ async function probePaint(c, path) {
       ["P03", "P09"],
       async () => {
         const converted = await converter.parseMermaidToExcalidraw(definition);
-        const image = converted.elements.find((e) => e.type === "image");
-        const dataURL = converted.files?.[image?.fileId]?.dataURL;
-        requireValue(
-          dataURL?.startsWith("data:image/svg+xml;base64,"),
-          name + " did not return an SVG image",
-        );
-        const svg = new TextDecoder().decode(
-          Uint8Array.from(atob(dataURL.split(",")[1]), (ch) =>
-            ch.charCodeAt(0),
-          ),
-        );
+        const nativeOutput = ["gantt", "timeline", "quadrant"].includes(name);
+        let svg;
+        if (nativeOutput) {
+          requireValue(converted.elements.length > 0 && converted.elements.every((e) => e.type !== "image"), name + " lost native converter output");
+          // The paint case above reopens the drawing and retires its original view.
+          const currentView = app.workspace.getLeavesOfType("excalidraw").find((leaf) => leaf.view.file?.path === path)?.view;
+          requireValue(currentView?.excalidrawAPI, "Missing reopened SVG paint target");
+          const lib = currentView.packages.excalidrawLib;
+          const elements = lib.convertToExcalidrawElements(converted.elements);
+          const exported = await lib.exportToSvg({ elements, files: converted.files || {}, appState: currentView.excalidrawAPI.getAppState() });
+          svg = exported.outerHTML;
+        } else {
+          const image = converted.elements.find((e) => e.type === "image");
+          const dataURL = converted.files?.[image?.fileId]?.dataURL;
+          requireValue(
+            dataURL?.startsWith("data:image/svg+xml;base64,"),
+            name + " did not return an SVG image",
+          );
+          svg = new TextDecoder().decode(
+            Uint8Array.from(atob(dataURL.split(",")[1]), (ch) => ch.charCodeAt(0)),
+          );
+        }
         const bench = plugin.ea.getAPI();
         try {
           requireValue(bench.importSVG(svg), name + " SVG import failed");
@@ -180,7 +191,7 @@ async function probePaint(c, path) {
         requireValue(expected.every(label => labels.includes(label)), name + " lost native SVG labels");
         return {
             assertions: [
-              "real Extras returns SVG-backed image",
+              nativeOutput ? "real Extras editable output exports as SVG" : "real Extras returns SVG-backed image",
               "actual SVG imports through EA",
             "nonempty native geometry without an image fallback",
             "expected SVG labels retained as editable text",
