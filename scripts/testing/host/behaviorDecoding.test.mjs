@@ -148,3 +148,28 @@ test('native save/reopen still refuses failed acknowledgements and mismatched ph
     const h=saveHarness(options);await assert.rejects(h.saveReopen(h.view),/not physically acknowledged|scene IDs differ on disk/);assert.equal(h.saves(),1);assert.equal(h.opens(),0);
   }
 });
+
+function extractionModalHarness(active='popout') {
+  const source=readFileSync(new URL('./workflowBundle.mjs',import.meta.url),'utf8');
+  const start=source.indexOf('      // Keep the selected image\'s drawing as the owner.');
+  const end=source.indexOf('      const normalize = path',start);
+  assert.ok(start>=0&&end>start);
+  let modal;
+  const createDocument=()=>({querySelector(){return modal?.ownerDocument===this?modal:null;}});
+  const main=createDocument(),popout=createDocument(),foreign=createDocument();
+  const current={main,popout,foreign}[active];
+  // Obsidian Modal uses the active document, even when a sidepanel button
+  // belongs to the main document and its selected drawing belongs to a popout.
+  const button={click(){modal={ownerDocument:current,querySelectorAll:()=>[]};}};
+  const tab={contentEl:{ownerDocument:main,querySelector:()=>({closest:()=>button})}};
+  const execute=vm.runInNewContext(`(async()=>{${source.slice(start,end)};return {doc,modal};})`,{tab,view:{ownerDocument:popout},activeDocument:current,check:(condition,label)=>assert.ok(condition,label),c:{waitFor:async(predicate,label)=>assert.ok(await predicate(),label)}});
+  return {execute,current};
+}
+
+test('native extraction follows the active modal document across main and popout ownership',async()=>{
+  for(const active of ['main','popout']){const h=extractionModalHarness(active),result=await h.execute();assert.equal(result.doc,h.current);assert.equal(result.modal.ownerDocument,h.current);}
+});
+
+test('native extraction rejects a modal in an unrelated document',async()=>{
+  await assert.rejects(extractionModalHarness('foreign').execute(),/unrelated document/);
+});

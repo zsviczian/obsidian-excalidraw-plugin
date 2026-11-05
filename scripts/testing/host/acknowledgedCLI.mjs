@@ -4,6 +4,7 @@ import {existsSync,lstatSync,realpathSync} from 'node:fs';
 import {dirname,resolve,sep} from 'node:path';
 import {parseCLIJSON} from './inAppTask.mjs';
 import {retryReadOnly} from './readOnlyTransport.mjs';
+import {nativeReadyCode} from './hostReadiness.mjs';
 
 /** Run once in the selected renderer; retain the outcome before returning it to CLI transport. */
 export async function recordCLIResult(key, id, source) {
@@ -39,6 +40,8 @@ export function createAcknowledgedCLI(run, {token=randomUUID().replaceAll('-',''
     const readOnly=['version','help','commands'].includes(name)
       || name==='vault'&&args.every(arg=>arg.startsWith('info='))
       || name==='dev:errors'&&args.length===0
+      // Only this exact probe can cross a renderer reload without a receipt.
+      || name==='eval'&&args.length===1&&args[0]==='code='+nativeReadyCode
       || /^obsidian-excalidraw-plugin:(help|status|skill|list|schema|api|read|result)$/.test(name);
     if(readOnly)return read(name,args);
     if(name==='dev:errors'&&args.length===1&&args[0]==='clear') {

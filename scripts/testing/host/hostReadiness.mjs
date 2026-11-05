@@ -1,10 +1,12 @@
 import { parseCLIJSON } from "./inAppTask.mjs";
+/** Exact read-only probe; renderer reloads may erase operation receipts. */
+export const nativeReadyCode = 'JSON.stringify((()=>{const p=app.plugins?.plugins?.["obsidian-excalidraw-plugin"];return p?.isReady?{ready:true,runtime:!!p.getCLIRuntime(),mobile:app.isMobile===true}:{ready:false};})())';
 /** Mode changes reload the host, briefly removing its CLI command registry. */
 export async function waitForNativeReady(cli, { timeoutMs = 60_000, now = () => Date.now(), wait = ms => new Promise(resolve => setTimeout(resolve, ms)), diagnostics = [] } = {}) {
   const end = now() + timeoutMs;
   for (;;) {
     try {
-      const result = parseCLIJSON(cli("eval", 'code=JSON.stringify((()=>{const p=app.plugins?.plugins?.["obsidian-excalidraw-plugin"];return p?.isReady?{ready:true,runtime:!!p.getCLIRuntime(),mobile:app.isMobile===true}:{ready:false};})())'));
+      const result = parseCLIJSON(cli("eval", "code=" + nativeReadyCode));
       if (result.ready && result.runtime) return result;
     } catch (error) {
       if (!/Command "eval" not found|Execution context was destroyed|Cannot find context with specified id/.test(error.message)) throw error;

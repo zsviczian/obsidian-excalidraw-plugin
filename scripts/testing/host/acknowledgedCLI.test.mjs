@@ -2,6 +2,26 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import vm from 'node:vm';
 import {recordCLIResult,createAcknowledgedCLI} from './acknowledgedCLI.mjs';
+import {nativeReadyCode,waitForNativeReady} from './hostReadiness.mjs';
+
+test('reload readiness retries its exact read-only probe without a renderer receipt',async()=>{
+  let clock=0,reads=0,wrapped=0;
+  const transport=createAcknowledgedCLI(()=>{throw Error('Unexpected default path');},{token:'reload',timeoutMs:200,now:()=>clock,wait:ms=>clock+=ms,invoke:(name,args)=>{
+    assert.equal(name,'eval');
+    if(args[0]==='code='+nativeReadyCode){if(++reads===1)throw Error('ETIMEDOUT');return '=> {"ready":true,"runtime":true,"mobile":true}';}
+    if(args[0].startsWith('code=JSON.stringify(globalThis['))return '=> null';
+    wrapped++;throw Error('ETIMEDOUT');
+  }});
+  const result=await waitForNativeReady(transport.cli,{now:()=>clock,wait:async ms=>clock+=ms,timeoutMs:200});
+  assert.equal(result.mobile,true);assert.equal(reads,2);assert.equal(wrapped,0);assert.equal(transport.diagnostics.length,1);
+});
+
+test('a readiness lookalike remains receipted instead of becoming a retryable eval',()=>{
+  let source;
+  const transport=createAcknowledgedCLI(()=>{throw Error('Unexpected default path');},{invoke:(name,args)=>{source=args[0];return '=> true';}});
+  transport.cli('eval','code='+nativeReadyCode+'; mutate()');
+  assert.match(source,/recordCLIResult/);
+});
 
 test('renderer receipt records an actual async result once before acknowledging it',async()=>{
   const context=vm.createContext({calls:0});

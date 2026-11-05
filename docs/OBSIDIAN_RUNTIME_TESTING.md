@@ -150,6 +150,10 @@ full-profile result.
    deadline waiting for a lost acknowledgement. A timed-out error-buffer clear
    may be accepted only after reading an empty buffer; never clear again and erase
    newly captured errors. Known read-only CLI commands use bounded read retries.
+   This includes only the exact exported `nativeReadyCode` reload probe: its
+   renderer may disappear during mobile-mode reload, so it must not depend on
+   that renderer retaining an operation receipt. Other evals and lookalikes
+   retain strict receipt ownership and are never replayed as readiness reads.
    A screenshot reply may be recovered only from its uniquely owned, previously
    absent artifact after the native image decoder confirms a complete image.
    Never capture again to obtain a replacement acknowledgement, and never treat

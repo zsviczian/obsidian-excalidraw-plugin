@@ -104,9 +104,16 @@ async function exerciseWorkflows(c, prefix, fixture) {
       // reattaches when another drawing becomes active, so arrange both drawings
       // before opening this editor rather than invalidating it mid-operation.
       tab.contentEl.querySelector("button .lucide-file-output").closest("button").click();
-      const doc = tab.contentEl.ownerDocument;
-      await c.waitFor(() => doc.querySelector(".excalidraw-file-and-folder-selector"), "extraction destination dialog");
-      const modal = doc.querySelector(".excalidraw-file-and-folder-selector"), inputs = modal.querySelectorAll("input");
+      // Obsidian Modal uses the active document; the shared sidepanel and its
+      // selected popout drawing can belong to different documents.
+      let modal;
+      await c.waitFor(() => {
+        const doc = activeDocument;
+        check(doc === tab.contentEl.ownerDocument || doc === view.ownerDocument, "Extraction modal targeted an unrelated document");
+        modal = doc.querySelector(".excalidraw-file-and-folder-selector");
+        return modal;
+      }, "extraction destination dialog");
+      const doc = modal.ownerDocument, inputs = modal.querySelectorAll("input");
       const normalize = path => path.replace(/^\/+|\/+$/g, "");
       const expectedFolder = normalize(view.file.parent.path), actualFolder = normalize(inputs[0].value);
       c.observations.extraction = [...(c.observations.extraction || []), { name: options.name, expectedFolder, actualFolder }];
