@@ -125,10 +125,10 @@ full-profile result.
    use the normal coordinator to deploy/hash-verify them, enable services and
    check the actual live API versions against the plugin gateway. Do not fake a
    version or relax a version handshake to accept mismatched components.
-   The converter package version and Extras service-contract version are distinct:
-   current Extras bundles converter 3.1.0 while advertising service contract 3.0.0.
-   Verify each at its own boundary rather than changing the handshake to match a
-   package version.
+   The converter package version and Extras service-contract version are distinct.
+   The coordinated 3.6 upgrade bundles converter 3.6.0 and advertises service
+   contract 3.6.0. Verify both boundaries and keep the producer advertisement and
+   consumer requirement paired.
 2. For `Concurrent host requests`, inspect the outstanding request ID, method,
    target renderer, acknowledgement and original error. Distinguish UI-readiness
    waits from transport completion. Settle or explicitly cancel the exact owned
