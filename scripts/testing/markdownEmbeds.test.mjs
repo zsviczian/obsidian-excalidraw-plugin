@@ -201,6 +201,14 @@ test("Reading controls are read-only and absent in nested, print, hover, Canvas 
   }
 });
 
+test("native table alt text retains escaped caption, size and style through image generation", async () => {
+  const f = fixture(), parent = new f.Element(), embed = parent.appendChild(new f.Element("internal-embed"));
+  embed.setAttribute("src", "target.excalidraw.md"); embed.setAttribute("alt", "Caption\\|100\\|left");
+  const rendered = f.processor.processReadingMode([embed], f.ctx), job = f.start();
+  assert.equal(f.requests[0].attr.fwidth, "100"); assert.deepEqual([...f.requests[0].attr.imgstyle], ["excalidraw-svg-left"]);
+  await f.settle(); await job; await rendered;
+});
+
 test("ready follows successful insertion; repeated callbacks preserve the image", async () => {
   const f = fixture(); const first = f.render(); const repeat = f.render();
   assert.equal(f.container.hasAttribute("ready"), false); assert.equal(f.jobs.length, 1); assert.equal(f.children.length, 1);

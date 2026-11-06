@@ -15,7 +15,10 @@ The editor bridge uses public `editorInfoField`, `editorLivePreviewField` and
 CodeMirror DOM/source boundaries. It checks the complete source token, owning
 file/editor and canonical drawing/reference. It does not depend on native private
 widget fields, the active note, a global occurrence index or whole-file replacement.
-Bindings map through prefix edits and retire on edits inside their token.
+Bindings map through prefix edits and retire on edits inside their token. Native
+table widgets use their public source boundary and the physical table cell;
+rectangular shape, delimiter row, complete token and row/column identity must
+agree before a write. Escaped table aliases also retain their displayed size.
 
 Movement changes CSS only. A completed resize uses one isolated editor history
 transaction. Unchanged or cancelled gestures preserve the original source bytes.
@@ -27,9 +30,10 @@ unchanged. Existing wrapper layout remains responsible for alignment and percent
 sizing. Controls follow the visible image bounds.
 
 Cancellation restores control placement immediately; scrolling and viewport
-changes remeasure it. Hover toolbars touch the image boundary so pointer travel
-does not cross a disappearing hover gap. Always-visible touch toolbars occupy
-normal document flow below the image. A full-width no-op keeps percentage syntax
+changes and image decoding remeasure it through an owned ResizeObserver. Hover
+toolbars sit inside the image because native widgets use paint containment.
+Small images and always-visible touch toolbars use normal flow below the image.
+A full-width no-op keeps percentage syntax
 instead of shrinking solely to create space for the handle.
 
 Fullscreen uses the existing exporter with the same drawing/reference and theme,
@@ -41,7 +45,8 @@ prompts and modifier/reference behavior.
 
 Reading-mode controls have one plugin-owned registry in addition to their render
 context lifetime. Context cleanup removes each owner from the registry, and
-plugin unload closes any remaining controls/viewers. A Reading export completing
+plugin unload closes any remaining controls/viewers. Hidden Live Preview controls
+retire when switching to Reading mode. A Reading export completing
 after plugin unload is discarded before touching the document.
 
 No dependency, release version, fork or Extras change is required. The unmerged
@@ -86,13 +91,37 @@ loop after resizing. The latter starved the renderer's replacement timer and CLI
 The bridge now rejects stale generations before mounting; a bounded production
 bridge test reproduces and prevents the loop. A recovery build was hash-verified
 in the owned test vault. The stalled run remains failed, including cleanup.
-It is not acceptance evidence. A restart was requested because other vaults were
-open and the owned window did not respond to a normal reload.
+It is not acceptance evidence. The maintainer restarted Obsidian; acknowledged
+CLI recovery removed only the failed run's owned fixtures and restored the
+declared baseline. Recovery evidence is retained under
+`.test-work/recovery/pr3037-stale-renderer/restarted-baseline.json`.
 
-Full native acceptance must be rerun after recovery. Exact table-widget source
-mapping, same-note split panes, popout input with the main window minimized,
-touch, minimum Obsidian 1.8.7, macOS, physical Android/iOS and hosted CodeScanner
-remain explicit review/validation gates until actual evidence is recorded.
+The focused desktop matrix passed on Windows / Obsidian 1.14.5 after recovery:
+all 15 embed cases across main, split and popout contexts, with clean console,
+source stability, cleanup and baseline restoration. It covers all three image
+modes, repeated/same-line tokens, table cells, same-note split synchronization,
+history, source selection, fullscreen keyboard controls/focus, Reading mode and
+popout input with the main window minimized. Evidence:
+`.test-work/reports/pr3037-controls-focused-10/report.json`.
+
+Trusted touch initially exposed the host's `body.emulate-mobile .clickable-icon`
+rule overriding the resize handle's touch action. A scoped selector now outranks
+that rule. All ten phone/tablet embed cases, including resize/history/reset,
+tables, fullscreen pinch and pan, passed against the fresh frozen build:
+`.test-work/reports/pr3037-phone-probe-3/report.json`.
+
+A repeated popout run exposed the native table cell editor activating underneath
+a toolbar mouse press and retaining an extra rendered copy. Toolbar compatibility
+mouse/touch events are now isolated from the table; button default activation is
+preserved. Source tests and the focused popout roundtrip passed after the fix:
+`.test-work/reports/pr3037-table-input-smoke/popout-probe.json`.
+
+Latest source suite before the event-isolation checkpoint: 716 tests in 87 files
+passed. Modified embed modules have zero targeted lint or TypeScript diagnostics.
+The production bundle is 5,088,586 bytes before that final small checkpoint.
+Complete native and portable acceptance, minimum Obsidian 1.8.7, macOS, physical
+Android/iOS and hosted CodeScanner remain explicit gates until actual evidence
+is recorded.
 
 `npm run code` reports 118 existing errors outside the modified production
 modules; targeted lint and targeted TypeScript diagnostics pass. Production

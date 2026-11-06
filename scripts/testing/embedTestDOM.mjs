@@ -7,6 +7,10 @@ export function embedTestDOM() {
     disconnect() { this.connected = false; }
     fire() { if (this.connected) this.callback(); }
   } };
+  window.ResizeObserver = class extends window.MutationObserver {
+    constructor(callback) { super(callback); this.resize = true; }
+    observe(target) { super.observe(); this.target = target; }
+  };
   const document = { defaultView: window, activeElement: null };
   class Element {
     constructor(options = {}) { this.children = []; this.attrs = { ...options.attr }; this.classes = new Set((options.cls || "").split(" ")); this.events = new Map(); this.style = {}; this.ownerDocument = document; this.isConnected = true; this.captures = new Set(); this.bounds = { left: 0, top: 0, right: 700, bottom: 130, width: 700, height: 130 }; }

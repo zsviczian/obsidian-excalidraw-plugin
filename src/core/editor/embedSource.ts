@@ -18,6 +18,7 @@ export class DrawingEmbedSource implements EmbedSourceBinding {
     private to: number,
     public readonly text: string,
     private readonly ownsSource: () => boolean,
+    private readonly validateRange?: (from: number, to: number) => boolean,
   ) {}
 
   /** Track edits before the token; edits inside it retire this binding. */
@@ -41,7 +42,7 @@ export class DrawingEmbedSource implements EmbedSourceBinding {
 
   /** Commit a single isolated undoable transaction, retaining the destination. */
   replace(text: string): boolean {
-    if (!this.isCurrent()) return false;
+    if (!this.isCurrent() || this.validateRange && !this.validateRange(this.from, this.to)) return false;
     if (text === this.text) return true;
     const original = readDrawingEmbedToken(this.text), next = readDrawingEmbedToken(text);
     if (!original || !next || next.text !== text || next.target !== original.target || next.wiki !== original.wiki) return false;
@@ -55,7 +56,7 @@ export class DrawingEmbedSource implements EmbedSourceBinding {
 
   /** Select the containing-note syntax, allowing Live Preview to reveal it. */
   select(): boolean {
-    if (!this.isCurrent()) return false;
+    if (!this.isCurrent() || this.validateRange && !this.validateRange(this.from, this.to)) return false;
     this.view.dispatch({ selection: EditorSelection.range(this.from, this.to), scrollIntoView: true });
     this.view.focus();
     return true;

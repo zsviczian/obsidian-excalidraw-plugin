@@ -2537,7 +2537,7 @@ button.excalidraw-font-picker {
 .excalidraw-embed-toolbar {
   position: absolute;
   left: var(--excalidraw-embed-control-left, 0px);
-  bottom: calc(100% - var(--excalidraw-embed-control-top, 0px));
+  top: var(--excalidraw-embed-control-top, 0px);
   z-index: 10;
   display: flex;
   flex-wrap: wrap;
@@ -2553,8 +2553,9 @@ button.excalidraw-font-picker {
   pointer-events: none;
 }
 .excalidraw-embed-controls-below > .excalidraw-embed-toolbar {
+  position: relative;
   bottom: auto;
-  top: var(--excalidraw-embed-control-below, 100%);
+  top: auto;
 }
 .excalidraw-embed-toolbar button,
 .excalidraw-embed-preview-toolbar button {
@@ -2572,9 +2573,12 @@ button.excalidraw-font-picker {
   background: var(--background-primary);
   border: 1px solid var(--background-modifier-border);
   cursor: nwse-resize;
-  touch-action: none;
   opacity: 0;
   pointer-events: none;
+}
+/* Outrank the host's body.emulate-mobile .clickable-icon touch rule. */
+.excalidraw-embed-controls-frame > .excalidraw-embed-resize-handle.clickable-icon {
+  touch-action: none;
 }
 .excalidraw-embed-controls-frame:hover > .excalidraw-embed-toolbar,
 .excalidraw-embed-controls-frame:focus-within > .excalidraw-embed-toolbar,

@@ -2705,6 +2705,10 @@
       "mode": "direct-module-or-tooling"
     },
     {
+      "path": "scripts/testing/tableEmbedSource.source.test.mjs",
+      "mode": "direct-module-or-tooling"
+    },
+    {
       "path": "scripts/testing/templateWorkflow.test.mjs",
       "mode": "isolated-or-extracted"
     },

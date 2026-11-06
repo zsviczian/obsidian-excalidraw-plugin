@@ -22,6 +22,19 @@ async function fixture(text = "![[Map|Alias|180x130|left]]") {
 }
 function start(f) { f.handle.fire("pointerdown", { button: 0, pointerId: 1, clientX: 180, clientY: 130 }); }
 
+test("toolbar compatibility events cannot activate the surrounding native table cell", async () => {
+  const f = await fixture();
+  try {
+    for (const name of ["mousedown", "touchstart"]) {
+      let stopped = false;
+      const event = f.toolbar.fire(name, { stopPropagation() { stopped = true; } });
+      assert.equal(stopped, true); assert.equal(event.prevented, undefined);
+    }
+    assert.deepEqual(f.writes, []); assert.equal(f.selects(), 0);
+    f.toolbar.children[2].fire("click"); assert.equal(f.selects(), 1);
+  } finally { f.close(); }
+});
+
 test("resize previews proportionally without writing, then commits once on the owned pointer release", async () => {
   const f = await fixture();
   try {
@@ -97,5 +110,20 @@ test("a full-width no-op retains percentage syntax and a replacement gesture use
     f.handle.fire("pointerdown", { button: 0, pointerId: 2, clientX: 180, clientY: 130 });
     f.fire(f.window, "pointermove", { pointerId: 2, clientX: 188, clientY: 130 });
     f.fire(f.window, "pointerup", { pointerId: 2 }); assert.deepEqual(f.writes, ["![[Map|188]]"]);
+  } finally { f.close(); }
+});
+
+test("late image sizing leaves the toolbar inside paint containment and remeasures the changed frame", async () => {
+  const f = await fixture();
+  try {
+    f.toolbar.bounds = { ...f.toolbar.bounds, width: 142, height: 40 };
+    f.frame.getBoundingClientRect = () => ({ ...f.frame.bounds, bottom: f.frame.hasClass("excalidraw-embed-controls-below") ? 170 : 130 });
+    f.image.bounds = { ...f.image.bounds, bottom: 0, height: 0 };
+    f.frame.fire("load"); assert.equal(f.frame.hasClass("excalidraw-embed-controls-below"), true);
+    f.image.bounds = { ...f.image.bounds, bottom: 130, height: 130 };
+    const observer = f.observers.find(observer => observer.resize); assert.equal(observer.target, f.image);
+    observer.fire(); assert.equal(f.frame.hasClass("excalidraw-embed-controls-below"), false);
+    assert.equal(f.frame.style["--excalidraw-embed-control-top"], "0px");
+    assert.equal(f.frame.style["--excalidraw-embed-control-bottom"], "-8px");
   } finally { f.close(); }
 });

@@ -1,11 +1,13 @@
 import { EditorState, type Extension } from "@codemirror/state";
 import { EditorView, ViewPlugin, type ViewUpdate } from "@codemirror/view";
-import { editorInfoField, editorLivePreviewField } from "obsidian";
+import { editorInfoField, editorLivePreviewField, MarkdownView } from "obsidian";
 import type ExcalidrawPlugin from "../main";
 import { DrawingEmbedControls } from "../managers/DrawingEmbedControls";
 import { getDrawingEmbedActions } from "../managers/drawingEmbedActions";
 import { DrawingEmbedSource } from "./embedSource";
 import { readDrawingEmbedToken } from "./embedDimensions";
+import { readTableEmbedToken } from "./tableEmbedSource";
+import type { LocatedDrawingEmbed } from "src/types/drawingEmbedTypes";
 
 interface OwnedEmbed {
   image: HTMLElement;
@@ -13,12 +15,18 @@ interface OwnedEmbed {
   controls: DrawingEmbedControls;
 }
 
+function isSourceMode(view: EditorView): boolean {
+  const info = view.state.field(editorInfoField, false);
+  return (!(info instanceof MarkdownView) || info.getMode() === "source") &&
+    view.dom.closest<HTMLElement>(".markdown-source-view")?.style.display !== "none";
+}
+
 function decodeTarget(target: string): string {
   const unescaped = target.replace(/\\([\\[\]()<>!| ])/g, "$1");
   try { return decodeURI(unescaped); } catch { return unescaped; }
 }
 
-function readWidgetToken(view: EditorView, element: HTMLElement): { from: number; text: string; target: string } | null {
+function widgetRange(view: EditorView, element: HTMLElement): { from: number; to: number } | null {
   const parent = element.parentNode;
   if (!parent) return null;
   let from: number, boundaryFrom: number, boundaryTo: number;
@@ -32,8 +40,24 @@ function readWidgetToken(view: EditorView, element: HTMLElement): { from: number
     return null;
   }
   if (from !== boundaryFrom || boundaryTo <= from || boundaryTo - from > 16384) return null;
-  const rangeText = view.state.doc.sliceString(from, boundaryTo), token = readDrawingEmbedToken(rangeText);
+  return { from, to: boundaryTo };
+}
+
+function readWidgetToken(view: EditorView, element: HTMLElement): LocatedDrawingEmbed | null {
+  const range = widgetRange(view, element);
+  if (!range) return null;
+  const { from, to } = range;
+  const rangeText = view.state.doc.sliceString(from, to), token = readDrawingEmbedToken(rangeText);
   return token && !rangeText.slice(token.text.length).trim() ? { from, text: token.text, target: token.target } : null;
+}
+
+function readTableWidgetToken(view: EditorView, root: HTMLElement, table: HTMLTableElement, cell: HTMLTableCellElement): LocatedDrawingEmbed | null {
+  if (!cell || cell.closest("table") !== table || cell.colSpan !== 1 || cell.rowSpan !== 1) return null;
+  const row = cell.parentElement as HTMLTableRowElement;
+  if (row.parentElement?.parentElement !== table) return null;
+  const range = widgetRange(view, root);
+  if (!range) return null;
+  return readTableEmbedToken(view.state.doc.sliceString(range.from, range.to), range.from, row.rowIndex, cell.cellIndex, table.rows.length, table.rows[0]?.cells.length ?? 0);
 }
 
 /**
@@ -56,6 +80,8 @@ export function createDrawingEmbedExtension(plugin: ExcalidrawPlugin): { extensi
       const win = view.dom.ownerDocument.defaultView;
       this.observer = new win.MutationObserver(() => this.schedule());
       this.observer.observe(view.contentDOM, { childList: true, subtree: true });
+      const source = view.dom.closest<HTMLElement>(".markdown-source-view");
+      if (source) this.observer.observe(source, { attributes: true, attributeFilter: ["class", "style"] });
       this.schedule();
     }
 
@@ -78,21 +104,25 @@ export function createDrawingEmbedExtension(plugin: ExcalidrawPlugin): { extensi
 
     private sync(): void {
       const view = this.view, info = view.state.field(editorInfoField, false), sourceFile = info?.file;
-      if (!sourceFile || !view.state.field(editorLivePreviewField, false) ||
+      if (!sourceFile || !isSourceMode(view) || !view.state.field(editorLivePreviewField, false) ||
           view.state.facet(EditorState.readOnly) || !view.state.facet(EditorView.editable) || plugin.isExcalidrawFile(sourceFile)) {
         this.clear(); return;
       }
       const seen = new Set<HTMLElement>();
       for (const image of view.contentDOM.querySelectorAll<HTMLElement>(".excalidraw-embedded-img")) {
         const nativeEmbed = image.closest<HTMLElement>(".internal-embed"), frame = image.parentElement;
+        const table = nativeEmbed ? null : image.closest<HTMLTableElement>("table.table-editor");
+        const cell = table && image.closest<HTMLTableCellElement>("td, th");
+        const root = nativeEmbed ?? table?.closest<HTMLElement>(".cm-table-widget");
+        const key = nativeEmbed ?? frame;
         const actions = getDrawingEmbedActions(image);
-        if (!nativeEmbed || !frame || !actions || !actions.isCurrent() || image.closest(".cm-content") !== view.contentDOM ||
-            nativeEmbed.closest(".markdown-embed, .hover-popover, .canvas-node-content, .print, .cm-preview-code-block")) continue;
-        seen.add(nativeEmbed);
-        const existing = this.entries.get(nativeEmbed);
+        if (!root || !frame || !actions || !actions.isCurrent() || image.closest(".cm-content") !== view.contentDOM ||
+            root.closest(".markdown-embed, .hover-popover, .canvas-node-content, .print, .cm-preview-code-block")) continue;
+        seen.add(key);
+        const existing = this.entries.get(key);
         if (existing?.image === image && existing.source.isCurrent()) continue;
-        if (existing) { existing.source.invalidate(); existing.controls.unload(); this.entries.delete(nativeEmbed); }
-        const token = readWidgetToken(view, nativeEmbed);
+        if (existing) { existing.source.invalidate(); existing.controls.unload(); this.entries.delete(key); }
+        const token = table ? readTableWidgetToken(view, root, table, cell) : readWidgetToken(view, root);
         if (!token) continue;
         const from = token.from;
         const target = decodeTarget(token.target), hash = target.indexOf("#");
@@ -100,12 +130,20 @@ export function createDrawingEmbedExtension(plugin: ExcalidrawPlugin): { extensi
         const drawing = plugin.app.metadataCache.getFirstLinkpathDest(path, sourceFile.path);
         if (!drawing || !plugin.isExcalidrawFile(drawing) || decodeTarget(drawing.path + reference) !== decodeTarget(actions.target)) continue;
         const sourcePath = sourceFile.path, ownerDocument = view.dom.ownerDocument;
+        const row = cell?.parentElement as HTMLTableRowElement | undefined;
+        const rowIndex = row?.rowIndex, columnIndex = cell?.cellIndex;
         const source = new DrawingEmbedSource(view, from, from + token.text.length, token.text, () =>
           this.active && !disposed && sourceFile.path === sourcePath &&
           view.state.field(editorInfoField, false)?.file === sourceFile &&
+          isSourceMode(view) &&
           !!view.state.field(editorLivePreviewField, false) && !view.state.facet(EditorState.readOnly) && view.state.facet(EditorView.editable) &&
-          frame.isConnected && view.contentDOM.contains(frame) && nativeEmbed.contains(frame) &&
-          frame.ownerDocument === ownerDocument && view.dom.ownerDocument === ownerDocument && actions.isCurrent());
+          frame.isConnected && view.contentDOM.contains(frame) && root.contains(frame) &&
+          (!table || cell?.parentElement === row && row.rowIndex === rowIndex && cell.cellIndex === columnIndex) &&
+          frame.ownerDocument === ownerDocument && view.dom.ownerDocument === ownerDocument && actions.isCurrent(),
+          table ? (from, to) => {
+            const current = readTableWidgetToken(view, root, table, cell);
+            return current?.from === from && from + current.text.length === to && current.text === token.text;
+          } : undefined);
         // A renderer may invalidate its generation before replacing the DOM.
         // Do not mount a stale binding: mounting/unloading it would schedule
         // another DOM sync and starve the renderer's debounce timer.
@@ -113,7 +151,7 @@ export function createDrawingEmbedExtension(plugin: ExcalidrawPlugin): { extensi
         const controls = new DrawingEmbedControls(frame, actions, source);
         try { controls.load(); }
         catch (error) { source.invalidate(); controls.unload(); throw error; }
-        this.entries.set(nativeEmbed, { image, source, controls });
+        this.entries.set(key, { image, source, controls });
       }
       for (const [element, entry] of this.entries) if (!seen.has(element)) {
         entry.source.invalidate(); entry.controls.unload(); this.entries.delete(element);

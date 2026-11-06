@@ -32,7 +32,7 @@ export function getDimensionsFromAliasString(data: string): EmbedDimensions | nu
 
 /** Preserve the existing renderer's alias/style precedence. */
 export function parseEmbedAlias(input: string): EmbedAliasParts {
-  const parts = input.split("|").map(part => part.trim());
+  const parts = input.replace(/\\\|/g, "|").split("|").map(part => part.trim());
   const first = getDimensionsFromAliasString(parts[0]);
   const second = parts.length > 1 ? getDimensionsFromAliasString(parts[1]) : null;
   let result: EmbedAliasParts;

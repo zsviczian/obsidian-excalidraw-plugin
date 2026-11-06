@@ -619,6 +619,13 @@
           ]
         },
         {
+          "layer": "source",
+          "path": "scripts/testing/tableEmbedSource.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/tableEmbedSource.source.test.mjs::physical table cells locate repeated escaped embeds without global occurrence matching"
+          ]
+        },
+        {
           "layer": "native",
           "path": "scripts/testing/host/embedControls.mjs",
           "cases": [
@@ -626,22 +633,27 @@
             "native:embed-controls:main:SVGIMG",
             "native:embed-controls:main:SVG",
             "native:embed-ownership:main",
+            "native:embed-table:main",
             "native:embed-controls:split:PNG",
             "native:embed-controls:split:SVGIMG",
             "native:embed-controls:split:SVG",
             "native:embed-ownership:split",
+            "native:embed-table:split",
             "native:embed-controls:popout:PNG",
             "native:embed-controls:popout:SVGIMG",
             "native:embed-controls:popout:SVG",
             "native:embed-ownership:popout",
+            "native:embed-table:popout",
             "native:embed-controls:phone:PNG",
             "native:embed-controls:phone:SVGIMG",
             "native:embed-controls:phone:SVG",
             "native:embed-ownership:phone",
+            "native:embed-table:phone",
             "native:embed-controls:tablet:PNG",
             "native:embed-controls:tablet:SVGIMG",
             "native:embed-controls:tablet:SVG",
-            "native:embed-ownership:tablet"
+            "native:embed-ownership:tablet",
+            "native:embed-table:tablet"
           ]
         },
         {
@@ -663,6 +675,7 @@
           "path": "scripts/testing/embedControls.source.test.mjs",
           "cases": [
             "node:scripts/testing/embedControls.source.test.mjs::resize previews proportionally without writing, then commits once on the owned pointer release",
+        "node:scripts/testing/embedControls.source.test.mjs::toolbar compatibility events cannot activate the surrounding native table cell",
             "node:scripts/testing/embedControls.source.test.mjs::Escape, lost capture, stale source and visual replacement cancel without stale writes"
           ]
         }

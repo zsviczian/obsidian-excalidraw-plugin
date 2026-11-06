@@ -6,6 +6,16 @@ import {sourceHarness} from './sourceHarness.mjs';
 const graph=sourceHarness();
 const {DrawingEmbedSource}=await graph.importModule('src/core/editor/embedSource.ts');
 after(()=>graph.close());
+
+test('a physical-cell range validator blocks stale resize and source selection without history entries',()=>{
+  let state=EditorState.create({doc:'![[Map|100]]',extensions:[history()]}),allowed=false,validations=0,focused=false;
+  const view={get state(){return state;},dispatch(spec){state=state.update(spec).state;},focus(){focused=true;}};
+  const binding=new DrawingEmbedSource(view,0,state.doc.length,state.doc.toString(),()=>true,(from,to)=>{validations++;assert.equal(state.sliceDoc(from,to),'![[Map|100]]');return allowed;});
+  assert.equal(binding.replace('![[Map|108]]'),false);assert.equal(binding.select(),false);assert.equal(focused,false);assert.equal(undo(view),false);
+  const transaction=state.update({changes:{from:0,insert:'prefix '}});state=transaction.state;binding.map(transaction.changes);
+  assert.equal(validations,2,'range validation must not read pre-update DOM while mapping');
+  allowed=true;assert.equal(binding.replace('![[Map|108]]'),true);assert.equal(state.doc.toString(),'prefix ![[Map|108]]');
+});
 function fixture(doc='before ![[Map|200]] after ![[Map|200]]',occurrence=1){
   let state=EditorState.create({doc,extensions:[history()]});let owner=true,focused=false,writes=0;
   const text='![[Map|200]]',from=doc.indexOf(text,occurrence===0?0:doc.indexOf(text)+1);

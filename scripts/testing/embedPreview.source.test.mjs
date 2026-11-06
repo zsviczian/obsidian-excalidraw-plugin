@@ -63,9 +63,9 @@ test("fullscreen zoom, fit, pan and pinch own their handlers and private image l
   const f = fixture(), image = new Element(); f.resolve(image); await flush();
   const stage = f.modal.contentEl.find("excalidraw-embed-preview-stage"), surface = stage.find("excalidraw-embed-preview-surface");
   assert.ok(surface.children.includes(image));
-  stage.fire("keydown", { key: "+" }); assert.equal(Number(stage.getAttribute("data-zoom")), 1.25);
-  stage.fire("keydown", { key: "ArrowRight" }); assert.match(surface.style.transform, /-24px/);
-  stage.fire("keydown", { key: "0" }); assert.equal(stage.getAttribute("data-zoom"), "1");
+  f.modal.modalEl.fire("keydown", { key: "+", target: f.modal.contentEl.find("excalidraw-embed-preview-toolbar").children[0] }); assert.equal(Number(stage.getAttribute("data-zoom")), 1.25);
+  f.modal.modalEl.fire("keydown", { key: "ArrowRight", target: stage }); assert.match(surface.style.transform, /-24px/);
+  f.modal.modalEl.fire("keydown", { key: "0", target: stage }); assert.equal(stage.getAttribute("data-zoom"), "1");
   stage.fire("pointerdown", { button: 0, pointerId: 1, clientX: 10, clientY: 10 });
   stage.fire("pointerdown", { button: 0, pointerId: 2, clientX: 30, clientY: 10 });
   stage.fire("pointermove", { pointerId: 2, clientX: 50, clientY: 10 });

@@ -7,7 +7,7 @@ import { behaviorInputDriver } from "./behaviorMatrix.mjs";
 import { completeConsoleErrors } from "./debuggerSession.mjs";
 import { settleBrowserDiagnostics, splitWindowErrors } from "./browserDiagnostics.mjs";
 
-const casesFor = ids => ids.flatMap(id => [...["PNG", "SVGIMG", "SVG"].map(mode => `native:embed-controls:${id}:${mode}`), `native:embed-ownership:${id}`]);
+const casesFor = ids => ids.flatMap(id => [...["PNG", "SVGIMG", "SVG"].map(mode => `native:embed-controls:${id}:${mode}`), `native:embed-ownership:${id}`, `native:embed-table:${id}`]);
 export const embedControlCaseIds = casesFor(["main", "split", "popout"]);
 export const embedControlDeviceCaseIds = casesFor(["phone", "tablet"]);
 
@@ -58,32 +58,60 @@ async function exerciseEmbedControls(c, env, template, modifier) {
     await leaf.setViewState({ type: "markdown", state: { file: file.path, mode, source: false } });
     app.workspace.setActiveLeaf(leaf, { focus: true }); win.focus();
     if (mode === "source") leaf.view.editor.setCursor({ line: leaf.view.editor.lastLine(), ch: 0 });
-    await c.waitFor(() => leaf.view.contentEl.querySelectorAll(".excalidraw-embed-toolbar").length === 3, "three owned embed toolbars");
+    await c.waitFor(() => activeRoot()?.querySelectorAll(".excalidraw-embed-toolbar").length === 3, "three active owned embed toolbars");
     await c.waitFor(() => frames().every(frame => {
       const image = frame.querySelector(".excalidraw-embedded-img");
       return image?.getBoundingClientRect().height > 0 && (image.tagName !== "IMG" || image.complete && image.naturalWidth > 0);
     }), "decoded drawing previews with positive dimensions");
   };
-  const frames = () => [...leaf.view.contentEl.querySelectorAll(".excalidraw-embed-controls-frame")];
+  const activeRoot = () => leaf.view.contentEl.querySelector(leaf.view.getMode?.() === "preview" ? ".markdown-preview-view" : ".markdown-source-view");
+  const frames = () => [...activeRoot()?.querySelectorAll(".excalidraw-embed-controls-frame") || []];
   const action = async (index, name) => {
     const frame = frames()[index];
     check(frame, "missing embed frame " + index); frame.scrollIntoView({ block: "center" });
-    const rect = frame.getBoundingClientRect();
+    let rect, signature, stableSince;
+    await c.waitFor(() => {
+      rect = frames()[index]?.getBoundingClientRect();
+      if (!rect?.height) return false;
+      const current = [rect.x, rect.y, rect.width, rect.height].map(value => Math.round(value * 10)).join(":");
+      if (signature !== current) { signature = current; stableSince = Date.now(); }
+      return Date.now() - stableSince >= 120;
+    }, "embed scroll settled before hover");
     if (!touch) await input("Input.dispatchMouseEvent", { type: "mouseMoved", x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 });
     await click(() => frames()[index]?.querySelector(`[data-excalidraw-embed-action="${name}"]`));
   };
   const drag = async (index, delta, cancel = false) => {
-    const frame = frames()[index], handle = frame.querySelector('[data-excalidraw-embed-action="resize"]');
+    let frame = frames()[index], handle = frame.querySelector('[data-excalidraw-embed-action="resize"]');
     handle.focus(); handle.scrollIntoView({ block: "center" });
-    const r = handle.getBoundingClientRect(), x = r.x + r.width / 2, y = r.y + r.height / 2;
-    const events = [], observe = event => events.push({ type: event.type, target: event.target.className, trusted: event.isTrusted, x: event.clientX, y: event.clientY });
-    for (const name of ["pointerdown", "pointermove", "pointerup", "blur", "lostpointercapture"]) win.addEventListener(name, observe, true);
-    c.defer(() => { for (const name of ["pointerdown", "pointermove", "pointerup", "blur", "lostpointercapture"]) win.removeEventListener(name, observe, true); });
+    let r, x, y, signature, stableSince;
+    await c.waitFor(() => {
+      const nextFrame = frames()[index], next = nextFrame?.querySelector('[data-excalidraw-embed-action="resize"]');
+      if (!next) return false;
+      if (next !== handle) { frame = nextFrame; handle = next; handle.focus(); handle.scrollIntoView({ block: "center" }); }
+      r = handle.getBoundingClientRect(); x = r.x + r.width / 2; y = r.y + r.height / 2;
+      if (!handle.contains(doc.elementFromPoint(x, y))) { signature = null; return false; }
+      const current = [r.x, r.y, r.width, r.height].map(value => Math.round(value * 10)).join(":");
+      if (signature !== current) { signature = current; stableSince = Date.now(); }
+      return Date.now() - stableSince >= 120;
+    }, "stable uncovered resize handle");
+    const events = [], eventNames = ["pointerdown", "pointermove", "pointerup", "pointercancel", "touchstart", "touchmove", "blur", "lostpointercapture"];
+    const observe = event => events.push({ type: event.type, target: event.target.className, trusted: event.isTrusted, x: event.clientX, y: event.clientY, prevented: event.defaultPrevented, cancelable: event.cancelable });
+    for (const name of eventNames) win.addEventListener(name, observe, true);
+    c.defer(() => { for (const name of eventNames) win.removeEventListener(name, observe, true); });
     c.observations = { ...c.observations, drag: { handle: handle.outerHTML, bounds: r.toJSON(), image: frame.querySelector(".excalidraw-embedded-img").getBoundingClientRect().toJSON(), hit: doc.elementFromPoint(x, y)?.outerHTML.slice(0, 500), events } };
+    const touchRules = [];
+    const inspectRules = rules => { for (const rule of rules) {
+      if (rule.style?.touchAction && rule.selectorText && handle.matches(rule.selectorText)) touchRules.push({ selector: rule.selectorText, value: rule.style.touchAction, priority: rule.style.getPropertyPriority("touch-action") });
+      if (rule.cssRules) inspectRules(rule.cssRules);
+    } };
+    for (const sheet of doc.styleSheets) { try { inspectRules(sheet.cssRules); } catch { /* Cross-origin sheets cannot be inspected. */ } }
+    c.observations.drag.touchRules = touchRules;
     const send = (phase, point) => touch ? input("Input.dispatchTouchEvent", { type: phase === "down" ? "touchStart" : phase === "move" ? "touchMove" : "touchEnd", touchPoints: phase === "up" ? [] : [{ x: point, y, id: 1 }] })
       : input("Input.dispatchMouseEvent", { type: phase === "down" ? "mousePressed" : phase === "move" ? "mouseMoved" : "mouseReleased", x: point, y, button: "left", buttons: phase === "up" ? 0 : 1, clickCount: 1 });
     try {
-      await send("down", x); await send("move", x + delta / 2); await send("move", x + delta);
+      const states = c.observations.drag.states = [];
+      const snapshot = () => states.push({ connected: frame.isConnected, current: frame === frames()[index], classes: frame.className, handleAction: win.getComputedStyle(handle).touchAction, selection: leaf.view.editor.cm.state.selection.main.toJSON() });
+      await send("down", x); snapshot(); await send("move", x + delta / 2); snapshot(); await send("move", x + delta); snapshot();
       check(leaf.view.editor.getValue() === content, "pointer movement wrote source before commit");
       check(frame.hasClass("excalidraw-embed-resizing"), "real pointer did not start CSS resize preview");
       if (cancel) await key("Escape", "Escape", 27);
@@ -135,19 +163,42 @@ async function exerciseEmbedControls(c, env, template, modifier) {
     let modal, stage;
     await c.waitFor(() => (modal = doc.querySelector(".excalidraw-embed-preview-modal")) && (stage = modal.querySelector(".excalidraw-embed-preview-stage")) && modal.querySelector(".excalidraw-embedded-img"), "fresh fullscreen payload");
     check(modal.querySelector("[fileSource]")?.getAttribute("fileSource") === drawing.path, "fullscreen changed drawing identity");
+    const keys = [], recordKey = event => keys.push({ key: event.key, code: event.code, target: event.target.className, trusted: event.isTrusted });
+    doc.addEventListener("keydown", recordKey, true); c.defer(() => doc.removeEventListener("keydown", recordKey, true));
+    c.observations = { ...c.observations, fullscreen: { focus: doc.activeElement?.outerHTML.slice(0, 500), connected: modal.isConnected, keys } };
     await key("+", "Equal", 187, 8);
+    c.observations.fullscreen.zoom = stage.getAttribute("data-zoom");
+    c.observations.fullscreen.stageConnected = stage.isConnected;
     check(Number(stage.getAttribute("data-zoom")) > 1, "fullscreen keyboard zoom failed");
     await key("ArrowRight", "ArrowRight", 39);
     check(modal.querySelector(".excalidraw-embed-preview-surface").style.transform.includes("-24px"), "fullscreen keyboard pan failed");
     await key("0", "Digit0", 48);
     check(Number(stage.getAttribute("data-zoom")) === 1, "fullscreen fit failed");
+    if (touch) {
+      const r = stage.getBoundingClientRect(), x = r.x + r.width / 2, y = r.y + r.height / 2;
+      const points = distance => [{ x: x - distance, y, id: 1 }, { x: x + distance, y, id: 2 }];
+      try {
+        await input("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: points(20) });
+        await input("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: points(40) });
+        check(Number(stage.getAttribute("data-zoom")) > 1.25, "fullscreen trusted pinch failed");
+      } finally { await input("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] }); }
+      await key("0", "Digit0", 48);
+      try {
+        await input("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y, id: 1 }] });
+        await input("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: x + 20, y: y + 12, id: 1 }] });
+        check(modal.querySelector(".excalidraw-embed-preview-surface").style.transform.includes("20px, 12px"), "fullscreen trusted touch pan failed");
+      } finally { await input("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] }); }
+      await key("0", "Digit0", 48);
+    }
     await key("Escape", "Escape", 27);
     await c.waitFor(() => !modal.isConnected, "fullscreen closes on Escape");
+    doc.removeEventListener("keydown", recordKey, true);
     check(doc.activeElement?.getAttribute("data-excalidraw-embed-action") === "preview", "fullscreen did not restore opener focus");
     check(inline.isConnected && (mode === "SVG" ? !!inline.querySelector("svg") : inline.complete && inline.naturalWidth > 0), "closing fullscreen invalidated inline payload");
     check(!leaf.view.contentEl.querySelector(`.internal-embed[src="${plain.path}"] [data-excalidraw-embed-action]`), "ordinary image acquired drawing controls");
     await open("preview");
-    check(!leaf.view.contentEl.querySelector('[data-excalidraw-embed-action="resize"], [data-excalidraw-embed-action="edit"], [data-excalidraw-embed-action="reset"]'), "Reading mode acquired source mutation controls");
+    check(!activeRoot().querySelector('[data-excalidraw-embed-action="resize"], [data-excalidraw-embed-action="edit"], [data-excalidraw-embed-action="reset"]'), "Reading mode acquired source mutation controls");
+    check(!leaf.view.contentEl.querySelector('.markdown-source-view [data-excalidraw-embed-action="resize"]'), "hidden source retained editable controls after mode switch");
     await action(2, "preview");
     await c.waitFor(() => doc.querySelector(".excalidraw-embed-preview-modal [fileSource]")?.getAttribute("fileSource") === drawing.path + "#^as-image", "Reading fullscreen preserves reference");
     await key("Escape", "Escape", 27);
@@ -195,5 +246,47 @@ async function exerciseEmbedControls(c, env, template, modifier) {
     check(leaf.view.editor.getValue() === sourceB && await app.vault.read(a) === source, "retired source or switched note changed");
     check(await app.vault.read(drawing) === drawingBytes, "ownership tests changed drawing content");
     return { assertions: ["same-line repeated embeds target only their own token", "inline/fenced examples have no controls", "independent note and pane stay unchanged", "one-step undo", "refresh remounts controls exactly once", "switching source unloads controls and fullscreen", "drawing bytes unchanged"], actual: geometry() };
+  });
+
+  await c.case(`native:embed-table:${context}`, ["P03", "P04", "P05"], async () => {
+    const token = `![[${drawing.path}\\|Caption\\|100\\|left]]`;
+    const markdown = `![Label\\|120](<${drawing.path}#^as-image> "Keep title")`;
+    const source = `# Table source\n\n| Drawing | Cell |\n| --- | --- |\n| ${token} | first |\n| ${token} | second |\n| ${markdown} | third |\n\nFooter\n`;
+    const file = await create("Table-source.md", source);
+    await leaf.setViewState({ type: "markdown", state: { file: file.path, mode: "source", source: false } });
+    app.workspace.setActiveLeaf(leaf, { focus: true });
+    leaf.view.editor.setCursor({ line: leaf.view.editor.lastLine(), ch: 0 });
+    const cm = leaf.view.editor.cm;
+    const ready = () => {
+      const current = frames();
+      c.observations = { ...c.observations, table: { selection: cm.state.selection.main.toJSON(), frames: current.map(frame => ({ connected: frame.isConnected, width: frame.querySelector(".excalidraw-embedded-img")?.getAttribute("w") })), html: cm.contentDOM.querySelector(".cm-table-widget")?.outerHTML.slice(0, 10000) } };
+      return current.length === 3 && current.every((frame, i) => frame.querySelector(".excalidraw-embedded-img")?.getAttribute("w") === (i === 2 ? "120" : "100"));
+    };
+    await c.waitFor(ready, "three authoritative table cells and escaped display dimensions");
+    let other;
+    if (!touch) {
+      other = app.workspace.getLeaf("split", "vertical"); env.owned.add(other);
+      await other.setViewState({ type: "markdown", state: { file: file.path, mode: "source", source: false } });
+      other.view.editor.setCursor({ line: other.view.editor.lastLine(), ch: 0 });
+      app.workspace.setActiveLeaf(other, { focus: true });
+    }
+    frames()[1].querySelector('[data-excalidraw-embed-action="resize"]').focus();
+    await key("ArrowRight", "ArrowRight", 39);
+    const changed = source.replace(token + " | second", token.replace("100", "108") + " | second");
+    await c.waitFor(() => cm.state.doc.toString() === changed, "only the second identical physical table cell resized");
+    if (other) await c.waitFor(() => other.view.editor.getValue() === changed, "same-note split receives the exact table transaction");
+    cm.focus(); await key("z", "KeyZ", 90, modifier);
+    await c.waitFor(() => cm.state.doc.toString() === source && ready(), "one undo restores table source and rendered dimensions");
+    await action(2, "edit");
+    check(cm.state.sliceDoc(cm.state.selection.main.from, cm.state.selection.main.to) === markdown, "table source edit selected the wrong syntax or cell");
+    leaf.view.editor.setCursor({ line: leaf.view.editor.lastLine(), ch: 0 });
+    await c.waitFor(ready, "table syntax edit roundtrip");
+    await action(1, "reset");
+    const reset = source.replace(token + " | second", token.replace("\\|100", "") + " | second");
+    await c.waitFor(() => cm.state.doc.toString() === reset, "table reset preserves escaped aliases, style, title and other cells");
+    cm.focus(); await key("z", "KeyZ", 90, modifier);
+    await c.waitFor(() => cm.state.doc.toString() === source, "table reset is one undo step");
+    check(await app.vault.read(drawing) === drawingBytes, "table controls changed the drawing file");
+    return { assertions: ["native table widget public boundaries and physical cell ownership", "escaped wiki and Markdown-image dimensions render", "only second identical row changes", "same-note split synchronization", "one-step undo/reset", "exact Markdown syntax selection", "aliases/styles/title and other cells preserved", "drawing bytes unchanged"], actual: geometry() };
   });
 }

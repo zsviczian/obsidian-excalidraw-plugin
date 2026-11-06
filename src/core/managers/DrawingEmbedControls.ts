@@ -23,6 +23,7 @@ export class DrawingEmbedControls extends MarkdownRenderChild {
   private toolbar: HTMLElement;
   private handle: HTMLButtonElement | null = null;
   private visual: HTMLElement | SVGElement | null = null;
+  private resizeObserver: ResizeObserver | null = null;
   private gesture: ResizeGesture | null = null;
   private active = false;
   private modals = new Set<DrawingEmbedPreviewModal>();
@@ -41,6 +42,10 @@ export class DrawingEmbedControls extends MarkdownRenderChild {
     const frame = this.containerEl, doc = frame.ownerDocument, win = doc.defaultView;
     frame.addClass("excalidraw-embed-controls-frame");
     this.toolbar = frame.createDiv({ cls: "excalidraw-embed-toolbar", attr: { role: "toolbar", "aria-label": t("EMBED_ACTIONS") } });
+    // Native table cells also handle compatibility mouse/touch events. A
+    // toolbar press must not activate the cell editor underneath our action.
+    this.registerDomEvent(this.toolbar, "mousedown", event => event.stopPropagation());
+    this.registerDomEvent(this.toolbar, "touchstart", event => event.stopPropagation());
     const button = (action: string, icon: string, label: string, callback: (event: MouseEvent) => void) => {
       const element = this.toolbar.createEl("button", { cls: "clickable-icon", attr: { type: "button", "aria-label": label, "data-excalidraw-embed-action": action } });
       setIcon(element, icon); setTooltip(element, label);
@@ -71,6 +76,11 @@ export class DrawingEmbedControls extends MarkdownRenderChild {
     const observer = new win.MutationObserver(() => this.refresh());
     observer.observe(frame, { childList: true, subtree: true });
     this.register(() => observer.disconnect());
+    if (typeof win.ResizeObserver === "function") {
+      this.resizeObserver = new win.ResizeObserver(() => this.placeToolbar());
+      this.register(() => { this.resizeObserver?.disconnect(); this.resizeObserver = null; });
+    }
+    this.registerDomEvent(frame, "load", () => this.placeToolbar(), true);
     this.registerDomEvent(frame, "pointerenter", () => this.placeToolbar());
     this.registerDomEvent(frame, "focusin", () => this.placeToolbar());
     this.registerDomEvent(win, "resize", () => this.placeToolbar());
@@ -90,7 +100,11 @@ export class DrawingEmbedControls extends MarkdownRenderChild {
   private refresh(): void {
     const image = this.containerEl.querySelector<HTMLElement>(".excalidraw-embedded-img");
     const visual = image?.querySelector<SVGElement | HTMLImageElement>("img, svg") ?? image;
-    if (visual !== this.visual) { this.finish(false); this.visual = visual; }
+    if (visual !== this.visual) {
+      this.finish(false); this.visual = visual;
+      this.resizeObserver?.disconnect();
+      if (visual) this.resizeObserver?.observe(visual);
+    }
     if (!image) return;
     if (this.toolbar.parentElement !== this.containerEl) this.containerEl.append(this.toolbar);
     if (this.handle && this.handle.parentElement !== this.containerEl) this.containerEl.append(this.handle);
@@ -98,18 +112,23 @@ export class DrawingEmbedControls extends MarkdownRenderChild {
   }
 
   private placeToolbar(): void {
-    const frame = this.containerEl, bounds = frame.getBoundingClientRect();
+    const frame = this.containerEl;
     if (!this.active || !frame.isConnected) return;
-    const visual = this.visual?.getBoundingClientRect() ?? bounds;
-    const editor = frame.closest(".cm-scroller");
+    let visual = this.visual?.getBoundingClientRect() ?? frame.getBoundingClientRect();
+    const editor = frame.closest(".cm-scroller, .markdown-preview-view");
     const top = editor?.getBoundingClientRect().top ?? 0;
-    frame.toggleClass("excalidraw-embed-controls-below", visual.top < top + 48 || visual.width < 160);
+    // Obsidian's image widget uses contain: paint. Keep the normal toolbar
+    // inside its image; small previews need an in-flow row below instead.
+    const toolbar = this.toolbar.getBoundingClientRect();
+    frame.toggleClass("excalidraw-embed-controls-below", visual.width < Math.max(160, toolbar.width) || visual.height < Math.max(48, toolbar.height));
+    // Switching to/from an in-flow row changes the frame's height immediately.
+    const bounds = frame.getBoundingClientRect();
+    visual = this.visual?.getBoundingClientRect() ?? bounds;
     const right = frame.closest(".cm-content, .markdown-preview-view")?.getBoundingClientRect().right ?? frame.ownerDocument.defaultView.innerWidth;
     setStyle(frame, {
       "--excalidraw-embed-toolbar-width": `${Math.max(44, right - visual.left - 16)}px`,
       "--excalidraw-embed-control-left": `${visual.left - bounds.left}px`,
-      "--excalidraw-embed-control-top": `${visual.top - bounds.top}px`,
-      "--excalidraw-embed-control-below": `${visual.bottom - bounds.top}px`,
+      "--excalidraw-embed-control-top": `${Math.max(visual.top, top) - bounds.top}px`,
       "--excalidraw-embed-control-right": `${bounds.right - visual.right - 8}px`,
       "--excalidraw-embed-control-bottom": `${bounds.bottom - visual.bottom - 8}px`,
     });
@@ -197,6 +216,6 @@ export class DrawingEmbedControls extends MarkdownRenderChild {
     for (const modal of [...this.modals]) modal.close();
     this.modals.clear(); this.toolbar?.remove(); this.handle?.remove();
     this.containerEl.removeClass("excalidraw-embed-controls-frame", "excalidraw-embed-controls-below");
-    removeStyle(this.containerEl, ["--excalidraw-embed-toolbar-width", "--excalidraw-embed-resize-width", "--excalidraw-embed-resize-height", "--excalidraw-embed-control-left", "--excalidraw-embed-control-top", "--excalidraw-embed-control-below", "--excalidraw-embed-control-right", "--excalidraw-embed-control-bottom"]);
+    removeStyle(this.containerEl, ["--excalidraw-embed-toolbar-width", "--excalidraw-embed-resize-width", "--excalidraw-embed-resize-height", "--excalidraw-embed-control-left", "--excalidraw-embed-control-top", "--excalidraw-embed-control-right", "--excalidraw-embed-control-bottom"]);
   }
 }

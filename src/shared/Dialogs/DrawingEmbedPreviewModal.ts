@@ -75,7 +75,9 @@ export class DrawingEmbedPreviewModal extends Modal {
     this.owner.registerDomEvent(this.stage, "pointerup", release);
     this.owner.registerDomEvent(this.stage, "pointercancel", release);
     this.owner.registerDomEvent(this.stage, "lostpointercapture", release);
-    this.owner.registerDomEvent(this.stage, "keydown", event => {
+    // Obsidian may focus its close button after onOpen(), and users can Tab to
+    // our toolbar. Viewer shortcuts belong to the whole modal, not just the pan surface.
+    this.owner.registerDomEvent(this.modalEl, "keydown", event => {
       if (event.ctrlKey || event.metaKey || event.altKey) return;
       if (["+", "=", "-", "0", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) {
         event.preventDefault();
