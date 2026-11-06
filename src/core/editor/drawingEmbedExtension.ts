@@ -99,13 +99,13 @@ export function createDrawingEmbedExtension(plugin: ExcalidrawPlugin): { extensi
         const path = hash < 0 ? target : target.slice(0, hash), reference = hash < 0 ? "" : target.slice(hash);
         const drawing = plugin.app.metadataCache.getFirstLinkpathDest(path, sourceFile.path);
         if (!drawing || !plugin.isExcalidrawFile(drawing) || decodeTarget(drawing.path + reference) !== decodeTarget(actions.target)) continue;
-        const sourcePath = sourceFile.path;
+        const sourcePath = sourceFile.path, ownerDocument = view.dom.ownerDocument;
         const source = new DrawingEmbedSource(view, from, from + token.text.length, token.text, () =>
           this.active && !disposed && sourceFile.path === sourcePath &&
           view.state.field(editorInfoField, false)?.file === sourceFile &&
           !!view.state.field(editorLivePreviewField, false) && !view.state.facet(EditorState.readOnly) && view.state.facet(EditorView.editable) &&
           frame.isConnected && view.contentDOM.contains(frame) && nativeEmbed.contains(frame) &&
-          frame.ownerDocument === view.dom.ownerDocument && actions.isCurrent());
+          frame.ownerDocument === ownerDocument && view.dom.ownerDocument === ownerDocument && actions.isCurrent());
         // A renderer may invalidate its generation before replacing the DOM.
         // Do not mount a stale binding: mounting/unloading it would schedule
         // another DOM sync and starve the renderer's debounce timer.

@@ -26,6 +26,12 @@ titles, aliases, style suffixes, whitespace and escaped table separators remain
 unchanged. Existing wrapper layout remains responsible for alignment and percentage
 sizing. Controls follow the visible image bounds.
 
+Cancellation restores control placement immediately; scrolling and viewport
+changes remeasure it. Hover toolbars touch the image boundary so pointer travel
+does not cross a disappearing hover gap. Always-visible touch toolbars occupy
+normal document flow below the image. A full-width no-op keeps percentage syntax
+instead of shrinking solely to create space for the handle.
+
 Fullscreen uses the existing exporter with the same drawing/reference and theme,
 but bypasses the shared image cache. It owns and releases that fresh image. SVG
 links are inactive in the viewer. Closing a source owner closes its viewers and

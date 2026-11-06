@@ -67,3 +67,35 @@ test("keyboard resizing commits once on release, keeps shortcuts, and reset pres
   } finally { f.close(); }
   assert.equal(f.modals[0].active, false);
 });
+
+test("cancel and viewport changes restore controls to the visible image corner", async () => {
+  const f = await fixture();
+  try {
+    const originalFrame = { ...f.frame.bounds }, originalImage = { ...f.image.bounds };
+    f.frame.getBoundingClientRect = () => f.frame.hasClass("excalidraw-embed-resizing") ? { ...originalFrame, right: 220, width: 220, bottom: 159, height: 159 } : originalFrame;
+    f.image.getBoundingClientRect = () => f.frame.hasClass("excalidraw-embed-resizing") ? { ...originalImage, right: 220, width: 220, bottom: 159, height: 159 } : originalImage;
+    start(f); f.fire(f.window, "pointermove", { pointerId: 1, clientX: 220, clientY: 130 });
+    assert.equal(f.frame.style["--excalidraw-embed-control-right"], "-8px");
+    f.fire(f.window, "keydown", { key: "Escape" });
+    assert.equal(f.frame.style["--excalidraw-embed-control-right"], "512px"); assert.deepEqual(f.writes, []);
+    originalImage.left = 50; originalImage.right = 230; f.fire(f.window, "resize");
+    assert.equal(f.frame.style["--excalidraw-embed-control-left"], "50px");
+    assert.equal(f.frame.style["--excalidraw-embed-control-right"], "462px");
+  } finally { f.close(); }
+});
+
+test("a full-width no-op retains percentage syntax and a replacement gesture uses restored dimensions", async () => {
+  const f = await fixture("![[Map|100%]]");
+  try {
+    f.frame.parentElement.bounds.right = 180;
+    start(f); f.fire(f.window, "pointermove", { pointerId: 1, clientX: 200, clientY: 130 });
+    f.fire(f.window, "pointerup", { pointerId: 1 }); assert.deepEqual(f.writes, []);
+    f.frame.parentElement.bounds.right = 700;
+    const original = { ...f.image.bounds };
+    f.image.getBoundingClientRect = () => f.frame.hasClass("excalidraw-embed-resizing") ? { ...original, width: Number.parseFloat(f.frame.style["--excalidraw-embed-resize-width"]), height: Number.parseFloat(f.frame.style["--excalidraw-embed-resize-height"]) } : original;
+    start(f); f.fire(f.window, "pointermove", { pointerId: 1, clientX: 220, clientY: 130 });
+    f.handle.fire("pointerdown", { button: 0, pointerId: 2, clientX: 180, clientY: 130 });
+    f.fire(f.window, "pointermove", { pointerId: 2, clientX: 188, clientY: 130 });
+    f.fire(f.window, "pointerup", { pointerId: 2 }); assert.deepEqual(f.writes, ["![[Map|188]]"]);
+  } finally { f.close(); }
+});

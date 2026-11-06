@@ -73,6 +73,9 @@ export class DrawingEmbedControls extends MarkdownRenderChild {
     this.register(() => observer.disconnect());
     this.registerDomEvent(frame, "pointerenter", () => this.placeToolbar());
     this.registerDomEvent(frame, "focusin", () => this.placeToolbar());
+    this.registerDomEvent(win, "resize", () => this.placeToolbar());
+    const scroller = frame.closest<HTMLElement>(".cm-scroller, .markdown-preview-view");
+    if (scroller) this.registerDomEvent(scroller, "scroll", () => this.placeToolbar(), { passive: true });
     this.refresh();
   }
 
@@ -96,6 +99,7 @@ export class DrawingEmbedControls extends MarkdownRenderChild {
 
   private placeToolbar(): void {
     const frame = this.containerEl, bounds = frame.getBoundingClientRect();
+    if (!this.active || !frame.isConnected) return;
     const visual = this.visual?.getBoundingClientRect() ?? bounds;
     const editor = frame.closest(".cm-scroller");
     const top = editor?.getBoundingClientRect().top ?? 0;
@@ -113,11 +117,11 @@ export class DrawingEmbedControls extends MarkdownRenderChild {
 
   private start(kind: ResizeGesture["kind"], x = 0, id?: number, y = 0): boolean {
     if (!this.source || !this.current() || !this.visual) return false;
+    this.finish(false);
     const bounds = this.visual.getBoundingClientRect();
     if (bounds.width <= 0 || bounds.height <= 0) return false;
-    this.finish(false);
     const frame = this.containerEl, content = frame.closest(".cm-content");
-    const max = Math.max(1, (content?.getBoundingClientRect().right ?? frame.ownerDocument.defaultView.innerWidth) - frame.getBoundingClientRect().left - 8);
+    const max = Math.max(bounds.width, (content?.getBoundingClientRect().right ?? frame.ownerDocument.defaultView.innerWidth) - frame.getBoundingClientRect().left - 8);
     const owner = new Component(); owner.load();
     this.gesture = { owner, kind, id, startX: x, startY: y, startWidth: bounds.width, width: bounds.width, aspect: bounds.width / bounds.height, max, min: Math.min(32, max) };
     owner.registerDomEvent(frame.ownerDocument.defaultView, "keydown", event => {
@@ -174,6 +178,7 @@ export class DrawingEmbedControls extends MarkdownRenderChild {
     if (gesture.id !== undefined && this.handle?.hasPointerCapture(gesture.id)) this.handle.releasePointerCapture(gesture.id);
     this.containerEl.removeClass("excalidraw-embed-resizing");
     removeStyle(this.containerEl, ["--excalidraw-embed-resize-width", "--excalidraw-embed-resize-height"]);
+    this.placeToolbar();
     if (!commit || !this.current() || Math.abs(gesture.width - gesture.startWidth) < 1) return;
     const dimensions = getEmbedDimensions(this.source.text);
     const text = rewriteEmbedDimensions(this.source.text, { width: gesture.width, ...(dimensions?.height ? { height: Math.max(1, Math.round(gesture.width / gesture.aspect)) } : {}) });

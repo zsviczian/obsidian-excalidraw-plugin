@@ -2537,7 +2537,7 @@ button.excalidraw-font-picker {
 .excalidraw-embed-toolbar {
   position: absolute;
   left: var(--excalidraw-embed-control-left, 0px);
-  bottom: calc(100% - var(--excalidraw-embed-control-top, 0px) + 4px);
+  bottom: calc(100% - var(--excalidraw-embed-control-top, 0px));
   z-index: 10;
   display: flex;
   flex-wrap: wrap;
@@ -2554,7 +2554,7 @@ button.excalidraw-font-picker {
 }
 .excalidraw-embed-controls-below > .excalidraw-embed-toolbar {
   bottom: auto;
-  top: calc(var(--excalidraw-embed-control-below, 100%) + 4px);
+  top: var(--excalidraw-embed-control-below, 100%);
 }
 .excalidraw-embed-toolbar button,
 .excalidraw-embed-preview-toolbar button {
@@ -2642,6 +2642,12 @@ button.excalidraw-font-picker {
   padding: 16px;
 }
 @media (hover: none), (pointer: coarse) {
+  .excalidraw-embed-controls-frame > .excalidraw-embed-toolbar {
+    position: relative;
+    top: auto;
+    bottom: auto;
+    margin-top: 4px;
+  }
   .excalidraw-embed-controls-frame > .excalidraw-embed-toolbar,
   .excalidraw-embed-controls-frame > .excalidraw-embed-resize-handle {
     opacity: 1;
@@ -2658,4 +2664,10 @@ button.excalidraw-font-picker {
 .is-mobile .excalidraw-embed-resize-handle {
   opacity: 1;
   pointer-events: auto;
+}
+.is-mobile .excalidraw-embed-controls-frame > .excalidraw-embed-toolbar {
+  position: relative;
+  top: auto;
+  bottom: auto;
+  margin-top: 4px;
 }

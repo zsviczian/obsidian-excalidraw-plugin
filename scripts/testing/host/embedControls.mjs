@@ -93,6 +93,10 @@ async function exerciseEmbedControls(c, env, template, modifier) {
     p.settings.previewImageType = mode;
     await open();
     if (mainWindow) { mainWindow.minimize(); browserWindow.focus(); check(mainWindow.isMinimized(), "main window was not minimized for popout input"); }
+    if (touch) {
+      const frame = frames()[0], image = frame.querySelector(".excalidraw-embedded-img").getBoundingClientRect(), toolbar = frame.querySelector(".excalidraw-embed-toolbar").getBoundingClientRect();
+      check(toolbar.top >= image.bottom && toolbar.bottom <= frame.getBoundingClientRect().bottom + 1, "touch toolbar overlaps image or following note content");
+    }
     let cm = leaf.view.editor.cm;
     const changed = content.replace(token + "\n\n" + token, token + "\n\n" + token.replace("|180", "|220"));
     await drag(1, 40);
@@ -112,6 +116,9 @@ async function exerciseEmbedControls(c, env, template, modifier) {
     await c.waitFor(() => frames().length === 3, "restored embeds");
     await drag(1, 35, true);
     check(cm.state.doc.toString() === content && !frames()[1].hasClass("excalidraw-embed-resizing"), "Escape committed or retained preview");
+    const cancelledFrame = frames()[1], cancelledImage = cancelledFrame.querySelector(".excalidraw-embedded-img");
+    const imageCorner = (cancelledImage.querySelector("svg") ?? cancelledImage).getBoundingClientRect(), handleCorner = cancelledFrame.querySelector('[data-excalidraw-embed-action="resize"]').getBoundingClientRect();
+    check(Math.abs(handleCorner.right - imageCorner.right - 8) < 2 && Math.abs(handleCorner.bottom - imageCorner.bottom - 8) < 2, "cancel left the resize handle away from the visible corner");
     frames()[1].querySelector('[data-excalidraw-embed-action="resize"]').focus();
     await key("ArrowRight", "ArrowRight", 39);
     await c.waitFor(() => cm.state.doc.toString() === content.replace(token + "\n\n" + token, token + "\n\n" + token.replace("|180", "|188")), "keyboard resize commits on key release");
