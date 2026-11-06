@@ -111,6 +111,12 @@ function fixture() {
       hasExportTheme: () => false, getWithBackground: () => false, isMaskFile: () => false,
       getEmbeddedFilenameParts: src => ({ hasBlockref: src.includes("#^"), blockref: src.split("#^")[1] }),
     },
+    "../../shared/PaddingUI": {
+      initPaddingUI: () => {},
+      getAreaPaddingSize: () => undefined,
+      embedPaddingWrapperMap: new WeakMap(),
+      wrapWithPaddingPopup: imgDiv => imgDiv,
+    },
   };
   const context = vm.createContext({ MutationObserver: Observer, window: ownerWindow, createEl: tag => new Element("", tag),
     console: { error: (...args) => errors.push(args) }, __createImage: createImage, __createRaster: async () => null });
