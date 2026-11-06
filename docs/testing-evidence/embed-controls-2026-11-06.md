@@ -110,18 +110,45 @@ that rule. All ten phone/tablet embed cases, including resize/history/reset,
 tables, fullscreen pinch and pan, passed against the fresh frozen build:
 `.test-work/reports/pr3037-phone-probe-3/report.json`.
 
-A repeated popout run exposed the native table cell editor activating underneath
-a toolbar mouse press and retaining an extra rendered copy. Toolbar compatibility
-mouse/touch events are now isolated from the table; button default activation is
-preserved. Source tests and the focused popout roundtrip passed after the fix:
-`.test-work/reports/pr3037-table-input-smoke/popout-probe.json`.
+Toolbar compatibility mouse/touch events are isolated from the surrounding native
+table, preserving button default activation. Editing table syntax intentionally
+opens Obsidian's inner cell editor; the host retains its hidden display preview.
+The native test exits through a trusted footer click instead of moving only the
+outer editor's caret. It verifies that this roundtrip preserves every source byte.
 
-Latest source suite before the event-isolation checkpoint: 716 tests in 87 files
-passed. Modified embed modules have zero targeted lint or TypeScript diagnostics.
-The production bundle is 5,088,586 bytes before that final small checkpoint.
-Complete native and portable acceptance, minimum Obsidian 1.8.7, macOS, physical
-Android/iOS and hosted CodeScanner remain explicit gates until actual evidence
-is recorded.
+Complete portable regression at `76ffd8ed4dbb347e0c1a7ef01d5778f9537a41d3`
+passed 934 canonical cases, with successful cleanup and no missing cases. It
+includes 717 plugin tests and 199 source-coverage tests. GitHub Plugin tests and
+CodeQL passed at that revision. The first complete native attempt remains failed:
+399 passed, five failed, cleanup passed. Evidence is retained under
+`.test-work/reports/pr3037-native-76ffd8ed/`.
+
+The November 7 checkpoint addresses the observed native readiness failures:
+
+- Focus the table handle through trusted hover/scroll/click input before keyboard
+  resizing, while retaining inactive-pane ownership and exact transaction checks.
+- Wait for saved fixture frontmatter before each stability reopen; disk persistence
+  completes before Obsidian republishes the cache used by its default-view router.
+- Flush live Markdown saves before retiring views and deleting owned fixtures.
+- Restore Electron zoom and require bounded geometry/notification idle before
+  closing the owning popout; keep the strict host exception gate unchanged.
+- Coalesce the controller's ResizeObserver-driven layout writes into an owned
+  animation frame and cancel it on unload. This does not attribute or suppress the
+  host's historically recorded observer notifications.
+
+All six stability cycles and the restored-zoom workflow passed focused validation
+without unexpected host errors. Full phone/tablet workflows passed 108 cases with
+clean error gates, cleanup and restoration. The corrected desktop input sequence
+then passed all 15 embed cases with baseline restoration. Evidence:
+`.test-work/reports/pr3037-native-readiness-focused-1/`, including
+`devices/report.json` and `controls-input-probe.json`. Failed predecessor attempts
+remain separate; the focused parent report's hidden-handle input failure is not
+acceptance evidence.
+
+Latest source suite: 717 tests in 87 files passed. Modified embed modules have zero
+targeted lint or TypeScript diagnostics. Fresh complete portable/native acceptance
+is still required at this checkpoint. Minimum Obsidian 1.8.7, macOS, physical
+Android/iOS and hosted CodeScanner remain separate unverified gates.
 
 `npm run code` reports 118 existing errors outside the modified production
 modules; targeted lint and targeted TypeScript diagnostics pass. Production

@@ -69,6 +69,10 @@ export async function behaviorEnvironment(
       windows.get(owner).push({ leaf, view });
     }
     for (const [owner, entries] of windows) {
+      // Native Markdown autosave/reload can outlive setViewState(empty).
+      // Flush while the note exists, then let its update/render work settle.
+      for (const { view } of entries)
+        if (view.containerEl.isConnected && view.getViewType?.() === "markdown" && view.file) await view.save();
       browserIdle.push(await settleBrowserDiagnostics(owner,windowErrors,'behavior:'+context.id));
       for (const { view } of entries) view.exitFullscreen?.();
       for (const { view } of entries)

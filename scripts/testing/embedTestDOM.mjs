@@ -1,12 +1,14 @@
 /** Small lifecycle/DOM boundary for production embed-controller tests; no rendering claim. */
 export function embedTestDOM() {
-  const observers = []; let listeners = 0;
+  const observers = [], frames = new Map(); let listeners = 0, nextFrame = 0;
   const window = { events: new Map(), closed: false, innerWidth: 800, MutationObserver: class {
     constructor(callback) { this.callback = callback; observers.push(this); }
     observe() { this.connected = true; }
     disconnect() { this.connected = false; }
     fire() { if (this.connected) this.callback(); }
   } };
+  window.requestAnimationFrame = callback => { const id = ++nextFrame; frames.set(id, callback); return id; };
+  window.cancelAnimationFrame = id => frames.delete(id);
   window.ResizeObserver = class extends window.MutationObserver {
     constructor(callback) { super(callback); this.resize = true; }
     observe(target) { super.observe(); this.target = target; }
@@ -53,5 +55,6 @@ export function embedTestDOM() {
     unload() { for (const cleanup of this.cleanups.splice(0)) cleanup(); this.onunload?.(); }
   }
   class MarkdownRenderChild extends Component { constructor(containerEl) { super(); this.containerEl = containerEl; } }
-  return { Element, Component, MarkdownRenderChild, window, document, fire, observers, listenerCount: () => listeners };
+  return { Element, Component, MarkdownRenderChild, window, document, fire, observers, listenerCount: () => listeners,
+    pendingFrames: () => frames.size, flushFrames: () => { const callbacks = [...frames.values()]; frames.clear(); for (const callback of callbacks) callback(); } };
 }

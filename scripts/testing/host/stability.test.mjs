@@ -24,7 +24,7 @@ test("failed stability loading retires the owned leaf before deleting its file",
     operations = [];
   let detached = false,
     closed = false,
-    removed = false;
+    removed = false, frontmatter;
   const file = { path: "__excalidraw_cli_smoke_owned_stability.excalidraw.md" };
   const doc = { querySelectorAll: () => [{}] };
   const originalView = {
@@ -40,7 +40,7 @@ test("failed stability loading retires the owned leaf before deleting its file",
   const leaf = {
     id: "owned",
     view: originalView,
-    async openFile() {},
+    async openFile() { assert.ok(frontmatter?.["excalidraw-plugin"], "Opening before metadata is ready can select Markdown mode"); },
     async setViewState(state) {
       assert.equal(state.type, "empty");
       closed = true;
@@ -63,6 +63,7 @@ test("failed stability loading retires the owned leaf before deleting its file",
     },
     root = {};
   const app = {
+    metadataCache: { getCache: () => ({ frontmatter }) },
     plugins: {
       plugins: {
         "obsidian-excalidraw-plugin": { isExcalidrawFile: () => true },
@@ -108,6 +109,12 @@ test("failed stability loading retires the owned leaf before deleting its file",
     async waitFor(predicate, label) {
       if (label === "large fixture metadata") {
         assert.ok(predicate());
+        return;
+      }
+      if (label === "large saved fixture frontmatter before open") {
+        assert.equal(!!predicate(), false);
+        frontmatter = { "excalidraw-plugin": "parsed" };
+        assert.equal(predicate(), true);
         return;
       }
       assert.equal(label, "large scene first commit");

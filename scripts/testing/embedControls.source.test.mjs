@@ -122,8 +122,12 @@ test("late image sizing leaves the toolbar inside paint containment and remeasur
     f.frame.fire("load"); assert.equal(f.frame.hasClass("excalidraw-embed-controls-below"), true);
     f.image.bounds = { ...f.image.bounds, bottom: 130, height: 130 };
     const observer = f.observers.find(observer => observer.resize); assert.equal(observer.target, f.image);
-    observer.fire(); assert.equal(f.frame.hasClass("excalidraw-embed-controls-below"), false);
+    observer.fire(); observer.fire();
+    assert.equal(f.pendingFrames(), 1); assert.equal(f.frame.hasClass("excalidraw-embed-controls-below"), true);
+    f.flushFrames(); assert.equal(f.frame.hasClass("excalidraw-embed-controls-below"), false);
     assert.equal(f.frame.style["--excalidraw-embed-control-top"], "0px");
     assert.equal(f.frame.style["--excalidraw-embed-control-bottom"], "-8px");
+    observer.fire(); assert.equal(f.pendingFrames(), 1);
   } finally { f.close(); }
+  assert.equal(f.pendingFrames(), 0); f.flushFrames();
 });

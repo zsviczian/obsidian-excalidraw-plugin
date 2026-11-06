@@ -44,6 +44,9 @@ async function exerciseStability(c,path,fixture,cycles){
       const observation={cycle};c.observations.push(observation);
       let anchor;app.workspace.iterateAllLeaves(l=>{if(!anchor&&l.getRoot()===app.workspace.rootSplit)anchor=l;});
       check(anchor,'No main-window anchor');app.workspace.setActiveLeaf(anchor,{focus:true});
+      // Vault persistence completes before Obsidian republishes frontmatter.
+      // The default-view router requires that metadata on every fresh open.
+      await c.waitFor(()=>!!app.metadataCache.getCache(path)?.frontmatter?.['excalidraw-plugin'],'large saved fixture frontmatter before open');
       leaf=app.workspace.getLeaf('tab');await leaf.openFile(file);
       observation.opened=loadState();
       try{await c.waitFor(()=>leaf.view.excalidrawAPI&&leaf.view.isLoaded&&!leaf.view.semaphores.justLoaded&&!leaf.view.isClosingOrMigrating(),'large scene first commit',60000);}catch(error){observation.failed=loadState();throw error;}

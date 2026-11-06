@@ -77,8 +77,18 @@ export class DrawingEmbedControls extends MarkdownRenderChild {
     observer.observe(frame, { childList: true, subtree: true });
     this.register(() => observer.disconnect());
     if (typeof win.ResizeObserver === "function") {
-      this.resizeObserver = new win.ResizeObserver(() => this.placeToolbar());
-      this.register(() => { this.resizeObserver?.disconnect(); this.resizeObserver = null; });
+      let frameId: number | null = null;
+      this.resizeObserver = new win.ResizeObserver(() => {
+        // Placement can change flow. Write outside observer delivery, and
+        // coalesce notifications into disposable owning-window UI work.
+        if (frameId === null) frameId = win.requestAnimationFrame(() => {
+          frameId = null; this.placeToolbar();
+        });
+      });
+      this.register(() => {
+        this.resizeObserver?.disconnect(); this.resizeObserver = null;
+        if (frameId !== null) win.cancelAnimationFrame(frameId);
+      });
     }
     this.registerDomEvent(frame, "load", () => this.placeToolbar(), true);
     this.registerDomEvent(frame, "pointerenter", () => this.placeToolbar());

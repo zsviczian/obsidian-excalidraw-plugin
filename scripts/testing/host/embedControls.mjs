@@ -259,7 +259,7 @@ async function exerciseEmbedControls(c, env, template, modifier) {
     const cm = leaf.view.editor.cm;
     const ready = () => {
       const current = frames();
-      c.observations = { ...c.observations, table: { selection: cm.state.selection.main.toJSON(), frames: current.map(frame => ({ connected: frame.isConnected, width: frame.querySelector(".excalidraw-embedded-img")?.getAttribute("w") })), html: cm.contentDOM.querySelector(".cm-table-widget")?.outerHTML.slice(0, 10000) } };
+      c.observations = { ...c.observations, table: { selection: cm.state.selection.main.toJSON(), frames: current.map(frame => ({ connected: frame.isConnected, bounds: frame.getBoundingClientRect().toJSON(), width: frame.querySelector(".excalidraw-embedded-img")?.getAttribute("w") })), html: cm.contentDOM.querySelector(".cm-table-widget")?.outerHTML.replace(/<svg\b[\s\S]*?<\/svg>/g, "<svg/>").slice(0, 10000) } };
       return current.length === 3 && current.every((frame, i) => frame.querySelector(".excalidraw-embedded-img")?.getAttribute("w") === (i === 2 ? "120" : "100"));
     };
     await c.waitFor(ready, "three authoritative table cells and escaped display dimensions");
@@ -270,7 +270,10 @@ async function exerciseEmbedControls(c, env, template, modifier) {
       other.view.editor.setCursor({ line: other.view.editor.lastLine(), ch: 0 });
       app.workspace.setActiveLeaf(other, { focus: true });
     }
-    frames()[1].querySelector('[data-excalidraw-embed-action="resize"]').focus();
+    // A second pane's asynchronous activation can reclaim programmatic focus.
+    // Use the same trusted click that a keyboard user uses to focus the handle.
+    await action(1, "resize");
+    await c.waitFor(() => doc.activeElement === frames()[1]?.querySelector('[data-excalidraw-embed-action="resize"]'), "owned table resize keyboard focus");
     await key("ArrowRight", "ArrowRight", 39);
     const changed = source.replace(token + " | second", token.replace("100", "108") + " | second");
     await c.waitFor(() => cm.state.doc.toString() === changed, "only the second identical physical table cell resized");
@@ -280,7 +283,12 @@ async function exerciseEmbedControls(c, env, template, modifier) {
     await action(2, "edit");
     check(cm.state.sliceDoc(cm.state.selection.main.from, cm.state.selection.main.to) === markdown, "table source edit selected the wrong syntax or cell");
     leaf.view.editor.setCursor({ line: leaf.view.editor.lastLine(), ch: 0 });
+    // The table intentionally owns an inner cell editor while syntax is being
+    // edited. Moving the outer caret by API does not blur that editor. Exit it
+    // through trusted note input before counting/restoring its normal previews.
+    await click(() => [...cm.contentDOM.querySelectorAll(".cm-line")].find(line => line.closest(".cm-content") === cm.contentDOM && line.textContent.trim() === "Footer"));
     await c.waitFor(ready, "table syntax edit roundtrip");
+    check(cm.state.doc.toString() === source, "table source editing roundtrip rewrote surrounding syntax");
     await action(1, "reset");
     const reset = source.replace(token + " | second", token.replace("\\|100", "") + " | second");
     await c.waitFor(() => cm.state.doc.toString() === reset, "table reset preserves escaped aliases, style, title and other cells");
