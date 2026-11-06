@@ -1,0 +1,69 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { sourceHarness } from "./sourceHarness.mjs";
+import { embedTestDOM } from "./embedTestDOM.mjs";
+
+async function fixture(text = "![[Map|Alias|180x130|left]]") {
+  const dom = embedTestDOM(), notices = [], modals = [], writes = [];
+  let current = true, sourceCurrent = true, selects = 0, opens = 0;
+  const graph = sourceHarness({ obsidian: { Component: dom.Component, MarkdownRenderChild: dom.MarkdownRenderChild, Notice: class { constructor(text) { notices.push(text); } }, setIcon() {}, setTooltip() {} },
+    "src/lang/helpers": { t: key => key },
+    "src/utils/styleUtils": { setStyle: (el, values) => Object.assign(el.style, values), removeStyle: (el, keys) => { for (const key of keys) delete el.style[key]; } },
+    "src/shared/Dialogs/DrawingEmbedPreviewModal": { DrawingEmbedPreviewModal: class { constructor(_app, _preview, _opener, close) { this.onClosed = close; modals.push(this); } open() { this.active = true; } close() { this.active = false; this.onClosed(); } } },
+  });
+  const { DrawingEmbedControls } = await graph.importModule("src/core/managers/DrawingEmbedControls.ts");
+  const content = new dom.Element({ cls: "cm-content" }), frame = content.createDiv();
+  const image = frame.createEl("img", { cls: "excalidraw-embedded-img" }); image.bounds = { left: 0, top: 0, right: 180, bottom: 130, width: 180, height: 130 };
+  const source = { text, isCurrent: () => sourceCurrent, replace: value => { if (!sourceCurrent) return false; writes.push(value); return true; }, select: () => { selects++; return sourceCurrent; } };
+  const controls = new DrawingEmbedControls(frame, { app: {}, target: "Map", isCurrent: () => current, openDrawing: () => opens++ }, source); controls.load();
+  const handle = frame.querySelector(".excalidraw-embed-resize-handle"), toolbar = frame.querySelector(".excalidraw-embed-toolbar");
+  return { ...dom, frame, image, handle, toolbar, controls, writes, source, notices, modals, current: value => current = value, sourceCurrent: value => sourceCurrent = value, selects: () => selects, opens: () => opens,
+    close: () => { controls.unload(); graph.close(); assert.equal(dom.listenerCount(), 0); assert.ok(dom.observers.every(observer => !observer.connected)); } };
+}
+function start(f) { f.handle.fire("pointerdown", { button: 0, pointerId: 1, clientX: 180, clientY: 130 }); }
+
+test("resize previews proportionally without writing, then commits once on the owned pointer release", async () => {
+  const f = await fixture();
+  try {
+    start(f); f.fire(f.window, "pointermove", { pointerId: 1, clientX: 220, clientY: 130 });
+    assert.deepEqual(f.writes, []); assert.equal(f.frame.style["--excalidraw-embed-resize-width"], "220px");
+    assert.equal(Number.parseFloat(f.frame.style["--excalidraw-embed-resize-height"]), 220 / (180 / 130));
+    f.fire(f.window, "pointerup", { pointerId: 2 }); assert.deepEqual(f.writes, []);
+    f.fire(f.window, "pointerup", { pointerId: 1 });
+    assert.deepEqual(f.writes, ["![[Map|Alias|220x159|left]]"]); assert.equal(f.handle.captures.size, 0);
+    assert.equal(f.frame.hasClass("excalidraw-embed-resizing"), false);
+    assert.equal(f.frame.style["--excalidraw-embed-resize-height"], undefined);
+  } finally { f.close(); }
+});
+
+test("Escape, lost capture, stale source and visual replacement cancel without stale writes", async () => {
+  for (const cancel of ["escape", "capture", "source", "replace", "unload"]) {
+    const f = await fixture();
+    try {
+      start(f); f.fire(f.window, "pointermove", { pointerId: 1, clientX: 200, clientY: 130 });
+      if (cancel === "escape") f.fire(f.window, "keydown", { key: "Escape" });
+      if (cancel === "capture") f.handle.fire("lostpointercapture");
+      if (cancel === "source") f.sourceCurrent(false);
+      if (cancel === "replace") {
+        f.frame.empty(); f.frame.createEl("img", { cls: "excalidraw-embedded-img" }); f.observers[0].fire();
+        assert.equal(f.frame.querySelectorAll(".excalidraw-embed-toolbar").length, 1); assert.equal(f.toolbar.parentElement, f.frame);
+      }
+      if (cancel === "unload") f.controls.unload();
+      f.fire(f.window, "pointerup", { pointerId: 1 }); assert.deepEqual(f.writes, []); assert.equal(f.handle.captures.size, 0);
+    } finally { f.close(); }
+  }
+});
+
+test("keyboard resizing commits once on release, keeps shortcuts, and reset preserves aliases", async () => {
+  const f = await fixture();
+  try {
+    f.handle.fire("keydown", { key: "ArrowRight", ctrlKey: true }); assert.equal(f.frame.hasClass("excalidraw-embed-resizing"), false);
+    f.handle.fire("keydown", { key: "ArrowRight" }); f.handle.fire("keydown", { key: "ArrowRight" }); assert.deepEqual(f.writes, []);
+    f.handle.fire("keyup", { key: "ArrowRight" }); assert.deepEqual(f.writes, ["![[Map|Alias|196x142|left]]"]);
+    f.handle.fire("keydown", { key: "Home" }); assert.equal(f.writes.at(-1), "![[Map|Alias|left]]");
+    f.toolbar.children[2].fire("click"); assert.equal(f.selects(), 1);
+    f.toolbar.children[1].fire("click"); assert.equal(f.opens(), 1);
+    f.toolbar.children[0].fire("click"); assert.equal(f.modals[0].active, true);
+  } finally { f.close(); }
+  assert.equal(f.modals[0].active, false);
+});

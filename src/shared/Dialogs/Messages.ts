@@ -19,6 +19,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 `,
 "2.29.2": `
 ## New and improved
+- Resize drawing embeds in Live Preview, edit their embed syntax, or open a fullscreen preview and the editable drawing.
 - Mermaid now converts Gantt, quadrant and timeline charts to editable elements and uses elbow connectors for flowcharts. Update **Excalidraw Extras** to use the new converter.
 - With a compatible K-Plex enabled, complete its ontology fields in link inputs using your configured triggers, then continue with \`[[note]]\` completion inside parentheses or square brackets.
 - **Mindmap Builder.** Enter a complete equation as a node to render it as LaTeX; editing the node restores its Markdown equation source.

@@ -400,6 +400,18 @@
         {
           "path": "src/utils/ExcalidrawExtrasGateway.ts",
           "symbol": "export class ExcalidrawExtrasGateway"
+        },
+        {
+          "path": "src/core/editor/drawingEmbedExtension.ts",
+          "symbol": "createDrawingEmbedExtension"
+        },
+        {
+          "path": "src/core/managers/DrawingEmbedControls.ts",
+          "symbol": "export class DrawingEmbedControls"
+        },
+        {
+          "path": "src/shared/Dialogs/DrawingEmbedPreviewModal.ts",
+          "symbol": "export class DrawingEmbedPreviewModal"
         }
       ],
       "tests": [
@@ -582,6 +594,75 @@
             "node:scripts/testing/markdownEmbeds.test.mjs::PDF postprocessing claims drawing images before native embed discovery",
             "node:scripts/testing/markdownEmbeds.test.mjs::synchronous embed ownership preserves native text and hybrid Markdown"
           ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/embedDimensions.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/embedDimensions.source.test.mjs::the established alias/style and percentage grammar remains intact"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/embedSource.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/embedSource.source.test.mjs::only the bound repeated occurrence changes, with one undo and redo step"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/embedPreview.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/embedPreview.source.test.mjs::closing during fullscreen export cancels ownership and discards only the late private payload"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/embedControls.mjs",
+          "cases": [
+            "native:embed-controls:main:PNG",
+            "native:embed-controls:main:SVGIMG",
+            "native:embed-controls:main:SVG",
+            "native:embed-ownership:main",
+            "native:embed-controls:split:PNG",
+            "native:embed-controls:split:SVGIMG",
+            "native:embed-controls:split:SVG",
+            "native:embed-ownership:split",
+            "native:embed-controls:popout:PNG",
+            "native:embed-controls:popout:SVGIMG",
+            "native:embed-controls:popout:SVG",
+            "native:embed-ownership:popout",
+            "native:embed-controls:phone:PNG",
+            "native:embed-controls:phone:SVGIMG",
+            "native:embed-controls:phone:SVG",
+            "native:embed-ownership:phone",
+            "native:embed-controls:tablet:PNG",
+            "native:embed-controls:tablet:SVGIMG",
+            "native:embed-controls:tablet:SVG",
+            "native:embed-ownership:tablet"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/embedBridge.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/embedBridge.source.test.mjs::invalid render generations cannot remount controls or starve the renderer debounce"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/openDrawingEmbed.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/openDrawingEmbed.source.test.mjs::Open drawing preserves all modifier and complete reference semantics of existing gestures"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/embedControls.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/embedControls.source.test.mjs::resize previews proportionally without writing, then commits once on the owned pointer release",
+            "node:scripts/testing/embedControls.source.test.mjs::Escape, lost capture, stale source and visual replacement cancel without stale writes"
+          ]
         }
       ],
       "fixtures": [
@@ -631,7 +712,9 @@
         {
           "layer": "native",
           "path": "scripts/testing/host/lifecycle.mjs",
-          "cases": ["native:lifecycle-plugin-reload"]
+          "cases": [
+            "native:lifecycle-plugin-reload"
+          ]
         },
         {
           "layer": "source",
@@ -1028,7 +1111,9 @@
         {
           "layer": "native",
           "path": "scripts/testing/host/workflowBundle.mjs",
-          "cases": ["native:workflow-zen-controls-3000"]
+          "cases": [
+            "native:workflow-zen-controls-3000"
+          ]
         },
         {
           "layer": "native",

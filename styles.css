@@ -2529,3 +2529,133 @@ button.excalidraw-font-picker {
   display: flex;
   justify-content: space-between;
 }
+/* Drawing embed controls (#3036). The CodeMirror widget root stays untouched. */
+.excalidraw-embed-controls-frame {
+  position: relative;
+  max-width: 100%;
+}
+.excalidraw-embed-toolbar {
+  position: absolute;
+  left: var(--excalidraw-embed-control-left, 0px);
+  bottom: calc(100% - var(--excalidraw-embed-control-top, 0px) + 4px);
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  width: max-content;
+  max-width: var(--excalidraw-embed-toolbar-width, calc(100vw - 32px));
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  background: var(--background-primary);
+  box-shadow: var(--shadow-s);
+  opacity: 0;
+  pointer-events: none;
+}
+.excalidraw-embed-controls-below > .excalidraw-embed-toolbar {
+  bottom: auto;
+  top: calc(var(--excalidraw-embed-control-below, 100%) + 4px);
+}
+.excalidraw-embed-toolbar button,
+.excalidraw-embed-preview-toolbar button {
+  min-width: 32px;
+  min-height: 32px;
+}
+.excalidraw-embed-resize-handle {
+  position: absolute;
+  right: var(--excalidraw-embed-control-right, -8px);
+  bottom: var(--excalidraw-embed-control-bottom, -8px);
+  z-index: 11;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-s);
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  cursor: nwse-resize;
+  touch-action: none;
+  opacity: 0;
+  pointer-events: none;
+}
+.excalidraw-embed-controls-frame:hover > .excalidraw-embed-toolbar,
+.excalidraw-embed-controls-frame:focus-within > .excalidraw-embed-toolbar,
+.excalidraw-embed-controls-frame:hover > .excalidraw-embed-resize-handle,
+.excalidraw-embed-controls-frame:focus-within > .excalidraw-embed-resize-handle {
+  opacity: 1;
+  pointer-events: auto;
+}
+.excalidraw-embed-resizing {
+  width: var(--excalidraw-embed-resize-width);
+}
+.excalidraw-embed-resizing > .excalidraw-embedded-img {
+  width: 100% !important;
+  height: var(--excalidraw-embed-resize-height) !important;
+  max-width: 100% !important;
+  max-height: none !important;
+  min-height: 0 !important;
+}
+.excalidraw-embed-resizing > .excalidraw-embedded-img svg {
+  width: 100% !important;
+  height: 100% !important;
+  max-height: none !important;
+}
+.excalidraw-embed-preview-modal {
+  width: 95vw;
+  max-width: 1400px;
+}
+.excalidraw-embed-preview-toolbar {
+  display: flex;
+  gap: 4px;
+  padding-bottom: 8px;
+}
+.excalidraw-embed-preview-stage {
+  position: relative;
+  width: 100%;
+  height: 70vh;
+  overflow: hidden;
+  background: var(--background-secondary);
+  border-radius: var(--radius-m);
+  touch-action: none;
+  cursor: grab;
+}
+.excalidraw-embed-preview-surface {
+  width: 100%;
+  height: 100%;
+  transform-origin: center;
+  pointer-events: none;
+}
+.excalidraw-embed-preview-surface > *,
+.excalidraw-embed-preview-surface svg {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+  object-fit: contain;
+  pointer-events: none;
+}
+.excalidraw-embed-preview-status {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+@media (hover: none), (pointer: coarse) {
+  .excalidraw-embed-controls-frame > .excalidraw-embed-toolbar,
+  .excalidraw-embed-controls-frame > .excalidraw-embed-resize-handle {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+.is-mobile .excalidraw-embed-toolbar button,
+.is-mobile .excalidraw-embed-preview-toolbar button,
+.is-mobile .excalidraw-embed-resize-handle {
+  min-width: 44px;
+  min-height: 44px;
+}
+.is-mobile .excalidraw-embed-toolbar,
+.is-mobile .excalidraw-embed-resize-handle {
+  opacity: 1;
+  pointer-events: auto;
+}

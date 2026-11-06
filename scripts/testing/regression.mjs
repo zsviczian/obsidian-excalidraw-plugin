@@ -21,17 +21,19 @@ import { coverageChanges } from "./coverageChanges.mjs";
 import { workflowBundleCaseIds } from "./host/workflowBundle.mjs";
 import { textSaveShortcutCaseIds } from "./host/textSaveShortcut.mjs";
 import { codeCardCaseIds } from "./host/codeCards.mjs";
+import { embedControlCaseIds, embedControlDeviceCaseIds } from "./host/embedControls.mjs";
 import { kplexOntologyCaseIds, kplexOntologyDeviceCaseIds } from "./host/kplexOntology.mjs";
 
 export const requiredDeviceCases = [
   ...deviceProfiles(),
   ...breakpointProfiles(),
-].map((profile) => "native:device:" + profile.id).concat(kplexOntologyDeviceCaseIds);
+].map((profile) => "native:device:" + profile.id).concat(kplexOntologyDeviceCaseIds, embedControlDeviceCaseIds);
 
 export const requiredNativeCases = [
   ...workflowBundleCaseIds,
   ...textSaveShortcutCaseIds,
   ...codeCardCaseIds,
+  ...embedControlCaseIds,
   ...kplexOntologyCaseIds,
   ...behavioralCases().map((row) => row.testId),
   ...["image-url", "image-import"].flatMap((action) =>
