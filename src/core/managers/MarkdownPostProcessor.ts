@@ -65,6 +65,7 @@ let plugin: ExcalidrawPlugin;
 let app: App;
 let vault: Vault;
 let metadataCache: MetadataCache;
+let readingControls: Set<DrawingEmbedControls> | null = null;
 
 const getDefaultWidth = (plugin: ExcalidrawPlugin): string => {
   const width = parseInt(plugin.settings.width);
@@ -110,6 +111,15 @@ export const initializeMarkdownPostProcessor = (p: ExcalidrawPlugin) => {
   app = plugin.app;
   vault = app.vault;
   metadataCache = app.metadataCache;
+  // Render contexts may outlive plugin unload. One plugin-owned registry closes
+  // their controls/viewers; context cleanup removes completed owners promptly.
+  const owners = new Set<DrawingEmbedControls>();
+  readingControls = owners;
+  p.register(() => {
+    for (const controls of [...owners]) controls.unload();
+    owners.clear();
+    if (readingControls === owners) readingControls = null;
+  });
 };
 
 const _getPNG = async ({
@@ -823,6 +833,7 @@ const processReadingMode = async (
   showControls: boolean = false,
 ) => {
   //We are processing a non-excalidraw file in reading mode
+  const renderPlugin = plugin;
   //Embedded files will be displayed in an .internal-embed container
 
   //Iterating all the containers in the file to check which one is an excalidraw drawing
@@ -843,8 +854,8 @@ const processReadingMode = async (
     //then lets replace the .internal-embed with the generated PNG or SVG image
     if (file) {
       promises.push(
-        getGlobalTaskQueue(plugin).addTask(async () => {
-          if (!maybeDrawing.isConnected) {
+        getGlobalTaskQueue(renderPlugin).addTask(async () => {
+          if (!renderPlugin._loaded || plugin !== renderPlugin || !maybeDrawing.isConnected) {
             return;
           }
 
@@ -854,7 +865,7 @@ const processReadingMode = async (
           }
 
           // Ensure we don't attempt to append onto a detached DOM tree
-          if (!maybeDrawing.isConnected) {
+          if (!renderPlugin._loaded || plugin !== renderPlugin || !maybeDrawing.isConnected) {
             discardImage(imgDiv);
             return;
           }
@@ -862,8 +873,13 @@ const processReadingMode = async (
           maybeDrawing.parentElement.replaceChild(imgDiv, maybeDrawing);
           const image = imgDiv.querySelector(".excalidraw-embedded-img");
           const actions = image && getDrawingEmbedActions(image);
-          if (showControls && actions && !imgDiv.closest(".cm-content, .markdown-embed, .hover-popover, .canvas-node-content, .print")) {
-            ctx.addChild(new DrawingEmbedControls(imgDiv, actions));
+          const owners = readingControls;
+          if (showControls && owners && actions?.isCurrent() && !imgDiv.closest(".cm-content, .markdown-embed, .hover-popover, .canvas-node-content, .print")) {
+            const controls = new DrawingEmbedControls(imgDiv, actions);
+            owners.add(controls);
+            controls.register(() => owners.delete(controls));
+            try { ctx.addChild(controls); }
+            catch (error) { owners.delete(controls); controls.unload(); throw error; }
           }
         }),
       );

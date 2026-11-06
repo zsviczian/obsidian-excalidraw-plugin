@@ -33,6 +33,11 @@ cancels gestures; late exports are discarded. Open drawing and the existing
 double-click/long-press gestures share the same navigation helper, including mask
 prompts and modifier/reference behavior.
 
+Reading-mode controls have one plugin-owned registry in addition to their render
+context lifetime. Context cleanup removes each owner from the registry, and
+plugin unload closes any remaining controls/viewers. A Reading export completing
+after plugin unload is discarded before touching the document.
+
 No dependency, release version, fork or Extras change is required. The unmerged
 area-padding PR #2868 is not a dependency.
 

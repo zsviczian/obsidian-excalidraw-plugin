@@ -14,7 +14,7 @@ const deferred = () => {
 };
 
 function fixture() {
-  const observers = [], timers = new Map(), intervals = new Map(), jobs = [], requests = [], errors = [], released = [], loaders = [], rasters = [], controls = [];
+  const observers = [], timers = new Map(), intervals = new Map(), jobs = [], requests = [], errors = [], released = [], loaders = [], rasters = [], controls = [], controlInstances = [], pluginCleanups = [];
   let cacheReady = false;
   const actions = new WeakMap();
   let timerId = 0;
@@ -83,6 +83,7 @@ function fixture() {
   const frontmatters = new Map();
   const plugin = {
     _loaded: true,
+    register: callback => pluginCleanups.push(callback),
     awaitInit: async () => {},
     awaitSettings: async () => {},
     settings: { width: "400", height: "", renderImageInMarkdownReadingMode: true, renderImageInMarkdownToPDF: true },
@@ -94,7 +95,7 @@ function fixture() {
   };
   const queue = { addTask: task => new Promise((resolve, reject) => jobs.push(async () => { try { await task(); resolve(); } catch (e) { reject(e); } })) };
   const image = (name = "result") => {
-    const div = new Element(), img = new Element("excalidraw-embedded-img", "img"); img.src = `blob:${name}`; div.appendChild(img); actions.set(img, { target: targetFile.path }); return div;
+    const div = new Element(), img = new Element("excalidraw-embedded-img", "img"); img.src = `blob:${name}`; div.appendChild(img); actions.set(img, { target: targetFile.path, isCurrent: () => plugin._loaded }); return div;
   };
   const createImage = async (attr, onCanvas, embedEl, isRenderActive) => {
     const result = deferred(); requests.push({ ...result, attr, isRenderActive }); return result.promise;
@@ -103,7 +104,8 @@ function fixture() {
     obsidian: { TFile, MarkdownRenderChild: RenderChild },
     "./drawingEmbedActions": { getDrawingEmbedActions: element => actions.get(element) },
     "./DrawingEmbedControls": { DrawingEmbedControls: class extends RenderChild {
-      constructor(...args) { super(args[0]); controls.push(args); }
+      constructor(...args) { super(args[0]); controls.push(args); controlInstances.push(this); this.unloadCalls = 0; }
+      unload() { this.unloadCalls++; super.unload(); }
       onload() {} onunload() {}
     } },
     "src/shared/GlobalTaskQueue": { getGlobalTaskQueue: () => queue },
@@ -151,8 +153,30 @@ function fixture() {
   const flushTimers = () => { for (const [id, callback] of timers) { timers.delete(id); callback(); } };
   const start = () => { assert.ok(jobs.length); const done = jobs.shift()(); return done; };
   const settle = async (name = "result", request = requests.at(-1)) => { const result = image(name); request.resolve(result); await Promise.resolve(); return result; };
-  return { processor, plugin, container, ctx, el, children, render, jobs, requests, errors, released, observers, timers, intervals, loaders, frontmatters, flushTimers, start, settle, image, Element, rasters, controls, cacheReady: value => cacheReady = value };
+  return { processor, plugin, container, ctx, el, children, render, jobs, requests, errors, released, observers, timers, intervals, loaders, frontmatters, flushTimers, start, settle, image, Element, rasters, controls, controlInstances, cacheReady: value => cacheReady = value,
+    unloadPlugin: () => { plugin._loaded = false; for (const callback of pluginCleanups.splice(0)) callback(); } };
 }
+
+test("plugin unload releases Reading controls and context cleanup removes owners from its registry", async () => {
+  for (const contextFirst of [false, true]) {
+    const f = fixture(), parent = new f.Element(), embed = parent.appendChild(new f.Element("internal-embed"));
+    embed.setAttribute("src", "target.excalidraw.md");
+    const rendered = f.processor.processReadingMode([embed], f.ctx, true), job = f.start();
+    await f.settle(); await job; await rendered;
+    const controls = f.controlInstances[0]; assert.equal(controls._loaded, true);
+    if (contextFirst) controls.unload();
+    f.unloadPlugin(); assert.equal(controls._loaded, false); assert.equal(controls.unloadCalls, 1);
+  }
+});
+
+test("Reading export finishing after plugin unload is discarded without mounting controls", async () => {
+  const f = fixture(), parent = new f.Element(), embed = parent.appendChild(new f.Element("internal-embed"));
+  embed.setAttribute("src", "target.excalidraw.md");
+  const rendered = f.processor.processReadingMode([embed], f.ctx, true), job = f.start();
+  f.unloadPlugin(); await f.settle("retired-reading-export"); await job; await rendered;
+  assert.equal(parent.children[0], embed); assert.equal(f.controls.length, 0);
+  assert.ok(f.released.includes("blob:retired-reading-export"));
+});
 
 test("fullscreen image generation bypasses shared cache and cancels without an embed DOM node", async () => {
   const f = fixture(); f.cacheReady(true); f.plugin.settings.previewImageType = "PNG";

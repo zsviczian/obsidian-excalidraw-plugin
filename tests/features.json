@@ -592,7 +592,9 @@
           "path": "scripts/testing/markdownEmbeds.test.mjs",
           "cases": [
             "node:scripts/testing/markdownEmbeds.test.mjs::PDF postprocessing claims drawing images before native embed discovery",
-            "node:scripts/testing/markdownEmbeds.test.mjs::synchronous embed ownership preserves native text and hybrid Markdown"
+            "node:scripts/testing/markdownEmbeds.test.mjs::synchronous embed ownership preserves native text and hybrid Markdown",
+            "node:scripts/testing/markdownEmbeds.test.mjs::plugin unload releases Reading controls and context cleanup removes owners from its registry",
+            "node:scripts/testing/markdownEmbeds.test.mjs::Reading export finishing after plugin unload is discarded without mounting controls"
           ]
         },
         {
