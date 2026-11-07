@@ -615,7 +615,9 @@
           "layer": "source",
           "path": "scripts/testing/embedPreview.source.test.mjs",
           "cases": [
-            "node:scripts/testing/embedPreview.source.test.mjs::closing during fullscreen export cancels ownership and discards only the late private payload"
+            "node:scripts/testing/embedPreview.source.test.mjs::closing during fullscreen export cancels ownership and discards only the late private payload",
+            "node:scripts/testing/embedPreview.source.test.mjs::preview pencil and modifier clicks preserve modifiers and close before opening the drawing",
+            "node:scripts/testing/embedPreview.source.test.mjs::dragging a viewport preview restores movable bounds and releases its pointer ownership"
           ]
         },
         {
@@ -673,7 +675,8 @@
           "layer": "source",
           "path": "scripts/testing/openDrawingEmbed.source.test.mjs",
           "cases": [
-            "node:scripts/testing/openDrawingEmbed.source.test.mjs::Open drawing preserves all modifier and complete reference semantics of existing gestures"
+            "node:scripts/testing/openDrawingEmbed.source.test.mjs::Open drawing preserves all modifier and complete reference semantics of existing gestures",
+            "node:scripts/testing/openDrawingEmbed.source.test.mjs::open tooltips follow live platform settings and omit unsupported mobile popouts"
           ]
         },
         {

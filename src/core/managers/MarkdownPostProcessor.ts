@@ -1,6 +1,6 @@
 import { DrawingEmbedControls } from "./DrawingEmbedControls";
 import { getDrawingEmbedActions, setDrawingEmbedActions } from "./drawingEmbedActions";
-import { openDrawingEmbed } from "./openDrawingEmbed";
+import { getDrawingEmbedOpenTooltip, openDrawingEmbed } from "./openDrawingEmbed";
 import { parseEmbedAlias } from "../editor/embedDimensions";
 import {
   App,
@@ -654,7 +654,8 @@ const createImgElement = async (
   imgOrDiv.setAttribute("onCanvas", onCanvas ? "true" : "false");
 
   let timer: number;
-  const clickEvent = (ev: PointerEvent) => {
+  const clickEvent = (ev: MouseEvent) => {
+    if (isRenderActive && !isRenderActive()) return;
     if (
       !(isInstanceOfHTMLElement(ev.target) || isInstanceOfSVGElement(ev.target))
     ) {
@@ -668,7 +669,7 @@ const createImgElement = async (
       return;
     }
     const src = imgOrDiv.getAttribute("fileSource");
-    if (src) openDrawingEmbed(plugin, src, ev);
+    if (src) openDrawingEmbed(plugin, src, ev, imgOrDiv);
   };
   //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1003
   let pointerDownEvent: PointerEvent | null = null;
@@ -691,6 +692,7 @@ const createImgElement = async (
     }
   });
   eventElement.addEventListener("pointerdown", (ev) => {
+    if (ev.ctrlKey || ev.metaKey || ev.altKey || ev.shiftKey) return;
     if (imgOrDiv?.parentElement?.hasClass("canvas-node-content")) {
       return;
     }
@@ -709,7 +711,13 @@ const createImgElement = async (
     }
     timer = null;
   });
-  eventElement.addEventListener("dblclick", clickEvent);
+  eventElement.addEventListener("click", ev => {
+    if (!(ev.ctrlKey || ev.metaKey || ev.altKey || ev.shiftKey) || onCanvas) return;
+    ev.preventDefault(); ev.stopPropagation(); clickEvent(ev);
+  });
+  eventElement.addEventListener("dblclick", ev => {
+    if (!(ev.ctrlKey || ev.metaKey || ev.altKey || ev.shiftKey)) clickEvent(ev);
+  });
   eventElement.addEventListener(RERENDER_EVENT, (e) => {
     e.stopPropagation();
     void getGlobalTaskQueue(plugin).addTask(async () => {
@@ -772,7 +780,8 @@ const createImgElement = async (
     (!isRenderActive || isRenderActive());
   if (!onCanvas && drawingFile) setDrawingEmbedActions(imgOrDiv, {
     app: app, target: attr.fname, isCurrent,
-    openDrawing: event => openDrawingEmbed(currentPlugin, attr.fname, event),
+    openDrawing: event => openDrawingEmbed(currentPlugin, attr.fname, event, imgOrDiv),
+    getOpenTooltip: () => getDrawingEmbedOpenTooltip(currentPlugin.settings),
     // A fullscreen viewer owns a fresh payload and must never revoke an inline
     // embed's cached URL. Keep its crop/reference/theme through the same exporter.
     create: async active => {

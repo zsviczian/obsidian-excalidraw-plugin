@@ -4,6 +4,7 @@ import type { DrawingEmbedActions, EmbedSourceBinding } from "src/types/drawingE
 import { DrawingEmbedPreviewModal } from "src/shared/Dialogs/DrawingEmbedPreviewModal";
 import { t } from "src/lang/helpers";
 import { removeStyle, setStyle } from "src/utils/styleUtils";
+import { labelDrawingEmbedControl } from "./drawingEmbedActions";
 
 interface ResizeGesture {
   owner: Component;
@@ -41,14 +42,17 @@ export class DrawingEmbedControls extends MarkdownRenderChild {
     this.active = true;
     const frame = this.containerEl, doc = frame.ownerDocument, win = doc.defaultView;
     frame.addClass("excalidraw-embed-controls-frame");
-    this.toolbar = frame.createDiv({ cls: "excalidraw-embed-toolbar", attr: { role: "toolbar", "aria-label": t("EMBED_ACTIONS") } });
+    this.toolbar = frame.createDiv({ cls: "excalidraw-embed-toolbar", attr: { role: "toolbar" } });
+    labelDrawingEmbedControl(this.toolbar, t("EMBED_ACTIONS"));
     // Native table cells also handle compatibility mouse/touch events. A
     // toolbar press must not activate the cell editor underneath our action.
     this.registerDomEvent(this.toolbar, "mousedown", event => event.stopPropagation());
     this.registerDomEvent(this.toolbar, "touchstart", event => event.stopPropagation());
     const button = (action: string, icon: string, label: string, callback: (event: MouseEvent) => void) => {
       const element = this.toolbar.createEl("button", { cls: "clickable-icon", attr: { type: "button", "aria-label": label, "data-excalidraw-embed-action": action } });
-      setIcon(element, icon); setTooltip(element, label);
+      setIcon(element, icon);
+      if (action === "preview") labelDrawingEmbedControl(element, label);
+      else setTooltip(element, label);
       this.registerDomEvent(element, "pointerdown", event => event.stopPropagation());
       this.registerDomEvent(element, "click", event => { event.preventDefault(); event.stopPropagation(); callback(event); });
       return element;
@@ -59,12 +63,14 @@ export class DrawingEmbedControls extends MarkdownRenderChild {
       const modal = new DrawingEmbedPreviewModal(this.actions.app, this.actions, opener, () => this.modals.delete(modal));
       this.modals.add(modal); modal.open();
     });
-    button("open", "pencil", t("EMBED_OPEN_DRAWING"), event => { if (this.current()) this.actions.openDrawing(event); });
+    const open = button("open", "pencil", this.actions.getOpenTooltip(), event => { if (this.current()) this.actions.openDrawing(event); });
+    this.registerDomEvent(open, "pointerenter", () => setTooltip(open, this.actions.getOpenTooltip()));
+    this.registerDomEvent(open, "focus", () => setTooltip(open, this.actions.getOpenTooltip()));
     if (this.source) {
       button("edit", "code-2", t("EMBED_EDIT_SOURCE"), () => { if (!this.source.select()) this.changed(); });
       button("reset", "rotate-ccw", t("EMBED_RESET_SIZE"), () => this.reset());
       this.handle = frame.createEl("button", { cls: "excalidraw-embed-resize-handle clickable-icon", attr: { type: "button", "aria-label": t("EMBED_RESIZE"), "data-excalidraw-embed-action": "resize" } });
-      setIcon(this.handle, "scaling"); setTooltip(this.handle, t("EMBED_RESIZE"));
+      labelDrawingEmbedControl(this.handle, t("EMBED_RESIZE"));
       this.registerDomEvent(this.handle, "pointerdown", event => this.pointerStart(event));
       this.registerDomEvent(this.handle, "dblclick", event => { event.preventDefault(); event.stopPropagation(); this.reset(); });
       this.registerDomEvent(this.handle, "keydown", event => this.keyboard(event));
@@ -129,18 +135,20 @@ export class DrawingEmbedControls extends MarkdownRenderChild {
     const top = editor?.getBoundingClientRect().top ?? 0;
     // Obsidian's image widget uses contain: paint. Keep the normal toolbar
     // inside its image; small previews need an in-flow row below instead.
+    const right = frame.closest(".cm-content, .markdown-preview-view")?.getBoundingClientRect().right ?? frame.ownerDocument.defaultView.innerWidth;
+    setStyle(frame, { "--excalidraw-embed-toolbar-width": `${Math.max(44, right - visual.left - 8)}px` });
     const toolbar = this.toolbar.getBoundingClientRect();
-    frame.toggleClass("excalidraw-embed-controls-below", visual.width < Math.max(160, toolbar.width) || visual.height < Math.max(48, toolbar.height));
+    frame.toggleClass("excalidraw-embed-controls-below", visual.width < toolbar.width + 8 || visual.height < toolbar.height + 8);
     // Switching to/from an in-flow row changes the frame's height immediately.
     const bounds = frame.getBoundingClientRect();
     visual = this.visual?.getBoundingClientRect() ?? bounds;
-    const right = frame.closest(".cm-content, .markdown-preview-view")?.getBoundingClientRect().right ?? frame.ownerDocument.defaultView.innerWidth;
+    const handle = this.handle?.getBoundingClientRect();
     setStyle(frame, {
-      "--excalidraw-embed-toolbar-width": `${Math.max(44, right - visual.left - 16)}px`,
-      "--excalidraw-embed-control-left": `${visual.left - bounds.left}px`,
-      "--excalidraw-embed-control-top": `${Math.max(visual.top, top) - bounds.top}px`,
-      "--excalidraw-embed-control-right": `${bounds.right - visual.right - 8}px`,
-      "--excalidraw-embed-control-bottom": `${bounds.bottom - visual.bottom - 8}px`,
+      "--excalidraw-embed-toolbar-row-width": `${toolbar.width}px`,
+      "--excalidraw-embed-toolbar-right": `${Math.max(0, bounds.right - visual.right + 4)}px`,
+      "--excalidraw-embed-control-top": `${Math.max(visual.top, top) - bounds.top + 4}px`,
+      "--excalidraw-embed-control-right": `${Math.max(0, Math.min(bounds.width - (handle?.width ?? 0), bounds.right - visual.right + 2))}px`,
+      "--excalidraw-embed-control-bottom": `${Math.max(0, Math.min(bounds.height - (handle?.height ?? 0), bounds.bottom - visual.bottom + 2))}px`,
     });
   }
 
@@ -226,6 +234,6 @@ export class DrawingEmbedControls extends MarkdownRenderChild {
     for (const modal of [...this.modals]) modal.close();
     this.modals.clear(); this.toolbar?.remove(); this.handle?.remove();
     this.containerEl.removeClass("excalidraw-embed-controls-frame", "excalidraw-embed-controls-below");
-    removeStyle(this.containerEl, ["--excalidraw-embed-toolbar-width", "--excalidraw-embed-resize-width", "--excalidraw-embed-resize-height", "--excalidraw-embed-control-left", "--excalidraw-embed-control-top", "--excalidraw-embed-control-right", "--excalidraw-embed-control-bottom"]);
+    removeStyle(this.containerEl, ["--excalidraw-embed-toolbar-width", "--excalidraw-embed-toolbar-row-width", "--excalidraw-embed-toolbar-right", "--excalidraw-embed-resize-width", "--excalidraw-embed-resize-height", "--excalidraw-embed-control-top", "--excalidraw-embed-control-right", "--excalidraw-embed-control-bottom"]);
   }
 }

@@ -17,13 +17,14 @@ declare const PLUGIN_VERSION: string;
 // English
 export default {
   // Drawing embed controls (#3036)
+  EMBED_OPEN_MODIFIER: "{keys}+click: {action}",
   EMBED_ACTIONS: "Drawing embed actions",
   EMBED_OPEN_DRAWING: "Open drawing",
   EMBED_EDIT_SOURCE: "Edit embed syntax",
   EMBED_RESET_SIZE: "Reset embed size",
   EMBED_RESIZE: "Resize drawing embed. Use arrow keys to resize, Home to reset, or Escape to cancel.",
   EMBED_SOURCE_CHANGED: "This embed changed. Wait for its preview to refresh and try again.",
-  EMBED_PREVIEW_TITLE: "Fullscreen drawing preview",
+  EMBED_PREVIEW_TITLE: "Drawing preview",
   EMBED_PREVIEW_ZOOM_OUT: "Zoom out",
   EMBED_PREVIEW_ZOOM_IN: "Zoom in",
   EMBED_PREVIEW_FIT: "Fit preview",

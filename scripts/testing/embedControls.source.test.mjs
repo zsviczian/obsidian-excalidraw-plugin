@@ -15,9 +15,11 @@ async function fixture(text = "![[Map|Alias|180x130|left]]") {
   const content = new dom.Element({ cls: "cm-content" }), frame = content.createDiv();
   const image = frame.createEl("img", { cls: "excalidraw-embedded-img" }); image.bounds = { left: 0, top: 0, right: 180, bottom: 130, width: 180, height: 130 };
   const source = { text, isCurrent: () => sourceCurrent, replace: value => { if (!sourceCurrent) return false; writes.push(value); return true; }, select: () => { selects++; return sourceCurrent; } };
-  const controls = new DrawingEmbedControls(frame, { app: {}, target: "Map", isCurrent: () => current, openDrawing: () => opens++ }, source); controls.load();
+  const controls = new DrawingEmbedControls(frame, { app: {}, target: "Map", isCurrent: () => current, openDrawing: () => opens++, getOpenTooltip: () => "configured open shortcuts" }, source); controls.load();
   const handle = frame.querySelector(".excalidraw-embed-resize-handle"), toolbar = frame.querySelector(".excalidraw-embed-toolbar");
-  return { ...dom, frame, image, handle, toolbar, controls, writes, source, notices, modals, current: value => current = value, sourceCurrent: value => sourceCurrent = value, selects: () => selects, opens: () => opens,
+  handle.bounds = { left: 156, top: 106, right: 178, bottom: 128, width: 22, height: 22 };
+  const buttons = toolbar.children.filter(element => element.tagName === "BUTTON");
+  return { ...dom, frame, image, handle, toolbar, buttons, controls, writes, source, notices, modals, current: value => current = value, sourceCurrent: value => sourceCurrent = value, selects: () => selects, opens: () => opens,
     close: () => { controls.unload(); graph.close(); assert.equal(dom.listenerCount(), 0); assert.ok(dom.observers.every(observer => !observer.connected)); } };
 }
 function start(f) { f.handle.fire("pointerdown", { button: 0, pointerId: 1, clientX: 180, clientY: 130 }); }
@@ -31,7 +33,7 @@ test("toolbar compatibility events cannot activate the surrounding native table 
       assert.equal(stopped, true); assert.equal(event.prevented, undefined);
     }
     assert.deepEqual(f.writes, []); assert.equal(f.selects(), 0);
-    f.toolbar.children[2].fire("click"); assert.equal(f.selects(), 1);
+    f.buttons[2].fire("click"); assert.equal(f.selects(), 1);
   } finally { f.close(); }
 });
 
@@ -74,9 +76,9 @@ test("keyboard resizing commits once on release, keeps shortcuts, and reset pres
     f.handle.fire("keydown", { key: "ArrowRight" }); f.handle.fire("keydown", { key: "ArrowRight" }); assert.deepEqual(f.writes, []);
     f.handle.fire("keyup", { key: "ArrowRight" }); assert.deepEqual(f.writes, ["![[Map|Alias|196x142|left]]"]);
     f.handle.fire("keydown", { key: "Home" }); assert.equal(f.writes.at(-1), "![[Map|Alias|left]]");
-    f.toolbar.children[2].fire("click"); assert.equal(f.selects(), 1);
-    f.toolbar.children[1].fire("click"); assert.equal(f.opens(), 1);
-    f.toolbar.children[0].fire("click"); assert.equal(f.modals[0].active, true);
+    f.buttons[2].fire("click"); assert.equal(f.selects(), 1);
+    f.buttons[1].fire("click"); assert.equal(f.opens(), 1);
+    f.buttons[0].fire("click"); assert.equal(f.modals[0].active, true);
   } finally { f.close(); }
   assert.equal(f.modals[0].active, false);
 });
@@ -88,12 +90,12 @@ test("cancel and viewport changes restore controls to the visible image corner",
     f.frame.getBoundingClientRect = () => f.frame.hasClass("excalidraw-embed-resizing") ? { ...originalFrame, right: 220, width: 220, bottom: 159, height: 159 } : originalFrame;
     f.image.getBoundingClientRect = () => f.frame.hasClass("excalidraw-embed-resizing") ? { ...originalImage, right: 220, width: 220, bottom: 159, height: 159 } : originalImage;
     start(f); f.fire(f.window, "pointermove", { pointerId: 1, clientX: 220, clientY: 130 });
-    assert.equal(f.frame.style["--excalidraw-embed-control-right"], "-8px");
+    assert.equal(f.frame.style["--excalidraw-embed-control-right"], "2px");
     f.fire(f.window, "keydown", { key: "Escape" });
-    assert.equal(f.frame.style["--excalidraw-embed-control-right"], "512px"); assert.deepEqual(f.writes, []);
+    assert.equal(f.frame.style["--excalidraw-embed-control-right"], "522px"); assert.deepEqual(f.writes, []);
     originalImage.left = 50; originalImage.right = 230; f.fire(f.window, "resize");
-    assert.equal(f.frame.style["--excalidraw-embed-control-left"], "50px");
-    assert.equal(f.frame.style["--excalidraw-embed-control-right"], "462px");
+    assert.equal(f.frame.style["--excalidraw-embed-toolbar-right"], "474px");
+    assert.equal(f.frame.style["--excalidraw-embed-control-right"], "472px");
   } finally { f.close(); }
 });
 
@@ -125,8 +127,8 @@ test("late image sizing leaves the toolbar inside paint containment and remeasur
     observer.fire(); observer.fire();
     assert.equal(f.pendingFrames(), 1); assert.equal(f.frame.hasClass("excalidraw-embed-controls-below"), true);
     f.flushFrames(); assert.equal(f.frame.hasClass("excalidraw-embed-controls-below"), false);
-    assert.equal(f.frame.style["--excalidraw-embed-control-top"], "0px");
-    assert.equal(f.frame.style["--excalidraw-embed-control-bottom"], "-8px");
+    assert.equal(f.frame.style["--excalidraw-embed-control-top"], "4px");
+    assert.equal(f.frame.style["--excalidraw-embed-control-bottom"], "2px");
     observer.fire(); assert.equal(f.pendingFrames(), 1);
   } finally { f.close(); }
   assert.equal(f.pendingFrames(), 0); f.flushFrames();

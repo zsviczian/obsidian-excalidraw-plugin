@@ -2536,19 +2536,18 @@ button.excalidraw-font-picker {
 }
 .excalidraw-embed-toolbar {
   position: absolute;
-  left: var(--excalidraw-embed-control-left, 0px);
+  right: var(--excalidraw-embed-toolbar-right, 4px);
   top: var(--excalidraw-embed-control-top, 0px);
   z-index: 10;
   display: flex;
   flex-wrap: wrap;
   width: max-content;
   max-width: var(--excalidraw-embed-toolbar-width, calc(100vw - 32px));
-  gap: 2px;
-  padding: 3px;
+  gap: 0;
+  padding: 2px;
   border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-m);
-  background: var(--background-primary);
-  box-shadow: var(--shadow-s);
+  border-radius: var(--radius-s);
+  background: var(--background-primary-alt);
   opacity: 0;
   pointer-events: none;
 }
@@ -2556,25 +2555,61 @@ button.excalidraw-font-picker {
   position: relative;
   bottom: auto;
   top: auto;
+  right: auto;
+  clear: both;
+  margin-top: 4px;
+  margin-left: auto;
 }
 .excalidraw-embed-toolbar button,
 .excalidraw-embed-preview-toolbar button {
-  min-width: 32px;
-  min-height: 32px;
+  min-width: 28px;
+  min-height: 28px;
+  padding: 4px;
+  color: var(--icon-color);
 }
 .excalidraw-embed-resize-handle {
   position: absolute;
-  right: var(--excalidraw-embed-control-right, -8px);
-  bottom: var(--excalidraw-embed-control-bottom, -8px);
+  right: var(--excalidraw-embed-control-right, 2px);
+  bottom: var(--excalidraw-embed-control-bottom, 2px);
   z-index: 11;
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-s);
-  background: var(--background-primary);
-  border: 1px solid var(--background-modifier-border);
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  min-height: 22px;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  border: 0;
   cursor: nwse-resize;
   opacity: 0;
   pointer-events: none;
+}
+.excalidraw-embed-resize-handle::after {
+  content: "";
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid var(--color-base-50, #888);
+  border-bottom: 2px solid var(--color-base-50, #888);
+  border-bottom-right-radius: 3px;
+  pointer-events: none;
+}
+.excalidraw-embed-resize-handle.clickable-icon:hover {
+  background: transparent;
+}
+.excalidraw-embed-resizing > .excalidraw-embed-resize-handle::after {
+  border-color: var(--interactive-accent);
+}
+.excalidraw-embed-accessible-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 /* Outrank the host's body.emulate-mobile .clickable-icon touch rule. */
 .excalidraw-embed-controls-frame > .excalidraw-embed-resize-handle.clickable-icon {
@@ -2593,32 +2628,78 @@ button.excalidraw-font-picker {
   display: block;
   width: var(--excalidraw-embed-resize-width);
 }
+.excalidraw-embed-controls-frame.excalidraw-embed-controls-below.excalidraw-embed-resizing {
+  width: max(var(--excalidraw-embed-resize-width), var(--excalidraw-embed-toolbar-row-width));
+}
 .excalidraw-embed-resizing > .excalidraw-embedded-img {
   display: block;
-  width: 100% !important;
+  float: none;
+  width: var(--excalidraw-embed-resize-width) !important;
   height: var(--excalidraw-embed-resize-height) !important;
   max-width: 100% !important;
   max-height: none !important;
   min-height: 0 !important;
+}
+.excalidraw-embed-controls-frame.excalidraw-svg-right.excalidraw-embed-resizing > .excalidraw-embedded-img {
+  margin-left: auto;
 }
 .excalidraw-embed-resizing > .excalidraw-embedded-img svg {
   width: 100% !important;
   height: 100% !important;
   max-height: none !important;
 }
-.excalidraw-embed-preview-modal {
-  width: 95vw;
-  max-width: 1400px;
+.excalidraw-embed-preview-container {
+  padding: 0;
+}
+.excalidraw-embed-preview-container .modal.excalidraw-embed-preview-modal {
+  position: absolute;
+  left: var(--excalidraw-preview-left, 0px);
+  top: var(--excalidraw-preview-top, 0px);
+  width: 100vw;
+  height: 100vh;
+  max-width: calc(100vw - var(--excalidraw-preview-left, 0px));
+  max-height: calc(100vh - var(--excalidraw-preview-top, 0px));
+  min-width: min(280px, 100vw);
+  min-height: min(200px, 100vh);
+  margin: 0;
+  padding: 12px;
+  transform: none;
+  box-sizing: border-box;
+  border-radius: 0;
+  overflow: hidden;
+  resize: both;
+  display: flex;
+  flex-direction: column;
+}
+.excalidraw-embed-preview-modal .modal-header {
+  flex: 0 0 auto;
+}
+.excalidraw-embed-preview-titlebar {
+  cursor: move;
+  touch-action: none;
+  user-select: none;
+  padding-right: 32px;
+}
+.excalidraw-embed-preview-modal .modal-content {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+  margin: 0;
 }
 .excalidraw-embed-preview-toolbar {
   display: flex;
+  flex: 0 0 auto;
   gap: 4px;
   padding-bottom: 8px;
 }
 .excalidraw-embed-preview-stage {
   position: relative;
   width: 100%;
-  height: 70vh;
+  flex: 1 1 0;
+  min-height: 0;
   overflow: hidden;
   background: var(--background-secondary);
   border-radius: var(--radius-m);

@@ -12,13 +12,14 @@ declare const PLUGIN_VERSION: string;
 // 繁體中文
 export default {
   // Drawing embed controls (#3036)
+  EMBED_OPEN_MODIFIER: "{keys}+按一下：{action}",
   EMBED_ACTIONS: "嵌入繪圖操作",
   EMBED_OPEN_DRAWING: "開啟繪圖",
   EMBED_EDIT_SOURCE: "編輯嵌入語法",
   EMBED_RESET_SIZE: "重設嵌入尺寸",
   EMBED_RESIZE: "調整繪圖尺寸。方向鍵調整大小，Home 重設，Escape 取消。",
   EMBED_SOURCE_CHANGED: "此嵌入已變更。請等待預覽重新整理後再試。",
-  EMBED_PREVIEW_TITLE: "全螢幕預覽繪圖",
+  EMBED_PREVIEW_TITLE: "繪圖預覽",
   EMBED_PREVIEW_ZOOM_OUT: "縮小",
   EMBED_PREVIEW_ZOOM_IN: "放大",
   EMBED_PREVIEW_FIT: "符合預覽視窗",

@@ -252,11 +252,33 @@ preservation and fullscreen from Live Preview and Reading mode. Evidence:
 passed. Failed fixture-setup runs remain retained; guarded recovery restored the
 owned test view, retired its completed controller and restored the baseline.
 
-Complete acceptance for this follow-up uses
+The interrupted complete acceptance attempts for this follow-up used
 `.test-work/reports/pr3037-hybrid-portable-final/report.json` and
-`.test-work/reports/pr3037-hybrid-native-final/aggregate.json`. The PR description
-records their actual results and exact commit after completion. Earlier complete
-passes establish the prior runtime, not this new checkpoint.
+`.test-work/reports/pr3037-hybrid-native-final/aggregate.json` as intended final
+report paths. They were stopped at the maintainer's request; partial artifacts
+remain, and final reports may be absent. Earlier complete passes establish the
+prior runtime, not this new checkpoint.
+
+## Control appearance and preview refinement
+
+Maintainer review requested an inset, theme-colored corner grip, compact
+top-right controls, stable small-image controls during resizing, explicit drawing
+navigation for self/reference embeds, and a viewport-sized movable/resizable
+preview with a drawing-edit action. Modifier clicks on inline and preview images
+and pencil actions use the configured navigation rules; pencil help describes
+the live platform-specific settings. Accessible labels for the viewer, toolbars
+and grip no longer create unsolicited hover tooltips.
+
+The follow-up builds successfully. Targeted static lint passes. Regression
+fixtures and coverage mappings are updated but have **not been executed**: the
+maintainer paused testing. The preceding complete runs at `13bac7af` were
+interrupted and do not count as completed acceptance. In particular, the new
+visual geometry, dialog dragging/native resizing and live navigation still need
+focused Obsidian validation when testing resumes. The maintainer reviewed the
+appearance, requested a slightly rounded neutral-gray grip, and authorized merge
+while testing remained paused. The final production bundle is 5,094,032 bytes,
+148,848 bytes below 5 MiB. No personal-vault deployment was performed by the agent
+during this follow-up.
 
 ## Priority review
 

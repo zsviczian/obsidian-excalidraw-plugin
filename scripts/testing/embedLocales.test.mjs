@@ -17,7 +17,7 @@ test("embed controls have complete maintained translations without lossy shell e
       ts.forEachChild(node, visit);
     };
     visit(tree);
-    assert.equal(strings.size, 14, language); expected ??= [...strings.keys()].sort();
+    assert.equal(strings.size, 15, language); expected ??= [...strings.keys()].sort();
     assert.deepEqual([...strings.keys()].sort(), expected, language);
     for (const [key, value] of strings) {
       assert.ok(value.trim()); assert.doesNotMatch(value, /\?|\uFFFD/, language + ": " + key);

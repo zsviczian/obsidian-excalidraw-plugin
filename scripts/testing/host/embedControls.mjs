@@ -167,7 +167,7 @@ async function exerciseEmbedControls(c, env, template, modifier) {
     check(cm.state.doc.toString() === content && !frames()[1].hasClass("excalidraw-embed-resizing"), "Escape committed or retained preview");
     const cancelledFrame = frames()[1], cancelledImage = cancelledFrame.querySelector(".excalidraw-embedded-img");
     const imageCorner = (cancelledImage.querySelector("svg") ?? cancelledImage).getBoundingClientRect(), handleCorner = cancelledFrame.querySelector('[data-excalidraw-embed-action="resize"]').getBoundingClientRect();
-    check(Math.abs(handleCorner.right - imageCorner.right - 8) < 2 && Math.abs(handleCorner.bottom - imageCorner.bottom - 8) < 2, "cancel left the resize handle away from the visible corner");
+    check(Math.abs(handleCorner.right - imageCorner.right + 2) < 2 && Math.abs(handleCorner.bottom - imageCorner.bottom + 2) < 2, "cancel left the resize handle away from the visible inside corner");
     frames()[1].querySelector('[data-excalidraw-embed-action="resize"]').focus();
     await key("ArrowRight", "ArrowRight", 39);
     await c.waitFor(() => cm.state.doc.toString() === content.replace(token + "\n\n" + token, token + "\n\n" + token.replace("|180", "|188")), "keyboard resize commits on key release");

@@ -3,22 +3,25 @@ import assert from "node:assert/strict";
 import test, { after } from "node:test";
 import { sourceHarness } from "./sourceHarness.mjs";
 
-const document = { defaultView: { closed: false }, activeElement: null };
+const document = { defaultView: { closed: false, innerWidth: 800, innerHeight: 600, events: new Map() }, activeElement: null };
 let listeners = 0;
 class Element {
   constructor(options = {}) { this.children = []; this.attrs = { ...options.attr }; this.classes = new Set((options.cls || "").split(" ")); this.events = new Map(); this.style = {}; this.ownerDocument = document; this.isConnected = true; this.captures = new Set(); }
   createDiv(options) { return this.createEl("div", typeof options === "string" ? { cls: options } : options); }
+  createSpan(options) { return this.createEl("span", options); }
   createEl(tag, options) { const el = new Element(options); el.tag = tag; this.append(el); return el; }
   append(el) { el.parent = this; this.children.push(el); }
   addClass(cls) { this.classes.add(cls); }
   setAttribute(key, value) { this.attrs[key] = value; }
+  removeAttribute(key) { delete this.attrs[key]; }
   getAttribute(key) { return this.attrs[key] ?? null; }
   setText(text) { this.text = text; }
   focus() { document.activeElement = this; }
   remove() { this.isConnected = false; if (this.parent) this.parent.children = this.parent.children.filter(el => el !== this); }
   empty() { for (const child of [...this.children]) child.remove(); }
   find(cls) { return this.children.find(el => el.classes.has(cls)) ?? this.children.map(el => el.find(cls)).find(Boolean); }
-  fire(name, event = {}) { const e = { preventDefault() { this.prevented = true; }, ...event }; for (const callback of [...this.events.get(name) || []]) callback(e); return e; }
+  fire(name, event = {}) { const e = { preventDefault() { this.prevented = true; }, stopPropagation() { this.stopped = true; }, ...event }; for (const callback of [...this.events.get(name) || []]) callback(e); return e; }
+  getBoundingClientRect() { return { left: 0, top: 0, right: 800, bottom: 600, width: 800, height: 600 }; }
   setPointerCapture(id) { this.captures.add(id); }
   hasPointerCapture(id) { return this.captures.has(id); }
   releasePointerCapture(id) { this.captures.delete(id); }
@@ -26,6 +29,7 @@ class Element {
 class Component {
   cleanups = [];
   load() {}
+  register(callback) { this.cleanups.push(callback); }
   registerDomEvent(el, event, callback) {
     if (!el.events.has(event)) el.events.set(event, new Set());
     el.events.get(event).add(callback); listeners++;
@@ -34,7 +38,7 @@ class Component {
   unload() { for (const cleanup of this.cleanups.splice(0)) cleanup(); }
 }
 class Modal {
-  constructor() { this.modalEl = new Element(); this.contentEl = this.modalEl.createDiv(); }
+  constructor() { this.containerEl = new Element(); this.modalEl = this.containerEl.createDiv(); this.titleEl = this.modalEl.createDiv(); this.contentEl = this.modalEl.createDiv(); }
   setTitle(title) { this.title = title; }
   open() { this.onOpen(); }
   close() { this.onClose(); this.modalEl.remove(); }
@@ -45,10 +49,10 @@ after(() => graph.close());
 const flush = () => new Promise(resolve => setImmediate(resolve));
 function fixture() {
   let resolve, reject, isCurrent, closed = 0;
-  const discarded = [], opener = new Element(), promise = new Promise((yes, no) => { resolve = yes; reject = no; });
-  const modal = new DrawingEmbedPreviewModal({}, { create: active => { isCurrent = active; return promise; }, discard: el => discarded.push(el) }, opener, () => closed++);
+  const discarded = [], opened = [], opener = new Element(), promise = new Promise((yes, no) => { resolve = yes; reject = no; });
+  const modal = new DrawingEmbedPreviewModal({}, { create: active => { isCurrent = active; return promise; }, discard: el => discarded.push(el), isCurrent: () => true, getOpenTooltip: () => "configured shortcuts", openDrawing: event => opened.push(event) }, opener, () => closed++);
   modal.open();
-  return { modal, opener, resolve, reject, discarded, current: () => isCurrent(), closed: () => closed };
+  return { modal, opener, resolve, reject, discarded, opened, current: () => isCurrent(), closed: () => closed };
 }
 
 test("closing during fullscreen export cancels ownership and discards only the late private payload", async () => {
@@ -79,4 +83,26 @@ test("failed fullscreen export reports failure and a detached opener is never fo
   assert.equal(f.modal.contentEl.find("excalidraw-embed-preview-status").text, "EMBED_PREVIEW_FAILED");
   f.opener.isConnected = false; document.activeElement = null;
   f.modal.close(); assert.equal(document.activeElement, null); assert.equal(listeners, 0); assert.deepEqual(f.discarded, []);
+});
+
+test("preview pencil and modifier clicks preserve modifiers and close before opening the drawing", () => {
+  for (const target of ["pencil", "image"]) {
+    const f = fixture(), stage = f.modal.contentEl.find("excalidraw-embed-preview-stage");
+    const event = { ctrlKey: true, metaKey: true, shiftKey: true, altKey: false };
+    if (target === "pencil") f.modal.contentEl.find("excalidraw-embed-preview-toolbar").children.find(el => el.getAttribute("data-excalidraw-embed-action") === "open").fire("click", event);
+    else stage.fire("click", event);
+    assert.equal(f.closed(), 1); assert.equal(f.opened.length, 1);
+    for (const key of Object.keys(event)) assert.equal(f.opened[0][key], event[key]);
+    assert.equal(listeners, 0);
+  }
+});
+
+test("dragging a viewport preview restores movable bounds and releases its pointer ownership", () => {
+  const f = fixture(), header = f.modal.titleEl;
+  header.fire("pointerdown", { button: 0, pointerId: 7, clientX: 100, clientY: 20 });
+  for (const callback of document.defaultView.events.get("pointermove")) callback({ pointerId: 7, clientX: 120, clientY: 30, preventDefault() {} });
+  assert.equal(f.modal.modalEl.style.width, "680px"); assert.equal(f.modal.modalEl.style.height, "510px");
+  assert.equal(f.modal.modalEl.style["--excalidraw-preview-left"], "35px");
+  assert.equal(f.modal.modalEl.style["--excalidraw-preview-top"], "10px");
+  f.modal.close(); assert.equal(header.captures.size, 0); assert.equal(listeners, 0);
 });

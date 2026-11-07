@@ -17,13 +17,14 @@ declare const PLUGIN_VERSION: string;
 // Español
 export default {
   // Drawing embed controls (#3036)
+  EMBED_OPEN_MODIFIER: "{keys}+clic: {action}",
   EMBED_ACTIONS: "Acciones del dibujo incrustado",
   EMBED_OPEN_DRAWING: "Abrir dibujo",
   EMBED_EDIT_SOURCE: "Editar sintaxis de la inserción",
   EMBED_RESET_SIZE: "Restablecer tamaño",
   EMBED_RESIZE: "Cambiar el tamaño del dibujo. Usa las flechas para ajustar, Inicio para restablecer o Escape para cancelar.",
   EMBED_SOURCE_CHANGED: "Esta inserción ha cambiado. Espera a que se actualice la vista previa y vuelve a intentarlo.",
-  EMBED_PREVIEW_TITLE: "Vista previa del dibujo a pantalla completa",
+  EMBED_PREVIEW_TITLE: "Vista previa del dibujo",
   EMBED_PREVIEW_ZOOM_OUT: "Alejar",
   EMBED_PREVIEW_ZOOM_IN: "Acercar",
   EMBED_PREVIEW_FIT: "Ajustar vista previa",

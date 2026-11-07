@@ -16,6 +16,7 @@ export interface DrawingEmbedActions extends DrawingEmbedPreview {
   app: App;
   target: string;
   openDrawing: (event: MouseEvent) => void;
+  getOpenTooltip: () => string;
   isCurrent: () => boolean;
 }
 
