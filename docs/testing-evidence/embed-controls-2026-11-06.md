@@ -145,10 +145,11 @@ then passed all 15 embed cases with baseline restoration. Evidence:
 remain separate; the focused parent report's hidden-handle input failure is not
 acceptance evidence.
 
-Latest source suite: 717 tests in 87 files passed. Modified embed modules have zero
-targeted lint or TypeScript diagnostics. Fresh complete portable/native acceptance
-is still required at this checkpoint. Minimum Obsidian 1.8.7, macOS, physical
-Android/iOS and hosted CodeScanner remain separate unverified gates.
+At the readiness checkpoint, 717 tests in 87 files passed. Modified embed modules
+had zero targeted lint or TypeScript diagnostics. Complete-profile acceptance was
+still required; the latest validated runtime results are recorded below. Minimum
+Obsidian 1.8.7, macOS, physical Android/iOS and hosted CodeScanner remain separate
+unverified gates.
 
 The isolated alignment check found that the existing
 `div.excalidraw-svg-left/right` width rule overrode the gesture's single-class
@@ -177,6 +178,29 @@ same-note synchronization and isolated undo remain required. Passive focus/key
 evidence is retained on failure. The independent extraction workflow now waits
 for the owner to leave save/synchronization work and for its new editor tab to
 appear, and verifies the rendered tab's full drawing identity.
+
+## Latest validated runtime checkpoint
+
+Runtime source: `7de41e73247f5a5f7631519115d2856384661092`.
+
+- Complete portable profile: **934 canonical cases passed**, cleanup passed, no
+  missing cases. Includes 717 plugin tests and 199 source-coverage tests, fork and
+  Extras source/browser suites, builds and isolated package-consumer checks.
+- Focused native desktop/touch profile: **31 cases passed**, cleanup and baseline
+  restoration passed. This includes all 25 dedicated embed cases across main,
+  split, minimized-main popout, phone and tablet contexts. It measures actual
+  preview geometry, including left/right table gestures, rather than CSS values
+  alone. Both device profiles passed their exception and cleanup gates.
+- Evidence: `.test-work/reports/pr3037-portable-7de41e73/report.json` and
+  `.test-work/reports/pr3037-alignment-native-focused-2/report.json`.
+- Production `main.js`: 5,088,831 bytes, 154,049 bytes below the 5 MiB target.
+
+The complete matching-build native profile remains required after this focused
+checkpoint. Its final run uses
+`.test-work/reports/pr3037-native-final-2026-11-07/report.json`; the PR description
+records that run's actual status, counts and exact source commit after completion.
+The documentation checkpoint adds no runtime or test-code changes. Previous
+failed runs remain retained and do not count as acceptance evidence.
 
 `npm run code` reports 118 existing errors outside the modified production
 modules; targeted lint and targeted TypeScript diagnostics pass. Production
