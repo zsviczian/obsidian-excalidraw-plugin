@@ -14,7 +14,9 @@ const deferred = () => {
 };
 
 function fixture() {
-  const observers = [], timers = new Map(), intervals = new Map(), jobs = [], requests = [], errors = [], released = [], loaders = [];
+  const observers = [], timers = new Map(), intervals = new Map(), jobs = [], requests = [], errors = [], released = [], loaders = [], rasters = [], controls = [], controlInstances = [], pluginCleanups = [];
+  let cacheReady = false;
+  const actions = new WeakMap();
   let timerId = 0;
   class Observer {
     constructor(callback) { this.callback = callback; observers.push(this); }
@@ -49,7 +51,7 @@ function fixture() {
     hasChildNodes() { return this.children.length > 0; }
     closest(selector) {
       let el = this;
-      while (el) { if (selector.startsWith(".") && el.hasClass(selector.slice(1))) return el; el = el.parentElement; }
+      while (el) { if (selector.split(",").some(part => part.trim().startsWith(".") && el.hasClass(part.trim().slice(1)))) return el; el = el.parentElement; }
       return null;
     }
     empty() { for (const child of this.children) child.parentElement = null; this.children = []; }
@@ -81,6 +83,7 @@ function fixture() {
   const frontmatters = new Map();
   const plugin = {
     _loaded: true,
+    register: callback => pluginCleanups.push(callback),
     awaitInit: async () => {},
     awaitSettings: async () => {},
     settings: { width: "400", height: "", renderImageInMarkdownReadingMode: true, renderImageInMarkdownToPDF: true },
@@ -92,16 +95,22 @@ function fixture() {
   };
   const queue = { addTask: task => new Promise((resolve, reject) => jobs.push(async () => { try { await task(); resolve(); } catch (e) { reject(e); } })) };
   const image = (name = "result") => {
-    const div = new Element(), img = new Element("", "img"); img.src = `blob:${name}`; div.appendChild(img); return div;
+    const div = new Element(), img = new Element("excalidraw-embedded-img", "img"); img.src = `blob:${name}`; div.appendChild(img); actions.set(img, { target: targetFile.path, isCurrent: () => plugin._loaded }); return div;
   };
   const createImage = async (attr, onCanvas, embedEl, isRenderActive) => {
     const result = deferred(); requests.push({ ...result, attr, isRenderActive }); return result.promise;
   };
   const mocks = {
     obsidian: { TFile, MarkdownRenderChild: RenderChild },
+    "./drawingEmbedActions": { getDrawingEmbedActions: element => actions.get(element) },
+    "./DrawingEmbedControls": { DrawingEmbedControls: class extends RenderChild {
+      constructor(...args) { super(args[0]); controls.push(args); controlInstances.push(this); this.unloadCalls = 0; }
+      unload() { this.unloadCalls++; super.unload(); }
+      onload() {} onunload() {}
+    } },
     "src/shared/GlobalTaskQueue": { getGlobalTaskQueue: () => queue },
     "../../utils/debugHelper": { DEBUGGING: false },
-    "../../shared/ImageCache": { getImageCache: () => ({ isReady: () => false, releaseObsidianURL: url => released.push(url) }) },
+    "../../shared/ImageCache": { getImageCache: () => ({ isReady: () => cacheReady, releaseObsidianURL: url => released.push(url) }) },
     "../../shared/EmbeddedFileLoader": { EmbeddedFilesLoader: class { constructor() { this.terminate = false; loaders.push(this); } } },
     "../../types/utilTypes": { PreviewImageType: { PNG: "PNG", SVGIMG: "SVGIMG", SVG: "SVG" } },
     "../../utils/typechecks": { isInstanceOfHTMLImageElement: el => el.tag === "img" },
@@ -113,13 +122,14 @@ function fixture() {
     },
   };
   const context = vm.createContext({ MutationObserver: Observer, window: ownerWindow, createEl: tag => new Element("", tag),
-    console: { error: (...args) => errors.push(args) }, __createImage: createImage, __createRaster: async () => null });
+    console: { error: (...args) => errors.push(args) }, __createImage: createImage, __createRaster: async args => { rasters.push(args); return null; } });
   const compile = (source, require) => {
     const code = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
     const exports = {};
     vm.runInContext(`(function(require,exports){${code}\n})`, context)(require, exports);
     return exports;
   };
+  const dimensions = compile(readFileSync(resolve(root, "src/core/editor/embedDimensions.ts"), "utf8"), () => ({}));
   const child = compile(readFileSync(resolve(root, "src/core/managers/MarkdownEmbedRenderChild.ts"), "utf8"), name => mocks[name]);
   Object.assign(mocks["../../utils/utils"], compile(readFileSync(resolve(root, "src/utils/embeddedFilenameParts.ts"), "utf8"), () => ({})));
   let source = readFileSync(resolve(root, "src/core/managers/MarkdownPostProcessor.ts"), "utf8");
@@ -133,7 +143,7 @@ function fixture() {
     source = source.slice(0, statement.getStart(tree)) + `const ${name} = ${seams[name]};` + source.slice(statement.end);
   }
   source += "\nexport { tmpObsidianWYSIWYG, processReadingMode, getIMG };";
-  const processor = compile(source, name => name === "./MarkdownEmbedRenderChild" ? child : mocks[name] ?? {});
+  const processor = compile(source, name => name === "./MarkdownEmbedRenderChild" ? child : name === "../editor/embedDimensions" ? dimensions : mocks[name] ?? {});
   processor.initializeMarkdownPostProcessor(plugin);
   const container = new Element("internal-embed markdown-embed"); container.setAttribute("src", targetFile.path);
   const el = container.appendChild(new Element());
@@ -143,8 +153,61 @@ function fixture() {
   const flushTimers = () => { for (const [id, callback] of timers) { timers.delete(id); callback(); } };
   const start = () => { assert.ok(jobs.length); const done = jobs.shift()(); return done; };
   const settle = async (name = "result", request = requests.at(-1)) => { const result = image(name); request.resolve(result); await Promise.resolve(); return result; };
-  return { processor, plugin, container, ctx, el, children, render, jobs, requests, errors, released, observers, timers, intervals, loaders, frontmatters, flushTimers, start, settle, image, Element };
+  return { processor, plugin, container, ctx, el, children, render, jobs, requests, errors, released, observers, timers, intervals, loaders, frontmatters, flushTimers, start, settle, image, Element, rasters, controls, controlInstances, cacheReady: value => cacheReady = value,
+    unloadPlugin: () => { plugin._loaded = false; for (const callback of pluginCleanups.splice(0)) callback(); } };
 }
+
+test("plugin unload releases Reading controls and context cleanup removes owners from its registry", async () => {
+  for (const contextFirst of [false, true]) {
+    const f = fixture(), parent = new f.Element(), embed = parent.appendChild(new f.Element("internal-embed"));
+    embed.setAttribute("src", "target.excalidraw.md");
+    const rendered = f.processor.processReadingMode([embed], f.ctx, true), job = f.start();
+    await f.settle(); await job; await rendered;
+    const controls = f.controlInstances[0]; assert.equal(controls._loaded, true);
+    if (contextFirst) controls.unload();
+    f.unloadPlugin(); assert.equal(controls._loaded, false); assert.equal(controls.unloadCalls, 1);
+  }
+});
+
+test("Reading export finishing after plugin unload is discarded without mounting controls", async () => {
+  const f = fixture(), parent = new f.Element(), embed = parent.appendChild(new f.Element("internal-embed"));
+  embed.setAttribute("src", "target.excalidraw.md");
+  const rendered = f.processor.processReadingMode([embed], f.ctx, true), job = f.start();
+  f.unloadPlugin(); await f.settle("retired-reading-export"); await job; await rendered;
+  assert.equal(parent.children[0], embed); assert.equal(f.controls.length, 0);
+  assert.ok(f.released.includes("blob:retired-reading-export"));
+});
+
+test("fullscreen image generation bypasses shared cache and cancels without an embed DOM node", async () => {
+  const f = fixture(); f.cacheReady(true); f.plugin.settings.previewImageType = "PNG";
+  const attr = { file: { path: "target.excalidraw.md" }, fname: "target.excalidraw.md#^area=abc,padding=2", imgstyle: [] };
+  await f.processor.getIMG({ ...attr }, false, undefined, () => true, true);
+  assert.equal(f.rasters[0].cacheReady, false); assert.equal(f.rasters[0].filenameParts.linkpartReference, "#^area=abc,padding=2");
+  assert.equal(f.intervals.size, 0);
+  await f.processor.getIMG({ ...attr }, false, undefined, () => true);
+  assert.equal(f.rasters[1].cacheReady, true);
+  await f.processor.getIMG({ ...attr }, false, undefined, () => false, true);
+  assert.equal(f.rasters.length, 2); assert.equal(f.intervals.size, 0);
+});
+
+test("Reading controls are read-only and absent in nested, print, hover, Canvas and editor contexts", async () => {
+  for (const ancestor of ["", "markdown-embed", "print", "hover-popover", "canvas-node-content", "cm-content"]) {
+    const f = fixture(), parent = new f.Element(ancestor), embed = parent.appendChild(new f.Element("internal-embed"));
+    embed.setAttribute("src", "target.excalidraw.md");
+    const rendered = f.processor.processReadingMode([embed], f.ctx, true), job = f.start();
+    await f.settle(); await job; await rendered;
+    assert.equal(f.controls.length, ancestor ? 0 : 1, ancestor);
+    if (!ancestor) assert.equal(f.controls[0].length, 2, "Reading mode has no source binding");
+  }
+});
+
+test("native table alt text retains escaped caption, size and style through image generation", async () => {
+  const f = fixture(), parent = new f.Element(), embed = parent.appendChild(new f.Element("internal-embed"));
+  embed.setAttribute("src", "target.excalidraw.md"); embed.setAttribute("alt", "Caption\\|100\\|left");
+  const rendered = f.processor.processReadingMode([embed], f.ctx), job = f.start();
+  assert.equal(f.requests[0].attr.fwidth, "100"); assert.deepEqual([...f.requests[0].attr.imgstyle], ["excalidraw-svg-left"]);
+  await f.settle(); await job; await rendered;
+});
 
 test("ready follows successful insertion; repeated callbacks preserve the image", async () => {
   const f = fixture(); const first = f.render(); const repeat = f.render();

@@ -1,6 +1,7 @@
 import { Extension } from "@codemirror/state";
 import ExcalidrawPlugin from "src/core/main";
 import { HideTextBetweenCommentsExtension } from "./Fadeout";
+import { createDrawingEmbedExtension } from "./drawingEmbedExtension";
 export const EDITOR_FADEOUT = "fadeOutExcalidrawMarkup";
 
 type TaggedExtension = Extension & { exID?: string };
@@ -11,14 +12,20 @@ const editorExtensions: { [key: string]: Extension } = {
 
 export class EditorHandler {
   private activeEditorExtensions: TaggedExtension[] = [];
+  private disposeDrawingEmbeds: (() => void) | null = null;
 
   constructor(private plugin: ExcalidrawPlugin) {}
 
   destroy(): void {
+    this.disposeDrawingEmbeds?.();
+    this.disposeDrawingEmbeds = null;
     this.plugin = null;
   }
 
   setup(): void {
+    const drawingEmbeds = createDrawingEmbedExtension(this.plugin);
+    this.activeEditorExtensions.push(drawingEmbeds.extension);
+    this.disposeDrawingEmbeds = drawingEmbeds.dispose;
     this.plugin.registerEditorExtension(this.activeEditorExtensions);
     this.updateCMExtensionState(
       EDITOR_FADEOUT,

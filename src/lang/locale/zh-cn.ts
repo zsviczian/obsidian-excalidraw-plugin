@@ -11,6 +11,23 @@ declare const PLUGIN_VERSION: string;
 
 // 简体中文
 export default {
+  // Drawing embed controls (#3036)
+  EMBED_OPEN_MODIFIER: "{keys}+单击：{action}",
+  EMBED_ACTIONS: "嵌入绘图操作",
+  EMBED_OPEN_DRAWING: "打开绘图",
+  EMBED_EDIT_SOURCE: "编辑嵌入语法",
+  EMBED_RESET_SIZE: "重置嵌入尺寸",
+  EMBED_RESIZE: "调整绘图尺寸。方向键调整大小，Home 重置，Escape 取消。",
+  EMBED_SOURCE_CHANGED: "此嵌入已更改。请等待预览刷新后重试。",
+  EMBED_PREVIEW_TITLE: "绘图预览",
+  EMBED_PREVIEW_ZOOM_OUT: "缩小",
+  EMBED_PREVIEW_ZOOM_IN: "放大",
+  EMBED_PREVIEW_FIT: "适应预览窗口",
+  EMBED_PREVIEW_CLOSE: "关闭预览",
+  EMBED_PREVIEW_PAN: "绘图预览。拖动以平移，使用 + 或 - 缩放，0 适应窗口，Escape 关闭。",
+  EMBED_PREVIEW_LOADING: "正在加载预览…",
+  EMBED_PREVIEW_FAILED: "无法加载此绘图的预览。",
+
   // Native CLI and agent discovery
   CLI_HELP: "显示 CLI 和智能体说明",
   CLI_COPY_SKILL: "复制智能体说明",

@@ -10,6 +10,7 @@ import { obsidianCliExecutable, spawnNativeSync } from "./processTools.mjs";
 import { runTextUndoScenario } from "./textUndo.mjs";
 import { runNativeCLIScenario } from "./nativeCLI.mjs";
 import { runEmbedRecoveryScenario } from "./embedRecovery.mjs";
+import { runEmbedControlsScenario } from "./embedControls.mjs";
 import { runGroupedLinkClickScenario } from "./groupedLinkClick.mjs";
 import { runLatexInputScenario } from "./latexInput.mjs";
 import { runImageGeometryScenario } from "./imageGeometry.mjs";
@@ -87,6 +88,7 @@ const textUndo = coreScenarios || process.argv.includes("--text-undo");
 const stability = coreScenarios || profile === "soak" || process.argv.includes("--stability");
 const nativeCLI = coreScenarios || process.argv.includes("--native-cli");
 const embedRecovery = coreScenarios || process.argv.includes("--embed-recovery");
+const embedControls = coreScenarios || process.argv.includes("--embed-controls");
 const groupedLinkClick =
   coreScenarios || process.argv.includes("--grouped-link-click");
 const latexInput = coreScenarios || process.argv.includes("--latex-input");
@@ -160,6 +162,7 @@ const flags = [
   "--stability",
   "--native-cli",
   "--embed-recovery",
+  "--embed-controls",
   "--grouped-link-click",
   "--latex-input",
   "--latex-preview",
@@ -350,6 +353,7 @@ try {
         ...(textUndo ? [runTextUndoScenario] : []),
         ...(nativeCLI ? [runNativeCLIScenario] : []),
         ...(embedRecovery ? [runEmbedRecoveryScenario] : []),
+        ...(embedControls ? [runEmbedControlsScenario] : []),
         ...(groupedLinkClick ? [runGroupedLinkClickScenario] : []),
         ...(latexInput ? [runLatexInputScenario] : []),
         ...(latexPreview
@@ -413,6 +417,7 @@ try {
         featureWorkflows: fullProfile || profile === "devices",
         featureCases:focusedCases,
         kplexOntology,
+        embedControls,
       });
       deviceReport.source = combination?.manifests.plugin || source;
       deviceReport.artifacts = report.artifacts.installedHashes;

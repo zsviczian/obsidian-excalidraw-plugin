@@ -14,6 +14,23 @@ import {
 
 // русский
 export default {
+  // Drawing embed controls (#3036)
+  EMBED_OPEN_MODIFIER: "{keys}+щелчок: {action}",
+  EMBED_ACTIONS: "Действия со встроенным рисунком",
+  EMBED_OPEN_DRAWING: "Открыть рисунок",
+  EMBED_EDIT_SOURCE: "Изменить синтаксис вставки",
+  EMBED_RESET_SIZE: "Сбросить размер вставки",
+  EMBED_RESIZE: "Изменить размер вставки. Стрелки — размер, Home — сброс, Escape — отмена.",
+  EMBED_SOURCE_CHANGED: "Вставка изменилась. Дождитесь обновления предпросмотра и повторите попытку.",
+  EMBED_PREVIEW_TITLE: "Просмотр рисунка",
+  EMBED_PREVIEW_ZOOM_OUT: "Уменьшить",
+  EMBED_PREVIEW_ZOOM_IN: "Увеличить",
+  EMBED_PREVIEW_FIT: "Вписать в окно",
+  EMBED_PREVIEW_CLOSE: "Закрыть просмотр",
+  EMBED_PREVIEW_PAN: "Предпросмотр рисунка. Перетаскивайте для перемещения. + и - — масштаб, 0 — вписать, Escape — закрыть.",
+  EMBED_PREVIEW_LOADING: "Загрузка предпросмотра…",
+  EMBED_PREVIEW_FAILED: "Не удалось загрузить предпросмотр рисунка.",
+
   // Native CLI and agent discovery
   CLI_HELP: "Показать инструкции CLI и для агентов",
   CLI_COPY_SKILL: "Копировать инструкции для агентов",

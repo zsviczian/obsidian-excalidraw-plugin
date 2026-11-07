@@ -2453,6 +2453,30 @@
       "mode": "isolated-or-extracted"
     },
     {
+      "path": "scripts/testing/embedBridge.source.test.mjs",
+      "mode": "direct-module-or-tooling"
+    },
+    {
+      "path": "scripts/testing/embedControls.source.test.mjs",
+      "mode": "direct-module-or-tooling"
+    },
+    {
+      "path": "scripts/testing/embedDimensions.source.test.mjs",
+      "mode": "direct-module-or-tooling"
+    },
+    {
+      "path": "scripts/testing/embedLocales.test.mjs",
+      "mode": "isolated-or-extracted"
+    },
+    {
+      "path": "scripts/testing/embedPreview.source.test.mjs",
+      "mode": "direct-module-or-tooling"
+    },
+    {
+      "path": "scripts/testing/embedSource.source.test.mjs",
+      "mode": "direct-module-or-tooling"
+    },
+    {
       "path": "scripts/testing/excalidrawTypeSource.test.mjs",
       "mode": "direct-module-or-tooling"
     },
@@ -2597,6 +2621,10 @@
       "mode": "direct-module-or-tooling"
     },
     {
+      "path": "scripts/testing/openDrawingEmbed.source.test.mjs",
+      "mode": "direct-module-or-tooling"
+    },
+    {
       "path": "scripts/testing/package.source.test.mjs",
       "mode": "direct-module-or-tooling"
     },
@@ -2674,6 +2702,10 @@
     },
     {
       "path": "scripts/testing/svgText.test.mjs",
+      "mode": "direct-module-or-tooling"
+    },
+    {
+      "path": "scripts/testing/tableEmbedSource.source.test.mjs",
       "mode": "direct-module-or-tooling"
     },
     {

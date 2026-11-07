@@ -2,6 +2,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { runInAppTask } from "./inAppTask.mjs";
+import { settleBrowserDiagnostics } from "./browserDiagnostics.mjs";
 
 export const workflowBundleCaseIds = ["native:workflow-markdown-extraction-3009", "native:workflow-zen-controls-3000"];
 
@@ -9,15 +10,24 @@ export async function runWorkflowBundleScenario({ cli, drawingPath }) {
   assert.ok(drawingPath.startsWith("__excalidraw_cli_smoke_"));
   const prefix = drawingPath.replace(/\.(excalidraw\.md|excalidraw|md)$/, "") + "_bundle";
   const fixture = readFileSync(new URL("../../../tests/vault/Drawings/Uncompressed.excalidraw.md", import.meta.url), "utf8");
-  const result = await runInAppTask({ cli, execute: exerciseWorkflows, args: [prefix, fixture], timeoutMs: 180000, cleanupMs: 60000 });
+  const execute = new Function(`return async function(c,prefix,fixture){return (${exerciseWorkflows.toString()})(c,prefix,fixture,${settleBrowserDiagnostics.toString()});}`)();
+  const result = await runInAppTask({ cli, execute, args: [prefix, fixture], timeoutMs: 180000, cleanupMs: 60000 });
   return { id: "workflow-bundle-3030", status: "passed", ...result };
 }
 
-async function exerciseWorkflows(c, prefix, fixture) {
+async function exerciseWorkflows(c, prefix, fixture, settleBrowserDiagnostics) {
   const plugin = app.plugins.plugins["obsidian-excalidraw-plugin"];
   const mainDocument = app.workspace.containerEl.ownerDocument;
   const previous = app.workspace.activeLeaf, leaves = new Set(), tabs = new Set(), rootFiles = new Set();
   const attachmentFolderPath = app.vault.getConfig("attachmentFolderPath");
+  const windowEvents = [], observedWindows = new Map();
+  const observeWindow = win => {
+    if (observedWindows.has(win)) return;
+    const listener = event => windowEvents.push({ message: event.message, at: Date.now() });
+    win.addEventListener("error", listener); observedWindows.set(win, listener);
+  };
+  observeWindow(mainDocument.defaultView);
+  c.defer(() => { for (const [win, listener] of observedWindows) if (!win.closed) win.removeEventListener("error", listener); });
   c.observations = {};
   const check = (condition, message) => { if (!condition) throw Error(message); };
   const closeTab = async (tab, view) => {
@@ -64,6 +74,7 @@ async function exerciseWorkflows(c, prefix, fixture) {
     const leaf = popout ? app.workspace.openPopoutLeaf() : app.workspace.getLeaf("tab"); leaves.add(leaf);
     if (popout) await c.waitFor(() => leaf.view.containerEl.ownerDocument !== mainDocument, "empty workflow popout migration");
     await leaf.openFile(file); await ready(leaf);
+    observeWindow(leaf.view.ownerWindow);
     app.workspace.setActiveLeaf(leaf, { focus: true }); leaf.view.ownerWindow.focus();
     return leaf;
   };
@@ -87,11 +98,18 @@ async function exerciseWorkflows(c, prefix, fixture) {
         await open(prefix + "/Other.excalidraw.md");
         app.workspace.setActiveLeaf(leaf, { focus: true });
       }
+      await c.waitFor(() => leaf.view === view && view.excalidrawData?.file === view.file && !view.isSaveInProgress() && !view.isSynchronizing, "extraction owner readiness");
       const panel = await plugin.openSidepanel(false), beforeTabs = new Set(panel.tabs.keys());
       await view.openMarkdownImageEditor();
-      const tab = [...panel.tabs.values()].find(tab => !beforeTabs.has(tab.id));
-      check(tab, "owned extraction editor tab missing"); const ownedTab = { tab, view }; tabs.add(ownedTab);
+      let tab;
+      await c.waitFor(() => {
+        tab = [...panel.tabs.values()].find(tab => !beforeTabs.has(tab.id));
+        c.observations.extractionOpen = { name: options.name, owner: view.file?.path, leafCurrent: leaf.view === view, dataFile: view.excalidrawData?.file?.path, api: !!view.excalidrawAPI, saving: view.isSaveInProgress(), synchronizing: view.isSynchronizing, panelCurrent: panel.leaf.view === panel, tabs: [...panel.tabs.values()].map(tab => ({ id: tab.id, owner: tab.contentEl.querySelector(".excalidraw-markdown-image-editor__owner")?.getAttribute("title") })) };
+        return tab;
+      }, "owned extraction editor tab");
+      const ownedTab = { tab, view }; tabs.add(ownedTab);
       await c.waitFor(() => tab.contentEl.querySelector(".excalidraw-markdown-image-editor__markdown-view .cm-content"), "extraction source editor");
+      check(tab.contentEl.querySelector(".excalidraw-markdown-image-editor__owner")?.getAttribute("title")?.includes(view.file.path), "extraction editor attached to a different drawing");
       const content = tab.contentEl.querySelector(".excalidraw-markdown-image-editor__markdown-view .cm-content");
       const cm = content.cmTile?.view ?? content.cmView?.rootView?.view;
       cm.dispatch({ changes: { from: 0, to: cm.state.doc.length, insert: markdown } });
@@ -149,7 +167,7 @@ async function exerciseWorkflows(c, prefix, fixture) {
     return { assertions: ["root/nested/Unicode owning folder defaults", "two simultaneous drawings retain the selected image's owner", "explicit selection and cancellation", "unique names and original content preserved", "external source links persist through save/reopen", "main/popout extraction"], variants };
   });
   await c.case("native:workflow-zen-controls-3000", ["P03", "P08"], async () => {
-    const variants = [];
+    const variants = [], zoomIdle = [];
     for (const popout of [false, true]) {
       const leaf = await open(prefix + "/Zen-" + popout + ".excalidraw.md", popout), view = leaf.view, api = view.excalidrawAPI;
       const doc = view.ownerDocument, win = view.ownerWindow;
@@ -196,9 +214,13 @@ async function exerciseWorkflows(c, prefix, fixture) {
         view.contentEl.setCssProps({ width: originalWidth, "max-width": originalMaxWidth });
         api.updateScene({ appState: { zenModeEnabled: false }, captureUpdate: "NEVER" });
       }
+      // Restoring Electron zoom schedules native status/resize work. Keep its
+      // owning popout alive until that work is quiet before destroying it.
+      const idle = await settleBrowserDiagnostics(win, windowEvents, "workflow restored zoom");
+      zoomIdle.push(idle); check(idle.status === "passed", "Restored workflow zoom did not settle");
       await closeLeaf(leaf);
     }
-    return { assertions: ["Zen exit and zoom indicator do not intersect", "both controls remain inside the editor and uncovered", "zoom and exit actions activate repeatedly", "LTR/RTL wide/narrow panes and UI scale", "main/popout document ownership"], variants };
+    return { assertions: ["Zen exit and zoom indicator do not intersect", "both controls remain inside the editor and uncovered", "zoom and exit actions activate repeatedly", "LTR/RTL wide/narrow panes and UI scale", "main/popout document ownership", "restored native zoom settles before popout teardown"], variants, zoomIdle };
   });
   return { tests: c.tests };
 }
