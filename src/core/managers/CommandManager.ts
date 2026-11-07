@@ -570,6 +570,39 @@ export class CommandManager {
     });
 
     this.addCommand({
+      id: "toggle-highlighter",
+      name: t("TOGGLE_HIGHLIGHTER_COMMAND"),
+      checkCallback: (checking: boolean) => {
+        const view = this.plugin.activeExcalidrawView;
+        if (checking) {
+          return Boolean(view?.excalidrawAPI);
+        }
+        if (view?.obsidianMenu) {
+          view.obsidianMenu.actionHighlighterClick();
+        }
+      },
+    });
+
+    this.addCommand({
+      id: "toggle-keep-drawing-tools-selected",
+      name: t("TOGGLE_KEEP_DRAWING_TOOLS_COMMAND"),
+      callback: () => {
+        this.plugin.settings.keepDrawingToolsSelected =
+          !this.plugin.settings.keepDrawingToolsSelected;
+        void this.plugin.saveSettings();
+        new Notice(
+          `Excalidraw: ${
+            this.plugin.settings.keepDrawingToolsSelected
+              ? "Keep drawing tools active (Tool Lock) ENABLED"
+              : "Keep drawing tools active (Tool Lock) DISABLED"
+          }`,
+          3000,
+        );
+      },
+    });
+
+
+    this.addCommand({
       id: "excalidraw-insert-transclusion",
       name: t("TRANSCLUDE"),
       checkCallback: (checking: boolean) => {
