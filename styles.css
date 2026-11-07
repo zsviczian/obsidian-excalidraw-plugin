@@ -2588,9 +2588,13 @@ button.excalidraw-font-picker {
   pointer-events: auto;
 }
 .excalidraw-embed-controls-frame.excalidraw-embed-resizing {
+  /* Alignment uses table layout normally; its intrinsic toolbar width must
+     not become the minimum image width during a resize preview. */
+  display: block;
   width: var(--excalidraw-embed-resize-width);
 }
 .excalidraw-embed-resizing > .excalidraw-embedded-img {
+  display: block;
   width: 100% !important;
   height: var(--excalidraw-embed-resize-height) !important;
   max-width: 100% !important;

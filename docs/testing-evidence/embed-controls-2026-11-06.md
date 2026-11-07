@@ -161,6 +161,14 @@ actual preview size/aspect ratio during movement and exercise pointer resizing
 of left-aligned wiki embeds and right-aligned Markdown-image table cells. Fresh
 complete acceptance is required after this CSS checkpoint.
 
+Including the real in-flow toolbar in the small-preview probe exposed the
+alignment table layout's intrinsic minimum: an 80 px preview remained 140 px.
+Gesture-only block layout on the frame and image removes that minimum while
+retaining the alignment's float. Normal table layout returns when the gesture
+class is removed. All nine small-preview cases then measure 80 px; evidence is
+retained in `.test-work/pr3037-alignment-css-toolbar-probe.json` and
+`.test-work/pr3037-alignment-css-toolbar-fixed.json`.
+
 The complete-sequence split fixture can leave only 170 px for its owning pane.
 Table resize checks therefore shrink from the measured displayed width instead
 of assuming an eight-pixel enlargement fits. Pointer checks likewise shrink by
