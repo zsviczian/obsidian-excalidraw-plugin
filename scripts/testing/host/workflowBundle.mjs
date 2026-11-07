@@ -98,11 +98,18 @@ async function exerciseWorkflows(c, prefix, fixture, settleBrowserDiagnostics) {
         await open(prefix + "/Other.excalidraw.md");
         app.workspace.setActiveLeaf(leaf, { focus: true });
       }
+      await c.waitFor(() => leaf.view === view && view.excalidrawData?.file === view.file && !view.isSaveInProgress() && !view.isSynchronizing, "extraction owner readiness");
       const panel = await plugin.openSidepanel(false), beforeTabs = new Set(panel.tabs.keys());
       await view.openMarkdownImageEditor();
-      const tab = [...panel.tabs.values()].find(tab => !beforeTabs.has(tab.id));
-      check(tab, "owned extraction editor tab missing"); const ownedTab = { tab, view }; tabs.add(ownedTab);
+      let tab;
+      await c.waitFor(() => {
+        tab = [...panel.tabs.values()].find(tab => !beforeTabs.has(tab.id));
+        c.observations.extractionOpen = { name: options.name, owner: view.file?.path, leafCurrent: leaf.view === view, dataFile: view.excalidrawData?.file?.path, api: !!view.excalidrawAPI, saving: view.isSaveInProgress(), synchronizing: view.isSynchronizing, panelCurrent: panel.leaf.view === panel, tabs: [...panel.tabs.values()].map(tab => ({ id: tab.id, owner: tab.contentEl.querySelector(".excalidraw-markdown-image-editor__owner")?.getAttribute("title") })) };
+        return tab;
+      }, "owned extraction editor tab");
+      const ownedTab = { tab, view }; tabs.add(ownedTab);
       await c.waitFor(() => tab.contentEl.querySelector(".excalidraw-markdown-image-editor__markdown-view .cm-content"), "extraction source editor");
+      check(tab.contentEl.querySelector(".excalidraw-markdown-image-editor__owner")?.getAttribute("title")?.includes(view.file.path), "extraction editor attached to a different drawing");
       const content = tab.contentEl.querySelector(".excalidraw-markdown-image-editor__markdown-view .cm-content");
       const cm = content.cmTile?.view ?? content.cmView?.rootView?.view;
       cm.dispatch({ changes: { from: 0, to: cm.state.doc.length, insert: markdown } });

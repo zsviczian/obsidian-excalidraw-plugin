@@ -120,6 +120,7 @@ async function exerciseEmbedControls(c, env, template, modifier) {
       check(Math.abs(preview.width - initial.width - delta) < 1 && Math.abs(preview.height - preview.width * initial.height / initial.width) < 1, "resize preview geometry lost its requested size or aspect ratio");
       if (cancel) await key("Escape", "Escape", 27);
     } finally { await send("up", x + delta); }
+    return initial.width + delta;
   };
   for (const mode of ["PNG", "SVGIMG", "SVG"]) await c.case(`native:embed-controls:${context}:${mode}`, ["P02", "P05"], async () => {
     p.settings.previewImageType = mode;
@@ -282,16 +283,20 @@ async function exerciseEmbedControls(c, env, template, modifier) {
     // Use the same trusted click that a keyboard user uses to focus the handle.
     await action(1, "resize");
     await c.waitFor(() => doc.activeElement === frames()[1]?.querySelector('[data-excalidraw-embed-action="resize"]'), "owned table resize keyboard focus");
-    await key("ArrowRight", "ArrowRight", 39);
+    const keyboardImage = frames()[1].querySelector(".excalidraw-embedded-img"), keyboardVisual = keyboardImage.querySelector("svg") ?? keyboardImage;
+    const keyboardWidth = keyboardVisual.getBoundingClientRect().width;
+    check(keyboardWidth > 52, "table fixture is too narrow for measured shrinking");
+    await key("ArrowLeft", "ArrowLeft", 37);
     c.observations.tableInput.afterKeyboard = { activeLeaf: app.workspace.activeLeaf?.id, activeElement: doc.activeElement?.getAttribute("class"), outerFocus: cm.hasFocus, source: cm.state.doc.toString() };
-    const changed = source.replace(token + " | second", token.replace("\\|100", "\\|108") + " | second");
+    const changed = source.replace(token + " | second", token.replace("\\|100", "\\|" + Math.round(keyboardWidth - 8)) + " | second");
     await c.waitFor(() => cm.state.doc.toString() === changed, "only the second identical physical table cell resized");
     if (other) await c.waitFor(() => other.view.editor.getValue() === changed, "same-note split receives the exact table transaction");
     cm.focus(); await key("z", "KeyZ", 90, modifier);
     await c.waitFor(() => cm.state.doc.toString() === source && ready(), "one undo restores table source and rendered dimensions");
-    for (const [index, label, original, resized] of [[1, "left", token, token.replace("\\|100", "\\|120")], [2, "right", markdown, markdown.replace("\\|120", "\\|140")]]) {
+    for (const [index, label, original, sourceWidth] of [[1, "left", token, 100], [2, "right", markdown, 120]]) {
       c.phase = `native:embed-table:${context}:aligned-resize-${label}`;
-      await drag(index, 20, false, source);
+      const targetWidth = await drag(index, -20, false, source);
+      const resized = original.replace("\\|" + sourceWidth, "\\|" + Math.round(targetWidth));
       const expected = index === 1 ? source.replace(token + " | second", resized + " | second") : source.replace(original, resized);
       await c.waitFor(() => cm.state.doc.toString() === expected, "aligned table resize preserves exact source and other cells");
       cm.focus(); await key("z", "KeyZ", 90, modifier);

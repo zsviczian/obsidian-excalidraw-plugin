@@ -161,6 +161,15 @@ actual preview size/aspect ratio during movement and exercise pointer resizing
 of left-aligned wiki embeds and right-aligned Markdown-image table cells. Fresh
 complete acceptance is required after this CSS checkpoint.
 
+The complete-sequence split fixture can leave only 170 px for its owning pane.
+Table resize checks therefore shrink from the measured displayed width instead
+of assuming an eight-pixel enlargement fits. Pointer checks likewise shrink by
+20 px while measuring actual geometry. Exact source, other-cell preservation,
+same-note synchronization and isolated undo remain required. Passive focus/key
+evidence is retained on failure. The independent extraction workflow now waits
+for the owner to leave save/synchronization work and for its new editor tab to
+appear, and verifies the rendered tab's full drawing identity.
+
 `npm run code` reports 118 existing errors outside the modified production
 modules; targeted lint and targeted TypeScript diagnostics pass. Production
 builds retain the same existing 18 Rollup circular-dependency warnings. The
