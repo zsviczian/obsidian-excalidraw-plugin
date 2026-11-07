@@ -5,11 +5,13 @@ import { EditorState, StateField } from "@codemirror/state";
 import * as cmView from "@codemirror/view";
 import { sourceHarness } from "./sourceHarness.mjs";
 
-test("invalid render generations cannot remount controls or starve the renderer debounce", async () => {
+for (const selfEmbed of [false, true]) test(selfEmbed
+  ? "drawing Markdown self-embeds retain controls and the same lifecycle guards"
+  : "invalid render generations cannot remount controls or starve the renderer debounce", async () => {
   const pending = [], originalQueue = globalThis.queueMicrotask, observers = [];
   let generation = true, loaded = 0, unloaded = 0, retireWhileMapping = false;
   globalThis.queueMicrotask = callback => pending.push(callback);
-  const file = { path: "Source.md" }, drawing = { path: "Map.excalidraw.md" }, text = "![[Map.excalidraw.md|180]]";
+  const drawing = { path: "Map.excalidraw.md" }, file = selfEmbed ? drawing : { path: "Source.md" }, text = "![[Map.excalidraw.md|180]]";
   class MarkdownView { mode = "source"; file = file; getMode() { return this.mode; } }
   const info = new MarkdownView(), sourceContainer = { style: { display: "" } };
   const editorInfoField = StateField.define({ create: () => info, update: value => value });

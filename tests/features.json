@@ -653,14 +653,20 @@
             "native:embed-controls:tablet:SVGIMG",
             "native:embed-controls:tablet:SVG",
             "native:embed-ownership:tablet",
-            "native:embed-table:tablet"
+            "native:embed-table:tablet",
+            "native:embed-hybrid:main",
+            "native:embed-hybrid:split",
+            "native:embed-hybrid:popout",
+            "native:embed-hybrid:phone",
+            "native:embed-hybrid:tablet"
           ]
         },
         {
           "layer": "source",
           "path": "scripts/testing/embedBridge.source.test.mjs",
           "cases": [
-            "node:scripts/testing/embedBridge.source.test.mjs::invalid render generations cannot remount controls or starve the renderer debounce"
+            "node:scripts/testing/embedBridge.source.test.mjs::invalid render generations cannot remount controls or starve the renderer debounce",
+            "node:scripts/testing/embedBridge.source.test.mjs::drawing Markdown self-embeds retain controls and the same lifecycle guards"
           ]
         },
         {

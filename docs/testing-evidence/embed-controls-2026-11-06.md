@@ -8,7 +8,9 @@ Implementation branch: `2026-11-06-issue-3036-embed-controls`, based on
 Direct Live Preview drawing embeds get proportional corner resizing, reset,
 selection of their exact embed syntax, fullscreen viewing and Open drawing.
 Normal Reading mode gets fullscreen viewing and Open drawing only. Print/PDF,
-hover previews, Canvas and nested or hybrid Markdown contexts get no toolbar.
+hover previews, Canvas and nested Markdown contexts get no toolbar. A drawing
+opened in its Markdown view supports direct self-embeds and other drawing embeds;
+its generated metadata preview has no source-bound controls.
 An ambiguous or retired source binding never writes.
 
 The editor bridge uses public `editorInfoField`, `editorLivePreviewField` and
@@ -179,7 +181,7 @@ evidence is retained on failure. The independent extraction workflow now waits
 for the owner to leave save/synchronization work and for its new editor tab to
 appear, and verifies the rendered tab's full drawing identity.
 
-## Latest validated runtime checkpoint
+## Previous validated runtime checkpoint
 
 Runtime source: `7de41e73247f5a5f7631519115d2856384661092`.
 
@@ -218,13 +220,43 @@ also passed after the driver repair.
 Complete acceptance is rerun after this test-harness checkpoint using
 `.test-work/reports/pr3037-native-final-2026-11-07-2/report.json`; the PR description
 records that run's actual status, counts and exact source commit after completion.
-The production runtime remains identical to `7de41e73`. Previous
+That driver-only checkpoint kept production runtime identical to `7de41e73`. Previous
 failed runs remain retained and do not count as acceptance evidence.
 
 `npm run code` reports 118 existing errors outside the modified production
 modules; targeted lint and targeted TypeScript diagnostics pass. Production
 builds retain the same existing 18 Rollup circular-dependency warnings. The
 `madge` executable and hosted Obsidian CodeScanner are not installed locally.
+
+## Drawing Markdown support follow-up
+
+The first implementation incorrectly excluded every drawing file from the editor
+bridge, even when the user had opened it as Markdown. A direct self-embed in that
+editor therefore rendered its image without controls. The reported deployment's
+JavaScript and CSS matched the previously validated artifact; rebuilding that
+revision could not resolve the omission.
+
+Remove only the source-file classification exclusion. Complete widget tokens,
+canonical target identity, live editor/file/document ownership, read-only state,
+renderer generation and nested-context exclusions remain required. Generated
+drawing metadata previews still have no source-bound controls.
+
+The new self-embed source test fails on the old guard and passes afterward:
+`.test-work/pr3037-hybrid-before-fix.log`. All 718 fast tests, targeted lint and
+inventory checks pass. Focused native validation passes 36 cases, including all
+30 embed cases and the five new drawing-Markdown cases in main, split, popout,
+phone and tablet contexts. It uses the real Open as Markdown action and verifies
+exact resize/reset edits, single undo, exact syntax selection, physical source
+preservation and fullscreen from Live Preview and Reading mode. Evidence:
+`.test-work/reports/pr3037-hybrid-focused-4/`; cleanup and baseline restoration
+passed. Failed fixture-setup runs remain retained; guarded recovery restored the
+owned test view, retired its completed controller and restored the baseline.
+
+Complete acceptance for this follow-up uses
+`.test-work/reports/pr3037-hybrid-portable-final/report.json` and
+`.test-work/reports/pr3037-hybrid-native-final/aggregate.json`. The PR description
+records their actual results and exact commit after completion. Earlier complete
+passes establish the prior runtime, not this new checkpoint.
 
 ## Priority review
 

@@ -105,7 +105,7 @@ export function createDrawingEmbedExtension(plugin: ExcalidrawPlugin): { extensi
     private sync(): void {
       const view = this.view, info = view.state.field(editorInfoField, false), sourceFile = info?.file;
       if (!sourceFile || !isSourceMode(view) || !view.state.field(editorLivePreviewField, false) ||
-          view.state.facet(EditorState.readOnly) || !view.state.facet(EditorView.editable) || plugin.isExcalidrawFile(sourceFile)) {
+          view.state.facet(EditorState.readOnly) || !view.state.facet(EditorView.editable)) {
         this.clear(); return;
       }
       const seen = new Set<HTMLElement>();

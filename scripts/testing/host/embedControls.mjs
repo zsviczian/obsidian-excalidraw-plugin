@@ -7,7 +7,7 @@ import { behaviorInputDriver } from "./behaviorMatrix.mjs";
 import { completeConsoleErrors } from "./debuggerSession.mjs";
 import { settleBrowserDiagnostics, splitWindowErrors } from "./browserDiagnostics.mjs";
 
-const casesFor = ids => ids.flatMap(id => [...["PNG", "SVGIMG", "SVG"].map(mode => `native:embed-controls:${id}:${mode}`), `native:embed-ownership:${id}`, `native:embed-table:${id}`]);
+const casesFor = ids => ids.flatMap(id => [...["PNG", "SVGIMG", "SVG"].map(mode => `native:embed-controls:${id}:${mode}`), `native:embed-ownership:${id}`, `native:embed-table:${id}`, `native:embed-hybrid:${id}`]);
 export const embedControlCaseIds = casesFor(["main", "split", "popout"]);
 export const embedControlDeviceCaseIds = casesFor(["phone", "tablet"]);
 
@@ -334,5 +334,65 @@ async function exerciseEmbedControls(c, env, template, modifier) {
     await c.waitFor(() => cm.state.doc.toString() === source, "table reset is one undo step");
     check(await app.vault.read(drawing) === drawingBytes, "table controls changed the drawing file");
     return { assertions: ["native table widget public boundaries and physical cell ownership", "escaped wiki and Markdown-image dimensions render", "only second identical row changes", "same-note split synchronization", "left/right pointer previews retain measured size and aspect ratio", "one-step undo/reset", "exact Markdown syntax selection", "aliases/styles/title and other cells preserved", "drawing bytes unchanged"], actual: geometry() };
+  });
+
+  await c.case(`native:embed-hybrid:${context}`, ["P02", "P05"], async () => {
+    p.settings.previewImageType = "SVG";
+    const selfToken = "![[Hybrid|180]]", otherToken = `![[${drawing.path}|180]]`;
+    const fixture = template.replace("User Markdown retained.", `# Hybrid controls\n\n${selfToken}\n\n${otherToken}\n\nFooter\n`);
+    check(fixture !== template, "hybrid fixture Markdown marker missing");
+    const file = await create("Hybrid.md", fixture);
+    await c.waitFor(() => p.isExcalidrawFile(file), "hybrid drawing metadata");
+    await leaf.setViewState({ type: "markdown", state: { file: file.path, mode: "source", source: false } });
+    // Known drawings are routed back to Excalidraw. Use its public Markdown
+    // action, which also establishes the leaf-specific mode override.
+    await c.waitFor(() => leaf.view.excalidrawAPI && leaf.view.isLoaded && !leaf.view.semaphores.justLoaded, "hybrid drawing ready before opening Markdown");
+    await leaf.view.openAsMarkdown();
+    await c.waitFor(() => leaf.view.getViewType() === "markdown" && leaf.view.editor, "drawing opened through its Markdown action");
+    await leaf.view.setState({ ...leaf.view.getState(), mode: "source", source: false }, { history: false });
+    app.workspace.setActiveLeaf(leaf, { focus: true });
+    const editor = leaf.view.editor, cm = editor.cm;
+    // Opening a drawing as Markdown may first save/decompress its scene. The
+    // controls must preserve the complete content produced by that transition.
+    const source = editor.getValue();
+    check(source.includes(selfToken + "\n\n" + otherToken), "hybrid fixture embeds changed before interaction");
+    editor.setCursor({ line: editor.getValue().slice(0, editor.getValue().indexOf("Footer")).split("\n").length - 1, ch: 0 });
+    const ready = () => frames().length === 2 && frames().every(frame => frame.querySelector('[data-excalidraw-embed-action="resize"]'));
+    await c.waitFor(ready, "self and other drawing controls in drawing Markdown view");
+    check(frames()[0].querySelector(".excalidraw-embedded-img").getAttribute("fileSource") === file.path, "short self-link resolved to a different drawing");
+    check(frames()[1].querySelector(".excalidraw-embedded-img").getAttribute("fileSource") === drawing.path, "other drawing identity changed");
+    await action(0, "resize");
+    const image = frames()[0].querySelector(".excalidraw-embedded-img"), visual = image.querySelector("svg") ?? image;
+    const initialWidth = visual.getBoundingClientRect().width;
+    check(initialWidth > 52, "hybrid preview too narrow to shrink");
+    await key("ArrowLeft", "ArrowLeft", 37);
+    const changed = source.replace(selfToken, selfToken.replace("|180", "|" + Math.round(initialWidth - 8)));
+    await c.waitFor(() => cm.state.doc.toString() === changed, "hybrid resize changes only its exact self-embed token");
+    await leaf.view.save();
+    check(await app.vault.read(file) === changed, "hybrid resize changed serialized drawing data or failed to persist");
+    cm.focus(); await key("z", "KeyZ", 90, modifier);
+    await c.waitFor(() => cm.state.doc.toString() === source && ready(), "hybrid resize is one undo step");
+    await action(0, "reset");
+    await c.waitFor(() => cm.state.doc.toString() === source.replace(selfToken, "![[Hybrid]]"), "hybrid reset changes only self dimensions");
+    cm.focus(); await key("z", "KeyZ", 90, modifier);
+    await c.waitFor(() => cm.state.doc.toString() === source && ready(), "hybrid reset is one undo step");
+    await leaf.view.save();
+    check(await app.vault.read(file) === source, "hybrid undo did not restore exact persisted drawing content");
+    await action(0, "edit");
+    check(cm.state.sliceDoc(cm.state.selection.main.from, cm.state.selection.main.to) === selfToken, "hybrid source edit selected drawing metadata");
+    editor.setCursor({ line: source.slice(0, source.indexOf("Footer")).split("\n").length - 1, ch: 0 });
+    await c.waitFor(ready, "hybrid source selection roundtrip");
+    await action(0, "preview");
+    await c.waitFor(() => doc.querySelector(".excalidraw-embed-preview-modal [fileSource]")?.getAttribute("fileSource") === file.path, "hybrid self-preview uses its drawing");
+    await key("Escape", "Escape", 27);
+    await c.waitFor(() => !doc.querySelector(".excalidraw-embed-preview-modal"), "hybrid self-preview closes");
+    await leaf.view.setState({ ...leaf.view.getState(), mode: "preview" }, { history: false });
+    await c.waitFor(() => frames().length === 2 && frames().every(frame => !frame.querySelector('[data-excalidraw-embed-action="resize"]')), "hybrid Reading controls are preview-only");
+    await action(0, "preview");
+    await c.waitFor(() => doc.querySelector(".excalidraw-embed-preview-modal [fileSource]")?.getAttribute("fileSource") === file.path, "Reading self-preview uses its drawing");
+    await key("Escape", "Escape", 27);
+    await c.waitFor(() => !doc.querySelector(".excalidraw-embed-preview-modal"), "Reading self-preview closes");
+    check(await app.vault.read(file) === source && await app.vault.read(drawing) === drawingBytes, "hybrid controls changed drawing data or another drawing");
+    return { assertions: ["drawing opened as Markdown owns self and other drawing embeds", "short self-link identity", "exact resize/reset and single undo", "physical save preserves serialized drawing data", "exact source selection", "Live Preview and Reading fullscreen", "Reading controls do not edit source", "other drawing unchanged"], actual: geometry() };
   });
 }
