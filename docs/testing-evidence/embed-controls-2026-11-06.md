@@ -195,11 +195,30 @@ Runtime source: `7de41e73247f5a5f7631519115d2856384661092`.
   `.test-work/reports/pr3037-alignment-native-focused-2/report.json`.
 - Production `main.js`: 5,088,831 bytes, 154,049 bytes below the 5 MiB target.
 
-The complete matching-build native profile remains required after this focused
-checkpoint. Its final run uses
-`.test-work/reports/pr3037-native-final-2026-11-07/report.json`; the PR description
+The complete matching-build native profile at the documentation checkpoint
+passed all 265 desktop cases and cleanup, then stopped at the phone resize
+handle's hit test. Cleanup and baseline restoration passed; incomplete device
+coverage does not count as acceptance. Evidence remains in
+`.test-work/reports/pr3037-native-final-2026-11-07/`.
+
+A diagnostic repeat captured the focused handle above the viewport (center
+approximately -30 px, editor scrollTop 613). CodeMirror's pending caret scroll
+could supersede the initial `scrollIntoView()` after image measurement. The
+native driver now permits at most three re-scrolls only when the handle center
+is outside the editor viewport. It still requires a real uncovered hit and
+120 ms of stable geometry before trusted input; an in-view overlay remains a
+failure. No product code, gesture assertions or exception gates changed.
+
+The failing diagnostic is retained in
+`.test-work/reports/pr3037-phone-layout-probe-1/`. The corrected repeat passed
+137 canonical cases, including all 108 phone/tablet cases, cleanup and baseline
+restoration: `.test-work/reports/pr3037-phone-layout-probe-2/`. All 717 fast tests
+also passed after the driver repair.
+
+Complete acceptance is rerun after this test-harness checkpoint using
+`.test-work/reports/pr3037-native-final-2026-11-07-2/report.json`; the PR description
 records that run's actual status, counts and exact source commit after completion.
-The documentation checkpoint adds no runtime or test-code changes. Previous
+The production runtime remains identical to `7de41e73`. Previous
 failed runs remain retained and do not count as acceptance evidence.
 
 `npm run code` reports 118 existing errors outside the modified production

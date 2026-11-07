@@ -83,13 +83,29 @@ async function exerciseEmbedControls(c, env, template, modifier) {
   const drag = async (index, delta, cancel = false, expectedSource = content) => {
     let frame = frames()[index], handle = frame.querySelector('[data-excalidraw-embed-action="resize"]');
     handle.focus(); handle.scrollIntoView({ block: "center" });
-    let r, x, y, signature, stableSince;
+    let r, x, y, signature, stableSince, scrollAttempts = 0;
     await c.waitFor(() => {
       const nextFrame = frames()[index], next = nextFrame?.querySelector('[data-excalidraw-embed-action="resize"]');
       if (!next) return false;
       if (next !== handle) { frame = nextFrame; handle = next; handle.focus(); handle.scrollIntoView({ block: "center" }); }
       r = handle.getBoundingClientRect(); x = r.x + r.width / 2; y = r.y + r.height / 2;
-      if (!handle.contains(doc.elementFromPoint(x, y))) { signature = null; return false; }
+      const scroller = leaf.view.editor.cm.scrollDOM.getBoundingClientRect();
+      c.observations = { ...c.observations, dragPreparation: {
+        handle: r.toJSON(), frame: frame.getBoundingClientRect().toJSON(),
+        image: frame.querySelector(".excalidraw-embedded-img")?.getBoundingClientRect().toJSON(),
+        hit: doc.elementFromPoint(x, y)?.outerHTML.slice(0, 500),
+        focus: doc.activeElement?.outerHTML.slice(0, 300),
+        scroller: scroller.toJSON(), scrollTop: leaf.view.editor.cm.scrollDOM.scrollTop, scrollAttempts,
+      } };
+      if (!handle.contains(doc.elementFromPoint(x, y))) {
+        // CodeMirror can apply its pending caret scroll after focus/scrollIntoView
+        // and image measurement. Reposition an offscreen target, then still
+        // require a stable real hit; never scroll to bypass an obscuring overlay.
+        if (scrollAttempts < 3 && (x < scroller.left || x >= scroller.right || y < scroller.top || y >= scroller.bottom)) {
+          scrollAttempts++; handle.scrollIntoView({ block: "center", inline: "nearest" });
+        }
+        signature = null; return false;
+      }
       const current = [r.x, r.y, r.width, r.height].map(value => Math.round(value * 10)).join(":");
       if (signature !== current) { signature = current; stableSince = Date.now(); }
       return Date.now() - stableSince >= 120;
