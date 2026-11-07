@@ -60,6 +60,14 @@ dependency graph rather than suppressing the warning. Check with
 - **Check production packaging:** Run `npm run test:bundle` after `npm run build` to verify the private React bootstrap, bundled font bytes, compressed locales, and release size target.
 - **Build the public library API:** Run `npm run lib` when changing exports or ExcalidrawAutomate APIs
 - **Run ESLint:** Run `npm run code`
+- **Check CSS scanner policy:** Run `npm run lint:css`. This uses the public
+  [`stylelint-config-obsidianmd`](https://github.com/obsidianmd/stylelint-config)
+  policy rules, with the browser target derived from `manifest.json`'s
+  `minAppVersion` using Obsidian's published Electron mapping. It follows the
+  [scanner workflow](https://github.com/obsidianmd/obsidian-workflows/blob/main/src/lint.ts)
+  without adding the theme package's formatting rules. The command fails on
+  warnings, so newly introduced policy findings can be caught before submission.
+  This is a local CSS check, not the complete hosted CodeScanner review.
 - **Fix ESLint Warnings:** Run `node ./scripts/fix-eslint-warnings.mjs`
 
 The shipped plugin is `dist/main.js`, `dist/styles.css`, and `dist/manifest.json`. Keep `main.js` below the **5 MB release target (5 × 1024 × 1024 = 5,242,880 bytes)** and report its byte size and remaining headroom after dependency or packaging changes.

@@ -53,6 +53,7 @@
     "skill": "npm run lib && node scripts/skill-builder.mjs",
     "mindmap": "node scripts/deploy-mindmap-builder.mjs",
     "lint": "eslint .",
+    "lint:css": "stylelint styles.css --config stylelint.config.mjs --max-warnings 0",
     "lint:fix": "npx prettier --write \"src/**/*.{ts,tsx}\" && eslint --max-warnings=0 --ext .ts,.tsx ./src --fix",
     "repo:export": "node scripts/generate-repository-zip.mjs",
     "repo:update": "node scripts/update-repository.mjs",
@@ -124,6 +125,8 @@
     "prettier": "^3.0.1",
     "rollup": "^4.14.0",
     "rollup-plugin-visualizer": "^7.0.1",
+    "stylelint": "17.6.0",
+    "stylelint-config-obsidianmd": "0.1.0",
     "tslib": "^2.8.1",
     "typescript": "5.9.3",
     "uglify-js": "^3.19.3"

@@ -304,7 +304,7 @@ button.ToolIcon_type_button[title="Export"] {
 
 .excalidraw-scriptengine-install tbody>tr>td>div>img {
   height: 20px;
-  background-color: silver;
+  background-color: #c0c0c0;
   padding: 2px;
 }
 
@@ -696,7 +696,7 @@ hr.excalidraw-setting-hr {
 
 img.excalidraw-cropped-pdfpage,
 .excalidraw-cropped-pdfpage svg {
-  background-color: white;
+  background-color: #fff;
 }
 
 .excalidraw .pdf-toolbar,
@@ -2608,7 +2608,7 @@ button.excalidraw-font-picker {
   width: 1px;
   height: 1px;
   overflow: hidden;
-  clip-path: inset(50%);
+  clip: rect(0, 0, 0, 0);
   white-space: nowrap;
 }
 /* Outrank the host's body.emulate-mobile .clickable-icon touch rule. */
@@ -2627,26 +2627,31 @@ button.excalidraw-font-picker {
      not become the minimum image width during a resize preview. */
   display: block;
   width: var(--excalidraw-embed-resize-width);
+  --excalidraw-embed-image-width: var(--excalidraw-embed-resize-width);
+  --excalidraw-embed-image-height: var(--excalidraw-embed-resize-height);
+  --excalidraw-embed-image-max-width: 100%;
+  --excalidraw-embed-image-max-height: none;
+  --excalidraw-embed-image-min-height: 0;
 }
 .excalidraw-embed-controls-frame.excalidraw-embed-controls-below.excalidraw-embed-resizing {
   width: max(var(--excalidraw-embed-resize-width), var(--excalidraw-embed-toolbar-row-width));
 }
-.excalidraw-embed-resizing > .excalidraw-embedded-img {
+.markdown-source-view .cm-content .excalidraw-embed-controls-frame.excalidraw-embed-resizing > .excalidraw-embedded-img {
   display: block;
   float: none;
-  width: var(--excalidraw-embed-resize-width) !important;
-  height: var(--excalidraw-embed-resize-height) !important;
-  max-width: 100% !important;
-  max-height: none !important;
-  min-height: 0 !important;
+  width: var(--excalidraw-embed-image-width);
+  height: var(--excalidraw-embed-image-height);
+  max-width: var(--excalidraw-embed-image-max-width);
+  max-height: var(--excalidraw-embed-image-max-height);
+  min-height: var(--excalidraw-embed-image-min-height);
 }
 .excalidraw-embed-controls-frame.excalidraw-svg-right.excalidraw-embed-resizing > .excalidraw-embedded-img {
   margin-left: auto;
 }
-.excalidraw-embed-resizing > .excalidraw-embedded-img svg {
-  width: 100% !important;
-  height: 100% !important;
-  max-height: none !important;
+.markdown-source-view .cm-content .excalidraw-embed-controls-frame.excalidraw-embed-resizing > .excalidraw-embedded-img > svg {
+  width: 100%;
+  height: 100%;
+  max-height: none;
 }
 .excalidraw-embed-preview-container {
   padding: 0;
@@ -2711,14 +2716,19 @@ button.excalidraw-font-picker {
   height: 100%;
   transform-origin: center;
   pointer-events: none;
+  --excalidraw-embed-image-width: 100%;
+  --excalidraw-embed-image-height: 100%;
+  --excalidraw-embed-image-max-width: 100%;
+  --excalidraw-embed-image-max-height: 100%;
+  --excalidraw-embed-image-min-height: 0;
 }
-.excalidraw-embed-preview-surface > *,
-.excalidraw-embed-preview-surface svg {
-  width: 100% !important;
-  height: 100% !important;
-  max-width: 100% !important;
-  max-height: 100% !important;
-  min-height: 0 !important;
+.excalidraw-embed-preview-container .excalidraw-embed-preview-modal .excalidraw-embed-preview-surface > .excalidraw-embedded-img,
+.excalidraw-embed-preview-container .excalidraw-embed-preview-modal .excalidraw-embed-preview-surface > .excalidraw-embedded-img > svg {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  min-height: 0;
   object-fit: contain;
   pointer-events: none;
 }

@@ -260,6 +260,14 @@ const setImgStyle = ({
       styles[targetHeightProperty] = `${imgAttributes.fheight}px`;
     }
 
+    // Preserve the renderer's normal dimensions as fallbacks. Owned resize and
+    // preview frames can override these variables without fighting inline styles.
+    for (const [property, suffix] of [
+      ["width", "width"], ["height", "height"], ["maxWidth", "max-width"],
+      ["maxHeight", "max-height"], ["minHeight", "min-height"],
+    ] as const) {
+      if (styles[property]) styles[property] = `var(--excalidraw-embed-image-${suffix}, ${styles[property]})`;
+    }
     // Apply styles uniformly using the generic function
     setStyle(element, styles);
   }
