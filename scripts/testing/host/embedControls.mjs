@@ -261,6 +261,10 @@ async function exerciseEmbedControls(c, env, template, modifier) {
     app.workspace.setActiveLeaf(leaf, { focus: true });
     leaf.view.editor.setCursor({ line: leaf.view.editor.lastLine(), ch: 0 });
     const cm = leaf.view.editor.cm;
+    const tableEvents = [], observeTableInput = event => tableEvents.push({ type: event.type, key: event.key, target: event.target.getAttribute?.("class"), activeLeaf: app.workspace.activeLeaf?.id, trusted: event.isTrusted });
+    for (const name of ["focusin", "keydown", "keyup"]) doc.addEventListener(name, observeTableInput, true);
+    c.defer(() => { for (const name of ["focusin", "keydown", "keyup"]) doc.removeEventListener(name, observeTableInput, true); });
+    c.observations.tableInput = { ownerLeaf: leaf.id, events: tableEvents };
     const ready = () => {
       const current = frames();
       c.observations = { ...c.observations, table: { selection: cm.state.selection.main.toJSON(), frames: current.map(frame => ({ connected: frame.isConnected, bounds: frame.getBoundingClientRect().toJSON(), width: frame.querySelector(".excalidraw-embedded-img")?.getAttribute("w") })), html: cm.contentDOM.querySelector(".cm-table-widget")?.outerHTML.replace(/<svg\b[\s\S]*?<\/svg>/g, "<svg/>").slice(0, 10000) } };
@@ -279,6 +283,7 @@ async function exerciseEmbedControls(c, env, template, modifier) {
     await action(1, "resize");
     await c.waitFor(() => doc.activeElement === frames()[1]?.querySelector('[data-excalidraw-embed-action="resize"]'), "owned table resize keyboard focus");
     await key("ArrowRight", "ArrowRight", 39);
+    c.observations.tableInput.afterKeyboard = { activeLeaf: app.workspace.activeLeaf?.id, activeElement: doc.activeElement?.getAttribute("class"), outerFocus: cm.hasFocus, source: cm.state.doc.toString() };
     const changed = source.replace(token + " | second", token.replace("\\|100", "\\|108") + " | second");
     await c.waitFor(() => cm.state.doc.toString() === changed, "only the second identical physical table cell resized");
     if (other) await c.waitFor(() => other.view.editor.getValue() === changed, "same-note split receives the exact table transaction");
