@@ -2587,7 +2587,7 @@ button.excalidraw-font-picker {
   opacity: 1;
   pointer-events: auto;
 }
-.excalidraw-embed-resizing {
+.excalidraw-embed-controls-frame.excalidraw-embed-resizing {
   width: var(--excalidraw-embed-resize-width);
 }
 .excalidraw-embed-resizing > .excalidraw-embedded-img {

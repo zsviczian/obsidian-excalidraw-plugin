@@ -150,6 +150,17 @@ targeted lint or TypeScript diagnostics. Fresh complete portable/native acceptan
 is still required at this checkpoint. Minimum Obsidian 1.8.7, macOS, physical
 Android/iOS and hosted CodeScanner remain separate unverified gates.
 
+The isolated alignment check found that the existing
+`div.excalidraw-svg-left/right` width rule overrode the gesture's single-class
+width rule. A requested 220 px preview measured 600 px in a 600 px container for
+both alignments, in PNG, SVG image and inline SVG. The scoped two-class gesture
+selector measures 220 px in all nine default/left/right and image-mode cases.
+Evidence: `.test-work/pr3037-alignment-css-probe.json` and
+`.test-work/pr3037-alignment-css-fixed.json`. The native input cases now assert
+actual preview size/aspect ratio during movement and exercise pointer resizing
+of left-aligned wiki embeds and right-aligned Markdown-image table cells. Fresh
+complete acceptance is required after this CSS checkpoint.
+
 `npm run code` reports 118 existing errors outside the modified production
 modules; targeted lint and targeted TypeScript diagnostics pass. Production
 builds retain the same existing 18 Rollup circular-dependency warnings. The

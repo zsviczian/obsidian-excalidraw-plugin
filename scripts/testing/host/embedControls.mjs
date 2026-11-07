@@ -80,7 +80,7 @@ async function exerciseEmbedControls(c, env, template, modifier) {
     if (!touch) await input("Input.dispatchMouseEvent", { type: "mouseMoved", x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 });
     await click(() => frames()[index]?.querySelector(`[data-excalidraw-embed-action="${name}"]`));
   };
-  const drag = async (index, delta, cancel = false) => {
+  const drag = async (index, delta, cancel = false, expectedSource = content) => {
     let frame = frames()[index], handle = frame.querySelector('[data-excalidraw-embed-action="resize"]');
     handle.focus(); handle.scrollIntoView({ block: "center" });
     let r, x, y, signature, stableSince;
@@ -94,6 +94,8 @@ async function exerciseEmbedControls(c, env, template, modifier) {
       if (signature !== current) { signature = current; stableSince = Date.now(); }
       return Date.now() - stableSince >= 120;
     }, "stable uncovered resize handle");
+    const image = frame.querySelector(".excalidraw-embedded-img"), visual = image.querySelector("svg") ?? image;
+    const initial = visual.getBoundingClientRect();
     const events = [], eventNames = ["pointerdown", "pointermove", "pointerup", "pointercancel", "touchstart", "touchmove", "blur", "lostpointercapture"];
     const observe = event => events.push({ type: event.type, target: event.target.className, trusted: event.isTrusted, x: event.clientX, y: event.clientY, prevented: event.defaultPrevented, cancelable: event.cancelable });
     for (const name of eventNames) win.addEventListener(name, observe, true);
@@ -112,8 +114,10 @@ async function exerciseEmbedControls(c, env, template, modifier) {
       const states = c.observations.drag.states = [];
       const snapshot = () => states.push({ connected: frame.isConnected, current: frame === frames()[index], classes: frame.className, handleAction: win.getComputedStyle(handle).touchAction, selection: leaf.view.editor.cm.state.selection.main.toJSON() });
       await send("down", x); snapshot(); await send("move", x + delta / 2); snapshot(); await send("move", x + delta); snapshot();
-      check(leaf.view.editor.getValue() === content, "pointer movement wrote source before commit");
+      check(leaf.view.editor.getValue() === expectedSource, "pointer movement wrote source before commit");
       check(frame.hasClass("excalidraw-embed-resizing"), "real pointer did not start CSS resize preview");
+      const preview = visual.getBoundingClientRect();
+      check(Math.abs(preview.width - initial.width - delta) < 1 && Math.abs(preview.height - preview.width * initial.height / initial.width) < 1, "resize preview geometry lost its requested size or aspect ratio");
       if (cancel) await key("Escape", "Escape", 27);
     } finally { await send("up", x + delta); }
   };
@@ -250,7 +254,7 @@ async function exerciseEmbedControls(c, env, template, modifier) {
 
   await c.case(`native:embed-table:${context}`, ["P03", "P04", "P05"], async () => {
     const token = `![[${drawing.path}\\|Caption\\|100\\|left]]`;
-    const markdown = `![Label\\|120](<${drawing.path}#^as-image> "Keep title")`;
+    const markdown = `![Label\\|120\\|right](<${drawing.path}#^as-image> "Keep title")`;
     const source = `# Table source\n\n| Drawing | Cell |\n| --- | --- |\n| ${token} | first |\n| ${token} | second |\n| ${markdown} | third |\n\nFooter\n`;
     const file = await create("Table-source.md", source);
     await leaf.setViewState({ type: "markdown", state: { file: file.path, mode: "source", source: false } });
@@ -275,11 +279,19 @@ async function exerciseEmbedControls(c, env, template, modifier) {
     await action(1, "resize");
     await c.waitFor(() => doc.activeElement === frames()[1]?.querySelector('[data-excalidraw-embed-action="resize"]'), "owned table resize keyboard focus");
     await key("ArrowRight", "ArrowRight", 39);
-    const changed = source.replace(token + " | second", token.replace("100", "108") + " | second");
+    const changed = source.replace(token + " | second", token.replace("\\|100", "\\|108") + " | second");
     await c.waitFor(() => cm.state.doc.toString() === changed, "only the second identical physical table cell resized");
     if (other) await c.waitFor(() => other.view.editor.getValue() === changed, "same-note split receives the exact table transaction");
     cm.focus(); await key("z", "KeyZ", 90, modifier);
     await c.waitFor(() => cm.state.doc.toString() === source && ready(), "one undo restores table source and rendered dimensions");
+    for (const [index, label, original, resized] of [[1, "left", token, token.replace("\\|100", "\\|120")], [2, "right", markdown, markdown.replace("\\|120", "\\|140")]]) {
+      c.phase = `native:embed-table:${context}:aligned-resize-${label}`;
+      await drag(index, 20, false, source);
+      const expected = index === 1 ? source.replace(token + " | second", resized + " | second") : source.replace(original, resized);
+      await c.waitFor(() => cm.state.doc.toString() === expected, "aligned table resize preserves exact source and other cells");
+      cm.focus(); await key("z", "KeyZ", 90, modifier);
+      await c.waitFor(() => cm.state.doc.toString() === source && ready(), "aligned resize is one undo step");
+    }
     await action(2, "edit");
     check(cm.state.sliceDoc(cm.state.selection.main.from, cm.state.selection.main.to) === markdown, "table source edit selected the wrong syntax or cell");
     leaf.view.editor.setCursor({ line: leaf.view.editor.lastLine(), ch: 0 });
@@ -295,6 +307,6 @@ async function exerciseEmbedControls(c, env, template, modifier) {
     cm.focus(); await key("z", "KeyZ", 90, modifier);
     await c.waitFor(() => cm.state.doc.toString() === source, "table reset is one undo step");
     check(await app.vault.read(drawing) === drawingBytes, "table controls changed the drawing file");
-    return { assertions: ["native table widget public boundaries and physical cell ownership", "escaped wiki and Markdown-image dimensions render", "only second identical row changes", "same-note split synchronization", "one-step undo/reset", "exact Markdown syntax selection", "aliases/styles/title and other cells preserved", "drawing bytes unchanged"], actual: geometry() };
+    return { assertions: ["native table widget public boundaries and physical cell ownership", "escaped wiki and Markdown-image dimensions render", "only second identical row changes", "same-note split synchronization", "left/right pointer previews retain measured size and aspect ratio", "one-step undo/reset", "exact Markdown syntax selection", "aliases/styles/title and other cells preserved", "drawing bytes unchanged"], actual: geometry() };
   });
 }
