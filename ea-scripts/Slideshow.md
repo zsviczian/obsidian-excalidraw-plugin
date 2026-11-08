@@ -129,10 +129,11 @@ Select **Print slideshow to PDF** in the sidepanel or presentation toolbar to op
 - The **Print only visible slides** toggle is on by default. Turn it off to include excluded slides, including decks whose slides are all excluded.
 - Choose the configured slide size, **A4**, **Letter**, **16:9**, or **Custom**, then select **Landscape** or **Portrait**. Width and height are editable in pixels (96 pixels per inch), from 320 to 14400 pixels. Holding Shift while opening setup starts with the current viewport dimensions.
 - Each slide is clipped to its own rectangle and fitted intact inside its page or handout slot. Changing paper aspect ratio never pulls neighboring slides into the printout or splits a slide across pages. Handout slots retain the configured presentation aspect ratio.
+- **Include frames around slides** adds a border using the configured slide aspect ratio in notes and handout layouts, including notes continuations. It is off by default and hidden for **Slides only**, which always prints without added frames.
 - **Margins** offers **None** (default, edge-to-edge slides), **Minimal** (10 px), and **Normal** (60 px). Margins apply to slides and handouts without adding a second inset in the PDF exporter.
 - Notes use Obsidian's Markdown renderer, preserving headings, emphasis, links, lists, tables, and code as formatted HTML. Long notes continue in another slot with the slide repeated.
 - **Page ranges** accepts output-page selections such as `1-3;5;9-`; leave it blank for all pages. Ranges count final pages, including notes continuation pages, and preserve their original order.
-- Confirmed print preferences (layout, visibility, page size, orientation/dimensions, margins, and page ranges) are saved in script settings and restored the next time print setup opens. The slideshow source initially follows the current drawing.
+- Confirmed print preferences (layout, visibility, handout frames, page size, orientation/dimensions, margins, and page ranges) are saved in script settings and restored the next time print setup opens. The slideshow source initially follows the current drawing.
 
 PDF creation uses Excalidraw's existing desktop PDF export and its normal save dialog.
 
@@ -159,7 +160,7 @@ The note includes every frame slide in sorter order, including excluded slides. 
   Alt/Option.
 - **Open the Slideshow sidepanel:** Hold Cmd on macOS or Ctrl on Windows/Linux while invoking the script.
 
-Build version: 2026-11-04T07:18:10.636Z
+Build version: 2026-11-08T14:18:12.266Z
 
 ```javascript
 */
@@ -203,6 +204,7 @@ Build version: 2026-11-04T07:18:10.636Z
     printNotesPage: "Notes \u2014 one slide per page",
     printHandout2: "Handout \u2014 two slides with notes per page",
     printHandout3: "Handout \u2014 three slides with notes per page",
+    printIncludeFrames: "Include frames around slides",
     printVisibleOnly: "Print only visible slides",
     printVisibleOnlyHint: "Turn off to include excluded slides.",
     printPageRanges: "Page ranges",
@@ -4295,6 +4297,7 @@ Build version: 2026-11-04T07:18:10.636Z
     const defaults = {
       layout: "slides",
       visibleOnly: true,
+      includeFrames: false,
       margin: "none",
       width,
       height,
@@ -4308,6 +4311,7 @@ Build version: 2026-11-04T07:18:10.636Z
     if (["slides", "notes", "handout-2", "handout-3"].includes(String(saved.layout)))
       defaults.layout = saved.layout;
     if (typeof saved.visibleOnly === "boolean") defaults.visibleOnly = saved.visibleOnly;
+    if (typeof saved.includeFrames === "boolean") defaults.includeFrames = saved.includeFrames;
     if (["none", "minimal", "normal"].includes(String(saved.margin)))
       defaults.margin = saved.margin;
     if (["configured", "A4", "Letter", "16:9", "custom"].includes(String(saved.preset)))
@@ -4396,6 +4400,15 @@ Build version: 2026-11-04T07:18:10.636Z
         ["handout-3", t("printHandout3")]
       ]);
       layout.value = preferences.layout;
+      let includeFrames = preferences.includeFrames ?? false;
+      const framesRow = new ea2.obsidian.Setting(modal.contentEl).setName(t("printIncludeFrames")).addToggle(
+        (toggle) => toggle.setValue(includeFrames).onChange((value) => {
+          includeFrames = value;
+        })
+      );
+      const updateFramesVisibility = () => framesRow.settingEl.toggle(layout.value !== "slides");
+      layout.addEventListener("change", updateFramesVisibility);
+      updateFramesVisibility();
       const theme = select(t("printTheme"), [
         ["light", t("printThemeLight")],
         ["dark", t("printThemeDark")]
@@ -4482,6 +4495,7 @@ Build version: 2026-11-04T07:18:10.636Z
           sourceKey: source.value,
           layout: layout.value,
           visibleOnly,
+          includeFrames: layout.value !== "slides" && includeFrames,
           theme: theme.value,
           pageRanges: ranges.value.trim(),
           margin: margin.value
@@ -4489,6 +4503,7 @@ Build version: 2026-11-04T07:18:10.636Z
         void savePrintPreferences(ea2, {
           layout: result.layout,
           visibleOnly,
+          includeFrames,
           margin: result.margin,
           width: result.width,
           height: result.height,
@@ -4661,6 +4676,19 @@ Build version: 2026-11-04T07:18:10.636Z
             clone.setAttribute("x", String(boxes.slide.x));
             clone.setAttribute("y", String(boxes.slide.y + y));
             page.appendChild(clone);
+            if (settings.includeFrames) {
+              page.createSvg("rect", {
+                attr: {
+                  x: slideBox.x,
+                  y: slideBox.y + y,
+                  width: slideBox.width,
+                  height: slideBox.height,
+                  fill: "none",
+                  stroke: colors.border,
+                  "stroke-width": 1
+                }
+              });
+            }
             appendPrintNotes(page, notes, { ...boxes.notes, y: boxes.notes.y + y });
             slot += 1;
           }
