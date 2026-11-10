@@ -421,6 +421,14 @@ npm run test:markdown-embeds
 npm run verify:obsidian:plugin -- --embed-recovery
 ```
 
+For #3039, #3040 and interactive area padding, run
+`node scripts/testing/host/verify.mjs --embed-regressions`. Its six main/popout
+cases cover relative Live Preview links, long detached Reading sections in PNG,
+SVG image and native SVG formats, plus padding preview, exact source edits,
+undo, cancellation and unchanged drawing bytes. See
+[drawing embed controls](DRAWING_EMBED_CONTROLS.md). The cases are also included
+in complete native profiles; this focused command does not run those profiles.
+
 Use `npm.cmd` in PowerShell. `--embed-recovery` also works with `verify:obsidian`
 and can be combined with `--text-undo` or `--grouped-link-click`. The offline tests exercise the real
 postprocessor with deferred image generation, including failed renders, temporary

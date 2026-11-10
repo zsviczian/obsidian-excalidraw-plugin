@@ -22,6 +22,7 @@ import { workflowBundleCaseIds } from "./host/workflowBundle.mjs";
 import { textSaveShortcutCaseIds } from "./host/textSaveShortcut.mjs";
 import { codeCardCaseIds } from "./host/codeCards.mjs";
 import { embedControlCaseIds, embedControlDeviceCaseIds } from "./host/embedControls.mjs";
+import { embedRegressionCaseIds } from "./host/embedRegressions.mjs";
 import { kplexOntologyCaseIds, kplexOntologyDeviceCaseIds } from "./host/kplexOntology.mjs";
 
 export const requiredDeviceCases = [
@@ -34,6 +35,7 @@ export const requiredNativeCases = [
   ...textSaveShortcutCaseIds,
   ...codeCardCaseIds,
   ...embedControlCaseIds,
+  ...embedRegressionCaseIds,
   ...kplexOntologyCaseIds,
   ...behavioralCases().map((row) => row.testId),
   ...["image-url", "image-import"].flatMap((action) =>

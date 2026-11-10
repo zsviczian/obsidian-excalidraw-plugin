@@ -17,6 +17,8 @@ export default {
   // Drawing embed controls (#3036)
   EMBED_OPEN_MODIFIER: "{keys}+щелчок: {action}",
   EMBED_ACTIONS: "Действия со встроенным рисунком",
+  EMBED_ADJUST_PADDING: "Изменить отступ области",
+  EMBED_RESET_PADDING: "Использовать отступ по умолчанию",
   EMBED_OPEN_DRAWING: "Открыть рисунок",
   EMBED_EDIT_SOURCE: "Изменить синтаксис вставки",
   EMBED_RESET_SIZE: "Сбросить размер вставки",

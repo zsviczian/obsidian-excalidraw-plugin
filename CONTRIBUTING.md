@@ -105,6 +105,10 @@ For Markdown embed changes, also run `npm run test:markdown-embeds` and
 `npm run verify:obsidian:plugin -- --embed-recovery`. See the runtime guide for
 fixture ownership, deferred rendering, popout coverage, and remaining manual checks.
 
+For relative links, detached Reading sections and area-padding controls, use the
+six-case `node scripts/testing/host/verify.mjs --embed-regressions` lane. See
+[drawing embed controls](docs/DRAWING_EMBED_CONTROLS.md) for behavior and scope.
+
 For drawing-load warning changes, run `npm run test:drawing-load-error` to check
 file identity, read-only details, filename truncation, and unchanged confirmation results.
 

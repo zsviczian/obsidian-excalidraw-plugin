@@ -1,7 +1,7 @@
 /** Exercise the real postprocessor with deferred image generation, without Electron. */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { resolve, posix } from "node:path";
 import test from "node:test";
 import vm from "node:vm";
 import ts from "typescript";
@@ -90,7 +90,7 @@ function fixture() {
     isExcalidrawFile: file => file.path.endsWith("excalidraw.md"),
     app: {
       vault: { getAbstractFileByPath: path => files.get(path), getFileByPath: path => files.get(path) },
-      metadataCache: { getFirstLinkpathDest: path => files.get(path), getFileCache: file => ({ frontmatter: frontmatters.get(file.path) }) },
+      metadataCache: { getFirstLinkpathDest: (path, source) => files.get(path.startsWith(".") ? posix.normalize(posix.join(posix.dirname(source), path)) : path), getFileCache: file => ({ frontmatter: frontmatters.get(file.path) }) },
     },
   };
   const queue = { addTask: task => new Promise((resolve, reject) => jobs.push(async () => { try { await task(); resolve(); } catch (e) { reject(e); } })) };
@@ -154,8 +154,63 @@ function fixture() {
   const start = () => { assert.ok(jobs.length); const done = jobs.shift()(); return done; };
   const settle = async (name = "result", request = requests.at(-1)) => { const result = image(name); request.resolve(result); await Promise.resolve(); return result; };
   return { processor, plugin, container, ctx, el, children, render, jobs, requests, errors, released, observers, timers, intervals, loaders, frontmatters, flushTimers, start, settle, image, Element, rasters, controls, controlInstances, cacheReady: value => cacheReady = value,
+    files, sourceFile, targetFile,
     unloadPlugin: () => { plugin._loaded = false; for (const callback of pluginCleanups.splice(0)) callback(); } };
 }
+
+test("#3040 Live Preview uses the rendered drawing identity for a host-relative embed", async () => {
+  const f = fixture();
+  f.files.delete(f.sourceFile.path); f.sourceFile.path = "Excalidraw/Drawings/Test.excalidraw.md";
+  f.files.set(f.sourceFile.path, f.sourceFile); f.ctx.sourcePath = f.sourceFile.path;
+  f.container.setAttribute("src", "../Excalidraw/Drawings/Test.excalidraw.md#^area=abcdefgh,padding=20");
+  const rendered = f.render();
+  assert.equal(f.jobs.length, 1, "relative link is already resolved by the drawing render context");
+  const job = f.start();
+  assert.equal(f.requests[0].attr.fname, f.sourceFile.path + "#^area=abcdefgh,padding=20");
+  await f.settle(); await job; await rendered;
+  assert.equal(f.container.hasAttribute("ready"), true);
+});
+
+test("#3039 a claimed Reading section renders while detached and survives later attachment", async () => {
+  const f = fixture(), section = new f.Element(), embed = section.appendChild(new f.Element("internal-embed"));
+  section.isConnected = embed.isConnected = false; embed.setAttribute("src", "target.excalidraw.md");
+  const rendered = f.processor.markdownPostProcessor(section, f.ctx);
+  assert.equal(embed.hasClass("is-loaded"), true);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(f.jobs.length, 1, "claimed detached embeds must not be abandoned");
+  const job = f.start();
+  assert.equal(f.requests[0].isRenderActive(), true, "loader follows context lifetime, not temporary attachment");
+  const image = await f.settle(); await job; await rendered;
+  section.isConnected = embed.isConnected = true;
+  assert.equal(section.querySelector(".excalidraw-embedded-img"), image.firstElementChild);
+});
+
+test("Reading callbacks deduplicate deferred renders and retire controls when the image is replaced", async () => {
+  const f = fixture(), embed = new f.Element("internal-embed"); embed.setAttribute("src", "target.excalidraw.md");
+  const first = f.processor.processReadingMode([embed], f.ctx, true);
+  const duplicate = f.processor.processReadingMode([embed], f.ctx, true);
+  assert.equal(f.jobs.length, 1);
+  const job = f.start(); const image = await f.settle(); await job; await Promise.all([first, duplicate]);
+  assert.equal(embed.children[0], image); assert.equal(f.controlInstances.length, 1);
+  await f.processor.processReadingMode([embed], f.ctx, true); assert.equal(f.jobs.length, 0);
+  embed.setAttribute("width", "120"); f.observers.find(observer => observer.el === embed).fire("width"); f.flushTimers();
+  const refresh = f.start(); const resized = await f.settle("reading-resized"); await refresh;
+  assert.equal(embed.children[0], resized); assert.equal(f.controlInstances[0]._loaded, false);
+  assert.equal(f.controlInstances[1]._loaded, true); f.children[0].unload();
+  assert.equal(f.controlInstances[1]._loaded, false);
+});
+
+test("Reading context retirement cancels queued and in-flight detached images", async () => {
+  for (const duringExport of [false, true]) {
+    const f = fixture(), embed = new f.Element("internal-embed"); embed.setAttribute("src", "target.excalidraw.md"); embed.isConnected = false;
+    const render = f.processor.processReadingMode([embed], f.ctx, true);
+    const job = duringExport ? f.start() : null; f.children[0].unload();
+    if (duringExport) { assert.equal(f.requests[0].isRenderActive(), false); await f.settle("cancelled-reading"); }
+    await (job ?? f.start()); await render;
+    assert.equal(embed.children.length, 0); assert.equal(f.controls.length, 0);
+    if (duringExport) assert.ok(f.released.includes("blob:cancelled-reading"));
+  }
+});
 
 test("plugin unload releases Reading controls and context cleanup removes owners from its registry", async () => {
   for (const contextFirst of [false, true]) {
@@ -306,12 +361,12 @@ test("ordinary image embeds, text references and code blocks remain native", asy
   }
 });
 
-test("Reading mode skips a detached candidate without suppressing a later live drawing", async () => {
+test("Reading mode ignores an unrecognized detached candidate without suppressing a later drawing", async () => {
   const f = fixture(); const detached = new f.Element(); detached.isConnected = false;
   const parent = new f.Element(), live = parent.appendChild(new f.Element("internal-embed")); live.setAttribute("src", "target.excalidraw.md");
   const rendered = f.processor.processReadingMode([detached, live], f.ctx);
   assert.equal(f.jobs.length, 1); const job = f.start(); const result = await f.settle(); await job; await rendered;
-  assert.equal(parent.children[0], result);
+  assert.equal(live.children[0], result);
 });
 
 test("image loader cancellation follows context lifetime and always clears its interval", async () => {
@@ -343,7 +398,7 @@ test("Reading mode resolves explicit self-images, but ignores empty and ordinary
     const rendered = f.processor.processReadingMode([embed], f.ctx);
     if (src === "#^as-image") {
       const job = f.start(); assert.equal(f.requests[0].attr.fname, `${f.ctx.sourcePath}#^as-image`);
-      const result = await f.settle(); await job; await rendered; assert.equal(parent.children[0], result);
+      const result = await f.settle(); await job; await rendered; assert.equal(embed.children[0], result);
     } else { await rendered; assert.equal(f.jobs.length, 0); assert.equal(parent.children[0], embed); }
   }
 });
@@ -354,7 +409,7 @@ test("Reading mode preserves a target's Markdown side unless the link explicitly
       const f = fixture(); const parent = new f.Element(); const embed = parent.appendChild(new f.Element("internal-embed")); embed.setAttribute("src", `target.excalidraw.md${suffix}`);
       f.frontmatters.set("target.excalidraw.md", { [property]: true });
       const rendered = f.processor.processReadingMode([embed], f.ctx);
-      if (suffix) { const job = f.start(); await f.settle(); await job; await rendered; assert.notEqual(parent.children[0], embed); }
+      if (suffix) { const job = f.start(); const image = await f.settle(); await job; await rendered; assert.equal(embed.children[0], image); }
       else { await rendered; assert.equal(f.jobs.length, 0); assert.equal(parent.children[0], embed); }
     }
   }
@@ -392,7 +447,7 @@ test("PDF postprocessing claims drawing images before native embed discovery", a
   assert.equal(f.requests.length, 0, "claiming an image does not bypass settings readiness");
   settings.resolve(); await new Promise(resolve => setImmediate(resolve));
   const job = f.start(); const image = await f.settle(); await job; await rendered;
-  assert.equal(section.children[0], image, "PDF rendering awaits the actual drawing image");
+  assert.equal(draw.children[0], image, "PDF rendering awaits the actual drawing image");
   assert.equal(section.children[1], plain, "native images remain untouched");
 });
 

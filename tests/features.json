@@ -121,7 +121,10 @@
         {
           "layer": "native",
           "path": "scripts/testing/host/textSaveShortcut.mjs",
-          "cases": ["native:workflow-text-save-2941:main", "native:workflow-text-save-2941:popout"]
+          "cases": [
+            "native:workflow-text-save-2941:main",
+            "native:workflow-text-save-2941:popout"
+          ]
         },
         {
           "layer": "source",
@@ -412,6 +415,10 @@
         {
           "path": "src/shared/Dialogs/DrawingEmbedPreviewModal.ts",
           "symbol": "export class DrawingEmbedPreviewModal"
+        },
+        {
+          "path": "src/core/managers/DrawingEmbedPaddingControl.ts",
+          "symbol": "DrawingEmbedPaddingControl"
         }
       ],
       "tests": [
@@ -425,12 +432,17 @@
         {
           "layer": "native",
           "path": "scripts/testing/host/workflowBundle.mjs",
-          "cases": ["native:workflow-markdown-extraction-3009"]
+          "cases": [
+            "native:workflow-markdown-extraction-3009"
+          ]
         },
         {
           "layer": "native",
           "path": "scripts/testing/host/codeCards.mjs",
-          "cases": ["native:workflow-code-card-2894:main", "native:workflow-code-card-2894:popout"]
+          "cases": [
+            "native:workflow-code-card-2894:main",
+            "native:workflow-code-card-2894:popout"
+          ]
         },
         {
           "layer": "source",
@@ -684,8 +696,43 @@
           "path": "scripts/testing/embedControls.source.test.mjs",
           "cases": [
             "node:scripts/testing/embedControls.source.test.mjs::resize previews proportionally without writing, then commits once on the owned pointer release",
-        "node:scripts/testing/embedControls.source.test.mjs::toolbar compatibility events cannot activate the surrounding native table cell",
+            "node:scripts/testing/embedControls.source.test.mjs::toolbar compatibility events cannot activate the surrounding native table cell",
             "node:scripts/testing/embedControls.source.test.mjs::Escape, lost capture, stale source and visual replacement cancel without stale writes"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/embedPadding.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/embedPadding.source.test.mjs::padding edits preserve wiki, Markdown, encoded paths, titles, aliases and escaped table delimiters",
+            "node:scripts/testing/embedPadding.source.test.mjs::padding changes only the owned repeated occurrence in one undo step and preserves target guards",
+            "node:scripts/testing/embedPadding.source.test.mjs::padding never writes through a stale source, owner or physical table-cell range",
+            "node:scripts/testing/embedPadding.source.test.mjs::padding previews debounce without writing; closing commits exactly once and releases fresh payloads",
+            "node:scripts/testing/embedPadding.source.test.mjs::newer padding previews win; late exports after Escape, unload or stale source are discarded",
+            "node:scripts/testing/embedPadding.source.test.mjs::padding wheel, outside close and default reset use the configured gesture without duplicate writes",
+            "node:scripts/testing/embedPadding.source.test.mjs::padding row aligns beneath the whole toolbar, stays onscreen, and exposes disclosure state"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/markdownEmbeds.test.mjs",
+          "cases": [
+            "node:scripts/testing/markdownEmbeds.test.mjs::#3040 Live Preview uses the rendered drawing identity for a host-relative embed",
+            "node:scripts/testing/markdownEmbeds.test.mjs::#3039 a claimed Reading section renders while detached and survives later attachment",
+            "node:scripts/testing/markdownEmbeds.test.mjs::Reading callbacks deduplicate deferred renders and retire controls when the image is replaced",
+            "node:scripts/testing/markdownEmbeds.test.mjs::Reading context retirement cancels queued and in-flight detached images"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/embedRegressions.mjs",
+          "cases": [
+            "native:embed-regressions:main:relative",
+            "native:embed-regressions:main:detached",
+            "native:embed-regressions:main:padding",
+            "native:embed-regressions:popout:relative",
+            "native:embed-regressions:popout:detached",
+            "native:embed-regressions:popout:padding"
           ]
         }
       ],

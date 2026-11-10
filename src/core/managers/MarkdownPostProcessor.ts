@@ -2,6 +2,7 @@ import { DrawingEmbedControls } from "./DrawingEmbedControls";
 import { getDrawingEmbedActions, setDrawingEmbedActions } from "./drawingEmbedActions";
 import { getDrawingEmbedOpenTooltip, openDrawingEmbed } from "./openDrawingEmbed";
 import { parseEmbedAlias } from "../editor/embedDimensions";
+import { withAreaPadding } from "../editor/embedPadding";
 import {
   App,
   MarkdownPostProcessorContext,
@@ -799,6 +800,16 @@ const createImgElement = async (
       return image;
     },
     discard: discardImage,
+    ...(withAreaPadding(attr.fname, null) !== null ? {
+      padding: {
+        value: getEmbeddedFilenameParts(attr.fname).padding ?? getExportPadding(currentPlugin, drawingFile),
+        create: async (padding: number | null, active: () => boolean) => {
+          const fname = withAreaPadding(attr.fname, padding);
+          if (fname === null) return null;
+          return getIMG({ ...attr, fname }, false, undefined, () => active() && isCurrent(), true);
+        },
+      },
+    } : {}),
   });
   return imgOrDiv;
 };
@@ -859,45 +870,33 @@ const processReadingMode = async (
   const promises: Promise<void>[] = [];
 
   for (const maybeDrawing of embeddedItems) {
-    // A detached candidate must not suppress later, connected embeds.
-    if (!maybeDrawing.isConnected) {
-      continue;
-    }
-
     //check to see if the file in the src attribute exists
     const file = getDrawingImageTarget(maybeDrawing, ctx.sourcePath);
 
     //if the embeddedFile exits and it is an Excalidraw file
-    //then lets replace the .internal-embed with the generated PNG or SVG image
+    //then render inside its claimed placeholder, including off-document sections
     if (file) {
       promises.push(
-        getGlobalTaskQueue(renderPlugin).addTask(async () => {
-          if (!renderPlugin._loaded || plugin !== renderPlugin || !maybeDrawing.isConnected) {
-            return;
-          }
-
-          const imgDiv = await processInternalEmbed(maybeDrawing, file);
-          if (!imgDiv) {
-            return;
-          }
-
-          // Ensure we don't attempt to append onto a detached DOM tree
-          if (!renderPlugin._loaded || plugin !== renderPlugin || !maybeDrawing.isConnected) {
-            discardImage(imgDiv);
-            return;
-          }
-
-          maybeDrawing.parentElement.replaceChild(imgDiv, maybeDrawing);
-          const image = imgDiv.querySelector(".excalidraw-embedded-img");
-          const actions = image && getDrawingEmbedActions(image);
-          const owners = readingControls;
-          if (showControls && owners && actions?.isCurrent() && !imgDiv.closest(".cm-content, .markdown-embed, .hover-popover, .canvas-node-content, .print")) {
-            const controls = new DrawingEmbedControls(imgDiv, actions);
-            owners.add(controls);
-            controls.register(() => owners.delete(controls));
-            try { ctx.addChild(controls); }
-            catch (error) { owners.delete(controls); controls.unload(); throw error; }
-          }
+        renderMarkdownEmbed(maybeDrawing as HTMLElement, maybeDrawing as HTMLElement, ctx, {
+          enqueue: task => getGlobalTaskQueue(renderPlugin).addTask(task),
+          createImage: active => processInternalEmbed(maybeDrawing, file, active),
+          discardImage,
+          isPluginLoaded: () => renderPlugin._loaded && plugin === renderPlugin,
+          // Reading sections are often prepared off-document. The render context,
+          // rather than isConnected, owns the claimed native placeholder's lifetime.
+          onImage: imgDiv => {
+            const image = imgDiv.querySelector(".excalidraw-embedded-img");
+            const actions = image && getDrawingEmbedActions(image);
+            const owners = readingControls;
+            if (showControls && owners && actions?.isCurrent() && !imgDiv.closest(".cm-content, .markdown-embed, .hover-popover, .canvas-node-content, .print")) {
+              const controls = new DrawingEmbedControls(imgDiv, actions);
+              owners.add(controls);
+              controls.register(() => owners.delete(controls));
+              try { ctx.addChild(controls); }
+              catch (error) { owners.delete(controls); controls.unload(); throw error; }
+              return () => controls.unload();
+            }
+          },
         }),
       );
     }
@@ -1190,7 +1189,17 @@ const tmpObsidianWYSIWYG = async (
   //over rendering when it is genuinely an Excalidraw drawing; otherwise leave the
   //embed alone so Obsidian's native renderer can display it.
   //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2292
-  const embedTargetFile = resolveEmbedTarget(internalEmbedDiv.getAttribute("src"), ctx.sourcePath);
+  const embedSrc = internalEmbedDiv.getAttribute("src");
+  const linkPath = embedSrc?.split("#")[0] ?? "";
+  // A drawing's postprocessor runs with that drawing as sourcePath, while a
+  // relative src on its outer embed belongs to the containing note. Obsidian has
+  // already resolved this context. Do not resolve that relative path a second
+  // time from the drawing's folder. Match its filename to keep unrelated native
+  // images in hybrid notes on their normal rendering path.
+  const contextDrawing = /^\.\.?\//.test(linkPath) &&
+    linkPath.split("/").at(-1).replace(/\.md$/i, "").toLowerCase() ===
+      file.path.split("/").at(-1).replace(/\.md$/i, "").toLowerCase();
+  const embedTargetFile = contextDrawing ? file : resolveEmbedTarget(embedSrc, ctx.sourcePath);
   if (
     !embedTargetFile ||
     !(embedTargetFile instanceof TFile) ||

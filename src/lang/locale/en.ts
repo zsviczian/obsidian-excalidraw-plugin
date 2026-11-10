@@ -19,6 +19,8 @@ export default {
   // Drawing embed controls (#3036)
   EMBED_OPEN_MODIFIER: "{keys}+click: {action}",
   EMBED_ACTIONS: "Drawing embed actions",
+  EMBED_ADJUST_PADDING: "Adjust area padding",
+  EMBED_RESET_PADDING: "Use default padding",
   EMBED_OPEN_DRAWING: "Open drawing",
   EMBED_EDIT_SOURCE: "Edit embed syntax",
   EMBED_RESET_SIZE: "Reset embed size",

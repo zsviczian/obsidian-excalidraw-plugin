@@ -11,6 +11,7 @@ import { runTextUndoScenario } from "./textUndo.mjs";
 import { runNativeCLIScenario } from "./nativeCLI.mjs";
 import { runEmbedRecoveryScenario } from "./embedRecovery.mjs";
 import { runEmbedControlsScenario } from "./embedControls.mjs";
+import { runEmbedRegressionsScenario } from "./embedRegressions.mjs";
 import { runGroupedLinkClickScenario } from "./groupedLinkClick.mjs";
 import { runLatexInputScenario } from "./latexInput.mjs";
 import { runImageGeometryScenario } from "./imageGeometry.mjs";
@@ -89,6 +90,7 @@ const stability = coreScenarios || profile === "soak" || process.argv.includes("
 const nativeCLI = coreScenarios || process.argv.includes("--native-cli");
 const embedRecovery = coreScenarios || process.argv.includes("--embed-recovery");
 const embedControls = coreScenarios || process.argv.includes("--embed-controls");
+const embedRegressions = coreScenarios || process.argv.includes("--embed-regressions");
 const groupedLinkClick =
   coreScenarios || process.argv.includes("--grouped-link-click");
 const latexInput = coreScenarios || process.argv.includes("--latex-input");
@@ -163,6 +165,7 @@ const flags = [
   "--native-cli",
   "--embed-recovery",
   "--embed-controls",
+  "--embed-regressions",
   "--grouped-link-click",
   "--latex-input",
   "--latex-preview",
@@ -354,6 +357,7 @@ try {
         ...(nativeCLI ? [runNativeCLIScenario] : []),
         ...(embedRecovery ? [runEmbedRecoveryScenario] : []),
         ...(embedControls ? [runEmbedControlsScenario] : []),
+        ...(embedRegressions ? [runEmbedRegressionsScenario] : []),
         ...(groupedLinkClick ? [runGroupedLinkClickScenario] : []),
         ...(latexInput ? [runLatexInputScenario] : []),
         ...(latexPreview
