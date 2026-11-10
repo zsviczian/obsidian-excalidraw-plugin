@@ -18,11 +18,16 @@ export interface DrawingEmbedActions extends DrawingEmbedPreview {
   openDrawing: (event: MouseEvent) => void;
   getOpenTooltip: () => string;
   isCurrent: () => boolean;
+  padding?: {
+    value: number;
+    create: (padding: number | null, isCurrent: () => boolean) => Promise<HTMLElement>;
+  };
 }
 
 export interface EmbedSourceBinding {
   readonly text: string;
   isCurrent(): boolean;
   replace(text: string): boolean;
+  replacePadding?(padding: number | null): boolean;
   select(): boolean;
 }

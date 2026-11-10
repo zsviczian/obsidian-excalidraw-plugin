@@ -14,6 +14,8 @@ export default {
   // Drawing embed controls (#3036)
   EMBED_OPEN_MODIFIER: "{keys}+单击：{action}",
   EMBED_ACTIONS: "嵌入绘图操作",
+  EMBED_ADJUST_PADDING: "调整区域边距",
+  EMBED_RESET_PADDING: "使用默认边距",
   EMBED_OPEN_DRAWING: "打开绘图",
   EMBED_EDIT_SOURCE: "编辑嵌入语法",
   EMBED_RESET_SIZE: "重置嵌入尺寸",

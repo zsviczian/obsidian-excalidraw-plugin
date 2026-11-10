@@ -19,6 +19,8 @@ export default {
   // Drawing embed controls (#3036)
   EMBED_OPEN_MODIFIER: "{keys}+clic: {action}",
   EMBED_ACTIONS: "Acciones del dibujo incrustado",
+  EMBED_ADJUST_PADDING: "Ajustar el margen del área",
+  EMBED_RESET_PADDING: "Usar el margen predeterminado",
   EMBED_OPEN_DRAWING: "Abrir dibujo",
   EMBED_EDIT_SOURCE: "Editar sintaxis de la inserción",
   EMBED_RESET_SIZE: "Restablecer tamaño",

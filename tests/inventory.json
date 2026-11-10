@@ -2469,6 +2469,10 @@
       "mode": "isolated-or-extracted"
     },
     {
+      "path": "scripts/testing/embedPadding.source.test.mjs",
+      "mode": "direct-module-or-tooling"
+    },
+    {
       "path": "scripts/testing/embedPreview.source.test.mjs",
       "mode": "direct-module-or-tooling"
     },

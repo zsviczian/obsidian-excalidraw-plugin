@@ -5,6 +5,7 @@ interface EmbedRenderer {
   createImage: (isCurrent: () => boolean) => Promise<HTMLDivElement>;
   discardImage: (image: Element) => void;
   isPluginLoaded: () => boolean;
+  onImage?: (image: HTMLDivElement) => (() => void) | undefined;
 }
 
 // One render owner per embed, including repeated postprocessor callbacks.
@@ -18,6 +19,7 @@ class MarkdownEmbedRenderChild extends MarkdownRenderChild {
   private ready = false;
   private image: HTMLDivElement | null = null;
   private timer: number | null = null;
+  private imageCleanup: (() => void) | undefined;
 
   constructor(containerEl: HTMLElement, private renderer: EmbedRenderer) {
     super(containerEl);
@@ -59,6 +61,7 @@ class MarkdownEmbedRenderChild extends MarkdownRenderChild {
     this.pending = null;
     this.ready = false;
     this.image = null;
+    this.imageCleanup?.(); this.imageCleanup = undefined;
     this.containerEl.removeAttribute("ready");
     this.renderer.discardImage(this.containerEl);
     if (children.get(this.containerEl) === this) children.delete(this.containerEl);
@@ -85,12 +88,14 @@ class MarkdownEmbedRenderChild extends MarkdownRenderChild {
       }
       // A live context may be temporarily detached by Obsidian. Rendering into
       // its container lets the image appear when that same section is reattached.
+      this.imageCleanup?.(); this.imageCleanup = undefined;
       this.renderer.discardImage(this.containerEl);
       this.containerEl.empty();
       this.containerEl.appendChild(image);
       this.image = image;
       this.ready = true;
       this.containerEl.setAttribute("ready", "");
+      this.imageCleanup = this.renderer.onImage?.(image);
     }).catch((error: unknown) => {
       if (isCurrent()) console.error("Excalidraw Markdown embed render failed", error);
     }).finally(() => {

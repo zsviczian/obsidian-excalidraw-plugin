@@ -5,6 +5,7 @@ import { DrawingEmbedPreviewModal } from "src/shared/Dialogs/DrawingEmbedPreview
 import { t } from "src/lang/helpers";
 import { removeStyle, setStyle } from "src/utils/styleUtils";
 import { labelDrawingEmbedControl } from "./drawingEmbedActions";
+import { DrawingEmbedPaddingControl } from "./DrawingEmbedPaddingControl";
 
 interface ResizeGesture {
   owner: Component;
@@ -28,6 +29,7 @@ export class DrawingEmbedControls extends MarkdownRenderChild {
   private gesture: ResizeGesture | null = null;
   private active = false;
   private modals = new Set<DrawingEmbedPreviewModal>();
+  private padding: DrawingEmbedPaddingControl | null = null;
 
   constructor(
     frame: HTMLElement,
@@ -67,6 +69,17 @@ export class DrawingEmbedControls extends MarkdownRenderChild {
     this.registerDomEvent(open, "pointerenter", () => setTooltip(open, this.actions.getOpenTooltip()));
     this.registerDomEvent(open, "focus", () => setTooltip(open, this.actions.getOpenTooltip()));
     if (this.source) {
+      if (this.actions.padding && this.source.replacePadding) {
+        const padding = button("padding", "square-dot", t("EMBED_ADJUST_PADDING"), () => {
+          if (this.padding) { this.padding.close(true); return; }
+          if (!this.current()) return;
+          this.finish(false);
+          this.padding = new DrawingEmbedPaddingControl(frame, padding, this.actions, this.source, () => { this.padding = null; });
+          this.padding.load();
+        });
+        padding.setAttribute("aria-haspopup", "dialog");
+        padding.setAttribute("aria-expanded", "false");
+      }
       button("edit", "code-2", t("EMBED_EDIT_SOURCE"), () => { if (!this.source.select()) this.changed(); });
       button("reset", "rotate-ccw", t("EMBED_RESET_SIZE"), () => this.reset());
       this.handle = frame.createEl("button", { cls: "excalidraw-embed-resize-handle clickable-icon", attr: { type: "button", "aria-label": t("EMBED_RESIZE"), "data-excalidraw-embed-action": "resize" } });
@@ -154,6 +167,7 @@ export class DrawingEmbedControls extends MarkdownRenderChild {
 
   private start(kind: ResizeGesture["kind"], x = 0, id?: number, y = 0): boolean {
     if (!this.source || !this.current() || !this.visual) return false;
+    this.padding?.close(false);
     this.finish(false);
     const bounds = this.visual.getBoundingClientRect();
     if (bounds.width <= 0 || bounds.height <= 0) return false;
@@ -231,6 +245,7 @@ export class DrawingEmbedControls extends MarkdownRenderChild {
   /** Closing a view or replacing a frame cancels gestures and releases its dialogs. */
   onunload(): void {
     this.active = false; this.finish(false);
+    this.padding?.close(false);
     for (const modal of [...this.modals]) modal.close();
     this.modals.clear(); this.toolbar?.remove(); this.handle?.remove();
     this.containerEl.removeClass("excalidraw-embed-controls-frame", "excalidraw-embed-controls-below");

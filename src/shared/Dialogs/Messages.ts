@@ -17,6 +17,13 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.29.3": `
+## New and improved
+- Adjust the padding of \`area=\` drawing embeds from their Live Preview toolbar. Preview changes with the slider, then close it to save; Escape cancels. Inspired by 🙏[Evgene-Kopylov](${URLs.GITHUB_COM}/Evgene-Kopylov) [#2868](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2868).
+
+## Fixed
+- Drawing embeds render reliably in long notes in Reading view and with relative links in Live Preview. [#3039](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3039), [#3040](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3040).
+`,
 "2.29.2": `
 ## New and improved
 - Resize exclidraw embeds in Live Preview, edit their embed syntax, or open a fullscreen preview and the editable drawing.

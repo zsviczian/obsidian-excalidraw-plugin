@@ -3,10 +3,10 @@ import test from "node:test";
 import { sourceHarness } from "./sourceHarness.mjs";
 import { embedTestDOM } from "./embedTestDOM.mjs";
 
-async function fixture(text = "![[Map|Alias|180x130|left]]") {
+async function fixture(text = "![[Map|Alias|180x130|left]]", padding = false, paddingSource = true) {
   const dom = embedTestDOM(), notices = [], modals = [], writes = [];
   let current = true, sourceCurrent = true, selects = 0, opens = 0;
-  const graph = sourceHarness({ obsidian: { Component: dom.Component, MarkdownRenderChild: dom.MarkdownRenderChild, Notice: class { constructor(text) { notices.push(text); } }, setIcon() {}, setTooltip() {} },
+  const graph = sourceHarness({ obsidian: { Component: dom.Component, MarkdownRenderChild: dom.MarkdownRenderChild, SliderComponent: class {}, Notice: class { constructor(text) { notices.push(text); } }, setIcon(element, icon) { element.icon = icon; }, setTooltip() {} },
     "src/lang/helpers": { t: key => key },
     "src/utils/styleUtils": { setStyle: (el, values) => Object.assign(el.style, values), removeStyle: (el, keys) => { for (const key of keys) delete el.style[key]; } },
     "src/shared/Dialogs/DrawingEmbedPreviewModal": { DrawingEmbedPreviewModal: class { constructor(_app, _preview, _opener, close) { this.onClosed = close; modals.push(this); } open() { this.active = true; } close() { this.active = false; this.onClosed(); } } },
@@ -15,7 +15,8 @@ async function fixture(text = "![[Map|Alias|180x130|left]]") {
   const content = new dom.Element({ cls: "cm-content" }), frame = content.createDiv();
   const image = frame.createEl("img", { cls: "excalidraw-embedded-img" }); image.bounds = { left: 0, top: 0, right: 180, bottom: 130, width: 180, height: 130 };
   const source = { text, isCurrent: () => sourceCurrent, replace: value => { if (!sourceCurrent) return false; writes.push(value); return true; }, select: () => { selects++; return sourceCurrent; } };
-  const controls = new DrawingEmbedControls(frame, { app: {}, target: "Map", isCurrent: () => current, openDrawing: () => opens++, getOpenTooltip: () => "configured open shortcuts" }, source); controls.load();
+  if (paddingSource) source.replacePadding = () => true;
+  const controls = new DrawingEmbedControls(frame, { app: {}, target: "Map", isCurrent: () => current, openDrawing: () => opens++, getOpenTooltip: () => "configured open shortcuts", ...(padding ? { padding: { value: 10 } } : {}) }, source); controls.load();
   const handle = frame.querySelector(".excalidraw-embed-resize-handle"), toolbar = frame.querySelector(".excalidraw-embed-toolbar");
   handle.bounds = { left: 156, top: 106, right: 178, bottom: 128, width: 22, height: 22 };
   const buttons = toolbar.children.filter(element => element.tagName === "BUTTON");
@@ -23,6 +24,18 @@ async function fixture(text = "![[Map|Alias|180x130|left]]") {
     close: () => { controls.unload(); graph.close(); assert.equal(dom.listenerCount(), 0); assert.ok(dom.observers.every(observer => !observer.connected)); } };
 }
 function start(f) { f.handle.fire("pointerdown", { button: 0, pointerId: 1, clientX: 180, clientY: 130 }); }
+
+test("padding toolbar action requires both an area-rendering capability and a writable source", async () => {
+  for (const area of [false, true]) for (const writable of [false, true]) {
+    const f = await fixture(undefined, area, writable);
+    try {
+      const button = f.buttons.find(button => button.getAttribute("data-excalidraw-embed-action") === "padding");
+      assert.equal(!!button, area && writable);
+      if (button) assert.equal(button.icon, "square-dot");
+    }
+    finally { f.close(); }
+  }
+});
 
 test("toolbar compatibility events cannot activate the surrounding native table cell", async () => {
   const f = await fixture();

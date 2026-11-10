@@ -2,6 +2,7 @@ import { isolateHistory } from "@codemirror/commands";
 import { ChangeDesc, EditorSelection, Transaction } from "@codemirror/state";
 import type { EditorView } from "@codemirror/view";
 import { readDrawingEmbedToken } from "./embedDimensions";
+import { rewriteEmbedPadding } from "./embedPadding";
 import type { EmbedSourceBinding } from "src/types/drawingEmbedTypes";
 
 /**
@@ -46,9 +47,21 @@ export class DrawingEmbedSource implements EmbedSourceBinding {
     if (text === this.text) return true;
     const original = readDrawingEmbedToken(this.text), next = readDrawingEmbedToken(text);
     if (!original || !next || next.text !== text || next.target !== original.target || next.wiki !== original.wiki) return false;
+    return this.commit(text, "input.excalidraw-embed-resize");
+  }
+
+  /** A separate capability changes only padding; general replacement keeps its target guard. */
+  replacePadding(padding: number | null): boolean {
+    const text = rewriteEmbedPadding(this.text, padding);
+    if (!text || !this.isCurrent() || this.validateRange && !this.validateRange(this.from, this.to)) return false;
+    if (text === this.text) return true;
+    return this.commit(text, "input.excalidraw-embed-padding");
+  }
+
+  private commit(text: string, userEvent: string): boolean {
     this.view.dispatch({
       changes: { from: this.from, to: this.to, insert: text },
-      annotations: [Transaction.userEvent.of("input.excalidraw-embed-resize"), isolateHistory.of("full")],
+      annotations: [Transaction.userEvent.of(userEvent), isolateHistory.of("full")],
     });
     this.valid = false;
     return true;

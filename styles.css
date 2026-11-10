@@ -2616,6 +2616,7 @@ button.excalidraw-font-picker {
   touch-action: none;
 }
 .excalidraw-embed-controls-frame:hover > .excalidraw-embed-toolbar,
+.excalidraw-embed-padding-open > .excalidraw-embed-toolbar,
 .excalidraw-embed-controls-frame:focus-within > .excalidraw-embed-toolbar,
 .excalidraw-embed-controls-frame:hover > .excalidraw-embed-resize-handle,
 .excalidraw-embed-controls-frame:focus-within > .excalidraw-embed-resize-handle {
@@ -2632,6 +2633,64 @@ button.excalidraw-font-picker {
   --excalidraw-embed-image-max-width: 100%;
   --excalidraw-embed-image-max-height: none;
   --excalidraw-embed-image-min-height: 0;
+}
+.excalidraw-embed-padding-popover {
+  position: fixed;
+  z-index: var(--layer-popover);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 240px;
+  max-width: calc(100vw - 8px);
+  padding: 4px 6px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  background: var(--background-primary-alt);
+  box-shadow: var(--shadow-s);
+  font-size: var(--font-ui-small);
+}
+.excalidraw-embed-padding-track {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+.excalidraw-embed-padding-track input[type="range"] {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+}
+.excalidraw-embed-padding-popover output {
+  min-width: 3.5ch;
+  color: var(--text-muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.excalidraw-embed-padding-popover button {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  padding: 4px;
+}
+.excalidraw-embed-padding-previewing > .excalidraw-embedded-img {
+  opacity: 0;
+}
+.excalidraw-embed-padding-preview {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  --excalidraw-embed-image-width: 100%;
+  --excalidraw-embed-image-height: 100%;
+  --excalidraw-embed-image-max-width: 100%;
+  --excalidraw-embed-image-max-height: 100%;
+  --excalidraw-embed-image-min-height: 0;
+}
+.excalidraw-embed-padding-preview > img,
+.excalidraw-embed-padding-preview > div,
+.excalidraw-embed-padding-preview > div > svg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 .excalidraw-embed-controls-frame.excalidraw-embed-controls-below.excalidraw-embed-resizing {
   width: max(var(--excalidraw-embed-resize-width), var(--excalidraw-embed-toolbar-row-width));
@@ -2754,6 +2813,7 @@ button.excalidraw-font-picker {
   }
 }
 .is-mobile .excalidraw-embed-toolbar button,
+.is-mobile .excalidraw-embed-padding-popover button,
 .is-mobile .excalidraw-embed-preview-toolbar button,
 .is-mobile .excalidraw-embed-resize-handle {
   min-width: 44px;
@@ -2769,4 +2829,7 @@ button.excalidraw-font-picker {
   top: auto;
   bottom: auto;
   margin-top: 4px;
+}
+.is-mobile .excalidraw-embed-padding-track {
+  min-height: 44px;
 }
