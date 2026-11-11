@@ -1,4 +1,5 @@
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
+import { readFrameProperty, resolveThumbnailFrame } from "./frameMetadata";
 import {
   BinaryFileData,
   DataURL,
@@ -305,6 +306,7 @@ export async function getTemplate(
   depth: number,
   convertMarkdownLinksToObsidianURLs: boolean = false,
   cliFileIdAllowList?: Set<FileId>, // #3004 -- CLI export may load only images needed by its preview policy
+  drawingThumbnail = false,
 ): Promise<{
   elements: ExcalidrawElement[];
   appState: Partial<AppState>;
@@ -312,6 +314,7 @@ export async function getTemplate(
   files: BinaryFiles;
   hasSVGwithBitmap: boolean;
   plaintext: string; //markdown data above Excalidraw data and below YAML frontmatter
+  thumbnailFrame?: ExportSettings["exportingFrame"];
 }> {
   const app = plugin.app;
   const vault = app.vault;
@@ -351,6 +354,8 @@ export async function getTemplate(
     }
 
     let scene = excalidrawData.scene;
+    const implicit = !(filenameParts.hasBlockref || filenameParts.hasSectionref) || filenameParts.blockref === "as-image";
+    const thumbnail = drawingThumbnail && implicit ? resolveThumbnailFrame(scene.elements, readFrameProperty(data)) : null;
 
     let groupElements: ExcalidrawElement[] = scene.elements;
     if (filenameParts.hasGroupref) {
@@ -371,7 +376,7 @@ export async function getTemplate(
         );
       }
     }
-    if (filenameParts.hasFrameref || filenameParts.hasClippedFrameref) {
+    if ((filenameParts.hasFrameref || filenameParts.hasClippedFrameref) && !(filenameParts.hasFrameref && (filenameParts.blockref ?? filenameParts.sectionref) === "")) {
       const el = getFrameBasedOnFrameNameOrId(
         filenameParts.blockref,
         scene.elements,
@@ -500,6 +505,7 @@ export async function getTemplate(
           : "",
       files,
       hasSVGwithBitmap,
+      thumbnailFrame: thumbnail ? { ...thumbnail, isDeleted: false } : undefined,
     };
   }
   return {
@@ -541,7 +547,7 @@ export async function createPNG(
   const filenameParts = getEmbeddedFilenameParts(templatePath);
   padding = filenameParts.padding ?? padding ?? plugin.settings.exportPaddingSVG;
   const template = templatePath
-    ? await getTemplate(plugin, templatePath, true, loader, depth)
+    ? await getTemplate(plugin, templatePath, true, loader, depth, false, undefined, exportSettings?.drawingThumbnail)
     : null;
   let elements = template?.elements ?? [];
   elements = elements.concat(automateElements);
@@ -578,6 +584,7 @@ export async function createPNG(
       ...(exportSettings?.frameRendering
         ? { frameRendering: exportSettings.frameRendering }
         : {}),
+      exportingFrame: template?.thumbnailFrame,
     },
     padding,
     scale,
@@ -691,6 +698,8 @@ export async function createSVG(
         loader,
         depth,
         convertMarkdownLinksToObsidianURLs,
+        undefined,
+        exportSettings?.drawingThumbnail,
       )
     : null;
   let elements = template?.elements ?? [];
@@ -730,6 +739,7 @@ export async function createSVG(
         exportSettings?.withBackground ?? plugin.settings.exportWithBackground,
       withTheme,
       isMask: exportSettings?.isMask ?? false,
+      exportingFrame: template?.thumbnailFrame,
       ...(filenameParts?.hasClippedFrameref
         ? {
             frameRendering: {

@@ -16,10 +16,27 @@ declare const PLUGIN_VERSION: string;
 
 // Español
 export default {
+  FRAME_NAVIGATE: "Ir al marco",
+  FRAME_PICK: "Elegir marco",
+  FRAME_DEFAULT: "Miniatura predeterminada",
+  FRAME_WHOLE: "Escena completa",
+  FRAME_UNNAMED: "Marco sin nombre",
+  FRAME_UNNAMED_MARKER: "Marco marcador sin nombre",
+  FRAME_SET_THUMBNAIL: "Usar como miniatura del dibujo",
+  FRAME_CLEAR_THUMBNAIL: "Quitar miniatura del dibujo",
+  FRAME_THUMBNAIL_HELP: "Usa este marco en las vistas previas. Su nombre se guarda en la propiedad excalidraw-thumbnail del documento.",
+  FRAME_NEEDS_NAME: "Asigna primero un nombre único a este marco.",
+  FRAME_RENAME_POLICY: "Al renombrar el marco de la miniatura",
+  FRAME_RENAME_DESC: "Elige si se actualiza la propiedad excalidraw-thumbnail cuando se renombra su marco.",
+  FRAME_RENAME_UNSET: "Preguntar al renombrar por primera vez",
+  FRAME_RENAME_ALWAYS: "Actualizar siempre la propiedad de miniatura",
+  FRAME_RENAME_ASK: "Preguntar cada vez",
+  FRAME_RENAME_NEVER: "No hacer nada",
+  FRAME_RENAME_CONFIRM: "¿Actualizar la propiedad de miniatura con el nuevo nombre del marco?",
   // Drawing embed controls (#3036)
   EMBED_OPEN_MODIFIER: "{keys}+clic: {action}",
   EMBED_ACTIONS: "Acciones del dibujo incrustado",
-  EMBED_ADJUST_PADDING: "Ajustar el margen del área",
+  EMBED_ADJUST_PADDING: "Ajustar el margen",
   EMBED_RESET_PADDING: "Usar el margen predeterminado",
   EMBED_OPEN_DRAWING: "Abrir dibujo",
   EMBED_EDIT_SOURCE: "Editar sintaxis de la inserción",

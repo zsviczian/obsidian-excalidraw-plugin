@@ -3,7 +3,7 @@ import { getEmbeddedFilenameParts } from "src/utils/embeddedFilenameParts";
 
 const PADDING_SUFFIX = /(?:,|%2c)padding(?:=|%3d)(?:\d+(?:(?:\.|%2e)\d+)?|(?:\.|%2e)\d+)$/i;
 
-/** Rewrite only an area reference's padding, preserving raw paths and encoding. */
+/** Rewrite only a region reference's terminal padding, preserving raw paths and encoding. */
 export function withAreaPadding(target: string, padding: number | null): string | null {
   const hash = target.includes("#") ? target.indexOf("#") : target.search(/%23/i);
   if (hash < 0) return null;
@@ -12,11 +12,11 @@ export function withAreaPadding(target: string, padding: number | null): string 
   // needs URI decoding; destination paths must retain their exact spelling.
   try { decoded = target.slice(0, hash) + decodeURIComponent(target.slice(hash)); } catch { return null; }
   const parts = getEmbeddedFilenameParts(decoded);
-  if (!parts.hasArearef || !(parts.blockref || parts.sectionref) ||
+  if (!(parts.hasArearef || parts.hasFrameref || parts.hasClippedFrameref) || !(parts.blockref || parts.sectionref) ||
       padding !== null && (!Number.isFinite(padding) || padding < 0 || padding > 2000)) return null;
   const bare = target.replace(PADDING_SUFFIX, "");
   // Malformed/duplicate parameters must never be mistaken for the area id.
-  if (/,padding=/i.test(decodeURIComponent(bare.slice(hash)))) return null;
+  if (parts.hasArearef && /,padding=/i.test(decodeURIComponent(bare.slice(hash)))) return null;
   return bare + (padding === null ? "" : `,padding=${padding}`);
 }
 

@@ -1,3 +1,5 @@
+import { syncFrameAnchors, readFrameProperty, resolveThumbnailFrame } from "src/utils/frameMetadata";
+import { FrameThumbnailController } from "./managers/FrameThumbnailController";
 import {
   Editor,
   TextFileView,
@@ -473,6 +475,7 @@ export default class ExcalidrawView
   private linkNavigationManager: ViewLinkNavigationManager;
   private excalidrawExtensionRenderer: ViewExcalidrawExtensionRenderer;
   private markdownImageController: MarkdownImageController;
+  public readonly frameThumbnail: FrameThumbnailController;
   private sceneFileManager: ViewSceneFileManager;
   private saveCoordinator: ViewSaveCoordinator;
   private sameFileEditGate: SameFileEditGate;
@@ -726,6 +729,8 @@ export default class ExcalidrawView
         openExportImageDialog: () => this.actionOpenExportImageDialog(),
       },
     );
+    this.frameThumbnail = new FrameThumbnailController(this, MultiOptionConfirmationPrompt);
+    this.register(() => this.frameThumbnail.reset());
     this.markdownImageController = new MarkdownImageController(this, {
       isMarkdownImageElement,
       getMarkdownImageCustomData,
@@ -1434,9 +1439,15 @@ export default class ExcalidrawView
         this.exportDialog.dirty = false;
       }
 
-      const header = syncMarkdownImagesInHeader(
-        getExcalidrawMarkdownHeaderSection(sourceTextSnapshot, keys),
-        this.excalidrawData.markdownImages,
+      const header = this.frameThumbnail.applyHeader(
+        syncFrameAnchors(
+          syncMarkdownImagesInHeader(
+            getExcalidrawMarkdownHeaderSection(sourceTextSnapshot, keys),
+            this.excalidrawData.markdownImages,
+          ),
+          scene.elements,
+        ),
+        scene.elements,
       );
       const tail = this.plugin.settings.zoteroCompatibility
         ? (RE_TAIL.exec(sourceTextSnapshot)?.[1] ?? "")
@@ -2378,6 +2389,7 @@ export default class ExcalidrawView
   }
 
   async onUnloadFile(): Promise<void> {
+    this.frameThumbnail.reset();
     //deliberately not calling super.onUnloadFile() to avoid autosave (saved in unload)
     this.invalidateSetViewDataLoad();
     this.markdownImageController.cancelPendingConversion();
@@ -6111,6 +6123,7 @@ export default class ExcalidrawView
       }
       this.previousSceneVersion = this.getSceneVersion(et);
       this.setTrackedAppStateBaseline(st);
+      this.frameThumbnail.update(et, true);
       this.canvasColorChangeHook(st);
       return;
     }
@@ -6154,6 +6167,7 @@ export default class ExcalidrawView
       this.checkSceneVersion(et);
     }
 
+    this.frameThumbnail.update(et);
     handleMarkdownImageEditorSelection(this, et, st.selectedElementIds);
     this.triggerSceneChangeHooks(et, st, files);
   }
@@ -7167,6 +7181,21 @@ export default class ExcalidrawView
       api.getAppState().selectedElementIds,
     );
     const areElementsSelected = selectedElementIds.length > 0;
+
+    if (!appState.viewModeEnabled && !this.compatibilityMode && selectedElementIds.length === 1) {
+      const frame = elements.find(element => element.id === selectedElementIds[0] && element.type === "frame" && !element.isDeleted);
+      if (frame?.type === "frame") {
+        const thumbnail = resolveThumbnailFrame(elements, readFrameProperty(this.data));
+        const clear = thumbnail?.id === frame.id;
+        const enabled = clear || resolveThumbnailFrame(elements, frame.name)?.id === frame.id;
+        contextMenuActions.push([renderContextMenuAction(
+          React, t(clear ? "FRAME_CLEAR_THUMBNAIL" : "FRAME_SET_THUMBNAIL"),
+          () => { void this.frameThumbnail.setThumbnail(clear ? undefined : frame.name, readFrameProperty(this.data), clear ? undefined : frame.id); },
+          onClose, "drawingThumbnail", clear,
+          enabled ? t("FRAME_THUMBNAIL_HELP") : t("FRAME_NEEDS_NAME"), !enabled,
+        )]);
+      }
+    }
 
     if (this.isLinkSelected()) {
       const isFormula =

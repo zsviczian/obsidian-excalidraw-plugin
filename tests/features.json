@@ -90,6 +90,22 @@
         {
           "path": "src/view/managers/ViewSaveCoordinator.ts",
           "symbol": "export class ViewSaveCoordinator"
+        },
+        {
+          "path": "src/utils/frameMetadata.ts",
+          "symbol": "export function syncFrameAnchors"
+        },
+        {
+          "path": "src/view/managers/FrameThumbnailController.ts",
+          "symbol": "export class FrameThumbnailController"
+        },
+        {
+          "path": "src/shared/Dialogs/FrameNavigator.ts",
+          "symbol": "export class FrameNavigator"
+        },
+        {
+          "path": "src/core/editor/embedFrame.ts",
+          "symbol": "export function rewriteEmbedFrame"
         }
       ],
       "tests": [
@@ -141,6 +157,74 @@
           "path": "scripts/testing/host/coldStart.mjs",
           "cases": [
             "native:cold-durable-restoration"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/frameMetadata.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/frameMetadata.source.test.mjs::frame anchors include actual regular and marker names, preserving order and punctuation",
+            "node:scripts/testing/frameMetadata.source.test.mjs::frame metadata replaces only its own multiline property and leaves invalid YAML untouched",
+            "node:scripts/testing/frameMetadata.source.test.mjs::thumbnail YAML uses exact unique names and supports manual edits, commas and suffixes"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/framePreview.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/framePreview.source.test.mjs::default thumbnails resolve exact YAML names while explicit whole/frame and ordinary exports retain precedence",
+            "node:scripts/testing/framePreview.source.test.mjs::missing, ambiguous and invalid thumbnails fall back to the complete scene",
+            "node:scripts/testing/framePreview.source.test.mjs::PNG and SVG preview exports forward strict frame cropping without changing full-scene export defaults"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/frameThumbnailController.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/frameThumbnailController.source.test.mjs::thumbnail rename follows always policy and undo/redo without replacing user hooks or unknown settings",
+            "node:scripts/testing/frameThumbnailController.source.test.mjs::first rename persists a selected policy and ask allows a different decision on subsequent renames",
+            "node:scripts/testing/frameThumbnailController.source.test.mjs::cancelling first-rename policy does not reopen a prompt on unchanged selection or scene updates",
+            "node:scripts/testing/frameThumbnailController.source.test.mjs::a rename reverted while its own YAML write settles keeps tracking the same frame",
+            "node:scripts/testing/frameThumbnailController.source.test.mjs::a context-menu thumbnail choice establishes identity before the next scene event renames it",
+            "node:scripts/testing/frameThumbnailController.source.test.mjs::external YAML changes, blank names and retired views cannot be overwritten by a pending rename"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/frameNavigator.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/frameNavigator.source.test.mjs::frame navigation preserves search and mode, distinguishes unnamed frames and rejects retired owners"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/embedFrame.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/embedFrame.source.test.mjs::frame selection preserves raw paths, clipping, dimensions, titles, padding and escaped table aliases",
+            "node:scripts/testing/embedFrame.source.test.mjs::frame selection edits only the owned occurrence and is one undo step"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/frameSemantics.mjs",
+          "cases": [
+            "native:frames:main:metadata",
+            "native:frames:main:navigation",
+            "native:frames:main:previews",
+            "native:frames:main:controls",
+            "native:frames:popout:metadata",
+            "native:frames:popout:navigation",
+            "native:frames:popout:previews",
+            "native:frames:popout:controls",
+            "native:frames:settings-reload",
+            "native:frames:phone:metadata",
+            "native:frames:phone:navigation",
+            "native:frames:phone:previews",
+            "native:frames:phone:controls",
+            "native:frames:tablet:metadata",
+            "native:frames:tablet:navigation",
+            "native:frames:tablet:previews",
+            "native:frames:tablet:controls"
           ]
         }
       ],
@@ -419,6 +503,22 @@
         {
           "path": "src/core/managers/DrawingEmbedPaddingControl.ts",
           "symbol": "DrawingEmbedPaddingControl"
+        },
+        {
+          "path": "src/utils/frameMetadata.ts",
+          "symbol": "export function syncFrameAnchors"
+        },
+        {
+          "path": "src/view/managers/FrameThumbnailController.ts",
+          "symbol": "export class FrameThumbnailController"
+        },
+        {
+          "path": "src/shared/Dialogs/FrameNavigator.ts",
+          "symbol": "export class FrameNavigator"
+        },
+        {
+          "path": "src/core/editor/embedFrame.ts",
+          "symbol": "export function rewriteEmbedFrame"
         }
       ],
       "tests": [
@@ -733,6 +833,74 @@
             "native:embed-regressions:popout:relative",
             "native:embed-regressions:popout:detached",
             "native:embed-regressions:popout:padding"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/frameMetadata.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/frameMetadata.source.test.mjs::frame anchors include actual regular and marker names, preserving order and punctuation",
+            "node:scripts/testing/frameMetadata.source.test.mjs::frame metadata replaces only its own multiline property and leaves invalid YAML untouched",
+            "node:scripts/testing/frameMetadata.source.test.mjs::thumbnail YAML uses exact unique names and supports manual edits, commas and suffixes"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/framePreview.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/framePreview.source.test.mjs::default thumbnails resolve exact YAML names while explicit whole/frame and ordinary exports retain precedence",
+            "node:scripts/testing/framePreview.source.test.mjs::missing, ambiguous and invalid thumbnails fall back to the complete scene",
+            "node:scripts/testing/framePreview.source.test.mjs::PNG and SVG preview exports forward strict frame cropping without changing full-scene export defaults"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/frameThumbnailController.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/frameThumbnailController.source.test.mjs::thumbnail rename follows always policy and undo/redo without replacing user hooks or unknown settings",
+            "node:scripts/testing/frameThumbnailController.source.test.mjs::first rename persists a selected policy and ask allows a different decision on subsequent renames",
+            "node:scripts/testing/frameThumbnailController.source.test.mjs::cancelling first-rename policy does not reopen a prompt on unchanged selection or scene updates",
+            "node:scripts/testing/frameThumbnailController.source.test.mjs::a rename reverted while its own YAML write settles keeps tracking the same frame",
+            "node:scripts/testing/frameThumbnailController.source.test.mjs::a context-menu thumbnail choice establishes identity before the next scene event renames it",
+            "node:scripts/testing/frameThumbnailController.source.test.mjs::external YAML changes, blank names and retired views cannot be overwritten by a pending rename"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/frameNavigator.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/frameNavigator.source.test.mjs::frame navigation preserves search and mode, distinguishes unnamed frames and rejects retired owners"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/embedFrame.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/embedFrame.source.test.mjs::frame selection preserves raw paths, clipping, dimensions, titles, padding and escaped table aliases",
+            "node:scripts/testing/embedFrame.source.test.mjs::frame selection edits only the owned occurrence and is one undo step"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/frameSemantics.mjs",
+          "cases": [
+            "native:frames:main:metadata",
+            "native:frames:main:navigation",
+            "native:frames:main:previews",
+            "native:frames:main:controls",
+            "native:frames:popout:metadata",
+            "native:frames:popout:navigation",
+            "native:frames:popout:previews",
+            "native:frames:popout:controls",
+            "native:frames:settings-reload",
+            "native:frames:phone:metadata",
+            "native:frames:phone:navigation",
+            "native:frames:phone:previews",
+            "native:frames:phone:controls",
+            "native:frames:tablet:metadata",
+            "native:frames:tablet:navigation",
+            "native:frames:tablet:previews",
+            "native:frames:tablet:controls"
           ]
         }
       ],

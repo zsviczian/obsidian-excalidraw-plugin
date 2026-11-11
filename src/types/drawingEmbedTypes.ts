@@ -1,5 +1,6 @@
 /** Narrow renderer, dialog and editor capabilities for drawing embed controls. */
 import type { App } from "obsidian";
+import type { DrawingFrameChoice } from "./frameTypes";
 
 export interface LocatedDrawingEmbed {
   from: number;
@@ -18,6 +19,7 @@ export interface DrawingEmbedActions extends DrawingEmbedPreview {
   openDrawing: (event: MouseEvent) => void;
   getOpenTooltip: () => string;
   isCurrent: () => boolean;
+  frames?: readonly DrawingFrameChoice[];
   padding?: {
     value: number;
     create: (padding: number | null, isCurrent: () => boolean) => Promise<HTMLElement>;
@@ -29,5 +31,6 @@ export interface EmbedSourceBinding {
   isCurrent(): boolean;
   replace(text: string): boolean;
   replacePadding?(padding: number | null): boolean;
+  replaceFrame?(reference: string | null): boolean;
   select(): boolean;
 }

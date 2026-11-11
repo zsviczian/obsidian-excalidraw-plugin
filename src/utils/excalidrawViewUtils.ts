@@ -763,17 +763,21 @@ export function renderContextMenuAction(
   onClose: (callback?: () => void) => void,
   actionId?: string,
   checked: boolean = false,
+  description?: string,
+  disabled = false,
 ) {
   return React.createElement(
     "li",
     {
       key: nanoid(),
-      onClick: () => onClose(action),
+      onClick: () => { if (!disabled) onClose(action); },
       "data-testid": actionId,
     },
     React.createElement(
       "button",
       {
+        disabled,
+        title: description,
         className: checked
           ? "context-menu-item checkmark"
           : "context-menu-item",

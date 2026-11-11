@@ -1,4 +1,5 @@
-import { Component, MarkdownRenderChild, Notice, setIcon, setTooltip } from "obsidian";
+import { Component, MarkdownRenderChild, Menu, Notice, setIcon, setTooltip } from "obsidian";
+import { getEmbeddedFilenameParts } from "src/utils/embeddedFilenameParts";
 import { getEmbedDimensions, rewriteEmbedDimensions } from "../editor/embedDimensions";
 import type { DrawingEmbedActions, EmbedSourceBinding } from "src/types/drawingEmbedTypes";
 import { DrawingEmbedPreviewModal } from "src/shared/Dialogs/DrawingEmbedPreviewModal";
@@ -30,6 +31,7 @@ export class DrawingEmbedControls extends MarkdownRenderChild {
   private active = false;
   private modals = new Set<DrawingEmbedPreviewModal>();
   private padding: DrawingEmbedPaddingControl | null = null;
+  private frameMenu: Menu | null = null;
 
   constructor(
     frame: HTMLElement,
@@ -69,6 +71,24 @@ export class DrawingEmbedControls extends MarkdownRenderChild {
     this.registerDomEvent(open, "pointerenter", () => setTooltip(open, this.actions.getOpenTooltip()));
     this.registerDomEvent(open, "focus", () => setTooltip(open, this.actions.getOpenTooltip()));
     if (this.source) {
+      if (this.actions.frames?.length && this.source.replaceFrame) {
+        const picker = button("frame", "scan-eye", t("FRAME_PICK"), () => {
+          if (!this.current()) return;
+          this.padding?.close(false); this.finish(false); this.frameMenu?.hide();
+          const menu = this.frameMenu = new Menu(); menu.setUseNativeMenu(false);
+          const parts = getEmbeddedFilenameParts(this.actions.target), ref = parts.blockref ?? parts.sectionref;
+          const choose = (reference: string | null) => { if (!this.current() || !this.source.replaceFrame(reference)) this.changed(); };
+          menu.addItem(item => item.setTitle(t("FRAME_DEFAULT")).setChecked(!parts.hasBlockref && !parts.hasSectionref).onClick(() => choose(null)));
+          menu.addItem(item => item.setTitle(t("FRAME_WHOLE")).setChecked(parts.hasFrameref && ref === "").onClick(() => choose("")));
+          menu.addSeparator();
+          for (const frame of this.actions.frames) {
+            const label = frame.name?.trim() ? frame.name : `${t(frame.marker ? "FRAME_UNNAMED_MARKER" : "FRAME_UNNAMED")} (${frame.id})`;
+            menu.addItem(item => item.setTitle(label).setChecked((parts.hasFrameref || parts.hasClippedFrameref) && (ref === frame.id || ref === frame.name)).onClick(() => choose(frame.reference)));
+          }
+          menu.onHide(() => { if (this.frameMenu === menu) this.frameMenu = null; });
+          const bounds = picker.getBoundingClientRect(); menu.showAtPosition({ x: bounds.left, y: bounds.bottom }, doc);
+        });
+      }
       if (this.actions.padding && this.source.replacePadding) {
         const padding = button("padding", "square-dot", t("EMBED_ADJUST_PADDING"), () => {
           if (this.padding) { this.padding.close(true); return; }
@@ -168,6 +188,7 @@ export class DrawingEmbedControls extends MarkdownRenderChild {
   private start(kind: ResizeGesture["kind"], x = 0, id?: number, y = 0): boolean {
     if (!this.source || !this.current() || !this.visual) return false;
     this.padding?.close(false);
+    this.frameMenu?.hide(); this.frameMenu = null;
     this.finish(false);
     const bounds = this.visual.getBoundingClientRect();
     if (bounds.width <= 0 || bounds.height <= 0) return false;
@@ -246,6 +267,7 @@ export class DrawingEmbedControls extends MarkdownRenderChild {
   onunload(): void {
     this.active = false; this.finish(false);
     this.padding?.close(false);
+    this.frameMenu?.hide(); this.frameMenu = null;
     for (const modal of [...this.modals]) modal.close();
     this.modals.clear(); this.toolbar?.remove(); this.handle?.remove();
     this.containerEl.removeClass("excalidraw-embed-controls-frame", "excalidraw-embed-controls-below");

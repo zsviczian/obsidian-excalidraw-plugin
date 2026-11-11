@@ -3,10 +3,16 @@ import test from "node:test";
 import { sourceHarness } from "./sourceHarness.mjs";
 import { embedTestDOM } from "./embedTestDOM.mjs";
 
-async function fixture(text = "![[Map|Alias|180x130|left]]", padding = false, paddingSource = true) {
-  const dom = embedTestDOM(), notices = [], modals = [], writes = [];
+async function fixture(text = "![[Map|Alias|180x130|left]]", padding = false, paddingSource = true, frames = []) {
+  const dom = embedTestDOM(), notices = [], modals = [], writes = [], menus = [];
+  class Menu {
+    items = []; constructor() { menus.push(this); }
+    setUseNativeMenu() { return this; } addSeparator() { return this; }
+    addItem(callback) { const item = { setTitle(value) { this.title = value; return this; }, setChecked(value) { this.checked = value; return this; }, onClick(callback) { this.click = callback; return this; } }; callback(item); this.items.push(item); return this; }
+    onHide(callback) { this.onHidden = callback; } showAtPosition(position, doc) { this.position = position; this.doc = doc; } hide() { this.hidden = true; this.onHidden?.(); }
+  }
   let current = true, sourceCurrent = true, selects = 0, opens = 0;
-  const graph = sourceHarness({ obsidian: { Component: dom.Component, MarkdownRenderChild: dom.MarkdownRenderChild, SliderComponent: class {}, Notice: class { constructor(text) { notices.push(text); } }, setIcon(element, icon) { element.icon = icon; }, setTooltip() {} },
+  const graph = sourceHarness({ obsidian: { Menu, Component: dom.Component, MarkdownRenderChild: dom.MarkdownRenderChild, SliderComponent: class {}, Notice: class { constructor(text) { notices.push(text); } }, setIcon(element, icon) { element.icon = icon; }, setTooltip() {} },
     "src/lang/helpers": { t: key => key },
     "src/utils/styleUtils": { setStyle: (el, values) => Object.assign(el.style, values), removeStyle: (el, keys) => { for (const key of keys) delete el.style[key]; } },
     "src/shared/Dialogs/DrawingEmbedPreviewModal": { DrawingEmbedPreviewModal: class { constructor(_app, _preview, _opener, close) { this.onClosed = close; modals.push(this); } open() { this.active = true; } close() { this.active = false; this.onClosed(); } } },
@@ -16,14 +22,33 @@ async function fixture(text = "![[Map|Alias|180x130|left]]", padding = false, pa
   const image = frame.createEl("img", { cls: "excalidraw-embedded-img" }); image.bounds = { left: 0, top: 0, right: 180, bottom: 130, width: 180, height: 130 };
   const source = { text, isCurrent: () => sourceCurrent, replace: value => { if (!sourceCurrent) return false; writes.push(value); return true; }, select: () => { selects++; return sourceCurrent; } };
   if (paddingSource) source.replacePadding = () => true;
-  const controls = new DrawingEmbedControls(frame, { app: {}, target: "Map", isCurrent: () => current, openDrawing: () => opens++, getOpenTooltip: () => "configured open shortcuts", ...(padding ? { padding: { value: 10 } } : {}) }, source); controls.load();
+  if (paddingSource) source.replaceFrame = reference => { if (!sourceCurrent) return false; writes.push(["frame", reference]); return true; };
+  const controls = new DrawingEmbedControls(frame, { app: {}, target: "Map", frames, isCurrent: () => current, openDrawing: () => opens++, getOpenTooltip: () => "configured open shortcuts", ...(padding ? { padding: { value: 10 } } : {}) }, source); controls.load();
   const handle = frame.querySelector(".excalidraw-embed-resize-handle"), toolbar = frame.querySelector(".excalidraw-embed-toolbar");
   handle.bounds = { left: 156, top: 106, right: 178, bottom: 128, width: 22, height: 22 };
   const buttons = toolbar.children.filter(element => element.tagName === "BUTTON");
-  return { ...dom, frame, image, handle, toolbar, buttons, controls, writes, source, notices, modals, current: value => current = value, sourceCurrent: value => sourceCurrent = value, selects: () => selects, opens: () => opens,
+  return { ...dom, frame, image, handle, toolbar, buttons, controls, writes, source, notices, modals, menus, current: value => current = value, sourceCurrent: value => sourceCurrent = value, selects: () => selects, opens: () => opens,
     close: () => { controls.unload(); graph.close(); assert.equal(dom.listenerCount(), 0); assert.ok(dom.observers.every(observer => !observer.connected)); } };
 }
 function start(f) { f.handle.fire("pointerdown", { button: 0, pointerId: 1, clientX: 180, clientY: 130 }); }
+
+test("frame picker requires editable ownership, offers unnamed frames by ID, and owns its menu document", async () => {
+  const frames = [{ id: "frame-a", reference: "frame-a", name: "中心,padding=50" }, { id: "frame-b", reference: "frame-b", name: null, marker: true }];
+  for (const writable of [true, false]) {
+    const f = await fixture(undefined, false, writable, frames);
+    try {
+      const trigger = f.buttons.find(button => button.getAttribute("data-excalidraw-embed-action") === "frame");
+      assert.equal(!!trigger, writable);
+      if (!trigger) continue;
+      assert.equal(trigger.icon, "scan-eye"); trigger.fire("click");
+      const menu = f.menus[0]; assert.equal(menu.doc, f.document);
+      assert.deepEqual(menu.items.map(item => item.title), ["FRAME_DEFAULT", "FRAME_WHOLE", "中心,padding=50", "FRAME_UNNAMED_MARKER (frame-b)"]);
+      assert.deepEqual(f.writes, []); menu.items[3].click(); assert.deepEqual(f.writes, [["frame", "frame-b"]]);
+      f.sourceCurrent(false); menu.items[1].click(); assert.equal(f.writes.length, 1);
+    } finally { f.close(); }
+    if (writable) assert.equal(f.menus[0].hidden, true);
+  }
+});
 
 test("padding toolbar action requires both an area-rendering capability and a writable source", async () => {
   for (const area of [false, true]) for (const writable of [false, true]) {

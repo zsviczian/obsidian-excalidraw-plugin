@@ -10,6 +10,7 @@
  * array binds directly against these same keys and defaults.
  */
 import { Modifier } from "obsidian";
+import type { ThumbnailRenamePolicy } from "src/types/frameTypes";
 import type { CodeBlockInsertionPreference } from "src/types/codeBlockTypes";
 import { PenStyle } from "src/types/penTypes";
 import { DynamicStyle, GridSettings } from "src/types/types";
@@ -43,6 +44,7 @@ import type {
 declare const PLUGIN_VERSION: string;
 
 export interface ExcalidrawSettings {
+  thumbnailRenamePolicy: ThumbnailRenamePolicy;
   showTabTitlebarButtons: boolean;
   copyLinkToElemenetAnchorTo100: boolean;
   copyFrameLinkByName: boolean;
@@ -491,6 +493,7 @@ export const cloneModelConfigs = <TConfig extends AIModelConfig>(
   ) as Record<string, TConfig>;
 
 export const DEFAULT_SETTINGS: ExcalidrawSettings = {
+  thumbnailRenamePolicy: "unset",
   showTabTitlebarButtons: true,
   copyLinkToElemenetAnchorTo100: false,
   copyFrameLinkByName: false,

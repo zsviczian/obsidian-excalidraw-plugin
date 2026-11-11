@@ -16,10 +16,27 @@ declare const PLUGIN_VERSION: string;
 
 // English
 export default {
+  FRAME_NAVIGATE: "Navigate to frame",
+  FRAME_PICK: "Choose frame",
+  FRAME_DEFAULT: "Default thumbnail",
+  FRAME_WHOLE: "Whole scene",
+  FRAME_UNNAMED: "Unnamed frame",
+  FRAME_UNNAMED_MARKER: "Unnamed marker frame",
+  FRAME_SET_THUMBNAIL: "Set as drawing thumbnail",
+  FRAME_CLEAR_THUMBNAIL: "Clear drawing thumbnail",
+  FRAME_THUMBNAIL_HELP: "Use this frame for drawing previews. Its name is saved in the excalidraw-thumbnail document property.",
+  FRAME_NEEDS_NAME: "Give this frame a unique name first.",
+  FRAME_RENAME_POLICY: "When the thumbnail frame is renamed",
+  FRAME_RENAME_DESC: "Choose whether to update the excalidraw-thumbnail document property when its frame is renamed.",
+  FRAME_RENAME_UNSET: "Ask on first rename",
+  FRAME_RENAME_ALWAYS: "Always update the thumbnail property",
+  FRAME_RENAME_ASK: "Ask each time",
+  FRAME_RENAME_NEVER: "Do nothing",
+  FRAME_RENAME_CONFIRM: "Update the drawing thumbnail property to the frame's new name?",
   // Drawing embed controls (#3036)
   EMBED_OPEN_MODIFIER: "{keys}+click: {action}",
   EMBED_ACTIONS: "Drawing embed actions",
-  EMBED_ADJUST_PADDING: "Adjust area padding",
+  EMBED_ADJUST_PADDING: "Adjust padding",
   EMBED_RESET_PADDING: "Use default padding",
   EMBED_OPEN_DRAWING: "Open drawing",
   EMBED_EDIT_SOURCE: "Edit embed syntax",

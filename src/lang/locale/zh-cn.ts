@@ -11,10 +11,27 @@ declare const PLUGIN_VERSION: string;
 
 // 简体中文
 export default {
+  FRAME_NAVIGATE: "跳转到画框",
+  FRAME_PICK: "选择画框",
+  FRAME_DEFAULT: "默认缩略图",
+  FRAME_WHOLE: "完整场景",
+  FRAME_UNNAMED: "未命名画框",
+  FRAME_UNNAMED_MARKER: "未命名标记画框",
+  FRAME_SET_THUMBNAIL: "设为绘图缩略图",
+  FRAME_CLEAR_THUMBNAIL: "清除绘图缩略图",
+  FRAME_THUMBNAIL_HELP: "使用此画框预览绘图。其名称保存在文档的 excalidraw-thumbnail 属性中。",
+  FRAME_NEEDS_NAME: "请先为此画框设置唯一名称。",
+  FRAME_RENAME_POLICY: "重命名缩略图画框时",
+  FRAME_RENAME_DESC: "选择重命名画框时是否更新 excalidraw-thumbnail 文档属性。",
+  FRAME_RENAME_UNSET: "首次重命名时询问",
+  FRAME_RENAME_ALWAYS: "始终更新缩略图属性",
+  FRAME_RENAME_ASK: "每次询问",
+  FRAME_RENAME_NEVER: "不执行操作",
+  FRAME_RENAME_CONFIRM: "将绘图缩略图属性更新为画框的新名称吗？",
   // Drawing embed controls (#3036)
   EMBED_OPEN_MODIFIER: "{keys}+单击：{action}",
   EMBED_ACTIONS: "嵌入绘图操作",
-  EMBED_ADJUST_PADDING: "调整区域边距",
+  EMBED_ADJUST_PADDING: "调整边距",
   EMBED_RESET_PADDING: "使用默认边距",
   EMBED_OPEN_DRAWING: "打开绘图",
   EMBED_EDIT_SOURCE: "编辑嵌入语法",

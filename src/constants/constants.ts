@@ -311,6 +311,8 @@ export const AUDIO_TYPES = [
 export const CODE_TYPES = ["json", "css", "js"];
 
 export const FRONTMATTER_KEYS = {
+  anchors: { name: "excalidraw-anchors", type: "multitext", depricated: false },
+  thumbnail: { name: "excalidraw-thumbnail", type: "text", depricated: false },
   plugin: { name: "excalidraw-plugin", type: "text", depricated: false },
   "export-transparent": {
     name: "excalidraw-export-transparent",

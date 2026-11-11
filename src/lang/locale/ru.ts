@@ -14,10 +14,27 @@ import {
 
 // русский
 export default {
+  FRAME_NAVIGATE: "Перейти к рамке",
+  FRAME_PICK: "Выбрать рамку",
+  FRAME_DEFAULT: "Миниатюра по умолчанию",
+  FRAME_WHOLE: "Вся сцена",
+  FRAME_UNNAMED: "Рамка без имени",
+  FRAME_UNNAMED_MARKER: "Рамка-маркер без имени",
+  FRAME_SET_THUMBNAIL: "Использовать как миниатюру рисунка",
+  FRAME_CLEAR_THUMBNAIL: "Убрать миниатюру рисунка",
+  FRAME_THUMBNAIL_HELP: "Использовать эту рамку для предпросмотра. Её имя сохраняется в свойстве документа excalidraw-thumbnail.",
+  FRAME_NEEDS_NAME: "Сначала задайте рамке уникальное имя.",
+  FRAME_RENAME_POLICY: "При переименовании рамки миниатюры",
+  FRAME_RENAME_DESC: "Обновлять ли свойство excalidraw-thumbnail при переименовании его рамки.",
+  FRAME_RENAME_UNSET: "Спросить при первом переименовании",
+  FRAME_RENAME_ALWAYS: "Всегда обновлять свойство миниатюры",
+  FRAME_RENAME_ASK: "Спрашивать каждый раз",
+  FRAME_RENAME_NEVER: "Ничего не делать",
+  FRAME_RENAME_CONFIRM: "Заменить имя рамки в свойстве миниатюры новым именем?",
   // Drawing embed controls (#3036)
   EMBED_OPEN_MODIFIER: "{keys}+щелчок: {action}",
   EMBED_ACTIONS: "Действия со встроенным рисунком",
-  EMBED_ADJUST_PADDING: "Изменить отступ области",
+  EMBED_ADJUST_PADDING: "Изменить отступ",
   EMBED_RESET_PADDING: "Использовать отступ по умолчанию",
   EMBED_OPEN_DRAWING: "Открыть рисунок",
   EMBED_EDIT_SOURCE: "Изменить синтаксис вставки",

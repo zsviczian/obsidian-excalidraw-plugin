@@ -16,7 +16,9 @@ import {
   RERENDER_EVENT,
 } from "../../constants/constants";
 import { EmbeddedFilesLoader } from "../../shared/EmbeddedFileLoader";
-import { createPNG, createSVG } from "../../utils/excalidrawAutomateUtils";
+import { createPNG, createSVG, getTemplate } from "../../utils/excalidrawAutomateUtils";
+import { getSceneFrames } from "src/utils/frameMetadata";
+import type { DrawingFrameChoice } from "src/types/frameTypes";
 import type ExcalidrawPlugin from "../main";
 import { getIMGFilename } from "../../utils/fileUtils";
 import {
@@ -67,6 +69,24 @@ let app: App;
 let vault: Vault;
 let metadataCache: MetadataCache;
 let readingControls: Set<DrawingEmbedControls> | null = null;
+let drawingFrames: Map<TFile, { mtime: number; frames: Promise<DrawingFrameChoice[]> }> | null = null;
+
+const getDrawingFrames = (file: TFile): Promise<DrawingFrameChoice[]> => {
+  const entries = drawingFrames;
+  if (!entries) return Promise.resolve<DrawingFrameChoice[]>([]);
+  const mtime = file.stat.mtime, cached = entries.get(file);
+  if (cached?.mtime === mtime) return cached.frames;
+  const frames = getTemplate(plugin, file.path, false, new EmbeddedFilesLoader(plugin), 0).then(scene =>
+    file.stat.mtime !== mtime ? [] : getSceneFrames(scene.elements).map(frame => ({
+      id: frame.id, name: frame.name, marker: frame.frameRole === "marker", reference: frame.id,
+    })));
+  entries.set(file, { mtime, frames });
+  if (entries.size > 128) {
+    const oldest = [...entries.keys()][0];
+    if (oldest) entries.delete(oldest);
+  }
+  return frames;
+};
 
 const getDefaultWidth = (plugin: ExcalidrawPlugin): string => {
   const width = parseInt(plugin.settings.width);
@@ -116,10 +136,13 @@ export const initializeMarkdownPostProcessor = (p: ExcalidrawPlugin) => {
   // their controls/viewers; context cleanup removes completed owners promptly.
   const owners = new Set<DrawingEmbedControls>();
   readingControls = owners;
+  const frames = new Map<TFile, { mtime: number; frames: Promise<DrawingFrameChoice[]> }>();
+  drawingFrames = frames;
   p.register(() => {
     for (const controls of [...owners]) controls.unload();
     owners.clear();
     if (readingControls === owners) readingControls = null;
+    frames.clear(); if (drawingFrames === frames) drawingFrames = null;
   });
 };
 
@@ -156,6 +179,7 @@ const _getPNG = async ({
 
   const cacheKey = {
     ...filenameParts,
+    cacheId: "frame-thumbnail-v1",
     isDark: theme === "dark",
     previewImageType: PreviewImageType.PNG,
     scale,
@@ -304,6 +328,7 @@ const _getSVGIMG = async ({
   exportSettings.skipInliningFonts = false;
   const cacheKey = {
     ...filenameParts,
+    cacheId: "frame-thumbnail-v1",
     isDark: theme === "dark",
     previewImageType: PreviewImageType.SVGIMG,
     scale: 1,
@@ -399,6 +424,7 @@ const _getSVGNative = async ({
   exportSettings.skipInliningFonts = false;
   const cacheKey = {
     ...filenameParts,
+    cacheId: "frame-thumbnail-v1",
     isDark: theme === "dark",
     previewImageType: PreviewImageType.SVG,
     scale: 1,
@@ -508,6 +534,7 @@ const getIMG = async (
     withBackground: getWithBackground(plugin, file),
     withTheme: forceTheme ? true : plugin.settings.exportWithTheme,
     isMask: isMaskFile(plugin, file),
+    drawingThumbnail: true,
   };
 
   const theme =
@@ -787,8 +814,11 @@ const createImgElement = async (
   const drawingFile = attr.file ?? vault.getFileByPath(drawingPath);
   const isCurrent = () => currentPlugin._loaded && vault.getFileByPath(drawingPath) === drawingFile &&
     (!isRenderActive || isRenderActive());
+  const frames = !onCanvas && drawingFile ? await getDrawingFrames(drawingFile) : [];
+  if (!isCurrent()) { discardImage(imgOrDiv); return null; }
   if (!onCanvas && drawingFile) setDrawingEmbedActions(imgOrDiv, {
     app: app, target: attr.fname, isCurrent,
+    frames,
     openDrawing: event => openDrawingEmbed(currentPlugin, attr.fname, event, imgOrDiv),
     getOpenTooltip: () => getDrawingEmbedOpenTooltip(currentPlugin.settings),
     // A fullscreen viewer owns a fresh payload and must never revoke an inline

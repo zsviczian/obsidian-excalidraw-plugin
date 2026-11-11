@@ -1,4 +1,5 @@
 import { App, Notice, request, requestUrl, TFile } from "obsidian";
+import { readFrameProperty } from "./frameMetadata";
 import { Random } from "roughjs/bin/math";
 import {
   AppState,
@@ -263,7 +264,7 @@ export async function getSVG<TScene extends SceneForExport>(
           exportSettings.frameRendering?.enabled && !allowFramePadding
             ? 0
             : padding,
-        exportingFrame: null,
+        exportingFrame: exportSettings.exportingFrame ?? null,
         renderEmbeddables: true,
         skipInliningFonts: exportSettings.skipInliningFonts,
       });
@@ -348,6 +349,7 @@ export async function getPNG<TScene extends SceneForExport>(
           : {}),
       } as AppState,
       files: filterFiles(files),
+      exportingFrame: exportSettings.exportingFrame ?? null,
       exportPadding:
         exportSettings.frameRendering?.enabled && !allowFramePadding
           ? 0
@@ -383,6 +385,11 @@ export async function getQuickImagePreview(
 ): Promise<Blob | string | null> {
   if (!plugin.settings.displayExportedImageIfAvailable) {
     return null;
+  }
+  const source = plugin.app.vault.getFileByPath(path);
+  if (source) {
+    const thumbnail = readFrameProperty(await plugin.app.vault.cachedRead(source));
+    if (typeof thumbnail === "string" && thumbnail.trim()) return null;
   }
   const imagePath = getIMGFilename(path, extension);
   const file = plugin.app.vault.getAbstractFileByPath(imagePath);

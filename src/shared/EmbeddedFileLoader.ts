@@ -933,6 +933,7 @@ export class EmbeddedFilesLoader {
       withTheme: !!forceTheme,
       isMask,
       skipInliningFonts: false,
+      drawingThumbnail: true,
     };
 
     const hasColorMap = Boolean(
@@ -952,6 +953,7 @@ export class EmbeddedFilesLoader {
       ? (inFile as EmbeddedFile).filenameparts
       : null;
     const cacheKey: ImageKey = {
+      cacheId: "frame-thumbnail-v1",
       ...(hasFilenameParts
         ? {
             ...filenameParts,
