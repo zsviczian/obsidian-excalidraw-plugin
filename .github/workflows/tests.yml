@@ -8,7 +8,7 @@ permissions:
   contents: read
 jobs:
   portable:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 35
     env:
       EXCALIDRAW_FORK_ROOT: ${{ github.workspace }}/.test-work/checkouts/fork
