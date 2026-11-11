@@ -5,10 +5,11 @@ the toolbar below the image; touch layouts keep the controls visible. Drag the
 bottom-right corner to resize, or focus it and use the arrow keys. A completed
 resize changes only that occurrence in the containing note, with one undo step.
 
-For an `area=`, `frame=` or `clippedframe=` reference such as
-`![[Drawing#^frame=abcdefgh|300]]`, the toolbar also offers **Adjust padding**,
-using the square-dot icon. A compact
-horizontal Obsidian slider appears directly below the toolbar and previews
+The toolbar offers **Outer padding** for default thumbnails, whole scenes, groups
+and frame references, using the **box-select** icon. **Area expansion** keeps the
+**square-dot** icon for `area=` references: it includes more of the surrounding
+drawing. Outer padding adds space without including additional elements.
+A compact horizontal Obsidian slider appears directly below the toolbar and previews
 padding from 0 to 2000: 0, 10, then increments of 50. You can drag, click the track, use the
 arrow keys, or scroll over the slider. Closing the popup or pressing Enter saves
 one source change; Escape cancels. **Use default padding** removes the explicit
@@ -20,10 +21,33 @@ note, replaced widget, or plugin unload cancels the gesture and its pending
 preview. Paths, aliases, Markdown titles, dimensions, and table escapes are
 preserved. Identical embeds remain independent.
 
-Padding controls require an editable Live Preview source binding and a nonempty
-area or frame reference. They are absent for whole drawings, text/group references,
+Padding controls require an editable Live Preview source binding. They are absent for text references,
 Reading view, read-only editors, nested Markdown transclusions, and Canvas.
 Reading view retains preview and open-drawing actions.
+
+Padding is independent of the selected view. For example,
+`![[Drawing#^as-image,padding=30|300]]` follows the current default thumbnail with
+30 units of outer padding; `![[Drawing#^frame=,padding=30|300]]` shows the whole
+scene with that padding. Switching views retains the padding override. Thumbnail
+contents stay clipped to the original frame rectangle before padding is added.
+
+## Drawing images inside a scene
+
+Select a drawing-backed image and use **Configure drawing preview** (scan-eye)
+next to its existing image actions. The popover previews the chosen view and
+padding without editing the scene. **Anchor at original size (100%)** follows
+the rendered source dimensions and disables manual resizing. **Apply** commits;
+Cancel or Escape discards the draft.
+
+When the source drawing appears in several images in the same scene, Apply asks
+whether to update **All images** or **Only this image**. Only edited settings are
+applied, preserving each copy's other view, padding and anchor choices. Each
+image retains its center; unanchored images retain their area when the aspect
+ratio changes. Anchored images follow their new intrinsic dimensions.
+
+Configuration is saved in each image's embedded-file link, including `|100%`.
+Independent references are created internally; the source drawing is never
+duplicated or modified. One Undo restores the previous references and geometry.
 
 ## Frames and drawing thumbnails
 
@@ -78,19 +102,27 @@ For frame metadata, thumbnails, navigation and source controls, run
 `--devices --device-profiles=phone-portrait-light,tablet-portrait-full-light`
 for focused phone/tablet emulation. Complete profiles include these cases too.
 
-The 2026-11-11 Windows checks on Obsidian 1.14.5 passed nine desktop frame cases
-(main window, popout and actual plugin reload), eight frame cases in phone/tablet
-emulation, and the six existing embed regressions. The final desktop run uses
-`scan-eye`; mobile emulation preceded this icon-only substitution. Reports under
-`.test-work/reports/frame-semantics-2026-11-11-07/` retain the mobile and prior
-regression results; `frame-semantics-2026-11-11-08/` records the successful desktop
-rerun. Earlier failed receipts remain intact. All cleanup gates passed.
+The final 2026-11-11 Windows run on Obsidian 1.14.5 passed thirteen desktop frame
+cases (main window, popout and actual plugin reload), twelve frame cases in
+phone/tablet emulation, both device profiles, and the six existing embed regressions.
+It exercises the selected-image popover, both shared-source choices, native
+Undo/Redo, intrinsic-size anchoring, cancellation and save/reopen. Saved links
+retain their configuration while following the writer's existing path-shortening
+rules. SVG, SVG-image and PNG checks verify padded thumbnail dimensions and
+ensure padding never reveals neighboring elements outside the thumbnail frame.
 
-Focused source checks passed 101/101; bundle/runner checks passed 18/18.
-Targeted lint added no findings (24 existing findings remain in adjacent legacy
-code). The production bundle is 5,114,584 bytes, leaving 128,296 bytes under 5 MiB.
-Physical touch devices, other operating systems and the minimum supported host
-version remain manual checks. Complete regression profiles were not run.
+The aggregate report records **37 passed, zero failed or blocked**, with artifact
+hashes, source stability and baseline restoration verified. Reports are under
+`.test-work/reports/preview-config-2026-11-11-03/`; earlier failed receipts remain
+intact. Desktop console/window errors are zero and all cleanup gates passed.
+
+Focused source checks passed 111/111, existing image-geometry/parsing checks
+32/32, and bundle/runner/host-contract checks 19/19. Targeted lint added no
+findings (24 existing findings remain in adjacent legacy code); CSS policy lint,
+inventory and feature mappings passed. The production bundle is 5,128,954 bytes,
+leaving 113,926 bytes under 5 MiB. Physical touch devices, other operating systems
+and the minimum supported host version remain manual checks. Complete regression
+profiles were not run.
 
 ## Investigation checkpoint: 2026-11-10
 

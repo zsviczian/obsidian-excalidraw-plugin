@@ -16,6 +16,21 @@ declare const PLUGIN_VERSION: string;
 
 // English
 export default {
+  PREVIEW_OUTER_PADDING: "Outer padding",
+  PREVIEW_AREA_EXPANSION: "Area expansion",
+  PREVIEW_PADDING_HELP: "Adds space around the preview without including additional elements.",
+  PREVIEW_AREA_HELP: "Includes more of the surrounding drawing.",
+  PREVIEW_CONFIGURE: "Configure drawing preview",
+  PREVIEW_CONFIGURE_HELP: "Choose the view, padding, and original-size behavior. If this drawing appears more than once, you'll choose which images to update.",
+  PREVIEW_VIEW: "View",
+  PREVIEW_ANCHOR: "Anchor at original size (100%)",
+  PREVIEW_ANCHOR_HELP: "Follows source dimensions and disables manual resizing.",
+  PREVIEW_SHARED_TITLE: "Change this image or all copies?",
+  PREVIEW_SHARED_HELP: "\"{drawing}\" appears in {count} images in this scene. Apply your changes to all of them?",
+  PREVIEW_ALL: "All {count} images",
+  PREVIEW_ONLY: "Only this image",
+  PREVIEW_APPLY: "Apply",
+  PREVIEW_CURRENT: "Current reference",
   FRAME_NAVIGATE: "Navigate to frame",
   FRAME_PICK: "Choose frame",
   FRAME_DEFAULT: "Default thumbnail",

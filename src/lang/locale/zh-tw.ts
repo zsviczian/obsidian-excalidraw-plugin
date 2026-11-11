@@ -11,6 +11,21 @@ declare const PLUGIN_VERSION: string;
 
 // 繁體中文
 export default {
+  PREVIEW_OUTER_PADDING: "外部留白",
+  PREVIEW_AREA_EXPANSION: "擴展區域",
+  PREVIEW_PADDING_HELP: "在預覽周圍加入留白，不顯示額外元素。",
+  PREVIEW_AREA_HELP: "包含所選區域周圍更多的繪圖內容。",
+  PREVIEW_CONFIGURE: "設定繪圖預覽",
+  PREVIEW_CONFIGURE_HELP: "選擇檢視、留白和原始大小。如果此繪圖多次出現，你可以選擇要更新的影像。",
+  PREVIEW_VIEW: "檢視",
+  PREVIEW_ANCHOR: "鎖定為原始大小（100%）",
+  PREVIEW_ANCHOR_HELP: "跟隨來源尺寸，並停用手動調整大小。",
+  PREVIEW_SHARED_TITLE: "修改此影像還是所有副本？",
+  PREVIEW_SHARED_HELP: "「{drawing}」在此場景中用於 {count} 個影像。將變更套用至所有影像嗎？",
+  PREVIEW_ALL: "全部 {count} 個影像",
+  PREVIEW_ONLY: "僅此影像",
+  PREVIEW_APPLY: "套用",
+  PREVIEW_CURRENT: "目前參照",
   FRAME_NAVIGATE: "跳至畫框",
   FRAME_PICK: "選擇畫框",
   FRAME_DEFAULT: "預設縮圖",

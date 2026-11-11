@@ -106,6 +106,22 @@
         {
           "path": "src/core/editor/embedFrame.ts",
           "symbol": "export function rewriteEmbedFrame"
+        },
+        {
+          "path": "src/view/managers/DrawingImagePreviewController.ts",
+          "symbol": "export class DrawingImagePreviewController"
+        },
+        {
+          "path": "src/shared/Dialogs/DrawingImagePreviewPopover.ts",
+          "symbol": "export class DrawingImagePreviewPopover"
+        },
+        {
+          "path": "src/utils/drawingPreviewLink.ts",
+          "symbol": "export function rewriteDrawingPreviewLink"
+        },
+        {
+          "path": "src/utils/thumbnailPadding.ts",
+          "symbol": "export function getThumbnailPaddingConfig"
         }
       ],
       "tests": [
@@ -212,19 +228,54 @@
             "native:frames:main:navigation",
             "native:frames:main:previews",
             "native:frames:main:controls",
+            "native:frames:main:outer-padding",
+            "native:frames:main:scene-images",
             "native:frames:popout:metadata",
             "native:frames:popout:navigation",
             "native:frames:popout:previews",
             "native:frames:popout:controls",
+            "native:frames:popout:outer-padding",
+            "native:frames:popout:scene-images",
             "native:frames:settings-reload",
             "native:frames:phone:metadata",
             "native:frames:phone:navigation",
             "native:frames:phone:previews",
             "native:frames:phone:controls",
+            "native:frames:phone:outer-padding",
+            "native:frames:phone:scene-images",
             "native:frames:tablet:metadata",
             "native:frames:tablet:navigation",
             "native:frames:tablet:previews",
-            "native:frames:tablet:controls"
+            "native:frames:tablet:controls",
+            "native:frames:tablet:outer-padding",
+            "native:frames:tablet:scene-images"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/drawingPreviewLink.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/drawingPreviewLink.source.test.mjs::thumbnail and whole-scene padding remain independent of frame selection and anchoring",
+            "node:scripts/testing/drawingPreviewLink.source.test.mjs::preview changes preserve raw encoding, padding, other aliases and the shared master-map link",
+            "node:scripts/testing/drawingPreviewLink.source.test.mjs::outer thumbnail padding enlarges the viewport while retaining the original frame clip"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/drawingImagePreview.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/drawingImagePreview.source.test.mjs::only this image gets a new persisted link and uses real external-update geometry; undo retains the original reference",
+            "node:scripts/testing/drawingImagePreview.source.test.mjs::apply to all copies changes only edited fields, preserving distinct views, anchoring and each image center",
+            "node:scripts/testing/drawingImagePreview.source.test.mjs::100% anchoring follows rendered intrinsic dimensions and remains in the link",
+            "node:scripts/testing/drawingImagePreview.source.test.mjs::cancel, stale scene changes and retired views do not register partial links or write a scene"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/drawingPreviewLoader.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/drawingPreviewLoader.source.test.mjs::embedded drawing loader recognizes padded default and whole-scene links while retaining 100%",
+            "node:scripts/testing/drawingPreviewLoader.source.test.mjs::an ordinary Markdown block named as-image keeps its section-transclusion behavior"
           ]
         }
       ],
@@ -519,6 +570,22 @@
         {
           "path": "src/core/editor/embedFrame.ts",
           "symbol": "export function rewriteEmbedFrame"
+        },
+        {
+          "path": "src/view/managers/DrawingImagePreviewController.ts",
+          "symbol": "export class DrawingImagePreviewController"
+        },
+        {
+          "path": "src/shared/Dialogs/DrawingImagePreviewPopover.ts",
+          "symbol": "export class DrawingImagePreviewPopover"
+        },
+        {
+          "path": "src/utils/drawingPreviewLink.ts",
+          "symbol": "export function rewriteDrawingPreviewLink"
+        },
+        {
+          "path": "src/utils/thumbnailPadding.ts",
+          "symbol": "export function getThumbnailPaddingConfig"
         }
       ],
       "tests": [
@@ -888,19 +955,54 @@
             "native:frames:main:navigation",
             "native:frames:main:previews",
             "native:frames:main:controls",
+            "native:frames:main:outer-padding",
+            "native:frames:main:scene-images",
             "native:frames:popout:metadata",
             "native:frames:popout:navigation",
             "native:frames:popout:previews",
             "native:frames:popout:controls",
+            "native:frames:popout:outer-padding",
+            "native:frames:popout:scene-images",
             "native:frames:settings-reload",
             "native:frames:phone:metadata",
             "native:frames:phone:navigation",
             "native:frames:phone:previews",
             "native:frames:phone:controls",
+            "native:frames:phone:outer-padding",
+            "native:frames:phone:scene-images",
             "native:frames:tablet:metadata",
             "native:frames:tablet:navigation",
             "native:frames:tablet:previews",
-            "native:frames:tablet:controls"
+            "native:frames:tablet:controls",
+            "native:frames:tablet:outer-padding",
+            "native:frames:tablet:scene-images"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/drawingPreviewLink.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/drawingPreviewLink.source.test.mjs::thumbnail and whole-scene padding remain independent of frame selection and anchoring",
+            "node:scripts/testing/drawingPreviewLink.source.test.mjs::preview changes preserve raw encoding, padding, other aliases and the shared master-map link",
+            "node:scripts/testing/drawingPreviewLink.source.test.mjs::outer thumbnail padding enlarges the viewport while retaining the original frame clip"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/drawingImagePreview.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/drawingImagePreview.source.test.mjs::only this image gets a new persisted link and uses real external-update geometry; undo retains the original reference",
+            "node:scripts/testing/drawingImagePreview.source.test.mjs::apply to all copies changes only edited fields, preserving distinct views, anchoring and each image center",
+            "node:scripts/testing/drawingImagePreview.source.test.mjs::100% anchoring follows rendered intrinsic dimensions and remains in the link",
+            "node:scripts/testing/drawingImagePreview.source.test.mjs::cancel, stale scene changes and retired views do not register partial links or write a scene"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/drawingPreviewLoader.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/drawingPreviewLoader.source.test.mjs::embedded drawing loader recognizes padded default and whole-scene links while retaining 100%",
+            "node:scripts/testing/drawingPreviewLoader.source.test.mjs::an ordinary Markdown block named as-image keeps its section-transclusion behavior"
           ]
         }
       ],

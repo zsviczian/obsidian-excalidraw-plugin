@@ -16,6 +16,21 @@ declare const PLUGIN_VERSION: string;
 
 // Español
 export default {
+  PREVIEW_OUTER_PADDING: "Margen exterior",
+  PREVIEW_AREA_EXPANSION: "Ampliación del área",
+  PREVIEW_PADDING_HELP: "Añade espacio alrededor de la vista previa sin incluir elementos adicionales.",
+  PREVIEW_AREA_HELP: "Incluye más contenido del dibujo circundante.",
+  PREVIEW_CONFIGURE: "Configurar vista previa del dibujo",
+  PREVIEW_CONFIGURE_HELP: "Elige la vista, el margen y el tamaño original. Si el dibujo aparece varias veces, podrás elegir qué imágenes actualizar.",
+  PREVIEW_VIEW: "Vista",
+  PREVIEW_ANCHOR: "Anclar al tamaño original (100%)",
+  PREVIEW_ANCHOR_HELP: "Sigue las dimensiones del origen y desactiva el cambio de tamaño manual.",
+  PREVIEW_SHARED_TITLE: "¿Cambiar esta imagen o todas las copias?",
+  PREVIEW_SHARED_HELP: "«{drawing}» aparece en {count} imágenes de esta escena. ¿Aplicar los cambios a todas?",
+  PREVIEW_ALL: "Las {count} imágenes",
+  PREVIEW_ONLY: "Solo esta imagen",
+  PREVIEW_APPLY: "Aplicar",
+  PREVIEW_CURRENT: "Referencia actual",
   FRAME_NAVIGATE: "Ir al marco",
   FRAME_PICK: "Elegir marco",
   FRAME_DEFAULT: "Miniatura predeterminada",

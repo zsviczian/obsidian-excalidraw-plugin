@@ -2,12 +2,13 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { runInAppTask } from "./inAppTask.mjs";
+import { exerciseDrawingImagePreview } from "./drawingImagePreview.mjs";
 import { behaviorEnvironment } from "./behaviorEnvironment.mjs";
 import { behaviorInputDriver, collectBehaviorCases } from "./behaviorMatrix.mjs";
 import { completeConsoleErrors } from "./debuggerSession.mjs";
 import { settleBrowserDiagnostics, splitWindowErrors } from "./browserDiagnostics.mjs";
 
-const kinds = ["metadata", "navigation", "previews", "controls"];
+const kinds = ["metadata", "navigation", "previews", "controls", "outer-padding", "scene-images"];
 export const frameSemanticsCaseIds = ["main", "popout"].flatMap(context => kinds.map(kind => `native:frames:${context}:${kind}`)).concat("native:frames:settings-reload");
 export const frameSemanticsDeviceCaseIds = ["phone", "tablet"].flatMap(context => kinds.map(kind => `native:frames:${context}:${kind}`));
 
@@ -20,6 +21,7 @@ export async function runFrameSemanticsScenario({ cli, drawingPath, contexts = [
     { ...base, id: "frame-marker", type: "frame", frameRole: "marker", name: "Marker,padding=50", x: 300, width: 100, height: 160, index: "a2" },
     { ...base, id: "frame-unnamed", type: "frame", name: null, x: 500, index: "a3" },
     { ...base, id: "frame-literal", type: "frame", name: "Frame", x: 650, index: "a4" },
+    { ...base, id: "outside-crop", x: 210, y: 20, width: 10, height: 10, backgroundColor: "#ff0000", index: "a4V" },
     { ...base, id: "outside", x: 900, y: 300, index: "a5" },
   ];
   template = template.replace(/```json\n[\s\S]*?\n```/, "```json\n" + JSON.stringify(scene, null, 2) + "\n```");
@@ -29,7 +31,7 @@ export async function runFrameSemanticsScenario({ cli, drawingPath, contexts = [
       const env=await (${behaviorEnvironment.toString()})(c,path,context,template,${completeConsoleErrors.toString()},${settleBrowserDiagnostics.toString()});
       c.diagnostics=env.diagnostics;
       (${collectBehaviorCases.toString()})(c);
-      await (${exercise.toString()})(c,env,template,modifier,context.id);
+      await (${exercise.toString()})(c,env,template,modifier,context.id,(${exerciseDrawingImagePreview.toString()}));
       return {tests:c.tests,consoleErrors:c.externalConsoleErrors||[],windowErrors:env.windowErrors,browserIdle:env.browserIdle};
     }`)();
     const result = await runInAppTask({ cli, execute, args: [drawingPath, { id, input: inputMode }, template, process.platform === "darwin" ? 4 : 2],
@@ -74,12 +76,12 @@ async function reloadSettings(c) {
   return { tests: c.tests };
 }
 
-async function exercise(c, env, template, modifier, context) {
+async function exercise(c, env, template, modifier, context, sceneExercise) {
   const { p, leaf, doc, win, check, click, key } = env;
   const nativeWindow = win.require("@electron/remote").getCurrentWindow();
   const minimized = nativeWindow.isMinimized(); nativeWindow.restore(); nativeWindow.show(); nativeWindow.focus();
   if (minimized) c.defer(() => { if (!nativeWindow.isDestroyed()) nativeWindow.minimize(); });
-  let view = await env.openDrawing("Frames", { "excalidraw-thumbnail": "Main, α", "retained-property": "untouched" });
+  let view = await env.openDrawing("Frames", { "excalidraw-thumbnail": "Main, α", "excalidraw-export-padding": 0, "retained-property": "untouched" });
   const drawing = view.file;
   const customData = () => JSON.stringify(view.getViewElements().filter(element => element.type === "frame").map(element => [element.id, element.customData]).sort((a, b) => a[0].localeCompare(b[0])));
   const yaml = async () => p.ea.obsidian.parseYaml((await app.vault.read(drawing)).match(/^---\n([\s\S]*?)\n---/)[1]);
@@ -233,4 +235,23 @@ async function exercise(c, env, template, modifier, context) {
     check((await yaml())["excalidraw-thumbnail"] === "Main, α", "embed frame picker changed drawing thumbnail");
     return { assertions: ["scan-eye dropdown has defaults and all frames including unnamed", "marker name generates unambiguous ID reference", "only owning occurrence changes with one Undo", "frame padding preview and cancel leave source unchanged", "destination thumbnail unchanged"] };
   });
+  await c.case(`native:frames:${context}:outer-padding`, ["P02","P05"], async () => {
+    const outer = await env.create("Outer-padding.md", `![[${drawing.path}#^as-image,padding=0|200]]\n\n![[${drawing.path}#^as-image,padding=30|200]]\n\n![[${drawing.path}#^frame=,padding=30|200]]\n\nEnd`);
+    for(const type of ["SVG","SVGIMG","PNG"]){
+      p.settings.previewImageType=type;await leaf.setViewState({type:"empty",state:{}});
+      await leaf.setViewState({type:"markdown",state:{file:outer.path,mode:"source",source:false}});
+      app.workspace.setActiveLeaf(leaf,{focus:true});leaf.view.editor.setCursor({line:leaf.view.editor.lastLine(),ch:0});
+      await c.waitFor(()=>images().length===3&&images().every(decoded),"outer padding images decoded");
+      check(Math.abs(ratio(images()[0])-200/120)<.01,type+" zero padding changed frame bounds");
+      check(Math.abs(ratio(images()[1])-260/180)<.01,type+" thumbnail outer padding dimensions incorrect: "+ratio(images()[1]));
+      check(ratio(images()[2])>2,type+" padded whole-scene became a thumbnail");
+      const image=images()[1], svg=image.querySelector("svg");
+      const source=svg?"data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg.outerHTML):image.src;
+      const pixels=await env.decode(source);
+      check(pixels.green>0&&pixels.red===0,type+" outer padding revealed the red element outside the frame");
+    }
+    return {assertions:["default-thumbnail and explicit whole-scene padding persist independently", "all three render formats add the requested outer dimensions", "frame contents remain clipped; outer padding never reveals neighboring elements"]};
+  });
+  await c.case(`native:frames:${context}:scene-images`, ["P02","P05"], () => sceneExercise(c,env,template,drawing,context,modifier));
+
 }

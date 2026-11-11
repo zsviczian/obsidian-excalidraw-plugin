@@ -86,7 +86,7 @@ async function exercise(c, env, template, modifier, context) {
     await c.waitFor(() => images().length === 3 && images().every(decoded), "padding images decoded");
     const frames = () => [...root().querySelectorAll(".excalidraw-embed-controls-frame")];
     await c.waitFor(() => frames().length === 3, "padding toolbar bindings");
-    check(!frames()[2].querySelector('[data-excalidraw-embed-action="padding"]'), "padding shown on a whole drawing");
+    check(frames()[2].querySelector('[data-excalidraw-embed-action="padding"] .lucide-box-select'), "whole drawing outer-padding icon absent");
     const launch = async () => {
       const frame = frames()[1]; frame.scrollIntoView({ block: "center" });
       const button = frame.querySelector('[data-excalidraw-embed-action="padding"]'); button.focus();
@@ -107,6 +107,6 @@ async function exercise(c, env, template, modifier, context) {
     check(leaf.view.editor.getValue() === source, "Escape changed padding source");
     check(!doc.querySelector(".excalidraw-embed-padding-popover"), "padding popup leaked after Escape");
     await leaf.view.save(); check(await app.vault.read(drawing) === bytes, "padding modified the destination drawing");
-    return { assertions: ["padding action is absent on a whole drawing", "native slider keys create a live export preview without writing", "Enter changes only the second repeated area reference", "one native undo restores the complete original source", "Escape cancels and removes the popup", "the drawing bytes are unchanged"] };
+    return { assertions: ["whole drawing exposes the outer-padding icon", "native slider keys create a live export preview without writing", "Enter changes only the second repeated area reference", "one native undo restores the complete original source", "Escape cancels and removes the popup", "the drawing bytes are unchanged"] };
   });
 }

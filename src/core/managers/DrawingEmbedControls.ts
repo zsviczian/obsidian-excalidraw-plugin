@@ -78,7 +78,7 @@ export class DrawingEmbedControls extends MarkdownRenderChild {
           const menu = this.frameMenu = new Menu(); menu.setUseNativeMenu(false);
           const parts = getEmbeddedFilenameParts(this.actions.target), ref = parts.blockref ?? parts.sectionref;
           const choose = (reference: string | null) => { if (!this.current() || !this.source.replaceFrame(reference)) this.changed(); };
-          menu.addItem(item => item.setTitle(t("FRAME_DEFAULT")).setChecked(!parts.hasBlockref && !parts.hasSectionref).onClick(() => choose(null)));
+          menu.addItem(item => item.setTitle(t("FRAME_DEFAULT")).setChecked(!parts.hasBlockref && !parts.hasSectionref || ref === "as-image").onClick(() => choose(null)));
           menu.addItem(item => item.setTitle(t("FRAME_WHOLE")).setChecked(parts.hasFrameref && ref === "").onClick(() => choose("")));
           menu.addSeparator();
           for (const frame of this.actions.frames) {
@@ -90,7 +90,8 @@ export class DrawingEmbedControls extends MarkdownRenderChild {
         });
       }
       if (this.actions.padding && this.source.replacePadding) {
-        const padding = button("padding", "square-dot", t("EMBED_ADJUST_PADDING"), () => {
+        const area = getEmbeddedFilenameParts(this.actions.target).hasArearef;
+        const padding = button("padding", area ? "square-dot" : "box-select", t(area ? "PREVIEW_AREA_EXPANSION" : "PREVIEW_OUTER_PADDING"), () => {
           if (this.padding) { this.padding.close(true); return; }
           if (!this.current()) return;
           this.finish(false);

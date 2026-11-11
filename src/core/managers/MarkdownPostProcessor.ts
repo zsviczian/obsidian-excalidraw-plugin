@@ -179,7 +179,7 @@ const _getPNG = async ({
 
   const cacheKey = {
     ...filenameParts,
-    cacheId: "frame-thumbnail-v1",
+    cacheId: "frame-thumbnail-v2",
     isDark: theme === "dark",
     previewImageType: PreviewImageType.PNG,
     scale,
@@ -197,14 +197,15 @@ const _getPNG = async ({
     }
   }
 
-  const quickPNG = !isImagePartRef(filenameParts)
+  const hasImageReference = isExplicitImageEmbed(imgAttributes.fname);
+  const quickPNG = !hasImageReference
     ? await getQuickImagePreview(plugin, file.path, "png")
     : undefined;
 
   const png =
     quickPNG ??
     (await createPNG(
-      isImagePartRef(filenameParts)
+      hasImageReference
         ? filenameParts.filepath + filenameParts.linkpartReference
         : file.path,
       scale,
@@ -328,7 +329,7 @@ const _getSVGIMG = async ({
   exportSettings.skipInliningFonts = false;
   const cacheKey = {
     ...filenameParts,
-    cacheId: "frame-thumbnail-v1",
+    cacheId: "frame-thumbnail-v2",
     isDark: theme === "dark",
     previewImageType: PreviewImageType.SVGIMG,
     scale: 1,
@@ -424,7 +425,7 @@ const _getSVGNative = async ({
   exportSettings.skipInliningFonts = false;
   const cacheKey = {
     ...filenameParts,
-    cacheId: "frame-thumbnail-v1",
+    cacheId: "frame-thumbnail-v2",
     isDark: theme === "dark",
     previewImageType: PreviewImageType.SVG,
     scale: 1,

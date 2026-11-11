@@ -1,5 +1,6 @@
 import { App, Notice, request, requestUrl, TFile } from "obsidian";
 import { readFrameProperty } from "./frameMetadata";
+import { getThumbnailPaddingConfig } from "./thumbnailPadding";
 import { Random } from "roughjs/bin/math";
 import {
   AppState,
@@ -11,6 +12,7 @@ import { errorlog } from "./coreUtils";
 import {
   exportToSvg,
   exportToBlob,
+  exportScene,
   IMAGE_TYPES,
   FRONTMATTER_KEYS,
   EXCALIDRAW_PLUGIN,
@@ -247,7 +249,12 @@ export async function getSVG<TScene extends SceneForExport>(
             el.isDeleted !== true,
         );
       }
-      svg = await exportToSvg({
+      if (exportSettings.exportingFrame && padding > 0) {
+        svg = await exportScene({ type: "svg", data: { elements: exportElements, appState: scene.appState, files }, config: {
+          ...getThumbnailPaddingConfig(exportSettings, scene.appState, padding),
+          ...(exportSettings.skipInliningFonts ? { skipInliningFonts: true } : {}), renderEmbeddables: true,
+        } });
+      } else svg = await exportToSvg({
         elements: exportElements,
         appState: {
           ...scene.appState,
@@ -336,6 +343,10 @@ export async function getPNG<TScene extends SceneForExport>(
       );
     }
 
+    if (exportSettings.exportingFrame && padding > 0) {
+      return await exportScene({ type: "png", data: { elements, appState: scene.appState, files: filterFiles(files) },
+        config: getThumbnailPaddingConfig(exportSettings, scene.appState, padding, scale) });
+    }
     return await exportToBlob({
       elements,
       appState: {

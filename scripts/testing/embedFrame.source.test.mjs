@@ -15,8 +15,8 @@ test("frame selection preserves raw paths, clipping, dimensions, titles, padding
     ['![Caption|200](<Map%20one#%5eframe%3dOld> "Keep title")', '![Caption|200](<Map%20one#%5eframe%3dframe-id> "Keep title")'],
     ['![Caption](Map%20one%23%5Eclippedframe%3DOld%2Cpadding%3D00%2E50 "Keep")', '![Caption](Map%20one%23%5Eclippedframe%3Dframe-id%2Cpadding%3D00%2E50 "Keep")'],
   ]) assert.equal(rewriteEmbedFrame(text, "frame-id"), expected);
-  assert.equal(rewriteEmbedFrame('![[Map#^frame=Old,padding=50|200]]', null), '![[Map|200]]');
-  assert.equal(rewriteEmbedFrame('![[Map#^clippedframe=Old,padding=50|200]]', ''), '![[Map#^frame=|200]]');
+  assert.equal(rewriteEmbedFrame('![[Map#^frame=Old,padding=50|200]]', null), '![[Map#^as-image,padding=50|200]]');
+  assert.equal(rewriteEmbedFrame('![[Map#^clippedframe=Old,padding=50|200]]', ''), '![[Map#^frame=,padding=50|200]]');
   for (const ref of ['../Other', 'frame#evil', 'Name,padding=20']) assert.equal(rewriteEmbedFrame('![[Map]]', ref), null);
 });
 

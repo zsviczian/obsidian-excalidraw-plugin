@@ -42,6 +42,7 @@ export class SelectedElementActionsMenu {
   private actionElementType: ExcalidrawElement["type"] | null = null;
   private actionElementFileId: string | null = null;
   private actionElementCustomData: ExcalidrawElement["customData"] | null = null;
+  private actionViewMode: boolean | null = null;
   private positionKey = "";
 
   constructor(private readonly getHost: () => HTMLElement | null | undefined) {}
@@ -108,11 +109,13 @@ export class SelectedElementActionsMenu {
       selectionChanged ||
       element.type !== this.actionElementType ||
       fileId !== this.actionElementFileId ||
+      appState.viewModeEnabled !== this.actionViewMode ||
       element.customData !== this.actionElementCustomData;
     if (actionTargetChanged) {
       this.actionElementType = element.type;
       this.actionElementFileId = fileId;
       this.actionElementCustomData = element.customData;
+      this.actionViewMode = appState.viewModeEnabled;
       const actions = this.providers.flatMap((provider) =>
         provider.getActions(element),
       );
@@ -158,6 +161,7 @@ export class SelectedElementActionsMenu {
           // A title attribute adds a native browser tooltip alongside the
           // styled Excalidraw tooltip. Keep the accessible name only.
           "aria-label": action.title,
+          "data-excalidraw-element-action": action.id,
         },
       });
       const iconEl = button.createDiv({
@@ -237,6 +241,7 @@ export class SelectedElementActionsMenu {
   }
 
   private clearActionTarget(): void {
+    this.actionViewMode = null;
     this.actionElementType = null;
     this.actionElementFileId = null;
     this.actionElementCustomData = null;

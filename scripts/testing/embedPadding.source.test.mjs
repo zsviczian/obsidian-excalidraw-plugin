@@ -21,7 +21,7 @@ test("padding edits preserve wiki, Markdown, encoded paths, titles, aliases and 
     ['![Map](Map%20one%23%5Earea%3Dabcdefgh%2Cpadding%3D10 "Keep")', '![Map](Map%20one%23%5Earea%3Dabcdefgh,padding=50 "Keep")'],
   ]) assert.equal(rewriteEmbedPadding(text, 50), expected);
   assert.equal(rewriteEmbedPadding("![[Map#^area=abcdefgh,padding=50|200]]", null), "![[Map#^area=abcdefgh|200]]");
-  for (const target of ["Map", "Map#^text", "Map#^group=abcdefgh", "Map#^frame=", "Map#^area=", "Map#^area=abc,padding=-1", "Map#^area=abc,padding=1,padding=2"])
+  for (const target of ["Map#^text", "Map#^group=", "Map#^area=", "Map#^area=abc,padding=-1", "Map#^area=abc,padding=1,padding=2"])
     assert.equal(withAreaPadding(target, 10), null, target);
   for (const value of [-1, 2001, NaN, Infinity]) assert.equal(withAreaPadding("Map#^area=abc", value), null);
   assert.equal(withAreaPadding("Map#^frame=Part, One,padding=20", 50), "Map#^frame=Part, One,padding=50");

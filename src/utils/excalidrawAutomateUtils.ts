@@ -762,7 +762,7 @@ export async function createSVG(
   }
 
   if (
-    !(filenameParts.hasGroupref || filenameParts.hasClippedFrameref) &&
+    !(filenameParts.hasGroupref || filenameParts.hasClippedFrameref) && filenameParts.blockref !== "as-image" &&
     (filenameParts.hasBlockref || filenameParts.hasSectionref)
   ) {
     let el = filenameParts.hasSectionref

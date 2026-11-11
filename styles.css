@@ -2649,6 +2649,50 @@ button.excalidraw-font-picker {
   box-shadow: var(--shadow-s);
   font-size: var(--font-ui-small);
 }
+.excalidraw-embed-padding-heading,
+.excalidraw-embed-padding-help {
+  flex-basis: 100%;
+}
+.excalidraw-embed-padding-heading {
+  font-weight: var(--font-semibold);
+}
+.excalidraw-embed-padding-help {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+.excalidraw-drawing-preview-popover {
+  position: fixed;
+  z-index: var(--layer-popover);
+  width: 340px;
+  max-width: calc(100vw - 16px);
+  max-height: calc(100vh - 16px);
+  overflow: auto;
+  padding: 12px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  background: var(--background-primary);
+  box-shadow: var(--shadow-s);
+}
+.excalidraw-drawing-preview-popover > img {
+  display: block;
+  width: 100%;
+  height: 120px;
+  margin: 8px auto;
+  object-fit: contain;
+}
+.excalidraw-drawing-preview-popover .setting-item {
+  display: block;
+  padding: 8px 0;
+}
+.excalidraw-drawing-preview-popover .setting-item-control {
+  justify-content: flex-start;
+  margin-top: 6px;
+}
+.excalidraw-drawing-preview-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
 .excalidraw-embed-padding-track {
   display: flex;
   align-items: center;

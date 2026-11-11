@@ -2,6 +2,7 @@ import { Component, Notice, SliderComponent, setIcon, setTooltip } from "obsidia
 import type { DrawingEmbedActions, EmbedSourceBinding } from "src/types/drawingEmbedTypes";
 import { t } from "src/lang/helpers";
 import { setStyle } from "src/utils/styleUtils";
+import { getDrawingPreviewParts } from "src/utils/drawingPreviewLink";
 
 const VALUES = [0, 10, ...Array.from({ length: 40 }, (_, index) => (index + 1) * 50)];
 
@@ -33,12 +34,16 @@ export class DrawingEmbedPaddingControl extends Component {
     this.frame.addClass("excalidraw-embed-padding-open");
     this.opener.setAttribute("aria-expanded", "true");
     const doc = this.frame.ownerDocument, win = doc.defaultView;
-    this.popup = doc.body.createDiv({ cls: "excalidraw-embed-padding-popover", attr: { role: "dialog", "aria-label": t("EMBED_ADJUST_PADDING") } });
+    const area = getDrawingPreviewParts(this.actions.target ?? "")?.hasArearef;
+    const label = t(area ? "PREVIEW_AREA_EXPANSION" : "PREVIEW_OUTER_PADDING");
+    this.popup = doc.body.createDiv({ cls: "excalidraw-embed-padding-popover", attr: { role: "dialog", "aria-label": label } });
+    this.popup.createDiv({ cls: "excalidraw-embed-padding-heading", text: label });
+    this.popup.createDiv({ cls: "excalidraw-embed-padding-help", text: t(area ? "PREVIEW_AREA_HELP" : "PREVIEW_PADDING_HELP") });
     const track = this.popup.createDiv({ cls: "excalidraw-embed-padding-track" });
     const nearest = VALUES.reduce((best, value, index) => Math.abs(value - this.value) < Math.abs(VALUES[best] - this.value) ? index : best, 0);
     const control = new SliderComponent(track).setLimits(0, VALUES.length - 1, 1).setValue(nearest);
     const slider = control.sliderEl;
-    slider.setAttribute("aria-label", t("EMBED_ADJUST_PADDING"));
+    slider.setAttribute("aria-label", label);
     slider.setAttribute("aria-valuetext", String(this.value));
     const output = this.popup.createEl("output", { text: String(this.value), attr: { "aria-live": "polite" } });
     const update = () => {

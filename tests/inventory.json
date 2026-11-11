@@ -2155,132 +2155,132 @@
     {
       "name": "excalidraw-anchors",
       "path": "src/constants/constants.ts",
-      "line": 314
+      "line": 316
     },
     {
       "name": "excalidraw-thumbnail",
       "path": "src/constants/constants.ts",
-      "line": 315
+      "line": 317
     },
     {
       "name": "excalidraw-plugin",
       "path": "src/constants/constants.ts",
-      "line": 316
+      "line": 318
     },
     {
       "name": "excalidraw-export-transparent",
       "path": "src/constants/constants.ts",
-      "line": 317
+      "line": 319
     },
     {
       "name": "excalidraw-mask",
       "path": "src/constants/constants.ts",
-      "line": 322
+      "line": 324
     },
     {
       "name": "excalidraw-export-dark",
       "path": "src/constants/constants.ts",
-      "line": 323
+      "line": 325
     },
     {
       "name": "excalidraw-export-svgpadding",
       "path": "src/constants/constants.ts",
-      "line": 328
+      "line": 330
     },
     {
       "name": "excalidraw-export-padding",
       "path": "src/constants/constants.ts",
-      "line": 333
+      "line": 335
     },
     {
       "name": "excalidraw-export-pngscale",
       "path": "src/constants/constants.ts",
-      "line": 338
+      "line": 340
     },
     {
       "name": "excalidraw-export-embed-scene",
       "path": "src/constants/constants.ts",
-      "line": 343
+      "line": 345
     },
     {
       "name": "excalidraw-export-internal-links",
       "path": "src/constants/constants.ts",
-      "line": 348
+      "line": 350
     },
     {
       "name": "excalidraw-link-prefix",
       "path": "src/constants/constants.ts",
-      "line": 353
+      "line": 355
     },
     {
       "name": "excalidraw-url-prefix",
       "path": "src/constants/constants.ts",
-      "line": 358
+      "line": 360
     },
     {
       "name": "excalidraw-link-brackets",
       "path": "src/constants/constants.ts",
-      "line": 363
+      "line": 365
     },
     {
       "name": "excalidraw-onload-script",
       "path": "src/constants/constants.ts",
-      "line": 368
+      "line": 370
     },
     {
       "name": "excalidraw-linkbutton-opacity",
       "path": "src/constants/constants.ts",
-      "line": 373
+      "line": 375
     },
     {
       "name": "excalidraw-default-mode",
       "path": "src/constants/constants.ts",
-      "line": 378
+      "line": 380
     },
     {
       "name": "excalidraw-font",
       "path": "src/constants/constants.ts",
-      "line": 383
+      "line": 385
     },
     {
       "name": "excalidraw-font-color",
       "path": "src/constants/constants.ts",
-      "line": 384
+      "line": 386
     },
     {
       "name": "excalidraw-border-color",
       "path": "src/constants/constants.ts",
-      "line": 389
+      "line": 391
     },
     {
       "name": "excalidraw-css",
       "path": "src/constants/constants.ts",
-      "line": 394
+      "line": 396
     },
     {
       "name": "excalidraw-autoexport",
       "path": "src/constants/constants.ts",
-      "line": 395
+      "line": 397
     },
     {
       "name": "excalidraw-iframe-theme",
       "path": "src/constants/constants.ts",
-      "line": 400
+      "line": 402
     },
     {
       "name": "excalidraw-embeddable-theme",
       "path": "src/constants/constants.ts",
-      "line": 405
+      "line": 407
     },
     {
       "name": "excalidraw-open-md",
       "path": "src/constants/constants.ts",
-      "line": 410
+      "line": 412
     },
     {
       "name": "excalidraw-embed-md",
       "path": "src/constants/constants.ts",
-      "line": 415
+      "line": 417
     }
   ],
   "cliCommands": [
@@ -2465,7 +2465,19 @@
       "mode": "isolated-or-extracted"
     },
     {
+      "path": "scripts/testing/drawingImagePreview.source.test.mjs",
+      "mode": "isolated-or-extracted"
+    },
+    {
       "path": "scripts/testing/drawingLoadError.test.mjs",
+      "mode": "isolated-or-extracted"
+    },
+    {
+      "path": "scripts/testing/drawingPreviewLink.source.test.mjs",
+      "mode": "direct-module-or-tooling"
+    },
+    {
+      "path": "scripts/testing/drawingPreviewLoader.source.test.mjs",
       "mode": "isolated-or-extracted"
     },
     {

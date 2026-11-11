@@ -1,5 +1,6 @@
 import { syncFrameAnchors, readFrameProperty, resolveThumbnailFrame } from "src/utils/frameMetadata";
 import { FrameThumbnailController } from "./managers/FrameThumbnailController";
+import { DrawingImagePreviewController } from "./managers/DrawingImagePreviewController";
 import {
   Editor,
   TextFileView,
@@ -303,6 +304,7 @@ import {
   EphemeralIncrement,
 } from "@zsviczian/excalidraw/types/element/src";
 import {
+  getTemplate,
   getTextElementsMatchingQuery,
   getFrameElementsMatchingQuery,
   getElementsWithLinkMatchingQuery,
@@ -476,6 +478,7 @@ export default class ExcalidrawView
   private excalidrawExtensionRenderer: ViewExcalidrawExtensionRenderer;
   private markdownImageController: MarkdownImageController;
   public readonly frameThumbnail: FrameThumbnailController;
+  public readonly drawingImagePreview: DrawingImagePreviewController;
   private sceneFileManager: ViewSceneFileManager;
   private saveCoordinator: ViewSaveCoordinator;
   private sameFileEditGate: SameFileEditGate;
@@ -731,6 +734,11 @@ export default class ExcalidrawView
     );
     this.frameThumbnail = new FrameThumbnailController(this, MultiOptionConfirmationPrompt);
     this.register(() => this.frameThumbnail.reset());
+    this.drawingImagePreview = new DrawingImagePreviewController(this, {
+      Prompt: MultiOptionConfirmationPrompt, EmbeddedFile, EmbeddedFilesLoader,
+      getTemplate, scaleLoadedImage, getExportPadding,
+    });
+    this.register(() => this.drawingImagePreview.reset());
     this.markdownImageController = new MarkdownImageController(this, {
       isMarkdownImageElement,
       getMarkdownImageCustomData,
@@ -2390,6 +2398,7 @@ export default class ExcalidrawView
 
   async onUnloadFile(): Promise<void> {
     this.frameThumbnail.reset();
+    this.drawingImagePreview.reset();
     //deliberately not calling super.onUnloadFile() to avoid autosave (saved in unload)
     this.invalidateSetViewDataLoad();
     this.markdownImageController.cancelPendingConversion();

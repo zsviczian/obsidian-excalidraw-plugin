@@ -56,7 +56,7 @@ test("padding toolbar action requires both an area-rendering capability and a wr
     try {
       const button = f.buttons.find(button => button.getAttribute("data-excalidraw-embed-action") === "padding");
       assert.equal(!!button, area && writable);
-      if (button) assert.equal(button.icon, "square-dot");
+      if (button) assert.equal(button.icon, "box-select");
     }
     finally { f.close(); }
   }

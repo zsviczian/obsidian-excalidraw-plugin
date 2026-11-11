@@ -41,7 +41,7 @@ export function getEmbeddedFilenameParts(fname: string): FILENAMEPARTS {
   const hasSectionref = Boolean(parts[6]);
   const prefix = parts[4] ?? parts[7];
   const rawReference = hasBlockref ? parts[5] : parts[8];
-  const paddingMatch = IMAGE_REFERENCE_PREFIXES.has(prefix)
+  const paddingMatch = (IMAGE_REFERENCE_PREFIXES.has(prefix) || rawReference?.startsWith("as-image,padding="))
     ? rawReference?.match(PADDING_PARAMETER_REGEX)
     : null;
   const parsedPadding = paddingMatch ? Number(paddingMatch[1]) : undefined;
