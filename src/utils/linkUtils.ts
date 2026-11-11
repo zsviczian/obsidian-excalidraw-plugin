@@ -12,6 +12,13 @@ export type LinkParts = {
   page: number;
 };
 
+/** Restore a master-map reference with |100% after its fragment, exactly once. */
+export function getEmbeddedFileMasterLink(path: string, reference: string | null): string {
+  if (!reference) return path;
+  const anchored = path.endsWith("|100%");
+  return path.replace(/\|100%$/, "") + "#" + reference + (anchored && !reference.endsWith("|100%") ? "|100%" : "");
+}
+
 /**
  * Splits a drawing or embedded-file link into its path, reference, dimensions,
  * and optional PDF page.

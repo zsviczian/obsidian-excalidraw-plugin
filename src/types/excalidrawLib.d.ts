@@ -78,6 +78,7 @@ type EmbeddedLink =
   | null;
 
 export declare namespace ExcalidrawLib {
+  const exportScene: typeof import("@zsviczian/excalidraw").exportScene;
   type ObsidianCommonHostUIMode = "full" | "compact" | "tray" | "mobile";
 
   type ObsidianCommonHostAdapter = Readonly<{

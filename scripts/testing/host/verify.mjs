@@ -12,6 +12,7 @@ import { runNativeCLIScenario } from "./nativeCLI.mjs";
 import { runEmbedRecoveryScenario } from "./embedRecovery.mjs";
 import { runEmbedControlsScenario } from "./embedControls.mjs";
 import { runEmbedRegressionsScenario } from "./embedRegressions.mjs";
+import { runFrameSemanticsScenario } from "./frameSemantics.mjs";
 import { runGroupedLinkClickScenario } from "./groupedLinkClick.mjs";
 import { runLatexInputScenario } from "./latexInput.mjs";
 import { runImageGeometryScenario } from "./imageGeometry.mjs";
@@ -91,6 +92,7 @@ const nativeCLI = coreScenarios || process.argv.includes("--native-cli");
 const embedRecovery = coreScenarios || process.argv.includes("--embed-recovery");
 const embedControls = coreScenarios || process.argv.includes("--embed-controls");
 const embedRegressions = coreScenarios || process.argv.includes("--embed-regressions");
+const frameSemantics = coreScenarios || process.argv.includes("--frame-semantics");
 const groupedLinkClick =
   coreScenarios || process.argv.includes("--grouped-link-click");
 const latexInput = coreScenarios || process.argv.includes("--latex-input");
@@ -166,6 +168,7 @@ const flags = [
   "--embed-recovery",
   "--embed-controls",
   "--embed-regressions",
+  "--frame-semantics",
   "--grouped-link-click",
   "--latex-input",
   "--latex-preview",
@@ -358,6 +361,7 @@ try {
         ...(embedRecovery ? [runEmbedRecoveryScenario] : []),
         ...(embedControls ? [runEmbedControlsScenario] : []),
         ...(embedRegressions ? [runEmbedRegressionsScenario] : []),
+        ...(frameSemantics ? [runFrameSemanticsScenario] : []),
         ...(groupedLinkClick ? [runGroupedLinkClickScenario] : []),
         ...(latexInput ? [runLatexInputScenario] : []),
         ...(latexPreview
@@ -422,6 +426,7 @@ try {
         featureCases:focusedCases,
         kplexOntology,
         embedControls,
+        frameSemantics,
       });
       deviceReport.source = combination?.manifests.plugin || source;
       deviceReport.artifacts = report.artifacts.installedHashes;

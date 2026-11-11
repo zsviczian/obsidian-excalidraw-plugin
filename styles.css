@@ -2637,9 +2637,7 @@ button.excalidraw-font-picker {
 .excalidraw-embed-padding-popover {
   position: fixed;
   z-index: var(--layer-popover);
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  display: block;
   width: 240px;
   max-width: calc(100vw - 8px);
   padding: 4px 6px;
@@ -2648,6 +2646,58 @@ button.excalidraw-font-picker {
   background: var(--background-primary-alt);
   box-shadow: var(--shadow-s);
   font-size: var(--font-ui-small);
+}
+.excalidraw-embed-padding-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.excalidraw-embed-padding-help {
+  margin-top: 6px;
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+.excalidraw-drawing-preview-popover {
+  position: fixed;
+  z-index: var(--layer-popover);
+  width: 340px;
+  max-width: calc(100vw - 16px);
+  max-height: calc(100vh - 16px);
+  overflow: auto;
+  padding: 12px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  background: var(--background-primary);
+  box-shadow: var(--shadow-s);
+}
+.excalidraw-drawing-preview-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 120px;
+  margin: 8px auto;
+}
+.excalidraw-drawing-preview-image > img {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  border: 1px solid var(--text-faint);
+  object-fit: contain;
+}
+.excalidraw-drawing-preview-popover .setting-item {
+  display: block;
+  padding: 8px 0;
+}
+.excalidraw-drawing-preview-popover .setting-item-control {
+  justify-content: flex-start;
+  margin-top: 6px;
+}
+.excalidraw-drawing-preview-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }
 .excalidraw-embed-padding-track {
   display: flex;
@@ -2660,11 +2710,32 @@ button.excalidraw-font-picker {
   min-width: 0;
   margin: 0;
 }
-.excalidraw-embed-padding-popover output {
-  min-width: 3.5ch;
+.excalidraw-embed-padding-popover .slider-value,
+.excalidraw-drawing-preview-padding .slider-value {
+  display: none;
+}
+.excalidraw-padding-value {
+  display: block;
+  min-height: 1.4em;
+  margin-top: 2px;
   color: var(--text-muted);
-  text-align: right;
+  text-align: center;
+  font-size: var(--font-ui-smaller);
   font-variant-numeric: tabular-nums;
+}
+.excalidraw-drawing-preview-popover .excalidraw-drawing-preview-padding .setting-item-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0 6px;
+}
+.excalidraw-drawing-preview-padding input[type="range"] {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+}
+.excalidraw-drawing-preview-padding .excalidraw-padding-value {
+  grid-column: 1;
+  grid-row: 2;
 }
 .excalidraw-embed-padding-popover button {
   flex-shrink: 0;

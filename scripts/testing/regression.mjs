@@ -23,12 +23,13 @@ import { textSaveShortcutCaseIds } from "./host/textSaveShortcut.mjs";
 import { codeCardCaseIds } from "./host/codeCards.mjs";
 import { embedControlCaseIds, embedControlDeviceCaseIds } from "./host/embedControls.mjs";
 import { embedRegressionCaseIds } from "./host/embedRegressions.mjs";
+import { frameSemanticsCaseIds, frameSemanticsDeviceCaseIds } from "./host/frameSemantics.mjs";
 import { kplexOntologyCaseIds, kplexOntologyDeviceCaseIds } from "./host/kplexOntology.mjs";
 
 export const requiredDeviceCases = [
   ...deviceProfiles(),
   ...breakpointProfiles(),
-].map((profile) => "native:device:" + profile.id).concat(kplexOntologyDeviceCaseIds, embedControlDeviceCaseIds);
+].map((profile) => "native:device:" + profile.id).concat(kplexOntologyDeviceCaseIds, embedControlDeviceCaseIds, frameSemanticsDeviceCaseIds);
 
 export const requiredNativeCases = [
   ...workflowBundleCaseIds,
@@ -36,6 +37,7 @@ export const requiredNativeCases = [
   ...codeCardCaseIds,
   ...embedControlCaseIds,
   ...embedRegressionCaseIds,
+  ...frameSemanticsCaseIds,
   ...kplexOntologyCaseIds,
   ...behavioralCases().map((row) => row.testId),
   ...["image-url", "image-import"].flatMap((action) =>

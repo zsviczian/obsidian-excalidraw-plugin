@@ -18,7 +18,7 @@ export function embedTestDOM() {
     constructor(options = {}) { this.children = []; this.attrs = { ...options.attr }; this.classes = new Set((options.cls || "").split(" ")); this.events = new Map(); this.style = {}; this.ownerDocument = document; this.isConnected = true; this.captures = new Set(); this.bounds = { left: 0, top: 0, right: 700, bottom: 130, width: 700, height: 130 }; }
     createDiv(options) { return this.createEl("div", typeof options === "string" ? { cls: options } : options); }
     createSpan(options) { return this.createEl("span", options); }
-    createEl(tag, options) { const el = new Element(options); el.tagName = tag.toUpperCase(); this.append(el); return el; }
+    createEl(tag, options) { const el = new Element(options); el.tagName = tag.toUpperCase(); el.text = options?.text; this.append(el); return el; }
     append(el) { el.remove(); el.isConnected = true; el.parentElement = this; this.children.push(el); }
     addClass(...classes) { for (const cls of classes) this.classes.add(cls); }
     removeClass(...classes) { for (const cls of classes) this.classes.delete(cls); }

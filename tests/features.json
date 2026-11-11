@@ -90,6 +90,46 @@
         {
           "path": "src/view/managers/ViewSaveCoordinator.ts",
           "symbol": "export class ViewSaveCoordinator"
+        },
+        {
+          "path": "src/utils/frameMetadata.ts",
+          "symbol": "export function syncFrameAnchors"
+        },
+        {
+          "path": "src/view/managers/FrameThumbnailController.ts",
+          "symbol": "export class FrameThumbnailController"
+        },
+        {
+          "path": "src/shared/Dialogs/FrameNavigator.ts",
+          "symbol": "export class FrameNavigator"
+        },
+        {
+          "path": "src/core/editor/embedFrame.ts",
+          "symbol": "export function rewriteEmbedFrame"
+        },
+        {
+          "path": "src/view/managers/DrawingImagePreviewController.ts",
+          "symbol": "export class DrawingImagePreviewController"
+        },
+        {
+          "path": "src/shared/Dialogs/DrawingImagePreviewPopover.ts",
+          "symbol": "export class DrawingImagePreviewPopover"
+        },
+        {
+          "path": "src/utils/drawingPreviewLink.ts",
+          "symbol": "export function rewriteDrawingPreviewLink"
+        },
+        {
+          "path": "src/utils/thumbnailPadding.ts",
+          "symbol": "export function getThumbnailPaddingConfig"
+        },
+        {
+          "path": "src/utils/drawingPadding.ts",
+          "symbol": "export function getDrawingPaddingMax"
+        },
+        {
+          "path": "src/utils/drawingPreviewScene.ts",
+          "symbol": "export async function readDrawingPreviewElements"
         }
       ],
       "tests": [
@@ -141,6 +181,117 @@
           "path": "scripts/testing/host/coldStart.mjs",
           "cases": [
             "native:cold-durable-restoration"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/frameMetadata.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/frameMetadata.source.test.mjs::frame anchors include actual regular and marker names, preserving order and punctuation",
+            "node:scripts/testing/frameMetadata.source.test.mjs::frame metadata replaces only its own multiline property and leaves invalid YAML untouched",
+            "node:scripts/testing/frameMetadata.source.test.mjs::thumbnail YAML uses exact unique names and supports manual edits, commas and suffixes"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/framePreview.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/framePreview.source.test.mjs::default thumbnails resolve exact YAML names while explicit whole/frame and ordinary exports retain precedence",
+            "node:scripts/testing/framePreview.source.test.mjs::missing, ambiguous and invalid thumbnails fall back to the complete scene",
+            "node:scripts/testing/framePreview.source.test.mjs::PNG and SVG preview exports forward strict frame cropping without changing full-scene export defaults"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/frameThumbnailController.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/frameThumbnailController.source.test.mjs::thumbnail rename follows always policy and undo/redo without replacing user hooks or unknown settings",
+            "node:scripts/testing/frameThumbnailController.source.test.mjs::first rename persists a selected policy and ask allows a different decision on subsequent renames",
+            "node:scripts/testing/frameThumbnailController.source.test.mjs::cancelling first-rename policy does not reopen a prompt on unchanged selection or scene updates",
+            "node:scripts/testing/frameThumbnailController.source.test.mjs::a rename reverted while its own YAML write settles keeps tracking the same frame",
+            "node:scripts/testing/frameThumbnailController.source.test.mjs::a context-menu thumbnail choice establishes identity before the next scene event renames it",
+            "node:scripts/testing/frameThumbnailController.source.test.mjs::external YAML changes, blank names and retired views cannot be overwritten by a pending rename"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/frameNavigator.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/frameNavigator.source.test.mjs::frame navigation preserves search and mode, distinguishes unnamed frames and rejects retired owners"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/embedFrame.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/embedFrame.source.test.mjs::frame selection preserves raw paths, clipping, dimensions, titles, padding and escaped table aliases",
+            "node:scripts/testing/embedFrame.source.test.mjs::frame selection edits only the owned occurrence and is one undo step"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/frameSemantics.mjs",
+          "cases": [
+            "native:frames:main:metadata",
+            "native:frames:main:navigation",
+            "native:frames:main:previews",
+            "native:frames:main:controls",
+            "native:frames:main:outer-padding",
+            "native:frames:main:scene-images",
+            "native:frames:popout:metadata",
+            "native:frames:popout:navigation",
+            "native:frames:popout:previews",
+            "native:frames:popout:controls",
+            "native:frames:popout:outer-padding",
+            "native:frames:popout:scene-images",
+            "native:frames:settings-reload",
+            "native:frames:phone:metadata",
+            "native:frames:phone:navigation",
+            "native:frames:phone:previews",
+            "native:frames:phone:controls",
+            "native:frames:phone:outer-padding",
+            "native:frames:phone:scene-images",
+            "native:frames:tablet:metadata",
+            "native:frames:tablet:navigation",
+            "native:frames:tablet:previews",
+            "native:frames:tablet:controls",
+            "native:frames:tablet:outer-padding",
+            "native:frames:tablet:scene-images"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/drawingPreviewLink.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/drawingPreviewLink.source.test.mjs::thumbnail and whole-scene padding remain independent of frame selection and anchoring",
+            "node:scripts/testing/drawingPreviewLink.source.test.mjs::preview changes preserve raw encoding, padding, other aliases and the shared master-map link",
+            "node:scripts/testing/drawingPreviewLink.source.test.mjs::outer thumbnail padding enlarges the viewport while retaining the original frame clip"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/drawingImagePreview.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/drawingImagePreview.source.test.mjs::only this image gets a new persisted link and uses real external-update geometry; undo retains the original reference",
+            "node:scripts/testing/drawingImagePreview.source.test.mjs::apply to all copies changes only edited fields, preserving distinct views, anchoring and each image center",
+            "node:scripts/testing/drawingImagePreview.source.test.mjs::100% anchoring follows rendered intrinsic dimensions and remains in the link",
+            "node:scripts/testing/drawingImagePreview.source.test.mjs::cancel, stale scene changes and retired views do not register partial links or write a scene"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/drawingPreviewLoader.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/drawingPreviewLoader.source.test.mjs::embedded drawing loader recognizes padded default and whole-scene links while retaining 100%",
+            "node:scripts/testing/drawingPreviewLoader.source.test.mjs::an ordinary Markdown block named as-image keeps its section-transclusion behavior"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/drawingPadding.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/drawingPadding.source.test.mjs::area range covers off-center scene edges beyond 2000 and ignores deleted elements",
+            "node:scripts/testing/drawingPadding.source.test.mjs::padding geometry reads plain, compressed and legacy saved scenes without resolving embeds"
           ]
         }
       ],
@@ -419,6 +570,46 @@
         {
           "path": "src/core/managers/DrawingEmbedPaddingControl.ts",
           "symbol": "DrawingEmbedPaddingControl"
+        },
+        {
+          "path": "src/utils/frameMetadata.ts",
+          "symbol": "export function syncFrameAnchors"
+        },
+        {
+          "path": "src/view/managers/FrameThumbnailController.ts",
+          "symbol": "export class FrameThumbnailController"
+        },
+        {
+          "path": "src/shared/Dialogs/FrameNavigator.ts",
+          "symbol": "export class FrameNavigator"
+        },
+        {
+          "path": "src/core/editor/embedFrame.ts",
+          "symbol": "export function rewriteEmbedFrame"
+        },
+        {
+          "path": "src/view/managers/DrawingImagePreviewController.ts",
+          "symbol": "export class DrawingImagePreviewController"
+        },
+        {
+          "path": "src/shared/Dialogs/DrawingImagePreviewPopover.ts",
+          "symbol": "export class DrawingImagePreviewPopover"
+        },
+        {
+          "path": "src/utils/drawingPreviewLink.ts",
+          "symbol": "export function rewriteDrawingPreviewLink"
+        },
+        {
+          "path": "src/utils/thumbnailPadding.ts",
+          "symbol": "export function getThumbnailPaddingConfig"
+        },
+        {
+          "path": "src/utils/drawingPadding.ts",
+          "symbol": "export function getDrawingPaddingMax"
+        },
+        {
+          "path": "src/utils/drawingPreviewScene.ts",
+          "symbol": "export async function readDrawingPreviewElements"
         }
       ],
       "tests": [
@@ -710,7 +901,9 @@
             "node:scripts/testing/embedPadding.source.test.mjs::padding previews debounce without writing; closing commits exactly once and releases fresh payloads",
             "node:scripts/testing/embedPadding.source.test.mjs::newer padding previews win; late exports after Escape, unload or stale source are discarded",
             "node:scripts/testing/embedPadding.source.test.mjs::padding wheel, outside close and default reset use the configured gesture without duplicate writes",
-            "node:scripts/testing/embedPadding.source.test.mjs::padding row aligns beneath the whole toolbar, stays onscreen, and exposes disclosure state"
+            "node:scripts/testing/embedPadding.source.test.mjs::padding row aligns beneath the whole toolbar, stays onscreen, and exposes disclosure state",
+            "node:scripts/testing/embedPadding.source.test.mjs::area limits load once before the gesture and stay fixed across value digit changes",
+            "node:scripts/testing/embedPadding.source.test.mjs::opening a capped padding control preserves larger saved values until edited"
           ]
         },
         {
@@ -733,6 +926,117 @@
             "native:embed-regressions:popout:relative",
             "native:embed-regressions:popout:detached",
             "native:embed-regressions:popout:padding"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/frameMetadata.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/frameMetadata.source.test.mjs::frame anchors include actual regular and marker names, preserving order and punctuation",
+            "node:scripts/testing/frameMetadata.source.test.mjs::frame metadata replaces only its own multiline property and leaves invalid YAML untouched",
+            "node:scripts/testing/frameMetadata.source.test.mjs::thumbnail YAML uses exact unique names and supports manual edits, commas and suffixes"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/framePreview.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/framePreview.source.test.mjs::default thumbnails resolve exact YAML names while explicit whole/frame and ordinary exports retain precedence",
+            "node:scripts/testing/framePreview.source.test.mjs::missing, ambiguous and invalid thumbnails fall back to the complete scene",
+            "node:scripts/testing/framePreview.source.test.mjs::PNG and SVG preview exports forward strict frame cropping without changing full-scene export defaults"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/frameThumbnailController.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/frameThumbnailController.source.test.mjs::thumbnail rename follows always policy and undo/redo without replacing user hooks or unknown settings",
+            "node:scripts/testing/frameThumbnailController.source.test.mjs::first rename persists a selected policy and ask allows a different decision on subsequent renames",
+            "node:scripts/testing/frameThumbnailController.source.test.mjs::cancelling first-rename policy does not reopen a prompt on unchanged selection or scene updates",
+            "node:scripts/testing/frameThumbnailController.source.test.mjs::a rename reverted while its own YAML write settles keeps tracking the same frame",
+            "node:scripts/testing/frameThumbnailController.source.test.mjs::a context-menu thumbnail choice establishes identity before the next scene event renames it",
+            "node:scripts/testing/frameThumbnailController.source.test.mjs::external YAML changes, blank names and retired views cannot be overwritten by a pending rename"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/frameNavigator.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/frameNavigator.source.test.mjs::frame navigation preserves search and mode, distinguishes unnamed frames and rejects retired owners"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/embedFrame.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/embedFrame.source.test.mjs::frame selection preserves raw paths, clipping, dimensions, titles, padding and escaped table aliases",
+            "node:scripts/testing/embedFrame.source.test.mjs::frame selection edits only the owned occurrence and is one undo step"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/frameSemantics.mjs",
+          "cases": [
+            "native:frames:main:metadata",
+            "native:frames:main:navigation",
+            "native:frames:main:previews",
+            "native:frames:main:controls",
+            "native:frames:main:outer-padding",
+            "native:frames:main:scene-images",
+            "native:frames:popout:metadata",
+            "native:frames:popout:navigation",
+            "native:frames:popout:previews",
+            "native:frames:popout:controls",
+            "native:frames:popout:outer-padding",
+            "native:frames:popout:scene-images",
+            "native:frames:settings-reload",
+            "native:frames:phone:metadata",
+            "native:frames:phone:navigation",
+            "native:frames:phone:previews",
+            "native:frames:phone:controls",
+            "native:frames:phone:outer-padding",
+            "native:frames:phone:scene-images",
+            "native:frames:tablet:metadata",
+            "native:frames:tablet:navigation",
+            "native:frames:tablet:previews",
+            "native:frames:tablet:controls",
+            "native:frames:tablet:outer-padding",
+            "native:frames:tablet:scene-images"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/drawingPreviewLink.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/drawingPreviewLink.source.test.mjs::thumbnail and whole-scene padding remain independent of frame selection and anchoring",
+            "node:scripts/testing/drawingPreviewLink.source.test.mjs::preview changes preserve raw encoding, padding, other aliases and the shared master-map link",
+            "node:scripts/testing/drawingPreviewLink.source.test.mjs::outer thumbnail padding enlarges the viewport while retaining the original frame clip"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/drawingImagePreview.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/drawingImagePreview.source.test.mjs::only this image gets a new persisted link and uses real external-update geometry; undo retains the original reference",
+            "node:scripts/testing/drawingImagePreview.source.test.mjs::apply to all copies changes only edited fields, preserving distinct views, anchoring and each image center",
+            "node:scripts/testing/drawingImagePreview.source.test.mjs::100% anchoring follows rendered intrinsic dimensions and remains in the link",
+            "node:scripts/testing/drawingImagePreview.source.test.mjs::cancel, stale scene changes and retired views do not register partial links or write a scene"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/drawingPreviewLoader.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/drawingPreviewLoader.source.test.mjs::embedded drawing loader recognizes padded default and whole-scene links while retaining 100%",
+            "node:scripts/testing/drawingPreviewLoader.source.test.mjs::an ordinary Markdown block named as-image keeps its section-transclusion behavior"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/drawingPadding.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/drawingPadding.source.test.mjs::area range covers off-center scene edges beyond 2000 and ignores deleted elements",
+            "node:scripts/testing/drawingPadding.source.test.mjs::padding geometry reads plain, compressed and legacy saved scenes without resolving embeds"
           ]
         }
       ],

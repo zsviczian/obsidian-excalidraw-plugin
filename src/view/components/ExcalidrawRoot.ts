@@ -72,6 +72,12 @@ export function createExcalidrawRootElement(
       () => view.excalidrawContainer,
     );
     view.selectedElementActionsMenu.registerProvider({
+      id: "drawing-image-preview",
+      getActions: element => element.type === "image" && !view.excalidrawAPI?.getAppState().viewModeEnabled && view.drawingImagePreview.getSource(element)
+        ? [{ id: "configure-drawing-preview", title: t("PREVIEW_CONFIGURE"), icon: "scan-eye",
+          action: () => { void view.drawingImagePreview.open(element.id); } }] : [],
+    });
+    view.selectedElementActionsMenu.registerProvider({
       id: "markdown-image",
       getActions: (element) =>
         element.type === "image" && isMarkdownImageElement(view, element)
@@ -101,6 +107,7 @@ export function createExcalidrawRootElement(
     }
     view.plugin.scriptEngine.runAutostartScripts(view);
     return () => {
+      view.drawingImagePreview.reset();
       view.obsidianMenu.destroy();
       view.obsidianMenu = null;
       view.embeddableMenu.destroy();

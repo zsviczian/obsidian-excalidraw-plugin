@@ -3,6 +3,7 @@ import { ChangeDesc, EditorSelection, Transaction } from "@codemirror/state";
 import type { EditorView } from "@codemirror/view";
 import { readDrawingEmbedToken } from "./embedDimensions";
 import { rewriteEmbedPadding } from "./embedPadding";
+import { rewriteEmbedFrame } from "./embedFrame";
 import type { EmbedSourceBinding } from "src/types/drawingEmbedTypes";
 
 /**
@@ -65,6 +66,14 @@ export class DrawingEmbedSource implements EmbedSourceBinding {
     });
     this.valid = false;
     return true;
+  }
+
+  /** Frame choices can change a region reference without exposing arbitrary destination writes. */
+  replaceFrame(reference: string | null): boolean {
+    const text = rewriteEmbedFrame(this.text, reference);
+    if (!text || !this.isCurrent() || this.validateRange && !this.validateRange(this.from, this.to)) return false;
+    if (text === this.text) return true;
+    return this.commit(text, "input.excalidraw-embed-frame");
   }
 
   /** Select the containing-note syntax, allowing Live Preview to reveal it. */

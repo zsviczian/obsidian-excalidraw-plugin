@@ -1,4 +1,5 @@
 import { FrameRenderingOptions } from "./utilTypes";
+import type { ExcalidrawFrameElement, NonDeleted } from "@zsviczian/excalidraw/types/element/src/types";
 
 export type PDFPageAlignment =
   | "center"
@@ -63,6 +64,9 @@ export interface ExportSettings {
   isMask: boolean;
   frameRendering?: FrameRenderingOptions; //optional, overrides relevant appState settings for rendering the frame
   skipInliningFonts?: boolean;
+  /** Preview-only opt-in; ordinary scene exports must ignore the document thumbnail. */
+  drawingThumbnail?: boolean;
+  exportingFrame?: NonDeleted<ExcalidrawFrameElement>;
 }
 
 // Electron IPC interfaces

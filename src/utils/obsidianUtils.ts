@@ -699,6 +699,7 @@ export function strictArrayBuffer(
 // 1. Map your custom 'type' strings to actual TypeScript types
 type FrontmatterTypeMap = {
   text: string;
+  multitext: string[];
   checkbox: boolean;
   number: number;
 };

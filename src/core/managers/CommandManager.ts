@@ -808,6 +808,17 @@ export class CommandManager {
     });
 
     this.addCommand({
+      id: "navigate-to-frame", name: t("FRAME_NAVIGATE"),
+      checkCallback: (checking: boolean) => {
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        const available = !!view?.getViewElements().some(element => element.type === "frame" && !element.isDeleted);
+        if (checking) return available;
+        if (available) view.frameThumbnail.navigate();
+        return available;
+      },
+    });
+
+    this.addCommand({
       id: "fullscreen",
       name: t("TOGGLE_FULLSCREEN"),
       checkCallback: (checking: boolean) => {

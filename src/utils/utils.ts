@@ -1,4 +1,6 @@
 import { App, Notice, request, requestUrl, TFile } from "obsidian";
+import { readFrameProperty } from "./frameMetadata";
+import { getThumbnailPaddingConfig } from "./thumbnailPadding";
 import { Random } from "roughjs/bin/math";
 import {
   AppState,
@@ -10,6 +12,7 @@ import { errorlog } from "./coreUtils";
 import {
   exportToSvg,
   exportToBlob,
+  exportScene,
   IMAGE_TYPES,
   FRONTMATTER_KEYS,
   EXCALIDRAW_PLUGIN,
@@ -246,7 +249,12 @@ export async function getSVG<TScene extends SceneForExport>(
             el.isDeleted !== true,
         );
       }
-      svg = await exportToSvg({
+      if (exportSettings.exportingFrame && padding > 0) {
+        svg = await exportScene({ type: "svg", data: { elements: exportElements, appState: scene.appState, files }, config: {
+          ...getThumbnailPaddingConfig(exportSettings, scene.appState, padding),
+          ...(exportSettings.skipInliningFonts ? { skipInliningFonts: true } : {}), renderEmbeddables: true,
+        } });
+      } else svg = await exportToSvg({
         elements: exportElements,
         appState: {
           ...scene.appState,
@@ -263,7 +271,7 @@ export async function getSVG<TScene extends SceneForExport>(
           exportSettings.frameRendering?.enabled && !allowFramePadding
             ? 0
             : padding,
-        exportingFrame: null,
+        exportingFrame: exportSettings.exportingFrame ?? null,
         renderEmbeddables: true,
         skipInliningFonts: exportSettings.skipInliningFonts,
       });
@@ -335,6 +343,10 @@ export async function getPNG<TScene extends SceneForExport>(
       );
     }
 
+    if (exportSettings.exportingFrame && padding > 0) {
+      return await exportScene({ type: "png", data: { elements, appState: scene.appState, files: filterFiles(files) },
+        config: getThumbnailPaddingConfig(exportSettings, scene.appState, padding, scale) });
+    }
     return await exportToBlob({
       elements,
       appState: {
@@ -348,6 +360,7 @@ export async function getPNG<TScene extends SceneForExport>(
           : {}),
       } as AppState,
       files: filterFiles(files),
+      exportingFrame: exportSettings.exportingFrame ?? null,
       exportPadding:
         exportSettings.frameRendering?.enabled && !allowFramePadding
           ? 0
@@ -383,6 +396,11 @@ export async function getQuickImagePreview(
 ): Promise<Blob | string | null> {
   if (!plugin.settings.displayExportedImageIfAvailable) {
     return null;
+  }
+  const source = plugin.app.vault.getFileByPath(path);
+  if (source) {
+    const thumbnail = readFrameProperty(await plugin.app.vault.cachedRead(source));
+    if (typeof thumbnail === "string" && thumbnail.trim()) return null;
   }
   const imagePath = getIMGFilename(path, extension);
   const file = plugin.app.vault.getAbstractFileByPath(imagePath);

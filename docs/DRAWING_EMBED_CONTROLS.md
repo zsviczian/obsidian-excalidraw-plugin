@@ -5,10 +5,19 @@ the toolbar below the image; touch layouts keep the controls visible. Drag the
 bottom-right corner to resize, or focus it and use the arrow keys. A completed
 resize changes only that occurrence in the containing note, with one undo step.
 
-For an `area=` reference such as `![[Drawing#^area=abcdefgh|300]]`, the toolbar
-also offers **Adjust area padding**, using the square-dot icon. A compact
-horizontal Obsidian slider appears directly below the toolbar and previews
-padding from 0 to 2000: 0, 10, then increments of 50. You can drag, click the track, use the
+The toolbar offers **Outer padding** for default thumbnails, whole scenes, groups
+and frame references, using the **box-select** icon. **Area expansion** keeps the
+**square-dot** icon for `area=` references: it includes more of the surrounding
+drawing. Outer padding adds space without including additional elements.
+A compact horizontal Obsidian slider appears directly below the toolbar and previews
+padding in increments of 1. Outer padding ranges from 0 to 100. Area expansion
+uses the largest distance from a zero-padding crop edge to the corresponding
+scene edge, plus 100. Saved geometry is read once when the control opens, without
+refreshing embedded text or images, and the range stays fixed during the gesture.
+The controls occupy the first row, with one small value underneath and then a
+short description. Changing digit counts never changes the track width.
+Existing saved padding remains unchanged until edited, including values above
+the current slider maximum. You can drag, click the track, use the
 arrow keys, or scroll over the slider. Closing the popup or pressing Enter saves
 one source change; Escape cancels. **Use default padding** removes the explicit
 `,padding=N` parameter and uses the drawing's export padding preference.
@@ -19,10 +28,65 @@ note, replaced widget, or plugin unload cancels the gesture and its pending
 preview. Paths, aliases, Markdown titles, dimensions, and table escapes are
 preserved. Identical embeds remain independent.
 
-Padding controls require an editable Live Preview source binding and an `area=`
-reference. They are absent for whole drawings, text/group/frame references,
+Padding controls require an editable Live Preview source binding. They are absent for text references,
 Reading view, read-only editors, nested Markdown transclusions, and Canvas.
 Reading view retains preview and open-drawing actions.
+
+Padding is independent of the selected view. For example,
+`![[Drawing#^as-image,padding=30|300]]` follows the current default thumbnail with
+30 units of outer padding; `![[Drawing#^frame=,padding=30|300]]` shows the whole
+scene with that padding. Switching views retains the padding override. Thumbnail
+contents stay clipped to the original frame rectangle before padding is added.
+
+## Drawing images inside a scene
+
+Select a drawing-backed image and use **Configure drawing preview** (scan-eye)
+next to its existing image actions. The popover previews the chosen view and
+padding without editing the scene. A thin outline marks the rendered image's
+bounds, including transparent padding. The view selector explains how to create
+views by adding frames or marker frames and replacing their default names.
+**Anchor at original size (100%)** follows
+the rendered source dimensions and disables manual resizing. **Apply** commits;
+Cancel or Escape discards the draft.
+
+When the source drawing appears in several images in the same scene, Apply asks
+whether to update **All images** or **Only this image**. Only edited settings are
+applied, preserving each copy's other view, padding and anchor choices. Each
+image retains its center; unanchored images retain their area when the aspect
+ratio changes. Anchored images follow their new intrinsic dimensions.
+
+Configuration is saved in each image's embedded-file link, including `|100%`.
+Independent references are created internally; the source drawing is never
+duplicated or modified. One Undo restores the previous references and geometry.
+
+## Frames and drawing thumbnails
+
+Select a named frame or marker frame and use **Set as drawing thumbnail** in its
+context menu. The document property `excalidraw-thumbnail` stores its exact name
+and can also be edited manually. Names must be unique. Implicit previews in
+notes, hover previews and other drawings crop to the frame rectangle, without
+its outline or title. A missing, invalid or ambiguous name falls back to the
+whole scene. PNG/SVG autoexports continue to export the full scene.
+
+On save, `excalidraw-anchors` lists unique named frames and marker frames in
+scene order. Unnamed frames are omitted; a frame deliberately named `Frame`
+is included. New properties appear at the top of frontmatter and existing
+properties retain their positions. Unrelated properties are preserved.
+
+The first rename of a thumbnail frame asks whether to always update its document
+property, ask on each rename or leave it unchanged. Change this preference later
+in the saving settings. Deleting the frame leaves a stale name and the preview
+falls back to the whole scene.
+
+For editable Live Preview embeds whose drawing has frames, the **scan-eye**
+button opens a frame picker. **Default thumbnail** removes the explicit override;
+**Whole scene** writes `#^frame=` and ignores the thumbnail property. Other items
+choose a frame by ID, including unnamed frames and names ending in `,padding=N`.
+Existing explicit `frame=` and `clippedframe=` rendering remains unchanged.
+
+Use **Excalidraw: Navigate to frame** to fuzzy-search regular and marker frames
+in the current drawing. It uses the existing viewport navigation and selection
+behavior, preserving editing mode and Search text.
 
 ## Focused validation
 
@@ -42,6 +106,58 @@ The prepared test vault must be open, trusted, and CLI-enabled. See
 [native testing](OBSIDIAN_RUNTIME_TESTING.md). A prepared build with an unmet
 host prerequisite is not a native test pass. Physical touch devices and other
 desktop operating systems remain separate manual environments.
+
+For frame metadata, thumbnails, navigation and source controls, run
+`node scripts/testing/host/verify.mjs --frame-semantics`. Add
+`--devices --device-profiles=phone-portrait-light,tablet-portrait-full-light`
+for focused phone/tablet emulation. Complete profiles include these cases too.
+
+Before the UI refinement below, the 2026-11-11 Windows run on Obsidian 1.14.5 passed thirteen desktop frame
+cases (main window, popout and actual plugin reload), twelve frame cases in
+phone/tablet emulation, both device profiles, and the six existing embed regressions.
+It exercises the selected-image popover, both shared-source choices, native
+Undo/Redo, intrinsic-size anchoring, cancellation and save/reopen. Saved links
+retain their configuration while following the writer's existing path-shortening
+rules. SVG, SVG-image and PNG checks verify padded thumbnail dimensions and
+ensure padding never reveals neighboring elements outside the thumbnail frame.
+
+The aggregate report records **37 passed, zero failed or blocked**, with artifact
+hashes, source stability and baseline restoration verified. Reports are under
+`.test-work/reports/preview-config-2026-11-11-03/`; earlier failed receipts remain
+intact. Desktop console/window errors are zero and all cleanup gates passed.
+
+Focused source checks passed 111/111, existing image-geometry/parsing checks
+32/32, and bundle/runner/host-contract checks 19/19. Targeted lint added no
+findings (24 existing findings remain in adjacent legacy code); CSS policy lint,
+inventory and feature mappings passed. The production bundle is 5,128,954 bytes,
+leaving 113,926 bytes under 5 MiB. Physical touch devices, other operating systems
+and the minimum supported host version remain manual checks. Complete regression
+profiles were not run.
+
+The subsequent UI refinement uses one-unit steps in both padding sliders, puts
+the compact controls above their description without a visible heading, explains
+named frames in the view selector, and outlines the preview image's actual bounds.
+Its focused source checks passed 111/111 and bundle checks 5/5; targeted ESLint
+and CSS policy lint are clean. The six native embed cases, extended with these
+UI assertions in the main window and popout, passed with four host gates (10/10)
+and successful source stability, baseline restoration and cleanup. Receipt:
+`.test-work/reports/preview-ui-2026-11-11-01/`. This build is 5,129,362 bytes,
+leaving 113,518 bytes under 5 MiB. Mobile emulation was not repeated for this
+refinement; physical touch remains a separate check.
+
+The range/readout refinement passed 115 focused source checks, five bundle
+checks, and the same six native cases plus four host gates (10/10) on Windows
+Obsidian 1.14.5. Native mouse dragging verifies a fixed 5,100-unit area limit
+from a distant scene element, one visible value below each track, unchanged
+track widths, the 100-unit outer-padding cap, and retention of a saved 750-unit
+override until edited. Switching an in-scene image between area and whole-scene
+views restores the appropriate range. Plain, compressed and legacy geometry
+readers, deleted elements and off-center crops have source coverage.
+Targeted lint adds zero findings; CSS policy lint, source stability, artifact
+hashes, baseline restoration and cleanup pass, with zero unexpected console or
+window errors. Receipt: `.test-work/reports/preview-ranges-2026-11-11-01/`.
+The bundle is 5,130,731 bytes, leaving 112,149 bytes under 5 MiB. Mobile layouts
+and physical touch were not repeated for this refinement.
 
 ## Investigation checkpoint: 2026-11-10
 

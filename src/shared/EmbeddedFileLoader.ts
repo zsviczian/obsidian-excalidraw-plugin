@@ -674,7 +674,8 @@ export class EmbeddedFile {
           this.filenameparts.hasGroupref ||
           this.filenameparts.hasArearef ||
           this.filenameparts.hasFrameref ||
-          this.filenameparts.hasClippedFrameref
+          this.filenameparts.hasClippedFrameref ||
+          this.filenameparts.blockref === "as-image" && this.plugin.isExcalidrawFile(this.file)
         );
       this.filenameparts.filepath = this.file.path;
     }
@@ -933,6 +934,7 @@ export class EmbeddedFilesLoader {
       withTheme: !!forceTheme,
       isMask,
       skipInliningFonts: false,
+      drawingThumbnail: true,
     };
 
     const hasColorMap = Boolean(
@@ -952,6 +954,7 @@ export class EmbeddedFilesLoader {
       ? (inFile as EmbeddedFile).filenameparts
       : null;
     const cacheKey: ImageKey = {
+      cacheId: "frame-thumbnail-v2",
       ...(hasFilenameParts
         ? {
             ...filenameParts,

@@ -13,6 +13,7 @@ import type { FileId } from "@zsviczian/excalidraw/types/element/src/types";
 import type { MarkdownImageData } from "src/types/markdownImageTypes";
 import type { EmbeddedFile } from "./EmbeddedFileLoader";
 import type { ExcalidrawData, EquationItem, MermaidItem } from "./ExcalidrawData";
+import { getEmbeddedFileMasterLink } from "src/utils/linkUtils";
 
 export class EmbeddedDataRegistries {
   /**
@@ -79,9 +80,7 @@ export class EmbeddedDataRegistries {
     embeddedFile = new this.embeddedFileCtor(
       this.host.plugin,
       this.host.file.path,
-      masterFile.blockrefData
-        ? `${masterFile.path}#${masterFile.blockrefData}`
-        : masterFile.path,
+      getEmbeddedFileMasterLink(masterFile.path, masterFile.blockrefData),
       masterFile.colorMapJSON,
     );
     this.host.files.set(fileId, embeddedFile);
@@ -125,9 +124,7 @@ export class EmbeddedDataRegistries {
       const embeddedFile = new this.embeddedFileCtor(
         this.host.plugin,
         this.host.file.path,
-        (masterFile.blockrefData
-          ? `${path}#${masterFile.blockrefData}`
-          : path) + (fixScale ? "|100%" : ""),
+        getEmbeddedFileMasterLink(path + (fixScale ? "|100%" : ""), masterFile.blockrefData),
         masterFile.colorMapJSON,
       );
       this.host.files.set(fileId, embeddedFile);

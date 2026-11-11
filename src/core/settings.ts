@@ -1903,6 +1903,16 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   private getSavingSpecs(): SettingSpec[] {
     return [
       {
+        name: t("FRAME_RENAME_POLICY"), desc: t("FRAME_RENAME_DESC"),
+        aliases: ["thumbnail frame rename", "excalidraw-thumbnail"],
+        control: { type: "dropdown", key: "thumbnailRenamePolicy", options: [
+          { value: "unset", label: t("FRAME_RENAME_UNSET") },
+          { value: "always", label: t("FRAME_RENAME_ALWAYS") },
+          { value: "ask", label: t("FRAME_RENAME_ASK") },
+          { value: "never", label: t("FRAME_RENAME_NEVER") },
+        ] },
+      },
+      {
         name: t("COMPRESS_NAME"),
         desc: fragWithHTML(t("COMPRESS_DESC")),
         control: { type: "toggle", key: "compress" },
