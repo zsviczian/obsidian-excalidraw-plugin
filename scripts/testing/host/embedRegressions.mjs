@@ -92,13 +92,17 @@ async function exercise(c, env, template, modifier, context) {
       const button = frame.querySelector('[data-excalidraw-embed-action="padding"]'); button.focus();
       await click(button);
       await c.waitFor(() => doc.querySelector(".excalidraw-embed-padding-popover input"), "padding slider opens");
+      const popup=doc.querySelector(".excalidraw-embed-padding-popover"), row=popup.querySelector(".excalidraw-embed-padding-row"), help=popup.querySelector(".excalidraw-embed-padding-help");
+      check(row&&help&&!popup.querySelector(".excalidraw-embed-padding-heading"),"padding popup should have controls and a description without a visible label");
+      check(help.getBoundingClientRect().top>=row.getBoundingClientRect().bottom,"padding description is not below controls");
+      check(popup.querySelector("input").step==="1","compact padding slider does not use unit steps");
     };
     await launch();
     await key("Home", "Home", 36); await key("ArrowUp", "ArrowUp", 38); await key("ArrowUp", "ArrowUp", 38);
     await c.waitFor(() => frames()[1].querySelector(".excalidraw-embed-padding-preview svg"), "padding export preview");
     check(leaf.view.editor.getValue() === source, "padding preview wrote the note");
     await key("Enter", "Enter", 13);
-    const changed = token + "\n\n" + token.replace("padding=0", "padding=50") + source.slice(2 * token.length + 2);
+    const changed = token + "\n\n" + token.replace("padding=0", "padding=2") + source.slice(2 * token.length + 2);
     await c.waitFor(() => leaf.view.editor.getValue() === changed, "padding changed only the second occurrence");
     leaf.view.editor.cm.focus(); await key("z", "KeyZ", 90, modifier);
     await c.waitFor(() => leaf.view.editor.getValue() === source, "padding single undo");
@@ -107,6 +111,20 @@ async function exercise(c, env, template, modifier, context) {
     check(leaf.view.editor.getValue() === source, "Escape changed padding source");
     check(!doc.querySelector(".excalidraw-embed-padding-popover"), "padding popup leaked after Escape");
     await leaf.view.save(); check(await app.vault.read(drawing) === bytes, "padding modified the destination drawing");
-    return { assertions: ["whole drawing exposes the outer-padding icon", "native slider keys create a live export preview without writing", "Enter changes only the second repeated area reference", "one native undo restores the complete original source", "Escape cancels and removes the popup", "the drawing bytes are unchanged"] };
+    const view=await env.openDrawing("Preview-controls",{},template), ea=p.ea.getAPI(view);let imageId;
+    try{imageId=await ea.addImage(0,0,drawing,false,false);await ea.addElementsToView(false,true,true);}finally{ea.destroy();}
+    const original=JSON.stringify(view.getViewElements());
+    await view.drawingImagePreview.open(imageId);
+    await c.waitFor(()=>doc.querySelector(".excalidraw-drawing-preview-popover img")?.naturalWidth>0,"drawing settings preview image decoded");
+    const popup=doc.querySelector(".excalidraw-drawing-preview-popover"), preview=popup.querySelector("img"), slider=popup.querySelector('input[type="range"]');
+    check(popup.textContent.includes("frames or marker frames")&&popup.textContent.includes("default")&&popup.textContent.includes("Frame"),"view guidance must explain naming frames");
+    check(win.getComputedStyle(preview).borderTopStyle==="solid"&&parseFloat(win.getComputedStyle(preview).borderTopWidth)>0,"drawing preview outline absent");
+    check(preview.getBoundingClientRect().height<=preview.parentElement.getBoundingClientRect().height+.5,"preview exceeds its reserved height");
+    check(slider.step==="1","drawing settings padding slider does not use unit steps");
+    slider.focus();await key("Home","Home",36);await key("ArrowRight","ArrowRight",39);
+    check(slider.value==="1","one padding keypress did not produce one unit");
+    await key("Escape","Escape",27);
+    check(!doc.querySelector(".excalidraw-drawing-preview-popover")&&JSON.stringify(view.getViewElements())===original,"UI inspection changed the scene");
+    return { assertions: ["whole drawing exposes the outer-padding icon", "compact slider appears above its description without a visible heading", "both padding sliders use one-unit steps", "drawing settings explain named frames and outline the rendered image", "native slider keys create a live export preview without writing", "Enter changes only the second repeated area reference", "one native undo restores the complete original source", "Escape cancels and removes the popup", "the drawing bytes are unchanged"] };
   });
 }

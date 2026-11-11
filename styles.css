@@ -2637,9 +2637,7 @@ button.excalidraw-font-picker {
 .excalidraw-embed-padding-popover {
   position: fixed;
   z-index: var(--layer-popover);
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  display: block;
   width: 240px;
   max-width: calc(100vw - 8px);
   padding: 4px 6px;
@@ -2649,14 +2647,13 @@ button.excalidraw-font-picker {
   box-shadow: var(--shadow-s);
   font-size: var(--font-ui-small);
 }
-.excalidraw-embed-padding-heading,
-.excalidraw-embed-padding-help {
-  flex-basis: 100%;
-}
-.excalidraw-embed-padding-heading {
-  font-weight: var(--font-semibold);
+.excalidraw-embed-padding-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 .excalidraw-embed-padding-help {
+  margin-top: 6px;
   color: var(--text-muted);
   font-size: var(--font-ui-smaller);
 }
@@ -2673,11 +2670,20 @@ button.excalidraw-font-picker {
   background: var(--background-primary);
   box-shadow: var(--shadow-s);
 }
-.excalidraw-drawing-preview-popover > img {
-  display: block;
-  width: 100%;
+.excalidraw-drawing-preview-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   height: 120px;
   margin: 8px auto;
+}
+.excalidraw-drawing-preview-image > img {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  border: 1px solid var(--text-faint);
   object-fit: contain;
 }
 .excalidraw-drawing-preview-popover .setting-item {

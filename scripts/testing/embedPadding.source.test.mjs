@@ -88,6 +88,13 @@ test("padding row aligns beneath the whole toolbar, stays onscreen, and exposes 
     f.fire(f.window, "resize");
     assert.equal(f.root.style.left, "490px"); assert.equal(f.root.style.top, "136px");
     assert.equal(f.opener.getAttribute("aria-expanded"), "true");
+    assert.equal(f.slider.getAttribute("min"), "0");
+    assert.equal(f.slider.getAttribute("max"), "2000");
+    assert.equal(f.slider.getAttribute("step"), "1");
+    assert.equal(f.root.children[0].hasClass("excalidraw-embed-padding-row"), true);
+    assert.equal(f.root.children[1].hasClass("excalidraw-embed-padding-help"), true);
+    assert.equal(f.root.querySelector(".excalidraw-embed-padding-heading"), null);
+    assert.equal(f.root.children.length, 2, "only the controls row and description are displayed");
     f.toolbar.bounds = { ...f.toolbar.bounds, top: 580, bottom: 612 };
     f.fire(f.window, "resize"); assert.equal(f.root.style.top, "540px", "near the bottom the row flips above its toolbar");
     f.popup.close(false); assert.equal(f.opener.getAttribute("aria-expanded"), "false");
@@ -98,12 +105,12 @@ test("padding previews debounce without writing; closing commits exactly once an
   const f = await fixture();
   try {
     f.change(2); f.change(3); assert.equal(f.timers.size, 1); assert.equal(f.requests.length, 0); f.flush();
-    assert.equal(f.requests[0].value, 100); assert.deepEqual(f.writes, []);
+    assert.equal(f.requests[0].value, 3); assert.deepEqual(f.writes, []);
     const preview = new f.Element(); f.requests[0].resolve(preview); await Promise.resolve();
     assert.equal(f.frame.children.includes(f.original), true, "original widget and source identity remain stable");
     assert.equal(f.frame.hasClass("excalidraw-embed-padding-previewing"), true);
     f.popup.close(true); f.popup.close(true);
-    assert.deepEqual(f.writes, [100]); assert.deepEqual(f.discarded, [preview]); assert.equal(f.closed(), 1);
+    assert.deepEqual(f.writes, [3]); assert.deepEqual(f.discarded, [preview]); assert.equal(f.closed(), 1);
     assert.equal(f.document.body.children.length, 0); assert.equal(f.frame.hasClass("excalidraw-embed-padding-previewing"), false);
   } finally { f.close(); }
 });
@@ -129,7 +136,7 @@ test("padding wheel, outside close and default reset use the configured gesture 
   try {
     f.slider.fire("wheel", { deltaY: -1 });
     f.fire(f.document, "pointerdown", { composedPath: () => [f.document] });
-    assert.deepEqual(f.writes, [50]); assert.equal(f.timers.size, 0);
+    assert.deepEqual(f.writes, [11]); assert.equal(f.timers.size, 0);
   } finally { f.close(); }
   const reset = await fixture();
   try { reset.root.querySelector("button").fire("click"); assert.deepEqual(reset.writes, [null]); }

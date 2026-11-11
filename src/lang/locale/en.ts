@@ -16,6 +16,7 @@ declare const PLUGIN_VERSION: string;
 
 // English
 export default {
+  PREVIEW_VIEW_HELP: "Create views by adding frames or marker frames to the source drawing and naming them. Replace the default “Frame” name.",
   PREVIEW_OUTER_PADDING: "Outer padding",
   PREVIEW_AREA_EXPANSION: "Area expansion",
   PREVIEW_PADDING_HELP: "Adds space around the preview without including additional elements.",

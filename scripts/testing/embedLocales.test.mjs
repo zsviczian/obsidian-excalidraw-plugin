@@ -59,7 +59,7 @@ test("preview configuration and scope explanations have maintained translations"
       }
       ts.forEachChild(node, visit);
     };
-    visit(tree); assert.equal(strings.size, 15, language); expected ??= [...strings.keys()].sort();
+    visit(tree); assert.equal(strings.size, 16, language); expected ??= [...strings.keys()].sort();
     assert.deepEqual([...strings.keys()].sort(), expected, language);
     for (const [key, value] of strings) {
       assert.ok(value.trim()); assert.doesNotMatch(value, /\uFFFD/, language + ": " + key);

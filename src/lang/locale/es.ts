@@ -16,6 +16,7 @@ declare const PLUGIN_VERSION: string;
 
 // Español
 export default {
+  PREVIEW_VIEW_HELP: "Crea vistas añadiendo marcos o marcos marcadores al dibujo de origen y asignándoles un nombre. Cambia el nombre predeterminado «Frame».",
   PREVIEW_OUTER_PADDING: "Margen exterior",
   PREVIEW_AREA_EXPANSION: "Ampliación del área",
   PREVIEW_PADDING_HELP: "Añade espacio alrededor de la vista previa sin incluir elementos adicionales.",

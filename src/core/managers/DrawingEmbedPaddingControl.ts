@@ -4,8 +4,6 @@ import { t } from "src/lang/helpers";
 import { setStyle } from "src/utils/styleUtils";
 import { getDrawingPreviewParts } from "src/utils/drawingPreviewLink";
 
-const VALUES = [0, 10, ...Array.from({ length: 40 }, (_, index) => (index + 1) * 50)];
-
 /** One source-owned padding gesture; preview payloads never replace the editor widget. */
 export class DrawingEmbedPaddingControl extends Component {
   private active = false;
@@ -37,18 +35,16 @@ export class DrawingEmbedPaddingControl extends Component {
     const area = getDrawingPreviewParts(this.actions.target ?? "")?.hasArearef;
     const label = t(area ? "PREVIEW_AREA_EXPANSION" : "PREVIEW_OUTER_PADDING");
     this.popup = doc.body.createDiv({ cls: "excalidraw-embed-padding-popover", attr: { role: "dialog", "aria-label": label } });
-    this.popup.createDiv({ cls: "excalidraw-embed-padding-heading", text: label });
-    this.popup.createDiv({ cls: "excalidraw-embed-padding-help", text: t(area ? "PREVIEW_AREA_HELP" : "PREVIEW_PADDING_HELP") });
-    const track = this.popup.createDiv({ cls: "excalidraw-embed-padding-track" });
-    const nearest = VALUES.reduce((best, value, index) => Math.abs(value - this.value) < Math.abs(VALUES[best] - this.value) ? index : best, 0);
-    const control = new SliderComponent(track).setLimits(0, VALUES.length - 1, 1).setValue(nearest);
+    const row = this.popup.createDiv({ cls: "excalidraw-embed-padding-row" });
+    const track = row.createDiv({ cls: "excalidraw-embed-padding-track" });
+    const control = new SliderComponent(track).setLimits(0, 2000, 1).setValue(this.value);
     const slider = control.sliderEl;
     slider.setAttribute("aria-label", label);
     slider.setAttribute("aria-valuetext", String(this.value));
-    const output = this.popup.createEl("output", { text: String(this.value), attr: { "aria-live": "polite" } });
+    const output = row.createEl("output", { text: String(this.value), attr: { "aria-live": "polite" } });
     const update = () => {
       if (!this.current()) { this.close(false); return; }
-      this.value = VALUES[Number(slider.value)];
+      this.value = Number(slider.value);
       slider.setAttribute("aria-valuetext", String(this.value));
       output.setText(String(this.value));
       this.changed = this.value !== this.actions.padding.value;
@@ -58,13 +54,14 @@ export class DrawingEmbedPaddingControl extends Component {
     this.registerDomEvent(slider, "wheel", event => {
       if (!event.deltaY) return;
       event.preventDefault(); event.stopPropagation();
-      slider.value = String(Math.max(0, Math.min(VALUES.length - 1, Number(slider.value) - Math.sign(event.deltaY))));
+      control.setValue(Math.max(0, Math.min(2000, Number(slider.value) - Math.sign(event.deltaY))));
       update();
     }, { passive: false });
-    const reset = this.popup.createEl("button", { cls: "clickable-icon", attr: { type: "button", "aria-label": t("EMBED_RESET_PADDING") } });
+    const reset = row.createEl("button", { cls: "clickable-icon", attr: { type: "button", "aria-label": t("EMBED_RESET_PADDING") } });
     setIcon(reset, "rotate-ccw");
     setTooltip(reset, t("EMBED_RESET_PADDING"));
     this.registerDomEvent(reset, "click", () => { this.value = null; this.changed = true; this.close(true); });
+    this.popup.createDiv({ cls: "excalidraw-embed-padding-help", text: t(area ? "PREVIEW_AREA_HELP" : "PREVIEW_PADDING_HELP") });
     this.registerDomEvent(this.popup, "pointerdown", event => event.stopPropagation());
     this.registerDomEvent(this.popup, "click", event => event.stopPropagation());
     this.registerDomEvent(doc, "pointerdown", event => {

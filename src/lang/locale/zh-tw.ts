@@ -11,6 +11,7 @@ declare const PLUGIN_VERSION: string;
 
 // 繁體中文
 export default {
+  PREVIEW_VIEW_HELP: "在來源繪圖中新增框架或標記框架並為其命名，即可建立檢視。請將預設名稱「Frame」改為有意義的名稱。",
   PREVIEW_OUTER_PADDING: "外部留白",
   PREVIEW_AREA_EXPANSION: "擴展區域",
   PREVIEW_PADDING_HELP: "在預覽周圍加入留白，不顯示額外元素。",

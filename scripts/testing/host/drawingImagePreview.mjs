@@ -32,7 +32,7 @@ export async function exerciseDrawingImagePreview(c, env, template, drawing, con
   const choosePadding = async (popup, steps) => {
     const slider=popup.querySelector('input[type="range"]'); slider.focus(); await key("Home","Home",36);
     for(let i=0;i<steps;i++) await key("ArrowRight","ArrowRight",39);
-    check(Number(slider.value)===steps*10,"native padding selection failed");
+    check(Number(slider.value)===steps,"native padding selection failed");
   };
   const apply = async (popup, all) => {
     c.caseTrace = { ...c.caseTrace, imageSettings: { all, html: popup.outerHTML, links: [first,"shared-copy",variant].map(link) } };
@@ -50,18 +50,18 @@ export async function exerciseDrawingImagePreview(c, env, template, drawing, con
   };
   let popup=await open(); await chooseFrame(popup); await choosePadding(popup,3); await apply(popup,false);
   check(get(first).fileId!==originalId && get("shared-copy").fileId===originalId,"only-this-image changed a shared copy");
-  check(link(first).includes("#^frame=frame-marker,padding=30"),"image settings not persisted to embedded link");
+  check(link(first).includes("#^frame=frame-marker,padding=3"),"image settings not persisted to embedded link");
   check(link(variant).includes("padding=20|100%"),"only-this-image changed a distinct view");
   check(Math.abs(get(first).width*get(first).height-oldAreas[0])<.01,"frame change did not retain image area");
   check(JSON.stringify(center(first))===JSON.stringify(oldCenters[0]),"frame change moved image center");
   view.containerEl.querySelector(".excalidraw").focus(); await key("z","KeyZ",90,modifier);
   await c.waitFor(()=>get(first).fileId===originalId,"one undo restores old preview reference");
   await key("z","KeyZ",90,modifier|8);
-  await c.waitFor(()=>link(first).includes("padding=30"),"redo restores preview reference");
+  await c.waitFor(()=>link(first).includes("padding=3"),"redo restores preview reference");
   popup=await open(); await choosePadding(popup,5); await apply(popup,true);
-  check(link(first).includes("frame=frame-marker,padding=50"),"apply-all lost chosen frame");
-  check(link("shared-copy").includes("as-image,padding=50"),"apply-all pinned a default-thumbnail copy");
-  check(link(variant).includes("frame=frame-marker,padding=50|100%"),"apply-all lost another copy's anchor or frame");
+  check(link(first).includes("frame=frame-marker,padding=5"),"apply-all lost chosen frame");
+  check(link("shared-copy").includes("as-image,padding=5"),"apply-all pinned a default-thumbnail copy");
+  check(link(variant).includes("frame=frame-marker,padding=5|100%"),"apply-all lost another copy's anchor or frame");
   for(let i=0;i<3;i++)check(JSON.stringify(center([first,"shared-copy",variant][i]))===JSON.stringify(oldCenters[i]),"apply-all changed a copy's center");
   popup=await open(); await click(popup.querySelector(".checkbox-container")); await apply(popup,true);
   for(const id of [first,"shared-copy",variant]){

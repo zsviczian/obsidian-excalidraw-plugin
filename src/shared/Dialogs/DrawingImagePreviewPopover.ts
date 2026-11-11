@@ -31,7 +31,7 @@ export class DrawingImagePreviewPopover extends Component {
     this.popup = doc.body.createDiv({ cls: "excalidraw-drawing-preview-popover", attr: { role: "dialog", "aria-label": t("PREVIEW_CONFIGURE") } });
     this.popup.createEl("strong", { text: t("PREVIEW_CONFIGURE") });
     this.popup.createDiv({ cls: "setting-item-description", text: t("PREVIEW_CONFIGURE_HELP") });
-    this.image = this.popup.createEl("img", { attr: { alt: t("PREVIEW_VIEW") } });
+    this.image = this.popup.createDiv({ cls: "excalidraw-drawing-preview-image" }).createEl("img", { attr: { alt: t("PREVIEW_VIEW") } });
     const parts = getDrawingPreviewParts(this.original), ref = parts.blockref ?? parts.sectionref;
     const initialFrame = parts.hasFrameref && ref === "" ? "whole" :
       !(parts.hasBlockref || parts.hasSectionref) || ref === "as-image" ? "default" :
@@ -47,7 +47,7 @@ export class DrawingImagePreviewPopover extends Component {
       setIcon(paddingSetting.nameEl, area ? "square-dot" : "box-select");
       paddingSetting.nameEl.appendText(" " + t(area ? "PREVIEW_AREA_EXPANSION" : "PREVIEW_OUTER_PADDING"));
     };
-    const viewSetting = new Setting(this.popup).setName(t("PREVIEW_VIEW")).addDropdown(dropdown => {
+    const viewSetting = new Setting(this.popup).setName(t("PREVIEW_VIEW")).setDesc(t("PREVIEW_VIEW_HELP")).addDropdown(dropdown => {
       dropdown.addOption("default", t("FRAME_DEFAULT")).addOption("whole", t("FRAME_WHOLE"));
       if (initialFrame === "current") dropdown.addOption("current", t("PREVIEW_CURRENT"));
       for (const frame of this.frames) dropdown.addOption("frame:" + frame.id,
@@ -63,7 +63,7 @@ export class DrawingImagePreviewPopover extends Component {
     let slider: SliderComponent;
     const output = paddingSetting.controlEl.createEl("output", { text: String(initialPadding ?? defaultPadding) });
     paddingSetting.addSlider(control => {
-      slider = control; control.setLimits(0, 2000, 10).setValue(initialPadding ?? defaultPadding).onChange(value => {
+      slider = control; control.setLimits(0, 2000, 1).setValue(initialPadding ?? defaultPadding).onChange(value => {
         if (value === (initialPadding ?? defaultPadding)) delete this.changes.padding; else this.changes.padding = value;
         output.setText(String(value)); this.queuePreview();
       }); control.sliderEl.setAttribute("aria-label", t("PREVIEW_OUTER_PADDING"));

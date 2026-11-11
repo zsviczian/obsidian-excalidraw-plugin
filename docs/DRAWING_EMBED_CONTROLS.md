@@ -10,7 +10,8 @@ and frame references, using the **box-select** icon. **Area expansion** keeps th
 **square-dot** icon for `area=` references: it includes more of the surrounding
 drawing. Outer padding adds space without including additional elements.
 A compact horizontal Obsidian slider appears directly below the toolbar and previews
-padding from 0 to 2000: 0, 10, then increments of 50. You can drag, click the track, use the
+padding from 0 to 2000 in increments of 1. The controls occupy the first row,
+with a short description below. You can drag, click the track, use the
 arrow keys, or scroll over the slider. Closing the popup or pressing Enter saves
 one source change; Escape cancels. **Use default padding** removes the explicit
 `,padding=N` parameter and uses the drawing's export padding preference.
@@ -35,7 +36,10 @@ contents stay clipped to the original frame rectangle before padding is added.
 
 Select a drawing-backed image and use **Configure drawing preview** (scan-eye)
 next to its existing image actions. The popover previews the chosen view and
-padding without editing the scene. **Anchor at original size (100%)** follows
+padding without editing the scene. A thin outline marks the rendered image's
+bounds, including transparent padding. The view selector explains how to create
+views by adding frames or marker frames and replacing their default names.
+**Anchor at original size (100%)** follows
 the rendered source dimensions and disables manual resizing. **Apply** commits;
 Cancel or Escape discards the draft.
 
@@ -102,7 +106,7 @@ For frame metadata, thumbnails, navigation and source controls, run
 `--devices --device-profiles=phone-portrait-light,tablet-portrait-full-light`
 for focused phone/tablet emulation. Complete profiles include these cases too.
 
-The final 2026-11-11 Windows run on Obsidian 1.14.5 passed thirteen desktop frame
+Before the UI refinement below, the 2026-11-11 Windows run on Obsidian 1.14.5 passed thirteen desktop frame
 cases (main window, popout and actual plugin reload), twelve frame cases in
 phone/tablet emulation, both device profiles, and the six existing embed regressions.
 It exercises the selected-image popover, both shared-source choices, native
@@ -123,6 +127,17 @@ inventory and feature mappings passed. The production bundle is 5,128,954 bytes,
 leaving 113,926 bytes under 5 MiB. Physical touch devices, other operating systems
 and the minimum supported host version remain manual checks. Complete regression
 profiles were not run.
+
+The subsequent UI refinement uses one-unit steps in both padding sliders, puts
+the compact controls above their description without a visible heading, explains
+named frames in the view selector, and outlines the preview image's actual bounds.
+Its focused source checks passed 111/111 and bundle checks 5/5; targeted ESLint
+and CSS policy lint are clean. The six native embed cases, extended with these
+UI assertions in the main window and popout, passed with four host gates (10/10)
+and successful source stability, baseline restoration and cleanup. Receipt:
+`.test-work/reports/preview-ui-2026-11-11-01/`. This build is 5,129,362 bytes,
+leaving 113,518 bytes under 5 MiB. Mobile emulation was not repeated for this
+refinement; physical touch remains a separate check.
 
 ## Investigation checkpoint: 2026-11-10
 
