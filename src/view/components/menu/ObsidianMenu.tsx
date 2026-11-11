@@ -212,6 +212,92 @@ export class ObsidianMenu {
     api.setActiveTool({ type: "freedraw" });
   }
 
+  private isHighlighterActive = false;
+  private highlighterClickTimestamp = 0;
+
+  public actionHighlighterClick() {
+    const now = Date.now();
+    const dblClick = now - this.highlighterClickTimestamp < 500;
+    this.highlighterClickTimestamp = now;
+
+    if (dblClick) {
+      const highlighterIndex = this.plugin.settings.customPens.findIndex(
+        (p) => p.type === "highlighter",
+      );
+      const targetIndex = highlighterIndex >= 0 ? highlighterIndex : 1;
+      const penSettings = new PenSettingsModal(this.plugin, this.view, targetIndex);
+      void (async () => {
+        await this.plugin.loadSettings();
+        penSettings.open();
+      })();
+      return;
+    }
+
+    const api = this.view.excalidrawAPI;
+    const st = api.getAppState();
+
+    const isCurrentlyHighlighter =
+      this.isHighlighterActive && st.activeTool.type === "freedraw";
+
+    if (isCurrentlyHighlighter) {
+      this.isHighlighterActive = false;
+      this.activePenIndex = null;
+      resetStrokeOptions(st.resetCustomPen, api, true);
+      return;
+    }
+
+    this.isHighlighterActive = true;
+    this.activePenIndex = null;
+    this.pendingPenActivation = true;
+
+    const highlighterPen =
+      this.plugin.settings.customPens.find((p) => p.type === "highlighter") ??
+      PENS.highlighter;
+
+    setPen(highlighterPen, api);
+    api.setActiveTool({
+      type: "freedraw",
+      locked: this.plugin.settings.keepDrawingToolsSelected,
+    });
+  }
+
+  public renderHighlighterButton(isMobile: boolean, appState: AppState) {
+    if (!this.plugin.settings.showHighlighterInToolbar) {
+      return null;
+    }
+
+    const isHighlighterCurrentlyActive =
+      appState.activeTool.type === "freedraw" &&
+      (this.isHighlighterActive ||
+        appState.currentStrokeOptions?.highlighter === true);
+
+    const highlighterPen =
+      this.plugin.settings.customPens.find((p) => p.type === "highlighter") ??
+      PENS.highlighter;
+
+    return (
+      <label
+        key="highlighter-tool-btn"
+        className={clsx("ToolIcon", "ToolIcon_size_medium", {
+          "is-mobile": isMobile,
+        })}
+        onClick={() => this.actionHighlighterClick()}
+      >
+        <div
+          className="ToolIcon__icon"
+          aria-label={DEVICE.isDesktop ? (t("HIGHLIGHTER_TOOL_NAME") ?? "Highlighter") : undefined}
+          style={{
+            ...(isHighlighterCurrentlyActive
+              ? { background: "var(--color-primary)" }
+              : {}),
+          }}
+        >
+          {penIcon(highlighterPen)}
+        </div>
+      </label>
+    );
+  }
+
   private actionScriptButtonPointerUp(index: number, key: string) {
     if (this.longpressTimeout[index]) {
       this.view.ownerWindow.clearTimeout(this.longpressTimeout[index]);
@@ -449,6 +535,7 @@ export class ObsidianMenu {
             {isFullscreen ? ICONS.exitFullScreen : ICONS.gotoFullScreen}
           </div>
         </label>
+        {this.renderHighlighterButton(isMobile, appState)}
         {this.renderCustomPens(isMobile, appState)}
         {this.renderPinnedScriptButtons(isMobile, appState)}
       </>
