@@ -24,7 +24,7 @@ async function fixture() {
   const prompts = [], errors = [], notices = [], renders = [], history = [], registry = new Map(), payloads = [];
   const file = { path: "Host.md" }, drawing = { path: "Source.md", basename: "Source <drawing>" };
   const graph = sourceHarness({ obsidian: { Notice: class { constructor(value) { notices.push(value); } }, parseYaml: () => ({}) },
-    "src/constants/constants": { CaptureUpdateAction: { IMMEDIATELY: "IMMEDIATELY" }, fileid: () => "new-" + registry.size + "-" + renders.length },
+    "src/constants/constants": { CaptureUpdateAction: { IMMEDIATELY: "IMMEDIATELY" }, getCommonBoundingBox() {}, fileid: () => "new-" + registry.size + "-" + renders.length },
     "src/shared/Dialogs/DrawingImagePreviewPopover": { DrawingImagePreviewPopover: class {} },
     "src/lang/helpers": { t: key => key === "PREVIEW_SHARED_HELP" ? '“{drawing}” appears in {count} images in this scene.' : key },
     "src/utils/coreUtils": { errorlog: error => errors.push(error) },

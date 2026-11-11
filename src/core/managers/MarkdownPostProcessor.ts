@@ -14,6 +14,7 @@ import {
   DEVICE,
   MARKDOWN_TO_SVG_RENDER_CLASS,
   RERENDER_EVENT,
+  getCommonBoundingBox,
 } from "../../constants/constants";
 import { EmbeddedFilesLoader } from "../../shared/EmbeddedFileLoader";
 import { createPNG, createSVG, getTemplate } from "../../utils/excalidrawAutomateUtils";
@@ -51,6 +52,8 @@ import {
 import { ExportSettings } from "src/types/exportUtilTypes";
 import { setElementDisplay } from "src/utils/htmlUtils";
 import { setStyle } from "src/utils/styleUtils";
+import { getDrawingPaddingMax } from "src/utils/drawingPadding";
+import { readDrawingPreviewElements } from "src/utils/drawingPreviewScene";
 import { getGlobalTaskQueue } from "src/shared/GlobalTaskQueue";
 import { renderMarkdownEmbed } from "./MarkdownEmbedRenderChild";
 
@@ -834,6 +837,7 @@ const createImgElement = async (
     ...(withAreaPadding(attr.fname, null) !== null ? {
       padding: {
         value: getEmbeddedFilenameParts(attr.fname).padding ?? getExportPadding(currentPlugin, drawingFile),
+        getMax: async () => getDrawingPaddingMax(await readDrawingPreviewElements(vault, drawingFile), attr.fname, getCommonBoundingBox),
         create: async (padding: number | null, active: () => boolean) => {
           const fname = withAreaPadding(attr.fname, padding);
           if (fname === null) return null;

@@ -1,4 +1,5 @@
 import { syncFrameAnchors, readFrameProperty, resolveThumbnailFrame } from "src/utils/frameMetadata";
+import { readDrawingPreviewElements } from "src/utils/drawingPreviewScene";
 import { FrameThumbnailController } from "./managers/FrameThumbnailController";
 import { DrawingImagePreviewController } from "./managers/DrawingImagePreviewController";
 import {
@@ -304,7 +305,6 @@ import {
   EphemeralIncrement,
 } from "@zsviczian/excalidraw/types/element/src";
 import {
-  getTemplate,
   getTextElementsMatchingQuery,
   getFrameElementsMatchingQuery,
   getElementsWithLinkMatchingQuery,
@@ -736,7 +736,7 @@ export default class ExcalidrawView
     this.register(() => this.frameThumbnail.reset());
     this.drawingImagePreview = new DrawingImagePreviewController(this, {
       Prompt: MultiOptionConfirmationPrompt, EmbeddedFile, EmbeddedFilesLoader,
-      getTemplate, scaleLoadedImage, getExportPadding,
+      readScene: readDrawingPreviewElements, scaleLoadedImage, getExportPadding,
     });
     this.register(() => this.drawingImagePreview.reset());
     this.markdownImageController = new MarkdownImageController(this, {

@@ -10,8 +10,14 @@ and frame references, using the **box-select** icon. **Area expansion** keeps th
 **square-dot** icon for `area=` references: it includes more of the surrounding
 drawing. Outer padding adds space without including additional elements.
 A compact horizontal Obsidian slider appears directly below the toolbar and previews
-padding from 0 to 2000 in increments of 1. The controls occupy the first row,
-with a short description below. You can drag, click the track, use the
+padding in increments of 1. Outer padding ranges from 0 to 100. Area expansion
+uses the largest distance from a zero-padding crop edge to the corresponding
+scene edge, plus 100. Saved geometry is read once when the control opens, without
+refreshing embedded text or images, and the range stays fixed during the gesture.
+The controls occupy the first row, with one small value underneath and then a
+short description. Changing digit counts never changes the track width.
+Existing saved padding remains unchanged until edited, including values above
+the current slider maximum. You can drag, click the track, use the
 arrow keys, or scroll over the slider. Closing the popup or pressing Enter saves
 one source change; Escape cancels. **Use default padding** removes the explicit
 `,padding=N` parameter and uses the drawing's export padding preference.
@@ -138,6 +144,20 @@ and successful source stability, baseline restoration and cleanup. Receipt:
 `.test-work/reports/preview-ui-2026-11-11-01/`. This build is 5,129,362 bytes,
 leaving 113,518 bytes under 5 MiB. Mobile emulation was not repeated for this
 refinement; physical touch remains a separate check.
+
+The range/readout refinement passed 115 focused source checks, five bundle
+checks, and the same six native cases plus four host gates (10/10) on Windows
+Obsidian 1.14.5. Native mouse dragging verifies a fixed 5,100-unit area limit
+from a distant scene element, one visible value below each track, unchanged
+track widths, the 100-unit outer-padding cap, and retention of a saved 750-unit
+override until edited. Switching an in-scene image between area and whole-scene
+views restores the appropriate range. Plain, compressed and legacy geometry
+readers, deleted elements and off-center crops have source coverage.
+Targeted lint adds zero findings; CSS policy lint, source stability, artifact
+hashes, baseline restoration and cleanup pass, with zero unexpected console or
+window errors. Receipt: `.test-work/reports/preview-ranges-2026-11-11-01/`.
+The bundle is 5,130,731 bytes, leaving 112,149 bytes under 5 MiB. Mobile layouts
+and physical touch were not repeated for this refinement.
 
 ## Investigation checkpoint: 2026-11-10
 

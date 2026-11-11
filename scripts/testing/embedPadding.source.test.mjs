@@ -23,7 +23,8 @@ test("padding edits preserve wiki, Markdown, encoded paths, titles, aliases and 
   assert.equal(rewriteEmbedPadding("![[Map#^area=abcdefgh,padding=50|200]]", null), "![[Map#^area=abcdefgh|200]]");
   for (const target of ["Map#^text", "Map#^group=", "Map#^area=", "Map#^area=abc,padding=-1", "Map#^area=abc,padding=1,padding=2"])
     assert.equal(withAreaPadding(target, 10), null, target);
-  for (const value of [-1, 2001, NaN, Infinity]) assert.equal(withAreaPadding("Map#^area=abc", value), null);
+  for (const value of [-1, Number.MAX_SAFE_INTEGER + 1, NaN, Infinity]) assert.equal(withAreaPadding("Map#^area=abc", value), null);
+  assert.equal(withAreaPadding("Map#^area=abc", 5000), "Map#^area=abc,padding=5000");
   assert.equal(withAreaPadding("Map#^frame=Part, One,padding=20", 50), "Map#^frame=Part, One,padding=50");
   assert.equal(withAreaPadding("Map#^clippedframe=Part,padding=20, Two", 50), "Map#^clippedframe=Part,padding=20, Two,padding=50");
 });
@@ -52,7 +53,7 @@ test("padding never writes through a stale source, owner or physical table-cell 
   }
 });
 
-async function fixture() {
+async function fixture({ value = 10, target = "Map", getMax } = {}) {
   const dom = embedTestDOM(), timers = new Map(), requests = [], discarded = [], writes = [];
   let id = 0, current = true, closed = 0;
   dom.document.events = new Map(); dom.document.body = new dom.Element(); dom.window.innerHeight = 600;
@@ -68,7 +69,7 @@ async function fixture() {
     "src/lang/helpers": { t: key => key }, "src/utils/styleUtils": { setStyle: (el, values) => Object.assign(el.style, values) } });
   const { DrawingEmbedPaddingControl } = await module.importModule("src/core/managers/DrawingEmbedPaddingControl.ts");
   const frame = new dom.Element(), toolbar = frame.createDiv({ cls: "excalidraw-embed-toolbar" }), opener = toolbar.createEl("button"), original = frame.createEl("img", { cls: "excalidraw-embedded-img" });
-  const actions = { isCurrent: () => current, discard: image => discarded.push(image), padding: { value: 10,
+  const actions = { target, isCurrent: () => current, discard: image => discarded.push(image), padding: { value, getMax,
     create: (value, active) => new Promise(resolve => requests.push({ value, active, resolve })) } };
   const source = { isCurrent: () => current, replacePadding: value => { writes.push(value); return true; } };
   const popup = new DrawingEmbedPaddingControl(frame, opener, actions, source, () => closed++); popup.load();
@@ -89,12 +90,13 @@ test("padding row aligns beneath the whole toolbar, stays onscreen, and exposes 
     assert.equal(f.root.style.left, "490px"); assert.equal(f.root.style.top, "136px");
     assert.equal(f.opener.getAttribute("aria-expanded"), "true");
     assert.equal(f.slider.getAttribute("min"), "0");
-    assert.equal(f.slider.getAttribute("max"), "2000");
+    assert.equal(f.slider.getAttribute("max"), "100");
     assert.equal(f.slider.getAttribute("step"), "1");
     assert.equal(f.root.children[0].hasClass("excalidraw-embed-padding-row"), true);
-    assert.equal(f.root.children[1].hasClass("excalidraw-embed-padding-help"), true);
+    assert.equal(f.root.children[1].hasClass("excalidraw-padding-value"), true);
+    assert.equal(f.root.children[2].hasClass("excalidraw-embed-padding-help"), true);
     assert.equal(f.root.querySelector(".excalidraw-embed-padding-heading"), null);
-    assert.equal(f.root.children.length, 2, "only the controls row and description are displayed");
+    assert.equal(f.root.children.length, 3, "controls, value and description occupy separate rows");
     f.toolbar.bounds = { ...f.toolbar.bounds, top: 580, bottom: 612 };
     f.fire(f.window, "resize"); assert.equal(f.root.style.top, "540px", "near the bottom the row flips above its toolbar");
     f.popup.close(false); assert.equal(f.opener.getAttribute("aria-expanded"), "false");
@@ -141,4 +143,35 @@ test("padding wheel, outside close and default reset use the configured gesture 
   const reset = await fixture();
   try { reset.root.querySelector("button").fire("click"); assert.deepEqual(reset.writes, [null]); }
   finally { reset.close(); }
+});
+
+test("area limits load once before the gesture and stay fixed across value digit changes", async () => {
+  let calls=0, resolve;
+  const limit=new Promise(done=>{resolve=done;});
+  const f=await fixture({target:"Map#^area=a",getMax:()=>{calls++;return limit;}});
+  try{
+    assert.equal(f.slider.disabled,true);assert.equal(calls,1);
+    resolve(5432);await Promise.resolve();await Promise.resolve();
+    assert.equal(f.slider.disabled,false);assert.equal(f.slider.getAttribute("max"),"5432");
+    f.change(9);f.change(100);f.change(2000);
+    assert.equal(f.slider.getAttribute("max"),"5432");assert.equal(calls,1);
+    assert.equal(f.root.children[1].text,"2000");
+    assert.equal(f.root.children[0].querySelector("output"),null,"readout must not affect the track row");
+    f.popup.close(true);assert.deepEqual(f.writes,[2000]);
+  }finally{f.close();}
+  let resolveStale;
+  const stale=await fixture({target:"Map#^area=a",getMax:()=>new Promise(done=>{resolveStale=done;})});
+  try{
+    stale.popup.close(false);resolveStale(9000);await Promise.resolve();await Promise.resolve();
+    assert.equal(stale.slider.disabled,true,"a closed popup must ignore the completed range read");
+    assert.deepEqual(stale.writes,[]);
+  }finally{stale.close();}
+});
+
+test("opening a capped padding control preserves larger saved values until edited", async () => {
+  const f=await fixture({value:750});
+  try{
+    assert.equal(f.slider.value,"100");assert.equal(f.root.children[1].text,"750");
+    f.popup.close(true);assert.deepEqual(f.writes,[]);
+  }finally{f.close();}
 });

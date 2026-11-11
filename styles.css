@@ -2710,11 +2710,32 @@ button.excalidraw-font-picker {
   min-width: 0;
   margin: 0;
 }
-.excalidraw-embed-padding-popover output {
-  min-width: 3.5ch;
+.excalidraw-embed-padding-popover .slider-value,
+.excalidraw-drawing-preview-padding .slider-value {
+  display: none;
+}
+.excalidraw-padding-value {
+  display: block;
+  min-height: 1.4em;
+  margin-top: 2px;
   color: var(--text-muted);
-  text-align: right;
+  text-align: center;
+  font-size: var(--font-ui-smaller);
   font-variant-numeric: tabular-nums;
+}
+.excalidraw-drawing-preview-popover .excalidraw-drawing-preview-padding .setting-item-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0 6px;
+}
+.excalidraw-drawing-preview-padding input[type="range"] {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+}
+.excalidraw-drawing-preview-padding .excalidraw-padding-value {
+  grid-column: 1;
+  grid-row: 2;
 }
 .excalidraw-embed-padding-popover button {
   flex-shrink: 0;

@@ -22,6 +22,7 @@ export interface DrawingEmbedActions extends DrawingEmbedPreview {
   frames?: readonly DrawingFrameChoice[];
   padding?: {
     value: number;
+    getMax?: () => Promise<number>;
     create: (padding: number | null, isCurrent: () => boolean) => Promise<HTMLElement>;
   };
 }

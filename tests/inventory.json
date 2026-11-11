@@ -2473,6 +2473,10 @@
       "mode": "isolated-or-extracted"
     },
     {
+      "path": "scripts/testing/drawingPadding.source.test.mjs",
+      "mode": "direct-module-or-tooling"
+    },
+    {
       "path": "scripts/testing/drawingPreviewLink.source.test.mjs",
       "mode": "direct-module-or-tooling"
     },

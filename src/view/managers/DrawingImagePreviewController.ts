@@ -4,8 +4,9 @@ import type { MultiOptionConfirmationPrompt } from "src/shared/Dialogs/Prompt";
 import type ExcalidrawView from "../ExcalidrawView";
 import type { EmbeddedFile, EmbeddedFilesLoader } from "src/shared/EmbeddedFileLoader";
 import { DrawingImagePreviewPopover } from "src/shared/Dialogs/DrawingImagePreviewPopover";
-import { CaptureUpdateAction, fileid } from "src/constants/constants";
+import { CaptureUpdateAction, fileid, getCommonBoundingBox } from "src/constants/constants";
 import { getSceneFrames } from "src/utils/frameMetadata";
+import { getDrawingPaddingMax } from "src/utils/drawingPadding";
 import { rewriteDrawingPreviewLink, type DrawingPreviewChanges } from "src/utils/drawingPreviewLink";
 import type { FileData } from "src/types/embeddedFileLoaderTypes";
 import { t } from "src/lang/helpers";
@@ -16,7 +17,7 @@ export interface DrawingImagePreviewDependencies {
   Prompt: typeof MultiOptionConfirmationPrompt;
   EmbeddedFile: typeof import("src/shared/EmbeddedFileLoader").EmbeddedFile;
   EmbeddedFilesLoader: typeof import("src/shared/EmbeddedFileLoader").EmbeddedFilesLoader;
-  getTemplate: typeof import("src/utils/excalidrawAutomateUtils").getTemplate;
+  readScene: typeof import("src/utils/drawingPreviewScene").readDrawingPreviewElements;
   scaleLoadedImage: typeof import("src/utils/utils").scaleLoadedImage;
   getExportPadding: typeof import("src/utils/utils").getExportPadding;
 }
@@ -53,12 +54,10 @@ export class DrawingImagePreviewController {
       view.excalidrawData.getFile(element.fileId) === source &&
       view.getViewElements().some(el => el.id === elementId && el.type === "image" && el.fileId === element.fileId);
     try {
-      const loader = new this.dependencies.EmbeddedFilesLoader(view.plugin); this.loaders.add(loader);
-      let scene: Awaited<ReturnType<DrawingImagePreviewDependencies["getTemplate"]>>;
-      try { scene = await this.dependencies.getTemplate(view.plugin, source.file.path, false, loader, 0); }
-      finally { this.loaders.delete(loader); loader.terminate = true; }
+      const elements = await this.dependencies.readScene(view.plugin.app.vault, source.file);
       if (!ownsImage()) return;
-      this.popover = new DrawingImagePreviewPopover(view, source, getSceneFrames(scene.elements), this.dependencies.getExportPadding(view.plugin, source.file),
+      this.popover = new DrawingImagePreviewPopover(view, source, getSceneFrames(elements), this.dependencies.getExportPadding(view.plugin, source.file),
+        getDrawingPaddingMax(elements, originalLink, getCommonBoundingBox),
         ownsImage,
         link => this.load(source, link),
         changes => this.apply(elementId, source, changes, ownsImage),

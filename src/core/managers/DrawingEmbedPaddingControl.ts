@@ -3,6 +3,7 @@ import type { DrawingEmbedActions, EmbedSourceBinding } from "src/types/drawingE
 import { t } from "src/lang/helpers";
 import { setStyle } from "src/utils/styleUtils";
 import { getDrawingPreviewParts } from "src/utils/drawingPreviewLink";
+import { OUTER_PADDING_MAX } from "src/utils/drawingPadding";
 
 /** One source-owned padding gesture; preview payloads never replace the editor widget. */
 export class DrawingEmbedPaddingControl extends Component {
@@ -37,12 +38,15 @@ export class DrawingEmbedPaddingControl extends Component {
     this.popup = doc.body.createDiv({ cls: "excalidraw-embed-padding-popover", attr: { role: "dialog", "aria-label": label } });
     const row = this.popup.createDiv({ cls: "excalidraw-embed-padding-row" });
     const track = row.createDiv({ cls: "excalidraw-embed-padding-track" });
-    const control = new SliderComponent(track).setLimits(0, 2000, 1).setValue(this.value);
+    let maximum = OUTER_PADDING_MAX;
+    const control = new SliderComponent(track).setLimits(0, maximum, 1).setValue(Math.min(this.value, maximum));
     const slider = control.sliderEl;
+    slider.disabled = !!area && !!this.actions.padding.getMax;
     slider.setAttribute("aria-label", label);
     slider.setAttribute("aria-valuetext", String(this.value));
-    const output = row.createEl("output", { text: String(this.value), attr: { "aria-live": "polite" } });
+    const output = this.popup.createEl("output", { cls: "excalidraw-padding-value", text: String(this.value), attr: { "aria-live": "polite" } });
     const update = () => {
+      if (slider.disabled) return;
       if (!this.current()) { this.close(false); return; }
       this.value = Number(slider.value);
       slider.setAttribute("aria-valuetext", String(this.value));
@@ -53,8 +57,9 @@ export class DrawingEmbedPaddingControl extends Component {
     this.registerDomEvent(slider, "input", update);
     this.registerDomEvent(slider, "wheel", event => {
       if (!event.deltaY) return;
+      if (slider.disabled) return;
       event.preventDefault(); event.stopPropagation();
-      control.setValue(Math.max(0, Math.min(2000, Number(slider.value) - Math.sign(event.deltaY))));
+      control.setValue(Math.max(0, Math.min(maximum, Number(slider.value) - Math.sign(event.deltaY))));
       update();
     }, { passive: false });
     const reset = row.createEl("button", { cls: "clickable-icon", attr: { type: "button", "aria-label": t("EMBED_RESET_PADDING") } });
@@ -76,6 +81,15 @@ export class DrawingEmbedPaddingControl extends Component {
     this.registerDomEvent(win, "resize", () => this.place());
     this.registerDomEvent(doc, "scroll", () => this.place(), true);
     this.place(); slider.focus({ preventScroll: true });
+    if (slider.disabled) void (async () => {
+      try {
+        const limit = await this.actions.padding.getMax();
+        if (!this.current()) return;
+        maximum = Number.isFinite(limit) ? Math.max(OUTER_PADDING_MAX, Math.ceil(limit)) : OUTER_PADDING_MAX;
+        control.setLimits(0, maximum, 1).setValue(Math.min(this.value, maximum));
+      } catch { /* Saved geometry may be unavailable; keep the conservative initial range. */ }
+      finally { if (this.current()) { slider.disabled = false; slider.focus({ preventScroll: true }); } }
+    })();
   }
 
   private current(): boolean {

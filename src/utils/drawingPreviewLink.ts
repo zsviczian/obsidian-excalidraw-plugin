@@ -36,7 +36,7 @@ export function rewriteDrawingPreviewLink(link: string, changes: DrawingPreviewC
   }
   if (changes.padding !== undefined) {
     const padding = changes.padding, ref = parts.blockref ?? parts.sectionref;
-    if (padding !== null && (!Number.isFinite(padding) || padding < 0 || padding > 2000)) return null;
+    if (padding !== null && (!Number.isFinite(padding) || padding < 0 || padding > Number.MAX_SAFE_INTEGER)) return null;
     if (changes.frame === undefined && !(
       !raw || ref === "as-image" || parts.hasFrameref || (parts.hasArearef || parts.hasGroupref || parts.hasClippedFrameref) && !!ref
     )) return null;
