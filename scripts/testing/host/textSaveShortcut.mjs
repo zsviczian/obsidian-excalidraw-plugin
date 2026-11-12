@@ -107,7 +107,8 @@ async function exerciseTextSave(c, env, modifier) {
         await enter();
         const beforeShift = exports.length;
         await key("s", "KeyS", 83, modifier | 8);
-        await c.waitFor(() => exports.length > beforeShift && exports.at(-1) === "closed" && !view.containerEl.querySelector("textarea.excalidraw-wysiwyg"), "Shift+S retains its standalone save route");
+        check(exports.length === beforeShift && doc.activeElement?.matches("textarea.excalidraw-wysiwyg"), "Shift+S must leave text editing intact without standalone Save As");
+        await key("Escape", "Escape", 27);
       }
       await key("s", "KeyS", 83, modifier);
       await c.waitFor(async () => !view.isDirty() && !view.isSaveInProgress() &&
@@ -117,6 +118,6 @@ async function exerciseTextSave(c, env, modifier) {
       check(restored?.rawText === source && Boolean(restored.containerId) === bound, "saved text/binding lost on reopen");
       variants.push({ mode, bound, forcedDiskWrite: true, undoRedo: true, reopened: true });
     }
-    return { assertions: ["trusted Ctrl/Cmd+S submits pending raw/parsed and bound/plain text", "forced physical write with autosave disabled", "no standalone dialog or download", "Shift+S retains its standalone save route", "undo/redo and canvas save", "source and binding survive reopen"], variants };
+    return { assertions: ["trusted Ctrl/Cmd+S submits pending raw/parsed and bound/plain text", "forced physical write with autosave disabled", "no standalone dialog or download", "Shift+S is blocked without ending text editing", "undo/redo and canvas save", "source and binding survive reopen"], variants };
   });
 }

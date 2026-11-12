@@ -5,7 +5,7 @@
     originalText: this is the text without added linebreaks for wrapping. This will be parsed or markup depending on view mode
     rawText: text with original markdown markup and without the added linebreaks for wrapping
  */
-import { App, Notice, TFile } from "obsidian";
+import { App, Notice, TFile, stripHeading } from "obsidian";
 import {
   nanoid,
   fileid,
@@ -2595,6 +2595,9 @@ export const getTransclusion = async (
         cleanSectionHeading(c?.value) === linkParts.ref ||
         cleanSectionHeading(c?.title) === linkParts.ref ||
         cleanSectionHeading(dataHeading) === linkParts.ref ||
+        // New picker links use Obsidian's source-heading identity; preserve
+        // the older display-label matches above for existing image embeds.
+        (dataHeading && stripHeading(dataHeading) === linkParts.ref) ||
         (cc ? cleanSectionHeading(cc[0]?.value) === linkParts.ref : false))
     ) {
       startPos = c.position.start.offset;

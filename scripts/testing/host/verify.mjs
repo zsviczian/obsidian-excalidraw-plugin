@@ -12,6 +12,7 @@ import { runNativeCLIScenario } from "./nativeCLI.mjs";
 import { runEmbedRecoveryScenario } from "./embedRecovery.mjs";
 import { runEmbedControlsScenario } from "./embedControls.mjs";
 import { runEmbedRegressionsScenario } from "./embedRegressions.mjs";
+import { runEmbedReliabilityScenario } from "./embedReliability.mjs";
 import { runFrameSemanticsScenario } from "./frameSemantics.mjs";
 import { runGroupedLinkClickScenario } from "./groupedLinkClick.mjs";
 import { runLatexInputScenario } from "./latexInput.mjs";
@@ -92,6 +93,7 @@ const nativeCLI = coreScenarios || process.argv.includes("--native-cli");
 const embedRecovery = coreScenarios || process.argv.includes("--embed-recovery");
 const embedControls = coreScenarios || process.argv.includes("--embed-controls");
 const embedRegressions = coreScenarios || process.argv.includes("--embed-regressions");
+const embedReliability = coreScenarios || process.argv.includes("--embed-reliability");
 const frameSemantics = coreScenarios || process.argv.includes("--frame-semantics");
 const groupedLinkClick =
   coreScenarios || process.argv.includes("--grouped-link-click");
@@ -168,6 +170,7 @@ const flags = [
   "--embed-recovery",
   "--embed-controls",
   "--embed-regressions",
+  "--embed-reliability",
   "--frame-semantics",
   "--grouped-link-click",
   "--latex-input",
@@ -361,6 +364,7 @@ try {
         ...(embedRecovery ? [runEmbedRecoveryScenario] : []),
         ...(embedControls ? [runEmbedControlsScenario] : []),
         ...(embedRegressions ? [runEmbedRegressionsScenario] : []),
+        ...(embedReliability ? [runEmbedReliabilityScenario] : []),
         ...(frameSemantics ? [runFrameSemanticsScenario] : []),
         ...(groupedLinkClick ? [runGroupedLinkClickScenario] : []),
         ...(latexInput ? [runLatexInputScenario] : []),

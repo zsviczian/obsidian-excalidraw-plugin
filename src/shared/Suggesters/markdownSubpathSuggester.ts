@@ -1,8 +1,7 @@
-import { resolveSubpath, type App, type TFile } from "obsidian";
+import { resolveSubpath, stripHeading, type App, type TFile } from "obsidian";
 import { MD_EX_SECTIONS, nanoid } from "src/constants/constants";
 import { t } from "src/lang/helpers";
 import { ScriptEngine } from "src/shared/Scripts";
-import { cleanSectionHeading } from "src/utils/pathUtils";
 
 type BlockCacheEntry = Awaited<
   ReturnType<App["metadataCache"]["blockCache"]["getForFile"]>
@@ -35,12 +34,17 @@ export async function getMarkdownHeadingSubpaths(
   file: TFile,
   isExcalidrawFile: boolean,
 ): Promise<MarkdownHeadingSubpath[]> {
-  const sections = (
+  const blocks = (
     await app.metadataCache.blockCache.getForFile(
       { isCancelled: () => false },
       file,
     )
-  ).blocks
+  ).blocks;
+  const fileCache = app.metadataCache.getFileCache(file);
+  const headingsByOffset = new Map(
+    fileCache?.headings?.map(heading => [heading.position.start.offset, heading.heading]) ?? [],
+  );
+  const sections = blocks
     .filter(isHeadingBlockEntry)
     .filter(
       (entry) =>
@@ -48,9 +52,10 @@ export async function getMarkdownHeadingSubpaths(
     )
     .map((entry) => ({
       display: entry.display,
-      subpath: `#${cleanSectionHeading(entry.display)}`,
+      // Display labels omit link destinations and formatting that Obsidian
+      // includes in heading identity. Keep the label, but link to the source.
+      subpath: `#${stripHeading(headingsByOffset.get(entry.node.position.start.offset) ?? entry.display)}`,
     }));
-  const fileCache = app.metadataCache.getFileCache(file);
   return fileCache
     ? sections.filter(
         (section) =>

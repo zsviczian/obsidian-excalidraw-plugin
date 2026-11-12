@@ -2533,6 +2533,10 @@
       "mode": "direct-module-or-tooling"
     },
     {
+      "path": "scripts/testing/fileAliases.test.mjs",
+      "mode": "isolated-or-extracted"
+    },
+    {
       "path": "scripts/testing/frameMetadata.source.test.mjs",
       "mode": "direct-module-or-tooling"
     },
@@ -2673,6 +2677,14 @@
       "mode": "isolated-or-extracted"
     },
     {
+      "path": "scripts/testing/markdownHeadingSubpaths.test.mjs",
+      "mode": "direct-module-or-tooling"
+    },
+    {
+      "path": "scripts/testing/markdownHeadingTransclusion.test.mjs",
+      "mode": "isolated-or-extracted"
+    },
+    {
       "path": "scripts/testing/markdownImageInsertion.source.test.mjs",
       "mode": "direct-module-or-tooling"
     },
@@ -2763,6 +2775,10 @@
     {
       "path": "scripts/testing/svgText.test.mjs",
       "mode": "direct-module-or-tooling"
+    },
+    {
+      "path": "scripts/testing/svgVaultLinks.test.mjs",
+      "mode": "isolated-or-extracted"
     },
     {
       "path": "scripts/testing/tableEmbedSource.source.test.mjs",

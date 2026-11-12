@@ -1,5 +1,27 @@
 import type ExcalidrawView from "../ExcalidrawView";
 
+/** Block standalone Save As only while this drawing's editor owns keyboard focus. */
+export function handleSaveAsShortcut(
+  view: ExcalidrawView,
+  event: KeyboardEvent,
+): boolean {
+  if (
+    !(event.ctrlKey || event.metaKey) || !event.shiftKey || event.altKey ||
+    event.key.toLowerCase() !== "s"
+  ) return false;
+  const target = event.target as HTMLElement | null;
+  if (
+    !view.excalidrawAPI || !view.file || view.isClosingOrMigrating() ||
+    target?.ownerDocument !== view.ownerDocument ||
+    target !== view.ownerDocument.activeElement ||
+    !view.containerEl.contains(target) ||
+    target.closest(".excalidraw__embeddable-container")
+  ) return false;
+  event.preventDefault();
+  event.stopPropagation();
+  return true;
+}
+
 /**
  * Submit the owning text editor before forcing a vault save. Capture runs before
  * Excalidraw's textarea handler, which otherwise invokes standalone file export.
