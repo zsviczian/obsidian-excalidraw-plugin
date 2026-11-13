@@ -681,7 +681,7 @@ async function exerciseDevice(c, path, fixture, profile) {
           const exit = view.containerEl.querySelector(".disable-zen-mode--visible");
           return exit && doc.defaultView.getComputedStyle(exit).visibility === "visible" && Number(doc.defaultView.getComputedStyle(exit).opacity) > 0.99;
         }, "device Zen exit control");
-        const exit = view.containerEl.querySelector(".disable-zen-mode--visible"), zoom = view.containerEl.querySelector(".reset-zoom-button");
+        const exit = view.containerEl.querySelector(".disable-zen-mode--visible"), zoom = view.containerEl.querySelector(".zoom-menu-trigger, .reset-zoom-button");
         check(zoom, "Device Zen zoom indicator missing");
         const a = rect(exit), b = rect(zoom), editor = rect(root);
         check(!(Math.min(a.right, b.right) - Math.max(a.x, b.x) > 1 && Math.min(a.bottom, b.bottom) - Math.max(a.y, b.y) > 1), "Device Zen controls overlap");
@@ -699,7 +699,12 @@ async function exerciseDevice(c, path, fixture, profile) {
           await input(profile.input === "touch" ? "touchStart" : "mousePressed", x, y);
           await input(profile.input === "touch" ? "touchEnd" : "mouseReleased", x, y);
         };
-        await tap(zoom); await c.waitFor(() => { c.observations.zenZoom = { zoom: api.getAppState().zoom.value, constraints: api.getAppState().scrollConstraints }; return api.getAppState().zoom.value === 1; }, "device Zen zoom action");
+        await tap(zoom);
+        if (zoom.classList.contains("zoom-menu-trigger")) {
+          await c.waitFor(() => doc.querySelector('[data-testid="zoom-menu-resetZoom"]'), "device Zen zoom menu");
+          await tap(doc.querySelector('[data-testid="zoom-menu-resetZoom"]'));
+        }
+        await c.waitFor(() => { c.observations.zenZoom = { zoom: api.getAppState().zoom.value, constraints: api.getAppState().scrollConstraints }; return api.getAppState().zoom.value === 1; }, "device Zen zoom action");
         await tap(exit); await c.waitFor(() => !api.getAppState().zenModeEnabled, "device Zen exit action");
         variants.push({ direction, exit: a, zoom: b });
       }

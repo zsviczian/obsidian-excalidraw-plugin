@@ -114,6 +114,7 @@ const svgEntryPoints = process.argv.includes("--svg-entry-points");
 const lucide = coreScenarios || process.argv.includes("--lucide");
 const workflowFixes = coreScenarios || process.argv.includes("--workflow-fixes");
 const workflowBundle = coreScenarios || process.argv.includes("--workflow-bundle");
+const minimapOnly = process.argv.includes("--minimap");
 const textSaveShortcut = workflowBundle || process.argv.includes("--text-save-shortcut");
 const codeCards = workflowBundle || process.argv.includes("--code-cards");
 const kplexOntology = coreScenarios || profile === "devices" || process.argv.includes("--kplex-ontology");
@@ -160,6 +161,7 @@ const flags = [
   "--data-integrity",
   "--workflow-fixes",
   "--workflow-bundle",
+  "--minimap",
   "--text-save-shortcut",
   "--code-cards",
   "--kplex-ontology",
@@ -387,6 +389,7 @@ try {
             ]
           : []),
         ...(workflowBundle ? [runWorkflowBundleScenario] : []),
+        ...(minimapOnly ? [context => runWorkflowBundleScenario({ ...context, minimapOnly: true })] : []),
         ...(textSaveShortcut ? [runTextSaveShortcutScenario] : []),
         ...(codeCards ? [runCodeCardScenario] : []),
         ...(kplexOntology ? [runKplexOntologyScenario] : []),

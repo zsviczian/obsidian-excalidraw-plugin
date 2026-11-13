@@ -1557,7 +1557,8 @@
           "layer": "native",
           "path": "scripts/testing/host/workflowBundle.mjs",
           "cases": [
-            "native:workflow-zen-controls-3000"
+            "native:workflow-zen-controls-3000",
+            "native:upstream-minimap-483"
           ]
         },
         {

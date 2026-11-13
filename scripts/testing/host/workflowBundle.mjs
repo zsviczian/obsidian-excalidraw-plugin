@@ -4,15 +4,17 @@ import { readFileSync } from "node:fs";
 import { runInAppTask } from "./inAppTask.mjs";
 import { settleBrowserDiagnostics } from "./browserDiagnostics.mjs";
 
-export const workflowBundleCaseIds = ["native:workflow-markdown-extraction-3009", "native:workflow-zen-controls-3000"];
+export const workflowBundleCaseIds = ["native:workflow-markdown-extraction-3009", "native:workflow-zen-controls-3000", "native:upstream-minimap-483"];
 
-export async function runWorkflowBundleScenario({ cli, drawingPath }) {
+export async function runWorkflowBundleScenario({ cli, drawingPath, minimapOnly = false }) {
   assert.ok(drawingPath.startsWith("__excalidraw_cli_smoke_"));
   const prefix = drawingPath.replace(/\.(excalidraw\.md|excalidraw|md)$/, "") + "_bundle";
   const fixture = readFileSync(new URL("../../../tests/vault/Drawings/Uncompressed.excalidraw.md", import.meta.url), "utf8");
-  const execute = new Function(`return async function(c,prefix,fixture){return (${exerciseWorkflows.toString()})(c,prefix,fixture,${settleBrowserDiagnostics.toString()});}`)();
-  const result = await runInAppTask({ cli, execute, args: [prefix, fixture], timeoutMs: 180000, cleanupMs: 60000 });
-  return { id: "workflow-bundle-3030", status: "passed", ...result };
+  const execute = new Function(`return async function(c,prefix,fixture,minimapOnly){
+    if(minimapOnly){const runCase=c.case.bind(c);c.case=async(id,...args)=>id==='native:upstream-minimap-483'?runCase(id,...args):undefined;}
+    return (${exerciseWorkflows.toString()})(c,prefix,fixture,${settleBrowserDiagnostics.toString()});}`)();
+  const result = await runInAppTask({ cli, execute, args: [prefix, fixture, minimapOnly], timeoutMs: 300000, cleanupMs: 60000 });
+  return { id: minimapOnly ? "minimap-483" : "workflow-bundle-3030", status: "passed", ...result };
 }
 
 async function exerciseWorkflows(c, prefix, fixture, settleBrowserDiagnostics) {
@@ -185,7 +187,7 @@ async function exerciseWorkflows(c, prefix, fixture, settleBrowserDiagnostics) {
             view.contentEl.setCssProps({ width: width + "px", "max-width": "100%" });
             api.updateScene({ appState: { zenModeEnabled: true, zoom: { value: 1.7 } }, captureUpdate: "NEVER" });
             await c.waitFor(() => api.getAppState().zenModeEnabled && view.containerEl.querySelector(".disable-zen-mode--visible"), "Zen exit control");
-            const exit = view.containerEl.querySelector(".disable-zen-mode--visible"), zoom = view.containerEl.querySelector(".reset-zoom-button");
+            const exit = view.containerEl.querySelector(".disable-zen-mode--visible"), zoom = view.containerEl.querySelector(".zoom-menu-trigger, .reset-zoom-button");
             check(zoom, "Zen zoom indicator missing");
             await c.waitFor(() => win.getComputedStyle(exit).visibility === "visible" && Number(win.getComputedStyle(exit).opacity) > 0.99, "Zen exit transition completes");
             const a = exit.getBoundingClientRect(), b = zoom.getBoundingClientRect();
@@ -202,7 +204,12 @@ async function exerciseWorkflows(c, prefix, fixture, settleBrowserDiagnostics) {
                 doc.elementFromPoint(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2)?.closest("button") === button,
                 "Zen control is clipped or covered");
             }
-            zoom.click(); await c.waitFor(() => api.getAppState().zoom.value === 1, "Zen zoom action");
+            zoom.click();
+            if (zoom.classList.contains("zoom-menu-trigger")) {
+              await c.waitFor(() => doc.querySelector('[data-testid="zoom-menu-resetZoom"]'), "Zen zoom menu");
+              doc.querySelector('[data-testid="zoom-menu-resetZoom"]').click();
+            }
+            await c.waitFor(() => api.getAppState().zoom.value === 1, "Zen zoom action");
             exit.click(); await c.waitFor(() => !api.getAppState().zenModeEnabled, "Zen exit action");
             variants.push(record);
           }
@@ -221,6 +228,61 @@ async function exerciseWorkflows(c, prefix, fixture, settleBrowserDiagnostics) {
       await closeLeaf(leaf);
     }
     return { assertions: ["Zen exit and zoom indicator do not intersect", "both controls remain inside the editor and uncovered", "zoom and exit actions activate repeatedly", "LTR/RTL wide/narrow panes and UI scale", "main/popout document ownership", "restored native zoom settles before popout teardown"], variants, zoomIdle };
+  });
+  await c.case("native:upstream-minimap-483", ["P01", "P03", "P08"], async () => {
+    const variants = [], oldLimits = { min: plugin.settings.zoomMin, max: plugin.settings.zoomMax, mode: plugin.settings.desktopUIMode };
+    try {
+      for (const popout of [false, true]) {
+        const leaf = await open(prefix + "/Minimap-" + popout + ".excalidraw.md", popout);
+        const view = leaf.view, api = view.excalidrawAPI, doc = view.ownerDocument, win = view.ownerWindow;
+        for (const mode of ["full", "compact", "tray"]) {
+          plugin.settings.desktopUIMode = mode;
+          view.setUIMode(mode);
+          api.updateScene({ appState: { zenModeEnabled: false, minimapEnabled: false, zoom: { value: 1 } }, captureUpdate: "NEVER" });
+          await c.waitFor(() => view.containerEl.querySelector('[data-testid="button-minimap"]'), "native minimap toggle " + mode);
+          const toggle = view.containerEl.querySelector('[data-testid="button-minimap"]');
+          toggle.click();
+          await c.waitFor(() => {
+            const canvas = view.containerEl.querySelector(".minimap__canvas");
+            return canvas && canvas.width > 0 && canvas.height > 0 && canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height).data.some(value => value !== 0);
+          }, "native minimap paints " + mode);
+          const map = view.containerEl.querySelector(".minimap"), bounds = map.getBoundingClientRect();
+          check(map.ownerDocument === doc && !!map.closest(".tray-zoom") === (mode === "tray"), "minimap footer owner");
+          check(bounds.width > 0 && bounds.height > 0 && map.contains(doc.elementFromPoint(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2)), "minimap clipped or covered");
+          const state = api.getAppState(), center = { x: state.width / (2 * state.zoom.value) - state.scrollX, y: state.height / (2 * state.zoom.value) - state.scrollY };
+          map.dispatchEvent(new win.WheelEvent("wheel", { deltaY: -100, bubbles: true, cancelable: true }));
+          await c.waitFor(() => api.getAppState().zoom.value > 1, "native minimap wheel");
+          const next = api.getAppState();
+          check(Math.abs(next.width / (2 * next.zoom.value) - next.scrollX - center.x) < 0.01 && Math.abs(next.height / (2 * next.zoom.value) - next.scrollY - center.y) < 0.01, "minimap zoom center changed");
+          plugin.settings.zoomMax = next.zoom.value;
+          const trigger = view.containerEl.querySelector('[data-testid="zoom-menu-trigger"]'); trigger.click();
+          await c.waitFor(() => doc.querySelector('[data-testid="zoom-menu-zoomIn"]'), "native zoom menu");
+          check(doc.querySelector('[data-testid="zoom-menu-zoomIn"]').disabled, "menu ignored live host zoom limit");
+          const reset = doc.querySelector('[data-testid="zoom-menu-resetZoom"]');
+          await c.waitFor(() => {
+            const r = reset.getBoundingClientRect();
+            return r.width > 0 && r.height > 0 && doc.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)?.closest("button") === reset;
+          }, "popout zoom portal hit target");
+          reset.click(); await c.waitFor(() => api.getAppState().zoom.value === 1, "native menu reset");
+          plugin.settings.zoomMax = oldLimits.max;
+          const currentToggle = view.containerEl.querySelector('[data-testid="button-minimap"]');
+          c.observations.minimap = { popout, mode, originalToggleConnected: toggle.isConnected, sameToggle: currentToggle === toggle, before: api.getAppState().minimapEnabled, constraints: api.getAppState().scrollConstraints };
+          check(currentToggle?.isConnected, "current minimap toggle missing after zoom action");
+          currentToggle.click();
+          await c.waitFor(() => {
+            c.observations.minimap.after = api.getAppState().minimapEnabled;
+            return !view.containerEl.querySelector(".minimap");
+          }, "native minimap cleanup");
+          variants.push({ popout, mode, painted: true, ownerDocument: true, centeredWheel: true, liveLimit: true, reset: true });
+        }
+        await closeLeaf(leaf);
+      }
+    } finally {
+      plugin.settings.zoomMin = oldLimits.min; plugin.settings.zoomMax = oldLimits.max;
+      plugin.settings.desktopUIMode = oldLimits.mode;
+      for (const leaf of app.workspace.getLeavesOfType("excalidraw")) leaf.view.excalidrawAPI?.setDesktopUIMode(oldLimits.mode);
+    }
+    return { assertions: ["actual minimap pixels in full/compact/tray", "main/popout footer and portal ownership", "centered wheel navigation", "live host zoom limits", "zoom menu reset", "toggle cleanup and popout teardown"], variants };
   });
   return { tests: c.tests };
 }
