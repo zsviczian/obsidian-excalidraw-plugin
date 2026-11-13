@@ -2155,132 +2155,132 @@
     {
       "name": "excalidraw-anchors",
       "path": "src/constants/constants.ts",
-      "line": 316
+      "line": 320
     },
     {
       "name": "excalidraw-thumbnail",
       "path": "src/constants/constants.ts",
-      "line": 317
+      "line": 321
     },
     {
       "name": "excalidraw-plugin",
       "path": "src/constants/constants.ts",
-      "line": 318
+      "line": 322
     },
     {
       "name": "excalidraw-export-transparent",
       "path": "src/constants/constants.ts",
-      "line": 319
+      "line": 323
     },
     {
       "name": "excalidraw-mask",
       "path": "src/constants/constants.ts",
-      "line": 324
+      "line": 328
     },
     {
       "name": "excalidraw-export-dark",
       "path": "src/constants/constants.ts",
-      "line": 325
+      "line": 329
     },
     {
       "name": "excalidraw-export-svgpadding",
       "path": "src/constants/constants.ts",
-      "line": 330
+      "line": 334
     },
     {
       "name": "excalidraw-export-padding",
       "path": "src/constants/constants.ts",
-      "line": 335
+      "line": 339
     },
     {
       "name": "excalidraw-export-pngscale",
       "path": "src/constants/constants.ts",
-      "line": 340
+      "line": 344
     },
     {
       "name": "excalidraw-export-embed-scene",
       "path": "src/constants/constants.ts",
-      "line": 345
+      "line": 349
     },
     {
       "name": "excalidraw-export-internal-links",
       "path": "src/constants/constants.ts",
-      "line": 350
+      "line": 354
     },
     {
       "name": "excalidraw-link-prefix",
       "path": "src/constants/constants.ts",
-      "line": 355
+      "line": 359
     },
     {
       "name": "excalidraw-url-prefix",
       "path": "src/constants/constants.ts",
-      "line": 360
+      "line": 364
     },
     {
       "name": "excalidraw-link-brackets",
       "path": "src/constants/constants.ts",
-      "line": 365
+      "line": 369
     },
     {
       "name": "excalidraw-onload-script",
       "path": "src/constants/constants.ts",
-      "line": 370
+      "line": 374
     },
     {
       "name": "excalidraw-linkbutton-opacity",
       "path": "src/constants/constants.ts",
-      "line": 375
+      "line": 379
     },
     {
       "name": "excalidraw-default-mode",
       "path": "src/constants/constants.ts",
-      "line": 380
+      "line": 384
     },
     {
       "name": "excalidraw-font",
       "path": "src/constants/constants.ts",
-      "line": 385
+      "line": 389
     },
     {
       "name": "excalidraw-font-color",
       "path": "src/constants/constants.ts",
-      "line": 386
+      "line": 390
     },
     {
       "name": "excalidraw-border-color",
       "path": "src/constants/constants.ts",
-      "line": 391
+      "line": 395
     },
     {
       "name": "excalidraw-css",
       "path": "src/constants/constants.ts",
-      "line": 396
+      "line": 400
     },
     {
       "name": "excalidraw-autoexport",
       "path": "src/constants/constants.ts",
-      "line": 397
+      "line": 401
     },
     {
       "name": "excalidraw-iframe-theme",
       "path": "src/constants/constants.ts",
-      "line": 402
+      "line": 406
     },
     {
       "name": "excalidraw-embeddable-theme",
       "path": "src/constants/constants.ts",
-      "line": 407
+      "line": 411
     },
     {
       "name": "excalidraw-open-md",
       "path": "src/constants/constants.ts",
-      "line": 412
+      "line": 416
     },
     {
       "name": "excalidraw-embed-md",
       "path": "src/constants/constants.ts",
-      "line": 417
+      "line": 421
     }
   ],
   "cliCommands": [
@@ -2519,6 +2519,10 @@
     {
       "path": "scripts/testing/embedSource.source.test.mjs",
       "mode": "direct-module-or-tooling"
+    },
+    {
+      "path": "scripts/testing/excalidrawLangCode.test.mjs",
+      "mode": "isolated-or-extracted"
     },
     {
       "path": "scripts/testing/excalidrawTypeSource.test.mjs",

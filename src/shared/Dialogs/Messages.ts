@@ -28,6 +28,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 - Insert files with malformed aliases, and embed Markdown headings containing links or formatting. [#2257](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2257), [#2303](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2303).
 - Ctrl/Cmd+Shift+S no longer opens the unintended standalone Save As dialog in a focused drawing. Use the export menu to save a legacy Excalidraw file externally. [#2714](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2714).
 - SVG exports to the vault and clipboard now honor the option to remove internal links.
+- The drawing canvas now uses Brazilian Portuguese when Obsidian is set to Português (Brasil); it previously fell back to English. [#2956](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2956).
 `,
 "2.29.2": `
 ## New and improved
