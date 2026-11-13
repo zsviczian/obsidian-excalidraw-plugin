@@ -464,6 +464,9 @@ export class ViewExportManager {
       scene = this.view.getScene();
     }
 
+    if (!this.getViewExportIncludeInternalLinks()) {
+      scene = { ...scene, elements: this.dependencies.sceneRemoveInternalLinks(scene) };
+    }
     const exportImage = async (filepath: string, theme?: string) => {
       const svg = await this.svg(scene, theme, embedScene, true);
       if (!svg) {
@@ -537,8 +540,11 @@ export class ViewExportManager {
       return new SVGSVGElement();
     }
 
+    const scene = this.view.getScene(selectedOnly);
     const svg = await this.svg(
-      this.view.getScene(selectedOnly),
+      this.getViewExportIncludeInternalLinks()
+        ? scene
+        : { ...scene, elements: this.dependencies.sceneRemoveInternalLinks(scene) },
       undefined,
       embedScene,
       true,

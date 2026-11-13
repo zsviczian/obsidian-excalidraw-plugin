@@ -37,12 +37,15 @@ export class FileSuggestionModal extends SuggestionModal<LinkSuggestion> {
       const path = file.path;
       filesAndAliases.push({ file, path, alias: "" });
       const metadata = app.metadataCache.getFileCache(file); // Get metadata for the file
-      const aliases = metadata?.frontmatter?.aliases || []; // Check for frontmatter aliases
+      const frontmatterAliases: unknown = metadata?.frontmatter?.aliases;
+      const aliases: readonly unknown[] = typeof frontmatterAliases === "string"
+        ? [frontmatterAliases]
+        : Array.isArray(frontmatterAliases) ? frontmatterAliases : [];
 
       for (const alias of aliases) {
-        if (!alias) {
+        if (typeof alias !== "string" || !alias) {
           continue;
-        } // Skip empty aliases
+        }
         filesAndAliases.push({ file, path, alias });
       }
     }

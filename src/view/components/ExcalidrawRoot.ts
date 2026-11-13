@@ -10,7 +10,7 @@ import { t } from "../../lang/helpers";
 import { isMarkdownImageElement } from "../../shared/MarkdownImage";
 import { shouldRenderMermaid } from "../../utils/mermaidUtils";
 import type ExcalidrawView from "../ExcalidrawView";
-import { handleTextSaveShortcut } from "../managers/textSaveShortcut";
+import { handleSaveAsShortcut, handleTextSaveShortcut } from "../managers/textSaveShortcut";
 import { EmbeddableMenu } from "./menu/EmbeddableActionsMenu";
 import { ObsidianMenu } from "./menu/ObsidianMenu";
 import { SelectedElementActionsMenu } from "./menu/SelectedElementActionsMenu";
@@ -163,8 +163,11 @@ export function createExcalidrawRootElement(
         ref: excalidrawWrapperRef,
         key: "abc",
         tabIndex: 0,
-        onKeyDownCapture: (event: ReactKeyboardEvent<HTMLDivElement>) =>
-          handleTextSaveShortcut(view, event.nativeEvent),
+        onKeyDownCapture: (event: ReactKeyboardEvent<HTMLDivElement>) => {
+          if (!handleSaveAsShortcut(view, event.nativeEvent)) {
+            handleTextSaveShortcut(view, event.nativeEvent);
+          }
+        },
         onKeyDown: view.excalidrawDIVonKeyDown.bind(view),
         onKeyUp: view.excalidrawDIVonKeyUp.bind(view),
         onPointerDownCapture: () => {

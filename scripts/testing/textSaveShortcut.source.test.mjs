@@ -4,7 +4,7 @@ import test from "node:test";
 import { sourceHarness } from "./sourceHarness.mjs";
 
 const harness = sourceHarness();
-const { handleTextSaveShortcut } = await harness.importModule("src/view/managers/textSaveShortcut.ts");
+const { handleTextSaveShortcut, handleSaveAsShortcut } = await harness.importModule("src/view/managers/textSaveShortcut.ts");
 test.after(() => harness.close());
 
 function fixture() {
@@ -43,5 +43,29 @@ test("submission cannot save a replacement file, API or retiring view", () => {
     const f = fixture(); f.editable.blur = () => { f.calls.push("submit"); retire(f); };
     handleTextSaveShortcut(f.view, f.event);
     assert.deepEqual(f.calls, ["preventDefault", "stopPropagation", "flush", "submit", "committed"]);
+  }
+});
+
+test("focused canvas and text editor block Ctrl/Cmd+Shift+S without submitting or saving", () => {
+  for (const modifier of ["ctrlKey", "metaKey"]) for (const tagName of ["DIV", "TEXTAREA"]) {
+    const f = fixture(); f.editable.tagName = tagName; f.editable.closest = () => null;
+    Object.assign(f.event, { ctrlKey: false, [modifier]: true, shiftKey: true, key: "S" });
+    assert.equal(handleSaveAsShortcut(f.view, f.event), true);
+    assert.deepEqual(f.calls, ["preventDefault", "stopPropagation"]);
+  }
+});
+
+test("Save As guard leaves other shortcuts, other documents, unfocused views and embedded notes alone", () => {
+  for (const mutate of [
+    f => f.event.shiftKey = false, f => f.event.altKey = true,
+    f => f.event.ctrlKey = false, f => f.event.key = "x",
+    f => f.editable.ownerDocument = {}, f => f.doc.activeElement = {},
+    f => f.view.containerEl.contains = () => false,
+    f => f.editable.closest = selector => selector === ".excalidraw__embeddable-container" ? {} : null,
+    f => f.view.file = null, f => f.view.excalidrawAPI = null,
+    f => f.view.isClosingOrMigrating = () => true,
+  ]) {
+    const f = fixture(); f.event.shiftKey = true; f.editable.closest = () => null; mutate(f);
+    assert.equal(handleSaveAsShortcut(f.view, f.event), false); assert.deepEqual(f.calls, []);
   }
 });

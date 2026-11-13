@@ -362,6 +362,16 @@ Follow the mandatory [validation requirements](CODING_STANDARDS.md#validation-re
 
 ### Obsidian CLI runtime lane
 
+Do not infer that CLI is disabled from a transient `Command "eval" not found`
+response or the preparation runner's generic first-open message. Check the
+installed CLI's help, the selected vault's canonical path and initialization,
+and pending dialogs; retry a benign read-only `eval` readiness probe before
+requesting human help. Preserve the actual error and distinguish a temporarily
+unready vault from missing CLI registration or trust. Do not invent a separate
+"developer CLI" setting: verify any claimed setting against the installed UI
+or official documentation before asking the maintainer to change it. An already
+enabled CLI does not need to be enabled again.
+
 Resolve recoverable dependency, host-request, menu-renderer and cleanup failures and rerun failed/blocked cases before returning. Follow [native failure recovery](docs/OBSIDIAN_RUNTIME_TESTING.md#recovering-from-native-test-failures); ask the maintainer promptly when an actual human prerequisite prevents progress.
 
 Start with the layered [testing guide](docs/TESTING.md) and [Obsidian runtime testing](docs/OBSIDIAN_RUNTIME_TESTING.md). Use `npm run test:native` to prepare and test `.test-work/vaults/excalidraw-auto-test/`. Every native sequence builds selected workspace revisions, freezes and hash-verifies the plugin and available Extras artifacts, installs and enables them, applies the immutable seed's settings, verifies the running CLI vault/config identity and restores the declared baseline. Use the matching local fork when available. Never reuse stale installed builds. Missing Extras is explicit and cannot satisfy Extras-dependent coverage. Serialize preparation, deployment, scenarios and cleanup under the shared application-user-data lock. Specific maintained scripts remain tested in ea-scripts; focus here on core Excalidraw and ExcalidrawAutomate. Inventory and screenshots do not establish behavior; missing important matrix cases remain unfinished.

@@ -363,6 +363,32 @@
             "native:behavior:tablet:cli-atomic-targeted-edit",
             "native:behavior:tablet:ea-hooks-targeting-invalid"
           ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/embedReliability.mjs",
+          "cases": [
+            "native:embed-reliability:main:aliases",
+            "native:embed-reliability:main:save-as",
+            "native:embed-reliability:popout:aliases",
+            "native:embed-reliability:popout:save-as"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/fileAliases.test.mjs",
+          "cases": [
+            "node:scripts/testing/fileAliases.test.mjs::unsupported alias metadata cannot hide mixed vault files or mutate YAML values",
+            "node:scripts/testing/fileAliases.test.mjs::string aliases remain whole and valid list members remain searchable after reopening"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/textSaveShortcut.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/textSaveShortcut.source.test.mjs::focused canvas and text editor block Ctrl/Cmd+Shift+S without submitting or saving",
+            "node:scripts/testing/textSaveShortcut.source.test.mjs::Save As guard leaves other shortcuts, other documents, unfocused views and embedded notes alone"
+          ]
         }
       ],
       "fixtures": [
@@ -527,6 +553,24 @@
           "cases": [
             "node:scripts/testing/host/nativeKeyboard.test.mjs::macOS native editing shortcuts carry browser commands while preserving trusted key parameters",
             "node:scripts/testing/host/nativeKeyboard.test.mjs::native keyboard transport preserves releases, app shortcuts, other platforms and explicit commands"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/embedReliability.mjs",
+          "cases": [
+            "native:embed-reliability:main:svg",
+            "native:embed-reliability:popout:svg"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/svgVaultLinks.test.mjs",
+          "cases": [
+            "node:scripts/testing/svgVaultLinks.test.mjs::vault SVG honors internal links=true without changing the source scene",
+            "node:scripts/testing/svgVaultLinks.test.mjs::vault SVG honors internal links=false without changing the source scene",
+            "node:scripts/testing/svgVaultLinks.test.mjs::clipboard SVG honors internal links=true without changing the source scene",
+            "node:scripts/testing/svgVaultLinks.test.mjs::clipboard SVG honors internal links=false without changing the source scene"
           ]
         }
       ],
@@ -1037,6 +1081,32 @@
           "cases": [
             "node:scripts/testing/drawingPadding.source.test.mjs::area range covers off-center scene edges beyond 2000 and ignores deleted elements",
             "node:scripts/testing/drawingPadding.source.test.mjs::padding geometry reads plain, compressed and legacy saved scenes without resolving embeds"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/embedReliability.mjs",
+          "cases": [
+            "native:embed-reliability:main:headings",
+            "native:embed-reliability:main:nbsp",
+            "native:embed-reliability:popout:headings",
+            "native:embed-reliability:popout:nbsp"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/markdownHeadingSubpaths.test.mjs",
+          "cases": [
+            "node:scripts/testing/markdownHeadingSubpaths.test.mjs::heading suggestions retain formatted source targets, friendly labels and duplicate order",
+            "node:scripts/testing/markdownHeadingSubpaths.test.mjs::missing or unmatched cache cannot offer a section that Obsidian cannot resolve"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/markdownHeadingTransclusion.test.mjs",
+          "cases": [
+            "node:scripts/testing/markdownHeadingTransclusion.test.mjs::canonical linked-heading image targets retain the heading body and nested sections",
+            "node:scripts/testing/markdownHeadingTransclusion.test.mjs::existing display-label targets, ordinary sections and missing-section fallback stay unchanged"
           ]
         }
       ],

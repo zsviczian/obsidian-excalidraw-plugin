@@ -23,6 +23,7 @@ import { textSaveShortcutCaseIds } from "./host/textSaveShortcut.mjs";
 import { codeCardCaseIds } from "./host/codeCards.mjs";
 import { embedControlCaseIds, embedControlDeviceCaseIds } from "./host/embedControls.mjs";
 import { embedRegressionCaseIds } from "./host/embedRegressions.mjs";
+import { embedReliabilityCaseIds } from "./host/embedReliability.mjs";
 import { frameSemanticsCaseIds, frameSemanticsDeviceCaseIds } from "./host/frameSemantics.mjs";
 import { kplexOntologyCaseIds, kplexOntologyDeviceCaseIds } from "./host/kplexOntology.mjs";
 
@@ -37,6 +38,7 @@ export const requiredNativeCases = [
   ...codeCardCaseIds,
   ...embedControlCaseIds,
   ...embedRegressionCaseIds,
+  ...embedReliabilityCaseIds,
   ...frameSemanticsCaseIds,
   ...kplexOntologyCaseIds,
   ...behavioralCases().map((row) => row.testId),
