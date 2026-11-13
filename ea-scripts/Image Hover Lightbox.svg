@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- 背景：图片示意框 -->
+  <rect x="10" y="12" width="32" height="28" rx="3" ry="3"
+        fill="none" stroke="#1e1e1e" stroke-width="2.5"/>
+  <path d="M14 34 L20 24 L26 30 L32 20 L38 34 Z"
+        fill="none" stroke="#1e1e1e" stroke-width="1.8" stroke-linejoin="round"/>
+  <!-- 全屏四角图标（右下强调） -->
+  <g fill="none" stroke="#1e1e1e" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M36 40 H30 a2 2 0 0 0 -2 2 v6"/>
+    <path d="M54 48 V42 a2 2 0 0 0 -2 -2 h-6"/>
+    <path d="M28 54 v6 a2 2 0 0 0 2 2 h6"/>
+    <path d="M46 62 h6 a2 2 0 0 0 2 -2 v-6"/>
+  </g>
+</svg>
