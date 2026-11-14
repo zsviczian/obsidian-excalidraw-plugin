@@ -1,0 +1,5567 @@
+{
+  "schemaVersion": 1,
+  "scope": "Plugin PR #3052 and fork PR #484: complete portable/native checkpoint at fdca1796; final localized held-P follow-up at 78782221 has separate fast and focused native evidence. No claim of a complete native rerun after that keyboard-only change.",
+  "native": {
+    "status": "passed",
+    "cleanup": "passed",
+    "startedAt": "2026-11-14T21:59:50.742Z",
+    "completedAt": "2026-11-14T22:23:21.747Z",
+    "vault": ".test-work/vaults/excalidraw-auto-test/",
+    "environment": {
+      "version": "1.15.1 (installer 1.14.5)",
+      "applicationIdentity": "<user>/AppData/Roaming/obsidian",
+      "scheduling": {
+        "originalBackgroundThrottling": true,
+        "scopedBackgroundThrottling": false
+      },
+      "runtime": {
+        "installer": "1.14.5",
+        "versions": {
+          "node": "24.22.0",
+          "acorn": "8.18.0",
+          "ada": "4.0.0",
+          "amaro": "1.1.11",
+          "ares": "1.34.8",
+          "brotli": "1.2.0",
+          "cldr": "48.0",
+          "icu": "78.2",
+          "llhttp": "9.4.3",
+          "merve": "1.2.2",
+          "modules": "148",
+          "napi": "10",
+          "nbytes": "0.1.4",
+          "ncrypto": "0.0.1",
+          "nghttp2": "1.70.0",
+          "nghttp3": "",
+          "ngtcp2": "",
+          "openssl": "0.0.0",
+          "simdjson": "4.6.11",
+          "simdutf": "7.7.0",
+          "sqlite": "3.53.4",
+          "tz": "2026d",
+          "undici": "7.29.1",
+          "unicode": "17.0",
+          "uv": "1.52.1",
+          "uvwasi": "0.0.23",
+          "v8": "15.0.245.31-electron.0",
+          "zlib": "1.3.2.1-motley",
+          "zstd": "1.6.0",
+          "electron": "43.8.3",
+          "chrome": "150.0.7871.250"
+        },
+        "platform": "win32",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) obsidian/1.14.5 Chrome/150.0.7871.250 Electron/43.8.3 Safari/537.36"
+      },
+      "pluginDiscovery": {
+        "discovery": "existing"
+      },
+      "errorBaseline": "passed"
+    },
+    "requiredCases": 468,
+    "executedCases": 468,
+    "counts": {
+      "passed": 468,
+      "failed": 0,
+      "blocked": 0,
+      "notApplicable": 0
+    },
+    "missing": [],
+    "baselineRestoration": {
+      "restored": true,
+      "pluginEnabled": true,
+      "extrasEnabled": true,
+      "kplexEnabled": true,
+      "theme": "moonstone",
+      "restoredFixturePaths": []
+    },
+    "deviceRestoration": {
+      "restored": true
+    },
+    "seedHash": "b231ed99d53d800f730e3ceeec83c53dcac7ba54b76ba67264223be8766c9796",
+    "manifests": {
+      "fork": {
+        "repository": "zsviczian/excalidraw",
+        "commit": "8260fa444f84c616d1486c2a47365c1b72c4be9a",
+        "dirty": false,
+        "lockfileHash": "5ff2005c676da0a7250e859ce363fc40c832a64104732e21d40e827b02632d18",
+        "buildCommand": "yarn build:esm && yarn build:obsidian",
+        "toolchain": {
+          "node": "v22.22.3",
+          "platform": "win32"
+        },
+        "artifactCount": 635,
+        "allArtifactsSHA256": "ceb37ed7378eea69db01e8adf36ce5e076d6aecfe33627ad624f3c534c5cb17a",
+        "artifacts": [
+          {
+            "role": "production-js",
+            "relativePath": "packages/excalidraw/dist/obsidian/excalidraw.production.min.js",
+            "sha256": "02d588f48d3a7cdcbec261f47b36d8a7dc5ccf626a35c192f875a71f0120c385",
+            "bytes": 6528246
+          },
+          {
+            "role": "production-css",
+            "relativePath": "packages/excalidraw/dist/obsidian/excalidraw.production.min.css",
+            "sha256": "ec335630eb0117a57585053c04ad014cf45471bbde39d5acca909c056899aabf",
+            "bytes": 314075
+          },
+          {
+            "role": "development-js",
+            "relativePath": "packages/excalidraw/dist/obsidian/excalidraw.development.js",
+            "sha256": "8ede48ef8ee437a4a5acee026ee5e7160fcf25bb6495d6be4c7a86fcb11af0e2",
+            "bytes": 30176477
+          },
+          {
+            "role": "development-css",
+            "relativePath": "packages/excalidraw/dist/obsidian/excalidraw.development.css",
+            "sha256": "4e3777b2799487b0a0aac432ff5db2588a59228d373bdff6c598bc9bff1ada3c",
+            "bytes": 355823
+          },
+          {
+            "role": "package-manifest",
+            "relativePath": "packages/excalidraw/package.json",
+            "sha256": "7da0958ba3ebc82041d2a238f49cdd787c40a383c303bb64916385ef6f72cd15",
+            "bytes": 4669
+          },
+          {
+            "role": "declarations",
+            "relativePath": "packages/excalidraw/types/excalidraw/index.d.ts",
+            "sha256": "1c7b902df4906cd290cbefaab4bd2eefe01cd2ecde3912fd8b72eba8206e6196",
+            "bytes": 6227
+          }
+        ]
+      },
+      "extras": {
+        "repository": "zsviczian/obsidian-excalidraw-extras",
+        "commit": "4bd7af3325a8059a5ca68fc3e88169507b08c773",
+        "dirty": false,
+        "lockfileHash": "e6419e0a6e01e7292c905ccd51efc54223eff4f80e8d1d9229ce94194eb282f9",
+        "buildCommand": "npm run build && npm run build:api",
+        "toolchain": {
+          "node": "v22.22.3",
+          "platform": "win32"
+        },
+        "artifactCount": 8,
+        "allArtifactsSHA256": "2f94e618caee6f43173b9991acb6062a4d048f0149debbd331632e6a9b846e75",
+        "artifacts": [
+          {
+            "role": "main",
+            "relativePath": "dist/main.js",
+            "sha256": "387e1c2642e92712bed038142f7e04bff2051456c440d2cd92fd7f15969a3f56",
+            "bytes": 2591898
+          },
+          {
+            "role": "manifest",
+            "relativePath": "dist/manifest.json",
+            "sha256": "6820958e66d6736ae5114f41349a24ea152495e9055a043f6bde47fde1e6e967",
+            "bytes": 303
+          },
+          {
+            "role": "styles",
+            "relativePath": "dist/styles.css",
+            "sha256": "3de04a6882b3e43b48f81231962c5f52afbd7146cc986fb0c86631ac5de30eda",
+            "bytes": 1427
+          },
+          {
+            "role": "declarations",
+            "relativePath": "api/api/index.d.ts",
+            "sha256": "54138761aea20e80fc664c7f31c6b4d1ebf230f957ca3aaa5dfea169d286b23f",
+            "bytes": 100
+          }
+        ]
+      },
+      "kplex": {
+        "repository": "zsviczian/kplex",
+        "commit": "69eb4642dbf7bb995bff6d1b2e8409fd6e2c5046",
+        "dirty": false,
+        "lockfileHash": "a086f519213867690e08297d483787569d1fbb6629f4320000034e9ed7e7014f",
+        "buildCommand": "npm run build",
+        "toolchain": {
+          "node": "v22.22.3",
+          "platform": "win32"
+        },
+        "artifactCount": 3,
+        "allArtifactsSHA256": "e4f738a98fe1f2469b248b33cd555252fab2acbf816cf5e246df34fda8609d0d",
+        "artifacts": [
+          {
+            "role": "main",
+            "relativePath": "dist/main.js",
+            "sha256": "f6be8064015e0967883986cb0b50bc0549307125c22f36297da27f0dddd9472b",
+            "bytes": 4729316
+          },
+          {
+            "role": "manifest",
+            "relativePath": "dist/manifest.json",
+            "sha256": "dd5c24bca596d39dcfeda4adaac6649fdaa3d2a3cfd905b315c63c64f28b2efb",
+            "bytes": 329
+          },
+          {
+            "role": "styles",
+            "relativePath": "dist/styles.css",
+            "sha256": "8188d204efa48384c616c32f8e7a546c82e5548b4136eeb525c06341922e3909",
+            "bytes": 162340
+          }
+        ]
+      },
+      "plugin": {
+        "repository": "zsviczian/obsidian-excalidraw-plugin",
+        "commit": "fdca179677bcabccb83e883e89026723345be67b",
+        "dirty": false,
+        "lockfileHash": "741c0318ef12f5b1661e3d86b9044949aab9f2132db6d23d2b119a3b4740d2b1",
+        "buildCommand": "npm run build",
+        "toolchain": {
+          "node": "v22.22.3",
+          "platform": "win32"
+        },
+        "artifactCount": 3,
+        "allArtifactsSHA256": "5e8171f3237dd967143ef05d37ce8c1016e530b515ff5eeaea3b017b2706f887",
+        "artifacts": [
+          {
+            "role": "main",
+            "relativePath": "dist/main.js",
+            "sha256": "8dd5681b793f096609ce82851383ad8c2c4c17c33f8a5ebf2a937fdd24cf755c",
+            "bytes": 5145069
+          },
+          {
+            "role": "manifest",
+            "relativePath": "dist/manifest.json",
+            "sha256": "8e82828fd9125615e8a361d0f15553e548cac2ee7a303e55387378a53b925fd9",
+            "bytes": 470
+          },
+          {
+            "role": "styles",
+            "relativePath": "dist/styles.css",
+            "sha256": "c66306b0fd8f29348b58e50339b2ae614c82524c043c3241dc39e12ee287665e",
+            "bytes": 368530
+          }
+        ]
+      }
+    },
+    "installedPluginHashes": {
+      "main.js": "8dd5681b793f096609ce82851383ad8c2c4c17c33f8a5ebf2a937fdd24cf755c",
+      "manifest.json": "8e82828fd9125615e8a361d0f15553e548cac2ee7a303e55387378a53b925fd9",
+      "styles.css": "c66306b0fd8f29348b58e50339b2ae614c82524c043c3241dc39e12ee287665e"
+    },
+    "diagnostics": {
+      "windowNotificationCount": 1,
+      "windowNotifications": [
+        {
+          "at": 1794693725147,
+          "message": "ResizeObserver loop completed with undelivered notifications.",
+          "isTrusted": true,
+          "hasError": false,
+          "source": "app://obsidian.md/index.html",
+          "line": 0,
+          "column": 0,
+          "label": "scenario:0",
+          "activeLeaf": {
+            "type": "markdown",
+            "file": "__excalidraw_cli_smoke_bf259280_behavior_popout/Render-matrix.md"
+          },
+          "activeEditor": {
+            "type": "markdown",
+            "file": "__excalidraw_cli_smoke_bf259280_behavior_popout/Render-matrix.md",
+            "editor": true,
+            "keys": [
+              "_loaded",
+              "_events",
+              "_children",
+              "icon",
+              "navigation",
+              "app",
+              "leaf",
+              "containerEl",
+              "canDropAnywhere",
+              "leftSidebarToggleEl",
+              "headerEl",
+              "contentEl",
+              "backButtonEl",
+              "forwardButtonEl",
+              "titleParentEl",
+              "titleEl",
+              "titleContainerEl",
+              "actionsEl",
+              "moreOptionsButtonEl",
+              "allowNoFile",
+              "fileBeingRenamed",
+              "lastSavedData",
+              "savePromise",
+              "isPlaintext",
+              "data",
+              "dirty",
+              "requestSave",
+              "modeButtonEl",
+              "modes",
+              "currentMode",
+              "scroll",
+              "showBacklinks",
+              "rawFrontmatter",
+              "initialScope",
+              "scope",
+              "editMode",
+              "sourceMode",
+              "previewMode",
+              "inlineTitleEl",
+              "metadataEditor",
+              "backlinksEl",
+              "file"
+            ]
+          },
+          "cases": [
+            {
+              "phase": "native:behavior:popout:markdown-reading"
+            }
+          ]
+        }
+      ],
+      "unexpectedConsoleErrors": [],
+      "consoleErrors": [
+        {
+          "kind": "console",
+          "messages": [
+            "Error: EXCALIDRAW_OWNED_WRITE_FAILURE\n    at o.faulty [as modify] (eval at recordCLIResult (eval at <anonymous> (eval at <anonymous> (app://obsidian.md/app.js:320:488))), <anonymous>:182:89)\n    at j_.writeData (app://obsidian.md/app.js:549:80609)\n    at async j_.save (app://obsidian.md/app.js:549:80413)\n    at async plugin:obsidian-excalidraw-plugin:35:1092711\n    at async j_.withPersistenceWriteLease (plugin:obsidian-excalidraw-plugin:35:1088902)\n    at async j_.executeSaveRequest (plugin:obsidian-excalidraw-plugin:35:1092653)\n    at async M_.performQueuedSave (plugin:obsidian-excalidraw-plugin:35:1064806)\n    at async M_.drainSaveQueue (plugin:obsidian-excalidraw-plugin:35:1066575)\n    at async M_.saveWithOutcome (plugin:obsidian-excalidraw-plugin:35:1065202)\n    at async eval (eval at recordCLIResult (eval at <anonymous> (eval at <anonymous> (app://obsidian.md/app.js:320:488))), <anonymous>:187:22) [{\"name\":\"stack\",\"type\":\"string\",\"value\":\"Error: EXCALIDRAW_OWNED_WRITE_FAILURE/n    at o.fau…bsidian.md/app.js:320:488))), <anonymous>:187:22)\"},{\"name\":\"message\",\"type\":\"string\",\"value\":\"EXCALIDRAW_OWNED_WRITE_FAILURE\"}]"
+          ]
+        },
+        {
+          "kind": "console",
+          "messages": [
+            "Object [{\"name\":\"plugin\",\"type\":\"string\",\"value\":\"Excalidraw\"},{\"name\":\"where\",\"type\":\"string\",\"value\":\"ExcalidrawView.save\"},{\"name\":\"fn\",\"type\":\"string\",\"value\":\"save\"},{\"name\":\"error\",\"subtype\":\"error\",\"type\":\"object\",\"value\":\"Error: EXCALIDRAW_OWNED_WRITE_FAILURE/n    at o.faulty [as modify] (eval at recordCLIResult (eval at…\"}]"
+          ]
+        }
+      ],
+      "windowErrors": [
+        {
+          "at": 1794693725147,
+          "message": "ResizeObserver loop completed with undelivered notifications.",
+          "isTrusted": true,
+          "hasError": false,
+          "source": "app://obsidian.md/index.html",
+          "line": 0,
+          "column": 0,
+          "label": "scenario:0",
+          "activeLeaf": {
+            "type": "markdown",
+            "file": "__excalidraw_cli_smoke_bf259280_behavior_popout/Render-matrix.md"
+          },
+          "activeEditor": {
+            "type": "markdown",
+            "file": "__excalidraw_cli_smoke_bf259280_behavior_popout/Render-matrix.md",
+            "editor": true,
+            "keys": [
+              "_loaded",
+              "_events",
+              "_children",
+              "icon",
+              "navigation",
+              "app",
+              "leaf",
+              "containerEl",
+              "canDropAnywhere",
+              "leftSidebarToggleEl",
+              "headerEl",
+              "contentEl",
+              "backButtonEl",
+              "forwardButtonEl",
+              "titleParentEl",
+              "titleEl",
+              "titleContainerEl",
+              "actionsEl",
+              "moreOptionsButtonEl",
+              "allowNoFile",
+              "fileBeingRenamed",
+              "lastSavedData",
+              "savePromise",
+              "isPlaintext",
+              "data",
+              "dirty",
+              "requestSave",
+              "modeButtonEl",
+              "modes",
+              "currentMode",
+              "scroll",
+              "showBacklinks",
+              "rawFrontmatter",
+              "initialScope",
+              "scope",
+              "editMode",
+              "sourceMode",
+              "previewMode",
+              "inlineTitleEl",
+              "metadataEditor",
+              "backlinksEl",
+              "file"
+            ]
+          },
+          "cases": [
+            {
+              "phase": "native:behavior:popout:markdown-reading"
+            }
+          ]
+        }
+      ],
+      "settlingChecks": [
+        {
+          "id": "behavior-matrix",
+          "status": "passed",
+          "timeoutMs": 5000,
+          "quietMs": 1000,
+          "sampleCount": 11,
+          "fullResultSHA256": "10e2f58f28fd8c3c7bc36abb2403ced425c4be4ea6adcdb313e7a76ba4790fdb"
+        },
+        {
+          "id": "lifecycle",
+          "status": "passed",
+          "timeoutMs": 5000,
+          "quietMs": 1000,
+          "sampleCount": 11,
+          "fullResultSHA256": "ea2e8fdf1a4f27bf16a38158f65f74a433c0bf151c72a9b18fefeade1e774359"
+        },
+        {
+          "id": "extras-services",
+          "status": "passed",
+          "timeoutMs": 5000,
+          "quietMs": 1000,
+          "sampleCount": 11,
+          "fullResultSHA256": "9232bef23b39dc664409a54ac863aa0d4d03da565408364954ba3d43c177f574"
+        },
+        {
+          "id": "data-integrity",
+          "status": "passed",
+          "timeoutMs": 5000,
+          "quietMs": 1000,
+          "sampleCount": 11,
+          "fullResultSHA256": "0e78c6372094f548df74dddd81585872f34c16d68b31476365cadad848204c4d"
+        },
+        {
+          "id": "workflow-fixes-3020",
+          "status": "passed",
+          "timeoutMs": 5000,
+          "quietMs": 1000,
+          "sampleCount": 11,
+          "fullResultSHA256": "6dd15084bd409a792b074a3c69f85422659633272993b0796556bbd9094805b0"
+        },
+        {
+          "id": "wheel-zoom-3008",
+          "status": "passed",
+          "timeoutMs": 5000,
+          "quietMs": 1000,
+          "sampleCount": 11,
+          "fullResultSHA256": "12fc8c0835d03743a28413da57183222e91e34a9a749d80fad13e8756e9679d8"
+        },
+        {
+          "id": "image-geometry-real-3014",
+          "status": "passed",
+          "timeoutMs": 5000,
+          "quietMs": 1000,
+          "sampleCount": 11,
+          "fullResultSHA256": "f3c7abea836dd40ceb3ef23186f41b4e91aad4512e4e3e003d048bc47d64e12e"
+        },
+        {
+          "id": "web-drop-2967",
+          "status": "passed",
+          "timeoutMs": 5000,
+          "quietMs": 1000,
+          "sampleCount": 11,
+          "fullResultSHA256": "aff2a7c94b7b4c6220c79fdb7b3524c5e0369df4d6f16d3813ff875e958b1774"
+        },
+        {
+          "id": "internal-drop-tooltip",
+          "status": "passed",
+          "timeoutMs": 5000,
+          "quietMs": 1000,
+          "sampleCount": 11,
+          "fullResultSHA256": "493b01eb9cfa25058e5a4e3236abf1de0d5898d48b2eba9ba5deea4ce4bf79d8"
+        },
+        {
+          "id": "text-undo-2976",
+          "status": "passed",
+          "timeoutMs": 5000,
+          "quietMs": 1000,
+          "sampleCount": 11,
+          "fullResultSHA256": "371febeff68cd8e475d2e9a5e9614ec88ad5e9c0fd01fb1a0ba14005e27dcbfe"
+        },
+        {
+          "id": "native-cli-authoring",
+          "status": "passed",
+          "timeoutMs": 5000,
+          "quietMs": 1000,
+          "sampleCount": 11,
+          "fullResultSHA256": "7d56b9e4b3a60b38df49fd8137e7d586cbec0224565250237c56b367a24eab4a"
+        },
+        {
+          "id": "markdown-embed-recovery-2953",
+          "status": "passed",
+          "timeoutMs": 5000,
+          "quietMs": 1000,
+          "sampleCount": 11,
+          "fullResultSHA256": "e36d51e7fa88da2272cb3fb7018401c4faf738b2efd95d94f86f184ef30ec14d"
+        },
+        {
+          "id": "drawing-embed-controls-3036",
+          "status": "passed",
+          "timeoutMs": 5000,
+          "quietMs": 1000,
+          "sampleCount": 11,
+          "fullResultSHA256": "c8147e616ed7e98b5f8269de602d863185170beae4064a4c5d39fe04865f8db5"
+        },
+        {
+          "id": "drawing-embed-regressions",
+          "status": "passed",
+          "timeoutMs": 5000,
+          "quietMs": 1000,
+          "sampleCount": 11,
+          "fullResultSHA256": "8116ae75cbb40dd2db767527777b6ee7fb7af5bccf99bcfa670e35843a7162b5"
+        },
+        {
+          "id": "embed-reliability-3046",
+          "status": "passed",
+          "timeoutMs": 5000,
+          "quietMs": 1000,
+          "sampleCount": 11,
+          "fullResultSHA256": "ce28e0c779340a02c9caed8a181af36df8d5ae86f95db0a4ba24d40790bc8ffc"
+        },
+        {
+          "id": "frame-semantics",
+          "status": "passed",
+          "timeoutMs": 5000,
+          "quietMs": 1000,
+          "sampleCount": 11,
+          "fullResultSHA256": "26058e92d319d8e72a052e2071792bedc917f404a75fb34c94bf0f0e06903a1d"
+        },
+        {
+          "id": "grouped-link-click",
+          "status": "passed",
+          "timeoutMs": 5000,
+          "quietMs": 1000,
+          "sampleCount": 11,
+          "fullResultSHA256": "2817746ddd95184754cba9947c7540bb54ffeb0b99bf406d7b8088dbe6df9460"
+        },
+        {
+          "id": "latex-input-2970",
+          "status": "passed",
+          "timeoutMs": 5000,
+          "quietMs": 1000,
+          "sampleCount": 11,
+          "fullResultSHA256": "f8fceafc0909127e6755b5ff67abddfda50880d3e157d2eaa00b9bfddde46ce8"
+        },
+        {
+          "id": "core-excalidraw-automate",
+          "status": "passed",
+          "timeoutMs": 5000,
+          "quietMs": 1000,
+          "sampleCount": 11,
+          "fullResultSHA256": "f8cb9d8645c857794226098b1d894d483a1c3cea12c9e29851082e40446161e8"
+        },
+        {
+          "id": "core-trusted-interaction",
+          "status": "passed",
+          "timeoutMs": 5000,
+          "quietMs": 1000,
+          "sampleCount": 11,
+          "fullResultSHA256": "c6af39937837dec27c445f9c38c6243f9980e91a7e4d73b640acf8cc04eb856c"
+        },
+        {
+          "id": "portable-pdf-import",
+          "status": "passed",
+          "timeoutMs": 5000,
+          "quietMs": 1000,
+          "sampleCount": 11,
+          "fullResultSHA256": "23f91d73d0c89d83f73722fa32cfe7e74918a3ff86616d46ea2fd85a56f8751f"
+        },
+        {
+          "id": "stability",
+          "status": "passed",
+          "timeoutMs": 5000,
+          "quietMs": 1000,
+          "sampleCount": 11,
+          "fullResultSHA256": "63167f28a61926b1043f928c0fb85e821321b4dd98a1f4a26c5bc1fdb50abf1c"
+        },
+        {
+          "id": "workflow-bundle-3030",
+          "status": "passed",
+          "timeoutMs": 5000,
+          "quietMs": 1000,
+          "sampleCount": 11,
+          "fullResultSHA256": "58e60cc3ad8d818049d5c1349ff309aaa81be641fb0481f71253aa103b7dc58b"
+        },
+        {
+          "id": "issue-fixes-3052",
+          "status": "passed",
+          "timeoutMs": 5000,
+          "quietMs": 1000,
+          "sampleCount": 11,
+          "fullResultSHA256": "c68169f313ddae0e9faf4c5c7ecb7143761bf678f6625913b598131bd6d61e2e"
+        },
+        {
+          "id": "workflow-text-save-2941",
+          "status": "passed",
+          "timeoutMs": 5000,
+          "quietMs": 1000,
+          "sampleCount": 11,
+          "fullResultSHA256": "d5a60be1448cc25b7bd3094df16c50909f3b794fea898a846d4d140257f384b6"
+        },
+        {
+          "id": "workflow-code-card-2894",
+          "status": "passed",
+          "timeoutMs": 5000,
+          "quietMs": 1000,
+          "sampleCount": 11,
+          "fullResultSHA256": "9343a7db425afc7eb9b3763b58d8febcd6aaca5cb2b3e9653b8760259fbd3f37"
+        },
+        {
+          "id": "kplex-ontology",
+          "status": "passed",
+          "timeoutMs": 5000,
+          "quietMs": 1000,
+          "sampleCount": 11,
+          "fullResultSHA256": "e903efe118fdf00e7866fcbe3ca5672372d07c05a024c0611024f71ea6d1dcb5"
+        },
+        {
+          "id": "lucide-3019",
+          "status": "passed",
+          "timeoutMs": 5000,
+          "quietMs": 1000,
+          "sampleCount": 11,
+          "fullResultSHA256": "b80a5acdf5bed26af7f73d4a98634d8efdbeb0e837805a1f0d9e3aeda4d856b9"
+        }
+      ],
+      "finalIdle": {
+        "status": "passed",
+        "label": "native-main",
+        "started": 1794694999892,
+        "completed": 1794695000985,
+        "timeoutMs": 5000,
+        "quietMs": 1000,
+        "samples": [
+          {
+            "at": 1794694999893,
+            "geometry": [
+              [
+                "workspace-leaf mod-active",
+                44,
+                40,
+                680,
+                760
+              ],
+              [
+                "workspace-leaf",
+                724,
+                40,
+                300,
+                760
+              ]
+            ],
+            "eventCount": 1
+          },
+          {
+            "at": 1794694999998,
+            "geometry": [
+              [
+                "workspace-leaf mod-active",
+                44,
+                40,
+                680,
+                760
+              ],
+              [
+                "workspace-leaf",
+                724,
+                40,
+                300,
+                760
+              ]
+            ],
+            "eventCount": 1
+          },
+          {
+            "at": 1794695000106,
+            "geometry": [
+              [
+                "workspace-leaf mod-active",
+                44,
+                40,
+                680,
+                760
+              ],
+              [
+                "workspace-leaf",
+                724,
+                40,
+                300,
+                760
+              ]
+            ],
+            "eventCount": 1
+          },
+          {
+            "at": 1794695000217,
+            "geometry": [
+              [
+                "workspace-leaf mod-active",
+                44,
+                40,
+                680,
+                760
+              ],
+              [
+                "workspace-leaf",
+                724,
+                40,
+                300,
+                760
+              ]
+            ],
+            "eventCount": 1
+          },
+          {
+            "at": 1794695000328,
+            "geometry": [
+              [
+                "workspace-leaf mod-active",
+                44,
+                40,
+                680,
+                760
+              ],
+              [
+                "workspace-leaf",
+                724,
+                40,
+                300,
+                760
+              ]
+            ],
+            "eventCount": 1
+          },
+          {
+            "at": 1794695000440,
+            "geometry": [
+              [
+                "workspace-leaf mod-active",
+                44,
+                40,
+                680,
+                760
+              ],
+              [
+                "workspace-leaf",
+                724,
+                40,
+                300,
+                760
+              ]
+            ],
+            "eventCount": 1
+          },
+          {
+            "at": 1794695000549,
+            "geometry": [
+              [
+                "workspace-leaf mod-active",
+                44,
+                40,
+                680,
+                760
+              ],
+              [
+                "workspace-leaf",
+                724,
+                40,
+                300,
+                760
+              ]
+            ],
+            "eventCount": 1
+          },
+          {
+            "at": 1794695000658,
+            "geometry": [
+              [
+                "workspace-leaf mod-active",
+                44,
+                40,
+                680,
+                760
+              ],
+              [
+                "workspace-leaf",
+                724,
+                40,
+                300,
+                760
+              ]
+            ],
+            "eventCount": 1
+          },
+          {
+            "at": 1794695000765,
+            "geometry": [
+              [
+                "workspace-leaf mod-active",
+                44,
+                40,
+                680,
+                760
+              ],
+              [
+                "workspace-leaf",
+                724,
+                40,
+                300,
+                760
+              ]
+            ],
+            "eventCount": 1
+          },
+          {
+            "at": 1794695000876,
+            "geometry": [
+              [
+                "workspace-leaf mod-active",
+                44,
+                40,
+                680,
+                760
+              ],
+              [
+                "workspace-leaf",
+                724,
+                40,
+                300,
+                760
+              ]
+            ],
+            "eventCount": 1
+          },
+          {
+            "at": 1794695000985,
+            "geometry": [
+              [
+                "workspace-leaf mod-active",
+                44,
+                40,
+                680,
+                760
+              ],
+              [
+                "workspace-leaf",
+                724,
+                40,
+                300,
+                760
+              ]
+            ],
+            "eventCount": 1
+          }
+        ]
+      },
+      "negativeControls": [
+        {
+          "testId": "native:diagnostics-rejects-unhandled",
+          "featureIds": [
+            "P11"
+          ],
+          "status": "passed",
+          "assertions": [
+            "actual uncaught host exception captured by a fresh owned stream",
+            "ordinary clean-error oracle rejects it",
+            "no unrelated error is filtered"
+          ]
+        },
+        {
+          "testId": "native:diagnostics-rejects-broken-layout",
+          "featureIds": [
+            "P11"
+          ],
+          "status": "passed",
+          "assertions": [
+            "actual workspace geometry measured",
+            "ordinary native task/case collector rejects deliberately wrong width",
+            "negative-control cleanup passes"
+          ]
+        }
+      ],
+      "transportDiagnosticCount": 84,
+      "transportRecoveryCounts": {
+        "completed receipt": 79,
+        "undefined": 5
+      },
+      "transportDiagnosticsSHA256": "0d485f9770c1445ab303256cac6a9283a0d1e2a03db358fce958ecfa8ddaf567"
+    },
+    "cases": [
+      {
+        "testId": "plugin-load",
+        "status": "passed",
+        "featureIds": []
+      },
+      {
+        "testId": "drawing-main-window",
+        "status": "passed",
+        "featureIds": []
+      },
+      {
+        "testId": "native:behavior:main:settings-01",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:main:settings-02",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:main:settings-03",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:main:settings-04",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:main:settings-05",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:main:settings-06",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:main:settings-07",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:main:settings-08",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:main:settings-09",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:main:settings-10",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:main:settings-11",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:main:settings-12",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:main:settings-13",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:main:settings-14",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:main:settings-15",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:main:settings-16",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:main:export-01",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:main:export-02",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:main:export-03",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:main:export-04",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:main:export-05",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:main:export-06",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:main:export-07",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:main:export-08",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:main:export-09",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:main:export-10",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:main:export-11",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:main:export-12",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:main:export-frame-padding-policy",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:main:settings-live-persistence",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:main:frontmatter-prefixes-theme-scale",
+        "status": "passed",
+        "featureIds": [
+          "P04",
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:main:cli-atomic-targeted-edit",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P07",
+          "P10"
+        ]
+      },
+      {
+        "testId": "native:behavior:main:markdown-reading",
+        "status": "passed",
+        "featureIds": [
+          "P04",
+          "P05"
+        ]
+      },
+      {
+        "testId": "native:behavior:main:markdown-live-preview",
+        "status": "passed",
+        "featureIds": [
+          "P04",
+          "P05"
+        ]
+      },
+      {
+        "testId": "native:behavior:main:markdown-source-edit",
+        "status": "passed",
+        "featureIds": [
+          "P04",
+          "P05"
+        ]
+      },
+      {
+        "testId": "native:behavior:main:raw-parsed-text",
+        "status": "passed",
+        "featureIds": [
+          "P04"
+        ]
+      },
+      {
+        "testId": "native:behavior:main:images-shared-crops",
+        "status": "passed",
+        "featureIds": [
+          "P05",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:main:images-source-edit-missing",
+        "status": "passed",
+        "featureIds": [
+          "P05"
+        ]
+      },
+      {
+        "testId": "native:behavior:main:drawing-and-markdown-embeds",
+        "status": "passed",
+        "featureIds": [
+          "P05",
+          "P09"
+        ],
+        "assertions": [
+          "drawing and Markdown rendered images",
+          "Helvetica frontmatter renders without an empty-source font error",
+          "plain PDF TFile decodes page 1 content",
+          "local embeddable target",
+          "decoded export content",
+          "save/reopen"
+        ]
+      },
+      {
+        "testId": "native:behavior:main:ea-selection-groups-bindings-frames",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P10"
+        ]
+      },
+      {
+        "testId": "native:behavior:main:ea-hooks-targeting-invalid",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P10"
+        ]
+      },
+      {
+        "testId": "native:behavior:main:command-palette-selection-cancel",
+        "status": "passed",
+        "featureIds": [
+          "P07"
+        ]
+      },
+      {
+        "testId": "native:behavior:main:toolbar-context-shortcuts",
+        "status": "passed",
+        "featureIds": [
+          "P07"
+        ]
+      },
+      {
+        "testId": "native:behavior:split:settings-01",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:split:settings-02",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:split:settings-03",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:split:settings-04",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:split:settings-05",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:split:settings-06",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:split:settings-07",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:split:settings-08",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:split:settings-09",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:split:settings-10",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:split:settings-11",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:split:settings-12",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:split:settings-13",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:split:settings-14",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:split:settings-15",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:split:settings-16",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:split:export-01",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:split:export-02",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:split:export-03",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:split:export-04",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:split:export-05",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:split:export-06",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:split:export-07",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:split:export-08",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:split:export-09",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:split:export-10",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:split:export-11",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:split:export-12",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:split:export-frame-padding-policy",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:split:settings-live-persistence",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:split:frontmatter-prefixes-theme-scale",
+        "status": "passed",
+        "featureIds": [
+          "P04",
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:split:cli-atomic-targeted-edit",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P07",
+          "P10"
+        ]
+      },
+      {
+        "testId": "native:behavior:split:markdown-reading",
+        "status": "passed",
+        "featureIds": [
+          "P04",
+          "P05"
+        ]
+      },
+      {
+        "testId": "native:behavior:split:markdown-live-preview",
+        "status": "passed",
+        "featureIds": [
+          "P04",
+          "P05"
+        ]
+      },
+      {
+        "testId": "native:behavior:split:markdown-source-edit",
+        "status": "passed",
+        "featureIds": [
+          "P04",
+          "P05"
+        ]
+      },
+      {
+        "testId": "native:behavior:split:raw-parsed-text",
+        "status": "passed",
+        "featureIds": [
+          "P04"
+        ]
+      },
+      {
+        "testId": "native:behavior:split:images-shared-crops",
+        "status": "passed",
+        "featureIds": [
+          "P05",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:split:images-source-edit-missing",
+        "status": "passed",
+        "featureIds": [
+          "P05"
+        ]
+      },
+      {
+        "testId": "native:behavior:split:drawing-and-markdown-embeds",
+        "status": "passed",
+        "featureIds": [
+          "P05",
+          "P09"
+        ],
+        "assertions": [
+          "drawing and Markdown rendered images",
+          "Helvetica frontmatter renders without an empty-source font error",
+          "plain PDF TFile decodes page 1 content",
+          "local embeddable target",
+          "decoded export content",
+          "save/reopen"
+        ]
+      },
+      {
+        "testId": "native:behavior:split:ea-selection-groups-bindings-frames",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P10"
+        ]
+      },
+      {
+        "testId": "native:behavior:split:ea-hooks-targeting-invalid",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P10"
+        ]
+      },
+      {
+        "testId": "native:behavior:split:command-palette-selection-cancel",
+        "status": "passed",
+        "featureIds": [
+          "P07"
+        ]
+      },
+      {
+        "testId": "native:behavior:split:toolbar-context-shortcuts",
+        "status": "passed",
+        "featureIds": [
+          "P07"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:settings-01",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:settings-02",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:settings-03",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:settings-04",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:settings-05",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:settings-06",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:settings-07",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:settings-08",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:settings-09",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:settings-10",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:settings-11",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:settings-12",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:settings-13",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:settings-14",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:settings-15",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:settings-16",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:export-01",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:export-02",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:export-03",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:export-04",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:export-05",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:export-06",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:export-07",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:export-08",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:export-09",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:export-10",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:export-11",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:export-12",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:export-frame-padding-policy",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:settings-live-persistence",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:frontmatter-prefixes-theme-scale",
+        "status": "passed",
+        "featureIds": [
+          "P04",
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:cli-atomic-targeted-edit",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P07",
+          "P10"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:markdown-reading",
+        "status": "passed",
+        "featureIds": [
+          "P04",
+          "P05"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:markdown-live-preview",
+        "status": "passed",
+        "featureIds": [
+          "P04",
+          "P05"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:markdown-source-edit",
+        "status": "passed",
+        "featureIds": [
+          "P04",
+          "P05"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:raw-parsed-text",
+        "status": "passed",
+        "featureIds": [
+          "P04"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:images-shared-crops",
+        "status": "passed",
+        "featureIds": [
+          "P05",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:images-source-edit-missing",
+        "status": "passed",
+        "featureIds": [
+          "P05"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:drawing-and-markdown-embeds",
+        "status": "passed",
+        "featureIds": [
+          "P05",
+          "P09"
+        ],
+        "assertions": [
+          "drawing and Markdown rendered images",
+          "Helvetica frontmatter renders without an empty-source font error",
+          "plain PDF TFile decodes page 1 content",
+          "local embeddable target",
+          "decoded export content",
+          "save/reopen"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:ea-selection-groups-bindings-frames",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P10"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:ea-hooks-targeting-invalid",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P10"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:command-palette-selection-cancel",
+        "status": "passed",
+        "featureIds": [
+          "P07"
+        ]
+      },
+      {
+        "testId": "native:behavior:nested-split:toolbar-context-shortcuts",
+        "status": "passed",
+        "featureIds": [
+          "P07"
+        ]
+      },
+      {
+        "testId": "native:behavior:popout:settings-01",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:popout:settings-02",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:popout:settings-03",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:popout:settings-04",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:popout:settings-05",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:popout:settings-06",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:popout:settings-07",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:popout:settings-08",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:popout:settings-09",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:popout:settings-10",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:popout:settings-11",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:popout:settings-12",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:popout:settings-13",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:popout:settings-14",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:popout:settings-15",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:popout:settings-16",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:popout:export-01",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:popout:export-02",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:popout:export-03",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:popout:export-04",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:popout:export-05",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:popout:export-06",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:popout:export-07",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:popout:export-08",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:popout:export-09",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:popout:export-10",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:popout:export-11",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:popout:export-12",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:popout:export-frame-padding-policy",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:popout:settings-live-persistence",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:popout:frontmatter-prefixes-theme-scale",
+        "status": "passed",
+        "featureIds": [
+          "P04",
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:popout:cli-atomic-targeted-edit",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P07",
+          "P10"
+        ]
+      },
+      {
+        "testId": "native:behavior:popout:markdown-reading",
+        "status": "passed",
+        "featureIds": [
+          "P04",
+          "P05"
+        ]
+      },
+      {
+        "testId": "native:behavior:popout:markdown-live-preview",
+        "status": "passed",
+        "featureIds": [
+          "P04",
+          "P05"
+        ]
+      },
+      {
+        "testId": "native:behavior:popout:markdown-source-edit",
+        "status": "passed",
+        "featureIds": [
+          "P04",
+          "P05"
+        ]
+      },
+      {
+        "testId": "native:behavior:popout:raw-parsed-text",
+        "status": "passed",
+        "featureIds": [
+          "P04"
+        ]
+      },
+      {
+        "testId": "native:behavior:popout:images-shared-crops",
+        "status": "passed",
+        "featureIds": [
+          "P05",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:popout:images-source-edit-missing",
+        "status": "passed",
+        "featureIds": [
+          "P05"
+        ]
+      },
+      {
+        "testId": "native:behavior:popout:drawing-and-markdown-embeds",
+        "status": "passed",
+        "featureIds": [
+          "P05",
+          "P09"
+        ],
+        "assertions": [
+          "drawing and Markdown rendered images",
+          "Helvetica frontmatter renders without an empty-source font error",
+          "plain PDF TFile decodes page 1 content",
+          "local embeddable target",
+          "decoded export content",
+          "save/reopen"
+        ]
+      },
+      {
+        "testId": "native:behavior:popout:ea-selection-groups-bindings-frames",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P10"
+        ]
+      },
+      {
+        "testId": "native:behavior:popout:ea-hooks-targeting-invalid",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P10"
+        ]
+      },
+      {
+        "testId": "native:behavior:popout:command-palette-selection-cancel",
+        "status": "passed",
+        "featureIds": [
+          "P07"
+        ]
+      },
+      {
+        "testId": "native:behavior:popout:toolbar-context-shortcuts",
+        "status": "passed",
+        "featureIds": [
+          "P07"
+        ]
+      },
+      {
+        "testId": "native:lifecycle-two-split-fullscreen",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P08"
+        ]
+      },
+      {
+        "testId": "native:lifecycle-dirty-main-to-popout",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P03"
+        ]
+      },
+      {
+        "testId": "native:lifecycle-dirty-popout-to-main",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P03"
+        ]
+      },
+      {
+        "testId": "native:lifecycle-new-popout-survivor",
+        "status": "passed",
+        "featureIds": [
+          "P03"
+        ]
+      },
+      {
+        "testId": "native:lifecycle-plugin-reload",
+        "status": "passed",
+        "featureIds": [
+          "P01",
+          "P02",
+          "P03"
+        ]
+      },
+      {
+        "testId": "native:extras-mathjax-gateway",
+        "status": "passed",
+        "featureIds": [
+          "P05",
+          "P09",
+          "P11"
+        ]
+      },
+      {
+        "testId": "native:extras-mermaid-gateway",
+        "status": "passed",
+        "featureIds": [
+          "P09",
+          "P11"
+        ]
+      },
+      {
+        "testId": "native:extras-pdf-output",
+        "status": "passed",
+        "featureIds": [
+          "P05",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:data-roundtrip:Uncompressed.excalidraw.md",
+        "status": "passed",
+        "featureIds": [
+          "P02"
+        ]
+      },
+      {
+        "testId": "native:data-roundtrip:Compressed.excalidraw.md",
+        "status": "passed",
+        "featureIds": [
+          "P02"
+        ]
+      },
+      {
+        "testId": "native:data-roundtrip:Legacy.excalidraw",
+        "status": "passed",
+        "featureIds": [
+          "P02"
+        ]
+      },
+      {
+        "testId": "native:data-backup",
+        "status": "passed",
+        "featureIds": [
+          "P02"
+        ]
+      },
+      {
+        "testId": "native:data-external-change",
+        "status": "passed",
+        "featureIds": [
+          "P02"
+        ]
+      },
+      {
+        "testId": "native:data-write-failure",
+        "status": "passed",
+        "featureIds": [
+          "P02"
+        ]
+      },
+      {
+        "testId": "native:data-rename-delete",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P03"
+        ]
+      },
+      {
+        "testId": "workflow-fixes-3020",
+        "status": "passed",
+        "featureIds": []
+      },
+      {
+        "testId": "wheel-zoom-3008",
+        "status": "passed",
+        "featureIds": []
+      },
+      {
+        "testId": "image-geometry-real-3014",
+        "status": "passed",
+        "featureIds": []
+      },
+      {
+        "testId": "web-drop-2967",
+        "status": "passed",
+        "featureIds": [
+          "P05",
+          "P07"
+        ]
+      },
+      {
+        "testId": "native:drop:web:popout:uri:image-url",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P05",
+          "P07"
+        ]
+      },
+      {
+        "testId": "native:drop:web:popout:linked-image:image-url",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P05",
+          "P07"
+        ]
+      },
+      {
+        "testId": "native:drop:web:popout:extensionless:image-url",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P05",
+          "P07"
+        ]
+      },
+      {
+        "testId": "native:drop:web:popout:blob:image-url",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P05",
+          "P07"
+        ]
+      },
+      {
+        "testId": "native:drop:web:popout:uri:image-import",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P05",
+          "P07"
+        ]
+      },
+      {
+        "testId": "native:drop:web:popout:linked-image:image-import",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P05",
+          "P07"
+        ]
+      },
+      {
+        "testId": "native:drop:web:popout:extensionless:image-import",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P05",
+          "P07"
+        ]
+      },
+      {
+        "testId": "native:drop:web:popout:blob:image-import",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P05",
+          "P07"
+        ]
+      },
+      {
+        "testId": "native:drop:web:popout:linked-page:link",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P05",
+          "P07"
+        ]
+      },
+      {
+        "testId": "native:drop:web:popout:linked-page:embeddable",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P05",
+          "P07"
+        ],
+        "assertions": [
+          "synthetic mixed payload reaches actual popout drop handling",
+          "expected URL/local file/link/embeddable storage",
+          "physical save and reopen preserves target"
+        ]
+      },
+      {
+        "testId": "internal-drop-tooltip",
+        "status": "passed",
+        "featureIds": [
+          "P05",
+          "P07"
+        ]
+      },
+      {
+        "testId": "native:drop:internal:popout:0",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P05",
+          "P07"
+        ]
+      },
+      {
+        "testId": "native:drop:internal:popout:1",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P05",
+          "P07"
+        ]
+      },
+      {
+        "testId": "native:drop:internal:popout:2",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P05",
+          "P07"
+        ]
+      },
+      {
+        "testId": "native:drop:internal:popout:3",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P05",
+          "P07"
+        ]
+      },
+      {
+        "testId": "native:drop:internal:popout:4",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P05",
+          "P07"
+        ]
+      },
+      {
+        "testId": "text-undo-2976",
+        "status": "passed",
+        "featureIds": []
+      },
+      {
+        "testId": "native-cli-authoring",
+        "status": "passed",
+        "featureIds": []
+      },
+      {
+        "testId": "markdown-embed-recovery-2953",
+        "status": "passed",
+        "featureIds": [],
+        "assertions": [
+          "SVGIMG: native Markdown PDF preparation completes with three frames and a native PNG, without recursive drawing transclusion",
+          "PNG: native Markdown PDF preparation completes with three frames and a native PNG, without recursive drawing transclusion",
+          "SVG: native Markdown PDF preparation completes with three frames and a native PNG, without recursive drawing transclusion",
+          "SVGIMG: detached Live Preview context completes and reattaches",
+          "SVGIMG: width attribute refresh preserves all three embeds",
+          "SVGIMG: Reading mode after Live Preview",
+          "SVGIMG: warm Live Preview reopen",
+          "PNG: detached Live Preview context completes and reattaches",
+          "PNG: width attribute refresh preserves all three embeds",
+          "PNG: Reading mode after Live Preview",
+          "PNG: warm Live Preview reopen",
+          "SVG: detached Live Preview context completes and reattaches",
+          "SVG: width attribute refresh preserves all three embeds",
+          "SVG: Reading mode after Live Preview",
+          "SVG: warm Live Preview reopen",
+          "permanent context unload rejects insertion into the retired embed containers",
+          "popout: detached context, reattachment and width refresh in the owning document",
+          "SVGIMG: popout Markdown PDF preparation preserves drawing frames and the native PNG",
+          "PNG: popout Markdown PDF preparation preserves drawing frames and the native PNG",
+          "SVG: popout Markdown PDF preparation preserves drawing frames and the native PNG",
+          "hybrid source, nested=false: self-image, drawing and native PNG visible in popout",
+          "hybrid source, nested=true: self-image, drawing and native PNG visible in popout",
+          "hybrid preview, nested=false: self-image, drawing and native PNG visible in popout",
+          "hybrid preview, nested=true: self-image, drawing and native PNG visible in popout"
+        ]
+      },
+      {
+        "testId": "native:embed-controls:main:PNG",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P05"
+        ],
+        "assertions": [
+          "trusted proportional resize previews without source writes",
+          "only second identical token changed",
+          "one-step undo/redo and reset",
+          "Escape cancellation",
+          "exact Markdown-image syntax selection and roundtrip",
+          "fresh fullscreen zoom/pan/fit/Escape/focus",
+          "inline payload survives modal cleanup",
+          "Reading controls cannot write",
+          "ordinary image unchanged",
+          "Open drawing and drawing bytes unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-controls:main:SVGIMG",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P05"
+        ],
+        "assertions": [
+          "trusted proportional resize previews without source writes",
+          "only second identical token changed",
+          "one-step undo/redo and reset",
+          "Escape cancellation",
+          "exact Markdown-image syntax selection and roundtrip",
+          "fresh fullscreen zoom/pan/fit/Escape/focus",
+          "inline payload survives modal cleanup",
+          "Reading controls cannot write",
+          "ordinary image unchanged",
+          "Open drawing and drawing bytes unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-controls:main:SVG",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P05"
+        ],
+        "assertions": [
+          "trusted proportional resize previews without source writes",
+          "only second identical token changed",
+          "one-step undo/redo and reset",
+          "Escape cancellation",
+          "exact Markdown-image syntax selection and roundtrip",
+          "fresh fullscreen zoom/pan/fit/Escape/focus",
+          "inline payload survives modal cleanup",
+          "Reading controls cannot write",
+          "ordinary image unchanged",
+          "Open drawing and drawing bytes unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-ownership:main",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P04",
+          "P05"
+        ],
+        "assertions": [
+          "same-line repeated embeds target only their own token",
+          "inline/fenced examples have no controls",
+          "independent note and pane stay unchanged",
+          "one-step undo",
+          "refresh remounts controls exactly once",
+          "switching source unloads controls and fullscreen",
+          "drawing bytes unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-table:main",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P04",
+          "P05"
+        ],
+        "assertions": [
+          "native table widget public boundaries and physical cell ownership",
+          "escaped wiki and Markdown-image dimensions render",
+          "only second identical row changes",
+          "same-note split synchronization",
+          "left/right pointer previews retain measured size and aspect ratio",
+          "one-step undo/reset",
+          "exact Markdown syntax selection",
+          "aliases/styles/title and other cells preserved",
+          "drawing bytes unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-hybrid:main",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P05"
+        ],
+        "assertions": [
+          "drawing opened as Markdown owns self and other drawing embeds",
+          "short self-link identity",
+          "exact resize/reset and single undo",
+          "physical save preserves serialized drawing data",
+          "exact source selection",
+          "Live Preview and Reading fullscreen",
+          "Reading controls do not edit source",
+          "other drawing unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-controls:split:PNG",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P05"
+        ],
+        "assertions": [
+          "trusted proportional resize previews without source writes",
+          "only second identical token changed",
+          "one-step undo/redo and reset",
+          "Escape cancellation",
+          "exact Markdown-image syntax selection and roundtrip",
+          "fresh fullscreen zoom/pan/fit/Escape/focus",
+          "inline payload survives modal cleanup",
+          "Reading controls cannot write",
+          "ordinary image unchanged",
+          "Open drawing and drawing bytes unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-controls:split:SVGIMG",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P05"
+        ],
+        "assertions": [
+          "trusted proportional resize previews without source writes",
+          "only second identical token changed",
+          "one-step undo/redo and reset",
+          "Escape cancellation",
+          "exact Markdown-image syntax selection and roundtrip",
+          "fresh fullscreen zoom/pan/fit/Escape/focus",
+          "inline payload survives modal cleanup",
+          "Reading controls cannot write",
+          "ordinary image unchanged",
+          "Open drawing and drawing bytes unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-controls:split:SVG",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P05"
+        ],
+        "assertions": [
+          "trusted proportional resize previews without source writes",
+          "only second identical token changed",
+          "one-step undo/redo and reset",
+          "Escape cancellation",
+          "exact Markdown-image syntax selection and roundtrip",
+          "fresh fullscreen zoom/pan/fit/Escape/focus",
+          "inline payload survives modal cleanup",
+          "Reading controls cannot write",
+          "ordinary image unchanged",
+          "Open drawing and drawing bytes unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-ownership:split",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P04",
+          "P05"
+        ],
+        "assertions": [
+          "same-line repeated embeds target only their own token",
+          "inline/fenced examples have no controls",
+          "independent note and pane stay unchanged",
+          "one-step undo",
+          "refresh remounts controls exactly once",
+          "switching source unloads controls and fullscreen",
+          "drawing bytes unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-table:split",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P04",
+          "P05"
+        ],
+        "assertions": [
+          "native table widget public boundaries and physical cell ownership",
+          "escaped wiki and Markdown-image dimensions render",
+          "only second identical row changes",
+          "same-note split synchronization",
+          "left/right pointer previews retain measured size and aspect ratio",
+          "one-step undo/reset",
+          "exact Markdown syntax selection",
+          "aliases/styles/title and other cells preserved",
+          "drawing bytes unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-hybrid:split",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P05"
+        ],
+        "assertions": [
+          "drawing opened as Markdown owns self and other drawing embeds",
+          "short self-link identity",
+          "exact resize/reset and single undo",
+          "physical save preserves serialized drawing data",
+          "exact source selection",
+          "Live Preview and Reading fullscreen",
+          "Reading controls do not edit source",
+          "other drawing unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-controls:popout:PNG",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P05"
+        ],
+        "assertions": [
+          "trusted proportional resize previews without source writes",
+          "only second identical token changed",
+          "one-step undo/redo and reset",
+          "Escape cancellation",
+          "exact Markdown-image syntax selection and roundtrip",
+          "fresh fullscreen zoom/pan/fit/Escape/focus",
+          "inline payload survives modal cleanup",
+          "Reading controls cannot write",
+          "ordinary image unchanged",
+          "Open drawing and drawing bytes unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-controls:popout:SVGIMG",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P05"
+        ],
+        "assertions": [
+          "trusted proportional resize previews without source writes",
+          "only second identical token changed",
+          "one-step undo/redo and reset",
+          "Escape cancellation",
+          "exact Markdown-image syntax selection and roundtrip",
+          "fresh fullscreen zoom/pan/fit/Escape/focus",
+          "inline payload survives modal cleanup",
+          "Reading controls cannot write",
+          "ordinary image unchanged",
+          "Open drawing and drawing bytes unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-controls:popout:SVG",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P05"
+        ],
+        "assertions": [
+          "trusted proportional resize previews without source writes",
+          "only second identical token changed",
+          "one-step undo/redo and reset",
+          "Escape cancellation",
+          "exact Markdown-image syntax selection and roundtrip",
+          "fresh fullscreen zoom/pan/fit/Escape/focus",
+          "inline payload survives modal cleanup",
+          "Reading controls cannot write",
+          "ordinary image unchanged",
+          "Open drawing and drawing bytes unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-ownership:popout",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P04",
+          "P05"
+        ],
+        "assertions": [
+          "same-line repeated embeds target only their own token",
+          "inline/fenced examples have no controls",
+          "independent note and pane stay unchanged",
+          "one-step undo",
+          "refresh remounts controls exactly once",
+          "switching source unloads controls and fullscreen",
+          "drawing bytes unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-table:popout",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P04",
+          "P05"
+        ],
+        "assertions": [
+          "native table widget public boundaries and physical cell ownership",
+          "escaped wiki and Markdown-image dimensions render",
+          "only second identical row changes",
+          "same-note split synchronization",
+          "left/right pointer previews retain measured size and aspect ratio",
+          "one-step undo/reset",
+          "exact Markdown syntax selection",
+          "aliases/styles/title and other cells preserved",
+          "drawing bytes unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-hybrid:popout",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P05"
+        ],
+        "assertions": [
+          "drawing opened as Markdown owns self and other drawing embeds",
+          "short self-link identity",
+          "exact resize/reset and single undo",
+          "physical save preserves serialized drawing data",
+          "exact source selection",
+          "Live Preview and Reading fullscreen",
+          "Reading controls do not edit source",
+          "other drawing unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-regressions:main:relative",
+        "status": "passed",
+        "featureIds": [
+          "P05"
+        ],
+        "assertions": [
+          "relative and vault-path Live Preview embeds decode in SVG, SVG image and PNG",
+          "both images retain the canonical drawing identity",
+          "no raw drawing Markdown remains"
+        ]
+      },
+      {
+        "testId": "native:embed-regressions:main:detached",
+        "status": "passed",
+        "featureIds": [
+          "P05"
+        ],
+        "assertions": [
+          "a long Reading section renders while detached in SVG, SVG image and PNG",
+          "each image decodes after attachment with its original destination",
+          "each render context is unloaded"
+        ]
+      },
+      {
+        "testId": "native:embed-regressions:main:padding",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P05"
+        ],
+        "assertions": [
+          "whole drawing exposes the outer-padding icon",
+          "one small readout below each slider keeps native drag geometry fixed",
+          "area range uses saved scene bounds and stays at 5100 during dragging",
+          "outer padding is capped at 100 and legacy 750 remains intact until edited",
+          "both padding sliders use one-unit steps",
+          "drawing settings explain named frames and outline the rendered image",
+          "native slider keys create a live export preview without writing",
+          "Enter changes only the second repeated area reference",
+          "one native undo restores the complete original source",
+          "Escape cancels and removes the popup",
+          "the drawing bytes are unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-regressions:popout:relative",
+        "status": "passed",
+        "featureIds": [
+          "P05"
+        ],
+        "assertions": [
+          "relative and vault-path Live Preview embeds decode in SVG, SVG image and PNG",
+          "both images retain the canonical drawing identity",
+          "no raw drawing Markdown remains"
+        ]
+      },
+      {
+        "testId": "native:embed-regressions:popout:detached",
+        "status": "passed",
+        "featureIds": [
+          "P05"
+        ],
+        "assertions": [
+          "a long Reading section renders while detached in SVG, SVG image and PNG",
+          "each image decodes after attachment with its original destination",
+          "each render context is unloaded"
+        ]
+      },
+      {
+        "testId": "native:embed-regressions:popout:padding",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P05"
+        ],
+        "assertions": [
+          "whole drawing exposes the outer-padding icon",
+          "one small readout below each slider keeps native drag geometry fixed",
+          "area range uses saved scene bounds and stays at 5100 during dragging",
+          "outer padding is capped at 100 and legacy 750 remains intact until edited",
+          "both padding sliders use one-unit steps",
+          "drawing settings explain named frames and outline the rendered image",
+          "native slider keys create a live export preview without writing",
+          "Enter changes only the second repeated area reference",
+          "one native undo restores the complete original source",
+          "Escape cancels and removes the popup",
+          "the drawing bytes are unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-reliability:main:aliases",
+        "status": "passed",
+        "featureIds": [
+          "P03"
+        ],
+        "assertions": [
+          "unsupported aliases do not block paths",
+          "whole string and list aliases remain searchable",
+          "rename/reopen and source YAML fidelity"
+        ]
+      },
+      {
+        "testId": "native:embed-reliability:main:headings",
+        "status": "passed",
+        "featureIds": [
+          "P05"
+        ],
+        "assertions": [
+          "formatted, linked, escaped, wikilink, duplicate, six-level and Unicode heading options match Obsidian",
+          "exact level-two wikilink-only headings with existing, aliased and missing file targets",
+          "interactive insertion, image source and decoded image insertion",
+          "saved links, section bodies and decoded images survive reopen",
+          "whole file, missing sections and block choices stay separate",
+          "rename updates picker without rewriting existing links",
+          "ordinary links to URL and wikilink headings navigate in Reading and Live Preview",
+          "source and wikilink destination remain unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-reliability:main:svg",
+        "status": "passed",
+        "featureIds": [
+          "P04"
+        ],
+        "assertions": [
+          "special-character URL matrix parses as XML without double escaping",
+          "light/dark manual, clipboard, autoexport and EA SVG agree",
+          "per-file and EA internal-link removal preserved",
+          "link-rewrite, path and autoexport hooks retain their arguments and overrides",
+          "scene metadata and source elements unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-reliability:main:nbsp",
+        "status": "passed",
+        "featureIds": [
+          "P05"
+        ],
+        "assertions": [
+          "original issue drawing decodes as SVG image, native SVG and PNG on cold and warm renders",
+          "SVG image XML and cache retain NBSP",
+          "NBSP and drawing source preserved"
+        ]
+      },
+      {
+        "testId": "native:embed-reliability:main:save-as",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P03"
+        ],
+        "assertions": [
+          "trusted focused Ctrl/Cmd+Shift+S cannot invoke external Save As",
+          "canvas and application themes preserved after dismissal and reopen",
+          "other focused surfaces retain their shortcut",
+          "dedicated legacy export still downloads"
+        ]
+      },
+      {
+        "testId": "native:embed-reliability:popout:aliases",
+        "status": "passed",
+        "featureIds": [
+          "P03"
+        ],
+        "assertions": [
+          "unsupported aliases do not block paths",
+          "whole string and list aliases remain searchable",
+          "rename/reopen and source YAML fidelity"
+        ]
+      },
+      {
+        "testId": "native:embed-reliability:popout:headings",
+        "status": "passed",
+        "featureIds": [
+          "P05"
+        ],
+        "assertions": [
+          "formatted, linked, escaped, wikilink, duplicate, six-level and Unicode heading options match Obsidian",
+          "exact level-two wikilink-only headings with existing, aliased and missing file targets",
+          "interactive insertion, image source and decoded image insertion",
+          "saved links, section bodies and decoded images survive reopen",
+          "whole file, missing sections and block choices stay separate",
+          "rename updates picker without rewriting existing links",
+          "ordinary links to URL and wikilink headings navigate in Reading and Live Preview",
+          "source and wikilink destination remain unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-reliability:popout:svg",
+        "status": "passed",
+        "featureIds": [
+          "P04"
+        ],
+        "assertions": [
+          "special-character URL matrix parses as XML without double escaping",
+          "light/dark manual, clipboard, autoexport and EA SVG agree",
+          "per-file and EA internal-link removal preserved",
+          "link-rewrite, path and autoexport hooks retain their arguments and overrides",
+          "scene metadata and source elements unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-reliability:popout:nbsp",
+        "status": "passed",
+        "featureIds": [
+          "P05"
+        ],
+        "assertions": [
+          "original issue drawing decodes as SVG image, native SVG and PNG on cold and warm renders",
+          "SVG image XML and cache retain NBSP",
+          "NBSP and drawing source preserved"
+        ]
+      },
+      {
+        "testId": "native:embed-reliability:popout:save-as",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P03"
+        ],
+        "assertions": [
+          "trusted focused Ctrl/Cmd+Shift+S cannot invoke external Save As",
+          "canvas and application themes preserved after dismissal and reopen",
+          "other focused surfaces retain their shortcut",
+          "dedicated legacy export still downloads"
+        ]
+      },
+      {
+        "testId": "native:frames:main:metadata",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P05"
+        ],
+        "assertions": [
+          "regular, marker and literal Frame names form an ordered YAML list; unnamed excluded",
+          "unrelated YAML survives",
+          "exact marker name with padding-looking suffix round trips",
+          "always policy follows rename and revert",
+          "no thumbnail customData",
+          "save/reopen retains metadata"
+        ]
+      },
+      {
+        "testId": "native:frames:main:navigation",
+        "status": "passed",
+        "featureIds": [
+          "P02"
+        ],
+        "assertions": [
+          "owner-window fuzzy picker contains regular, marker and unnamed frames",
+          "native selection navigates to marker ID",
+          "editing mode, scene and Search text unchanged"
+        ]
+      },
+      {
+        "testId": "native:frames:main:previews",
+        "status": "passed",
+        "featureIds": [
+          "P05"
+        ],
+        "assertions": [
+          "PNG, SVG image and native SVG use strict implicit frame bounds in Live Preview and Reading",
+          "empty frame means whole scene and explicit marker overrides default",
+          "hover and nested drawing use thumbnail",
+          "ordinary SVG export remains whole scene"
+        ]
+      },
+      {
+        "testId": "native:frames:main:controls",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P05"
+        ],
+        "assertions": [
+          "scan-eye dropdown has defaults and all frames including unnamed",
+          "marker name generates unambiguous ID reference",
+          "only owning occurrence changes with one Undo",
+          "frame padding preview and cancel leave source unchanged",
+          "destination thumbnail unchanged"
+        ]
+      },
+      {
+        "testId": "native:frames:main:outer-padding",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P05"
+        ],
+        "assertions": [
+          "default-thumbnail and explicit whole-scene padding persist independently",
+          "all three render formats add the requested outer dimensions",
+          "frame contents remain clipped; outer padding never reveals neighboring elements"
+        ]
+      },
+      {
+        "testId": "native:frames:main:scene-images",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P05"
+        ],
+        "assertions": [
+          "selected drawing image opens owner-window configuration",
+          "native frame/padding controls prompt once for all three source copies",
+          "only-this-image isolates its link and preserves image area/center",
+          "one native undo/redo restores references and geometry",
+          "apply-all changes only edited fields across shared and distinct references",
+          "100% persists in links and uses intrinsic dimensions",
+          "Escape cancels drafts",
+          "save/reopen preserves all links and three scene elements"
+        ]
+      },
+      {
+        "testId": "native:frames:popout:metadata",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P05"
+        ],
+        "assertions": [
+          "regular, marker and literal Frame names form an ordered YAML list; unnamed excluded",
+          "unrelated YAML survives",
+          "exact marker name with padding-looking suffix round trips",
+          "always policy follows rename and revert",
+          "no thumbnail customData",
+          "save/reopen retains metadata"
+        ]
+      },
+      {
+        "testId": "native:frames:popout:navigation",
+        "status": "passed",
+        "featureIds": [
+          "P02"
+        ],
+        "assertions": [
+          "owner-window fuzzy picker contains regular, marker and unnamed frames",
+          "native selection navigates to marker ID",
+          "editing mode, scene and Search text unchanged"
+        ]
+      },
+      {
+        "testId": "native:frames:popout:previews",
+        "status": "passed",
+        "featureIds": [
+          "P05"
+        ],
+        "assertions": [
+          "PNG, SVG image and native SVG use strict implicit frame bounds in Live Preview and Reading",
+          "empty frame means whole scene and explicit marker overrides default",
+          "hover and nested drawing use thumbnail",
+          "ordinary SVG export remains whole scene"
+        ]
+      },
+      {
+        "testId": "native:frames:popout:controls",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P05"
+        ],
+        "assertions": [
+          "scan-eye dropdown has defaults and all frames including unnamed",
+          "marker name generates unambiguous ID reference",
+          "only owning occurrence changes with one Undo",
+          "frame padding preview and cancel leave source unchanged",
+          "destination thumbnail unchanged"
+        ]
+      },
+      {
+        "testId": "native:frames:popout:outer-padding",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P05"
+        ],
+        "assertions": [
+          "default-thumbnail and explicit whole-scene padding persist independently",
+          "all three render formats add the requested outer dimensions",
+          "frame contents remain clipped; outer padding never reveals neighboring elements"
+        ]
+      },
+      {
+        "testId": "native:frames:popout:scene-images",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P05"
+        ],
+        "assertions": [
+          "selected drawing image opens owner-window configuration",
+          "native frame/padding controls prompt once for all three source copies",
+          "only-this-image isolates its link and preserves image area/center",
+          "one native undo/redo restores references and geometry",
+          "apply-all changes only edited fields across shared and distinct references",
+          "100% persists in links and uses intrinsic dimensions",
+          "Escape cancels drafts",
+          "save/reopen preserves all links and three scene elements"
+        ]
+      },
+      {
+        "testId": "native:frames:settings-reload",
+        "status": "passed",
+        "featureIds": [
+          "P01",
+          "P02"
+        ],
+        "assertions": [
+          "non-default rename policy saved on disk",
+          "actual unload/startup creates new plugin instance",
+          "new policy and unknown zero/false settings survive on disk and in memory"
+        ]
+      },
+      {
+        "testId": "grouped-link-click",
+        "status": "passed",
+        "featureIds": []
+      },
+      {
+        "testId": "latex-input-2970",
+        "status": "passed",
+        "featureIds": []
+      },
+      {
+        "testId": "native:ea-shapes-bindings-and-isolation",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P10"
+        ]
+      },
+      {
+        "testId": "native:ea-edit-image-and-decoded-export",
+        "status": "passed",
+        "featureIds": [
+          "P05",
+          "P09",
+          "P10"
+        ]
+      },
+      {
+        "testId": "native:ea-svg-import-and-disposal",
+        "status": "passed",
+        "featureIds": [
+          "P09",
+          "P10",
+          "P11"
+        ]
+      },
+      {
+        "testId": "native:core-toolbar-draw-history",
+        "status": "passed",
+        "featureIds": [
+          "P04",
+          "P07"
+        ]
+      },
+      {
+        "testId": "native:core-custom-highlighter",
+        "status": "passed",
+        "featureIds": [
+          "P05",
+          "P07"
+        ]
+      },
+      {
+        "testId": "native:core-eraser-and-undo",
+        "status": "passed",
+        "featureIds": [
+          "P04",
+          "P07"
+        ]
+      },
+      {
+        "testId": "native:core-laser-transient",
+        "status": "passed",
+        "featureIds": [
+          "P07"
+        ]
+      },
+      {
+        "testId": "native:pdf-reference-and-decoded-content",
+        "status": "passed",
+        "featureIds": [
+          "P05",
+          "P09",
+          "P10"
+        ]
+      },
+      {
+        "testId": "native:stability-roundtrip:0",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P07",
+          "P12"
+        ]
+      },
+      {
+        "testId": "native:stability-roundtrip:1",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P07",
+          "P12"
+        ]
+      },
+      {
+        "testId": "native:stability-roundtrip:2",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P07",
+          "P12"
+        ]
+      },
+      {
+        "testId": "native:stability-roundtrip:3",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P07",
+          "P12"
+        ]
+      },
+      {
+        "testId": "native:stability-roundtrip:4",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P07",
+          "P12"
+        ]
+      },
+      {
+        "testId": "native:stability-roundtrip:5",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P07",
+          "P12"
+        ]
+      },
+      {
+        "testId": "native:workflow-markdown-extraction-3009",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P03",
+          "P05"
+        ]
+      },
+      {
+        "testId": "native:workflow-zen-controls-3000",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P08"
+        ]
+      },
+      {
+        "testId": "native:upstream-minimap-483",
+        "status": "passed",
+        "featureIds": [
+          "P01",
+          "P03",
+          "P08"
+        ]
+      },
+      {
+        "testId": "native:png-embed-window-migration:main",
+        "status": "passed",
+        "featureIds": [
+          "P05",
+          "P08"
+        ],
+        "assertions": [
+          "two PNG embeds decode in main",
+          "decoded PNG embeds survive actual main-to-popout and popout-to-main Markdown migration",
+          "Markdown source remains unchanged"
+        ]
+      },
+      {
+        "testId": "native:pen-toggle-3044:main",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P08"
+        ],
+        "assertions": [
+          "native P enters pen and second P selects mouse",
+          "text input retains P",
+          "V still selects mouse",
+          "owning main/popout keyboard"
+        ]
+      },
+      {
+        "testId": "native:youtube-fullscreen-3048:main",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P08"
+        ],
+        "assertions": [
+          "YouTube iframe transport and existing wrapper URL",
+          "trusted Electron HTML fullscreen fills owning window",
+          "trusted player exit restores the same embedded player"
+        ]
+      },
+      {
+        "testId": "native:extras-unavailable-3051:main",
+        "status": "passed",
+        "featureIds": [
+          "P01",
+          "P03"
+        ],
+        "assertions": [
+          "absent/incomplete optional API produces cancellation without an exception",
+          "drawings remain editable",
+          "main-window late plugin load restores a fallback Markdown drawing",
+          "restored companion becomes available"
+        ]
+      },
+      {
+        "testId": "native:creation-actions-3047:main",
+        "status": "passed",
+        "featureIds": [
+          "P01",
+          "P02",
+          "P08"
+        ],
+        "assertions": [
+          "opt-in empty-tab action retains core actions",
+          "independent ribbon visibility",
+          "configured destination, format and template",
+          "nondefault and unknown settings survive actual plugin reload and disk persistence"
+        ]
+      },
+      {
+        "testId": "native:pen-toggle-3044:popout",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P08"
+        ],
+        "assertions": [
+          "native P enters pen and second P selects mouse",
+          "text input retains P",
+          "V still selects mouse",
+          "owning main/popout keyboard"
+        ]
+      },
+      {
+        "testId": "native:youtube-fullscreen-3048:popout",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P08"
+        ],
+        "assertions": [
+          "YouTube iframe transport and existing wrapper URL",
+          "trusted Electron HTML fullscreen fills owning window",
+          "trusted player exit restores the same embedded player"
+        ]
+      },
+      {
+        "testId": "native:extras-unavailable-3051:popout",
+        "status": "passed",
+        "featureIds": [
+          "P01",
+          "P03"
+        ],
+        "assertions": [
+          "absent/incomplete optional API produces cancellation without an exception",
+          "drawings remain editable",
+          "restored companion becomes available"
+        ]
+      },
+      {
+        "testId": "native:creation-actions-3047:popout",
+        "status": "passed",
+        "featureIds": [
+          "P01",
+          "P02",
+          "P08"
+        ],
+        "assertions": [
+          "opt-in empty-tab action retains core actions",
+          "independent ribbon visibility",
+          "configured destination, format and template"
+        ]
+      },
+      {
+        "testId": "native:workflow-text-save-2941:main",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P03"
+        ]
+      },
+      {
+        "testId": "native:workflow-text-save-2941:popout",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P03"
+        ]
+      },
+      {
+        "testId": "native:code-block-image-layout:main",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P05"
+        ]
+      },
+      {
+        "testId": "native:workflow-code-card-2894:main",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P05"
+        ]
+      },
+      {
+        "testId": "native:code-block-format:main",
+        "status": "passed",
+        "featureIds": [
+          "P01",
+          "P02",
+          "P05"
+        ]
+      },
+      {
+        "testId": "native:code-block-image-layout:popout",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P05"
+        ]
+      },
+      {
+        "testId": "native:workflow-code-card-2894:popout",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P05"
+        ]
+      },
+      {
+        "testId": "native:code-block-format:popout",
+        "status": "passed",
+        "featureIds": [
+          "P01",
+          "P02",
+          "P05"
+        ]
+      },
+      {
+        "testId": "native:kplex-ontology-passive:main",
+        "status": "passed",
+        "featureIds": [
+          "P04",
+          "P11"
+        ]
+      },
+      {
+        "testId": "native:kplex-ontology-links:main",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P04"
+        ]
+      },
+      {
+        "testId": "native:kplex-ontology-configuration:main",
+        "status": "passed",
+        "featureIds": [
+          "P04",
+          "P06",
+          "P11"
+        ]
+      },
+      {
+        "testId": "native:kplex-ontology-provider:main",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P04",
+          "P11"
+        ]
+      },
+      {
+        "testId": "native:kplex-ontology-markdown:main",
+        "status": "passed",
+        "featureIds": [
+          "P04"
+        ]
+      },
+      {
+        "testId": "native:kplex-ontology-passive:popout",
+        "status": "passed",
+        "featureIds": [
+          "P04",
+          "P11"
+        ]
+      },
+      {
+        "testId": "native:kplex-ontology-links:popout",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P04"
+        ]
+      },
+      {
+        "testId": "native:kplex-ontology-configuration:popout",
+        "status": "passed",
+        "featureIds": [
+          "P04",
+          "P06",
+          "P11"
+        ]
+      },
+      {
+        "testId": "native:kplex-ontology-provider:popout",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P04",
+          "P11"
+        ]
+      },
+      {
+        "testId": "native:kplex-ontology-markdown:popout",
+        "status": "passed",
+        "featureIds": [
+          "P04"
+        ]
+      },
+      {
+        "testId": "lucide-3019",
+        "status": "passed",
+        "featureIds": []
+      },
+      {
+        "testId": "javascript-errors",
+        "status": "passed",
+        "featureIds": []
+      },
+      {
+        "testId": "source-stability",
+        "status": "passed",
+        "featureIds": []
+      },
+      {
+        "testId": "native:device:desktop-wide-full-light",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P08"
+        ]
+      },
+      {
+        "testId": "native:device:desktop-wide-tray-light",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P08"
+        ]
+      },
+      {
+        "testId": "native:device:desktop-wide-compact-light",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P08"
+        ]
+      },
+      {
+        "testId": "native:device:desktop-narrow-full-light",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P08"
+        ]
+      },
+      {
+        "testId": "native:device:desktop-narrow-tray-light",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P08"
+        ]
+      },
+      {
+        "testId": "native:device:desktop-narrow-compact-light",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P08"
+        ]
+      },
+      {
+        "testId": "native:behavior:phone:settings-01",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:phone:settings-02",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:phone:settings-03",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:phone:settings-04",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:phone:settings-05",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:phone:settings-06",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:phone:settings-07",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:phone:settings-08",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:phone:settings-09",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:phone:settings-10",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:phone:settings-11",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:phone:settings-12",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:phone:settings-13",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:phone:settings-14",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:phone:settings-15",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:phone:settings-16",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:phone:export-01",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:phone:export-02",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:phone:export-03",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:phone:export-04",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:phone:export-05",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:phone:export-06",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:phone:export-07",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:phone:export-08",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:phone:export-09",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:phone:export-10",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:phone:export-11",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:phone:export-12",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:phone:export-frame-padding-policy",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:phone:settings-live-persistence",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:phone:frontmatter-prefixes-theme-scale",
+        "status": "passed",
+        "featureIds": [
+          "P04",
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:phone:cli-atomic-targeted-edit",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P07",
+          "P10"
+        ]
+      },
+      {
+        "testId": "native:behavior:phone:markdown-reading",
+        "status": "passed",
+        "featureIds": [
+          "P04",
+          "P05"
+        ]
+      },
+      {
+        "testId": "native:behavior:phone:markdown-live-preview",
+        "status": "passed",
+        "featureIds": [
+          "P04",
+          "P05"
+        ]
+      },
+      {
+        "testId": "native:behavior:phone:markdown-source-edit",
+        "status": "passed",
+        "featureIds": [
+          "P04",
+          "P05"
+        ]
+      },
+      {
+        "testId": "native:behavior:phone:raw-parsed-text",
+        "status": "passed",
+        "featureIds": [
+          "P04"
+        ]
+      },
+      {
+        "testId": "native:behavior:phone:images-shared-crops",
+        "status": "passed",
+        "featureIds": [
+          "P05",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:phone:images-source-edit-missing",
+        "status": "passed",
+        "featureIds": [
+          "P05"
+        ]
+      },
+      {
+        "testId": "native:behavior:phone:drawing-and-markdown-embeds",
+        "status": "passed",
+        "featureIds": [
+          "P05",
+          "P09"
+        ],
+        "assertions": [
+          "drawing and Markdown rendered images",
+          "Helvetica frontmatter renders without an empty-source font error",
+          "plain PDF TFile decodes page 1 content",
+          "local embeddable target",
+          "decoded export content",
+          "save/reopen"
+        ]
+      },
+      {
+        "testId": "native:behavior:phone:ea-selection-groups-bindings-frames",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P10"
+        ]
+      },
+      {
+        "testId": "native:behavior:phone:ea-hooks-targeting-invalid",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P10"
+        ]
+      },
+      {
+        "testId": "native:behavior:phone:command-palette-selection-cancel",
+        "status": "passed",
+        "featureIds": [
+          "P07"
+        ]
+      },
+      {
+        "testId": "native:behavior:phone:toolbar-context-shortcuts",
+        "status": "passed",
+        "featureIds": [
+          "P07"
+        ]
+      },
+      {
+        "testId": "native:kplex-ontology-passive:phone",
+        "status": "passed",
+        "featureIds": [
+          "P04",
+          "P11"
+        ]
+      },
+      {
+        "testId": "native:kplex-ontology-links:phone",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P04"
+        ]
+      },
+      {
+        "testId": "native:kplex-ontology-configuration:phone",
+        "status": "passed",
+        "featureIds": [
+          "P04",
+          "P06",
+          "P11"
+        ]
+      },
+      {
+        "testId": "native:kplex-ontology-provider:phone",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P04",
+          "P11"
+        ]
+      },
+      {
+        "testId": "native:kplex-ontology-markdown:phone",
+        "status": "passed",
+        "featureIds": [
+          "P04"
+        ]
+      },
+      {
+        "testId": "native:embed-controls:phone:PNG",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P05"
+        ],
+        "assertions": [
+          "trusted proportional resize previews without source writes",
+          "only second identical token changed",
+          "one-step undo/redo and reset",
+          "Escape cancellation",
+          "exact Markdown-image syntax selection and roundtrip",
+          "fresh fullscreen zoom/pan/fit/Escape/focus",
+          "inline payload survives modal cleanup",
+          "Reading controls cannot write",
+          "ordinary image unchanged",
+          "Open drawing and drawing bytes unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-controls:phone:SVGIMG",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P05"
+        ],
+        "assertions": [
+          "trusted proportional resize previews without source writes",
+          "only second identical token changed",
+          "one-step undo/redo and reset",
+          "Escape cancellation",
+          "exact Markdown-image syntax selection and roundtrip",
+          "fresh fullscreen zoom/pan/fit/Escape/focus",
+          "inline payload survives modal cleanup",
+          "Reading controls cannot write",
+          "ordinary image unchanged",
+          "Open drawing and drawing bytes unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-controls:phone:SVG",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P05"
+        ],
+        "assertions": [
+          "trusted proportional resize previews without source writes",
+          "only second identical token changed",
+          "one-step undo/redo and reset",
+          "Escape cancellation",
+          "exact Markdown-image syntax selection and roundtrip",
+          "fresh fullscreen zoom/pan/fit/Escape/focus",
+          "inline payload survives modal cleanup",
+          "Reading controls cannot write",
+          "ordinary image unchanged",
+          "Open drawing and drawing bytes unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-ownership:phone",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P04",
+          "P05"
+        ],
+        "assertions": [
+          "same-line repeated embeds target only their own token",
+          "inline/fenced examples have no controls",
+          "independent note and pane stay unchanged",
+          "one-step undo",
+          "refresh remounts controls exactly once",
+          "switching source unloads controls and fullscreen",
+          "drawing bytes unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-table:phone",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P04",
+          "P05"
+        ],
+        "assertions": [
+          "native table widget public boundaries and physical cell ownership",
+          "escaped wiki and Markdown-image dimensions render",
+          "only second identical row changes",
+          "same-note split synchronization",
+          "left/right pointer previews retain measured size and aspect ratio",
+          "one-step undo/reset",
+          "exact Markdown syntax selection",
+          "aliases/styles/title and other cells preserved",
+          "drawing bytes unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-hybrid:phone",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P05"
+        ],
+        "assertions": [
+          "drawing opened as Markdown owns self and other drawing embeds",
+          "short self-link identity",
+          "exact resize/reset and single undo",
+          "physical save preserves serialized drawing data",
+          "exact source selection",
+          "Live Preview and Reading fullscreen",
+          "Reading controls do not edit source",
+          "other drawing unchanged"
+        ]
+      },
+      {
+        "testId": "native:frames:phone:metadata",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P05"
+        ],
+        "assertions": [
+          "regular, marker and literal Frame names form an ordered YAML list; unnamed excluded",
+          "unrelated YAML survives",
+          "exact marker name with padding-looking suffix round trips",
+          "always policy follows rename and revert",
+          "no thumbnail customData",
+          "save/reopen retains metadata"
+        ]
+      },
+      {
+        "testId": "native:frames:phone:navigation",
+        "status": "passed",
+        "featureIds": [
+          "P02"
+        ],
+        "assertions": [
+          "owner-window fuzzy picker contains regular, marker and unnamed frames",
+          "native selection navigates to marker ID",
+          "editing mode, scene and Search text unchanged"
+        ]
+      },
+      {
+        "testId": "native:frames:phone:previews",
+        "status": "passed",
+        "featureIds": [
+          "P05"
+        ],
+        "assertions": [
+          "PNG, SVG image and native SVG use strict implicit frame bounds in Live Preview and Reading",
+          "empty frame means whole scene and explicit marker overrides default",
+          "hover and nested drawing use thumbnail",
+          "ordinary SVG export remains whole scene"
+        ]
+      },
+      {
+        "testId": "native:frames:phone:controls",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P05"
+        ],
+        "assertions": [
+          "scan-eye dropdown has defaults and all frames including unnamed",
+          "marker name generates unambiguous ID reference",
+          "only owning occurrence changes with one Undo",
+          "frame padding preview and cancel leave source unchanged",
+          "destination thumbnail unchanged"
+        ]
+      },
+      {
+        "testId": "native:frames:phone:outer-padding",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P05"
+        ],
+        "assertions": [
+          "default-thumbnail and explicit whole-scene padding persist independently",
+          "all three render formats add the requested outer dimensions",
+          "frame contents remain clipped; outer padding never reveals neighboring elements"
+        ]
+      },
+      {
+        "testId": "native:frames:phone:scene-images",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P05"
+        ],
+        "assertions": [
+          "selected drawing image opens owner-window configuration",
+          "native frame/padding controls prompt once for all three source copies",
+          "only-this-image isolates its link and preserves image area/center",
+          "one native undo/redo restores references and geometry",
+          "apply-all changes only edited fields across shared and distinct references",
+          "100% persists in links and uses intrinsic dimensions",
+          "Escape cancels drafts",
+          "save/reopen preserves all links and three scene elements"
+        ]
+      },
+      {
+        "testId": "native:device:phone-portrait-light",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P08"
+        ]
+      },
+      {
+        "testId": "native:device:phone-landscape-light",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P08"
+        ]
+      },
+      {
+        "testId": "native:behavior:tablet:settings-01",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:tablet:settings-02",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:tablet:settings-03",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:tablet:settings-04",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:tablet:settings-05",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:tablet:settings-06",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:tablet:settings-07",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:tablet:settings-08",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:tablet:settings-09",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:tablet:settings-10",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:tablet:settings-11",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:tablet:settings-12",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:tablet:settings-13",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:tablet:settings-14",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:tablet:settings-15",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:tablet:settings-16",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:tablet:export-01",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:tablet:export-02",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:tablet:export-03",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:tablet:export-04",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:tablet:export-05",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:tablet:export-06",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:tablet:export-07",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:tablet:export-08",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:tablet:export-09",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:tablet:export-10",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:tablet:export-11",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:tablet:export-12",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:tablet:export-frame-padding-policy",
+        "status": "passed",
+        "featureIds": [
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:tablet:settings-live-persistence",
+        "status": "passed",
+        "featureIds": [
+          "P06"
+        ]
+      },
+      {
+        "testId": "native:behavior:tablet:frontmatter-prefixes-theme-scale",
+        "status": "passed",
+        "featureIds": [
+          "P04",
+          "P06",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:tablet:cli-atomic-targeted-edit",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P07",
+          "P10"
+        ]
+      },
+      {
+        "testId": "native:behavior:tablet:markdown-reading",
+        "status": "passed",
+        "featureIds": [
+          "P04",
+          "P05"
+        ]
+      },
+      {
+        "testId": "native:behavior:tablet:markdown-live-preview",
+        "status": "passed",
+        "featureIds": [
+          "P04",
+          "P05"
+        ]
+      },
+      {
+        "testId": "native:behavior:tablet:markdown-source-edit",
+        "status": "passed",
+        "featureIds": [
+          "P04",
+          "P05"
+        ]
+      },
+      {
+        "testId": "native:behavior:tablet:raw-parsed-text",
+        "status": "passed",
+        "featureIds": [
+          "P04"
+        ]
+      },
+      {
+        "testId": "native:behavior:tablet:images-shared-crops",
+        "status": "passed",
+        "featureIds": [
+          "P05",
+          "P09"
+        ]
+      },
+      {
+        "testId": "native:behavior:tablet:images-source-edit-missing",
+        "status": "passed",
+        "featureIds": [
+          "P05"
+        ]
+      },
+      {
+        "testId": "native:behavior:tablet:drawing-and-markdown-embeds",
+        "status": "passed",
+        "featureIds": [
+          "P05",
+          "P09"
+        ],
+        "assertions": [
+          "drawing and Markdown rendered images",
+          "Helvetica frontmatter renders without an empty-source font error",
+          "plain PDF TFile decodes page 1 content",
+          "local embeddable target",
+          "decoded export content",
+          "save/reopen"
+        ]
+      },
+      {
+        "testId": "native:behavior:tablet:ea-selection-groups-bindings-frames",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P10"
+        ]
+      },
+      {
+        "testId": "native:behavior:tablet:ea-hooks-targeting-invalid",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P10"
+        ]
+      },
+      {
+        "testId": "native:behavior:tablet:command-palette-selection-cancel",
+        "status": "passed",
+        "featureIds": [
+          "P07"
+        ]
+      },
+      {
+        "testId": "native:behavior:tablet:toolbar-context-shortcuts",
+        "status": "passed",
+        "featureIds": [
+          "P07"
+        ]
+      },
+      {
+        "testId": "native:kplex-ontology-passive:tablet",
+        "status": "passed",
+        "featureIds": [
+          "P04",
+          "P11"
+        ]
+      },
+      {
+        "testId": "native:kplex-ontology-links:tablet",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P04"
+        ]
+      },
+      {
+        "testId": "native:kplex-ontology-configuration:tablet",
+        "status": "passed",
+        "featureIds": [
+          "P04",
+          "P06",
+          "P11"
+        ]
+      },
+      {
+        "testId": "native:kplex-ontology-provider:tablet",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P04",
+          "P11"
+        ]
+      },
+      {
+        "testId": "native:kplex-ontology-markdown:tablet",
+        "status": "passed",
+        "featureIds": [
+          "P04"
+        ]
+      },
+      {
+        "testId": "native:embed-controls:tablet:PNG",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P05"
+        ],
+        "assertions": [
+          "trusted proportional resize previews without source writes",
+          "only second identical token changed",
+          "one-step undo/redo and reset",
+          "Escape cancellation",
+          "exact Markdown-image syntax selection and roundtrip",
+          "fresh fullscreen zoom/pan/fit/Escape/focus",
+          "inline payload survives modal cleanup",
+          "Reading controls cannot write",
+          "ordinary image unchanged",
+          "Open drawing and drawing bytes unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-controls:tablet:SVGIMG",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P05"
+        ],
+        "assertions": [
+          "trusted proportional resize previews without source writes",
+          "only second identical token changed",
+          "one-step undo/redo and reset",
+          "Escape cancellation",
+          "exact Markdown-image syntax selection and roundtrip",
+          "fresh fullscreen zoom/pan/fit/Escape/focus",
+          "inline payload survives modal cleanup",
+          "Reading controls cannot write",
+          "ordinary image unchanged",
+          "Open drawing and drawing bytes unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-controls:tablet:SVG",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P05"
+        ],
+        "assertions": [
+          "trusted proportional resize previews without source writes",
+          "only second identical token changed",
+          "one-step undo/redo and reset",
+          "Escape cancellation",
+          "exact Markdown-image syntax selection and roundtrip",
+          "fresh fullscreen zoom/pan/fit/Escape/focus",
+          "inline payload survives modal cleanup",
+          "Reading controls cannot write",
+          "ordinary image unchanged",
+          "Open drawing and drawing bytes unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-ownership:tablet",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P04",
+          "P05"
+        ],
+        "assertions": [
+          "same-line repeated embeds target only their own token",
+          "inline/fenced examples have no controls",
+          "independent note and pane stay unchanged",
+          "one-step undo",
+          "refresh remounts controls exactly once",
+          "switching source unloads controls and fullscreen",
+          "drawing bytes unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-table:tablet",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P04",
+          "P05"
+        ],
+        "assertions": [
+          "native table widget public boundaries and physical cell ownership",
+          "escaped wiki and Markdown-image dimensions render",
+          "only second identical row changes",
+          "same-note split synchronization",
+          "left/right pointer previews retain measured size and aspect ratio",
+          "one-step undo/reset",
+          "exact Markdown syntax selection",
+          "aliases/styles/title and other cells preserved",
+          "drawing bytes unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-hybrid:tablet",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P05"
+        ],
+        "assertions": [
+          "drawing opened as Markdown owns self and other drawing embeds",
+          "short self-link identity",
+          "exact resize/reset and single undo",
+          "physical save preserves serialized drawing data",
+          "exact source selection",
+          "Live Preview and Reading fullscreen",
+          "Reading controls do not edit source",
+          "other drawing unchanged"
+        ]
+      },
+      {
+        "testId": "native:frames:tablet:metadata",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P05"
+        ],
+        "assertions": [
+          "regular, marker and literal Frame names form an ordered YAML list; unnamed excluded",
+          "unrelated YAML survives",
+          "exact marker name with padding-looking suffix round trips",
+          "always policy follows rename and revert",
+          "no thumbnail customData",
+          "save/reopen retains metadata"
+        ]
+      },
+      {
+        "testId": "native:frames:tablet:navigation",
+        "status": "passed",
+        "featureIds": [
+          "P02"
+        ],
+        "assertions": [
+          "owner-window fuzzy picker contains regular, marker and unnamed frames",
+          "native selection navigates to marker ID",
+          "editing mode, scene and Search text unchanged"
+        ]
+      },
+      {
+        "testId": "native:frames:tablet:previews",
+        "status": "passed",
+        "featureIds": [
+          "P05"
+        ],
+        "assertions": [
+          "PNG, SVG image and native SVG use strict implicit frame bounds in Live Preview and Reading",
+          "empty frame means whole scene and explicit marker overrides default",
+          "hover and nested drawing use thumbnail",
+          "ordinary SVG export remains whole scene"
+        ]
+      },
+      {
+        "testId": "native:frames:tablet:controls",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P05"
+        ],
+        "assertions": [
+          "scan-eye dropdown has defaults and all frames including unnamed",
+          "marker name generates unambiguous ID reference",
+          "only owning occurrence changes with one Undo",
+          "frame padding preview and cancel leave source unchanged",
+          "destination thumbnail unchanged"
+        ]
+      },
+      {
+        "testId": "native:frames:tablet:outer-padding",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P05"
+        ],
+        "assertions": [
+          "default-thumbnail and explicit whole-scene padding persist independently",
+          "all three render formats add the requested outer dimensions",
+          "frame contents remain clipped; outer padding never reveals neighboring elements"
+        ]
+      },
+      {
+        "testId": "native:frames:tablet:scene-images",
+        "status": "passed",
+        "featureIds": [
+          "P02",
+          "P05"
+        ],
+        "assertions": [
+          "selected drawing image opens owner-window configuration",
+          "native frame/padding controls prompt once for all three source copies",
+          "only-this-image isolates its link and preserves image area/center",
+          "one native undo/redo restores references and geometry",
+          "apply-all changes only edited fields across shared and distinct references",
+          "100% persists in links and uses intrinsic dimensions",
+          "Escape cancels drafts",
+          "save/reopen preserves all links and three scene elements"
+        ]
+      },
+      {
+        "testId": "native:device:tablet-portrait-full-light",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P08"
+        ]
+      },
+      {
+        "testId": "native:device:tablet-portrait-tray-light",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P08"
+        ]
+      },
+      {
+        "testId": "native:device:tablet-portrait-compact-light",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P08"
+        ]
+      },
+      {
+        "testId": "native:device:tablet-landscape-full-light",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P08"
+        ]
+      },
+      {
+        "testId": "native:device:tablet-landscape-tray-light",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P08"
+        ]
+      },
+      {
+        "testId": "native:device:tablet-landscape-compact-light",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P08"
+        ]
+      },
+      {
+        "testId": "native:device:desktop-wide-full-dark",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P08"
+        ]
+      },
+      {
+        "testId": "native:device:desktop-wide-tray-dark",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P08"
+        ]
+      },
+      {
+        "testId": "native:device:desktop-wide-compact-dark",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P08"
+        ]
+      },
+      {
+        "testId": "native:device:desktop-narrow-full-dark",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P08"
+        ]
+      },
+      {
+        "testId": "native:device:desktop-narrow-tray-dark",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P08"
+        ]
+      },
+      {
+        "testId": "native:device:desktop-narrow-compact-dark",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P08"
+        ]
+      },
+      {
+        "testId": "native:device:phone-portrait-dark",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P08"
+        ]
+      },
+      {
+        "testId": "native:device:phone-landscape-dark",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P08"
+        ]
+      },
+      {
+        "testId": "native:device:tablet-portrait-full-dark",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P08"
+        ]
+      },
+      {
+        "testId": "native:device:tablet-portrait-tray-dark",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P08"
+        ]
+      },
+      {
+        "testId": "native:device:tablet-portrait-compact-dark",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P08"
+        ]
+      },
+      {
+        "testId": "native:device:tablet-landscape-full-dark",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P08"
+        ]
+      },
+      {
+        "testId": "native:device:tablet-landscape-tray-dark",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P08"
+        ]
+      },
+      {
+        "testId": "native:device:tablet-landscape-compact-dark",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P08"
+        ]
+      },
+      {
+        "testId": "native:device:breakpoint-mobile-width-598",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P08"
+        ]
+      },
+      {
+        "testId": "native:device:breakpoint-mobile-width-599",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P08"
+        ]
+      },
+      {
+        "testId": "native:device:breakpoint-mobile-width-600",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P08"
+        ]
+      },
+      {
+        "testId": "native:device:breakpoint-sidebar-width-799",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P08"
+        ]
+      },
+      {
+        "testId": "native:device:breakpoint-sidebar-width-800",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P08"
+        ]
+      },
+      {
+        "testId": "native:device:breakpoint-sidebar-width-801",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P08"
+        ]
+      },
+      {
+        "testId": "native:device:breakpoint-landscape-width-999",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P08"
+        ]
+      },
+      {
+        "testId": "native:device:breakpoint-landscape-width-1000",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P08"
+        ]
+      },
+      {
+        "testId": "native:device:breakpoint-landscape-width-1001",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P08"
+        ]
+      },
+      {
+        "testId": "native:device:breakpoint-landscape-height-499",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P08"
+        ]
+      },
+      {
+        "testId": "native:device:breakpoint-landscape-height-500",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P08"
+        ]
+      },
+      {
+        "testId": "native:device:breakpoint-landscape-height-501",
+        "status": "passed",
+        "featureIds": [
+          "P07",
+          "P08"
+        ]
+      }
+    ],
+    "scope": "Complete matching-build native profile at fdca1796, before the separate pen-repeat-only follow-up.",
+    "allCaseEvidenceSHA256": "2244ef0cf1662dc538912044a587bff3bc01172a31197d0273be71564a36d7f3",
+    "builtArtifactsMatchedAtExport": true
+  },
+  "portable": {
+    "status": "passed",
+    "cleanup": "passed",
+    "canonicalCases": 1023,
+    "counts": {
+      "passed": 1023,
+      "failed": 0,
+      "blocked": 0,
+      "notApplicable": 0
+    },
+    "missing": [],
+    "sources": {
+      "plugin": {
+        "commit": "fdca179677bcabccb83e883e89026723345be67b",
+        "dirty": false,
+        "diffHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "lockfileHash": "741c0318ef12f5b1661e3d86b9044949aab9f2132db6d23d2b119a3b4740d2b1"
+      },
+      "fork": {
+        "commit": "8260fa444f84c616d1486c2a47365c1b72c4be9a",
+        "dirty": false,
+        "diffHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "lockfileHash": "5ff2005c676da0a7250e859ce363fc40c832a64104732e21d40e827b02632d18"
+      },
+      "extras": {
+        "commit": "4bd7af3325a8059a5ca68fc3e88169507b08c773",
+        "dirty": false,
+        "diffHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "lockfileHash": "e6419e0a6e01e7292c905ccd51efc54223eff4f80e8d1d9229ce94194eb282f9"
+      }
+    },
+    "gates": [
+      {
+        "suiteId": "plugin-source-coverage",
+        "status": "passed",
+        "cleanup": "passed"
+      },
+      {
+        "suiteId": "fork-package",
+        "status": "passed",
+        "cleanup": "passed"
+      },
+      {
+        "suiteId": "extras-package",
+        "status": "passed",
+        "cleanup": "passed"
+      }
+    ],
+    "sourceCoverage": {
+      "path": "src/utils/ownedPNGImage.ts",
+      "coveredLinePercent": 100,
+      "coveredBranchPercent": 89.47,
+      "coveredFunctionPercent": 100,
+      "lines": {
+        "total": 70,
+        "covered": 70,
+        "skipped": 0,
+        "pct": 100
+      },
+      "branches": {
+        "total": 19,
+        "covered": 17,
+        "skipped": 0,
+        "pct": 89.47
+      },
+      "functions": {
+        "total": 7,
+        "covered": 7,
+        "skipped": 0,
+        "pct": 100
+      }
+    }
+  },
+  "limitations": [
+    "Physical Android/iOS touch is unverified; desktop mobile emulation is recorded separately.",
+    "Real YouTube service playback and physical Windows Escape are unverified. Offline iframe fullscreen entry and player-button exit are tested in native main/popout; both browser artifacts additionally test a nested cross-origin provider fixture.",
+    "Sky could inventory the test window but failed twice to activate it; no physical input was sent, and the owned fixture was cleaned up.",
+    "Native macOS/Linux and an isolated whole-application cold restart are unverified.",
+    "The exact #3051 Lazy Loader / approximately 60-plugin startup interaction is not reproduced. Controlled late enablement and absent/incomplete Extras recovery are tested.",
+    "The inherited fork test:update command remains failed; no failed snapshot was accepted.",
+    "No package publication, dependency/version bump or personal-vault deployment is part of this PR."
+  ],
+  "finalFollowUp": {
+    "source": {
+      "pluginRevision": "78782221011caa2e8eb0e5f9655f426d4bb60c01",
+      "pluginDirty": false,
+      "forkRevision": "8260fa444f84c616d1486c2a47365c1b72c4be9a",
+      "forkDirty": false,
+      "buildMode": "workspace-frozen",
+      "requestedProfile": "focused",
+      "node": "v22.22.3",
+      "platform": "win32"
+    },
+    "scope": "Only production difference from fdca1796 is the pen-repeat guard; two test files strengthen state-commit and actual repeated-key assertions.",
+    "status": "passed",
+    "cleanup": "passed",
+    "nativeCases": 13,
+    "requiredIssueCases": [
+      "native:creation-actions-3047:main",
+      "native:pen-toggle-3044:main",
+      "native:youtube-fullscreen-3048:main",
+      "native:extras-unavailable-3051:main",
+      "native:creation-actions-3047:popout",
+      "native:pen-toggle-3044:popout",
+      "native:youtube-fullscreen-3048:popout",
+      "native:extras-unavailable-3051:popout",
+      "native:png-embed-window-migration:main"
+    ],
+    "missing": [],
+    "baselineRestoration": {
+      "restored": true,
+      "pluginEnabled": true,
+      "extrasEnabled": true,
+      "kplexEnabled": false,
+      "theme": "moonstone",
+      "restoredFixturePaths": []
+    },
+    "unexpectedConsoleErrors": [],
+    "windowErrors": [],
+    "pluginArtifacts": [
+      {
+        "role": "main",
+        "relativePath": "dist/main.js",
+        "sha256": "be72e4fc72ca30832cdf436634a3ed4f8f9a67c271de7b930c7adc1d1243b599",
+        "bytes": 5145115
+      },
+      {
+        "role": "manifest",
+        "relativePath": "dist/manifest.json",
+        "sha256": "8e82828fd9125615e8a361d0f15553e548cac2ee7a303e55387378a53b925fd9",
+        "bytes": 470
+      },
+      {
+        "role": "styles",
+        "relativePath": "dist/styles.css",
+        "sha256": "c66306b0fd8f29348b58e50339b2ae614c82524c043c3241dc39e12ee287665e",
+        "bytes": 368530
+      }
+    ],
+    "forkAndExtrasArtifactsMatchCompleteCheckpoint": true,
+    "fast": {
+      "status": "passed",
+      "cases": 789,
+      "testedBase": "fdca179677bcabccb83e883e89026723345be67b",
+      "testedDiffHash": "6f10e2ee9e0b487eea7353b8bf8a3f85c6862f3f65a99b17b9d600979161e2b0",
+      "committedDiffHash": "6f10e2ee9e0b487eea7353b8bf8a3f85c6862f3f65a99b17b9d600979161e2b0",
+      "codeContentMatchesCommit": true
+    },
+    "cases": [
+      {
+        "testId": "plugin-load",
+        "status": "passed",
+        "featureIds": [],
+        "assertions": [
+          "commands registered",
+          "drawing/font/export runtime available",
+          "host protocol 4"
+        ]
+      },
+      {
+        "testId": "drawing-main-window",
+        "status": "passed",
+        "featureIds": [],
+        "assertions": [
+          "Excalidraw API ready",
+          "wrapper mounted",
+          "owner document matches",
+          "main application document"
+        ]
+      },
+      {
+        "testId": "native:png-embed-window-migration:main",
+        "status": "passed",
+        "featureIds": [
+          "P05",
+          "P08"
+        ],
+        "assertions": [
+          "two PNG embeds decode in main",
+          "decoded PNG embeds survive actual main-to-popout and popout-to-main Markdown migration",
+          "Markdown source remains unchanged"
+        ]
+      },
+      {
+        "testId": "native:pen-toggle-3044:main",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P08"
+        ],
+        "assertions": [
+          "native P enters pen and second P selects mouse",
+          "holding the second P keeps selection after the API commits",
+          "fresh P reenters pen",
+          "text input retains P",
+          "V still selects mouse",
+          "owning main/popout keyboard"
+        ]
+      },
+      {
+        "testId": "native:youtube-fullscreen-3048:main",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P08"
+        ],
+        "assertions": [
+          "YouTube iframe transport and existing wrapper URL",
+          "trusted Electron HTML fullscreen fills owning window",
+          "trusted player exit restores the same embedded player"
+        ]
+      },
+      {
+        "testId": "native:extras-unavailable-3051:main",
+        "status": "passed",
+        "featureIds": [
+          "P01",
+          "P03"
+        ],
+        "assertions": [
+          "absent/incomplete optional API produces cancellation without an exception",
+          "drawings remain editable",
+          "main-window late plugin load restores a fallback Markdown drawing",
+          "restored companion becomes available"
+        ]
+      },
+      {
+        "testId": "native:creation-actions-3047:main",
+        "status": "passed",
+        "featureIds": [
+          "P01",
+          "P02",
+          "P08"
+        ],
+        "assertions": [
+          "opt-in empty-tab action retains core actions",
+          "independent ribbon visibility",
+          "configured destination, format and template",
+          "nondefault and unknown settings survive actual plugin reload and disk persistence"
+        ]
+      },
+      {
+        "testId": "native:pen-toggle-3044:popout",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P08"
+        ],
+        "assertions": [
+          "native P enters pen and second P selects mouse",
+          "holding the second P keeps selection after the API commits",
+          "fresh P reenters pen",
+          "text input retains P",
+          "V still selects mouse",
+          "owning main/popout keyboard"
+        ]
+      },
+      {
+        "testId": "native:youtube-fullscreen-3048:popout",
+        "status": "passed",
+        "featureIds": [
+          "P03",
+          "P08"
+        ],
+        "assertions": [
+          "YouTube iframe transport and existing wrapper URL",
+          "trusted Electron HTML fullscreen fills owning window",
+          "trusted player exit restores the same embedded player"
+        ]
+      },
+      {
+        "testId": "native:extras-unavailable-3051:popout",
+        "status": "passed",
+        "featureIds": [
+          "P01",
+          "P03"
+        ],
+        "assertions": [
+          "absent/incomplete optional API produces cancellation without an exception",
+          "drawings remain editable",
+          "restored companion becomes available"
+        ]
+      },
+      {
+        "testId": "native:creation-actions-3047:popout",
+        "status": "passed",
+        "featureIds": [
+          "P01",
+          "P02",
+          "P08"
+        ],
+        "assertions": [
+          "opt-in empty-tab action retains core actions",
+          "independent ribbon visibility",
+          "configured destination, format and template"
+        ]
+      },
+      {
+        "testId": "javascript-errors",
+        "status": "passed",
+        "featureIds": []
+      },
+      {
+        "testId": "source-stability",
+        "status": "passed",
+        "featureIds": []
+      }
+    ],
+    "beforeFix": "The strengthened unit test fails at the repeat-consumed assertion on fdca1796; retained pr3052-pen-repeat-red.txt. It passes after the guard fix.",
+    "hostedChecks": {
+      "commit": "78782221011caa2e8eb0e5f9655f426d4bb60c01",
+      "pluginTests": {
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/zsviczian/obsidian-excalidraw-plugin/actions/runs/43649533527"
+      },
+      "codeQL": {
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/zsviczian/obsidian-excalidraw-plugin/actions/runs/43649533590"
+      }
+    }
+  }
+}
