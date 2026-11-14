@@ -111,10 +111,12 @@ export function createDrawingEmbedExtension(plugin: ExcalidrawPlugin): { extensi
       const seen = new Set<HTMLElement>();
       for (const image of view.contentDOM.querySelectorAll<HTMLElement>(".excalidraw-embedded-img")) {
         const nativeEmbed = image.closest<HTMLElement>(".internal-embed"), frame = image.parentElement;
-        const table = nativeEmbed ? null : image.closest<HTMLTableElement>("table.table-editor");
+        // Native table images also carry internal-embed. Map their physical
+        // cell through the whole table widget before considering ordinary embeds.
+        const table = image.closest<HTMLTableElement>("table.table-editor");
         const cell = table && image.closest<HTMLTableCellElement>("td, th");
-        const root = nativeEmbed ?? table?.closest<HTMLElement>(".cm-table-widget");
-        const key = nativeEmbed ?? frame;
+        const root = table ? table.closest<HTMLElement>(".cm-table-widget") : nativeEmbed;
+        const key = table ? frame : nativeEmbed ?? frame;
         const actions = getDrawingEmbedActions(image);
         if (!root || !frame || !actions || !actions.isCurrent() || image.closest(".cm-content") !== view.contentDOM ||
             root.closest(".markdown-embed, .hover-popover, .canvas-node-content, .print, .cm-preview-code-block")) continue;

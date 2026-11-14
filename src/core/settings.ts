@@ -1685,6 +1685,15 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   private getGeneralStartupSpecs(): SettingSpec[] {
     return [
       {
+        name: t("SHOW_RIBBON_ICON_NAME"),
+        control: { type: "toggle", key: "showRibbonIcon", after: () => this.plugin.drawingCreationUI?.refresh() },
+      },
+      {
+        name: t("SHOW_NEW_DRAWING_EMPTY_TAB_NAME"),
+        desc: t("SHOW_NEW_DRAWING_EMPTY_TAB_DESC"),
+        control: { type: "toggle", key: "showNewDrawingInEmptyTab", after: () => this.plugin.drawingCreationUI?.refresh() },
+      },
+      {
         name: t("RELEASE_NOTES_NAME"),
         desc: fragWithHTML(t("RELEASE_NOTES_DESC")),
         control: { type: "toggle", key: "showReleaseNotes" },

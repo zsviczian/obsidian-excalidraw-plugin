@@ -44,6 +44,8 @@ import type {
 declare const PLUGIN_VERSION: string;
 
 export interface ExcalidrawSettings {
+  showRibbonIcon: boolean;
+  showNewDrawingInEmptyTab: boolean;
   thumbnailRenamePolicy: ThumbnailRenamePolicy;
   showTabTitlebarButtons: boolean;
   copyLinkToElemenetAnchorTo100: boolean;
@@ -493,6 +495,8 @@ export const cloneModelConfigs = <TConfig extends AIModelConfig>(
   ) as Record<string, TConfig>;
 
 export const DEFAULT_SETTINGS: ExcalidrawSettings = {
+  showRibbonIcon: true,
+  showNewDrawingInEmptyTab: false,
   thumbnailRenamePolicy: "unset",
   showTabTitlebarButtons: true,
   copyLinkToElemenetAnchorTo100: false,

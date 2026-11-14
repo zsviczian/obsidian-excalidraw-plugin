@@ -19,11 +19,14 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 `,
 "2.29.3": `
 ## New and improved
+- Optionally add **New Excalidraw** to empty tabs and independently hide the ribbon icon in settings. [#3047](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3047).
+- Press P again while using the pen to return to the selection tool. [#3044](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3044).
 - Configure drawing images directly in the scene: choose a view, padding and original-size anchoring, then update one image or all copies of the same drawing.
 - Choose a named frame or marker frame as the drawing thumbnail, pick frames from embed controls, and use **Navigate to frame** to jump within a drawing. Named frames are listed in the document's \`excalidraw-anchors\` property. [#3042](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3042).
 - Adjust outer padding for thumbnails, whole scenes and frames, or expand the captured area of \`area=\` drawing embeds from their Live Preview toolbar. Preview changes with the slider, then close it to save; Escape cancels. Inspired by 🙏[Evgene-Kopylov](${URLs.GITHUB_COM}/Evgene-Kopylov) [#2868](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2868).
 
 ## Fixed
+- Drawing embed controls appear in Live Preview tables and remain reachable in phone Reading view. [#3049](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3049).
 - Drawing embeds render reliably in long notes in Reading view and with relative links in Live Preview. [#3039](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3039), [#3040](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3040).
 - Insert files with malformed aliases, and embed Markdown headings containing links or formatting. [#2257](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2257), [#2303](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2303).
 - Ctrl/Cmd+Shift+S no longer opens the unintended standalone Save As dialog in a focused drawing. Use the export menu to save a legacy Excalidraw file externally. [#2714](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2714).

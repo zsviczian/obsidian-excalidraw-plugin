@@ -66,6 +66,13 @@
             "destination closure during migration grace settles without recreating a retired leaf",
             "destination closure during migration replacement yield settles without recreating a retired leaf"
           ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/extrasUnavailable.test.mjs",
+          "cases": [
+            "an enabled Extras plugin with an absent or incomplete API cancels service access cleanly"
+          ]
         }
       ],
       "fixtures": [],
@@ -388,6 +395,21 @@
           "cases": [
             "node:scripts/testing/textSaveShortcut.source.test.mjs::focused canvas and text editor block Ctrl/Cmd+Shift+S without submitting or saving",
             "node:scripts/testing/textSaveShortcut.source.test.mjs::Save As guard leaves other shortcuts, other documents, unfocused views and embedded notes alone"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/penToggleShortcut.test.mjs",
+          "cases": [
+            "P toggles freedraw to selection only for the owning canvas and ignores repeats"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/embedBridge.source.test.mjs",
+          "cases": [
+            "table embeds with internal-embed wrappers: invalid render generations cannot remount controls or starve the renderer debounce",
+            "table embeds with internal-embed wrappers: drawing Markdown self-embeds retain controls and the same lifecycle guards"
           ]
         }
       ],
@@ -1578,6 +1600,36 @@
             "closing the sidepanel cancels its restore yield without executing another script",
             "a current conversion finishes after its main-window fallback and saves the converted section",
             "Markdown embed debounce follows a live render context into another window"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/drawingCreationUI.test.mjs",
+          "cases": [
+            "creation actions opt in independently, survive host rerenders and release their listeners"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/issue3052.mjs",
+          "cases": [
+            "native:creation-actions-3047:main",
+            "native:pen-toggle-3044:main",
+            "native:youtube-fullscreen-3048:main",
+            "native:extras-unavailable-3051:main",
+            "native:creation-actions-3047:popout",
+            "native:pen-toggle-3044:popout",
+            "native:youtube-fullscreen-3048:popout",
+            "native:extras-unavailable-3051:popout"
+          ]
+        },
+        {
+          "layer": "browser",
+          "repository": "fork",
+          "path": "tests/obsidian/browser/youtubeFullscreen.mjs",
+          "cases": [
+            "fork-browser:production:youtube-fullscreen",
+            "fork-browser:development:youtube-fullscreen"
           ]
         }
       ],
