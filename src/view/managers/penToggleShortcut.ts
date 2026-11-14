@@ -10,9 +10,10 @@ export function handlePenToggleShortcut(view: ExcalidrawView, event: KeyboardEve
       !target.closest(".excalidraw") ||
       target.closest("input, textarea, select, button, [contenteditable], [role=dialog], [role=menu], .excalidraw__embeddable-container")) return false;
   const state = api.getAppState();
-  if (state.activeTool.type !== "freedraw" || state.viewModeEnabled || state.newElement || state.openDialog) return false;
+  if ((state.activeTool.type !== "freedraw" && !(event.repeat && state.activeTool.type === "selection")) ||
+      state.viewModeEnabled || state.newElement || state.openDialog) return false;
   event.preventDefault(); event.stopPropagation();
-  // Holding the pen button must not oscillate between tools on key repeat.
+  // Keep consuming repeats after selection commits, or upstream P reenters pen.
   if (!event.repeat) api.setActiveTool({ type: "selection" });
   return true;
 }

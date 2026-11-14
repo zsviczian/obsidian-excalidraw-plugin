@@ -108,8 +108,17 @@ async function exerciseIssues(c, env, template) {
     const root = view.containerEl.querySelector(".excalidraw"); root.focus();
     api.setActiveTool({ type: "selection" });
     await key("p", "KeyP", 80); await c.waitFor(() => api.getAppState().activeTool.type === "freedraw", "P selects pen");
-    await key("p", "KeyP", 80); await c.waitFor(() => api.getAppState().activeTool.type === "selection", "second P selects mouse");
+    const penKey = { key: "p", code: "KeyP", windowsVirtualKeyCode: 80 };
+    await env.input("Input.dispatchKeyEvent", { type: "keyDown", ...penKey });
+    try {
+      await c.waitFor(() => api.getAppState().activeTool.type === "selection", "second P selects mouse");
+      await env.input("Input.dispatchKeyEvent", { type: "keyDown", ...penKey, autoRepeat: true });
+    } finally {
+      await env.input("Input.dispatchKeyEvent", { type: "keyUp", ...penKey });
+    }
+    check(api.getAppState().activeTool.type === "selection", "holding the second P returned to pen");
     await key("p", "KeyP", 80);
+    await c.waitFor(() => api.getAppState().activeTool.type === "freedraw", "fresh P reenters pen");
     const input = root.createEl("input"); c.defer(() => input.remove()); input.focus();
     // The shortcut helper deliberately omits printable text. A real typing
     // keyDown needs text as well as key/code to exercise the exclusion rule.
@@ -119,7 +128,7 @@ async function exerciseIssues(c, env, template) {
     check(input.value === "p" && api.getAppState().activeTool.type === "freedraw", "P consumed text input");
     input.remove(); root.focus(); await key("v", "KeyV", 86);
     check(api.getAppState().activeTool.type === "selection", "existing selection shortcut changed");
-    return { assertions: ["native P enters pen and second P selects mouse", "text input retains P", "V still selects mouse", "owning main/popout keyboard"] };
+    return { assertions: ["native P enters pen and second P selects mouse", "holding the second P keeps selection after the API commits", "fresh P reenters pen", "text input retains P", "V still selects mouse", "owning main/popout keyboard"] };
   });
   await c.case("native:youtube-fullscreen-3048:" + context, ["P03", "P08"], async () => {
     const view = await open(), api = view.excalidrawAPI;
