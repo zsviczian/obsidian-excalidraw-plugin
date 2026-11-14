@@ -190,22 +190,19 @@ const _getPNG = async ({
     inlineFonts: true, //though for PNG this makes no difference, but the key requires it
   };
 
-  if (cacheReady) {
-    const src = await getImageCache().getImageFromCache(cacheKey, {
-      expectedPayloadKind: "raster",
-    });
-    if (src && typeof src === "string") {
-      img.src = src;
-      return img;
-    }
-  }
+  const cached = cacheReady
+    ? await getImageCache().getImageCacheData(cacheKey, {
+        expectedPayloadKind: "raster",
+      })
+    : undefined;
 
   const hasImageReference = isExplicitImageEmbed(imgAttributes.fname);
-  const quickPNG = !hasImageReference
+  const quickPNG = !cached && !hasImageReference
     ? await getQuickImagePreview(plugin, file.path, "png")
     : undefined;
 
   const png =
+    cached?.blob ??
     quickPNG ??
     (await createPNG(
       hasImageReference
@@ -236,17 +233,21 @@ const _getPNG = async ({
     return null;
   }
   const blobUrl = URL.createObjectURL(png);
+
+  // Each renderer owns its URL. Concurrent cache replacements and discarded
+  // siblings must never revoke an image which is still fetching/decoding.
+  const cleanup = () => {
+    img.removeEventListener("load", cleanup);
+    img.removeEventListener("error", cleanup);
+    URL.revokeObjectURL(blobUrl);
+  };
+  img.addEventListener("load", cleanup, { once: true });
+  img.addEventListener("error", cleanup, { once: true });
   img.src = blobUrl;
 
-  // Revoke the ObjectURL after the image loads or fails to prevent memory leaks
-  if (!cacheReady) {
-    const cleanup = () => URL.revokeObjectURL(blobUrl);
-    img.addEventListener("load", cleanup, { once: true });
-    img.addEventListener("error", cleanup, { once: true });
-  }
-
-  if (cacheReady) {
-    getImageCache().addImageToCache(cacheKey, blobUrl, png);
+  if (cacheReady && !cached) {
+    // Persist the blob, independently of any particular IMG's lifetime.
+    getImageCache().addImageToCache(cacheKey, "", png);
   }
 
   return img;

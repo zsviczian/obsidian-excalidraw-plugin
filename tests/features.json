@@ -983,6 +983,15 @@
           ]
         },
         {
+          "layer": "source",
+          "path": "scripts/testing/pngEmbedLifetime.test.mjs",
+          "cases": [
+            "node:scripts/testing/pngEmbedLifetime.test.mjs::concurrent cold PNG renders keep both renderer URLs alive until each image settles",
+            "node:scripts/testing/pngEmbedLifetime.test.mjs::warm PNG cache hits have independent URLs and discarding one preserves its sibling",
+            "node:scripts/testing/pngEmbedLifetime.test.mjs::uncached PNG load and error both release their owned URLs without populating the cache"
+          ]
+        },
+        {
           "layer": "native",
           "path": "scripts/testing/host/embedRegressions.mjs",
           "cases": [

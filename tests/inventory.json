@@ -2739,6 +2739,10 @@
       "mode": "direct-module-or-tooling"
     },
     {
+      "path": "scripts/testing/pngEmbedLifetime.test.mjs",
+      "mode": "isolated-or-extracted"
+    },
+    {
       "path": "scripts/testing/provision.test.mjs",
       "mode": "direct-module-or-tooling"
     },
