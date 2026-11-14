@@ -49,6 +49,18 @@ async function exerciseIssues(c, env, template) {
     return app.plugins.plugins["obsidian-excalidraw-plugin"];
   };
   c.defer(livePlugin);
+  const disablePlugin = async () => {
+    // Reload tests change registration/settings, not save cancellation. Flush
+    // the owned edits before retiring the plugin (as deployment does).
+    const views = app.workspace.getLeavesOfType("excalidraw").map(leaf => leaf.view);
+    for (const view of views) {
+      if (view.excalidrawAPI && view.isDirty())
+        check((await view.saveWithOutcome()).status === "persisted", "pre-reload drawing flush failed");
+    }
+    await c.waitFor(() => views.every(view => !view.isSaveInProgress() && !view.isSynchronizing), "pre-reload saves settled");
+    await app.plugins.disablePlugin("obsidian-excalidraw-plugin");
+    await c.waitFor(() => views.every(view => !view.excalidrawAPI), "all reload source roots unmounted");
+  };
   const drawing = await create("Issue-fixture.excalidraw.md", template);
   await c.waitFor(() => p.isExcalidrawFile(drawing), "issue fixture metadata");
   const open = async () => {
@@ -122,7 +134,7 @@ async function exerciseIssues(c, env, template) {
       extras.api = api;
       if (api === undefined && context === "main") {
         const retired = leaf.view;
-        await app.plugins.disablePlugin("obsidian-excalidraw-plugin");
+        await disablePlugin();
         await c.waitFor(() => !retired.excalidrawAPI, "late-load source root unmounted");
         if (!leaf.view) env.owned.delete(leaf);
         leaf = app.workspace.getLeaf("tab"); env.owned.add(leaf);
@@ -167,7 +179,7 @@ async function exerciseIssues(c, env, template) {
     check(await app.vault.read(creationTemplate) === template, "creation modified its template");
     if (context === "main") {
       const retired = leaf.view;
-      await app.plugins.disablePlugin("obsidian-excalidraw-plugin");
+      await disablePlugin();
       await c.waitFor(() => !retired.excalidrawAPI, "creation source root unmounted");
       if (!leaf.view) env.owned.delete(leaf);
       const current = await livePlugin();
