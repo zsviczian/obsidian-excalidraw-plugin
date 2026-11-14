@@ -46,9 +46,13 @@ async function fixture() {
     return stores.get(name);
   };
   const file = { path: "owned.excalidraw.md", stat: { mtime: 0 } };
+  const pluginCleanups = [];
+  const disposePlugin = () => {
+    for (const cleanup of pluginCleanups.splice(0).reverse()) cleanup();
+  };
   const plugin = {
     settings: { allowImageCache: true },
-    register() {},
+    register: (cleanup) => pluginCleanups.push(cleanup),
     app: {
       vault: { getFileByPath: () => file },
       metadataCache: {},
@@ -73,18 +77,14 @@ async function fixture() {
     }
     value = "";
     complete = false;
+    naturalWidth = 0;
     set src(value) {
       this.value = value;
       this.complete = false;
+      this.naturalWidth = 0;
     }
     get src() {
       return this.value;
-    }
-    onWindowMigrated(callback) {
-      this.migrated = callback;
-      return () => {
-        this.migrated = null;
-      };
     }
     listeners = new Map();
     addEventListener(name, callback, options) {
@@ -96,6 +96,7 @@ async function fixture() {
     }
     fire(name, complete = true) {
       this.complete = complete;
+      this.naturalWidth = name === "load" ? 1 : 0;
       const entry = this.listeners.get(name);
       if (entry?.options?.once) this.listeners.delete(name);
       entry?.callback();
@@ -176,7 +177,10 @@ async function fixture() {
     Image,
     render,
     discard: exports.discardImage,
+    disposePlugin,
+    ownedPNG,
     close() {
+      disposePlugin();
       for (const image of images) ownedPNG.discardOwnedPNGImage(image);
       if (cache.isReady()) cache.destroy();
       for (const url of urls) URL.revokeObjectURL(url);
@@ -189,7 +193,7 @@ async function fixture() {
 const flush = () => new Promise((resolve) => setImmediate(resolve));
 const blob = (text) => new Blob([text], { type: "image/png" });
 
-test("decoded PNG migration creates a fresh URL and ignores an obsolete request's unsettled error", async () => {
+test("loaded PNG URLs remain readable for independent pixel consumers", async () => {
   const f = await fixture();
   try {
     const img = new f.Image(),
@@ -199,26 +203,22 @@ test("decoded PNG migration creates a fresh URL and ignores an obsolete request'
     await task;
     const first = img.src;
     img.fire("load");
-    await assert.rejects(fetch(first));
-    const migrate = img.migrated;
-    migrate();
-    assert.equal(f.requests.length, 1, "migration reuses the blob without exporting again");
-    assert.notEqual(img.src, first);
+    assert.equal(await (await fetch(first)).text(), "migrated");
     img.fire("error", false);
     assert.equal(await (await fetch(img.src)).text(), "migrated");
-    img.fire("load");
-    await assert.rejects(fetch(img.src));
+    assert.equal(
+      f.requests.length,
+      1,
+      "pixel consumers reuse the payload without exporting again",
+    );
     f.discard(img);
-    assert.equal(img.migrated, null);
-    const retiredSource = img.src;
-    migrate();
-    assert.equal(img.src, retiredSource);
+    await assert.rejects(fetch(first));
   } finally {
     f.close();
   }
 });
 
-test("concurrent cold PNG renders keep both renderer URLs alive until each image settles", async () => {
+test("concurrent cold PNG renders retain independent URLs until their images retire", async () => {
   const f = await fixture();
   try {
     const a = new f.Image(),
@@ -235,7 +235,10 @@ test("concurrent cold PNG renders keep both renderer URLs alive until each image
     assert.equal(await (await fetch(b.src)).text(), "second");
     assert.notEqual(a.src, b.src);
     a.fire("load");
-    await assert.rejects(fetch(a.src));
+    assert.equal(await (await fetch(a.src)).text(), "first");
+    const firstURL = a.src;
+    f.discard(a);
+    await assert.rejects(fetch(firstURL));
     assert.equal(await (await fetch(b.src)).text(), "second");
     assert.equal(a.listeners.size, 0, "both terminal listeners are removed");
     b.fire("error");
@@ -264,13 +267,16 @@ test("warm PNG cache hits have independent URLs and discarding one preserves its
     await assert.rejects(fetch(old));
     assert.equal(await (await fetch(b.src)).text(), "cached");
     b.fire("load");
-    await assert.rejects(fetch(b.src));
+    assert.equal(await (await fetch(b.src)).text(), "cached");
+    const remaining = b.src;
+    f.discard(b);
+    await assert.rejects(fetch(remaining));
   } finally {
     f.close();
   }
 });
 
-test("uncached PNG load and error both release their owned URLs without populating the cache", async () => {
+test("uncached PNG payloads release on discard or decode failure without populating the cache", async () => {
   for (const terminal of ["load", "error"]) {
     const f = await fixture();
     try {
@@ -281,11 +287,46 @@ test("uncached PNG load and error both release their owned URLs without populati
       await task;
       assert.equal(await (await fetch(img.src)).text(), terminal);
       img.fire(terminal);
-      await assert.rejects(fetch(img.src));
+      const url = img.src;
+      if (terminal === "load") {
+        assert.equal(await (await fetch(url)).text(), terminal);
+        f.discard(img);
+      }
+      await assert.rejects(fetch(url));
       assert.equal(await f.cache.getImageCacheData(f.key), undefined);
     } finally {
       f.close();
     }
+  }
+});
+
+test("plugin retirement revokes PNG URLs and a stale disposer preserves its replacement", async () => {
+  const f = await fixture();
+  try {
+    const img = new f.Image(),
+      task = f.render(img);
+    await flush();
+    f.requests[0](blob("owned"));
+    await task;
+    img.fire("load");
+    const url = img.src;
+    f.disposePlugin();
+    await assert.rejects(fetch(url));
+    assert.equal(img.listeners.size, 0);
+    const late = new f.Image();
+    await f.render(late);
+    assert.equal(late.src, "");
+    const stale = f.ownedPNG.registerOwnedPNGImageSources();
+    const current = f.ownedPNG.registerOwnedPNGImageSources();
+    const replacement = new f.Image();
+    await f.render(replacement);
+    stale();
+    assert.equal(await (await fetch(replacement.src)).text(), "owned");
+    current();
+    await assert.rejects(fetch(replacement.src));
+    assert.equal(replacement.listeners.size, 0);
+  } finally {
+    f.close();
   }
 });
 

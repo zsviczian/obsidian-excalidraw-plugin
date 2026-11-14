@@ -1,5 +1,40 @@
-/** PNG payloads belong to an image, independently of the persistent image cache. */
+/** The shared plugin realm keeps PNG URLs valid across popout document migration. */
 const cleanups = new WeakMap<HTMLImageElement, () => void>();
+const liveImages = new Map<string, WeakRef<HTMLImageElement>>();
+let generation = 0;
+let active = true;
+
+function releaseURL(url: string): void {
+  liveImages.delete(url);
+  URL.revokeObjectURL(url);
+}
+
+// Normal renderers explicitly discard their images. Legacy DOM consumers may
+// also drop an image without a retirement callback. This fallback retains only
+// its URL string, never the image; plugin unload remains a deterministic boundary.
+const orphanedURLs =
+  typeof FinalizationRegistry === "function"
+    ? new FinalizationRegistry<string>(releaseURL)
+    : null;
+
+function clearSources(): void {
+  for (const [url, reference] of liveImages) {
+    const image = reference.deref();
+    if (!image || !discardOwnedPNGImage(image)) releaseURL(url);
+  }
+}
+
+/** One owner per plugin lifetime; an old disposer cannot retire a replacement. */
+export function registerOwnedPNGImageSources(): () => void {
+  clearSources();
+  const owner = ++generation;
+  active = true;
+  return () => {
+    if (!active || owner !== generation) return;
+    active = false;
+    clearSources();
+  };
+}
 
 /** Release an owned payload even after the plugin's cache manager has retired. */
 export function discardOwnedPNGImage(image: HTMLImageElement): boolean {
@@ -9,42 +44,27 @@ export function discardOwnedPNGImage(image: HTMLImageElement): boolean {
   return true;
 }
 
-/** Keep the blob available for Obsidian's document migrations without retaining a live URL after decoding. */
+/** Keep a live image's source reusable for pixel reads and document migration. */
 export function setOwnedPNGImageSource(
   image: HTMLImageElement,
   blob: Blob,
 ): void {
   discardOwnedPNGImage(image);
-  let disposed = false;
-  let releaseURL: () => void = () => undefined;
-  const setSource = () => {
-    if (disposed) return;
-    releaseURL();
-    const url = URL.createObjectURL(blob);
-    const release = () => {
-      image.removeEventListener("load", settled);
-      image.removeEventListener("error", settled);
-      URL.revokeObjectURL(url);
-    };
-    const settled = () => {
-      // An old request's event can arrive while migration starts a new request.
-      // Release only after the image's current request has actually settled.
-      if (image.complete) release();
-    };
-    releaseURL = release;
-    image.addEventListener("load", settled);
-    image.addEventListener("error", settled);
-    image.src = url;
-  };
-  // The hook is element-owned and returns a disposer. It captures no plugin,
-  // view or document; the same payload can follow an image into either window.
-  const stopMigration = image.onWindowMigrated(setSource);
-  cleanups.set(image, () => {
-    if (disposed) return;
-    disposed = true;
+  if (!active) return;
+  const url = URL.createObjectURL(blob);
+  liveImages.set(url, new WeakRef(image));
+  orphanedURLs?.register(image, url, image);
+  const cleanup = () => {
     cleanups.delete(image);
-    stopMigration();
-    releaseURL();
-  });
-  setSource();
+    image.removeEventListener("error", failed);
+    orphanedURLs?.unregister(image);
+    releaseURL(url);
+  };
+  const failed = () => {
+    // Ignore an old request's queued error while a replacement is loading.
+    if (image.complete && image.naturalWidth === 0) cleanup();
+  };
+  cleanups.set(image, cleanup);
+  image.addEventListener("error", failed);
+  image.src = url;
 }

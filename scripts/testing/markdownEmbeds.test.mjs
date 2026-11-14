@@ -115,7 +115,7 @@ function fixture() {
     "src/shared/GlobalTaskQueue": { getGlobalTaskQueue: () => queue },
     "../../utils/debugHelper": { DEBUGGING: false },
     "../../shared/ImageCache": { getImageCache: () => ({ isReady: () => cacheReady, releaseObsidianURL: url => released.push(url) }) },
-    "../../utils/ownedPNGImage": { discardOwnedPNGImage: () => false },
+    "../../utils/ownedPNGImage": { discardOwnedPNGImage: () => false, registerOwnedPNGImageSources: () => () => {} },
     "../../shared/EmbeddedFileLoader": { EmbeddedFilesLoader: class { constructor() { this.terminate = false; loaders.push(this); } } },
     "../../types/utilTypes": { PreviewImageType: { PNG: "PNG", SVGIMG: "SVGIMG", SVG: "SVG" } },
     "../../utils/typechecks": { isInstanceOfHTMLImageElement: el => el.tag === "img" },

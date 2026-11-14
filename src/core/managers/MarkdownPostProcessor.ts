@@ -56,7 +56,7 @@ import { getDrawingPaddingMax } from "src/utils/drawingPadding";
 import { readDrawingPreviewElements } from "src/utils/drawingPreviewScene";
 import { getGlobalTaskQueue } from "src/shared/GlobalTaskQueue";
 import { renderMarkdownEmbed } from "./MarkdownEmbedRenderChild";
-import { discardOwnedPNGImage, setOwnedPNGImageSource } from "../../utils/ownedPNGImage";
+import { discardOwnedPNGImage, registerOwnedPNGImageSources, setOwnedPNGImageSource } from "../../utils/ownedPNGImage";
 
 interface imgElementAttributes {
   file?: TFile;
@@ -133,6 +133,7 @@ const discardImage = (el: Element | null) => {
 
 export const initializeMarkdownPostProcessor = (p: ExcalidrawPlugin) => {
   plugin = p;
+  p.register(registerOwnedPNGImageSources());
   app = plugin.app;
   vault = app.vault;
   metadataCache = app.metadataCache;
@@ -784,6 +785,7 @@ const createImgElement = async (
         return;
       }
 
+      discardImage(imgOrDiv);
       parent.empty();
       if (!onCanvas) {
         setStyle(newImg, {
