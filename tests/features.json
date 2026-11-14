@@ -979,7 +979,9 @@
             "node:scripts/testing/markdownEmbeds.test.mjs::#3040 Live Preview uses the rendered drawing identity for a host-relative embed",
             "node:scripts/testing/markdownEmbeds.test.mjs::#3039 a claimed Reading section renders while detached and survives later attachment",
             "node:scripts/testing/markdownEmbeds.test.mjs::Reading callbacks deduplicate deferred renders and retire controls when the image is replaced",
-            "node:scripts/testing/markdownEmbeds.test.mjs::Reading context retirement cancels queued and in-flight detached images"
+            "node:scripts/testing/markdownEmbeds.test.mjs::Reading context retirement cancels queued and in-flight detached images",
+            "node:scripts/testing/markdownEmbeds.test.mjs::PNG inline images are created in their owning document",
+            "node:scripts/testing/markdownEmbeds.test.mjs::PNG preview images are created in their owning document"
           ]
         },
         {
@@ -988,7 +990,8 @@
           "cases": [
             "node:scripts/testing/pngEmbedLifetime.test.mjs::concurrent cold PNG renders keep both renderer URLs alive until each image settles",
             "node:scripts/testing/pngEmbedLifetime.test.mjs::warm PNG cache hits have independent URLs and discarding one preserves its sibling",
-            "node:scripts/testing/pngEmbedLifetime.test.mjs::uncached PNG load and error both release their owned URLs without populating the cache"
+            "node:scripts/testing/pngEmbedLifetime.test.mjs::uncached PNG load and error both release their owned URLs without populating the cache",
+            "node:scripts/testing/pngEmbedLifetime.test.mjs::discarding a pending PNG after cache shutdown still releases its URL and listeners"
           ]
         },
         {
@@ -1629,7 +1632,8 @@
             "native:creation-actions-3047:popout",
             "native:pen-toggle-3044:popout",
             "native:youtube-fullscreen-3048:popout",
-            "native:extras-unavailable-3051:popout"
+            "native:extras-unavailable-3051:popout",
+            "native:png-embed-window-migration:main"
           ]
         },
         {

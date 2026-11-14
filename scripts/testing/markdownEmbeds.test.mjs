@@ -38,6 +38,9 @@ function fixture() {
       this.classes = new Set(classes.split(" "));
       this.tag = tag; this.attrs = new Map(); this.children = []; this.isConnected = true;
       this.ownerDocument = { defaultView: ownerWindow };
+      this.ownerDocument.createElement = tag => {
+        const element = new Element("", tag); element.ownerDocument = this.ownerDocument; return element;
+      };
       this.ownerDocument.body = { querySelectorAll: () => [] };
     }
     hasClass(cls) { return this.classes.has(cls); }
@@ -156,6 +159,20 @@ function fixture() {
   return { processor, plugin, container, ctx, el, children, render, jobs, requests, errors, released, observers, timers, intervals, loaders, frontmatters, flushTimers, start, settle, image, Element, rasters, controls, controlInstances, cacheReady: value => cacheReady = value,
     files, sourceFile, targetFile,
     unloadPlugin: () => { plugin._loaded = false; for (const callback of pluginCleanups.splice(0)) callback(); } };
+}
+
+for (const context of ["inline", "preview"]) {
+  test(`PNG ${context} images are created in their owning document`, async () => {
+    const f = fixture(); f.plugin.settings.previewImageType = "PNG";
+    const doc = { defaultView: f.container.ownerDocument.defaultView, createElement(tag) {
+      const element = new f.Element("", tag); element.ownerDocument = doc; return element;
+    } };
+    const anchor = new f.Element(); anchor.ownerDocument = doc;
+    await f.processor.getIMG({ fname: f.targetFile.path, fwidth: "180", fheight: "", imgstyle: [] },
+      false, context === "inline" ? anchor : undefined, () => true, context === "preview", context === "preview" ? doc : undefined);
+    assert.equal(f.rasters.length, 1);
+    assert.equal(f.rasters[0].img.ownerDocument, doc);
+  });
 }
 
 test("#3040 Live Preview uses the rendered drawing identity for a host-relative embed", async () => {

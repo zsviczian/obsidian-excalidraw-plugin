@@ -10,7 +10,7 @@ import { settleBrowserDiagnostics, splitWindowErrors } from "./browserDiagnostic
 export const issue3052CaseIds = ["main", "popout"].flatMap(context => [
   "native:creation-actions-3047:" + context, "native:pen-toggle-3044:" + context,
   "native:youtube-fullscreen-3048:" + context, "native:extras-unavailable-3051:" + context,
-]);
+]).concat("native:png-embed-window-migration:main");
 
 export async function runIssue3052Scenario({ cli, drawingPath }) {
   const template = readFileSync(new URL("../../../tests/vault/Drawings/Uncompressed.excalidraw.md", import.meta.url), "utf8");
@@ -69,6 +69,40 @@ async function exerciseIssues(c, env, template) {
     await c.waitFor(() => leaf.view.excalidrawAPI && !leaf.view.excalidrawAPI.getAppState().isLoading, "issue fixture editor");
     return leaf.view;
   };
+  if (context === "main") await c.case("native:png-embed-window-migration:main", ["P05", "P08"], async () => {
+    const original = p.settings.previewImageType;
+    const restore = async () => { const current = await livePlugin(); current.settings.previewImageType = original; await current.saveSettings(); };
+    c.defer(restore);
+    p.settings.previewImageType = "PNG";
+    const source = `![[${drawing.path}|180]]\n\n![[${drawing.path}|220]]\n\nFooter\n`;
+    const note = await create("PNG-migration.md", source), destination = leaf.parent;
+    const images = () => [...leaf.view.containerEl.querySelectorAll("img.excalidraw-embedded-img")];
+    const decoded = async label => {
+      await c.waitFor(() => {
+        const nodes = images();
+        c.observations.pngMigration = { label, ownerMain: leaf.view.containerEl.ownerDocument === doc, images: nodes.map(img => ({ source: img.src, width: img.naturalWidth, complete: img.complete })) };
+        return nodes.length === 2 && nodes.every(img => img.complete && img.naturalWidth > 0);
+      }, label + " PNG images decode");
+    };
+    await leaf.setViewState({ type: "markdown", state: { file: note.path, mode: "source", source: false } });
+    leaf.view.editor.setCursor({ line: leaf.view.editor.lastLine(), ch: 0 });
+    await decoded("main");
+    app.workspace.moveLeafToPopout(leaf);
+    await c.waitFor(() => leaf.view.containerEl.ownerDocument !== doc, "PNG Markdown view moves to popout");
+    const popup = leaf.view.containerEl.ownerDocument.defaultView;
+    const observeError = event => env.windowErrors.push({ context: "png-migration", window: "popout", phase: c.activeCase,
+      message: event.message, hasError: event.error != null, isTrusted: event.isTrusted, stack: event.error?.stack });
+    popup.addEventListener("error", observeError);
+    c.defer(() => { if (!popup.closed) popup.removeEventListener("error", observeError); });
+    await decoded("popout");
+    leaf.parent.removeChild(leaf); leaf.setDimension(null); destination.insertChild(-1, leaf);
+    destination.selectTabIndex(destination.children.indexOf(leaf)); app.workspace.requestResize();
+    await c.waitFor(() => leaf.view.containerEl.ownerDocument === doc, "PNG Markdown view returns to main");
+    await decoded("returned main");
+    check(await app.vault.read(note) === source, "PNG window migration changed Markdown source");
+    await restore();
+    return { assertions: ["two PNG embeds decode in main", "decoded PNG embeds survive actual main-to-popout and popout-to-main Markdown migration", "Markdown source remains unchanged"] };
+  });
   await c.case("native:pen-toggle-3044:" + context, ["P03", "P08"], async () => {
     const view = await open(), api = view.excalidrawAPI;
     const root = view.containerEl.querySelector(".excalidraw"); root.focus();

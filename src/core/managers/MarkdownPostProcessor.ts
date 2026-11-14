@@ -73,6 +73,7 @@ let vault: Vault;
 let metadataCache: MetadataCache;
 let readingControls: Set<DrawingEmbedControls> | null = null;
 let drawingFrames: Map<TFile, { mtime: number; frames: Promise<DrawingFrameChoice[]> }> | null = null;
+const pngImageCleanups = new WeakMap<HTMLImageElement, () => void>();
 
 const getDrawingFrames = (file: TFile): Promise<DrawingFrameChoice[]> => {
   const entries = drawingFrames;
@@ -122,7 +123,9 @@ const discardImage = (el: Element | null) => {
     ? [el]
     : Array.from(el.querySelectorAll("img"));
   images.forEach((img) => {
-    if (img.src.startsWith("blob:")) {
+    const cleanup = pngImageCleanups.get(img);
+    if (cleanup) cleanup();
+    else if (img.src.startsWith("blob:")) {
       getImageCache().releaseObsidianURL(img.src);
     }
     // Instantly aborts the browser's background V8 image decoder task
@@ -237,10 +240,12 @@ const _getPNG = async ({
   // Each renderer owns its URL. Concurrent cache replacements and discarded
   // siblings must never revoke an image which is still fetching/decoding.
   const cleanup = () => {
+    pngImageCleanups.delete(img);
     img.removeEventListener("load", cleanup);
     img.removeEventListener("error", cleanup);
     URL.revokeObjectURL(blobUrl);
   };
+  pngImageCleanups.set(img, cleanup);
   img.addEventListener("load", cleanup, { once: true });
   img.addEventListener("error", cleanup, { once: true });
   img.src = blobUrl;
@@ -514,6 +519,7 @@ const getIMG = async (
   embedEl?: Node,
   isRenderActive?: () => boolean,
   freshOwnedPayload: boolean = false,
+  ownerDocument: Document = embedEl?.ownerDocument,
 ): Promise<HTMLImageElement | HTMLDivElement> => {
   let file = imgAttributes.file;
   if (!imgAttributes.file) {
@@ -577,7 +583,9 @@ const getIMG = async (
     if (isRenderActive && !isRenderActive()) return null;
     switch (plugin.settings.previewImageType) {
       case PreviewImageType.PNG: {
-        const img = createEl("img");
+        // A decoded/released blob URL cannot be fetched again after adoption
+        // into another document. Start the image in its final owning realm.
+        const img = ownerDocument ? ownerDocument.createElement("img") : createEl("img");
         setImgStyle({
           element: img,
           imgAttributes,
@@ -830,7 +838,7 @@ const createImgElement = async (
     // embed's cached URL. Keep its crop/reference/theme through the same exporter.
     create: async active => {
       const image = await getIMG({ ...attr, fwidth: "1600", fheight: "", imgstyle: [] }, false, undefined,
-        () => active() && isCurrent(), true);
+        () => active() && isCurrent(), true, imgOrDiv.ownerDocument);
       image?.setAttribute("fileSource", attr.fname);
       return image;
     },
@@ -842,7 +850,7 @@ const createImgElement = async (
         create: async (padding: number | null, active: () => boolean) => {
           const fname = withAreaPadding(attr.fname, padding);
           if (fname === null) return null;
-          return getIMG({ ...attr, fname }, false, undefined, () => active() && isCurrent(), true);
+          return getIMG({ ...attr, fname }, false, undefined, () => active() && isCurrent(), true, imgOrDiv.ownerDocument);
         },
       },
     } : {}),
@@ -860,7 +868,10 @@ const createImageDiv = async (
   if (!img) {
     return null;
   }
-  return createDiv(attr.imgstyle.join(" "), (el) => el.append(img));
+  const container = img.ownerDocument.createElement("div");
+  container.className = attr.imgstyle.join(" ");
+  container.append(img);
+  return container;
 };
 
 const isExplicitImageEmbed = (src: string): boolean => {
@@ -1475,19 +1486,18 @@ const legacyExcalidrawPopoverObserverFn: MutationCallback = (m) => {
       return;
     }
 
-    const div = createDiv("", (el) => {
-      el.appendChild(img);
-      el.setAttribute("src", file.path);
-      el.onClickEvent((ev) => {
-        ev.stopImmediatePropagation();
-        const src = el.getAttribute("src");
-        if (src) {
-          plugin.openDrawing(
-            vault.getFileByPath(src),
-            linkClickModifierType(ev),
-          );
-        } //.ctrlKey||ev.metaKey);
-      });
+    const div = img.ownerDocument.createElement("div");
+    div.appendChild(img);
+    div.setAttribute("src", file.path);
+    div.onClickEvent((ev) => {
+      ev.stopImmediatePropagation();
+      const src = div.getAttribute("src");
+      if (src) {
+        plugin.openDrawing(
+          vault.getFileByPath(src),
+          linkClickModifierType(ev),
+        );
+      } //.ctrlKey||ev.metaKey);
     });
     node.appendChild(div);
   });

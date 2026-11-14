@@ -156,7 +156,7 @@ async function fixture() {
     render,
     discard: exports.discardImage,
     close() {
-      cache.destroy();
+      if (cache.isReady()) cache.destroy();
       for (const url of urls) URL.revokeObjectURL(url);
       graph.close();
       if (previousWindow === undefined) delete globalThis.window;
@@ -235,5 +235,23 @@ test("uncached PNG load and error both release their owned URLs without populati
     } finally {
       f.close();
     }
+  }
+});
+
+test("discarding a pending PNG after cache shutdown still releases its URL and listeners", async () => {
+  const f = await fixture();
+  try {
+    const img = new f.Image(),
+      task = f.render(img);
+    await flush();
+    f.requests[0](blob("pending"));
+    await task;
+    const url = img.src;
+    f.cache.destroy();
+    f.discard(img);
+    await assert.rejects(fetch(url));
+    assert.equal(img.listeners.size, 0);
+  } finally {
+    f.close();
   }
 });
