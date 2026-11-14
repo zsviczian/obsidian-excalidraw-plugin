@@ -59,10 +59,17 @@ async function exerciseEmbedControls(c, env, template, modifier) {
     app.workspace.setActiveLeaf(leaf, { focus: true }); win.focus();
     if (mode === "source") leaf.view.editor.setCursor({ line: leaf.view.editor.lastLine(), ch: 0 });
     await c.waitFor(() => activeRoot()?.querySelectorAll(".excalidraw-embed-toolbar").length === 3, "three active owned embed toolbars");
-    await c.waitFor(() => frames().every(frame => {
-      const image = frame.querySelector(".excalidraw-embedded-img");
-      return image?.getBoundingClientRect().height > 0 && (image.tagName !== "IMG" || image.complete && image.naturalWidth > 0);
-    }), "decoded drawing previews with positive dimensions");
+    await c.waitFor(() => {
+      const previews = frames().map(frame => {
+        const image = frame.querySelector(".excalidraw-embedded-img");
+        return { tag: image?.tagName, bounds: image?.getBoundingClientRect().toJSON(), complete: image?.complete,
+          naturalWidth: image?.naturalWidth, source: image?.getAttribute("src")?.slice(0, 100),
+          display: image && win.getComputedStyle(image).display, frame: frame.getBoundingClientRect().toJSON(),
+          html: frame.outerHTML.slice(0, 700) };
+      });
+      c.observations = { ...c.observations, embedReadiness: previews };
+      return previews.every(image => image.bounds?.height > 0 && (image.tag !== "IMG" || image.complete && image.naturalWidth > 0));
+    }, "decoded drawing previews with positive dimensions");
   };
   const activeRoot = () => leaf.view.contentEl.querySelector(leaf.view.getMode?.() === "preview" ? ".markdown-preview-view" : ".markdown-source-view");
   const frames = () => [...activeRoot()?.querySelectorAll(".excalidraw-embed-controls-frame") || []];

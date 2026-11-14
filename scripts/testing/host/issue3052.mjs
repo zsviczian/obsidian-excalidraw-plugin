@@ -18,7 +18,13 @@ export async function runIssue3052Scenario({ cli, drawingPath }) {
   for (const context of ["main", "popout"]) {
     const execute = new Function(`return async function(c,path,context,template){
       const env=await (${behaviorEnvironment.toString()})(c,path,{id:context,input:'mouse'},template,${completeConsoleErrors.toString()},${settleBrowserDiagnostics.toString()});
-      await (${exerciseIssues.toString()})(c,env,template);
+      const runCase=c.case.bind(c);c.case=async(...args)=>{c.phase=args[0];return runCase(...args);};
+      try {await (${exerciseIssues.toString()})(c,env,template);}
+      catch(error){
+        try {c.observations={...c.observations,diagnostics:env.diagnostics()};}
+        catch(diagnosticError){c.observations={...c.observations,diagnosticError:String(diagnosticError)};}
+        throw error;
+      }
       return {tests:c.tests,consoleErrors:c.externalConsoleErrors||[],windowErrors:env.windowErrors};
     }`)();
     const result = await runInAppTask({ cli, execute, args: [drawingPath, context, template], timeoutMs: 300000, cleanupMs: 60000,
@@ -32,9 +38,17 @@ export async function runIssue3052Scenario({ cli, drawingPath }) {
 }
 
 async function exerciseIssues(c, env, template) {
-  const { leaf, doc, win, create, check, click, key, geometry } = env;
+  c.observations ??= {};
+  const { doc, win, create, check, click, key, geometry } = env;
+  let leaf = env.leaf;
   let p = env.p;
   const context = geometry().requested.id;
+  const livePlugin = async () => {
+    if (!app.plugins.plugins["obsidian-excalidraw-plugin"]) await app.plugins.enablePlugin("obsidian-excalidraw-plugin");
+    await c.waitForCleanup(() => app.plugins.plugins["obsidian-excalidraw-plugin"]?.isReady, "live plugin after reload");
+    return app.plugins.plugins["obsidian-excalidraw-plugin"];
+  };
+  c.defer(livePlugin);
   const drawing = await create("Issue-fixture.excalidraw.md", template);
   await c.waitFor(() => p.isExcalidrawFile(drawing), "issue fixture metadata");
   const open = async () => {
@@ -50,8 +64,13 @@ async function exerciseIssues(c, env, template) {
     await key("p", "KeyP", 80); await c.waitFor(() => api.getAppState().activeTool.type === "freedraw", "P selects pen");
     await key("p", "KeyP", 80); await c.waitFor(() => api.getAppState().activeTool.type === "selection", "second P selects mouse");
     await key("p", "KeyP", 80);
-    const input = view.containerEl.createEl("input"); c.defer(() => input.remove()); input.focus();
-    await key("p", "KeyP", 80); check(input.value === "p" && api.getAppState().activeTool.type === "freedraw", "P consumed text input");
+    const input = root.createEl("input"); c.defer(() => input.remove()); input.focus();
+    // The shortcut helper deliberately omits printable text. A real typing
+    // keyDown needs text as well as key/code to exercise the exclusion rule.
+    await env.input("Input.dispatchKeyEvent", { type: "keyDown", key: "p", code: "KeyP", windowsVirtualKeyCode: 80, text: "p" });
+    await env.input("Input.dispatchKeyEvent", { type: "keyUp", key: "p", code: "KeyP", windowsVirtualKeyCode: 80 });
+    c.observations.penInput = { value: input.value, tool: api.getAppState().activeTool.type, focused: doc.activeElement === input };
+    check(input.value === "p" && api.getAppState().activeTool.type === "freedraw", "P consumed text input");
     input.remove(); root.focus(); await key("v", "KeyV", 86);
     check(api.getAppState().activeTool.type === "selection", "existing selection shortcut changed");
     return { assertions: ["native P enters pen and second P selects mouse", "text input retains P", "V still selects mouse", "owning main/popout keyboard"] };
@@ -66,19 +85,35 @@ async function exerciseIssues(c, env, template) {
     check(iframe.src.startsWith("https://releases.obsidian.md/youtube?"), "YouTube wrapper routing changed");
     // Replace the external player with a local fixture; exercise the actual
     // Electron fullscreen boundary without requiring YouTube/network service.
-    iframe.srcdoc = "<!doctype html><html><body style='margin:0;background:#183048'>Offline fullscreen player</body></html>";
-    await c.waitFor(() => iframe.contentDocument?.body?.textContent === "Offline fullscreen player", "offline fullscreen fixture");
+    iframe.srcdoc = "<!doctype html><html><body style='margin:0;background:#183048'>Offline fullscreen player<button id='exit' style='position:absolute;left:24px;top:24px'>Exit fullscreen</button></body></html>";
+    await c.waitFor(() => iframe.contentDocument?.querySelector("#exit"), "offline fullscreen fixture");
+    const exit = iframe.contentDocument.querySelector("#exit");
+    exit.addEventListener("click", () => { void iframe.contentDocument.exitFullscreen(); });
     const trigger = doc.body.createEl("button", { text: "Test video fullscreen" });
     trigger.setCssStyles({ position: "fixed", left: "100px", top: "100px", zIndex: "100000" });
     c.defer(async () => { trigger.remove(); if (doc.fullscreenElement) await doc.exitFullscreen(); });
     trigger.onClickEvent(() => { void iframe.contentDocument.documentElement.requestFullscreen(); });
     await click(trigger); await c.waitFor(() => doc.fullscreenElement === iframe, "video owns fullscreen top layer");
     const r = iframe.getBoundingClientRect();
+    c.observations.fullscreen = { bounds: r.toJSON(), viewport: { width: win.innerWidth, height: win.innerHeight } };
     check(Math.abs(r.width - win.innerWidth) < 2 && Math.abs(r.height - win.innerHeight) < 2 && Math.abs(r.x) < 2 && Math.abs(r.y) < 2, "video did not fill owning window");
-    await key("Escape", "Escape", 27); await c.waitFor(() => !doc.fullscreenElement, "video exits fullscreen");
+    // CDP Escape is a renderer event, not Chromium's reserved browser shortcut
+    // (also reproduced in an unmodified browser). Exercise the player's own
+    // trusted exit control instead; physical Escape remains a manual check.
+    const b = exit.getBoundingClientRect(), x = b.x + b.width / 2, y = b.y + b.height / 2;
+    check(doc.elementFromPoint(x, y) === iframe && exit.contains(iframe.contentDocument.elementFromPoint(x, y)), "fullscreen exit target is covered");
+    for (const type of ["mousePressed", "mouseReleased"]) await env.input("Input.dispatchMouseEvent", { type, x, y, button: "left", buttons: type === "mousePressed" ? 1 : 0, clickCount: 1 });
+    await c.waitFor(() => !doc.fullscreenElement, "player exits fullscreen");
     check(iframe.isConnected && iframe.getBoundingClientRect().width < win.innerWidth, "video embed identity/geometry not restored");
     trigger.remove();
-    return { assertions: ["YouTube iframe transport and existing wrapper URL", "trusted Electron HTML fullscreen fills owning window", "Escape restores the same embedded player"], bounds: r.toJSON(), externalPlayback: "not exercised; offline fixture" };
+    // Unlike the cross-origin provider, this same-origin fixture lets Obsidian
+    // capture a child element lacking its DOM extensions when opening a modal.
+    // Retire the player and restore native editor focus before the next case.
+    api.updateScene({ elements: [], captureUpdate: "NEVER" });
+    await c.waitFor(() => !iframe.isConnected, "offline player teardown");
+    view.containerEl.querySelector(".excalidraw").focus();
+    check(typeof doc.activeElement.instanceOf === "function", "editor focus not restored after local player");
+    return { assertions: ["YouTube iframe transport and existing wrapper URL", "trusted Electron HTML fullscreen fills owning window", "trusted player exit restores the same embedded player"], bounds: r.toJSON(), externalPlayback: "not exercised; offline fixture", physicalEscape: "separate manual check; CDP does not invoke the browser shortcut" };
   });
   await c.case("native:extras-unavailable-3051:" + context, ["P01", "P03"], async () => {
     const extras = app.plugins.plugins["excalidraw-extras"], original = extras.api;
@@ -86,26 +121,37 @@ async function exerciseIssues(c, env, template) {
     for (const api of [undefined, {}, { versions: {} }]) {
       extras.api = api;
       if (api === undefined && context === "main") {
+        const retired = leaf.view;
         await app.plugins.disablePlugin("obsidian-excalidraw-plugin");
-        await app.plugins.enablePlugin("obsidian-excalidraw-plugin");
-        await c.waitFor(() => app.plugins.plugins["obsidian-excalidraw-plugin"]?.isReady, "startup without Extras API");
-        p = app.plugins.plugins["obsidian-excalidraw-plugin"];
+        await c.waitFor(() => !retired.excalidrawAPI, "late-load source root unmounted");
+        if (!leaf.view) env.owned.delete(leaf);
+        leaf = app.workspace.getLeaf("tab"); env.owned.add(leaf);
+        await leaf.setViewState({ type: "markdown", state: { file: drawing.path } });
+        check(leaf.view.getViewType() === "markdown", "late-load fixture did not start as Markdown");
+        c.observations.lateLoad = { before: leaf.view.getViewType(), layoutReady: app.workspace.layoutReady, extrasApiMissing: true };
+        p = await livePlugin();
+        await c.waitFor(() => leaf.view.excalidrawAPI && !leaf.view.excalidrawAPI.getAppState().isLoading, "late load restores drawing from Markdown");
+        c.observations.lateLoad.after = { type: leaf.view.getViewType(), editorReady: true };
       }
       check(await p.extrasGateway.getMermaid() === null, "unavailable companion did not cancel gracefully");
       const view = await open(); check(p.isReady && !!view.excalidrawAPI, "optional Extras API blocked drawing mode");
     }
     extras.api = original;
     check(p.extrasGateway.getAPI() === original, "updated companion API could not recover");
-    return { assertions: ["absent/incomplete optional API produces cancellation without an exception", "drawings remain editable", "restored companion becomes available"], reporterCause: "unconfirmed without version/debug information" };
+    return { assertions: ["absent/incomplete optional API produces cancellation without an exception", "drawings remain editable", ...(context === "main" ? ["main-window late plugin load restores a fallback Markdown drawing"] : []), "restored companion becomes available"], reporterCause: "reporter links failure to Lazy Loader's 20-second delay; exact third-party interaction remains unconfirmed" };
   });
   await c.case("native:creation-actions-3047:" + context, ["P01", "P02", "P08"], async () => {
+    // The editor fixture is deliberately mutated by the video case. Keep the
+    // creation template immutable so autosave cannot change this expectation.
+    const creationTemplate = await create("Creation-template.excalidraw.md", template);
+    await c.waitFor(() => p.isExcalidrawFile(creationTemplate), "creation template metadata");
     const original = JSON.parse(JSON.stringify(p.settings));
     c.defer(async () => {
-      const current = app.plugins.plugins["obsidian-excalidraw-plugin"];
+      const current = await livePlugin();
       current.settings = original; await current.saveSettings(); current.drawingCreationUI.refresh();
     });
     p.settings.showRibbonIcon = false; p.settings.showNewDrawingInEmptyTab = true;
-    p.settings.folder = env.prefix; p.settings.templateFilePath = drawing.path; p.settings.drawingFilenamePrefix = "New-action-";
+    p.settings.folder = env.prefix; p.settings.templateFilePath = creationTemplate.path; p.settings.drawingFilenamePrefix = "New-action-";
     p.settings.__issue3052Unknown = { preserved: true };
     await p.saveSettings();
     await leaf.setViewState({ type: "empty", state: {} }); app.workspace.setActiveLeaf(leaf, { focus: true });
@@ -116,15 +162,19 @@ async function exerciseIssues(c, env, template) {
     check(p.drawingCreationUI.ribbon.hasClass("excalidraw-display-none"), "ribbon preference ignored");
     await click(list.querySelector(".excalidraw-new-drawing"));
     await c.waitFor(() => leaf.view.excalidrawAPI && leaf.view.file?.path.startsWith(env.prefix + "/New-action-"), "creation uses configured destination and format");
+    await env.ready(leaf);
     check(leaf.view.file.extension === "md" && leaf.view.excalidrawAPI.getSceneElements().length > 0, "creation ignored template or file format");
+    check(await app.vault.read(creationTemplate) === template, "creation modified its template");
     if (context === "main") {
-      await app.plugins.disablePlugin("obsidian-excalidraw-plugin"); await app.plugins.enablePlugin("obsidian-excalidraw-plugin");
-      await c.waitFor(() => app.plugins.plugins["obsidian-excalidraw-plugin"]?.isReady, "settings reload readiness");
-      const current = app.plugins.plugins["obsidian-excalidraw-plugin"];
+      const retired = leaf.view;
+      await app.plugins.disablePlugin("obsidian-excalidraw-plugin");
+      await c.waitFor(() => !retired.excalidrawAPI, "creation source root unmounted");
+      if (!leaf.view) env.owned.delete(leaf);
+      const current = await livePlugin();
       check(!current.settings.showRibbonIcon && current.settings.showNewDrawingInEmptyTab && current.settings.__issue3052Unknown?.preserved, "reload lost creation preferences or unknown settings");
       const data = JSON.parse(await app.vault.adapter.read(app.vault.configDir + "/plugins/obsidian-excalidraw-plugin/data.json"));
       check(data.showNewDrawingInEmptyTab && data.showRibbonIcon === false && data.__issue3052Unknown.preserved, "disk settings differ after reload");
     }
-    return { assertions: ["opt-in empty-tab action retains core actions", "independent ribbon visibility", "configured destination, format and template", "nondefault and unknown settings survive actual plugin reload and disk persistence"] };
+    return { assertions: ["opt-in empty-tab action retains core actions", "independent ribbon visibility", "configured destination, format and template", ...(context === "main" ? ["nondefault and unknown settings survive actual plugin reload and disk persistence"] : [])] };
   });
 }
