@@ -35,6 +35,8 @@ async function fixture() {
   const { getImageCache } = await graph.importModule(
     "src/shared/ImageCache.ts",
   );
+  const ownedPNG = await graph.importModule("src/utils/ownedPNGImage.ts");
+  const images = new Set();
   const cache = getImageCache(),
     stores = new Map(),
     requests = [],
@@ -66,7 +68,24 @@ async function fixture() {
   cache.ensureCacheStoreReady = async () => {};
   cache.getCacheData = async (key) => store("imageCacheV2").get(key);
   class Image {
-    src = "";
+    constructor() {
+      images.add(this);
+    }
+    value = "";
+    complete = false;
+    set src(value) {
+      this.value = value;
+      this.complete = false;
+    }
+    get src() {
+      return this.value;
+    }
+    onWindowMigrated(callback) {
+      this.migrated = callback;
+      return () => {
+        this.migrated = null;
+      };
+    }
     listeners = new Map();
     addEventListener(name, callback, options) {
       this.listeners.set(name, { callback, options });
@@ -75,13 +94,15 @@ async function fixture() {
       if (this.listeners.get(name)?.callback === callback)
         this.listeners.delete(name);
     }
-    fire(name) {
+    fire(name, complete = true) {
+      this.complete = complete;
       const entry = this.listeners.get(name);
       if (entry?.options?.once) this.listeners.delete(name);
       entry?.callback();
     }
   }
   const mocks = {
+    "../../utils/ownedPNGImage": ownedPNG,
     "../../shared/ImageCache": { getImageCache: () => cache },
     "../../types/utilTypes": { PreviewImageType: { PNG: "PNG" } },
     "../../utils/utils": {
@@ -156,6 +177,7 @@ async function fixture() {
     render,
     discard: exports.discardImage,
     close() {
+      for (const image of images) ownedPNG.discardOwnedPNGImage(image);
       if (cache.isReady()) cache.destroy();
       for (const url of urls) URL.revokeObjectURL(url);
       graph.close();
@@ -166,6 +188,35 @@ async function fixture() {
 }
 const flush = () => new Promise((resolve) => setImmediate(resolve));
 const blob = (text) => new Blob([text], { type: "image/png" });
+
+test("decoded PNG migration creates a fresh URL and ignores an obsolete request's unsettled error", async () => {
+  const f = await fixture();
+  try {
+    const img = new f.Image(),
+      task = f.render(img);
+    await flush();
+    f.requests[0](blob("migrated"));
+    await task;
+    const first = img.src;
+    img.fire("load");
+    await assert.rejects(fetch(first));
+    const migrate = img.migrated;
+    migrate();
+    assert.equal(f.requests.length, 1, "migration reuses the blob without exporting again");
+    assert.notEqual(img.src, first);
+    img.fire("error", false);
+    assert.equal(await (await fetch(img.src)).text(), "migrated");
+    img.fire("load");
+    await assert.rejects(fetch(img.src));
+    f.discard(img);
+    assert.equal(img.migrated, null);
+    const retiredSource = img.src;
+    migrate();
+    assert.equal(img.src, retiredSource);
+  } finally {
+    f.close();
+  }
+});
 
 test("concurrent cold PNG renders keep both renderer URLs alive until each image settles", async () => {
   const f = await fixture();

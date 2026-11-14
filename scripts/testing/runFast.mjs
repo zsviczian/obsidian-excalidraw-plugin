@@ -21,6 +21,7 @@ const reportPath = join(reportDir, "report.json");
 // Separate measured whole-module tests from historical VM/extraction harnesses.
 const selected = coverage ? files.filter(file => file.endsWith(".source.test.mjs") || [
   "scripts/testing/settings/settingsWriter.test.mjs", "tests/markdownImageGeometry.test.mjs", "tests/markdownImageCache.test.mjs", "tests/markdownImageMetadata.test.mjs",
+  "scripts/testing/pngEmbedLifetime.test.mjs", // Complete cache/owned-payload modules; the postprocessor VM earns no source credit.
 ].includes(file)) : files;
 const args = ["--experimental-transform-types", "--enable-source-maps", "--test", "--test-concurrency=4",
   "--test-reporter=dot", "--test-reporter=./scripts/testing/reporter.mjs", "--test-reporter-destination=stdout", `--test-reporter-destination=${reportPath}`,

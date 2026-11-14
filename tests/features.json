@@ -991,7 +991,8 @@
             "node:scripts/testing/pngEmbedLifetime.test.mjs::concurrent cold PNG renders keep both renderer URLs alive until each image settles",
             "node:scripts/testing/pngEmbedLifetime.test.mjs::warm PNG cache hits have independent URLs and discarding one preserves its sibling",
             "node:scripts/testing/pngEmbedLifetime.test.mjs::uncached PNG load and error both release their owned URLs without populating the cache",
-            "node:scripts/testing/pngEmbedLifetime.test.mjs::discarding a pending PNG after cache shutdown still releases its URL and listeners"
+            "node:scripts/testing/pngEmbedLifetime.test.mjs::discarding a pending PNG after cache shutdown still releases its URL and listeners",
+            "node:scripts/testing/pngEmbedLifetime.test.mjs::decoded PNG migration creates a fresh URL and ignores an obsolete request's unsettled error"
           ]
         },
         {

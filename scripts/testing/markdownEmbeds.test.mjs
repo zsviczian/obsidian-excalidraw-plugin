@@ -41,6 +41,7 @@ function fixture() {
       this.ownerDocument.createElement = tag => {
         const element = new Element("", tag); element.ownerDocument = this.ownerDocument; return element;
       };
+      this.ownerDocument.adoptNode = element => { element.ownerDocument = this.ownerDocument; return element; };
       this.ownerDocument.body = { querySelectorAll: () => [] };
     }
     hasClass(cls) { return this.classes.has(cls); }
@@ -114,6 +115,7 @@ function fixture() {
     "src/shared/GlobalTaskQueue": { getGlobalTaskQueue: () => queue },
     "../../utils/debugHelper": { DEBUGGING: false },
     "../../shared/ImageCache": { getImageCache: () => ({ isReady: () => cacheReady, releaseObsidianURL: url => released.push(url) }) },
+    "../../utils/ownedPNGImage": { discardOwnedPNGImage: () => false },
     "../../shared/EmbeddedFileLoader": { EmbeddedFilesLoader: class { constructor() { this.terminate = false; loaders.push(this); } } },
     "../../types/utilTypes": { PreviewImageType: { PNG: "PNG", SVGIMG: "SVGIMG", SVG: "SVG" } },
     "../../utils/typechecks": { isInstanceOfHTMLImageElement: el => el.tag === "img" },
@@ -167,6 +169,7 @@ for (const context of ["inline", "preview"]) {
     const doc = { defaultView: f.container.ownerDocument.defaultView, createElement(tag) {
       const element = new f.Element("", tag); element.ownerDocument = doc; return element;
     } };
+    doc.adoptNode = element => { element.ownerDocument = doc; return element; };
     const anchor = new f.Element(); anchor.ownerDocument = doc;
     await f.processor.getIMG({ fname: f.targetFile.path, fwidth: "180", fheight: "", imgstyle: [] },
       false, context === "inline" ? anchor : undefined, () => true, context === "preview", context === "preview" ? doc : undefined);

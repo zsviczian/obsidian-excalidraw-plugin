@@ -56,6 +56,7 @@ import { getDrawingPaddingMax } from "src/utils/drawingPadding";
 import { readDrawingPreviewElements } from "src/utils/drawingPreviewScene";
 import { getGlobalTaskQueue } from "src/shared/GlobalTaskQueue";
 import { renderMarkdownEmbed } from "./MarkdownEmbedRenderChild";
+import { discardOwnedPNGImage, setOwnedPNGImageSource } from "../../utils/ownedPNGImage";
 
 interface imgElementAttributes {
   file?: TFile;
@@ -73,7 +74,6 @@ let vault: Vault;
 let metadataCache: MetadataCache;
 let readingControls: Set<DrawingEmbedControls> | null = null;
 let drawingFrames: Map<TFile, { mtime: number; frames: Promise<DrawingFrameChoice[]> }> | null = null;
-const pngImageCleanups = new WeakMap<HTMLImageElement, () => void>();
 
 const getDrawingFrames = (file: TFile): Promise<DrawingFrameChoice[]> => {
   const entries = drawingFrames;
@@ -123,9 +123,7 @@ const discardImage = (el: Element | null) => {
     ? [el]
     : Array.from(el.querySelectorAll("img"));
   images.forEach((img) => {
-    const cleanup = pngImageCleanups.get(img);
-    if (cleanup) cleanup();
-    else if (img.src.startsWith("blob:")) {
+    if (!discardOwnedPNGImage(img) && img.src.startsWith("blob:")) {
       getImageCache().releaseObsidianURL(img.src);
     }
     // Instantly aborts the browser's background V8 image decoder task
@@ -235,20 +233,9 @@ const _getPNG = async ({
   if (!png) {
     return null;
   }
-  const blobUrl = URL.createObjectURL(png);
-
   // Each renderer owns its URL. Concurrent cache replacements and discarded
   // siblings must never revoke an image which is still fetching/decoding.
-  const cleanup = () => {
-    pngImageCleanups.delete(img);
-    img.removeEventListener("load", cleanup);
-    img.removeEventListener("error", cleanup);
-    URL.revokeObjectURL(blobUrl);
-  };
-  pngImageCleanups.set(img, cleanup);
-  img.addEventListener("load", cleanup, { once: true });
-  img.addEventListener("error", cleanup, { once: true });
-  img.src = blobUrl;
+  setOwnedPNGImageSource(img, png);
 
   if (cacheReady && !cached) {
     // Persist the blob, independently of any particular IMG's lifetime.
@@ -585,7 +572,7 @@ const getIMG = async (
       case PreviewImageType.PNG: {
         // A decoded/released blob URL cannot be fetched again after adoption
         // into another document. Start the image in its final owning realm.
-        const img = ownerDocument ? ownerDocument.createElement("img") : createEl("img");
+        const img = ownerDocument ? ownerDocument.adoptNode(createEl("img")) : createEl("img");
         setImgStyle({
           element: img,
           imgAttributes,
@@ -868,8 +855,7 @@ const createImageDiv = async (
   if (!img) {
     return null;
   }
-  const container = img.ownerDocument.createElement("div");
-  container.className = attr.imgstyle.join(" ");
+  const container = img.ownerDocument.adoptNode(createDiv(attr.imgstyle.join(" ")));
   container.append(img);
   return container;
 };
@@ -1486,7 +1472,7 @@ const legacyExcalidrawPopoverObserverFn: MutationCallback = (m) => {
       return;
     }
 
-    const div = img.ownerDocument.createElement("div");
+    const div = img.ownerDocument.adoptNode(createDiv());
     div.appendChild(img);
     div.setAttribute("src", file.path);
     div.onClickEvent((ev) => {
