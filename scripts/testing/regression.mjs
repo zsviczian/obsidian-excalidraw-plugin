@@ -19,6 +19,7 @@ import { deviceProfiles, breakpointProfiles } from "./host/deviceProfiles.mjs";
 import { behavioralCases } from "./behaviorPlan.mjs";
 import { coverageChanges } from "./coverageChanges.mjs";
 import { workflowBundleCaseIds } from "./host/workflowBundle.mjs";
+import { issue3052CaseIds } from "./host/issue3052.mjs";
 import { textSaveShortcutCaseIds } from "./host/textSaveShortcut.mjs";
 import { codeCardCaseIds } from "./host/codeCards.mjs";
 import { embedControlCaseIds, embedControlDeviceCaseIds } from "./host/embedControls.mjs";
@@ -34,6 +35,7 @@ export const requiredDeviceCases = [
 
 export const requiredNativeCases = [
   ...workflowBundleCaseIds,
+  ...issue3052CaseIds,
   ...textSaveShortcutCaseIds,
   ...codeCardCaseIds,
   ...embedControlCaseIds,

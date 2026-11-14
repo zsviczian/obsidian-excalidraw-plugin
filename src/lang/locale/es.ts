@@ -16,6 +16,11 @@ declare const PLUGIN_VERSION: string;
 
 // Español
 export default {
+  SHOW_RIBBON_ICON_NAME: "Mostrar el icono de Excalidraw en la cinta izquierda",
+  SHOW_NEW_DRAWING_EMPTY_TAB_NAME: "Mostrar Nuevo Excalidraw en las pestañas vacías",
+  SHOW_NEW_DRAWING_EMPTY_TAB_DESC: "Añade una acción junto a Nueva nota usando los ajustes de carpeta, formato de archivo y plantilla del dibujo.",
+  NEW_DRAWING_EMPTY_TAB: "Nuevo Excalidraw",
+
   PREVIEW_VIEW_HELP: "Crea vistas añadiendo marcos o marcos marcadores al dibujo de origen y asignándoles un nombre. Cambia el nombre predeterminado «Frame».",
   PREVIEW_OUTER_PADDING: "Margen exterior",
   PREVIEW_AREA_EXPANSION: "Ampliación del área",

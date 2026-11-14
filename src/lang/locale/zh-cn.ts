@@ -11,6 +11,11 @@ declare const PLUGIN_VERSION: string;
 
 // 简体中文
 export default {
+  SHOW_RIBBON_ICON_NAME: "在左侧功能区显示 Excalidraw 图标",
+  SHOW_NEW_DRAWING_EMPTY_TAB_NAME: "在空白标签页显示「新建 Excalidraw」",
+  SHOW_NEW_DRAWING_EMPTY_TAB_DESC: "在新建笔记旁添加绘图操作，使用你的绘图文件夹、文件格式和模板设置。",
+  NEW_DRAWING_EMPTY_TAB: "新建 Excalidraw",
+
   PREVIEW_VIEW_HELP: "在源绘图中添加框架或标记框架并为其命名，即可创建视图。请将默认名称“Frame”改为有意义的名称。",
   PREVIEW_OUTER_PADDING: "外部留白",
   PREVIEW_AREA_EXPANSION: "扩展区域",
