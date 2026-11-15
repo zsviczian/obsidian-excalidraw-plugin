@@ -9,6 +9,7 @@ const root = resolve(import.meta.dirname, "../..");
 
 async function fixture() {
   const previousWindow = globalThis.window;
+  const previousCreateEl = globalThis.createEl;
   globalThis.window = globalThis;
   const graph = sourceHarness({
     obsidian: { Notice: class {} },
@@ -78,6 +79,9 @@ async function fixture() {
     value = "";
     complete = false;
     naturalWidth = 0;
+    ownerDocument = { adoptNode(image) { image.ownerDocument = this; return image; } };
+    classes = new Set();
+    hasClass(name) { return this.classes.has(name); }
     set src(value) {
       this.value = value;
       this.complete = false;
@@ -102,6 +106,12 @@ async function fixture() {
       entry?.callback();
     }
   }
+  globalThis.createEl = (tag, options) => {
+    assert.equal(tag, "img");
+    const image = new Image();
+    image.classes = new Set((options?.cls ?? "").split(" ").filter(Boolean));
+    return image;
+  };
   const mocks = {
     "../../utils/ownedPNGImage": ownedPNG,
     "../../shared/ImageCache": { getImageCache: () => cache },
@@ -187,11 +197,40 @@ async function fixture() {
       graph.close();
       if (previousWindow === undefined) delete globalThis.window;
       else globalThis.window = previousWindow;
+      if (previousCreateEl === undefined) delete globalThis.createEl;
+      else globalThis.createEl = previousCreateEl;
     },
   };
 }
 const flush = () => new Promise((resolve) => setImmediate(resolve));
 const blob = (text) => new Blob([text], { type: "image/png" });
+
+test("fullscreen PNG copies reuse displayed pixels without another export and own independent URLs", async () => {
+  for (const cacheReady of [true, false]) {
+    const f = await fixture();
+    try {
+      const inline = new f.Image(), task = f.render(inline, cacheReady);
+      await flush(); f.requests[0](blob("displayed-frame-crop-theme")); await task;
+      inline.fire("load");
+      const preview = f.ownedPNG.cloneOwnedPNGImage(inline);
+      assert.ok(preview);
+      assert.equal(preview.ownerDocument, inline.ownerDocument);
+      assert.ok(preview.hasClass("excalidraw-embedded-img"));
+      assert.notEqual(preview.src, inline.src);
+      assert.equal(await (await fetch(preview.src)).text(), "displayed-frame-crop-theme");
+      assert.equal(f.requests.length, 1, "opening fullscreen must not export another raster");
+      const previewURL = preview.src; f.discard(preview);
+      await assert.rejects(fetch(previewURL));
+      assert.equal(await (await fetch(inline.src)).text(), "displayed-frame-crop-theme");
+      const reopened = f.ownedPNG.cloneOwnedPNGImage(inline);
+      assert.notEqual(reopened.src, previewURL);
+      f.discard(inline);
+      assert.equal(await (await fetch(reopened.src)).text(), "displayed-frame-crop-theme");
+      assert.equal(f.ownedPNG.cloneOwnedPNGImage(inline), null, "retired images cannot be copied");
+      f.disposePlugin(); await assert.rejects(fetch(reopened.src));
+    } finally { f.close(); }
+  }
+});
 
 test("loaded PNG URLs remain readable for independent pixel consumers", async () => {
   const f = await fixture();

@@ -186,14 +186,27 @@ async function exerciseEmbedControls(c, env, template, modifier) {
     leaf.view.editor.setCursor({ line: leaf.view.editor.lastLine(), ch: 0 });
     await c.waitFor(() => frames().length === 3, "source-edit rendering roundtrip");
     const inline = frames()[0].querySelector(".excalidraw-embedded-img");
+    if (mode === "PNG") await c.waitFor(() => inline.complete && inline.naturalWidth > 0, "inline PNG decoded before fullscreen");
+    const fullscreenStarted = win.performance.now();
     await action(0, "preview");
     c.phase = `native:embed-controls:${context}:${mode}:fullscreen`;
     let modal, stage;
     await c.waitFor(() => (modal = doc.querySelector(".excalidraw-embed-preview-modal")) && (stage = modal.querySelector(".excalidraw-embed-preview-stage")) && modal.querySelector(".excalidraw-embedded-img"), "fresh fullscreen payload");
     check(modal.querySelector("[fileSource]")?.getAttribute("fileSource") === drawing.path, "fullscreen changed drawing identity");
+    let pngReuse;
+    if (mode === "PNG") {
+      const preview = modal.querySelector("img.excalidraw-embedded-img");
+      await c.waitFor(() => preview.complete && preview.naturalWidth > 0, "fullscreen PNG decoded");
+      check(preview.src !== inline.src, "fullscreen borrowed the inline PNG URL");
+      check(preview.naturalWidth === inline.naturalWidth && preview.naturalHeight === inline.naturalHeight, "fullscreen rerasterized PNG instead of reusing displayed pixels");
+      const before = new Uint8Array(await (await win.fetch(inline.src)).arrayBuffer());
+      const after = new Uint8Array(await (await win.fetch(preview.src)).arrayBuffer());
+      check(before.length === after.length && before.every((value, index) => value === after[index]), "fullscreen changed the encoded PNG payload");
+      pngReuse = { inlineWidth: inline.naturalWidth, inlineHeight: inline.naturalHeight, encodedBytes: before.length, independentURL: true, elapsedMs: win.performance.now() - fullscreenStarted };
+    }
     const keys = [], recordKey = event => keys.push({ key: event.key, code: event.code, target: event.target.className, trusted: event.isTrusted });
     doc.addEventListener("keydown", recordKey, true); c.defer(() => doc.removeEventListener("keydown", recordKey, true));
-    c.observations = { ...c.observations, fullscreen: { focus: doc.activeElement?.outerHTML.slice(0, 500), connected: modal.isConnected, keys } };
+    c.observations = { ...c.observations, fullscreen: { focus: doc.activeElement?.outerHTML.slice(0, 500), connected: modal.isConnected, keys, pngReuse } };
     await key("+", "Equal", 187, 8);
     c.observations.fullscreen.zoom = stage.getAttribute("data-zoom");
     c.observations.fullscreen.stageConnected = stage.isConnected;
@@ -235,7 +248,7 @@ async function exerciseEmbedControls(c, env, template, modifier) {
     check(await app.vault.read(drawing) === drawingBytes, "embed actions changed drawing source");
     // Retiring the source owner removes every control and cancels its dialogs.
     check(!doc.querySelector(".excalidraw-embed-preview-modal"), "retired source left fullscreen modal");
-    return { assertions: ["trusted proportional resize previews without source writes", "only second identical token changed", "one-step undo/redo and reset", "Escape cancellation", "exact Markdown-image syntax selection and roundtrip", "fresh fullscreen zoom/pan/fit/Escape/focus", "inline payload survives modal cleanup", "Reading controls cannot write", "ordinary image unchanged", "Open drawing and drawing bytes unchanged"], actual: geometry() };
+    return { assertions: ["trusted proportional resize previews without source writes", "only second identical token changed", "one-step undo/redo and reset", "Escape cancellation", "exact Markdown-image syntax selection and roundtrip", "independently owned fullscreen zoom/pan/fit/Escape/focus", ...(mode === "PNG" ? ["fullscreen PNG keeps the exact displayed encoded pixels and dimensions with an independent URL"] : []), "inline payload survives modal cleanup", "Reading controls cannot write", "ordinary image unchanged", "Open drawing and drawing bytes unchanged"], actual: geometry() };
   });
 
   await c.case(`native:embed-ownership:${context}`, ["P03", "P04", "P05"], async () => {

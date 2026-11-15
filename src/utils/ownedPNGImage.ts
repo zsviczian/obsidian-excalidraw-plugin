@@ -1,5 +1,5 @@
 /** The shared plugin realm keeps PNG URLs valid across popout document migration. */
-const cleanups = new WeakMap<HTMLImageElement, () => void>();
+const imageSources = new WeakMap<HTMLImageElement, { blob: Blob; dispose: () => void }>();
 const liveImages = new Map<string, WeakRef<HTMLImageElement>>();
 let generation = 0;
 let active = true;
@@ -38,10 +38,19 @@ export function registerOwnedPNGImageSources(): () => void {
 
 /** Release an owned payload even after the plugin's cache manager has retired. */
 export function discardOwnedPNGImage(image: HTMLImageElement): boolean {
-  const cleanup = cleanups.get(image);
-  if (!cleanup) return false;
-  cleanup();
+  const source = imageSources.get(image);
+  if (!source) return false;
+  source.dispose();
   return true;
+}
+
+/** Reuse displayed PNG pixels for fullscreen without rasterizing the scene again. */
+export function cloneOwnedPNGImage(image: HTMLImageElement): HTMLImageElement | null {
+  const source = imageSources.get(image);
+  if (!source) return null;
+  const copy = image.ownerDocument.adoptNode(createEl("img", { cls: "excalidraw-embedded-img" }));
+  setOwnedPNGImageSource(copy, source.blob);
+  return copy;
 }
 
 /** Keep a live image's source reusable for pixel reads and document migration. */
@@ -55,7 +64,7 @@ export function setOwnedPNGImageSource(
   liveImages.set(url, new WeakRef(image));
   orphanedURLs?.register(image, url, image);
   const cleanup = () => {
-    cleanups.delete(image);
+    imageSources.delete(image);
     image.removeEventListener("error", failed);
     orphanedURLs?.unregister(image);
     releaseURL(url);
@@ -64,7 +73,7 @@ export function setOwnedPNGImageSource(
     // Ignore an old request's queued error while a replacement is loading.
     if (image.complete && image.naturalWidth === 0) cleanup();
   };
-  cleanups.set(image, cleanup);
+  imageSources.set(image, { blob, dispose: cleanup });
   image.addEventListener("error", failed);
   image.src = url;
 }

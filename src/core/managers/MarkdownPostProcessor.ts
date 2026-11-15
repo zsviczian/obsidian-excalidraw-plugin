@@ -56,7 +56,7 @@ import { getDrawingPaddingMax } from "src/utils/drawingPadding";
 import { readDrawingPreviewElements } from "src/utils/drawingPreviewScene";
 import { getGlobalTaskQueue } from "src/shared/GlobalTaskQueue";
 import { renderMarkdownEmbed } from "./MarkdownEmbedRenderChild";
-import { discardOwnedPNGImage, registerOwnedPNGImageSources, setOwnedPNGImageSource } from "../../utils/ownedPNGImage";
+import { cloneOwnedPNGImage, discardOwnedPNGImage, registerOwnedPNGImageSources, setOwnedPNGImageSource } from "../../utils/ownedPNGImage";
 
 interface imgElementAttributes {
   file?: TFile;
@@ -823,10 +823,13 @@ const createImgElement = async (
     frames,
     openDrawing: event => openDrawingEmbed(currentPlugin, attr.fname, event, imgOrDiv),
     getOpenTooltip: () => getDrawingEmbedOpenTooltip(currentPlugin.settings),
-    // A fullscreen viewer owns a fresh payload and must never revoke an inline
-    // embed's cached URL. Keep its crop/reference/theme through the same exporter.
+    // PNG already contains the displayed crop/theme. Reuse its encoded pixels
+    // with a separate URL instead of blocking fullscreen on a fresh 3x raster.
+    // Other renderers retain their independently owned export path.
     create: async active => {
-      const image = await getIMG({ ...attr, fwidth: "1600", fheight: "", imgstyle: [] }, false, undefined,
+      if (!active() || !isCurrent()) return null;
+      const ownedPNG = isInstanceOfHTMLImageElement(imgOrDiv) ? cloneOwnedPNGImage(imgOrDiv) : null;
+      const image = ownedPNG ?? await getIMG({ ...attr, fwidth: "1600", fheight: "", imgstyle: [] }, false, undefined,
         () => active() && isCurrent(), true, imgOrDiv.ownerDocument);
       image?.setAttribute("fileSource", attr.fname);
       return image;

@@ -36,6 +36,7 @@ function fixture() {
   class Element {
     constructor(classes = "", tag = "div") {
       this.classes = new Set(classes.split(" "));
+      this.classList = this.classes; this.style = {}; this.events = new Map();
       this.tag = tag; this.attrs = new Map(); this.children = []; this.isConnected = true;
       this.ownerDocument = { defaultView: ownerWindow };
       this.ownerDocument.createElement = tag => {
@@ -45,6 +46,7 @@ function fixture() {
       this.ownerDocument.body = { querySelectorAll: () => [] };
     }
     hasClass(cls) { return this.classes.has(cls); }
+    addEventListener(name, callback) { this.events.set(name, callback); }
     addClass(cls) { this.classes.add(cls); }
     removeClass(cls) { this.classes.delete(cls); }
     getAttribute(key) { return this.attrs.get(key) ?? null; }
@@ -106,7 +108,7 @@ function fixture() {
   };
   const mocks = {
     obsidian: { TFile, MarkdownRenderChild: RenderChild },
-    "./drawingEmbedActions": { getDrawingEmbedActions: element => actions.get(element) },
+    "./drawingEmbedActions": { getDrawingEmbedActions: element => actions.get(element), setDrawingEmbedActions: (element, value) => actions.set(element, value) },
     "./DrawingEmbedControls": { DrawingEmbedControls: class extends RenderChild {
       constructor(...args) { super(args[0]); controls.push(args); controlInstances.push(this); this.unloadCalls = 0; }
       unload() { this.unloadCalls++; super.unload(); }
@@ -115,7 +117,9 @@ function fixture() {
     "src/shared/GlobalTaskQueue": { getGlobalTaskQueue: () => queue },
     "../../utils/debugHelper": { DEBUGGING: false },
     "../../shared/ImageCache": { getImageCache: () => ({ isReady: () => cacheReady, releaseObsidianURL: url => released.push(url) }) },
-    "../../utils/ownedPNGImage": { discardOwnedPNGImage: () => false, registerOwnedPNGImageSources: () => () => {} },
+    "../../utils/ownedPNGImage": { discardOwnedPNGImage: () => false, registerOwnedPNGImageSources: () => () => {}, cloneOwnedPNGImage: element => {
+      const copy = new Element("excalidraw-embedded-img", "img"); copy.ownerDocument = element.ownerDocument; return copy;
+    } },
     "../../shared/EmbeddedFileLoader": { EmbeddedFilesLoader: class { constructor() { this.terminate = false; loaders.push(this); } } },
     "../../types/utilTypes": { PreviewImageType: { PNG: "PNG", SVGIMG: "SVGIMG", SVG: "SVG" } },
     "../../utils/typechecks": { isInstanceOfHTMLImageElement: el => el.tag === "img" },
@@ -126,8 +130,13 @@ function fixture() {
       getEmbeddedFilenameParts: src => ({ hasBlockref: src.includes("#^"), blockref: src.split("#^")[1] }),
     },
   };
+  mocks["../../utils/obsidianUtils"].getFileCSSClasses = () => [];
+  mocks["../../utils/excalidrawAutomateUtils"] = { getTemplate: async () => ({ elements: [] }) };
+  mocks["src/utils/frameMetadata"] = { getSceneFrames: () => [] };
+  mocks["./openDrawingEmbed"] = { getDrawingEmbedOpenTooltip: () => "Open drawing" };
+  mocks["../editor/embedPadding"] = { withAreaPadding: () => null };
   const context = vm.createContext({ MutationObserver: Observer, window: ownerWindow, createEl: tag => new Element("", tag),
-    console: { error: (...args) => errors.push(args) }, __createImage: createImage, __createRaster: async args => { rasters.push(args); return null; } });
+    console: { error: (...args) => errors.push(args) }, __createImage: createImage, __createRaster: async args => { rasters.push(args); return args.img; } });
   const compile = (source, require) => {
     const code = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
     const exports = {};
@@ -147,7 +156,7 @@ function fixture() {
     const name = statement.declarationList.declarations[0].name.getText(tree);
     source = source.slice(0, statement.getStart(tree)) + `const ${name} = ${seams[name]};` + source.slice(statement.end);
   }
-  source += "\nexport { tmpObsidianWYSIWYG, processReadingMode, getIMG };";
+  source += "\nexport { tmpObsidianWYSIWYG, processReadingMode, getIMG, createImgElement };";
   const processor = compile(source, name => name === "./MarkdownEmbedRenderChild" ? child : name === "../editor/embedDimensions" ? dimensions : mocks[name] ?? {});
   processor.initializeMarkdownPostProcessor(plugin);
   const container = new Element("internal-embed markdown-embed"); container.setAttribute("src", targetFile.path);
@@ -159,9 +168,23 @@ function fixture() {
   const start = () => { assert.ok(jobs.length); const done = jobs.shift()(); return done; };
   const settle = async (name = "result", request = requests.at(-1)) => { const result = image(name); request.resolve(result); await Promise.resolve(); return result; };
   return { processor, plugin, container, ctx, el, children, render, jobs, requests, errors, released, observers, timers, intervals, loaders, frontmatters, flushTimers, start, settle, image, Element, rasters, controls, controlInstances, cacheReady: value => cacheReady = value,
-    files, sourceFile, targetFile,
+    files, sourceFile, targetFile, actions,
     unloadPlugin: () => { plugin._loaded = false; for (const callback of pluginCleanups.splice(0)) callback(); } };
 }
+
+test("PNG fullscreen routing opens the displayed raster without starting the high-resolution exporter", async () => {
+  const f = fixture(); f.plugin.settings.previewImageType = "PNG";
+  f.targetFile.stat = { mtime: 1 };
+  const image = await f.processor.createImgElement({ file: f.targetFile, fname: f.targetFile.path + "#^frame=crop,padding=20", fwidth: "180", fheight: "", imgstyle: [] }, false, undefined, () => true);
+  assert.equal(f.rasters.length, 1);
+  const preview = await f.actions.get(image).create(() => true);
+  assert.ok(preview); assert.notEqual(preview, image);
+  assert.equal(preview.ownerDocument, image.ownerDocument);
+  assert.equal(preview.getAttribute("fileSource"), f.targetFile.path + "#^frame=crop,padding=20");
+  assert.equal(f.rasters.length, 1, "fullscreen must not wait for a second 3x PNG export");
+  assert.equal(await f.actions.get(image).create(() => false), null);
+  assert.equal(f.intervals.size, 0);
+});
 
 for (const context of ["inline", "preview"]) {
   test(`PNG ${context} images are created in their owning document`, async () => {

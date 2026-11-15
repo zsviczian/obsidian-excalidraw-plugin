@@ -64,6 +64,32 @@ No unrelated startup refactor or automatic closure of #3051 is justified.
 
 ## Maintainer-approved PNG correction
 
+### Android fullscreen follow-up, 2026-11-15
+
+The maintainer reports a long "Loading preview" wait on physical Android when
+Markdown preview type is PNG, while Native SVG opens quickly. Git history traces
+the fullscreen `fwidth: "1600"` / fresh-payload path to commit `14115712` in
+PR #3037; PR #3052 retained it. That path bypasses the cache and requests scale 3,
+so it can rasterize nine times the base pixel area on every opening. This is a
+confirmed unnecessary-work path, not a measured attribution of every Android delay.
+
+Owned PNG images now retain a weakly keyed reference to their existing encoded
+blob. Fullscreen reuses those pixels through a new independently owned URL in the
+source document. It does not start another scene export or depend on cache
+availability. SVG/Native SVG and unowned-payload fallback paths remain unchanged.
+The deliberate trade-off is that PNG zoom uses the displayed raster's resolution
+rather than an automatically generated fresh 3x raster; no switch to SVG is hidden
+behind the PNG setting.
+
+The new routing regression fails before the fix because fullscreen starts a second
+raster export. Pixel-copy coverage includes cached/uncached images, close/reopen,
+source retirement, document ownership and plugin teardown. All 41 focused
+Markdown/PNG cases, all 791 fast cases, 251 measured source cases and the
+production build pass. Both changed production modules have zero focused lint
+errors/warnings. Native embed validation and
+physical Android confirmation are recorded separately; earlier full-profile
+counts are not acceptance evidence for this follow-up.
+
 Native validation independently exposed concurrent cold renders revoking an
 earlier image's URL, and warm-cache siblings sharing a revocable URL. The
 postprocessor now reads cached raster blobs and gives every image its own URL.
