@@ -119,7 +119,7 @@ const discardImage = (el: Element | null) => {
   if (!el) {
     return;
   }
-  const images = isInstanceOfHTMLImageElement(el)
+  const images = hasOwnedPNGImageSource(el) || isInstanceOfHTMLImageElement(el)
     ? [el]
     : Array.from(el.querySelectorAll("img"));
   images.forEach((img) => {
@@ -837,13 +837,13 @@ const createImgElement = async (
     // Other renderers retain their independently owned export path.
     create: async active => {
       if (!active() || !isCurrent()) return null;
-      const ownedPNG = isInstanceOfHTMLImageElement(imgOrDiv) ? cloneOwnedPNGImage(imgOrDiv) : null;
+      const ownedPNG = hasOwnedPNGImageSource(imgOrDiv) ? cloneOwnedPNGImage(imgOrDiv) : null;
       const image = ownedPNG ?? await getIMG({ ...attr, fwidth: "1600", fheight: "", imgstyle: [] }, false, undefined,
         () => active() && isCurrent(), true, imgOrDiv.ownerDocument);
       image?.setAttribute("fileSource", attr.fname);
       return image;
     },
-    ...(isInstanceOfHTMLImageElement(imgOrDiv) && hasOwnedPNGImageSource(imgOrDiv) ? {
+    ...(hasOwnedPNGImageSource(imgOrDiv) ? {
       upgrade: async (active: () => boolean, signal: AbortSignal) => {
         const image = await getIMG({ ...attr, fwidth: "1600", fheight: "", imgstyle: [] }, false, undefined,
           () => active() && !signal.aborted && isCurrent(), true, imgOrDiv.ownerDocument,

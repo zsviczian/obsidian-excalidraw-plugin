@@ -49,7 +49,7 @@ class Modal {
   open() { this.onOpen(); }
   close() { this.onClose(); this.modalEl.remove(); }
 }
-const graph = sourceHarness({ obsidian: { Component, Modal, setIcon() {}, setTooltip() {} }, "src/lang/helpers": { t: key => key }, "src/utils/typechecks": { isInstanceOfHTMLImageElement: el => el.tag === "img" }, "src/utils/styleUtils": { setStyle: (el, values) => Object.assign(el.style, values) } });
+const graph = sourceHarness({ obsidian: { Component, Modal, setIcon() {}, setTooltip() {} }, "src/lang/helpers": { t: key => key }, "src/utils/ownedPNGImage": { hasOwnedPNGImageSource: el => el.tag === "img" }, "src/utils/styleUtils": { setStyle: (el, values) => Object.assign(el.style, values) } });
 const { DrawingEmbedPreviewModal } = await graph.importModule("src/shared/Dialogs/DrawingEmbedPreviewModal.ts");
 after(() => { graph.close(); if (oldWindow === undefined) delete globalThis.window; else globalThis.window = oldWindow; });
 const flush = () => new Promise(resolve => setImmediate(resolve));

@@ -1,7 +1,7 @@
 import { App, Component, Modal, setIcon, setTooltip } from "obsidian";
 import { t } from "src/lang/helpers";
 import { setStyle } from "src/utils/styleUtils";
-import { isInstanceOfHTMLImageElement } from "src/utils/typechecks";
+import { hasOwnedPNGImageSource } from "src/utils/ownedPNGImage";
 import type { DrawingEmbedActions } from "src/types/drawingEmbedTypes";
 import { labelDrawingEmbedControl } from "src/core/managers/drawingEmbedActions";
 
@@ -195,7 +195,7 @@ export class DrawingEmbedPreviewModal extends Modal {
 
   private async waitForImage(image: HTMLElement, signal: AbortSignal): Promise<boolean> {
     if (signal.aborted) return false;
-    if (!isInstanceOfHTMLImageElement(image)) return true;
+    if (!hasOwnedPNGImageSource(image)) return true;
     return new Promise(resolve => {
       const finish = (ready: boolean) => { signal.removeEventListener("abort", abort); resolve(ready); };
       const abort = () => finish(false);

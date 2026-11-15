@@ -13,7 +13,7 @@ const deferred = () => {
   return { promise, resolve, reject };
 };
 
-function fixture() {
+function fixture({ recognizeImages = true } = {}) {
   const observers = [], timers = new Map(), intervals = new Map(), jobs = [], requests = [], errors = [], released = [], loaders = [], rasters = [], controls = [], controlInstances = [], pluginCleanups = [];
   let cacheReady = false;
   const actions = new WeakMap();
@@ -117,12 +117,12 @@ function fixture() {
     "src/shared/GlobalTaskQueue": { getGlobalTaskQueue: () => queue },
     "../../utils/debugHelper": { DEBUGGING: false },
     "../../shared/ImageCache": { getImageCache: () => ({ isReady: () => cacheReady, releaseObsidianURL: url => released.push(url) }) },
-    "../../utils/ownedPNGImage": { hasOwnedPNGImageSource: () => true, discardOwnedPNGImage: () => false, registerOwnedPNGImageSources: () => () => {}, cloneOwnedPNGImage: element => {
-      const copy = new Element("excalidraw-embedded-img", "img"); copy.ownerDocument = element.ownerDocument; return copy;
+    "../../utils/ownedPNGImage": { hasOwnedPNGImageSource: element => element.tag === "img", discardOwnedPNGImage: () => false, registerOwnedPNGImageSources: () => () => {}, cloneOwnedPNGImage: element => {
+      const copy = new Element("excalidraw-embedded-img", "img"); copy.src = "blob:clone"; copy.ownerDocument = element.ownerDocument; return copy;
     } },
     "../../shared/EmbeddedFileLoader": { EmbeddedFilesLoader: class { constructor() { this.terminate = false; loaders.push(this); } } },
     "../../types/utilTypes": { PreviewImageType: { PNG: "PNG", SVGIMG: "SVGIMG", SVG: "SVG" } },
-    "../../utils/typechecks": { isInstanceOfHTMLImageElement: el => el.tag === "img" },
+    "../../utils/typechecks": { isInstanceOfHTMLImageElement: el => recognizeImages && el.tag === "img" },
     "../../utils/obsidianUtils": { getSafeFrontmatter: fm => fm ?? {}, getParentOfClass: () => null },
     "src/utils/htmlUtils": { setElementDisplay: (el, display) => { if (display === "none") el.addClass("excalidraw-display-none"); else el.removeClass("excalidraw-display-none"); } },
     "../../utils/utils": {
@@ -198,6 +198,15 @@ test("PNG detail upgrade forces a fresh raster and abort immediately terminates 
   assert.ok(detail); assert.equal(f.rasters.at(-1).forceExport, true); assert.equal(f.rasters.at(-1).cacheReady, false);
   assert.equal(f.rasters.at(-1).imgAttributes.fwidth, "1600"); assert.equal(detail.ownerDocument, image.ownerDocument);
   next.abort(); assert.equal(f.loaders.at(-1).terminate, false, "completed request unregisters its abort listener");
+});
+
+test("adopted PNG images retain fast fullscreen detail and disposal when their owning-window instanceof check fails", async () => {
+  const f = fixture({ recognizeImages: false }); f.plugin.settings.previewImageType = "PNG"; f.targetFile.stat = { mtime: 1 };
+  const image = await f.processor.createImgElement({ file: f.targetFile, fname: f.targetFile.path, fwidth: "180", fheight: "", imgstyle: [] }, false, undefined, () => true);
+  const actions = f.actions.get(image), preview = await actions.create(() => true);
+  assert.equal(f.rasters.length, 1, "an adopted owned PNG must not take the fresh-export fallback");
+  assert.equal(typeof actions.upgrade, "function");
+  actions.discard(preview); assert.deepEqual(f.released, ["blob:clone"]); assert.equal(preview.src, "");
 });
 
 for (const context of ["inline", "preview"]) {

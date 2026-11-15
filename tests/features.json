@@ -986,7 +986,8 @@
             "node:scripts/testing/markdownEmbeds.test.mjs::PNG inline images are created in their owning document",
             "node:scripts/testing/markdownEmbeds.test.mjs::PNG preview images are created in their owning document",
             "node:scripts/testing/markdownEmbeds.test.mjs::PNG fullscreen routing opens the displayed raster without starting the high-resolution exporter",
-            "node:scripts/testing/markdownEmbeds.test.mjs::PNG detail upgrade forces a fresh raster and abort immediately terminates its loader"
+            "node:scripts/testing/markdownEmbeds.test.mjs::PNG detail upgrade forces a fresh raster and abort immediately terminates its loader",
+            "node:scripts/testing/markdownEmbeds.test.mjs::adopted PNG images retain fast fullscreen detail and disposal when their owning-window instanceof check fails"
           ]
         },
         {

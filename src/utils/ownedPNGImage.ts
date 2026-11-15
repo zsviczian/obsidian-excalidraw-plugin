@@ -1,5 +1,5 @@
 /** The shared plugin realm keeps PNG URLs valid across popout document migration. */
-const imageSources = new WeakMap<HTMLImageElement, { blob: Blob; dispose: () => void }>();
+const imageSources = new WeakMap<Element, { blob: Blob; dispose: () => void }>();
 const liveImages = new Map<string, WeakRef<HTMLImageElement>>();
 let generation = 0;
 let active = true;
@@ -53,8 +53,8 @@ export function cloneOwnedPNGImage(image: HTMLImageElement): HTMLImageElement | 
   return copy;
 }
 
-/** Identify a live raster without allocating another image or object URL. */
-export function hasOwnedPNGImageSource(image: HTMLImageElement): boolean {
+/** Ownership survives adoption, which changes the document but not the image's prototype realm. */
+export function hasOwnedPNGImageSource(image: Element): image is HTMLImageElement {
   return imageSources.has(image);
 }
 
