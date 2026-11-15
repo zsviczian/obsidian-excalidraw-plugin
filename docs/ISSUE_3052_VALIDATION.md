@@ -41,9 +41,9 @@ The new production bundle is 5,145,119 bytes (97,761 bytes below 5 MiB).
 
 The maintainer also requested a mandatory consent control for compatibility work
 with another plugin. It is canonical in `CODING_STANDARDS.md` and prominently
-linked from `AGENTS.md` and `CONTRIBUTING.md`. The #3051 Extras guards are unchanged
-pending the maintainer's decision; no Lazy Loader-specific production workaround
-was introduced.
+linked from `AGENTS.md` and `CONTRIBUTING.md`. On 2026-11-15 the maintainer
+explicitly approved retaining the generic #3051 Extras guards and their regression
+coverage. No Lazy Loader-specific production workaround was introduced or approved.
 
 | Issue | Implementation and observable evidence |
 | --- | --- |
