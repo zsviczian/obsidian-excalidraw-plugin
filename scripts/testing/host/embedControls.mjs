@@ -48,6 +48,21 @@ async function exerciseEmbedControls(c, env, template, modifier) {
   const drawing = await create("Controls.excalidraw.md", template);
   await c.waitFor(() => p.isExcalidrawFile(drawing), "embed drawing metadata");
   const drawingBytes = await app.vault.read(drawing);
+  const holdDrawingRead = () => {
+    const read = app.vault.read; let release, entered = 0;
+    const gate = new Promise(resolve => { release = resolve; });
+    const held = async function(file, ...args) {
+      // Hold detail work only after the first image has mounted. A popout can
+      // also refresh its source during activation; blocking that read retires
+      // the source owner before its preview action can mount.
+      if (file === drawing && doc.querySelector(".excalidraw-embed-preview-modal .excalidraw-embedded-img")) { entered++; await gate; }
+      return read.call(this, file, ...args);
+    };
+    app.vault.read = held;
+    const restore = () => { if (app.vault.read === held) app.vault.read = read; release(); };
+    c.defer(restore);
+    return { restore, entered: () => entered };
+  };
   const png = Uint8Array.from(atob("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aL1sAAAAASUVORK5CYII="), char => char.charCodeAt(0));
   const plain = await app.vault.createBinary(env.prefix + "/ordinary.png", png.buffer);
   const token = `![[${drawing.path}|180]]`;
@@ -59,10 +74,17 @@ async function exerciseEmbedControls(c, env, template, modifier) {
     app.workspace.setActiveLeaf(leaf, { focus: true }); win.focus();
     if (mode === "source") leaf.view.editor.setCursor({ line: leaf.view.editor.lastLine(), ch: 0 });
     await c.waitFor(() => activeRoot()?.querySelectorAll(".excalidraw-embed-toolbar").length === 3, "three active owned embed toolbars");
-    await c.waitFor(() => frames().every(frame => {
-      const image = frame.querySelector(".excalidraw-embedded-img");
-      return image?.getBoundingClientRect().height > 0 && (image.tagName !== "IMG" || image.complete && image.naturalWidth > 0);
-    }), "decoded drawing previews with positive dimensions");
+    await c.waitFor(() => {
+      const previews = frames().map(frame => {
+        const image = frame.querySelector(".excalidraw-embedded-img");
+        return { tag: image?.tagName, bounds: image?.getBoundingClientRect().toJSON(), complete: image?.complete,
+          naturalWidth: image?.naturalWidth, source: image?.getAttribute("src")?.slice(0, 100),
+          display: image && win.getComputedStyle(image).display, frame: frame.getBoundingClientRect().toJSON(),
+          html: frame.outerHTML.slice(0, 700) };
+      });
+      c.observations = { ...c.observations, embedReadiness: previews };
+      return previews.every(image => image.bounds?.height > 0 && (image.tag !== "IMG" || image.complete && image.naturalWidth > 0));
+    }, "decoded drawing previews with positive dimensions");
   };
   const activeRoot = () => leaf.view.contentEl.querySelector(leaf.view.getMode?.() === "preview" ? ".markdown-preview-view" : ".markdown-source-view");
   const frames = () => [...activeRoot()?.querySelectorAll(".excalidraw-embed-controls-frame") || []];
@@ -179,20 +201,56 @@ async function exerciseEmbedControls(c, env, template, modifier) {
     leaf.view.editor.setCursor({ line: leaf.view.editor.lastLine(), ch: 0 });
     await c.waitFor(() => frames().length === 3, "source-edit rendering roundtrip");
     const inline = frames()[0].querySelector(".excalidraw-embedded-img");
+    if (mode === "PNG") await c.waitFor(() => inline.complete && inline.naturalWidth > 0, "inline PNG decoded before fullscreen");
+    const inlinePNG = mode === "PNG" ? { src: inline.src, width: inline.naturalWidth, height: inline.naturalHeight,
+      bytes: new Uint8Array(await (await win.fetch(inline.src)).arrayBuffer()) } : null;
+    const detailGate = mode === "PNG" ? holdDrawingRead() : null;
+    const fullscreenStarted = win.performance.now();
     await action(0, "preview");
     c.phase = `native:embed-controls:${context}:${mode}:fullscreen`;
     let modal, stage;
-    await c.waitFor(() => (modal = doc.querySelector(".excalidraw-embed-preview-modal")) && (stage = modal.querySelector(".excalidraw-embed-preview-stage")) && modal.querySelector(".excalidraw-embedded-img"), "fresh fullscreen payload");
+    await c.waitFor(() => {
+      modal = doc.querySelector(".excalidraw-embed-preview-modal");
+      c.observations.viewerReadiness = { modal: !!modal, status: modal?.querySelector(".excalidraw-embed-preview-status")?.textContent,
+        mainModal: !!app.workspace.containerEl.ownerDocument.querySelector(".excalidraw-embed-preview-modal"), heldReads: detailGate?.entered() };
+      return modal && (stage = modal.querySelector(".excalidraw-embed-preview-stage")) && modal.querySelector(".excalidraw-embedded-img");
+    }, "fresh fullscreen payload");
     check(modal.querySelector("[fileSource]")?.getAttribute("fileSource") === drawing.path, "fullscreen changed drawing identity");
+    let pngReuse;
+    if (mode === "PNG") {
+      const preview = modal.querySelector("img.excalidraw-embedded-img");
+      await c.waitFor(() => preview.complete && preview.naturalWidth > 0, "fullscreen PNG decoded");
+      c.observations.pngDimensions = { before: [inlinePNG.width, inlinePNG.height], preview: [preview.naturalWidth, preview.naturalHeight],
+        originalInline: [inline.naturalWidth, inline.naturalHeight], inlineRetired: !inline.isConnected, heldReads: detailGate.entered() };
+      check(preview.src !== inlinePNG.src, "fullscreen borrowed the inline PNG URL");
+      check(preview.naturalWidth === inlinePNG.width && preview.naturalHeight === inlinePNG.height, "fullscreen rerasterized PNG instead of reusing displayed pixels");
+      const before = inlinePNG.bytes;
+      const after = new Uint8Array(await (await win.fetch(preview.src)).arrayBuffer());
+      check(before.length === after.length && before.every((value, index) => value === after[index]), "fullscreen changed the encoded PNG payload");
+      pngReuse = { inlineWidth: inlinePNG.width, inlineHeight: inlinePNG.height, encodedBytes: before.length, independentURL: true, elapsedMs: win.performance.now() - fullscreenStarted };
+    }
     const keys = [], recordKey = event => keys.push({ key: event.key, code: event.code, target: event.target.className, trusted: event.isTrusted });
     doc.addEventListener("keydown", recordKey, true); c.defer(() => doc.removeEventListener("keydown", recordKey, true));
-    c.observations = { ...c.observations, fullscreen: { focus: doc.activeElement?.outerHTML.slice(0, 500), connected: modal.isConnected, keys } };
+    c.observations = { ...c.observations, fullscreen: { focus: doc.activeElement?.outerHTML.slice(0, 500), connected: modal.isConnected, keys, pngReuse } };
     await key("+", "Equal", 187, 8);
     c.observations.fullscreen.zoom = stage.getAttribute("data-zoom");
     c.observations.fullscreen.stageConnected = stage.isConnected;
     check(Number(stage.getAttribute("data-zoom")) > 1, "fullscreen keyboard zoom failed");
     await key("ArrowRight", "ArrowRight", 39);
     check(modal.querySelector(".excalidraw-embed-preview-surface").style.transform.includes("-24px"), "fullscreen keyboard pan failed");
+    if (detailGate) {
+      await c.waitFor(() => detailGate.entered() > 0, "background detail export started while initial PNG remained visible");
+      const surface = modal.querySelector(".excalidraw-embed-preview-surface"), initial = surface.querySelector("img"), transform = surface.style.transform, zoom = stage.getAttribute("data-zoom");
+      const initialWidth = initial.naturalWidth, initialHeight = initial.naturalHeight;
+      detailGate.restore();
+      let detail;
+      await c.waitFor(() => (detail = surface.querySelector("img")) !== initial && detail?.complete && detail.naturalWidth > 0, "decoded 3x detail replaces initial PNG");
+      pngReuse.detailWidth = detail.naturalWidth; pngReuse.detailHeight = detail.naturalHeight;
+      check(Math.abs(detail.naturalWidth - initialWidth * 3) <= 3 && Math.abs(detail.naturalHeight - initialHeight * 3) <= 3, "detail export did not use scale 3");
+      check(surface.style.transform === transform && stage.getAttribute("data-zoom") === zoom, "detail replacement reset zoom or pan");
+      check(detail.getAttribute("fileSource") === drawing.path, "detail replacement changed drawing identity");
+      pngReuse.zoomPanPreserved = true;
+    }
     await key("0", "Digit0", 48);
     check(Number(stage.getAttribute("data-zoom")) === 1, "fullscreen fit failed");
     if (touch) {
@@ -215,7 +273,26 @@ async function exerciseEmbedControls(c, env, template, modifier) {
     await c.waitFor(() => !modal.isConnected, "fullscreen closes on Escape");
     doc.removeEventListener("keydown", recordKey, true);
     check(doc.activeElement?.getAttribute("data-excalidraw-embed-action") === "preview", "fullscreen did not restore opener focus");
-    check(inline.isConnected && (mode === "SVG" ? !!inline.querySelector("svg") : inline.complete && inline.naturalWidth > 0), "closing fullscreen invalidated inline payload");
+    const currentInline = frames()[0]?.querySelector(".excalidraw-embedded-img");
+    check(currentInline?.isConnected && (mode === "SVG" ? !!currentInline.querySelector("svg") : currentInline.complete && currentInline.naturalWidth > 0), "closing fullscreen invalidated inline payload");
+    if (mode === "PNG") {
+      const cancelGate = holdDrawingRead();
+      await action(0, "preview");
+      let cancelledModal;
+      await c.waitFor(() => (cancelledModal = doc.querySelector(".excalidraw-embed-preview-modal"))?.querySelector("img")?.naturalWidth > 0 && cancelGate.entered() > 0, "reopened initial PNG while its new detail export is pending");
+      const surface = cancelledModal.querySelector(".excalidraw-embed-preview-surface"), first = surface.firstElementChild;
+      const changes = [], observer = new win.MutationObserver(records => changes.push(...records)); observer.observe(surface, { childList: true });
+      c.defer(() => observer.disconnect());
+      await key("Escape", "Escape", 27);
+      await c.waitFor(() => !cancelledModal.isConnected, "closing pending PNG export");
+      cancelGate.restore();
+      await new Promise(resolve => window.setTimeout(resolve, 150));
+      observer.disconnect();
+      check(surface.firstElementChild === first && changes.every(record => record.addedNodes.length === 0), "cancelled detail export mounted a late image");
+      const survivingInline = frames()[0]?.querySelector(".excalidraw-embedded-img");
+      check(survivingInline?.complete && survivingInline.naturalWidth > 0, "cancelled detail export invalidated inline PNG");
+      pngReuse.cancelledPendingUpgrade = true;
+    }
     check(!leaf.view.contentEl.querySelector(`.internal-embed[src="${plain.path}"] [data-excalidraw-embed-action]`), "ordinary image acquired drawing controls");
     await open("preview");
     check(!activeRoot().querySelector('[data-excalidraw-embed-action="resize"], [data-excalidraw-embed-action="edit"], [data-excalidraw-embed-action="reset"]'), "Reading mode acquired source mutation controls");
@@ -228,7 +305,7 @@ async function exerciseEmbedControls(c, env, template, modifier) {
     check(await app.vault.read(drawing) === drawingBytes, "embed actions changed drawing source");
     // Retiring the source owner removes every control and cancels its dialogs.
     check(!doc.querySelector(".excalidraw-embed-preview-modal"), "retired source left fullscreen modal");
-    return { assertions: ["trusted proportional resize previews without source writes", "only second identical token changed", "one-step undo/redo and reset", "Escape cancellation", "exact Markdown-image syntax selection and roundtrip", "fresh fullscreen zoom/pan/fit/Escape/focus", "inline payload survives modal cleanup", "Reading controls cannot write", "ordinary image unchanged", "Open drawing and drawing bytes unchanged"], actual: geometry() };
+    return { assertions: ["trusted proportional resize previews without source writes", "only second identical token changed", "one-step undo/redo and reset", "Escape cancellation", "exact Markdown-image syntax selection and roundtrip", "independently owned fullscreen zoom/pan/fit/Escape/focus", ...(mode === "PNG" ? ["fullscreen PNG initially keeps exact encoded pixels and dimensions with an independent URL", "decoded 3x upgrade preserves zoom and pan", "close cancels pending upgrade without late image insertion"] : []), "inline payload survives modal cleanup", "Reading controls cannot write", "ordinary image unchanged", "Open drawing and drawing bytes unchanged"], actual: { ...geometry(), pngReuse } };
   });
 
   await c.case(`native:embed-ownership:${context}`, ["P03", "P04", "P05"], async () => {

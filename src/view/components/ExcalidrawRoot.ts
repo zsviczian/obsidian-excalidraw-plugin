@@ -11,6 +11,7 @@ import { isMarkdownImageElement } from "../../shared/MarkdownImage";
 import { shouldRenderMermaid } from "../../utils/mermaidUtils";
 import type ExcalidrawView from "../ExcalidrawView";
 import { handleSaveAsShortcut, handleTextSaveShortcut } from "../managers/textSaveShortcut";
+import { handlePenToggleShortcut } from "../managers/penToggleShortcut";
 import { EmbeddableMenu } from "./menu/EmbeddableActionsMenu";
 import { ObsidianMenu } from "./menu/ObsidianMenu";
 import { SelectedElementActionsMenu } from "./menu/SelectedElementActionsMenu";
@@ -164,7 +165,7 @@ export function createExcalidrawRootElement(
         key: "abc",
         tabIndex: 0,
         onKeyDownCapture: (event: ReactKeyboardEvent<HTMLDivElement>) => {
-          if (!handleSaveAsShortcut(view, event.nativeEvent)) {
+          if (!handlePenToggleShortcut(view, event.nativeEvent) && !handleSaveAsShortcut(view, event.nativeEvent)) {
             handleTextSaveShortcut(view, event.nativeEvent);
           }
         },

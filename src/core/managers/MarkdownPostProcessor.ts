@@ -56,6 +56,7 @@ import { getDrawingPaddingMax } from "src/utils/drawingPadding";
 import { readDrawingPreviewElements } from "src/utils/drawingPreviewScene";
 import { getGlobalTaskQueue } from "src/shared/GlobalTaskQueue";
 import { renderMarkdownEmbed } from "./MarkdownEmbedRenderChild";
+import { cloneOwnedPNGImage, discardOwnedPNGImage, hasOwnedPNGImageSource, registerOwnedPNGImageSources, setOwnedPNGImageSource } from "../../utils/ownedPNGImage";
 
 interface imgElementAttributes {
   file?: TFile;
@@ -118,11 +119,11 @@ const discardImage = (el: Element | null) => {
   if (!el) {
     return;
   }
-  const images = isInstanceOfHTMLImageElement(el)
+  const images = hasOwnedPNGImageSource(el) || isInstanceOfHTMLImageElement(el)
     ? [el]
     : Array.from(el.querySelectorAll("img"));
   images.forEach((img) => {
-    if (img.src.startsWith("blob:")) {
+    if (!discardOwnedPNGImage(img) && img.src.startsWith("blob:")) {
       getImageCache().releaseObsidianURL(img.src);
     }
     // Instantly aborts the browser's background V8 image decoder task
@@ -132,6 +133,7 @@ const discardImage = (el: Element | null) => {
 
 export const initializeMarkdownPostProcessor = (p: ExcalidrawPlugin) => {
   plugin = p;
+  p.register(registerOwnedPNGImageSources());
   app = plugin.app;
   vault = app.vault;
   metadataCache = app.metadataCache;
@@ -158,6 +160,7 @@ const _getPNG = async ({
   file,
   exportSettings,
   loader,
+  forceExport = false,
 }: {
   imgAttributes: imgElementAttributes;
   filenameParts: FILENAMEPARTS;
@@ -167,6 +170,7 @@ const _getPNG = async ({
   file: TFile;
   exportSettings: ExportSettings;
   loader: EmbeddedFilesLoader;
+  forceExport?: boolean;
 }): Promise<HTMLImageElement> => {
   const width = parseInt(imgAttributes.fwidth);
   const scale =
@@ -190,22 +194,20 @@ const _getPNG = async ({
     inlineFonts: true, //though for PNG this makes no difference, but the key requires it
   };
 
-  if (cacheReady) {
-    const src = await getImageCache().getImageFromCache(cacheKey, {
-      expectedPayloadKind: "raster",
-    });
-    if (src && typeof src === "string") {
-      img.src = src;
-      return img;
-    }
-  }
+  const cached = cacheReady
+    ? await getImageCache().getImageCacheData(cacheKey, {
+        expectedPayloadKind: "raster",
+      })
+    : undefined;
 
   const hasImageReference = isExplicitImageEmbed(imgAttributes.fname);
-  const quickPNG = !hasImageReference
+  if (loader.terminate) return null;
+  const quickPNG = !forceExport && !cached && !hasImageReference
     ? await getQuickImagePreview(plugin, file.path, "png")
     : undefined;
 
   const png =
+    cached?.blob ??
     quickPNG ??
     (await createPNG(
       hasImageReference
@@ -232,21 +234,16 @@ const _getPNG = async ({
       0,
       getExportPadding(plugin, file),
     ));
-  if (!png) {
+  if (!png || loader.terminate) {
     return null;
   }
-  const blobUrl = URL.createObjectURL(png);
-  img.src = blobUrl;
+  // Each renderer owns its URL. Concurrent cache replacements and discarded
+  // siblings must never revoke an image which is still fetching/decoding.
+  setOwnedPNGImageSource(img, png);
 
-  // Revoke the ObjectURL after the image loads or fails to prevent memory leaks
-  if (!cacheReady) {
-    const cleanup = () => URL.revokeObjectURL(blobUrl);
-    img.addEventListener("load", cleanup, { once: true });
-    img.addEventListener("error", cleanup, { once: true });
-  }
-
-  if (cacheReady) {
-    getImageCache().addImageToCache(cacheKey, blobUrl, png);
+  if (cacheReady && !cached) {
+    // Persist the blob, independently of any particular IMG's lifetime.
+    getImageCache().addImageToCache(cacheKey, "", png);
   }
 
   return img;
@@ -513,7 +510,10 @@ const getIMG = async (
   embedEl?: Node,
   isRenderActive?: () => boolean,
   freshOwnedPayload: boolean = false,
+  ownerDocument: Document = embedEl?.ownerDocument,
+  options?: { signal: AbortSignal; forcePNGExport: boolean },
 ): Promise<HTMLImageElement | HTMLDivElement> => {
+  if (options?.signal.aborted) return null;
   let file = imgAttributes.file;
   if (!imgAttributes.file) {
     const f = vault.getAbstractFileByPath(imgAttributes.fname?.split("#")[0]);
@@ -557,6 +557,8 @@ const getIMG = async (
     plugin,
     theme ? theme === "dark" : undefined,
   );
+  const abort = () => { loader.terminate = true; };
+  options?.signal.addEventListener("abort", abort, { once: true });
 
   let terminationTimer: number;
   if (embedEl || isRenderActive) {
@@ -573,10 +575,12 @@ const getIMG = async (
   let resultElement: HTMLImageElement | HTMLDivElement = null;
   try {
     await plugin.awaitInit();
-    if (isRenderActive && !isRenderActive()) return null;
-    switch (plugin.settings.previewImageType) {
+    if (loader.terminate || (isRenderActive && !isRenderActive())) return null;
+    switch (options?.forcePNGExport ? PreviewImageType.PNG : plugin.settings.previewImageType) {
       case PreviewImageType.PNG: {
-        const img = createEl("img");
+        // A decoded/released blob URL cannot be fetched again after adoption
+        // into another document. Start the image in its final owning realm.
+        const img = ownerDocument ? ownerDocument.adoptNode(createEl("img")) : createEl("img");
         setImgStyle({
           element: img,
           imgAttributes,
@@ -592,6 +596,7 @@ const getIMG = async (
           file,
           exportSettings,
           loader,
+          forceExport: options?.forcePNGExport,
         });
         break;
       }
@@ -640,6 +645,7 @@ const getIMG = async (
       }
     }
   } finally {
+    options?.signal.removeEventListener("abort", abort);
     if (terminationTimer) {
       window.clearInterval(terminationTimer);
     }
@@ -788,6 +794,7 @@ const createImgElement = async (
         return;
       }
 
+      discardImage(imgOrDiv);
       parent.empty();
       if (!onCanvas) {
         setStyle(newImg, {
@@ -825,14 +832,26 @@ const createImgElement = async (
     frames,
     openDrawing: event => openDrawingEmbed(currentPlugin, attr.fname, event, imgOrDiv),
     getOpenTooltip: () => getDrawingEmbedOpenTooltip(currentPlugin.settings),
-    // A fullscreen viewer owns a fresh payload and must never revoke an inline
-    // embed's cached URL. Keep its crop/reference/theme through the same exporter.
+    // PNG already contains the displayed crop/theme. Reuse its encoded pixels
+    // with a separate URL instead of blocking fullscreen on a fresh 3x raster.
+    // Other renderers retain their independently owned export path.
     create: async active => {
-      const image = await getIMG({ ...attr, fwidth: "1600", fheight: "", imgstyle: [] }, false, undefined,
-        () => active() && isCurrent(), true);
+      if (!active() || !isCurrent()) return null;
+      const ownedPNG = hasOwnedPNGImageSource(imgOrDiv) ? cloneOwnedPNGImage(imgOrDiv) : null;
+      const image = ownedPNG ?? await getIMG({ ...attr, fwidth: "1600", fheight: "", imgstyle: [] }, false, undefined,
+        () => active() && isCurrent(), true, imgOrDiv.ownerDocument);
       image?.setAttribute("fileSource", attr.fname);
       return image;
     },
+    ...(hasOwnedPNGImageSource(imgOrDiv) ? {
+      upgrade: async (active: () => boolean, signal: AbortSignal) => {
+        const image = await getIMG({ ...attr, fwidth: "1600", fheight: "", imgstyle: [] }, false, undefined,
+          () => active() && !signal.aborted && isCurrent(), true, imgOrDiv.ownerDocument,
+          { signal, forcePNGExport: true });
+        image?.setAttribute("fileSource", attr.fname);
+        return image;
+      },
+    } : {}),
     discard: discardImage,
     ...(withAreaPadding(attr.fname, null) !== null ? {
       padding: {
@@ -841,7 +860,7 @@ const createImgElement = async (
         create: async (padding: number | null, active: () => boolean) => {
           const fname = withAreaPadding(attr.fname, padding);
           if (fname === null) return null;
-          return getIMG({ ...attr, fname }, false, undefined, () => active() && isCurrent(), true);
+          return getIMG({ ...attr, fname }, false, undefined, () => active() && isCurrent(), true, imgOrDiv.ownerDocument);
         },
       },
     } : {}),
@@ -859,7 +878,9 @@ const createImageDiv = async (
   if (!img) {
     return null;
   }
-  return createDiv(attr.imgstyle.join(" "), (el) => el.append(img));
+  const container = img.ownerDocument.adoptNode(createDiv(attr.imgstyle.join(" ")));
+  container.append(img);
+  return container;
 };
 
 const isExplicitImageEmbed = (src: string): boolean => {
@@ -1474,19 +1495,18 @@ const legacyExcalidrawPopoverObserverFn: MutationCallback = (m) => {
       return;
     }
 
-    const div = createDiv("", (el) => {
-      el.appendChild(img);
-      el.setAttribute("src", file.path);
-      el.onClickEvent((ev) => {
-        ev.stopImmediatePropagation();
-        const src = el.getAttribute("src");
-        if (src) {
-          plugin.openDrawing(
-            vault.getFileByPath(src),
-            linkClickModifierType(ev),
-          );
-        } //.ctrlKey||ev.metaKey);
-      });
+    const div = img.ownerDocument.adoptNode(createDiv());
+    div.appendChild(img);
+    div.setAttribute("src", file.path);
+    div.onClickEvent((ev) => {
+      ev.stopImmediatePropagation();
+      const src = div.getAttribute("src");
+      if (src) {
+        plugin.openDrawing(
+          vault.getFileByPath(src),
+          linkClickModifierType(ev),
+        );
+      } //.ctrlKey||ev.metaKey);
     });
     node.appendChild(div);
   });

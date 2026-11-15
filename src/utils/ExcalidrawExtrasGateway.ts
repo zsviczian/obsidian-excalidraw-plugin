@@ -110,8 +110,8 @@ export class ExcalidrawExtrasGateway {
       // Added version check to the success path so it opens the modal if an update is needed
       if (
         api &&
-        api.features.isActive(component) &&
-        this.checkVersion(component, api).valid
+        this.checkVersion(component, api).valid &&
+        api.features.isActive(component)
       ) {
         return "success";
       }
@@ -138,10 +138,12 @@ export class ExcalidrawExtrasGateway {
   }
 
   public getAPI(): ExcalidrawExtrasAPI | null {
-    return (
-      (this.app.plugins.plugins[EXTRAS_PLUGIN_ID]
-        ?.api as ExcalidrawExtrasAPI) || null
-    );
+    const api = this.app.plugins.plugins[EXTRAS_PLUGIN_ID]?.api as ExcalidrawExtrasAPI | undefined;
+    // A failed/older companion can be registered without a usable API. Treat
+    // that as unavailable so the normal update notice/cancel path still works.
+    return api && typeof api.versions === "object" && api.versions !== null &&
+      typeof api.features?.isActive === "function" && typeof api.features?.enable === "function"
+      ? api : null;
   }
 
   public checkVersion(
@@ -179,7 +181,8 @@ export class ExcalidrawExtrasGateway {
     }
 
     // 2. Check specific component version
-    const currentVersion = api.versions[component as keyof typeof api.versions];
+    const advertisedVersion = api.versions?.[component as keyof typeof api.versions];
+    const currentVersion = typeof advertisedVersion === "string" ? advertisedVersion : "0.0.0";
     const req = REQUIRED_EXTRAS_VERSIONS[component];
     if (!req) {
       return { valid: true };

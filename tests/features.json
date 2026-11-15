@@ -66,6 +66,13 @@
             "destination closure during migration grace settles without recreating a retired leaf",
             "destination closure during migration replacement yield settles without recreating a retired leaf"
           ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/extrasUnavailable.test.mjs",
+          "cases": [
+            "an enabled Extras plugin with an absent or incomplete API cancels service access cleanly"
+          ]
         }
       ],
       "fixtures": [],
@@ -388,6 +395,21 @@
           "cases": [
             "node:scripts/testing/textSaveShortcut.source.test.mjs::focused canvas and text editor block Ctrl/Cmd+Shift+S without submitting or saving",
             "node:scripts/testing/textSaveShortcut.source.test.mjs::Save As guard leaves other shortcuts, other documents, unfocused views and embedded notes alone"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/penToggleShortcut.test.mjs",
+          "cases": [
+            "P toggles freedraw to selection only for the owning canvas and ignores repeats"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/embedBridge.source.test.mjs",
+          "cases": [
+            "table embeds with internal-embed wrappers: invalid render generations cannot remount controls or starve the renderer debounce",
+            "table embeds with internal-embed wrappers: drawing Markdown self-embeds retain controls and the same lifecycle guards"
           ]
         }
       ],
@@ -863,6 +885,9 @@
           "path": "scripts/testing/embedPreview.source.test.mjs",
           "cases": [
             "node:scripts/testing/embedPreview.source.test.mjs::closing during fullscreen export cancels ownership and discards only the late private payload",
+            "node:scripts/testing/embedPreview.source.test.mjs::progressive PNG detail swaps only after decode and preserves live zoom pan and pointer capture",
+            "node:scripts/testing/embedPreview.source.test.mjs::closing progressive PNG cancels frames exports and decoding and releases late private images",
+            "node:scripts/testing/embedPreview.source.test.mjs::failed PNG detail export keeps the initial preview and hidden-window fallback settles",
             "node:scripts/testing/embedPreview.source.test.mjs::preview pencil and modifier clicks preserve modifiers and close before opening the drawing",
             "node:scripts/testing/embedPreview.source.test.mjs::dragging a viewport preview restores movable bounds and releases its pointer ownership"
           ]
@@ -957,7 +982,25 @@
             "node:scripts/testing/markdownEmbeds.test.mjs::#3040 Live Preview uses the rendered drawing identity for a host-relative embed",
             "node:scripts/testing/markdownEmbeds.test.mjs::#3039 a claimed Reading section renders while detached and survives later attachment",
             "node:scripts/testing/markdownEmbeds.test.mjs::Reading callbacks deduplicate deferred renders and retire controls when the image is replaced",
-            "node:scripts/testing/markdownEmbeds.test.mjs::Reading context retirement cancels queued and in-flight detached images"
+            "node:scripts/testing/markdownEmbeds.test.mjs::Reading context retirement cancels queued and in-flight detached images",
+            "node:scripts/testing/markdownEmbeds.test.mjs::PNG inline images are created in their owning document",
+            "node:scripts/testing/markdownEmbeds.test.mjs::PNG preview images are created in their owning document",
+            "node:scripts/testing/markdownEmbeds.test.mjs::PNG fullscreen routing opens the displayed raster without starting the high-resolution exporter",
+            "node:scripts/testing/markdownEmbeds.test.mjs::PNG detail upgrade forces a fresh raster and abort immediately terminates its loader",
+            "node:scripts/testing/markdownEmbeds.test.mjs::adopted PNG images retain fast fullscreen detail and disposal when their owning-window instanceof check fails"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/pngEmbedLifetime.test.mjs",
+          "cases": [
+            "node:scripts/testing/pngEmbedLifetime.test.mjs::concurrent cold PNG renders retain independent URLs until their images retire",
+            "node:scripts/testing/pngEmbedLifetime.test.mjs::warm PNG cache hits have independent URLs and discarding one preserves its sibling",
+            "node:scripts/testing/pngEmbedLifetime.test.mjs::uncached PNG payloads release on discard or decode failure without populating the cache",
+            "node:scripts/testing/pngEmbedLifetime.test.mjs::discarding a pending PNG after cache shutdown still releases its URL and listeners",
+            "node:scripts/testing/pngEmbedLifetime.test.mjs::loaded PNG URLs remain readable for independent pixel consumers",
+            "node:scripts/testing/pngEmbedLifetime.test.mjs::plugin retirement revokes PNG URLs and a stale disposer preserves its replacement",
+            "node:scripts/testing/pngEmbedLifetime.test.mjs::fullscreen PNG copies reuse displayed pixels without another export and own independent URLs"
           ]
         },
         {
@@ -1578,6 +1621,37 @@
             "closing the sidepanel cancels its restore yield without executing another script",
             "a current conversion finishes after its main-window fallback and saves the converted section",
             "Markdown embed debounce follows a live render context into another window"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/drawingCreationUI.test.mjs",
+          "cases": [
+            "creation actions default to visible, respect independent opt-outs and release their listeners"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/issue3052.mjs",
+          "cases": [
+            "native:creation-actions-3047:main",
+            "native:pen-toggle-3044:main",
+            "native:youtube-fullscreen-3048:main",
+            "native:extras-unavailable-3051:main",
+            "native:creation-actions-3047:popout",
+            "native:pen-toggle-3044:popout",
+            "native:youtube-fullscreen-3048:popout",
+            "native:extras-unavailable-3051:popout",
+            "native:png-embed-window-migration:main"
+          ]
+        },
+        {
+          "layer": "browser",
+          "repository": "fork",
+          "path": "tests/obsidian/browser/youtubeFullscreen.mjs",
+          "cases": [
+            "fork-browser:production:youtube-fullscreen",
+            "fork-browser:development:youtube-fullscreen"
           ]
         }
       ],

@@ -17,6 +17,12 @@ subsystem constraints, and agent workflows.
 
 Before spending your valuable time writing code for a new feature or significant refactor, please **open an issue** to discuss it first. This ensures your idea aligns with the project's roadmap and architecture, and helps prevent wasted effort or complex merge conflicts later.
 
+**Compatibility with another plugin is out of scope by default. Agents MUST
+explicitly ask for maintainer consent before attempting compatibility work.**
+A request to investigate or fix an issue does not implicitly approve workarounds
+for another plugin. Identify the plugin, proposed accommodation and maintenance
+cost first; see the mandatory [compatibility consent control](CODING_STANDARDS.md#compatibility-with-other-plugins-requires-maintainer-consent).
+
 ## 🚀 Getting Started
 
 1. Fork the repository and clone it locally.

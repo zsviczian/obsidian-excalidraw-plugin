@@ -1,0 +1,599 @@
+{
+  "schemaVersion": 1,
+  "checkpoint": "b5f97ceaf44fff67c4ff44888059593a1ce9ffd3",
+  "source": {
+    "pluginRevision": "b5f97ceaf44fff67c4ff44888059593a1ce9ffd3",
+    "pluginDirty": false,
+    "forkRevision": "ddd461189de7810f319832430467207c34f257ad",
+    "forkDirty": false,
+    "buildMode": "workspace-frozen",
+    "requestedProfile": "focused",
+    "node": "v22.22.3",
+    "platform": "win32"
+  },
+  "producers": {
+    "fork": {
+      "commit": "ddd461189de7810f319832430467207c34f257ad",
+      "dirty": false,
+      "diffHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "lockfileHash": "5ff2005c676da0a7250e859ce363fc40c832a64104732e21d40e827b02632d18"
+    },
+    "extras": {
+      "commit": "4bd7af3325a8059a5ca68fc3e88169507b08c773",
+      "dirty": false,
+      "diffHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "lockfileHash": "e6419e0a6e01e7292c905ccd51efc54223eff4f80e8d1d9229ce94194eb282f9"
+    },
+    "plugin": {
+      "commit": "b5f97ceaf44fff67c4ff44888059593a1ce9ffd3",
+      "dirty": false,
+      "diffHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "lockfileHash": "741c0318ef12f5b1661e3d86b9044949aab9f2132db6d23d2b119a3b4740d2b1"
+    }
+  },
+  "artifactHashes": {
+    "main.js": "9d28c331bf96ddd1449336ca36d7799367cf7a00767495a456db596f761ecb03",
+    "manifest.json": "8e82828fd9125615e8a361d0f15553e548cac2ee7a303e55387378a53b925fd9",
+    "styles.css": "c66306b0fd8f29348b58e50339b2ae614c82524c043c3241dc39e12ee287665e"
+  },
+  "mainBytes": 5147278,
+  "sourceChecks": {
+    "focused": 55,
+    "fast": 797,
+    "build": "passed",
+    "focusedLint": "passed",
+    "existingExportUtilityFindings": 2
+  },
+  "native": {
+    "scope": "Focused embed/recovery with one emulated phone layout; physical Android not tested",
+    "status": "passed",
+    "cleanup": "passed",
+    "cases": [
+      {
+        "testId": "plugin-load",
+        "status": "passed",
+        "assertions": [
+          "commands registered",
+          "drawing/font/export runtime available",
+          "host protocol 4"
+        ]
+      },
+      {
+        "testId": "drawing-main-window",
+        "status": "passed",
+        "assertions": [
+          "Excalidraw API ready",
+          "wrapper mounted",
+          "owner document matches",
+          "main application document"
+        ]
+      },
+      {
+        "testId": "markdown-embed-recovery-2953",
+        "status": "passed",
+        "assertions": [
+          "SVGIMG: native Markdown PDF preparation completes with three frames and a native PNG, without recursive drawing transclusion",
+          "PNG: native Markdown PDF preparation completes with three frames and a native PNG, without recursive drawing transclusion",
+          "SVG: native Markdown PDF preparation completes with three frames and a native PNG, without recursive drawing transclusion",
+          "SVGIMG: detached Live Preview context completes and reattaches",
+          "SVGIMG: width attribute refresh preserves all three embeds",
+          "SVGIMG: Reading mode after Live Preview",
+          "SVGIMG: warm Live Preview reopen",
+          "PNG: detached Live Preview context completes and reattaches",
+          "PNG: width attribute refresh preserves all three embeds",
+          "PNG: Reading mode after Live Preview",
+          "PNG: warm Live Preview reopen",
+          "SVG: detached Live Preview context completes and reattaches",
+          "SVG: width attribute refresh preserves all three embeds",
+          "SVG: Reading mode after Live Preview",
+          "SVG: warm Live Preview reopen",
+          "permanent context unload rejects insertion into the retired embed containers",
+          "popout: detached context, reattachment and width refresh in the owning document",
+          "SVGIMG: popout Markdown PDF preparation preserves drawing frames and the native PNG",
+          "PNG: popout Markdown PDF preparation preserves drawing frames and the native PNG",
+          "SVG: popout Markdown PDF preparation preserves drawing frames and the native PNG",
+          "hybrid source, nested=false: self-image, drawing and native PNG visible in popout",
+          "hybrid source, nested=true: self-image, drawing and native PNG visible in popout",
+          "hybrid preview, nested=false: self-image, drawing and native PNG visible in popout",
+          "hybrid preview, nested=true: self-image, drawing and native PNG visible in popout"
+        ]
+      },
+      {
+        "testId": "native:embed-controls:main:PNG",
+        "status": "passed",
+        "assertions": [
+          "trusted proportional resize previews without source writes",
+          "only second identical token changed",
+          "one-step undo/redo and reset",
+          "Escape cancellation",
+          "exact Markdown-image syntax selection and roundtrip",
+          "independently owned fullscreen zoom/pan/fit/Escape/focus",
+          "fullscreen PNG initially keeps exact encoded pixels and dimensions with an independent URL",
+          "decoded 3x upgrade preserves zoom and pan",
+          "close cancels pending upgrade without late image insertion",
+          "inline payload survives modal cleanup",
+          "Reading controls cannot write",
+          "ordinary image unchanged",
+          "Open drawing and drawing bytes unchanged"
+        ],
+        "pngReuse": {
+          "inlineWidth": 248,
+          "inlineHeight": 180,
+          "encodedBytes": 6316,
+          "independentURL": true,
+          "elapsedMs": 999.6999999880791,
+          "detailWidth": 744,
+          "detailHeight": 542,
+          "zoomPanPreserved": true,
+          "cancelledPendingUpgrade": true
+        }
+      },
+      {
+        "testId": "native:embed-controls:main:SVGIMG",
+        "status": "passed",
+        "assertions": [
+          "trusted proportional resize previews without source writes",
+          "only second identical token changed",
+          "one-step undo/redo and reset",
+          "Escape cancellation",
+          "exact Markdown-image syntax selection and roundtrip",
+          "independently owned fullscreen zoom/pan/fit/Escape/focus",
+          "inline payload survives modal cleanup",
+          "Reading controls cannot write",
+          "ordinary image unchanged",
+          "Open drawing and drawing bytes unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-controls:main:SVG",
+        "status": "passed",
+        "assertions": [
+          "trusted proportional resize previews without source writes",
+          "only second identical token changed",
+          "one-step undo/redo and reset",
+          "Escape cancellation",
+          "exact Markdown-image syntax selection and roundtrip",
+          "independently owned fullscreen zoom/pan/fit/Escape/focus",
+          "inline payload survives modal cleanup",
+          "Reading controls cannot write",
+          "ordinary image unchanged",
+          "Open drawing and drawing bytes unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-ownership:main",
+        "status": "passed",
+        "assertions": [
+          "same-line repeated embeds target only their own token",
+          "inline/fenced examples have no controls",
+          "independent note and pane stay unchanged",
+          "one-step undo",
+          "refresh remounts controls exactly once",
+          "switching source unloads controls and fullscreen",
+          "drawing bytes unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-table:main",
+        "status": "passed",
+        "assertions": [
+          "native table widget public boundaries and physical cell ownership",
+          "escaped wiki and Markdown-image dimensions render",
+          "only second identical row changes",
+          "same-note split synchronization",
+          "left/right pointer previews retain measured size and aspect ratio",
+          "one-step undo/reset",
+          "exact Markdown syntax selection",
+          "aliases/styles/title and other cells preserved",
+          "drawing bytes unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-hybrid:main",
+        "status": "passed",
+        "assertions": [
+          "drawing opened as Markdown owns self and other drawing embeds",
+          "short self-link identity",
+          "exact resize/reset and single undo",
+          "physical save preserves serialized drawing data",
+          "exact source selection",
+          "Live Preview and Reading fullscreen",
+          "Reading controls do not edit source",
+          "other drawing unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-controls:split:PNG",
+        "status": "passed",
+        "assertions": [
+          "trusted proportional resize previews without source writes",
+          "only second identical token changed",
+          "one-step undo/redo and reset",
+          "Escape cancellation",
+          "exact Markdown-image syntax selection and roundtrip",
+          "independently owned fullscreen zoom/pan/fit/Escape/focus",
+          "fullscreen PNG initially keeps exact encoded pixels and dimensions with an independent URL",
+          "decoded 3x upgrade preserves zoom and pan",
+          "close cancels pending upgrade without late image insertion",
+          "inline payload survives modal cleanup",
+          "Reading controls cannot write",
+          "ordinary image unchanged",
+          "Open drawing and drawing bytes unchanged"
+        ],
+        "pngReuse": {
+          "inlineWidth": 248,
+          "inlineHeight": 180,
+          "encodedBytes": 6316,
+          "independentURL": true,
+          "elapsedMs": 1042.8999999761581,
+          "detailWidth": 744,
+          "detailHeight": 542,
+          "zoomPanPreserved": true,
+          "cancelledPendingUpgrade": true
+        }
+      },
+      {
+        "testId": "native:embed-controls:split:SVGIMG",
+        "status": "passed",
+        "assertions": [
+          "trusted proportional resize previews without source writes",
+          "only second identical token changed",
+          "one-step undo/redo and reset",
+          "Escape cancellation",
+          "exact Markdown-image syntax selection and roundtrip",
+          "independently owned fullscreen zoom/pan/fit/Escape/focus",
+          "inline payload survives modal cleanup",
+          "Reading controls cannot write",
+          "ordinary image unchanged",
+          "Open drawing and drawing bytes unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-controls:split:SVG",
+        "status": "passed",
+        "assertions": [
+          "trusted proportional resize previews without source writes",
+          "only second identical token changed",
+          "one-step undo/redo and reset",
+          "Escape cancellation",
+          "exact Markdown-image syntax selection and roundtrip",
+          "independently owned fullscreen zoom/pan/fit/Escape/focus",
+          "inline payload survives modal cleanup",
+          "Reading controls cannot write",
+          "ordinary image unchanged",
+          "Open drawing and drawing bytes unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-ownership:split",
+        "status": "passed",
+        "assertions": [
+          "same-line repeated embeds target only their own token",
+          "inline/fenced examples have no controls",
+          "independent note and pane stay unchanged",
+          "one-step undo",
+          "refresh remounts controls exactly once",
+          "switching source unloads controls and fullscreen",
+          "drawing bytes unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-table:split",
+        "status": "passed",
+        "assertions": [
+          "native table widget public boundaries and physical cell ownership",
+          "escaped wiki and Markdown-image dimensions render",
+          "only second identical row changes",
+          "same-note split synchronization",
+          "left/right pointer previews retain measured size and aspect ratio",
+          "one-step undo/reset",
+          "exact Markdown syntax selection",
+          "aliases/styles/title and other cells preserved",
+          "drawing bytes unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-hybrid:split",
+        "status": "passed",
+        "assertions": [
+          "drawing opened as Markdown owns self and other drawing embeds",
+          "short self-link identity",
+          "exact resize/reset and single undo",
+          "physical save preserves serialized drawing data",
+          "exact source selection",
+          "Live Preview and Reading fullscreen",
+          "Reading controls do not edit source",
+          "other drawing unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-controls:popout:PNG",
+        "status": "passed",
+        "assertions": [
+          "trusted proportional resize previews without source writes",
+          "only second identical token changed",
+          "one-step undo/redo and reset",
+          "Escape cancellation",
+          "exact Markdown-image syntax selection and roundtrip",
+          "independently owned fullscreen zoom/pan/fit/Escape/focus",
+          "fullscreen PNG initially keeps exact encoded pixels and dimensions with an independent URL",
+          "decoded 3x upgrade preserves zoom and pan",
+          "close cancels pending upgrade without late image insertion",
+          "inline payload survives modal cleanup",
+          "Reading controls cannot write",
+          "ordinary image unchanged",
+          "Open drawing and drawing bytes unchanged"
+        ],
+        "pngReuse": {
+          "inlineWidth": 248,
+          "inlineHeight": 180,
+          "encodedBytes": 6316,
+          "independentURL": true,
+          "elapsedMs": 1179.800000011921,
+          "detailWidth": 744,
+          "detailHeight": 542,
+          "zoomPanPreserved": true,
+          "cancelledPendingUpgrade": true
+        }
+      },
+      {
+        "testId": "native:embed-controls:popout:SVGIMG",
+        "status": "passed",
+        "assertions": [
+          "trusted proportional resize previews without source writes",
+          "only second identical token changed",
+          "one-step undo/redo and reset",
+          "Escape cancellation",
+          "exact Markdown-image syntax selection and roundtrip",
+          "independently owned fullscreen zoom/pan/fit/Escape/focus",
+          "inline payload survives modal cleanup",
+          "Reading controls cannot write",
+          "ordinary image unchanged",
+          "Open drawing and drawing bytes unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-controls:popout:SVG",
+        "status": "passed",
+        "assertions": [
+          "trusted proportional resize previews without source writes",
+          "only second identical token changed",
+          "one-step undo/redo and reset",
+          "Escape cancellation",
+          "exact Markdown-image syntax selection and roundtrip",
+          "independently owned fullscreen zoom/pan/fit/Escape/focus",
+          "inline payload survives modal cleanup",
+          "Reading controls cannot write",
+          "ordinary image unchanged",
+          "Open drawing and drawing bytes unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-ownership:popout",
+        "status": "passed",
+        "assertions": [
+          "same-line repeated embeds target only their own token",
+          "inline/fenced examples have no controls",
+          "independent note and pane stay unchanged",
+          "one-step undo",
+          "refresh remounts controls exactly once",
+          "switching source unloads controls and fullscreen",
+          "drawing bytes unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-table:popout",
+        "status": "passed",
+        "assertions": [
+          "native table widget public boundaries and physical cell ownership",
+          "escaped wiki and Markdown-image dimensions render",
+          "only second identical row changes",
+          "same-note split synchronization",
+          "left/right pointer previews retain measured size and aspect ratio",
+          "one-step undo/reset",
+          "exact Markdown syntax selection",
+          "aliases/styles/title and other cells preserved",
+          "drawing bytes unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-hybrid:popout",
+        "status": "passed",
+        "assertions": [
+          "drawing opened as Markdown owns self and other drawing embeds",
+          "short self-link identity",
+          "exact resize/reset and single undo",
+          "physical save preserves serialized drawing data",
+          "exact source selection",
+          "Live Preview and Reading fullscreen",
+          "Reading controls do not edit source",
+          "other drawing unchanged"
+        ]
+      },
+      {
+        "testId": "javascript-errors",
+        "status": "passed"
+      },
+      {
+        "testId": "source-stability",
+        "status": "passed"
+      },
+      {
+        "testId": "native:embed-controls:phone:PNG",
+        "status": "passed",
+        "assertions": [
+          "trusted proportional resize previews without source writes",
+          "only second identical token changed",
+          "one-step undo/redo and reset",
+          "Escape cancellation",
+          "exact Markdown-image syntax selection and roundtrip",
+          "independently owned fullscreen zoom/pan/fit/Escape/focus",
+          "fullscreen PNG initially keeps exact encoded pixels and dimensions with an independent URL",
+          "decoded 3x upgrade preserves zoom and pan",
+          "close cancels pending upgrade without late image insertion",
+          "inline payload survives modal cleanup",
+          "Reading controls cannot write",
+          "ordinary image unchanged",
+          "Open drawing and drawing bytes unchanged"
+        ],
+        "pngReuse": {
+          "inlineWidth": 248,
+          "inlineHeight": 180,
+          "encodedBytes": 6316,
+          "independentURL": true,
+          "elapsedMs": 851.7999999523163,
+          "detailWidth": 744,
+          "detailHeight": 542,
+          "zoomPanPreserved": true,
+          "cancelledPendingUpgrade": true
+        }
+      },
+      {
+        "testId": "native:embed-controls:phone:SVGIMG",
+        "status": "passed",
+        "assertions": [
+          "trusted proportional resize previews without source writes",
+          "only second identical token changed",
+          "one-step undo/redo and reset",
+          "Escape cancellation",
+          "exact Markdown-image syntax selection and roundtrip",
+          "independently owned fullscreen zoom/pan/fit/Escape/focus",
+          "inline payload survives modal cleanup",
+          "Reading controls cannot write",
+          "ordinary image unchanged",
+          "Open drawing and drawing bytes unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-controls:phone:SVG",
+        "status": "passed",
+        "assertions": [
+          "trusted proportional resize previews without source writes",
+          "only second identical token changed",
+          "one-step undo/redo and reset",
+          "Escape cancellation",
+          "exact Markdown-image syntax selection and roundtrip",
+          "independently owned fullscreen zoom/pan/fit/Escape/focus",
+          "inline payload survives modal cleanup",
+          "Reading controls cannot write",
+          "ordinary image unchanged",
+          "Open drawing and drawing bytes unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-ownership:phone",
+        "status": "passed",
+        "assertions": [
+          "same-line repeated embeds target only their own token",
+          "inline/fenced examples have no controls",
+          "independent note and pane stay unchanged",
+          "one-step undo",
+          "refresh remounts controls exactly once",
+          "switching source unloads controls and fullscreen",
+          "drawing bytes unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-table:phone",
+        "status": "passed",
+        "assertions": [
+          "native table widget public boundaries and physical cell ownership",
+          "escaped wiki and Markdown-image dimensions render",
+          "only second identical row changes",
+          "same-note split synchronization",
+          "left/right pointer previews retain measured size and aspect ratio",
+          "one-step undo/reset",
+          "exact Markdown syntax selection",
+          "aliases/styles/title and other cells preserved",
+          "drawing bytes unchanged"
+        ]
+      },
+      {
+        "testId": "native:embed-hybrid:phone",
+        "status": "passed",
+        "assertions": [
+          "drawing opened as Markdown owns self and other drawing embeds",
+          "short self-link identity",
+          "exact resize/reset and single undo",
+          "physical save preserves serialized drawing data",
+          "exact source selection",
+          "Live Preview and Reading fullscreen",
+          "Reading controls do not edit source",
+          "other drawing unchanged"
+        ]
+      },
+      {
+        "testId": "native:device:phone-portrait-light",
+        "status": "passed",
+        "assertions": [
+          "actual Obsidian mobile/desktop mode",
+          "measured editor classification",
+          "actual host and drawing theme",
+          "visible uncovered tool",
+          "trusted pointer selects and draws",
+          "device edit saves to disk",
+          "applicable Zen footer controls do not overlap and accept trusted input",
+          "code format options and remember toggle fit and accept trusted input",
+          "chosen code image preserves editable source and saves"
+        ]
+      }
+    ],
+    "baselineRestoration": {
+      "restored": true,
+      "pluginEnabled": true,
+      "extrasEnabled": true,
+      "kplexEnabled": false,
+      "theme": "moonstone",
+      "restoredFixturePaths": []
+    },
+    "deviceRestoration": {
+      "restored": true
+    },
+    "unexpectedConsoleErrors": 0
+  },
+  "hosted": [
+    {
+      "name": "Plugin tests",
+      "status": "success",
+      "url": "https://github.com/zsviczian/obsidian-excalidraw-plugin/actions/runs/43708519373"
+    },
+    {
+      "name": "CodeQL",
+      "status": "success",
+      "url": "https://github.com/zsviczian/obsidian-excalidraw-plugin/actions/runs/43708519308"
+    }
+  ],
+  "priorRuns": [
+    {
+      "directory": "pr3052-native-png-fullscreen",
+      "finding": "Prepared test vault was closed; opened its existing registration and verified readiness."
+    },
+    {
+      "directory": "pr3052-native-progressive-png",
+      "finding": "Test read dimensions after image disposal; captured dimensions before replacement."
+    },
+    {
+      "directory": "pr3052-native-progressive-png-final",
+      "finding": "Existing fixed +40px resize check failed at a 629px desktop viewport; reran at 1536x960 and restored bounds. No production resize change or narrow-pane fix claimed."
+    },
+    {
+      "directory": "pr3052-native-progressive-png-wide",
+      "finding": "Blanket read gate prevented first-image preparation; narrowed it to a populated viewer. Subsequent diagnostics identified the adopted-image slow fallback."
+    },
+    {
+      "directory": "pr3052-native-progressive-png-verified",
+      "finding": "Initial popout PNG assertion failed; retained report and added stable snapshots/diagnostics."
+    },
+    {
+      "directory": "pr3052-native-progressive-png-acceptance",
+      "finding": "248x180 inline PNG stayed valid while first popout preview was already 744x542. Confirmed production owning-window instanceof check misses adopted images; fixed via PNG ownership record."
+    }
+  ],
+  "deployment": {
+    "target": "Zsolts Brain",
+    "status": "passed",
+    "settingsBytesUnchanged": true,
+    "enabledConfigurationPreserved": true,
+    "pluginReloadVerified": true
+  }
+}

@@ -5,13 +5,15 @@ import { EditorState, StateField } from "@codemirror/state";
 import * as cmView from "@codemirror/view";
 import { sourceHarness } from "./sourceHarness.mjs";
 
-for (const selfEmbed of [false, true]) test(selfEmbed
+for (const tableEmbed of [false, true]) for (const selfEmbed of [false, true]) test((tableEmbed ? "table embeds with internal-embed wrappers: " : "") + (selfEmbed
   ? "drawing Markdown self-embeds retain controls and the same lifecycle guards"
-  : "invalid render generations cannot remount controls or starve the renderer debounce", async () => {
+  : "invalid render generations cannot remount controls or starve the renderer debounce"), async () => {
   const pending = [], originalQueue = globalThis.queueMicrotask, observers = [];
   let generation = true, loaded = 0, unloaded = 0, retireWhileMapping = false;
   globalThis.queueMicrotask = callback => pending.push(callback);
-  const drawing = { path: "Map.excalidraw.md" }, file = selfEmbed ? drawing : { path: "Source.md" }, text = "![[Map.excalidraw.md|180]]";
+  const drawing = { path: "Map.excalidraw.md" }, file = selfEmbed ? drawing : { path: "Source.md" };
+  const token = tableEmbed ? "![[Map.excalidraw.md\\|180]]" : "![[Map.excalidraw.md|180]]";
+  const text = tableEmbed ? `| Drawing |\n| --- |\n| ${token} |` : token;
   class MarkdownView { mode = "source"; file = file; getMode() { return this.mode; } }
   const info = new MarkdownView(), sourceContainer = { style: { display: "" } };
   const editorInfoField = StateField.define({ create: () => info, update: value => value });
@@ -22,9 +24,15 @@ for (const selfEmbed of [false, true]) test(selfEmbed
     disconnect() { this.connected = false; }
   } } };
   const frame = { isConnected: true, ownerDocument: doc }, parent = { childNodes: [] };
-  const native = { parentNode: parent, closest: () => null, contains: el => el === frame }; parent.childNodes.push(native);
+  const native = { parentNode: parent, closest: () => null, contains: el => el === frame };
+  const root = { parentNode: parent, closest: () => null, contains: el => el === frame };
+  const table = { closest: () => root, rows: [{ cells: [{}] }, { cells: [{}] }] };
+  const row = { parentElement: { parentElement: table }, rowIndex: 1 };
+  const cell = { closest: () => table, parentElement: row, colSpan: 1, rowSpan: 1, cellIndex: 0 };
+  parent.childNodes.push(tableEmbed ? root : native);
   const contentDOM = { querySelectorAll: () => [image], contains: el => el === frame };
-  const image = { parentElement: frame, closest: selector => selector === ".internal-embed" ? native : contentDOM };
+  const image = { parentElement: frame, closest: selector => ({ ".internal-embed": native, ".cm-content": contentDOM,
+    "table.table-editor": tableEmbed ? table : null, "td, th": tableEmbed ? cell : null })[selector] ?? null };
   const actions = { target: drawing.path, isCurrent: () => generation };
   const mutation = () => { for (const observer of observers) if (observer.connected) observer.callback(); };
   const graph = sourceHarness({

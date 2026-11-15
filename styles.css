@@ -2875,6 +2875,7 @@ button.excalidraw-font-picker {
     position: relative;
     top: auto;
     bottom: auto;
+    right: auto;
     margin-top: 4px;
   }
   .excalidraw-embed-controls-frame > .excalidraw-embed-toolbar,
@@ -2899,6 +2900,7 @@ button.excalidraw-font-picker {
   position: relative;
   top: auto;
   bottom: auto;
+  right: auto;
   margin-top: 4px;
 }
 .is-mobile .excalidraw-embed-padding-track {

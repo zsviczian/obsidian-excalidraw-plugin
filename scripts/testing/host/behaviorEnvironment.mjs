@@ -56,8 +56,11 @@ export async function behaviorEnvironment(
     c.phase = "behavior:" + context.id + ":cleanup";
     const windows = new Map();
     for (const leaf of [...owned].reverse()) {
-      const view = leaf.view,
-        owner = view.ownerWindow || view.containerEl.ownerDocument.defaultView;
+      const view = leaf.view;
+      // Plugin unload can detach its leaves entirely. Reload scenarios assert
+      // the captured roots unmounted before retiring those leaf identities.
+      if (!view) continue;
+      const owner = view.ownerWindow || view.containerEl.ownerDocument.defaultView;
       if (!owner || owner.closed) {
         await c.waitForCleanup(
           () => !view.excalidrawAPI,
@@ -106,9 +109,11 @@ export async function behaviorEnvironment(
   });
   const settings = structuredClone(p.settings);
   c.defer(async () => {
-    delete p.settings.__behaviorFutureSetting;
-    Object.assign(p.settings, settings);
-    await p.saveSettings();
+    const live = app.plugins.plugins["obsidian-excalidraw-plugin"];
+    check(live?.isReady && live.settings, "Live plugin unavailable for behavior settings restoration");
+    delete live.settings.__behaviorFutureSetting;
+    Object.assign(live.settings, settings);
+    await live.saveSettings();
   });
   const ready = async (leaf) =>
     c.waitFor(

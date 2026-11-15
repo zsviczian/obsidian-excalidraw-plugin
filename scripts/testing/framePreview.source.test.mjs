@@ -11,7 +11,7 @@ function fixture(property = '"Main,padding=20"') {
   const frame = { id: "frame-id", type: "frame", name: "Main,padding=20", x: 10, y: 20, width: 120, height: 80, isDeleted: false };
   let elements = [frame, { id: "in", type: "rectangle", x: 20, y: 30, width: 5, height: 5, frameId: "frame-id" }, { id: "out", type: "rectangle", x: 1000, y: 1000, width: 5, height: 5 }];
   class TFile { path = "Drawing.md"; extension = "md"; }
-  const file = new TFile(), requests = [];
+  const file = new TFile(), requests = []; let encode = async options => options;
   const context = vm.createContext({ console, PLUGIN_VERSION: "test" });
   const compile = (path, mocks) => {
     const code = ts.transpileModule(readFileSync(new URL('../../' + path, import.meta.url), 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
@@ -27,14 +27,14 @@ function fixture(property = '"Main,padding=20"') {
       scene = { elements: structuredClone(elements), appState: { theme: 'light' }, files: {} };
       async loadData() {} destroy() {}
     }, getExcalidrawMarkdownHeaderSection: value => value },
-    'src/utils/utils': { ...parts, getPNG: async (_scene, options) => { requests.push(options); return options; }, getSVG: async (_scene, options) => { requests.push(options); return { viewBox: { baseVal: {} }, setAttribute() {} }; } },
+    'src/utils/utils': { ...parts, getPNG: async (_scene, options) => { requests.push(options); return encode(options); }, getSVG: async (_scene, options) => { requests.push(options); return { viewBox: { baseVal: {} }, setAttribute() {} }; } },
     './excalidrawViewUtils': { getFrameBasedOnFrameNameOrId: name => elements.find(frame => frame.type === 'frame' && (frame.id === name || frame.name === name)) },
     './excalidrawElementUtils': { cloneElement: element => ({ ...element }) },
     'src/constants/safeUrls': { URLs: {} },
   });
   const plugin = { app: { vault: { read: async () => source }, metadataCache: { getFirstLinkpathDest: () => file } }, settings: { exportPaddingSVG: 10 }, ea: { getElementsInFrame: frame => frame ? elements.filter(element => element.id === frame.id || element.frameId === frame.id) : [] } };
   const loader = { loadSceneFiles: async () => {} }, options = { withBackground: false, withTheme: false, isMask: false, drawingThumbnail: true };
-  return { api, plugin, loader, options, requests, frame, source: value => { source = value; }, elements: value => { elements = value; } };
+  return { api, plugin, loader, options, requests, frame, encode: value => { encode = value; }, source: value => { source = value; }, elements: value => { elements = value; } };
 }
 
 test("default thumbnails resolve exact YAML names while explicit whole/frame and ordinary exports retain precedence", async () => {
@@ -65,4 +65,23 @@ test("PNG and SVG preview exports forward strict frame cropping without changing
   assert.deepEqual(f.requests.map(options => options.exportingFrame.id), ['frame-id', 'frame-id']);
   await f.api.createPNG('Drawing.md', 1, { ...f.options, drawingThumbnail: false }, f.loader, 'light', undefined, undefined, [], f.plugin, 0);
   assert.equal(f.requests.at(-1).exportingFrame, undefined);
+});
+
+test("cancelled PNG exports stop before rasterization or discard a completed encoder result", async () => {
+  const f = fixture(), args = () => ['Drawing.md', 3, f.options, f.loader, 'light', undefined, undefined, [], f.plugin, 0];
+  f.loader.terminate = true;
+  await f.api.createPNG(...args()); assert.equal(f.requests.length, 0);
+  f.loader.terminate = false;
+  let release; const read = new Promise(resolve => { release = resolve; }); f.plugin.app.vault.read = () => read;
+  const pending = f.api.createPNG(...args()); f.loader.terminate = true; release('');
+  assert.equal(await pending, null); assert.equal(f.requests.length, 0);
+  f.loader.terminate = false; f.plugin.app.vault.read = async () => '';
+  f.loader.loadSceneFiles = async () => { queueMicrotask(() => { f.loader.terminate = true; }); };
+  assert.equal(await f.api.createPNG(...args()), null); assert.equal(f.requests.length, 0);
+  f.loader.terminate = false; f.loader.loadSceneFiles = async () => {};
+  let finishEncoding, started;
+  const encoding = new Promise(resolve => { finishEncoding = resolve; }), entered = new Promise(resolve => { started = resolve; });
+  f.encode(() => { started(); return encoding; });
+  const last = f.api.createPNG(...args()); await entered; f.loader.terminate = true; finishEncoding(new Blob(['png']));
+  assert.equal(await last, null); assert.equal(f.requests.length, 1);
 });

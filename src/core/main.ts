@@ -1,4 +1,5 @@
 import { ExcalidrawExtrasGateway } from "../utils/ExcalidrawExtrasGateway";
+import { DrawingCreationUI } from "./managers/DrawingCreationUI";
 import { openSVGImportForEditor } from "src/shared/svgConversionActions";
 import { ExcalidrawCLI } from "./managers/ExcalidrawCLI";
 import type { ExcalidrawCLIRequest, ExcalidrawCLIResult } from "src/types/excalidrawCliTypes";
@@ -172,6 +173,7 @@ const EXCALIDRAW_EXTERNAL_GET_LABEL_KEY_SET = new Set<keyof typeof en>(
 export default class ExcalidrawPlugin extends Plugin {
   private cli: ExcalidrawCLI;
   public extrasGateway: ExcalidrawExtrasGateway;
+  public drawingCreationUI: DrawingCreationUI;
   private fileManager: PluginFileManager;
   private observerManager: ObserverManager;
   private packageManager: PackageManager;
@@ -452,9 +454,9 @@ export default class ExcalidrawPlugin extends Plugin {
     addIcon(ICON_NAME, EXCALIDRAW_ICON);
     addIcon(SCRIPTENGINE_ICON_NAME, SCRIPTENGINE_ICON);
     addIcon(EXPORT_IMG_ICON_NAME, EXPORT_IMG_ICON);
-    this.addRibbonIcon(ICON_NAME, t("CREATE_NEW"), (e) =>
-      this.actionRibbonClick(e),
-    );
+    this.drawingCreationUI = this.addChild(new DrawingCreationUI(this, (event) => {
+      void this.actionRibbonClick(event);
+    }));
 
     try {
       void this.loadSettings().then(() =>
@@ -504,6 +506,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.settingsTab = new ExcalidrawSettingTab(this.app, this);
     this.addSettingTab(this.settingsTab);
     this.settingsReady = true;
+    this.drawingCreationUI.refresh();
   }
 
   private async onloadOnLayoutReady() {
@@ -1068,6 +1071,7 @@ export default class ExcalidrawPlugin extends Plugin {
     const didLoadSettings = await this.settingsManager.loadSettings();
     if (didLoadSettings) {
       this.stencilLibraryManager?.invalidate();
+      this.drawingCreationUI?.refresh();
     }
   }
 
