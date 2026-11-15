@@ -17,9 +17,9 @@ declare const PLUGIN_VERSION: string;
 // English
 export default {
   SHOW_RIBBON_ICON_NAME: "Show Excalidraw icon in the left ribbon",
-  SHOW_NEW_DRAWING_EMPTY_TAB_NAME: "Show New Excalidraw on empty tabs",
+  SHOW_NEW_DRAWING_EMPTY_TAB_NAME: "Show New Drawing in empty tabs",
   SHOW_NEW_DRAWING_EMPTY_TAB_DESC: "Add a drawing action beside New note, using your drawing folder, file format and template settings.",
-  NEW_DRAWING_EMPTY_TAB: "New Excalidraw",
+  NEW_DRAWING_EMPTY_TAB: "New Drawing",
 
   PREVIEW_VIEW_HELP: "Create views by adding frames or marker frames to the source drawing and naming them. Replace the default “Frame” name.",
   PREVIEW_OUTER_PADDING: "Outer padding",

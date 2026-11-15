@@ -1620,7 +1620,7 @@
           "layer": "source",
           "path": "scripts/testing/drawingCreationUI.test.mjs",
           "cases": [
-            "creation actions opt in independently, survive host rerenders and release their listeners"
+            "creation actions default to visible, respect independent opt-outs and release their listeners"
           ]
         },
         {

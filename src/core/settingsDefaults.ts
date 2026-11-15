@@ -496,7 +496,7 @@ export const cloneModelConfigs = <TConfig extends AIModelConfig>(
 
 export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   showRibbonIcon: true,
-  showNewDrawingInEmptyTab: false,
+  showNewDrawingInEmptyTab: true,
   thumbnailRenamePolicy: "unset",
   showTabTitlebarButtons: true,
   copyLinkToElemenetAnchorTo100: false,

@@ -230,6 +230,6 @@ async function exerciseIssues(c, env, template) {
       const data = JSON.parse(await app.vault.adapter.read(app.vault.configDir + "/plugins/obsidian-excalidraw-plugin/data.json"));
       check(data.showNewDrawingInEmptyTab && data.showRibbonIcon === false && data.__issue3052Unknown.preserved, "disk settings differ after reload");
     }
-    return { assertions: ["opt-in empty-tab action retains core actions", "independent ribbon visibility", "configured destination, format and template", ...(context === "main" ? ["nondefault and unknown settings survive actual plugin reload and disk persistence"] : [])] };
+    return { assertions: ["empty-tab action retains core actions", "independent ribbon visibility", "configured destination, format and template", ...(context === "main" ? ["nondefault and unknown settings survive actual plugin reload and disk persistence"] : [])] };
   });
 }

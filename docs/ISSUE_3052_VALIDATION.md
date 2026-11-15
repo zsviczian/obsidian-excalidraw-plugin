@@ -24,10 +24,31 @@ under the shared application-user-data lock, then restored its declared baseline
 
 ## Issue outcomes
 
+Maintainer follow-up, 2026-11-15: the empty-tab action is now **New Drawing**
+and enabled by default, overriding the original issue's opt-in proposal. Explicit
+persisted opt-outs remain respected; no migration overwrites existing choices.
+The creation regression now loads the actual production defaults and checks
+default visibility, independent opt-outs, host rerenders and cleanup. The native
+and portable counts below remain evidence for their explicitly named earlier
+checkpoints, which preceded this default/copy change.
+
+This follow-up's production build and all 789 fast cases pass, including the five
+bundle checks and maintained-locale inflation. The strengthened real-defaults
+creation regression fails before the default change and passes afterward. This
+localized default/copy change does not alter the creation pipeline or controller;
+the earlier complete native run is not represented as a new native validation.
+The new production bundle is 5,145,119 bytes (97,761 bytes below 5 MiB).
+
+The maintainer also requested a mandatory consent control for compatibility work
+with another plugin. It is canonical in `CODING_STANDARDS.md` and prominently
+linked from `AGENTS.md` and `CONTRIBUTING.md`. The #3051 Extras guards are unchanged
+pending the maintainer's decision; no Lazy Loader-specific production workaround
+was introduced.
+
 | Issue | Implementation and observable evidence |
 | --- | --- |
 | [#3049](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/3049) | Prefer the physical table/cell boundary even when native images have an `internal-embed` wrapper. Preserve file, renderer-generation, document and stale-source guards. Reset `right` for in-flow phone/coarse-pointer controls. Source regressions fail before the fix. Native main/split/popout and phone/tablet cases pass for PNG and both SVG formats, repeated cells, alignment, exact source, history, fullscreen and Reading controls. |
-| [#3047](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/3047) | Independent ribbon visibility (on by default) and empty-tab creation action (off by default), using the existing folder/format/template pipeline. Both settings layouts and maintained locales are covered. Native main/popout creation passes; nondefault preferences and an unknown-key sentinel survive actual plugin reload and on-disk persistence. Core empty-tab actions remain present. |
+| [#3047](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/3047) | Independent ribbon visibility and **New Drawing** action, both on by default after the maintainer's 2026-11-15 follow-up, using the existing folder/format/template pipeline. Both settings layouts and maintained locales are covered. Earlier native main/popout creation passes; nondefault preferences and an unknown-key sentinel survive actual plugin reload and on-disk persistence. Core empty-tab actions remain present. |
 | [#3044](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/3044) | Plugin-only unmodified P toggle through the existing editor API. Exclude inputs, embeds, modifiers, composition, active drawing, view mode and retired views. Review found that repeats after selection commits could reenter pen; the strengthened state-mutating source test fails before the final guard and passes afterward. Actual repeated-key input passes in main/popout: second P selects mouse, holding it preserves selection, fresh P selects pen, input text and V still work. |
 | [#3048](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/3048) | Two fingerprinted fork conditions route normalized YouTube videos/playlists through the existing iframe instead of a guest webview. Four real-editor provider cases pass after two baseline failures. Both actual browser artifacts pass nested cross-origin offline-player fullscreen at zoom 0.5 and 2. Native main/popout tests pass iframe routing, viewport-sized HTML fullscreen and trusted player-button exit. Actual YouTube playback and physical Escape remain unverified. |
 | [#3051](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/3051) | Guard absent/incomplete Extras APIs, check versions before feature access and reject missing/non-string component versions through the normal unavailable/update path. Preserve the exact Mermaid 3.6 handshake. Native missing/incomplete API cancellation, continued drawing access, recovery and late plugin enablement pass. The original startup failure is not reproduced or claimed fixed. |

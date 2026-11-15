@@ -15,9 +15,9 @@ import {
 // русский
 export default {
   SHOW_RIBBON_ICON_NAME: "Показывать значок Excalidraw на левой ленте",
-  SHOW_NEW_DRAWING_EMPTY_TAB_NAME: "Показывать «Новый Excalidraw» в пустых вкладках",
+  SHOW_NEW_DRAWING_EMPTY_TAB_NAME: "Показывать «Новый рисунок» в пустых вкладках",
   SHOW_NEW_DRAWING_EMPTY_TAB_DESC: "Добавляет действие создания рисунка рядом с новой заметкой, используя настройки папки, формата файла и шаблона.",
-  NEW_DRAWING_EMPTY_TAB: "Новый Excalidraw",
+  NEW_DRAWING_EMPTY_TAB: "Новый рисунок",
 
   PREVIEW_VIEW_HELP: "Чтобы создать виды, добавьте в исходный рисунок рамки или рамки-маркеры и задайте им имена. Замените стандартное имя «Frame».",
   PREVIEW_OUTER_PADDING: "Внешние поля",

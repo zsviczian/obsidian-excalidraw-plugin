@@ -8,6 +8,11 @@ DOM/window ownership, cleanup, security, naming, type changes, localization, and
 validation. Add future cross-cutting requirements there instead of duplicating
 them here. Read [CONTRIBUTING.md](CONTRIBUTING.md) for setup and build workflows.
 
+**Do not attempt compatibility work with another plugin without explicitly asking
+for maintainer consent. Such work is out of scope by default.** Follow the
+[mandatory compatibility consent control](CODING_STANDARDS.md#compatibility-with-other-plugins-requires-maintainer-consent);
+a general issue-investigation request does not grant compatibility approval.
+
 ## Purpose
 
 This repository contains the Obsidian Excalidraw plugin: an Obsidian.md plugin that integrates a heavily customized Excalidraw fork into Obsidian.

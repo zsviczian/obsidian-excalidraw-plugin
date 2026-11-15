@@ -180,6 +180,29 @@ Use TSDoc as the documentation standard. It is the modern TypeScript-friendly ev
 - Add short module-level documentation to files whose behavior is easy to misread, such as `rollup.config.mjs`, `src/core/managers/PackageManager.ts`, migration code in `src/core/main.ts`, and the `MathjaxToSVG/` subproject.
 - Internal/private code should only be commented when the behavior is non-obvious. Avoid trivial comments.
 
+## Compatibility with other plugins requires maintainer consent
+
+Compatibility work with another plugin is out of scope by default. Once an
+agent identifies that a proposed fix would accommodate another plugin's behavior,
+it MUST explicitly ask for maintainer consent before implementing that work.
+A general request to investigate or fix an issue is not approval for plugin
+compatibility work.
+
+The consent request must name the other plugin, distinguish the confirmed core
+defect from the plugin interaction, describe the proposed accommodation, and
+explain its complexity and maintenance cost. This includes lifecycle changes,
+startup delays or retries, monkey patches, compatibility shims, fallback paths,
+and relaxed API/version requirements. Apply this control to companion-plugin
+compatibility changes as well; do not expand a supported integration's contract
+without explicit approval.
+
+Read-only triage may establish which component owns a failure. Do not presume
+that Excalidraw should compensate for another plugin that is outdated, broken,
+or incompatible with an Obsidian update. Report that boundary and prefer a fix
+in the responsible plugin unless the maintainer explicitly approves otherwise.
+Previously approved integrations are not authorization for new compatibility
+work, and this policy does not authorize removing existing integrations.
+
 ## Backward Compatibility Requirements
 
 Backwards compatibility is a strong requirement in this repository.
