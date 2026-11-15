@@ -117,7 +117,7 @@ function fixture() {
     "src/shared/GlobalTaskQueue": { getGlobalTaskQueue: () => queue },
     "../../utils/debugHelper": { DEBUGGING: false },
     "../../shared/ImageCache": { getImageCache: () => ({ isReady: () => cacheReady, releaseObsidianURL: url => released.push(url) }) },
-    "../../utils/ownedPNGImage": { discardOwnedPNGImage: () => false, registerOwnedPNGImageSources: () => () => {}, cloneOwnedPNGImage: element => {
+    "../../utils/ownedPNGImage": { hasOwnedPNGImageSource: () => true, discardOwnedPNGImage: () => false, registerOwnedPNGImageSources: () => () => {}, cloneOwnedPNGImage: element => {
       const copy = new Element("excalidraw-embedded-img", "img"); copy.ownerDocument = element.ownerDocument; return copy;
     } },
     "../../shared/EmbeddedFileLoader": { EmbeddedFilesLoader: class { constructor() { this.terminate = false; loaders.push(this); } } },
@@ -184,6 +184,20 @@ test("PNG fullscreen routing opens the displayed raster without starting the hig
   assert.equal(f.rasters.length, 1, "fullscreen must not wait for a second 3x PNG export");
   assert.equal(await f.actions.get(image).create(() => false), null);
   assert.equal(f.intervals.size, 0);
+});
+
+test("PNG detail upgrade forces a fresh raster and abort immediately terminates its loader", async () => {
+  const f = fixture(); f.plugin.settings.previewImageType = "PNG"; f.targetFile.stat = { mtime: 1 };
+  const image = await f.processor.createImgElement({ file: f.targetFile, fname: f.targetFile.path, fwidth: "180", fheight: "", imgstyle: [] }, false, undefined, () => true);
+  const controller = new AbortController(), init = deferred(); f.plugin.awaitInit = () => init.promise;
+  const pending = f.actions.get(image).upgrade(() => true, controller.signal), loader = f.loaders.at(-1);
+  assert.equal(loader.terminate, false); controller.abort(); assert.equal(loader.terminate, true);
+  init.resolve(); assert.equal(await pending, null); assert.equal(f.rasters.length, 1); assert.equal(f.intervals.size, 0);
+  f.plugin.awaitInit = async () => {}; f.plugin.settings.previewImageType = "SVG";
+  const next = new AbortController(); const detail = await f.actions.get(image).upgrade(() => true, next.signal);
+  assert.ok(detail); assert.equal(f.rasters.at(-1).forceExport, true); assert.equal(f.rasters.at(-1).cacheReady, false);
+  assert.equal(f.rasters.at(-1).imgAttributes.fwidth, "1600"); assert.equal(detail.ownerDocument, image.ownerDocument);
+  next.abort(); assert.equal(f.loaders.at(-1).terminate, false, "completed request unregisters its abort listener");
 });
 
 for (const context of ["inline", "preview"]) {

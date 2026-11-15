@@ -11,6 +11,7 @@ export interface LocatedDrawingEmbed {
 export interface DrawingEmbedPreview {
   create: (isCurrent: () => boolean) => Promise<HTMLElement>;
   discard: (element: HTMLElement) => void;
+  upgrade?: (isCurrent: () => boolean, signal: AbortSignal) => Promise<HTMLElement>;
 }
 
 export interface DrawingEmbedActions extends DrawingEmbedPreview {

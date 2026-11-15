@@ -4,6 +4,11 @@ import test, { after } from "node:test";
 import { sourceHarness } from "./sourceHarness.mjs";
 
 const document = { defaultView: { closed: false, innerWidth: 800, innerHeight: 600, events: new Map() }, activeElement: null };
+const frames = new Map(), timers = new Map(); let clockId = 0;
+document.defaultView.requestAnimationFrame = callback => { frames.set(++clockId, callback); return clockId; };
+document.defaultView.cancelAnimationFrame = id => frames.delete(id);
+const oldWindow = globalThis.window;
+globalThis.window = { setTimeout: callback => { timers.set(++clockId, callback); return clockId; }, clearTimeout: id => timers.delete(id) };
 let listeners = 0;
 class Element {
   constructor(options = {}) { this.children = []; this.attrs = { ...options.attr }; this.classes = new Set((options.cls || "").split(" ")); this.events = new Map(); this.style = {}; this.ownerDocument = document; this.isConnected = true; this.captures = new Set(); }
@@ -11,6 +16,7 @@ class Element {
   createSpan(options) { return this.createEl("span", options); }
   createEl(tag, options) { const el = new Element(options); el.tag = tag; this.append(el); return el; }
   append(el) { el.parent = this; this.children.push(el); }
+  replaceChild(el, old) { const index = this.children.indexOf(old); assert.notEqual(index, -1); this.children[index] = el; el.parent = this; old.parent = null; }
   addClass(cls) { this.classes.add(cls); }
   setAttribute(key, value) { this.attrs[key] = value; }
   removeAttribute(key) { delete this.attrs[key]; }
@@ -43,17 +49,64 @@ class Modal {
   open() { this.onOpen(); }
   close() { this.onClose(); this.modalEl.remove(); }
 }
-const graph = sourceHarness({ obsidian: { Component, Modal, setIcon() {}, setTooltip() {} }, "src/lang/helpers": { t: key => key }, "src/utils/styleUtils": { setStyle: (el, values) => Object.assign(el.style, values) } });
+const graph = sourceHarness({ obsidian: { Component, Modal, setIcon() {}, setTooltip() {} }, "src/lang/helpers": { t: key => key }, "src/utils/typechecks": { isInstanceOfHTMLImageElement: el => el.tag === "img" }, "src/utils/styleUtils": { setStyle: (el, values) => Object.assign(el.style, values) } });
 const { DrawingEmbedPreviewModal } = await graph.importModule("src/shared/Dialogs/DrawingEmbedPreviewModal.ts");
-after(() => graph.close());
+after(() => { graph.close(); if (oldWindow === undefined) delete globalThis.window; else globalThis.window = oldWindow; });
 const flush = () => new Promise(resolve => setImmediate(resolve));
-function fixture() {
+function fixture(upgrade) {
   let resolve, reject, isCurrent, closed = 0;
   const discarded = [], opened = [], opener = new Element(), promise = new Promise((yes, no) => { resolve = yes; reject = no; });
-  const modal = new DrawingEmbedPreviewModal({}, { create: active => { isCurrent = active; return promise; }, discard: el => discarded.push(el), isCurrent: () => true, getOpenTooltip: () => "configured shortcuts", openDrawing: event => opened.push(event) }, opener, () => closed++);
+  const modal = new DrawingEmbedPreviewModal({}, { upgrade, create: active => { isCurrent = active; return promise; }, discard: el => discarded.push(el), isCurrent: () => true, getOpenTooltip: () => "configured shortcuts", openDrawing: event => opened.push(event) }, opener, () => closed++);
   modal.open();
   return { modal, opener, resolve, reject, discarded, opened, current: () => isCurrent(), closed: () => closed };
 }
+
+const deferred = () => { let resolve, reject; const promise = new Promise((yes, no) => { resolve = yes; reject = no; }); return { resolve, reject, promise }; };
+const raster = (decode = Promise.resolve()) => { const el = new Element(); el.tag = "img"; el.decode = () => decode; return el; };
+async function renderFrames() { for (let i = 0; i < 2; i++) { for (const [id, callback] of [...frames]) { frames.delete(id); callback(); } await flush(); } }
+
+test("progressive PNG detail swaps only after decode and preserves live zoom pan and pointer capture", async () => {
+  const exportJob = deferred(), decodeJob = deferred(); let signal, calls = 0;
+  const f = fixture((active, abort) => { assert.equal(active(), true); calls++; signal = abort; return exportJob.promise; });
+  const initial = raster(); f.resolve(initial); await flush();
+  const stage = f.modal.contentEl.find("excalidraw-embed-preview-stage"), surface = stage.find("excalidraw-embed-preview-surface");
+  assert.deepEqual(surface.children, [initial]); assert.equal(calls, 0, "initial image must precede expensive work");
+  await renderFrames(); assert.equal(calls, 1); assert.equal(timers.size, 0);
+  f.modal.modalEl.fire("keydown", { key: "+" }); f.modal.modalEl.fire("keydown", { key: "ArrowRight" });
+  stage.fire("pointerdown", { button: 0, pointerId: 9, clientX: 10, clientY: 10 });
+  const transform = surface.style.transform, zoom = stage.getAttribute("data-zoom"), detail = raster(decodeJob.promise);
+  exportJob.resolve(detail); await flush(); assert.deepEqual(surface.children, [initial]);
+  decodeJob.resolve(); await flush(); assert.deepEqual(surface.children, [detail]);
+  assert.equal(surface.style.transform, transform); assert.equal(stage.getAttribute("data-zoom"), zoom); assert.equal(stage.hasPointerCapture(9), true);
+  assert.deepEqual(f.discarded, [initial]); f.modal.close();
+  assert.deepEqual(f.discarded, [initial, detail]); assert.equal(signal.aborted, false, "completed operation releases its controller"); assert.equal(listeners, 0);
+});
+
+test("closing progressive PNG cancels frames exports and decoding and releases late private images", async () => {
+  for (const phase of ["initial-decode", "frames", "export", "detail-decode"]) {
+    const initialDecode = deferred(), exportJob = deferred(), detailDecode = deferred(); let signal, calls = 0;
+    const f = fixture((_active, abort) => { signal = abort; calls++; return exportJob.promise; });
+    const initial = raster(phase === "initial-decode" ? initialDecode.promise : Promise.resolve()), detail = raster(detailDecode.promise);
+    f.resolve(initial); await flush();
+    if (["export", "detail-decode"].includes(phase)) await renderFrames();
+    if (phase === "detail-decode") { exportJob.resolve(detail); await flush(); }
+    f.modal.close(); await flush();
+    assert.equal(frames.size, 0); assert.equal(timers.size, 0); assert.equal(listeners, 0);
+    if (signal) assert.equal(signal.aborted, true);
+    initialDecode.resolve(); exportJob.resolve(detail); detailDecode.resolve(); await flush();
+    assert.equal(calls, ["export", "detail-decode"].includes(phase) ? 1 : 0);
+    assert.deepEqual(f.discarded, calls ? [initial, detail] : [initial]);
+  }
+});
+
+test("failed PNG detail export keeps the initial preview and hidden-window fallback settles", async () => {
+  const f = fixture(async () => { throw Error("export failed"); }), initial = raster();
+  f.resolve(initial); await flush();
+  for (const callback of [...timers.values()]) callback(); await flush();
+  assert.equal(frames.size, 0); assert.equal(timers.size, 0);
+  assert.deepEqual(f.modal.contentEl.find("excalidraw-embed-preview-surface").children, [initial]);
+  assert.deepEqual(f.discarded, []); f.modal.close(); assert.deepEqual(f.discarded, [initial]);
+});
 
 test("closing during fullscreen export cancels ownership and discards only the late private payload", async () => {
   const f = fixture(), privateImage = new Element();

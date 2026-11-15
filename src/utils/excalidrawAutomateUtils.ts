@@ -544,11 +544,13 @@ export async function createPNG(
   if (!loader) {
     loader = new EmbeddedFilesLoader(plugin);
   }
+  if (loader.terminate) return null;
   const filenameParts = getEmbeddedFilenameParts(templatePath);
   padding = filenameParts.padding ?? padding ?? plugin.settings.exportPaddingSVG;
   const template = templatePath
     ? await getTemplate(plugin, templatePath, true, loader, depth, false, undefined, exportSettings?.drawingThumbnail)
     : null;
+  if (loader.terminate) return null;
   let elements = template?.elements ?? [];
   elements = elements.concat(automateElements);
   const files = imagesDict ?? {};
@@ -560,7 +562,7 @@ export async function createPNG(
     });
   }
 
-  return await getPNG(
+  const png = await getPNG(
     {
       type: "excalidraw",
       version: 2,
@@ -591,6 +593,7 @@ export async function createPNG(
     overrideFiles,
     filenameParts.padding !== undefined,
   );
+  return loader.terminate ? null : png;
 }
 
 export const updateElementLinksToObsidianLinks = ({

@@ -885,6 +885,9 @@
           "path": "scripts/testing/embedPreview.source.test.mjs",
           "cases": [
             "node:scripts/testing/embedPreview.source.test.mjs::closing during fullscreen export cancels ownership and discards only the late private payload",
+            "node:scripts/testing/embedPreview.source.test.mjs::progressive PNG detail swaps only after decode and preserves live zoom pan and pointer capture",
+            "node:scripts/testing/embedPreview.source.test.mjs::closing progressive PNG cancels frames exports and decoding and releases late private images",
+            "node:scripts/testing/embedPreview.source.test.mjs::failed PNG detail export keeps the initial preview and hidden-window fallback settles",
             "node:scripts/testing/embedPreview.source.test.mjs::preview pencil and modifier clicks preserve modifiers and close before opening the drawing",
             "node:scripts/testing/embedPreview.source.test.mjs::dragging a viewport preview restores movable bounds and releases its pointer ownership"
           ]
@@ -982,7 +985,8 @@
             "node:scripts/testing/markdownEmbeds.test.mjs::Reading context retirement cancels queued and in-flight detached images",
             "node:scripts/testing/markdownEmbeds.test.mjs::PNG inline images are created in their owning document",
             "node:scripts/testing/markdownEmbeds.test.mjs::PNG preview images are created in their owning document",
-            "node:scripts/testing/markdownEmbeds.test.mjs::PNG fullscreen routing opens the displayed raster without starting the high-resolution exporter"
+            "node:scripts/testing/markdownEmbeds.test.mjs::PNG fullscreen routing opens the displayed raster without starting the high-resolution exporter",
+            "node:scripts/testing/markdownEmbeds.test.mjs::PNG detail upgrade forces a fresh raster and abort immediately terminates its loader"
           ]
         },
         {

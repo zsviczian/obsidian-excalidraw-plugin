@@ -75,20 +75,32 @@ confirmed unnecessary-work path, not a measured attribution of every Android del
 
 Owned PNG images now retain a weakly keyed reference to their existing encoded
 blob. Fullscreen reuses those pixels through a new independently owned URL in the
-source document. It does not start another scene export or depend on cache
-availability. SVG/Native SVG and unowned-payload fallback paths remain unchanged.
-The deliberate trade-off is that PNG zoom uses the displayed raster's resolution
-rather than an automatically generated fresh 3x raster; no switch to SVG is hidden
-behind the PNG setting.
+source document without waiting for another scene export or cache availability.
+At the maintainer's request, a fresh 3x PNG export then runs in the background.
+The viewer waits for its decode before replacing only the image, preserving the
+existing fit, zoom, pan and pointer gesture. Closing aborts deferred startup,
+embedded-file loading and subsequent raster/DOM work. An already running browser
+encoder cannot be preempted; its late result is discarded without an object URL
+or image insertion. SVG/Native SVG and unowned-payload fallback paths remain unchanged.
 
 The new routing regression fails before the fix because fullscreen starts a second
 raster export. Pixel-copy coverage includes cached/uncached images, close/reopen,
 source retirement, document ownership and plugin teardown. All 41 focused
 Markdown/PNG cases, all 791 fast cases, 251 measured source cases and the
-production build pass. Both changed production modules have zero focused lint
-errors/warnings. Native embed validation and
+production build pass for the first-stage checkpoint `7aedebfa`. The progressive
+follow-up adds executable swap/decode/failure/cancellation cases and native
+read-gated assertions for immediate display, 3x replacement, preserved zoom/pan
+and closing a pending export. Native embed validation and
 physical Android confirmation are recorded separately; earlier full-profile
 counts are not acceptance evidence for this follow-up.
+
+Progressive follow-up source validation passes 54 focused cases, 796 fast cases,
+the production build and all five bundle checks. `main.js` is 5,147,272 bytes
+(95,608 bytes below the release target). Focused lint is clean for the viewer,
+postprocessor, PNG ownership helper and preview types. The export utility reports
+two pre-existing unsafe-`any` findings at its unchanged text-conversion code;
+no new lint finding is introduced by the cancellation checks. Before/after
+regression output is retained under `.test-work/reports/pr3052-progressive-*`.
 
 Native validation independently exposed concurrent cold renders revoking an
 earlier image's URL, and warm-cache siblings sharing a revocable URL. The

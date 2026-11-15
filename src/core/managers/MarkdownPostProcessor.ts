@@ -56,7 +56,7 @@ import { getDrawingPaddingMax } from "src/utils/drawingPadding";
 import { readDrawingPreviewElements } from "src/utils/drawingPreviewScene";
 import { getGlobalTaskQueue } from "src/shared/GlobalTaskQueue";
 import { renderMarkdownEmbed } from "./MarkdownEmbedRenderChild";
-import { cloneOwnedPNGImage, discardOwnedPNGImage, registerOwnedPNGImageSources, setOwnedPNGImageSource } from "../../utils/ownedPNGImage";
+import { cloneOwnedPNGImage, discardOwnedPNGImage, hasOwnedPNGImageSource, registerOwnedPNGImageSources, setOwnedPNGImageSource } from "../../utils/ownedPNGImage";
 
 interface imgElementAttributes {
   file?: TFile;
@@ -160,6 +160,7 @@ const _getPNG = async ({
   file,
   exportSettings,
   loader,
+  forceExport = false,
 }: {
   imgAttributes: imgElementAttributes;
   filenameParts: FILENAMEPARTS;
@@ -169,6 +170,7 @@ const _getPNG = async ({
   file: TFile;
   exportSettings: ExportSettings;
   loader: EmbeddedFilesLoader;
+  forceExport?: boolean;
 }): Promise<HTMLImageElement> => {
   const width = parseInt(imgAttributes.fwidth);
   const scale =
@@ -199,7 +201,8 @@ const _getPNG = async ({
     : undefined;
 
   const hasImageReference = isExplicitImageEmbed(imgAttributes.fname);
-  const quickPNG = !cached && !hasImageReference
+  if (loader.terminate) return null;
+  const quickPNG = !forceExport && !cached && !hasImageReference
     ? await getQuickImagePreview(plugin, file.path, "png")
     : undefined;
 
@@ -231,7 +234,7 @@ const _getPNG = async ({
       0,
       getExportPadding(plugin, file),
     ));
-  if (!png) {
+  if (!png || loader.terminate) {
     return null;
   }
   // Each renderer owns its URL. Concurrent cache replacements and discarded
@@ -508,7 +511,9 @@ const getIMG = async (
   isRenderActive?: () => boolean,
   freshOwnedPayload: boolean = false,
   ownerDocument: Document = embedEl?.ownerDocument,
+  options?: { signal: AbortSignal; forcePNGExport: boolean },
 ): Promise<HTMLImageElement | HTMLDivElement> => {
+  if (options?.signal.aborted) return null;
   let file = imgAttributes.file;
   if (!imgAttributes.file) {
     const f = vault.getAbstractFileByPath(imgAttributes.fname?.split("#")[0]);
@@ -552,6 +557,8 @@ const getIMG = async (
     plugin,
     theme ? theme === "dark" : undefined,
   );
+  const abort = () => { loader.terminate = true; };
+  options?.signal.addEventListener("abort", abort, { once: true });
 
   let terminationTimer: number;
   if (embedEl || isRenderActive) {
@@ -568,8 +575,8 @@ const getIMG = async (
   let resultElement: HTMLImageElement | HTMLDivElement = null;
   try {
     await plugin.awaitInit();
-    if (isRenderActive && !isRenderActive()) return null;
-    switch (plugin.settings.previewImageType) {
+    if (loader.terminate || (isRenderActive && !isRenderActive())) return null;
+    switch (options?.forcePNGExport ? PreviewImageType.PNG : plugin.settings.previewImageType) {
       case PreviewImageType.PNG: {
         // A decoded/released blob URL cannot be fetched again after adoption
         // into another document. Start the image in its final owning realm.
@@ -589,6 +596,7 @@ const getIMG = async (
           file,
           exportSettings,
           loader,
+          forceExport: options?.forcePNGExport,
         });
         break;
       }
@@ -637,6 +645,7 @@ const getIMG = async (
       }
     }
   } finally {
+    options?.signal.removeEventListener("abort", abort);
     if (terminationTimer) {
       window.clearInterval(terminationTimer);
     }
@@ -834,6 +843,15 @@ const createImgElement = async (
       image?.setAttribute("fileSource", attr.fname);
       return image;
     },
+    ...(isInstanceOfHTMLImageElement(imgOrDiv) && hasOwnedPNGImageSource(imgOrDiv) ? {
+      upgrade: async (active: () => boolean, signal: AbortSignal) => {
+        const image = await getIMG({ ...attr, fwidth: "1600", fheight: "", imgstyle: [] }, false, undefined,
+          () => active() && !signal.aborted && isCurrent(), true, imgOrDiv.ownerDocument,
+          { signal, forcePNGExport: true });
+        image?.setAttribute("fileSource", attr.fname);
+        return image;
+      },
+    } : {}),
     discard: discardImage,
     ...(withAreaPadding(attr.fname, null) !== null ? {
       padding: {

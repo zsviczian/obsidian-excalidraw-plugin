@@ -53,6 +53,11 @@ export function cloneOwnedPNGImage(image: HTMLImageElement): HTMLImageElement | 
   return copy;
 }
 
+/** Identify a live raster without allocating another image or object URL. */
+export function hasOwnedPNGImageSource(image: HTMLImageElement): boolean {
+  return imageSources.has(image);
+}
+
 /** Keep a live image's source reusable for pixel reads and document migration. */
 export function setOwnedPNGImageSource(
   image: HTMLImageElement,

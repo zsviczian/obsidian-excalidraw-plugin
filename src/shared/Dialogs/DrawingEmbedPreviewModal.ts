@@ -1,6 +1,7 @@
 import { App, Component, Modal, setIcon, setTooltip } from "obsidian";
 import { t } from "src/lang/helpers";
 import { setStyle } from "src/utils/styleUtils";
+import { isInstanceOfHTMLImageElement } from "src/utils/typechecks";
 import type { DrawingEmbedActions } from "src/types/drawingEmbedTypes";
 import { labelDrawingEmbedControl } from "src/core/managers/drawingEmbedActions";
 
@@ -19,6 +20,7 @@ export class DrawingEmbedPreviewModal extends Modal {
   private pointers = new Map<number, Point>();
   private gesture: { center: Point; distance: number; zoom: number; pan: Point } | null = null;
   private windowGesture: Component | null = null;
+  private upgradeAbort: AbortController | null = null;
 
   constructor(
     app: App,
@@ -184,9 +186,67 @@ export class DrawingEmbedPreviewModal extends Modal {
       this.image = image;
       this.status.remove();
       this.surface.append(image);
+      if (this.preview.upgrade) void this.upgradePreview(image);
     } catch {
       if (this.active) this.status.setText(t("EMBED_PREVIEW_FAILED"));
       if (image) this.preview.discard(image);
+    }
+  }
+
+  private async waitForImage(image: HTMLElement, signal: AbortSignal): Promise<boolean> {
+    if (signal.aborted) return false;
+    if (!isInstanceOfHTMLImageElement(image)) return true;
+    return new Promise(resolve => {
+      const finish = (ready: boolean) => { signal.removeEventListener("abort", abort); resolve(ready); };
+      const abort = () => finish(false);
+      signal.addEventListener("abort", abort, { once: true });
+      void image.decode().then(() => finish(!signal.aborted), () => finish(false));
+    });
+  }
+
+  // Give the decoded first image rendering opportunities before starting the
+  // expensive export. Frames do not prove paint; the fallback also settles in
+  // a hidden window, and closing the viewer cancels both clocks immediately.
+  private waitForRendering(signal: AbortSignal): Promise<void> {
+    const win = this.surface.ownerDocument.defaultView;
+    return new Promise(resolve => {
+      if (signal.aborted) { resolve(); return; }
+      let frame: number;
+      const finish = () => {
+        win.cancelAnimationFrame(frame);
+        window.clearTimeout(timer);
+        signal.removeEventListener("abort", finish);
+        resolve();
+      };
+      const timer = window.setTimeout(finish, 100);
+      signal.addEventListener("abort", finish, { once: true });
+      frame = win.requestAnimationFrame(() => { frame = win.requestAnimationFrame(finish); });
+    });
+  }
+
+  private async upgradePreview(initial: HTMLElement): Promise<void> {
+    const controller = new AbortController();
+    this.upgradeAbort = controller;
+    const { signal } = controller;
+    let pending: HTMLElement = null;
+    const current = () => this.active && !signal.aborted && this.preview.isCurrent();
+    try {
+      if (!await this.waitForImage(initial, signal)) return;
+      await this.waitForRendering(signal);
+      if (!current()) return;
+      pending = await this.preview.upgrade(current, signal);
+      if (!pending || !current() || !await this.waitForImage(pending, signal) || !current()) return;
+      // The surface owns zoom/pan. Replacing only its image preserves the fit
+      // geometry and any gesture already in progress, regardless of pixel scale.
+      this.surface.replaceChild(pending, initial);
+      this.image = pending;
+      pending = null;
+      this.preview.discard(initial);
+    } catch {
+      // A failed detail upgrade leaves the already visible preview usable.
+    } finally {
+      if (pending) this.preview.discard(pending);
+      if (this.upgradeAbort === controller) this.upgradeAbort = null;
     }
   }
 
@@ -213,6 +273,7 @@ export class DrawingEmbedPreviewModal extends Modal {
   /** Cancel async work and release only the image created for this viewer. */
   onClose(): void {
     this.active = false;
+    this.upgradeAbort?.abort(); this.upgradeAbort = null;
     this.owner?.unload(); this.owner = null;
     for (const id of this.pointers.keys()) if (this.stage?.hasPointerCapture(id)) this.stage.releasePointerCapture(id);
     this.pointers.clear(); this.gesture = null;
