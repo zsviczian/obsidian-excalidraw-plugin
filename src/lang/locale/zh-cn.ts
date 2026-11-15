@@ -11,6 +11,18 @@ declare const PLUGIN_VERSION: string;
 
 // 简体中文
 export default {
+  // RankMessage.ts
+  RANK_MESSAGE_TITLE: "恭喜你，荣耀的骑士！",
+  RANK_MESSAGE_BODY: "你的库中已有 {{filecount}} 幅 Excalidraw 绘图，因此获得了新等级：**{{rank}}**！你的新称号是 **{{title}}**！\n\n过去 5 年多来，我一直在开发这个插件。如果你认可我的工作，欢迎通过 [Ko-Fi]({{koFiUrl}}) 支持我，或报名参加下一期 [Visual Thinking Workshop]({{workshopUrl}})。",
+  RANK_MESSAGE_BRONZE: "青铜",
+  RANK_MESSAGE_BRONZE_TITLE: "视觉笔记学徒",
+  RANK_MESSAGE_SILVER: "白银",
+  RANK_MESSAGE_SILVER_TITLE: "空间思维冠军",
+  RANK_MESSAGE_GOLD: "黄金",
+  RANK_MESSAGE_GOLD_TITLE: "视觉笔记英雄",
+  RANK_MESSAGE_PLATINUM: "铂金",
+  RANK_MESSAGE_PLATINUM_TITLE: "视觉思维传奇",
+
   SHOW_RIBBON_ICON_NAME: "在左侧功能区显示 Excalidraw 图标",
   SHOW_NEW_DRAWING_EMPTY_TAB_NAME: "在空白标签页显示「新建绘图」",
   SHOW_NEW_DRAWING_EMPTY_TAB_DESC: "在新建笔记旁添加绘图操作，使用你的绘图文件夹、文件格式和模板设置。",

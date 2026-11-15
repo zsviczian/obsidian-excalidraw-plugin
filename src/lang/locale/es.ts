@@ -16,6 +16,18 @@ declare const PLUGIN_VERSION: string;
 
 // Español
 export default {
+  // RankMessage.ts
+  RANK_MESSAGE_TITLE: "¡Enhorabuena, noble caballero!",
+  RANK_MESSAGE_BODY: "¡Tienes {{filecount}} dibujos de Excalidraw en tu bóveda y has conseguido un nuevo rango: **{{rank}}**! ¡Tu nuevo título es **{{title}}**!\n\nHe dedicado más de 5 años a desarrollar este complemento. Si valoras mi trabajo, considera apoyarme en [Ko-Fi]({{koFiUrl}}) o unirte al próximo grupo de [Visual Thinking Workshop]({{workshopUrl}}).",
+  RANK_MESSAGE_BRONZE: "Bronce",
+  RANK_MESSAGE_BRONZE_TITLE: "Aprendiz de apuntes visuales",
+  RANK_MESSAGE_SILVER: "Plata",
+  RANK_MESSAGE_SILVER_TITLE: "Campeón del pensamiento espacial",
+  RANK_MESSAGE_GOLD: "Oro",
+  RANK_MESSAGE_GOLD_TITLE: "Héroe de las notas visuales",
+  RANK_MESSAGE_PLATINUM: "Platino",
+  RANK_MESSAGE_PLATINUM_TITLE: "Leyenda del pensamiento visual",
+
   SHOW_RIBBON_ICON_NAME: "Mostrar el icono de Excalidraw en la cinta izquierda",
   SHOW_NEW_DRAWING_EMPTY_TAB_NAME: "Mostrar Nuevo dibujo en las pestañas vacías",
   SHOW_NEW_DRAWING_EMPTY_TAB_DESC: "Añade una acción junto a Nueva nota usando los ajustes de carpeta, formato de archivo y plantilla del dibujo.",

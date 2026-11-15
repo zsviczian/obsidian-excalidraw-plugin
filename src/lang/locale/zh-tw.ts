@@ -11,6 +11,18 @@ declare const PLUGIN_VERSION: string;
 
 // 繁體中文
 export default {
+  // RankMessage.ts
+  RANK_MESSAGE_TITLE: "恭喜你，榮耀的騎士！",
+  RANK_MESSAGE_BODY: "你的儲存庫中已有 {{filecount}} 幅 Excalidraw 繪圖，因此獲得了新等級：**{{rank}}**！你的新稱號是 **{{title}}**！\n\n過去 5 年多來，我一直在開發這個外掛。如果你認同我的工作，歡迎透過 [Ko-Fi]({{koFiUrl}}) 支持我，或報名參加下一期 [Visual Thinking Workshop]({{workshopUrl}})。",
+  RANK_MESSAGE_BRONZE: "青銅",
+  RANK_MESSAGE_BRONZE_TITLE: "視覺筆記學徒",
+  RANK_MESSAGE_SILVER: "白銀",
+  RANK_MESSAGE_SILVER_TITLE: "空間思維冠軍",
+  RANK_MESSAGE_GOLD: "黃金",
+  RANK_MESSAGE_GOLD_TITLE: "視覺筆記英雄",
+  RANK_MESSAGE_PLATINUM: "白金",
+  RANK_MESSAGE_PLATINUM_TITLE: "視覺思考傳奇",
+
   SHOW_RIBBON_ICON_NAME: "在左側功能區顯示 Excalidraw 圖示",
   SHOW_NEW_DRAWING_EMPTY_TAB_NAME: "在空白分頁顯示「新增繪圖」",
   SHOW_NEW_DRAWING_EMPTY_TAB_DESC: "在新增筆記旁加入繪圖操作，使用你的繪圖資料夾、檔案格式和範本設定。",

@@ -14,6 +14,18 @@ import {
 
 // русский
 export default {
+  // RankMessage.ts
+  RANK_MESSAGE_TITLE: "Поздравляю, славный рыцарь!",
+  RANK_MESSAGE_BODY: "В вашем хранилище {{filecount}} рисунков Excalidraw, и вы заслужили новый ранг: **{{rank}}**! Ваш новый титул — **{{title}}**!\n\nЯ посвятил разработке этого плагина более 5 лет. Если вы цените мою работу, поддержите меня на [Ko-Fi]({{koFiUrl}}) или присоединяйтесь к следующему потоку [Visual Thinking Workshop]({{workshopUrl}}).",
+  RANK_MESSAGE_BRONZE: "Бронза",
+  RANK_MESSAGE_BRONZE_TITLE: "Ученик скетчноутинга",
+  RANK_MESSAGE_SILVER: "Серебро",
+  RANK_MESSAGE_SILVER_TITLE: "Чемпион пространственного мышления",
+  RANK_MESSAGE_GOLD: "Золото",
+  RANK_MESSAGE_GOLD_TITLE: "Герой визуальных заметок",
+  RANK_MESSAGE_PLATINUM: "Платина",
+  RANK_MESSAGE_PLATINUM_TITLE: "Легенда визуального мышления",
+
   SHOW_RIBBON_ICON_NAME: "Показывать значок Excalidraw на левой ленте",
   SHOW_NEW_DRAWING_EMPTY_TAB_NAME: "Показывать «Новый рисунок» в пустых вкладках",
   SHOW_NEW_DRAWING_EMPTY_TAB_DESC: "Добавляет действие создания рисунка рядом с новой заметкой, используя настройки папки, формата файла и шаблона.",

@@ -16,6 +16,18 @@ declare const PLUGIN_VERSION: string;
 
 // English
 export default {
+  // RankMessage.ts
+  RANK_MESSAGE_TITLE: "Congratulations, glorious knight!",
+  RANK_MESSAGE_BODY: "You have {{filecount}} Excalidraw drawings in your Vault earning you a new rank: **{{rank}}**! You've ascended to **{{title}}**!\n\nI've spent the past 5+ years building this plugin. If you appreciate my work, consider supporting me on [Ko-Fi]({{koFiUrl}}) or join the next [Visual Thinking Workshop]({{workshopUrl}}) cohort.",
+  RANK_MESSAGE_BRONZE: "Bronze",
+  RANK_MESSAGE_BRONZE_TITLE: "Apprentice of Sketchnoting",
+  RANK_MESSAGE_SILVER: "Silver",
+  RANK_MESSAGE_SILVER_TITLE: "Champion of Spatial Thinking",
+  RANK_MESSAGE_GOLD: "Gold",
+  RANK_MESSAGE_GOLD_TITLE: "Hero of Visual Notetaking",
+  RANK_MESSAGE_PLATINUM: "Platinum",
+  RANK_MESSAGE_PLATINUM_TITLE: "Legend of Visual Thinking",
+
   SHOW_RIBBON_ICON_NAME: "Show Excalidraw icon in the left ribbon",
   SHOW_NEW_DRAWING_EMPTY_TAB_NAME: "Show New Drawing in empty tabs",
   SHOW_NEW_DRAWING_EMPTY_TAB_DESC: "Add a drawing action beside New note, using your drawing folder, file format and template settings.",
