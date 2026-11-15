@@ -52,7 +52,10 @@ async function exerciseEmbedControls(c, env, template, modifier) {
     const read = app.vault.read; let release, entered = 0;
     const gate = new Promise(resolve => { release = resolve; });
     const held = async function(file, ...args) {
-      if (file === drawing) { entered++; await gate; }
+      // Hold detail work only after the first image has mounted. A popout can
+      // also refresh its source during activation; blocking that read retires
+      // the source owner before its preview action can mount.
+      if (file === drawing && doc.querySelector(".excalidraw-embed-preview-modal .excalidraw-embedded-img")) { entered++; await gate; }
       return read.call(this, file, ...args);
     };
     app.vault.read = held;
@@ -204,7 +207,12 @@ async function exerciseEmbedControls(c, env, template, modifier) {
     await action(0, "preview");
     c.phase = `native:embed-controls:${context}:${mode}:fullscreen`;
     let modal, stage;
-    await c.waitFor(() => (modal = doc.querySelector(".excalidraw-embed-preview-modal")) && (stage = modal.querySelector(".excalidraw-embed-preview-stage")) && modal.querySelector(".excalidraw-embedded-img"), "fresh fullscreen payload");
+    await c.waitFor(() => {
+      modal = doc.querySelector(".excalidraw-embed-preview-modal");
+      c.observations.viewerReadiness = { modal: !!modal, status: modal?.querySelector(".excalidraw-embed-preview-status")?.textContent,
+        mainModal: !!app.workspace.containerEl.ownerDocument.querySelector(".excalidraw-embed-preview-modal"), heldReads: detailGate?.entered() };
+      return modal && (stage = modal.querySelector(".excalidraw-embed-preview-stage")) && modal.querySelector(".excalidraw-embedded-img");
+    }, "fresh fullscreen payload");
     check(modal.querySelector("[fileSource]")?.getAttribute("fileSource") === drawing.path, "fullscreen changed drawing identity");
     let pngReuse;
     if (mode === "PNG") {
