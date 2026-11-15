@@ -202,6 +202,8 @@ async function exerciseEmbedControls(c, env, template, modifier) {
     await c.waitFor(() => frames().length === 3, "source-edit rendering roundtrip");
     const inline = frames()[0].querySelector(".excalidraw-embedded-img");
     if (mode === "PNG") await c.waitFor(() => inline.complete && inline.naturalWidth > 0, "inline PNG decoded before fullscreen");
+    const inlinePNG = mode === "PNG" ? { src: inline.src, width: inline.naturalWidth, height: inline.naturalHeight,
+      bytes: new Uint8Array(await (await win.fetch(inline.src)).arrayBuffer()) } : null;
     const detailGate = mode === "PNG" ? holdDrawingRead() : null;
     const fullscreenStarted = win.performance.now();
     await action(0, "preview");
@@ -218,12 +220,14 @@ async function exerciseEmbedControls(c, env, template, modifier) {
     if (mode === "PNG") {
       const preview = modal.querySelector("img.excalidraw-embedded-img");
       await c.waitFor(() => preview.complete && preview.naturalWidth > 0, "fullscreen PNG decoded");
-      check(preview.src !== inline.src, "fullscreen borrowed the inline PNG URL");
-      check(preview.naturalWidth === inline.naturalWidth && preview.naturalHeight === inline.naturalHeight, "fullscreen rerasterized PNG instead of reusing displayed pixels");
-      const before = new Uint8Array(await (await win.fetch(inline.src)).arrayBuffer());
+      c.observations.pngDimensions = { before: [inlinePNG.width, inlinePNG.height], preview: [preview.naturalWidth, preview.naturalHeight],
+        originalInline: [inline.naturalWidth, inline.naturalHeight], inlineRetired: !inline.isConnected, heldReads: detailGate.entered() };
+      check(preview.src !== inlinePNG.src, "fullscreen borrowed the inline PNG URL");
+      check(preview.naturalWidth === inlinePNG.width && preview.naturalHeight === inlinePNG.height, "fullscreen rerasterized PNG instead of reusing displayed pixels");
+      const before = inlinePNG.bytes;
       const after = new Uint8Array(await (await win.fetch(preview.src)).arrayBuffer());
       check(before.length === after.length && before.every((value, index) => value === after[index]), "fullscreen changed the encoded PNG payload");
-      pngReuse = { inlineWidth: inline.naturalWidth, inlineHeight: inline.naturalHeight, encodedBytes: before.length, independentURL: true, elapsedMs: win.performance.now() - fullscreenStarted };
+      pngReuse = { inlineWidth: inlinePNG.width, inlineHeight: inlinePNG.height, encodedBytes: before.length, independentURL: true, elapsedMs: win.performance.now() - fullscreenStarted };
     }
     const keys = [], recordKey = event => keys.push({ key: event.key, code: event.code, target: event.target.className, trusted: event.isTrusted });
     doc.addEventListener("keydown", recordKey, true); c.defer(() => doc.removeEventListener("keydown", recordKey, true));
@@ -269,7 +273,8 @@ async function exerciseEmbedControls(c, env, template, modifier) {
     await c.waitFor(() => !modal.isConnected, "fullscreen closes on Escape");
     doc.removeEventListener("keydown", recordKey, true);
     check(doc.activeElement?.getAttribute("data-excalidraw-embed-action") === "preview", "fullscreen did not restore opener focus");
-    check(inline.isConnected && (mode === "SVG" ? !!inline.querySelector("svg") : inline.complete && inline.naturalWidth > 0), "closing fullscreen invalidated inline payload");
+    const currentInline = frames()[0]?.querySelector(".excalidraw-embedded-img");
+    check(currentInline?.isConnected && (mode === "SVG" ? !!currentInline.querySelector("svg") : currentInline.complete && currentInline.naturalWidth > 0), "closing fullscreen invalidated inline payload");
     if (mode === "PNG") {
       const cancelGate = holdDrawingRead();
       await action(0, "preview");
@@ -284,7 +289,8 @@ async function exerciseEmbedControls(c, env, template, modifier) {
       await new Promise(resolve => window.setTimeout(resolve, 150));
       observer.disconnect();
       check(surface.firstElementChild === first && changes.every(record => record.addedNodes.length === 0), "cancelled detail export mounted a late image");
-      check(inline.complete && inline.naturalWidth > 0, "cancelled detail export invalidated inline PNG");
+      const survivingInline = frames()[0]?.querySelector(".excalidraw-embedded-img");
+      check(survivingInline?.complete && survivingInline.naturalWidth > 0, "cancelled detail export invalidated inline PNG");
       pngReuse.cancelledPendingUpgrade = true;
     }
     check(!leaf.view.contentEl.querySelector(`.internal-embed[src="${plain.path}"] [data-excalidraw-embed-action]`), "ordinary image acquired drawing controls");
