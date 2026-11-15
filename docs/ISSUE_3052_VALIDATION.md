@@ -102,6 +102,32 @@ two pre-existing unsafe-`any` findings at its unchanged text-conversion code;
 no new lint finding is introduced by the cancellation checks. Before/after
 regression output is retained under `.test-work/reports/pr3052-progressive-*`.
 
+Final production checkpoint `b5f97cea` passes **55 focused source tests, 797 fast
+tests and 30/30 fresh focused native cases**, with strict error/idle gates,
+cleanup and baseline restoration passing. Main, split, popout and emulated phone
+exercise PNG, SVG image and Native SVG; desktop coverage includes tray mode.
+PNG opens with the exact 248x180 / 6,316-byte displayed payload and an independent
+URL, then replaces it with the decoded 744x542 export without changing zoom/pan.
+Closing a pending upgrade prevents late insertion. Actual dimensions include
+normal export rounding. Physical Android performance remains unverified.
+
+Native popout validation exposed a production bug: adopting an image changes its
+document but retains its original JavaScript prototype. The destination-window
+`instanceof` check therefore missed the owned PNG and used the blocking fallback.
+The PNG ownership record now narrows these images for cloning, upgrade/decode and
+root-image disposal. General window type guards and SVG behavior are unchanged.
+The new adopted-image source regression fails before this correction and passes
+afterward. Earlier test-gate/measurement failures, the constrained desktop run and
+the actual popout failure remain recorded in the
+[sanitized follow-up results](testing-evidence/3052/png-progressive.json).
+
+The final bundle is **5,147,278 bytes**, leaving **95,602 bytes** below the release
+target. [Hosted Plugin tests](https://github.com/zsviczian/obsidian-excalidraw-plugin/actions/runs/43708519373)
+and [CodeQL](https://github.com/zsviczian/obsidian-excalidraw-plugin/actions/runs/43708519308)
+pass for `b5f97cea`. The tested build was deployed to Zsolt's Brain with a backup,
+verified plugin reload, identical settings bytes and unchanged enabled-plugin
+configuration. No package version, dependency, lockfile or fork source changed.
+
 Native validation independently exposed concurrent cold renders revoking an
 earlier image's URL, and warm-cache siblings sharing a revocable URL. The
 postprocessor now reads cached raster blobs and gives every image its own URL.
