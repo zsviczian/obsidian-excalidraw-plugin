@@ -229,13 +229,15 @@ async function exerciseEmbedControls(c, env, template, modifier) {
     if (detailGate) {
       await c.waitFor(() => detailGate.entered() > 0, "background detail export started while initial PNG remained visible");
       const surface = modal.querySelector(".excalidraw-embed-preview-surface"), initial = surface.querySelector("img"), transform = surface.style.transform, zoom = stage.getAttribute("data-zoom");
+      const initialWidth = initial.naturalWidth, initialHeight = initial.naturalHeight;
       detailGate.restore();
       let detail;
       await c.waitFor(() => (detail = surface.querySelector("img")) !== initial && detail?.complete && detail.naturalWidth > 0, "decoded 3x detail replaces initial PNG");
-      check(Math.abs(detail.naturalWidth - initial.naturalWidth * 3) <= 3 && Math.abs(detail.naturalHeight - initial.naturalHeight * 3) <= 3, "detail export did not use scale 3");
+      pngReuse.detailWidth = detail.naturalWidth; pngReuse.detailHeight = detail.naturalHeight;
+      check(Math.abs(detail.naturalWidth - initialWidth * 3) <= 3 && Math.abs(detail.naturalHeight - initialHeight * 3) <= 3, "detail export did not use scale 3");
       check(surface.style.transform === transform && stage.getAttribute("data-zoom") === zoom, "detail replacement reset zoom or pan");
       check(detail.getAttribute("fileSource") === drawing.path, "detail replacement changed drawing identity");
-      pngReuse.detailWidth = detail.naturalWidth; pngReuse.detailHeight = detail.naturalHeight; pngReuse.zoomPanPreserved = true;
+      pngReuse.zoomPanPreserved = true;
     }
     await key("0", "Digit0", 48);
     check(Number(stage.getAttribute("data-zoom")) === 1, "fullscreen fit failed");
