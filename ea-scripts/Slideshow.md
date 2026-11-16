@@ -162,7 +162,7 @@ The note includes every frame slide in sorter order, including excluded slides. 
   Alt/Option.
 - **Open the Slideshow sidepanel:** Hold Cmd on macOS or Ctrl on Windows/Linux while invoking the script.
 
-Build version: 2026-11-16T07:50:43.985Z
+Build version: 2026-11-16T17:57:13.580Z
 
 ```javascript
 */
@@ -2817,8 +2817,14 @@ Build version: 2026-11-16T07:50:43.985Z
     }
   };
 
+  // src/scripts/slideshow/previewAppearance.ts
+  function getPreviewAppearance(state) {
+    const color = typeof state.viewBackgroundColor === "string" ? state.viewBackgroundColor : "#ffffff";
+    const backgroundColor = state.theme === "dark" ? window.ExcalidrawLib.applyDarkModeFilter(color) : color;
+    return { theme: state.theme, backgroundColor, key: `${state.theme}|${color}` };
+  }
+
   // src/scripts/slideshow/SlidePreviewService.ts
-  var FALLBACK_BACKGROUND = "#ffffff";
   var PREVIEW_CACHE_BYTES = 64 * 1024 * 1024;
   var DEFAULT_PREVIEW_WIDTH = 960;
   var PREVIEW_EXPORT_CONCURRENCY = 2;
@@ -2833,9 +2839,6 @@ Build version: 2026-11-16T07:50:43.985Z
     return getSceneVisualFingerprint(
       slide.kind === "path" ? elements.filter((element) => element.id !== slide.pathId) : elements
     );
-  }
-  function readBackgroundColor(appState) {
-    return typeof appState.viewBackgroundColor === "string" ? appState.viewBackgroundColor : FALLBACK_BACKGROUND;
   }
   function getHiddenBuildElementIds(slide, completedAnimationSteps, elements, config) {
     if (slide.animationSteps.length === 0) return [];
@@ -2890,7 +2893,7 @@ Build version: 2026-11-16T07:50:43.985Z
     generation = 0;
     /** Returns the drawing background used behind previews. */
     getBackgroundColor() {
-      return readBackgroundColor(this.api.getAppState());
+      return getPreviewAppearance(this.api.getAppState()).backgroundColor;
     }
     /** Returns the configured presentation aspect ratio used by sorter previews. */
     getAspectRatio() {
@@ -2919,8 +2922,7 @@ Build version: 2026-11-16T07:50:43.985Z
       image.style.backgroundColor = cached.backgroundColor;
       return image;
     }
-    async exportPreview(localElements, slide, hiddenElementIds, originalOpacities, targetWidth, generation, cacheKey) {
-      const appState = this.api.getAppState();
+    async exportPreview(localElements, slide, hiddenElementIds, originalOpacities, targetWidth, generation, cacheKey, appearance = getPreviewAppearance(this.api.getAppState())) {
       const rect = getPreviewNavigationRect(
         slide,
         this.config.maxZoom,
@@ -2933,7 +2935,7 @@ Build version: 2026-11-16T07:50:43.985Z
         width: Math.abs(rect.right - rect.left),
         height: Math.abs(rect.bottom - rect.top)
       };
-      if (generation !== this.generation) return void 0;
+      if (generation !== this.generation || getPreviewAppearance(this.api.getAppState()).key !== appearance.key) return void 0;
       const hiddenIds = new Set(hiddenElementIds);
       const exportElements = localElements.map((element) => {
         let opacity = element.opacity;
@@ -2948,12 +2950,12 @@ Build version: 2026-11-16T07:50:43.985Z
         elements: exportElements,
         area: exportArea,
         targetWidth,
-        theme: appState.theme
+        theme: appearance.theme
       });
-      if (generation !== this.generation) return void 0;
+      if (generation !== this.generation || getPreviewAppearance(this.api.getAppState()).key !== appearance.key) return void 0;
       const cached = {
         objectUrl: URL.createObjectURL(blob),
-        backgroundColor: readBackgroundColor(appState)
+        backgroundColor: appearance.backgroundColor
       };
       this.cached.set(cacheKey, cached, blob.size);
       return cached;
@@ -2969,6 +2971,7 @@ Build version: 2026-11-16T07:50:43.985Z
         this.config
       );
       const appState = this.api.getAppState();
+      const appearance = getPreviewAppearance(appState);
       const targetWidth = Math.max(Math.trunc(state.targetWidth ?? DEFAULT_PREVIEW_WIDTH), 1);
       const opacityKey = state.originalOpacities ? [...state.originalOpacities.entries()].sort(([left], [right]) => left.localeCompare(right)).map(([id, opacity]) => `${id}:${opacity}`).join(",") : "none";
       const rect = getPreviewNavigationRect(
@@ -2987,8 +2990,7 @@ Build version: 2026-11-16T07:50:43.985Z
         includeBoundElements: true
       });
       const cacheKey = [
-        appState.theme,
-        readBackgroundColor(appState),
+        appearance.key,
         slide.kind === "path" ? `path:${slide.pathId}` : "frame",
         `hidden:${hiddenElementIds.join(",")}`,
         `opacity:${opacityKey}`,
@@ -3008,7 +3010,8 @@ Build version: 2026-11-16T07:50:43.985Z
           state.originalOpacities,
           targetWidth,
           generation,
-          cacheKey
+          cacheKey,
+          appearance
         ),
         () => generation === this.generation
       );
@@ -5455,15 +5458,16 @@ Build version: 2026-11-16T07:50:43.985Z
         return opacity === element.opacity ? element : { ...element, opacity };
       });
       if (selected.length === 0) return null;
-      const theme = this.api.getAppState().theme;
-      const key = `${theme}|${getSceneVisualFingerprint(selected)}`;
+      const appearance = getPreviewAppearance(this.api.getAppState());
+      const key = `${appearance.key}|${getSceneVisualFingerprint(selected)}`;
       let url = this.cache.get(key);
       if (!url) {
         url = await this.queue.enqueue(key, async () => {
+          if (getPreviewAppearance(this.api.getAppState()).key !== appearance.key) return void 0;
           const bounds = this.ea.getBoundingBox(selected);
           const blob = await this.ea.createViewPNG({
-            withBackground: false,
-            theme,
+            withBackground: true,
+            theme: appearance.theme,
             frameRendering: { enabled: false, name: false, outline: false, clip: false },
             padding: 4,
             selectedOnly: false,
@@ -5471,7 +5475,7 @@ Build version: 2026-11-16T07:50:43.985Z
             elementsOverride: selected,
             scale: Math.min(2, 160 / Math.max(bounds.width + 8, bounds.height + 8, 1))
           });
-          if (this.destroyed) return void 0;
+          if (this.destroyed || getPreviewAppearance(this.api.getAppState()).key !== appearance.key) return void 0;
           const objectUrl = URL.createObjectURL(blob);
           this.cache.set(key, objectUrl, blob.size);
           return objectUrl;
@@ -5483,6 +5487,7 @@ Build version: 2026-11-16T07:50:43.985Z
       image.src = url;
       image.alt = "";
       image.draggable = false;
+      image.style.backgroundColor = appearance.backgroundColor;
       return image;
     }
     /** Invalidates queued exports and releases URLs, including when a running export finishes later. */
@@ -6065,11 +6070,17 @@ Build version: 2026-11-16T07:50:43.985Z
     previewRuntime;
     targetPreviews;
     drawingFile;
+    targetPreviewBindings = /* @__PURE__ */ new Map();
+    previewAppearanceKey = "";
+    previewGeneration = 0;
     /** Renders the editor into its current sidepanel container. */
     render() {
       if (this.destroyed) return;
       const { container, icons, t } = this.options;
       const doc = container.ownerDocument;
+      this.targetPreviewBindings.clear();
+      this.previewGeneration += 1;
+      this.previewAppearanceKey = getPreviewAppearance(this.options.api.getAppState()).key;
       container.replaceChildren();
       container.className = "slideshow-animation-editor";
       const instructions = doc.createElement("div");
@@ -6219,6 +6230,13 @@ Build version: 2026-11-16T07:50:43.985Z
     }
     /** Processes live scene changes while animation editing is active. */
     handleSceneChange(elements, appState) {
+      if (this.destroyed || !this.isCurrentDrawing()) return;
+      const appearanceKey = getPreviewAppearance(this.options.api.getAppState()).key;
+      if (appearanceKey !== this.previewAppearanceKey) {
+        this.previewAppearanceKey = appearanceKey;
+        this.previewGeneration += 1;
+        for (const [preview, targets] of this.targetPreviewBindings) this.loadTargetPreview(preview, targets);
+      }
       this.captureSelection(elements, appState);
       this.scheduleMissingTargetRecycle(elements);
     }
@@ -6259,6 +6277,8 @@ Build version: 2026-11-16T07:50:43.985Z
       if (this.recycleTimer) this.options.hostView.ownerWindow.clearTimeout(this.recycleTimer);
       this.recycleTimer = 0;
       this.pendingRecycleElements = null;
+      this.targetPreviewBindings.clear();
+      this.previewGeneration += 1;
       this.targetPreviews.destroy();
       if (this.isCurrentDrawing()) await this.previewRuntime.leaveSlide();
       else this.previewRuntime.abandonActiveSlide();
@@ -6392,16 +6412,22 @@ Build version: 2026-11-16T07:50:43.985Z
     createTargetPreview(doc, targets, className) {
       const preview = doc.createElement("span");
       preview.className = className;
+      this.targetPreviewBindings.set(preview, targets);
+      this.loadTargetPreview(preview, targets);
+      return preview;
+    }
+    /** Updates image content in place so appearance changes preserve the mounted form controls. */
+    loadTargetPreview(preview, targets) {
+      const generation = this.previewGeneration;
       void this.targetPreviews.createPreview(
         this.getSlideScope(),
         targets,
-        doc,
-        () => !this.destroyed && preview.isConnected && this.isCurrentDrawing(),
+        preview.ownerDocument,
+        () => !this.destroyed && generation === this.previewGeneration && preview.isConnected && this.isCurrentDrawing(),
         this.previewRuntime.getOriginalOpacities()
       ).then((image) => {
-        if (image && !this.destroyed && preview.isConnected) preview.replaceChildren(image);
+        if (image && !this.destroyed && generation === this.previewGeneration && preview.isConnected) preview.replaceChildren(image);
       }).catch((error) => console.error("Slideshow animation thumbnail failed", error));
-      return preview;
     }
     selectStep(step) {
       this.loadStepForm(step);
@@ -6771,6 +6797,13 @@ Build version: 2026-11-16T07:50:43.985Z
         if (this.previewObserver) this.previewObserver.observe(host);
         else this.renderPreview(host, slide, generation);
       }
+    }
+    /** Marks appearance changes for a fresh export even while ordinary scene refreshes are paused. */
+    invalidatePreviewAppearance() {
+      this.options.container.querySelectorAll(".slideshow-sorter__preview").forEach((host) => {
+        host.dataset.previewDirty = "true";
+      });
+      this.refreshPreviews();
     }
     /** Re-establishes lazy loading after focus returns, without touching already-populated thumbnails. */
     resumePreviewRendering() {
@@ -7279,6 +7312,7 @@ Build version: 2026-11-16T07:50:43.985Z
       row.appendChild(content);
       const preview = doc.createElement("div");
       preview.className = "slideshow-sorter__preview";
+      preview.dataset.slideId = slide.id;
       preview.style.backgroundColor = this.options.previewService.getBackgroundColor();
       preview.style.aspectRatio = this.options.previewService.getAspectRatio();
       content.appendChild(preview);
@@ -7951,6 +7985,7 @@ Build version: 2026-11-16T07:50:43.985Z
     ownerWindow;
     lastFingerprint = "";
     lastPreviewFingerprint = "";
+    lastPreviewAppearanceKey = "";
     lastChromeFingerprint = "";
     pendingRefresh = false;
     sorterMutationDepth = 0;
@@ -8127,6 +8162,12 @@ Build version: 2026-11-16T07:50:43.985Z
           if (view.file !== this.boundDrawingFile) {
             this.bindView(view);
             return;
+          }
+          const appearanceKey = getPreviewAppearance(appState).key;
+          if (appearanceKey !== this.lastPreviewAppearanceKey) {
+            this.lastPreviewAppearanceKey = appearanceKey;
+            this.sorter?.invalidatePreviewAppearance();
+            this.refreshPreviewsOnce();
           }
           if (this.sorterMutationDepth > 0) {
             this.pendingRefresh = true;
