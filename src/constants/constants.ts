@@ -76,7 +76,7 @@ export const obsidianToExcalidrawMap: { [key: string]: string } = {
   oc: "oc-FR", // Assuming France for Occitan
   pl: "pl-PL",
   pt: "pt-PT",
-  "pt-BR": "pt-BR",
+  "pt-br": "pt-BR", // keys are lowercase, see LOCALE
   ro: "ro-RO",
   ru: "ru-RU",
   sr: "sr-RS", // Assuming Serbia for Serbian
@@ -93,6 +93,10 @@ export const obsidianToExcalidrawMap: { [key: string]: string } = {
   zh: "zh-CN",
   "zh-tw": "zh-TW",
 };
+
+export function getExcalidrawLangCode(locale: string): string {
+  return obsidianToExcalidrawMap[locale] ?? "en-US";
+}
 
 export let {
   sceneCoordsToViewportCoords,
