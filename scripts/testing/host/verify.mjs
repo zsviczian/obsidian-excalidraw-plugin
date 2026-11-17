@@ -28,6 +28,7 @@ import { runSVGEntryPointsScenario } from "./svgEntryPoints.mjs";
 import { runLucideScenario } from "./lucideIcons.mjs";
 import { runWorkflowFixesScenario } from "./workflowFixes.mjs";
 import { runWorkflowBundleScenario } from "./workflowBundle.mjs";
+import { runAIAndEmbedsScenario } from "./aiAndEmbeds.mjs";
 import { runIssue3052Scenario } from "./issue3052.mjs";
 import { runTextSaveShortcutScenario } from "./textSaveShortcut.mjs";
 import { runCodeCardScenario } from "./codeCards.mjs";
@@ -115,6 +116,7 @@ const svgEntryPoints = process.argv.includes("--svg-entry-points");
 const lucide = coreScenarios || process.argv.includes("--lucide");
 const workflowFixes = coreScenarios || process.argv.includes("--workflow-fixes");
 const workflowBundle = coreScenarios || process.argv.includes("--workflow-bundle");
+const aiAndEmbeds = coreScenarios || process.argv.includes("--ai-and-embeds");
 const issue3052 = coreScenarios || process.argv.includes("--issue-3052");
 const minimapOnly = process.argv.includes("--minimap");
 const textSaveShortcut = workflowBundle || process.argv.includes("--text-save-shortcut");
@@ -173,6 +175,7 @@ const flags = [
   "--stability",
   "--native-cli",
   "--embed-recovery",
+  "--ai-and-embeds",
   "--embed-controls",
   "--embed-regressions",
   "--embed-reliability",
@@ -392,6 +395,7 @@ try {
             ]
           : []),
         ...(workflowBundle ? [runWorkflowBundleScenario] : []),
+        ...(aiAndEmbeds ? [runAIAndEmbedsScenario] : []),
         ...(issue3052 ? [runIssue3052Scenario] : []),
         ...(minimapOnly ? [context => runWorkflowBundleScenario({ ...context, minimapOnly: true })] : []),
         ...(textSaveShortcut ? [runTextSaveShortcutScenario] : []),

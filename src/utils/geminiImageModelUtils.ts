@@ -162,6 +162,13 @@ const GEMINI_IMAGE_MODEL_SPECS: Record<string, GeminiImageModelSpec> = {
   },
 };
 
+// Stable aliases retain the reviewed aspect-ratio/resolution contracts.
+GEMINI_IMAGE_MODEL_SPECS["gemini-3.1-flash-image"] = GEMINI_IMAGE_MODEL_SPECS["gemini-3.1-flash-image-preview"];
+GEMINI_IMAGE_MODEL_SPECS["gemini-3-pro-image"] = GEMINI_IMAGE_MODEL_SPECS["gemini-3-pro-image-preview"];
+GEMINI_IMAGE_MODEL_SPECS["gemini-3.1-flash-lite-image"] = {
+  entries: buildGeminiImageEntries([...COMMON_ASPECT_RATIOS, ...FLASH_IMAGE_PREVIEW_EXTRA_ASPECT_RATIOS], ["1K"], true),
+};
+
 const normalizeModelName = (value?: string): string =>
   String(value ?? "")
     .trim()

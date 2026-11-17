@@ -28,7 +28,6 @@ import { PDFExportSettings } from "src/shared/Dialogs/PDFExportSettingsComponent
 import { UIMode } from "src/shared/Dialogs/UIModeSettingComponent";
 import { ScriptSettingValue } from "src/types/excalidrawAutomateTypes";
 import {
-  AIImageModelCapability,
   AIImageModelConfig,
   AIModelConfig,
   AIProviderProfile,
@@ -217,6 +216,8 @@ export interface ExcalidrawSettings {
   latexPreambleLocation: string;
   taskboneEnabled: boolean;
   taskboneAPIkey: string;
+  taskboneAPIKeySource?: "settings" | "secret";
+  taskboneAPIKeySecret?: string;
   pinnedScripts: string[];
   sidepanelTabs: string[];
   customPens: PenStyle[];
@@ -267,73 +268,6 @@ export interface ExcalidrawSettings {
   disableContextMenu: boolean;
 }
 
-const KNOWN_AI_IMAGE_MODEL_CAPABILITIES: Record<
-  string,
-  AIImageModelCapability
-> = {
-  "dall-e-2": {
-    supportedSizes: ["256x256", "512x512", "1024x1024"],
-    supportsPromptImageTransforms: true,
-    supportsMaskImageEdits: true,
-  },
-  "dall-e-3": {
-    supportedSizes: ["1024x1024", "1792x1024", "1024x1792"],
-    supportsPromptImageTransforms: false,
-    supportsMaskImageEdits: false,
-  },
-  "gpt-image-1": {
-    supportedSizes: ["1024x1024", "1536x1024", "1024x1536"],
-    supportsPromptImageTransforms: true,
-    supportsMaskImageEdits: true,
-  },
-  "gpt-image-1-mini": {
-    supportedSizes: ["1024x1024", "1536x1024", "1024x1536"],
-    supportsPromptImageTransforms: true,
-    supportsMaskImageEdits: true,
-  },
-  "gpt-image-1.5": {
-    supportedSizes: ["1024x1024", "1536x1024", "1024x1536"],
-    supportsPromptImageTransforms: true,
-    supportsMaskImageEdits: true,
-  },
-  "gpt-image-2": {
-    supportedSizes: ["1024x1024", "1536x1024", "1024x1536", "2048x2048"],
-    supportsPromptImageTransforms: true,
-    supportsMaskImageEdits: true,
-  },
-  "gemini-2.5-flash-image": {
-    supportedSizes: getGeminiSupportedSizes("google", "gemini-2.5-flash-image"),
-    supportsPromptImageTransforms: true,
-    supportsMaskImageEdits: false,
-  },
-  "gemini-3.1-flash-image-preview": {
-    supportedSizes: getGeminiSupportedSizes(
-      "google",
-      "gemini-3.1-flash-image-preview",
-    ),
-    supportsPromptImageTransforms: true,
-    supportsMaskImageEdits: false,
-  },
-  "gemini-3-pro-image-preview": {
-    supportedSizes: getGeminiSupportedSizes(
-      "google",
-      "gemini-3-pro-image-preview",
-    ),
-    supportsPromptImageTransforms: true,
-    supportsMaskImageEdits: false,
-  },
-  "grok-imagine-image-quality": {
-    supportedSizes: ["1024x1024"],
-    supportsPromptImageTransforms: true,
-    supportsMaskImageEdits: false,
-  },
-  "grok-imagine-image-pro": {
-    supportedSizes: ["1024x1024"],
-    supportsPromptImageTransforms: true,
-    supportsMaskImageEdits: false,
-  },
-};
-
 export const KNOWN_AI_PROVIDER_PROFILES: Record<string, AIProviderProfile> = {
   OpenAI: {
     provider: "openai",
@@ -370,91 +304,52 @@ export const cloneKnownAIProviderProfiles = () =>
     ]),
   );
 
+/** Recommendations for new installs only. Existing model maps and defaults are retained on load. */
 export const KNOWN_AI_TEXT_MODEL_CONFIGS: Record<string, AIModelConfig> = {
-  "gpt-5-mini": {
-    providerId: "OpenAI",
-    model: "gpt-5-mini",
-    endpoint: "",
-    multimodalSupport: true,
-  },
-  "claude-sonnet-4-5": {
-    providerId: "Anthropic",
-    model: "claude-sonnet-4-5",
-    endpoint: "",
-    multimodalSupport: true,
-  },
-  "gemini-2.5-pro": {
-    providerId: "Google Gemini",
-    model: "gemini-2.5-pro",
-    endpoint: "",
-    multimodalSupport: true,
-  },
-  "grok-4-fast": {
-    providerId: "xAI",
-    model: "grok-4-fast",
-    endpoint: "",
-    multimodalSupport: true,
-  },
+  "gpt-6-luna": { providerId: "OpenAI", model: "gpt-6-luna", endpoint: "", multimodalSupport: true },
+  "gpt-6.1-sol": { providerId: "OpenAI", model: "gpt-6.1-sol", endpoint: "", multimodalSupport: true },
+  "gpt-6.1-terra": { providerId: "OpenAI", model: "gpt-6.1-terra", endpoint: "", multimodalSupport: true },
+  "claude-sonnet-5-5": { providerId: "Anthropic", model: "claude-sonnet-5-5", endpoint: "", multimodalSupport: true },
+  "claude-haiku-5-5": { providerId: "Anthropic", model: "claude-haiku-5-5", endpoint: "", multimodalSupport: true },
+  "claude-opus-5-5": { providerId: "Anthropic", model: "claude-opus-5-5", endpoint: "", multimodalSupport: true },
+  "gemini-3.8-flash": { providerId: "Google Gemini", model: "gemini-3.8-flash", endpoint: "", multimodalSupport: true },
+  "grok-4.7": { providerId: "xAI", model: "grok-4.7", endpoint: "", multimodalSupport: true },
 };
 
-export const KNOWN_AI_IMAGE_MODEL_CONFIGS: Record<string, AIImageModelConfig> =
-  {
-    "dall-e-2": {
-      providerId: "OpenAI",
-      model: "dall-e-2",
-      ...KNOWN_AI_IMAGE_MODEL_CAPABILITIES["dall-e-2"],
-    },
-    "dall-e-3": {
-      providerId: "OpenAI",
-      model: "dall-e-3",
-      ...KNOWN_AI_IMAGE_MODEL_CAPABILITIES["dall-e-3"],
-    },
-    "gpt-image-1": {
-      providerId: "OpenAI",
-      model: "gpt-image-1",
-      ...KNOWN_AI_IMAGE_MODEL_CAPABILITIES["gpt-image-1"],
-    },
-    "gpt-image-1-mini": {
-      providerId: "OpenAI",
-      model: "gpt-image-1-mini",
-      ...KNOWN_AI_IMAGE_MODEL_CAPABILITIES["gpt-image-1-mini"],
-    },
-    "gpt-image-1.5": {
-      providerId: "OpenAI",
-      model: "gpt-image-1.5",
-      ...KNOWN_AI_IMAGE_MODEL_CAPABILITIES["gpt-image-1.5"],
-    },
-    "gpt-image-2": {
-      providerId: "OpenAI",
-      model: "gpt-image-2",
-      ...KNOWN_AI_IMAGE_MODEL_CAPABILITIES["gpt-image-2"],
-    },
-    "gemini-2.5-flash-image": {
-      providerId: "Google Gemini",
-      model: "gemini-2.5-flash-image",
-      ...KNOWN_AI_IMAGE_MODEL_CAPABILITIES["gemini-2.5-flash-image"],
-    },
-    "gemini-3.1-flash-image-preview": {
-      providerId: "Google Gemini",
-      model: "gemini-3.1-flash-image-preview",
-      ...KNOWN_AI_IMAGE_MODEL_CAPABILITIES["gemini-3.1-flash-image-preview"],
-    },
-    "gemini-3-pro-image-preview": {
-      providerId: "Google Gemini",
-      model: "gemini-3-pro-image-preview",
-      ...KNOWN_AI_IMAGE_MODEL_CAPABILITIES["gemini-3-pro-image-preview"],
-    },
-    "grok-imagine-image-quality": {
-      providerId: "xAI",
-      model: "grok-imagine-image-quality",
-      ...KNOWN_AI_IMAGE_MODEL_CAPABILITIES["grok-imagine-image-quality"],
-    },
-    "grok-imagine-image-pro": {
-      providerId: "xAI",
-      model: "grok-imagine-image-pro",
-      ...KNOWN_AI_IMAGE_MODEL_CAPABILITIES["grok-imagine-image-pro"],
-    },
-  };
+export const KNOWN_AI_IMAGE_MODEL_CONFIGS: Record<string, AIImageModelConfig> = {
+  "gpt-image-2.6-flare": {
+    providerId: "OpenAI", model: "gpt-image-2.6-flare",
+    // A useful subset of the API's custom dimensions (multiples of 16, <= 3840 per side).
+    supportedSizes: ["1024x1024", "1536x1024", "1024x1536", "2048x2048", "2560x1440", "1440x2560"],
+    supportsPromptImageTransforms: true, supportsMaskImageEdits: true,
+  },
+  "gpt-image-2.6-sunburst": {
+    providerId: "OpenAI", model: "gpt-image-2.6-sunburst",
+    // A useful subset of the API's custom dimensions (multiples of 16, <= 3840 per side).
+    supportedSizes: ["1024x1024", "1536x1024", "1024x1536", "2048x2048", "2560x1440", "1440x2560"],
+    supportsPromptImageTransforms: true, supportsMaskImageEdits: true,
+  },
+  "gemini-3.1-flash-image": {
+    providerId: "Google Gemini", model: "gemini-3.1-flash-image",
+    supportedSizes: getGeminiSupportedSizes("google", "gemini-3.1-flash-image"),
+    supportsPromptImageTransforms: true, supportsMaskImageEdits: false,
+  },
+  "gemini-3.1-flash-lite-image": {
+    providerId: "Google Gemini", model: "gemini-3.1-flash-lite-image",
+    supportedSizes: getGeminiSupportedSizes("google", "gemini-3.1-flash-lite-image"),
+    supportsPromptImageTransforms: true, supportsMaskImageEdits: false,
+  },
+  "gemini-3-pro-image": {
+    providerId: "Google Gemini", model: "gemini-3-pro-image",
+    supportedSizes: getGeminiSupportedSizes("google", "gemini-3-pro-image"),
+    supportsPromptImageTransforms: true, supportsMaskImageEdits: false,
+  },
+  "grok-imagine-image-2.0": {
+    providerId: "xAI", model: "grok-imagine-image-2.0",
+    supportedSizes: ["1024x1024", "1536x1024", "1024x1536"],
+    supportsPromptImageTransforms: true, supportsMaskImageEdits: false,
+  },
+};
 
 export const cloneModelConfigs = <TConfig extends AIModelConfig>(
   configs: Record<string, TConfig>,
@@ -676,6 +571,8 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   latexPreambleLocation: "preamble.sty",
   taskboneEnabled: false,
   taskboneAPIkey: "",
+  taskboneAPIKeySource: "settings",
+  taskboneAPIKeySecret: "",
   pinnedScripts: [],
   sidepanelTabs: [],
   customPens: [
@@ -732,9 +629,9 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   aiProviderProfiles: cloneKnownAIProviderProfiles(),
   aiTextModelConfigs: cloneModelConfigs(KNOWN_AI_TEXT_MODEL_CONFIGS),
   aiImageModelConfigs: cloneModelConfigs(KNOWN_AI_IMAGE_MODEL_CONFIGS),
-  aiDefaultTextModel: "gpt-5-mini",
-  aiDefaultMultimodalModel: "gpt-5-mini",
-  aiDefaultImageGenerationModel: "gpt-image-1",
+  aiDefaultTextModel: "gpt-6-luna",
+  aiDefaultMultimodalModel: "gpt-6.1-terra",
+  aiDefaultImageGenerationModel: "gpt-image-2.6-flare",
   aiDefaultMaxOutgoingTokens: 0,
   aiDefaultMaxResponseTokens: 0,
   modifierKeyConfig: {

@@ -434,23 +434,26 @@ export class EventManager {
 
   //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/551
   private onClickSaveActiveDrawing(e: PointerEvent) {
+    const view = this.activeExcalidrawView;
+    // Same-leaf replacements can retire the cached editor before the next leaf event.
     if (
-      !this.activeExcalidrawView ||
-      !this.activeExcalidrawView?.isDirty() ||
+      !view?.excalidrawAPI ||
+      !view.isDirty() ||
       (e.target &&
         ((e.target as Element).className === "excalidraw__canvas" ||
           getParentOfClass(e.target as Element, "excalidraw-wrapper")))
     ) {
       return;
     }
-    void this.activeExcalidrawView.save();
+    void view.save();
   }
 
   private onFileMenuSaveActiveDrawing() {
-    if (!this.activeExcalidrawView || !this.activeExcalidrawView?.isDirty()) {
+    const view = this.activeExcalidrawView;
+    if (!view?.excalidrawAPI || !view.isDirty()) {
       return;
     }
-    void this.activeExcalidrawView.save();
+    void view.save();
   }
 
   private onFileMenuHandler(

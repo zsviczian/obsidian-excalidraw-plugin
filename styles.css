@@ -25,6 +25,11 @@ svg.excalidraw-svg {
   width: 100%;
 }
 
+/* #3055: embedded reading views must scroll before entering edit mode. */
+.excalidraw .excalidraw__embeddable-container .canvas-node .canvas-node-content.markdown-embed > .markdown-embed-content > .markdown-preview-view {
+  overflow-y: auto;
+}
+
 .excalidraw-svg-right-wrap {
   float: right;
   margin: 0px 0px 20px 20px;

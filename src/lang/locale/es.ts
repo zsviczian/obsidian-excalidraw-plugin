@@ -709,9 +709,30 @@ export default {
   AI_PROVIDER_PROFILE_MODAL_TYPE_NAME: "Tipo de proveedor",
   AI_PROVIDER_PROFILE_MODAL_TYPE_DESC:
     "Seleccione la familia de API utilizada por este perfil.",
+  // AI credentials and text-model reasoning
+  AI_REASONING_NAME: "Esfuerzo de razonamiento",
+  AI_REASONING_DESC: "Usa el valor predeterminado de la API o un nivel compatible con este modelo OpenAI. Los modelos desconocidos solo admiten Predeterminado.",
+  AI_REASONING_DEFAULT: "Predeterminado (API)",
+  AI_REASONING_INVALID: "Este nivel no es compatible con el modelo seleccionado. Elige Predeterminado o un nivel compatible.",
+  API_KEY_SOURCE_NAME: "Almacenamiento de la clave API",
+  API_KEY_SOURCE_DESC: "Las claves se guardan ofuscadas, no en texto plano. La ofuscación es reversible y no es cifrado. Elegir SecretStorage elimina la clave guardada de los ajustes de Excalidraw.",
+  API_KEY_SOURCE_SETTINGS: "Ajustes ofuscados (sincronizados con la bóveda)",
+  API_KEY_SOURCE_SECRET: "Obsidian SecretStorage (este dispositivo)",
+  API_KEY_SECRET_NAME: "Secreto",
+  API_KEY_SECRET_DESC: "Elige un secreto gestionado en los ajustes de Obsidian. Solo su nombre se guarda en la bóveda; configura el secreto en cada dispositivo. Requiere Obsidian 1.11.4 o posterior.",
+  API_KEY_SECRET_SELECT: "Selecciona un secreto",
+  API_KEY_MISSING: "No hay ninguna clave API disponible. Introduce una en los ajustes de Excalidraw o selecciona un secreto configurado en este dispositivo.",
+  AI_REASONING_NONE: "Ninguno",
+  AI_REASONING_MINIMAL: "Mínimo",
+  AI_REASONING_LOW: "Bajo",
+  AI_REASONING_MEDIUM: "Medio",
+  AI_REASONING_HIGH: "Alto",
+  AI_REASONING_XHIGH: "Muy alto",
+  AI_REASONING_MAX: "Máximo",
+
   AI_PROVIDER_PROFILE_MODAL_API_KEY_NAME: "Clave API",
   AI_PROVIDER_PROFILE_MODAL_API_KEY_DESC:
-    "Se guarda en este perfil y la utilizan todos los modelos asignados a él.",
+    "Las claves se guardan ofuscadas, no en texto plano. La ofuscación es reversible y no es cifrado. Elegir SecretStorage elimina la clave guardada de los ajustes de Excalidraw.",
   AI_PROVIDER_PROFILE_MODAL_API_KEY_PLACEHOLDER: "Clave API del proveedor",
   AI_PROVIDER_PROFILE_MODAL_BASE_URL_NAME: "URL base",
   AI_PROVIDER_PROFILE_MODAL_BASE_URL_DESC:
@@ -727,14 +748,14 @@ export default {
   AI_MODEL_CONFIG_MODAL_NAME_NAME: "Nombre de la entrada",
   AI_MODEL_CONFIG_MODAL_NAME_DESC:
     "Esta etiqueta aparece en el menú desplegable.",
-  AI_MODEL_CONFIG_MODAL_NAME_PLACEHOLDER: "ej.: gpt-5-mini",
+  AI_MODEL_CONFIG_MODAL_NAME_PLACEHOLDER: "ej.: gpt-6-luna",
   AI_MODEL_CONFIG_MODAL_PROVIDER_NAME: "Proveedor",
   AI_MODEL_CONFIG_MODAL_PROVIDER_DESC:
     "Elija qué perfil de proveedor debe usar este modelo.",
   AI_MODEL_CONFIG_MODAL_MODEL_NAME: "Nombre del modelo",
   AI_MODEL_CONFIG_MODAL_MODEL_DESC:
     "Nombre exacto del modelo enviado a la API.",
-  AI_MODEL_CONFIG_MODAL_MODEL_PLACEHOLDER: "ej.: gpt-5-mini",
+  AI_MODEL_CONFIG_MODAL_MODEL_PLACEHOLDER: "ej.: gpt-6-luna",
   AI_MODEL_CONFIG_MODAL_ENDPOINT_NAME: "Sobrescribir endpoint",
   AI_MODEL_CONFIG_MODAL_ENDPOINT_DESC:
     "Sobrescritura opcional del endpoint completo para este modelo. Dejar en blanco para derivarlo del perfil del proveedor.",
