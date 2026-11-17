@@ -1,26 +1,14 @@
-import { App, Modal, Notice, Setting, TextComponent } from "obsidian";
+import { App, Modal, Notice, Setting } from "obsidian";
 import { t } from "src/lang/helpers";
 import { AIProvider, AIProviderProfile } from "src/types/AIUtilTypes";
 import { isWinCTRLorMacCMD } from "src/utils/modifierkeyHelper";
+import { renderAPIKeySettings } from "src/shared/components/apiKeySettings";
 
 type SaveHandler = (
   profileId: string,
   profile: AIProviderProfile,
   previousProfileId?: string,
 ) => Promise<void> | void;
-
-const configurePasswordTextInput = (text: TextComponent) => {
-  const { inputEl } = text;
-  inputEl.type = "password";
-  inputEl.autocomplete = "off";
-  inputEl.spellcheck = false;
-  inputEl.addEventListener("focus", () => {
-    inputEl.type = "text";
-  });
-  inputEl.addEventListener("blur", () => {
-    inputEl.type = "password";
-  });
-};
 
 export class AIProviderProfileModal extends Modal {
   private profileId: string;
@@ -42,6 +30,7 @@ export class AIProviderProfileModal extends Modal {
     super(app);
     this.profileId = options.initialProfileId ?? "";
     this.profile = {
+      ...options.initialProfile,
       provider: options.initialProfile?.provider ?? "openai",
       apiKey: options.initialProfile?.apiKey ?? "",
       baseURL: options.initialProfile?.baseURL ?? "",
@@ -145,18 +134,10 @@ export class AIProviderProfileModal extends Modal {
     };
     updateProviderTypeHint();
 
-    new Setting(contentEl)
-      .setName(t("AI_PROVIDER_PROFILE_MODAL_API_KEY_NAME"))
-      .setDesc(t("AI_PROVIDER_PROFILE_MODAL_API_KEY_DESC"))
-      .addText((text) => {
-        configurePasswordTextInput(text);
-        return text
-          .setPlaceholder(t("AI_PROVIDER_PROFILE_MODAL_API_KEY_PLACEHOLDER"))
-          .setValue(this.profile.apiKey)
-          .onChange((value) => {
-            this.profile.apiKey = value;
-          });
-      });
+    renderAPIKeySettings(this.app, contentEl, this.profile, () => {}, {
+      name: t("AI_PROVIDER_PROFILE_MODAL_API_KEY_NAME"),
+      description: t("AI_PROVIDER_PROFILE_MODAL_API_KEY_DESC"),
+    });
 
     new Setting(contentEl)
       .setName(t("AI_PROVIDER_PROFILE_MODAL_BASE_URL_NAME"))
@@ -209,6 +190,10 @@ export class AIProviderProfileModal extends Modal {
       new Notice(t("AI_PROVIDER_PROFILE_MODAL_NAME_REQUIRED"));
       return;
     }
+    if (this.profile.apiKeySource === "secret" && !this.profile.apiKeySecret) {
+      new Notice(t("API_KEY_SECRET_SELECT"));
+      return;
+    }
 
     const duplicateExists =
       this.existingProfileIds.includes(normalizedProfileId) &&
@@ -221,8 +206,9 @@ export class AIProviderProfileModal extends Modal {
     await this.onSave(
       normalizedProfileId,
       {
+        ...this.profile,
         provider: this.profile.provider,
-        apiKey: this.profile.apiKey,
+        apiKey: this.profile.apiKeySource === "secret" ? "" : this.profile.apiKey,
         baseURL: this.profile.baseURL,
       },
       this.options.previousProfileId,

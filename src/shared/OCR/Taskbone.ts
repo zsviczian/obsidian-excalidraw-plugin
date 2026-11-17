@@ -11,13 +11,23 @@ import { log } from "src/utils/debugHelper";
 import { ExportSettings } from "src/types/exportUtilTypes";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import { URLs } from "src/constants/safeUrls";
+import { resolveStoredAPIKey } from "src/utils/apiKeyStorage";
 
 const TASKBONE_URL = `${URLs.API_TASKBONE_COM}/`;
 const TASKBONE_OCR_FN = "execute?id=60f394af-85f6-40bc-9613-5d26dc283cbb";
 
 export default class Taskbone {
   get apiKey() {
-    return this.plugin.settings.taskboneAPIkey;
+    const settings = this.plugin.settings;
+    return resolveStoredAPIKey(this.plugin.app, {
+      apiKey: settings.taskboneAPIkey,
+      apiKeySource: settings.taskboneAPIKeySource,
+      apiKeySecret: settings.taskboneAPIKeySecret,
+    });
+  }
+
+  private usesSecretStorage(): boolean {
+    return this.plugin.settings.taskboneAPIKeySource === "secret";
   }
 
   constructor(private plugin: ExcalidrawPlugin) {}
@@ -27,7 +37,7 @@ export default class Taskbone {
   }
 
   public async initialize(save: boolean = true): Promise<string> {
-    if (this.plugin.settings.taskboneAPIkey !== "") {
+    if (this.apiKey !== "" || this.usesSecretStorage()) {
       return;
     }
     const response = await requestUrl({
@@ -40,10 +50,13 @@ export default class Taskbone {
       return;
     }
     const apiKey = response.json?.apiKey;
+    // The user may select SecretStorage while the identity request is in flight.
+    if (this.usesSecretStorage()) return;
     if (apiKey && typeof apiKey === "string") {
       if (save) {
         await this.plugin.loadSettings();
       }
+      if (this.usesSecretStorage()) return;
       this.plugin.settings.taskboneAPIkey = apiKey;
       if (save) {
         await this.plugin.saveSettings();
@@ -136,6 +149,10 @@ export default class Taskbone {
     const url = TASKBONE_URL + TASKBONE_OCR_FN;
     if (this.apiKey === "") {
       await this.initialize();
+    }
+    if (!this.apiKey) {
+      new Notice(t("API_KEY_MISSING"));
+      return;
     }
     const base64Image = await blobToBase64(image);
     const input = {

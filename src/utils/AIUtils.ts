@@ -17,6 +17,7 @@ import {
   AIImageInput,
   AIProvider,
   AIProviderProfile,
+  AIReasoningEffort,
   AIRequest,
   AIRequestMessage,
   AIRequestMessagePart,
@@ -31,6 +32,9 @@ import {
 } from "src/utils/geminiImageModelUtils";
 import { log } from "./debugHelper";
 import { strictArrayBuffer } from "./obsidianUtils";
+import { resolveStoredAPIKey } from "./apiKeyStorage";
+import { getAIReasoningEfforts, supportsAITextTemperature } from "./aiReasoning";
+import { t } from "src/lang/helpers";
 
 type NormalizedBinaryInput = {
   source: string;
@@ -57,6 +61,7 @@ type ResolvedModelConfig = {
   endpoint: string;
   model: string;
   multimodalSupport: boolean;
+  reasoningEffort?: AIReasoningEffort;
 };
 
 type ResolvedImageConfig = ResolvedModelConfig & {
@@ -467,7 +472,10 @@ const getProviderProfiles = (
 ): Record<string, AIProviderProfile> => {
   return plugin.settings.aiProviderProfiles &&
     Object.keys(plugin.settings.aiProviderProfiles).length > 0
-    ? decryptProviderProfiles(plugin.settings.aiProviderProfiles)
+    ? Object.fromEntries(Object.entries(decryptProviderProfiles(plugin.settings.aiProviderProfiles)).map(([id, profile]) => [id, {
+        ...profile,
+        apiKey: resolveStoredAPIKey(plugin.app, profile),
+      }]))
     : {
         OpenAI: {
           provider: "openai",
@@ -503,7 +511,7 @@ const getModelConfigs = (plugin: ExcalidrawPlugin, kind: "text" | "image") => {
 
     const defaultTextModel =
       plugin.settings.aiDefaultTextModel ||
-      "gpt-5-mini";
+      "gpt-6-luna";
 
     return {
       [defaultTextModel]: {
@@ -517,7 +525,7 @@ const getModelConfigs = (plugin: ExcalidrawPlugin, kind: "text" | "image") => {
 
   const defaultImageModel =
     plugin.settings.aiDefaultImageGenerationModel ||
-    "gpt-image-1";
+    "gpt-image-2.6-flare";
 
   return plugin.settings.aiImageModelConfigs &&
     Object.keys(plugin.settings.aiImageModelConfigs).length > 0
@@ -644,6 +652,10 @@ const getResolvedModelConfig = (
     endpoint,
     model: request.model?.trim() || selectedConfig?.model || "",
     multimodalSupport: selectedConfig?.multimodalSupport !== false,
+    reasoningEffort: kind === "text"
+      ? request.reasoningEffort === null ? undefined : request.reasoningEffort ??
+        ((!request.model || request.model.trim() === selectedConfig?.model) ? selectedConfig?.reasoningEffort : undefined)
+      : undefined,
   };
 
   if (kind !== "image") {
@@ -755,7 +767,7 @@ const usesMaxCompletionTokens = (model: string): boolean => {
   if (!model) {
     return false;
   }
-  return ["gpt-4o", "gpt-5", "o1", "o3", "o4"].some((prefix) =>
+  return ["gpt-4o", "gpt-5", "gpt-6", "o1", "o3", "o4"].some((prefix) =>
     model.includes(prefix),
   );
 };
@@ -1926,6 +1938,15 @@ const handleImageRequest = async (
             model: request.model || imageConfig.model,
             ...(promptText ? { prompt: promptText } : {}),
           };
+      // xAI accepts aspect_ratio rather than OpenAI's pixel-size parameter.
+      const requestedSize = request.imageGenerationProperties?.size;
+      const dimensions = requestedSize?.match(/^(\d+)x(\d+)$/);
+      if (dimensions) {
+        const width = Number(dimensions[1]), height = Number(dimensions[2]);
+        const gcd = (a: number, b: number): number => b ? gcd(b, a % b) : a;
+        const divisor = gcd(width, height);
+        if (divisor > 0) Object.assign(payload, { aspect_ratio: `${width / divisor}:${height / divisor}` });
+      }
 
       response = await postJSON(
         endpoint,
@@ -2145,11 +2166,16 @@ const handleTextRequest = async (
       );
     }
     default: {
+      const effort = activeConfig.provider === "openai" ? activeConfig.reasoningEffort : undefined;
+      if (effort && !getAIReasoningEfforts(activeConfig.provider, model).includes(effort)) {
+        return createSyntheticResponse(t("AI_REASONING_INVALID"), 400);
+      }
       const body: GPTCompletionRequest = {
         model,
-        ...(request.temperature !== undefined
+        ...(request.temperature !== undefined && supportsAITextTemperature(activeConfig.provider, model, effort)
           ? { temperature: request.temperature }
           : {}),
+        ...(effort ? { reasoning_effort: effort } : {}),
         ...getTextLimitPayload(model, request.maxTokens ?? config.maxTokens),
         messages: toOpenAIMessages(messages),
       };
@@ -2224,9 +2250,9 @@ const requestAI = async (
   }
 
   if (!activeApiKey) {
-    new Notice("AI API key is not set. Please set it in plugin settings.");
+    new Notice(t("API_KEY_MISSING"));
     return createSyntheticResponse(
-      "AI API key is not set. Please set it in plugin settings.",
+      t("API_KEY_MISSING"),
       401,
     );
   }

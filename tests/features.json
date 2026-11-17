@@ -20,6 +20,14 @@
       "tests": [
         {
           "layer": "source",
+          "path": "scripts/testing/eventManagerSaving.source.test.mjs",
+          "cases": [
+            "click and file-menu saving ignore a retired editor before reading its persistence state",
+            "click and file-menu saving retain the live dirty editor behavior"
+          ]
+        },
+        {
+          "layer": "source",
           "path": "scripts/testing/package.source.test.mjs",
           "cases": [
             "node:scripts/testing/package.source.test.mjs::one private runtime serves main and two popout leases; only final release removes the alias",
@@ -1151,6 +1159,14 @@
             "node:scripts/testing/markdownHeadingTransclusion.test.mjs::canonical linked-heading image targets retain the heading body and nested sections",
             "node:scripts/testing/markdownHeadingTransclusion.test.mjs::existing display-label targets, ordinary sections and missing-section fallback stay unchanged"
           ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/aiAndEmbeds.mjs",
+          "cases": [
+            "native:markdown-embed-scroll-3055:main",
+            "native:markdown-embed-scroll-3055:popout"
+          ]
         }
       ],
       "fixtures": [
@@ -1410,6 +1426,22 @@
             "native:behavior:tablet:export-frame-padding-policy",
             "native:behavior:tablet:settings-live-persistence",
             "native:behavior:tablet:frontmatter-prefixes-theme-scale"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/aiSettingsUI.source.test.mjs",
+          "cases": [
+            "reasoning dropdown filters models, preserves edits across provider changes and blocks invalid saves",
+            "credential source changes remove the synced key and store only the selected reference"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/aiAndEmbeds.mjs",
+          "cases": [
+            "native:ai-settings-preservation:main",
+            "native:ai-settings-preservation:popout"
           ]
         }
       ],
@@ -2078,6 +2110,15 @@
             "template cancellation and invalid destinations leave the new-file form open without file writes",
             "template folder scanning includes descendants and excludes similarly prefixed sibling folders",
             "relocated creation updates only the clicked link, preserving aliases and other links, and retires its workbench"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/aiRequests.source.test.mjs",
+          "cases": [
+            "OpenAI text and multimodal requests inherit configured reasoning and use completion token limits",
+            "all provider text pipelines normalize responses without OpenAI reasoning fields leaking",
+            "current image providers generate and edit through their actual payload and response adapters"
           ]
         }
       ],

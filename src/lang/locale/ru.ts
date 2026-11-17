@@ -653,9 +653,30 @@ export default {
   AI_PROVIDER_PROFILE_MODAL_TYPE_NAME: "Тип провайдера",
   AI_PROVIDER_PROFILE_MODAL_TYPE_DESC:
     "Выберите семейство API, используемое этим профилем.",
+  // AI credentials and text-model reasoning
+  AI_REASONING_NAME: "Уровень рассуждения",
+  AI_REASONING_DESC: "Используйте настройку API по умолчанию или поддерживаемый уровень для этой модели OpenAI. Для неизвестных моделей доступно только значение по умолчанию.",
+  AI_REASONING_DEFAULT: "По умолчанию (API)",
+  AI_REASONING_INVALID: "Этот уровень не поддерживается выбранной моделью. Выберите значение по умолчанию или поддерживаемый уровень.",
+  API_KEY_SOURCE_NAME: "Хранение ключа API",
+  API_KEY_SOURCE_DESC: "Ключи в настройках обфусцированы, а не сохранены открытым текстом. Обфускация обратима и не является шифрованием. Выбор SecretStorage удаляет сохранённый ключ из настроек Excalidraw.",
+  API_KEY_SOURCE_SETTINGS: "Обфусцированные настройки (синхронизация с хранилищем)",
+  API_KEY_SOURCE_SECRET: "Obsidian SecretStorage (это устройство)",
+  API_KEY_SECRET_NAME: "Секрет",
+  API_KEY_SECRET_DESC: "Выберите секрет из настроек Obsidian. В хранилище сохраняется только его имя; настройте секрет на каждом устройстве. Требуется Obsidian 1.11.4 или новее.",
+  API_KEY_SECRET_SELECT: "Выберите секрет",
+  API_KEY_MISSING: "Ключ API недоступен. Введите ключ в настройках Excalidraw или выберите секрет, настроенный на этом устройстве.",
+  AI_REASONING_NONE: "Нет",
+  AI_REASONING_MINIMAL: "Минимальный",
+  AI_REASONING_LOW: "Низкий",
+  AI_REASONING_MEDIUM: "Средний",
+  AI_REASONING_HIGH: "Высокий",
+  AI_REASONING_XHIGH: "Очень высокий",
+  AI_REASONING_MAX: "Максимальный",
+
   AI_PROVIDER_PROFILE_MODAL_API_KEY_NAME: "API-ключ",
   AI_PROVIDER_PROFILE_MODAL_API_KEY_DESC:
-    "Сохраняется в этом профиле и используется всеми назначенными ему моделями.",
+    "Ключи в настройках обфусцированы, а не сохранены открытым текстом. Обфускация обратима и не является шифрованием. Выбор SecretStorage удаляет сохранённый ключ из настроек Excalidraw.",
   AI_PROVIDER_PROFILE_MODAL_API_KEY_PLACEHOLDER: "API-ключ провайдера",
   AI_PROVIDER_PROFILE_MODAL_BASE_URL_NAME: "Базовый URL",
   AI_PROVIDER_PROFILE_MODAL_BASE_URL_DESC:
@@ -671,13 +692,13 @@ export default {
   AI_MODEL_CONFIG_MODAL_NAME_NAME: "Название записи",
   AI_MODEL_CONFIG_MODAL_NAME_DESC:
     "Эта метка будет отображаться в выпадающем списке.",
-  AI_MODEL_CONFIG_MODAL_NAME_PLACEHOLDER: "например: gpt-5-mini",
+  AI_MODEL_CONFIG_MODAL_NAME_PLACEHOLDER: "например: gpt-6-luna",
   AI_MODEL_CONFIG_MODAL_PROVIDER_NAME: "Провайдер",
   AI_MODEL_CONFIG_MODAL_PROVIDER_DESC:
     "Выберите профиль провайдера, который должна использовать эта модель.",
   AI_MODEL_CONFIG_MODAL_MODEL_NAME: "Имя модели",
   AI_MODEL_CONFIG_MODAL_MODEL_DESC: "Точное имя модели, отправляемое в API.",
-  AI_MODEL_CONFIG_MODAL_MODEL_PLACEHOLDER: "например: gpt-5-mini",
+  AI_MODEL_CONFIG_MODAL_MODEL_PLACEHOLDER: "например: gpt-6-luna",
   AI_MODEL_CONFIG_MODAL_ENDPOINT_NAME: "Переопределение endpoint",
   AI_MODEL_CONFIG_MODAL_ENDPOINT_DESC:
     "Необязательный полный адрес эндпоинта для этой модели. Оставьте пустым, чтобы использовать адрес из профиля.",

@@ -223,7 +223,13 @@ declare global {
 }
 
 declare module "obsidian" {
+  /** Conservative public SecretStorage declarations (Obsidian 1.11.4+). */
+  interface SecretStorage {
+    getSecret(id: string): string | null;
+    listSecrets(): string[];
+  }
   interface App {
+    secretStorage?: SecretStorage;
     appId: string;
     dragManager: ObsidianDragManager;
     viewRegistry?: ObsidianViewRegistry;

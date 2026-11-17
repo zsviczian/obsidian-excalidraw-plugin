@@ -1228,7 +1228,8 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
       '"audio"' +
       ", audio:string | {url:string}|{dataURL:string}}]}</code>.<br>" +
       "This enables chat-style interfaces by preserving prior turns in <code>messages</code>, similar to Mermaid chat.<br>" +
-      "<b>temperature</b>: optional generation control.<br>" +
+      "<b>temperature</b>: optional sampling control, omitted for OpenAI models that reject it when reasoning.<br>" +
+      "<b>reasoningEffort</b>: optional OpenAI text-model effort override. Unset inherits the configured model; null uses the API default. Supported values depend on the model; invalid values return an actionable error before a request is sent.<br>" +
       "<b>maxOutgoingTokens</b>: optional approximate budget for outgoing text content. Excalidraw trims older text content first while keeping the latest messages and attached files.<br>" +
       "<b>maxTokens</b>: optional response-size limit.<br>" +
       "<b>imageGenerationProperties</b>: <code>{ size?, quality?, n?, mask? }</code>. If present, Excalidraw uses the image generation/edit pipeline. <code>mask</code> accepts the same format as <code>image</code>.<br>" +
@@ -1244,6 +1245,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     desc:
       "Returns the sanitized AI configuration currently available to ExcalidrawAutomate scripts.<br>" +
       "The returned object includes enabled state, provider profiles with <code>provider</code>, <code>baseURL</code>, and <code>hasApiKey</code>, the configured text/image model maps, the default text/image model IDs, and the default outgoing/response token budgets.<br>" +
+      "Text model entries include an optional <code>reasoningEffort</code>. <code>hasApiKey</code> reflects the selected settings or device-local secret source; secret values and references are omitted.<br>" +
       "Use this instead of reading <code>ea.plugin.settings</code> directly when building AI-driven scripts.",
     after: "",
   },

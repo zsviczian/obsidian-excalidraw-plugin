@@ -744,9 +744,30 @@ export default {
   AI_PROVIDER_PROFILE_MODAL_TYPE_NAME: "Provider type",
   AI_PROVIDER_PROFILE_MODAL_TYPE_DESC:
     "Select the API family used by this provider profile.",
+  // AI credentials and text-model reasoning
+  AI_REASONING_NAME: "Reasoning effort",
+  AI_REASONING_DESC: "Use the API default or a supported effort for this OpenAI model. Unknown models support Default only.",
+  AI_REASONING_DEFAULT: "Default (API setting)",
+  AI_REASONING_INVALID: "This reasoning effort is unsupported for the selected model. Choose Default or a supported level.",
+  API_KEY_SOURCE_NAME: "API key storage",
+  API_KEY_SOURCE_DESC: "Settings keys are obfuscated, not stored as plain text. Obfuscation is reversible, not encryption. Selecting SecretStorage removes the saved key from Excalidraw settings.",
+  API_KEY_SOURCE_SETTINGS: "Obfuscated settings (synced with vault)",
+  API_KEY_SOURCE_SECRET: "Obsidian SecretStorage (this device)",
+  API_KEY_SECRET_NAME: "Secret",
+  API_KEY_SECRET_DESC: "Choose a secret managed in Obsidian settings. Only its name is saved with the vault; configure the secret on each device. Requires Obsidian 1.11.4 or later.",
+  API_KEY_SECRET_SELECT: "Select a secret",
+  API_KEY_MISSING: "No API key is available. Enter a key in Excalidraw settings or select a secret configured on this device.",
+  AI_REASONING_NONE: "None",
+  AI_REASONING_MINIMAL: "Minimal",
+  AI_REASONING_LOW: "Low",
+  AI_REASONING_MEDIUM: "Medium",
+  AI_REASONING_HIGH: "High",
+  AI_REASONING_XHIGH: "Extra high",
+  AI_REASONING_MAX: "Maximum",
+
   AI_PROVIDER_PROFILE_MODAL_API_KEY_NAME: "API key",
   AI_PROVIDER_PROFILE_MODAL_API_KEY_DESC:
-    "Stored with this provider profile and used by any model assigned to it.",
+    "Settings keys are obfuscated, not stored as plain text. Obfuscation is reversible, not encryption. Selecting SecretStorage removes the saved key from Excalidraw settings.",
   AI_PROVIDER_PROFILE_MODAL_API_KEY_PLACEHOLDER: "Provider API key",
   AI_PROVIDER_PROFILE_MODAL_BASE_URL_NAME: "Base URL",
   AI_PROVIDER_PROFILE_MODAL_BASE_URL_DESC:
@@ -760,13 +781,13 @@ export default {
     "A provider profile with this name already exists.",
   AI_MODEL_CONFIG_MODAL_NAME_NAME: "Entry name",
   AI_MODEL_CONFIG_MODAL_NAME_DESC: "This label appears in the dropdown.",
-  AI_MODEL_CONFIG_MODAL_NAME_PLACEHOLDER: "e.g.: gpt-5-mini",
+  AI_MODEL_CONFIG_MODAL_NAME_PLACEHOLDER: "e.g.: gpt-6-luna",
   AI_MODEL_CONFIG_MODAL_PROVIDER_NAME: "Provider",
   AI_MODEL_CONFIG_MODAL_PROVIDER_DESC:
     "Choose which provider profile this model should use.",
   AI_MODEL_CONFIG_MODAL_MODEL_NAME: "Model name",
   AI_MODEL_CONFIG_MODAL_MODEL_DESC: "Exact model name sent to the API.",
-  AI_MODEL_CONFIG_MODAL_MODEL_PLACEHOLDER: "e.g.: gpt-5-mini",
+  AI_MODEL_CONFIG_MODAL_MODEL_PLACEHOLDER: "e.g.: gpt-6-luna",
   AI_MODEL_CONFIG_MODAL_ENDPOINT_NAME: "Endpoint override",
   AI_MODEL_CONFIG_MODAL_ENDPOINT_DESC:
     "Optional full endpoint override for this model. Leave blank to derive it from the provider profile.",

@@ -65,6 +65,8 @@ import {
 import { AIProviderProfileModal } from "src/shared/Dialogs/AIProviderProfileModal";
 import { AIModelConfigModal } from "src/shared/Dialogs/AIModelConfigModal";
 import { AIUsageModal } from "src/shared/Dialogs/AIUsageModal";
+import { renderAPIKeySettings } from "src/shared/components/apiKeySettings";
+import { resolveStoredAPIKey } from "src/utils/apiKeyStorage";
 import { getAIUsage, formatAIUsageLabel } from "src/utils/AIUtils";
 import { decryptProviderProfiles } from "src/utils/settingsKeyObfuscation";
 import { getGeminiSupportedSizes } from "src/utils/geminiImageModelUtils";
@@ -119,18 +121,6 @@ const sanitizeFilenameSegment = (value: string): string =>
 
 const NAVIGATION_TAG_EMBED_PREVIEW = "EmbedPreview";
 
-const configurePasswordTextInput = (text: TextComponent) => {
-  const { inputEl } = text;
-  inputEl.type = "password";
-  inputEl.autocomplete = "off";
-  inputEl.spellcheck = false;
-  inputEl.addEventListener("focus", () => {
-    inputEl.type = "text";
-  });
-  inputEl.addEventListener("blur", () => {
-    inputEl.type = "password";
-  });
-};
 
 interface SettingsPageModel {
   name: string;
@@ -2307,11 +2297,11 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     let selectedTextModelConfig =
       this.plugin.settings.aiDefaultTextModel?.trim() ||
       Object.keys(this.plugin.settings.aiTextModelConfigs ?? {})[0] ||
-      "gpt-5-mini";
+      "gpt-6-luna";
     let selectedImageModelConfig =
       this.plugin.settings.aiDefaultImageGenerationModel?.trim() ||
       Object.keys(this.plugin.settings.aiImageModelConfigs ?? {})[0] ||
-      "gpt-image-1";
+      "gpt-image-2.6-flare";
 
     const getProviderProfiles = () => {
       const profiles =
@@ -2546,7 +2536,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
       optionValues.forEach((providerId) => {
         const profile = profiles[providerId];
-        const apiStatus = getApiStatusMarkup(Boolean(profile.apiKey?.trim()));
+        const apiStatus = getApiStatusMarkup(Boolean(resolveStoredAPIKey(this.app, profile).trim()));
         const providerSetting = new Setting(providerContainer)
           .setName(providerId)
           .setDesc(
@@ -2599,7 +2589,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       const config = configs[selectedValue];
       const providerProfile = getProviderProfiles()[config.providerId];
       const apiStatus = getApiStatusMarkup(
-        Boolean(providerProfile?.apiKey?.trim()),
+        Boolean(providerProfile && resolveStoredAPIKey(this.app, providerProfile).trim()),
       );
       const getBooleanLabel = (value: boolean) =>
         value
@@ -4995,39 +4985,40 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   }
 
   private renderTaskboneControls(container: HTMLElement): void {
-    let taskboneAPIKeyText: TextComponent;
+    const credentials = {
+      apiKey: this.plugin.settings.taskboneAPIkey,
+      apiKeySource: this.plugin.settings.taskboneAPIKeySource,
+      apiKeySecret: this.plugin.settings.taskboneAPIKeySecret,
+    };
+    let refreshKeyControl = () => {};
     this.buildSetting(container, {
       name: t("TASKBONE_ENABLE_NAME"),
       desc: fragWithHTML(t("TASKBONE_ENABLE_DESC")),
       control: {
         type: "toggle",
         key: "taskboneEnabled",
-        before: (value) => {
-          taskboneAPIKeyText.setDisabled(!value);
-        },
         after: async () => {
-          if (this.plugin.settings.taskboneAPIkey === "") {
+          if (this.plugin.settings.taskboneEnabled && !this.plugin.taskbone.apiKey && credentials.apiKeySource !== "secret") {
             const apiKey = await this.plugin.taskbone.initialize(false);
             if (apiKey) {
-              taskboneAPIKeyText.setValue(apiKey);
+              credentials.apiKey = apiKey;
+              refreshKeyControl();
+              this.applySettingsUpdate();
             }
           }
         },
       },
     });
-    this.buildSetting(container, {
+    const control = renderAPIKeySettings(this.app, container, credentials, () => {
+      this.plugin.settings.taskboneAPIkey = credentials.apiKey;
+      this.plugin.settings.taskboneAPIKeySource = credentials.apiKeySource;
+      this.plugin.settings.taskboneAPIKeySecret = credentials.apiKeySecret;
+      this.applySettingsUpdate();
+    }, {
       name: t("TASKBONE_APIKEY_NAME"),
-      desc: fragWithHTML(t("TASKBONE_APIKEY_DESC")),
-      control: {
-        type: "text",
-        key: "taskboneAPIkey",
-        disabled: () => !this.plugin.settings.taskboneEnabled,
-        capture: (text) => {
-          taskboneAPIKeyText = text;
-          configurePasswordTextInput(text);
-        },
-      },
+      description: fragWithHTML(t("TASKBONE_APIKEY_DESC")),
     });
+    refreshKeyControl = control.refresh;
   }
 
   private getAutomateSpecs(): SettingSpec[] {

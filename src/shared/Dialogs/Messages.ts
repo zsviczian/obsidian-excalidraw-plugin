@@ -19,6 +19,8 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 `,
 "2.29.3": `
 ## New and improved
+- Choose OpenAI reasoning effort per text model and use updated AI model recommendations on new installs. ExcaliAI uses the selected model's effort. [#3056](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3056).
+- Optionally use device-local Obsidian SecretStorage for AI and Taskbone API keys, alongside the existing obfuscated vault settings. [#2969](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2969).
 - Create a **New Drawing** from empty tabs. Hide this action and the ribbon icon independently in settings. [#3047](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3047).
 - PNG fullscreen previews open faster, then sharpen in the background while preserving zoom and pan.
 - Press P again while using the pen to return to the selection tool. [#3044](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3044).
@@ -27,6 +29,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 - Adjust outer padding for thumbnails, whole scenes and frames, or expand the captured area of \`area=\` drawing embeds from their Live Preview toolbar. Preview changes with the slider, then close it to save; Escape cancels. Inspired by 🙏[Evgene-Kopylov](${URLs.GITHUB_COM}/Evgene-Kopylov) [#2868](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2868).
 
 ## Fixed
+- Scroll embedded Markdown directly in reading mode, including when **Lock to reading mode** is enabled. [#3055](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3055).
 - Drawing embed controls appear in Live Preview tables and remain reachable in phone Reading view. [#3049](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3049).
 - Drawing embeds render reliably in long notes in Reading view and with relative links in Live Preview. [#3039](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3039), [#3040](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3040).
 - Insert files with malformed aliases, and embed Markdown headings containing links or formatting. [#2257](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2257), [#2303](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2303).

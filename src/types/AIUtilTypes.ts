@@ -35,13 +35,21 @@ export type AIProviderProfile = {
   provider: AIProvider;
   apiKey: string;
   baseURL: string;
+  /** Defaults to the existing obfuscated, vault-synced settings storage. */
+  apiKeySource?: "settings" | "secret";
+  /** Device-local Obsidian SecretStorage reference; never the secret value. */
+  apiKeySecret?: string;
 };
+
+export type AIReasoningEffort = "none" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max";
 
 export type AIModelConfig = {
   providerId: string;
   model: string;
   endpoint?: string;
   multimodalSupport?: boolean;
+  /** Unset leaves the provider's default unchanged. OpenAI text models only. */
+  reasoningEffort?: AIReasoningEffort;
 };
 
 export type AIImageModelConfig = AIModelConfig & AIImageModelCapability;
@@ -101,6 +109,7 @@ export type GPTCompletionRequest = {
   top_p?: number | undefined;
   max_tokens?: number | undefined;
   max_completion_tokens?: number | undefined;
+  reasoning_effort?: AIReasoningEffort;
   n?: number | undefined;
   best_of?: number | undefined;
   frequency_penalty?: number | undefined;
@@ -159,6 +168,8 @@ export type AIRequest = {
   systemPrompt?: string;
   messages?: AIRequestMessage[];
   temperature?: number;
+  /** Overrides the text model preference; null explicitly uses the API default. */
+  reasoningEffort?: AIReasoningEffort | null;
   maxOutgoingTokens?: number;
   maxTokens?: number;
   imageGenerationProperties?: {

@@ -4,6 +4,7 @@ import {
   AIImageModelConfig,
   AIModelConfig,
   AIProviderProfile,
+  AIReasoningEffort,
 } from "src/types/AIUtilTypes";
 import {
   getGeminiSupportedSizes,
@@ -12,6 +13,7 @@ import {
 import { isWinCTRLorMacCMD } from "src/utils/modifierkeyHelper";
 import { showElement } from "src/utils/styleUtils";
 import { hideElement } from "src/utils/styleUtils";
+import { getAIReasoningEfforts } from "src/utils/aiReasoning";
 
 type SaveHandler<TConfig extends AIModelConfig> = (
   modelId: string,
@@ -47,6 +49,7 @@ export class AIModelConfigModal<
     const firstProviderId = options.providerIds[0] ?? "";
     this.modelId = options.initialModelId ?? "";
     this.config = {
+      ...options.initialConfig,
       providerId: options.initialConfig?.providerId ?? firstProviderId,
       model: options.initialConfig?.model ?? "",
       endpoint: options.initialConfig?.endpoint ?? "",
@@ -71,7 +74,7 @@ export class AIModelConfigModal<
                 ?.supportsMaskImageEdits ?? true,
           }
         : {}),
-    } as TConfig;
+    };
 
     this.syncDerivedGeminiImageSizes();
   }
@@ -165,6 +168,7 @@ export class AIModelConfigModal<
     contentEl.empty();
     contentEl.createEl("h1", { text: this.getTitle() });
     let updateImageSizeControls = () => {};
+    let updateReasoningControl = () => {};
 
     new Setting(contentEl)
       .setName(t("AI_MODEL_CONFIG_MODAL_NAME_NAME"))
@@ -187,6 +191,7 @@ export class AIModelConfigModal<
         );
         return dropdown.setValue(this.config.providerId).onChange((value) => {
           this.config.providerId = value;
+          updateReasoningControl();
           if (this.options.kind === "image") {
             this.syncDerivedGeminiImageSizes();
             updateImageSizeControls();
@@ -203,6 +208,7 @@ export class AIModelConfigModal<
           .setValue(this.config.model)
           .onChange((value) => {
             this.config.model = value.trim();
+            updateReasoningControl();
             if (this.options.kind === "image") {
               this.syncDerivedGeminiImageSizes();
               updateImageSizeControls();
@@ -225,6 +231,31 @@ export class AIModelConfigModal<
     }
 
     if (this.options.kind === "text") {
+      const reasoningContainer = contentEl.createDiv();
+      updateReasoningControl = () => {
+        reasoningContainer.empty();
+        if (this.getCurrentProviderType() !== "openai") return;
+        const efforts = getAIReasoningEfforts("openai", this.config.model);
+        new Setting(reasoningContainer)
+          .setName(t("AI_REASONING_NAME"))
+          .setDesc(t("AI_REASONING_DESC"))
+          .addDropdown((dropdown) => {
+            dropdown.addOption("", t("AI_REASONING_DEFAULT"));
+            const effortLabels: Record<AIReasoningEffort, Parameters<typeof t>[0]> = {
+              none: "AI_REASONING_NONE", minimal: "AI_REASONING_MINIMAL", low: "AI_REASONING_LOW",
+              medium: "AI_REASONING_MEDIUM", high: "AI_REASONING_HIGH", xhigh: "AI_REASONING_XHIGH", max: "AI_REASONING_MAX",
+            };
+            efforts.forEach((effort) => { void dropdown.addOption(effort, t(effortLabels[effort])); });
+            // Retain a previous model's choice while editing, but never silently save it.
+            if (this.config.reasoningEffort && !efforts.includes(this.config.reasoningEffort)) {
+              dropdown.addOption(this.config.reasoningEffort, t("AI_REASONING_INVALID"));
+            }
+            dropdown.setValue(this.config.reasoningEffort ?? "").onChange((value) => {
+              this.config.reasoningEffort = value ? value as AIReasoningEffort : undefined;
+            });
+          });
+      };
+      updateReasoningControl();
       new Setting(contentEl)
         .setName(t("AI_MODEL_CONFIG_MODAL_MULTIMODAL_NAME"))
         .setDesc(t("AI_MODEL_CONFIG_MODAL_MULTIMODAL_DESC"))
@@ -364,6 +395,11 @@ export class AIModelConfigModal<
     }
     if (!this.config.model.trim()) {
       new Notice(t("AI_MODEL_CONFIG_MODAL_MODEL_REQUIRED"));
+      return;
+    }
+    if (this.options.kind === "text" && this.getCurrentProviderType() === "openai" &&
+      this.config.reasoningEffort && !getAIReasoningEfforts("openai", this.config.model).includes(this.config.reasoningEffort)) {
+      new Notice(t("AI_REASONING_INVALID"));
       return;
     }
 

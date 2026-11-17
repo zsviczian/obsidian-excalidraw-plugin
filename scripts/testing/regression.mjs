@@ -19,6 +19,7 @@ import { deviceProfiles, breakpointProfiles } from "./host/deviceProfiles.mjs";
 import { behavioralCases } from "./behaviorPlan.mjs";
 import { coverageChanges } from "./coverageChanges.mjs";
 import { workflowBundleCaseIds } from "./host/workflowBundle.mjs";
+import { aiAndEmbedsCaseIds } from "./host/aiAndEmbeds.mjs";
 import { issue3052CaseIds } from "./host/issue3052.mjs";
 import { textSaveShortcutCaseIds } from "./host/textSaveShortcut.mjs";
 import { codeCardCaseIds } from "./host/codeCards.mjs";
@@ -36,6 +37,7 @@ export const requiredDeviceCases = [
 export const requiredNativeCases = [
   ...workflowBundleCaseIds,
   ...issue3052CaseIds,
+  ...aiAndEmbedsCaseIds,
   ...textSaveShortcutCaseIds,
   ...codeCardCaseIds,
   ...embedControlCaseIds,
@@ -198,7 +200,9 @@ async function main() {
           },
           stdio: ["ignore", fd, fd],
           windowsHide: true,
-          timeout: 1800000,
+          // Full native/device workflows exceed the portable lane's 30-minute budget.
+          // Individual native task and cleanup deadlines remain enforced by their runner.
+          timeout: name === "build" && native ? 5400000 : 1800000,
         });
       } finally {
         closeSync(fd);
