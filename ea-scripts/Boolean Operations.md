@@ -18,7 +18,23 @@ if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.9.20")) {
 }
 const ShadowGroupMarker = "ShadowCloneOf-";
 
-const elements = ea.getViewSelectedElements().filter(
+const isShadowClone = (el) => el.groupIds.some(id => id.startsWith(ShadowGroupMarker));
+
+// Clicking the fill of a shape that already has a hole may select only its shadow clone
+// (the background), without the borders. Pull in the rest of the shape's group so the
+// borders are part of the operation.
+const selectedElements = ea.getViewSelectedElements();
+const selectedIds = new Set(selectedElements.map(el => el.id));
+const holeGroupIds = new Set(
+  selectedElements
+    .filter(isShadowClone)
+    .map(el => el.groupIds.find(id => !id.startsWith(ShadowGroupMarker)))
+    .filter(id => id)
+);
+
+const elements = ea.getViewElements().filter(
+  el => selectedIds.has(el.id) || el.groupIds.some(id => holeGroupIds.has(id))
+).filter(
   el=>["ellipse", "rectangle", "diamond"].includes(el.type) ||
     el.groupIds.some(id => id.startsWith(ShadowGroupMarker)) ||
     (["line", "arrow"].includes(el.type) && el.roundness === null)
@@ -210,7 +226,8 @@ function drawPolygonHierachy(polygonHierachy) {
     const allIds = [innerBorderIds, outerBorderId, backgroundId].flat();
     ea.addToGroup(allIds);
     const background = ea.getElement(backgroundId);
-    background.groupIds.push(ShadowGroupMarker + outerBorderId);
+    // innermost group, so that clicking the fill selects the whole shape and not just the background
+    background.groupIds.unshift(ShadowGroupMarker + outerBorderId);
   });
 }
 
