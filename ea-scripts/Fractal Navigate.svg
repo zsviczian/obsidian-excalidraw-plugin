@@ -1,0 +1,6 @@
+<svg class="icon" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" width="128" height="128">
+  <!-- Fractal Navigate: dive-in compass arrow -->
+  <circle cx="512" cy="512" r="448" fill="none" stroke="#8b5cf6" stroke-width="56"/>
+  <path d="M320 704 L448 320 L704 320 L576 704 Z" fill="#8b5cf6" transform="rotate(45 512 512)"/>
+  <circle cx="512" cy="512" r="48" fill="#2e7d32"/>
+</svg>
