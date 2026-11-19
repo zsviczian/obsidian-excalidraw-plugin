@@ -173,3 +173,27 @@ test('native extraction follows the active modal document across main and popout
 test('native extraction rejects a modal in an unrelated document',async()=>{
   await assert.rejects(extractionModalHarness('foreign').execute(),/unrelated document/);
 });
+
+test('native context-menu hit testing uses the integer point dispatched by Chromium', () => {
+  const source = readFileSync(new URL('./interactionBehavior.mjs', import.meta.url), 'utf8');
+  const file = ts.createSourceFile('interactionBehavior.mjs', source, ts.ScriptTarget.Latest, true);
+  let loop;
+  function visit(node) {
+    if (ts.isForOfStatement(node) && node.initializer.getText(file) === 'const [x, y]' &&
+      node.statement.getText(file).includes('menuPoint = point')) loop = node;
+    ts.forEachChild(node, visit);
+  }
+  visit(file);
+  assert.ok(loop);
+  const canvas = {}, toolbar = {};
+  // The narrow split puts the toolbar boundary between the fractional hit-test
+  // point and the integer coordinates used by the native contextmenu event.
+  const hit = (x, y) => y > 524.5 ? canvas : toolbar;
+  const point = vm.runInNewContext(`(() => { let menuPoint; ${loop.getText(file)} return menuPoint; })()`, {
+    r: { x: 337.5, y: 476.09375, width: 290.5, height: 323.90625 },
+    state: { zoom: { value: 1 }, scrollX: 0, scrollY: 0 }, scene: [],
+    doc: { elementFromPoint: hit }, canvas, Math,
+  });
+  assert.ok(Number.isInteger(point.x) && Number.isInteger(point.y));
+  assert.equal(hit(Math.trunc(point.x), Math.trunc(point.y)), canvas);
+});
