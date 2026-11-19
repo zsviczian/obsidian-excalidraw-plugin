@@ -208,7 +208,11 @@ export async function exerciseInteractionBehavior(c, env, rows, modifier) {
           for (const [x, y] of [0.1, 0.3, 0.5, 0.7, 0.9].flatMap((x) =>
             [0.15, 0.3, 0.45, 0.6, 0.75, 0.9].map((y) => [x, y]),
           )) {
-            const point = { x: r.x + r.width * x, y: r.y + r.height * y };
+            // Native contextmenu events use integer coordinates; hit-test that same point.
+            const point = {
+              x: Math.round(r.x + r.width * x),
+              y: Math.round(r.y + r.height * y),
+            };
             const sx = (point.x - r.x) / state.zoom.value - state.scrollX,
               sy = (point.y - r.y) / state.zoom.value - state.scrollY;
             if (
