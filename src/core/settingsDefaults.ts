@@ -222,6 +222,8 @@ export interface ExcalidrawSettings {
   sidepanelTabs: string[];
   customPens: PenStyle[];
   numberOfCustomPens: number;
+  showHighlighterInToolbar: boolean;
+  keepDrawingToolsSelected: boolean;
   pdfScale: number;
   pdfBorderBox: boolean;
   pdfFrame: boolean;
@@ -588,6 +590,8 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
     { ...PENS.default },
   ],
   numberOfCustomPens: 0,
+  showHighlighterInToolbar: true,
+  keepDrawingToolsSelected: false,
   pdfScale: 4,
   pdfBorderBox: true,
   pdfFrame: false,
