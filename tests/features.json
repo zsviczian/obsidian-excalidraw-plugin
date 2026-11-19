@@ -150,6 +150,13 @@
       "tests": [
         {
           "layer": "source",
+          "path": "scripts/testing/sceneAppState.test.mjs",
+          "cases": [
+            "node:scripts/testing/sceneAppState.test.mjs::Markdown scene payload preserves both hint values and every input device"
+          ]
+        },
+        {
+          "layer": "source",
           "path": "scripts/testing/persistence.source.test.mjs",
           "cases": [
             "node:scripts/testing/persistence.source.test.mjs::same-path snapshots remain ordered and uncoalesced while another drawing proceeds independently",

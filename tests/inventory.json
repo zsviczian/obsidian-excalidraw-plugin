@@ -2781,6 +2781,10 @@
       "mode": "direct-module-or-tooling"
     },
     {
+      "path": "scripts/testing/sceneAppState.test.mjs",
+      "mode": "isolated-or-extracted"
+    },
+    {
       "path": "scripts/testing/sceneFiles.source.test.mjs",
       "mode": "direct-module-or-tooling"
     },

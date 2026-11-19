@@ -5439,6 +5439,7 @@ export default class ExcalidrawView
         isMidpointSnappingEnabled: st.isMidpointSnappingEnabled,
         boxSelectionMode: st.boxSelectionMode,
         inputDevice: st.inputDevice,
+        showHints: st.showHints,
       },
       prevTextMode: this.prevTextMode,
       files,
