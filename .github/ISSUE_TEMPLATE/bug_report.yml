@@ -52,7 +52,7 @@ body:
     id: notebook_lm
     attributes:
       label: "Your NotebookLM query"
-      description: "See point 4) above. Paste the question and answer you received from NotebookLM. This serves partly as proof, partly to help me see where the model is incorrect"
+      description: "See point 2) above. Paste the question and answer you received from NotebookLM. This serves partly as proof, partly to help me see where the model is incorrect"
       placeholder: "Copy/Paste your question and the resulting answer you got from NotebookLM"
 
   - type: textarea
