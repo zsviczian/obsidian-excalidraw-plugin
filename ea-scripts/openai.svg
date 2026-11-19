@@ -1,0 +1,16 @@
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 297 119.35507213105393" width="297" height="119.35507213105393">
+  <!-- svg-source:excalidraw -->
+  
+  <defs>
+    <style>
+      @font-face {
+        font-family: "Virgil";
+        src: url("https://unpkg.com/@zsviczian/excalidraw@0.12.0-obsidian-8/dist/excalidraw-assets/Virgil.woff2");
+      }
+      @font-face {
+        font-family: "Cascadia";
+        src: url("https://unpkg.com/@zsviczian/excalidraw@0.12.0-obsidian-8/dist/excalidraw-assets/Cascadia.woff2");
+      }
+    </style>
+  </defs>
+  <rect x="0" y="0" width="297" height="119.35507213105393" fill="#ffffff"></rect><g stroke-linecap="round" transform="translate(149.0127083154141 44.35507213105393) rotate(0 55 32.5)"><path d="M-1.11 -0.45 C30.93 -0.67, 64.64 0.41, 108.18 -1.54 M0.3 -0.68 C36.45 0.4, 73.16 -0.02, 110.28 -0.37 M109.04 0.58 C108.35 15.44, 110.13 31.7, 110.95 63.11 M110.51 -0.26 C108.86 25.92, 109.51 50.47, 109.99 64.16 M110.6 65.21 C78.27 65.36, 50.83 64.65, 1.31 63.71 M110.61 65.06 C75.09 64.34, 39.05 63.48, -0.13 64.01 M-0.81 64.46 C-1.31 45.95, -1.11 26.32, 0.5 -1.8 M-0.36 64.52 C-1.3 44.83, -0.27 25.52, 0.77 0.87" stroke="#000000" stroke-width="1" fill="none"></path></g><g transform="translate(10 10) rotate(0 138.5 49.5)"><text x="0" y="17.75" font-family="Virgil, Segoe UI Emoji" font-size="20px" fill="#000000" text-anchor="start" style="white-space: pre;" direction="ltr">what is the purpose of life?</text><text x="0" y="42.5" font-family="Virgil, Segoe UI Emoji" font-size="20px" fill="#000000" text-anchor="start" style="white-space: pre;" direction="ltr"></text><text x="0" y="67.25" font-family="Virgil, Segoe UI Emoji" font-size="20px" fill="#000000" text-anchor="start" style="white-space: pre;" direction="ltr">To be happy.</text><text x="0" y="92" font-family="Virgil, Segoe UI Emoji" font-size="20px" fill="#000000" text-anchor="start" style="white-space: pre;" direction="ltr"></text></g><g transform="translate(169.0127083154141 64.35507213105393) rotate(0 35 12.5)"><text x="0" y="17" font-family="Virgil, Segoe UI Emoji" font-size="20px" fill="#000000" text-anchor="start" style="white-space: pre;" direction="ltr">OpenAI</text></g></svg>
