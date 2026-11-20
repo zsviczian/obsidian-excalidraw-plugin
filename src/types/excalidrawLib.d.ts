@@ -284,6 +284,7 @@ export declare namespace ExcalidrawLib {
   ): () => void;
   const OBSIDIAN_EXCALIDRAW_HOST_PROTOCOL_VERSION: typeof import("@zsviczian/excalidraw/types/excalidraw/obsidianExcalidrawHost").OBSIDIAN_EXCALIDRAW_HOST_PROTOCOL_VERSION;
   const configureObsidianExcalidrawHost: typeof import("@zsviczian/excalidraw/types/excalidraw/obsidianExcalidrawHost").configureObsidianExcalidrawHost;
+  const Fonts: typeof import("@zsviczian/excalidraw").Fonts;
   function registerLocalFont(fontMetrics: FontMetadata, uri: string): void;
   function getFontFamilies(): string[];
   function registerFontsInCSS(): Promise<void>;

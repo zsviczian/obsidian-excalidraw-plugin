@@ -85,7 +85,10 @@ export class FontManager {
    * and registers custom font metrics with the shared Excalidraw runtime.
    */
   public async initializeFonts(): Promise<void> {
-    const cjkFontFaceData = await getCJKFontFaceData(this.plugin);
+    const cjkFontFaceData = await getCJKFontFaceData(
+      this.plugin,
+      this.getRuntimePackage().excalidrawLib.Fonts,
+    );
     if (cjkFontFaceData === false) {
       new Notice(
         t("FONTS_LOAD_ERROR") + this.plugin.settings.fontAssetsPath,

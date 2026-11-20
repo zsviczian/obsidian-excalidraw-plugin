@@ -432,3 +432,7 @@ requires an error-free baseline and the behavioral gate includes all recorded
 window errors. Complete core/mobile acceptance and two complete repeats remain
 required. Portable CI passed 645 cases at e3f421b3; its artifact upload separately
 failed with ECONNRESET after upload, not during build or tests.
+
+### Runtime compaction
+
+`npm run verify:obsidian -- --runtime-compaction` builds the selected local component and plugin, then verifies real local CJK font pixels and first/warm WASM font export in main/popout documents. It restores settings, owned files and layout under the shared host lock. The four cases are also mandatory in the full regression profile. Physical mobile and other native operating systems remain separate coverage.

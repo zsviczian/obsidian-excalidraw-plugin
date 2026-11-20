@@ -42,6 +42,7 @@ import { runExtrasServicesScenario } from "./extrasServices.mjs";
 import { runStabilityScenario } from "./stability.mjs";
 import { runAutomateScenario } from "./automate.mjs";
 import { runCoreInteractionScenario } from "./coreInteraction.mjs";
+import { runRuntimeCompactionScenario } from "./runtimeCompaction.mjs";
 import { runPDFImportScenario } from "./pdfImport.mjs";
 import { runDeviceMatrix } from "./devices.mjs";
 import { deviceProfiles, breakpointProfiles } from "./deviceProfiles.mjs";
@@ -79,6 +80,7 @@ if (
 const fullProfile = profile === "full" || profile === "regression";
 const coreOnly=process.argv.includes("--core"),coreScenarios=fullProfile||coreOnly;
 const lifecycle = coreScenarios || process.argv.includes("--lifecycle");
+const runtimeCompaction = coreScenarios || process.argv.includes("--runtime-compaction");
 const migrationComparison = process.argv.includes("--migration-comparison");
 const markdownMigrationControl = process.argv.includes("--markdown-migration-control");
 if (fullProfile && migrationComparison)
@@ -158,6 +160,7 @@ const flags = [
   "--prepare-only",
   "--behavior-matrix",
   "--lifecycle",
+  "--runtime-compaction",
   "--migration-comparison",
   "--markdown-migration-control",
   "--extras-services",
@@ -331,6 +334,7 @@ try {
                 }),
             ]
           : []),
+        ...(runtimeCompaction ? [runRuntimeCompactionScenario] : []),
         ...(lifecycle ? [runLifecycleScenario] : []),
         ...(migrationComparison ? [
           context => runLifecycleScenario(context),

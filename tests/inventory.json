@@ -2469,6 +2469,14 @@
       "mode": "isolated-or-extracted"
     },
     {
+      "path": "scripts/testing/chromaParser.test.mjs",
+      "mode": "isolated-or-extracted"
+    },
+    {
+      "path": "scripts/testing/cjkFonts.source.test.mjs",
+      "mode": "direct-module-or-tooling"
+    },
+    {
       "path": "scripts/testing/cli.test.mjs",
       "mode": "isolated-or-extracted"
     },
