@@ -28,6 +28,7 @@ import { embedRegressionCaseIds } from "./host/embedRegressions.mjs";
 import { embedReliabilityCaseIds } from "./host/embedReliability.mjs";
 import { frameSemanticsCaseIds, frameSemanticsDeviceCaseIds } from "./host/frameSemantics.mjs";
 import { kplexOntologyCaseIds, kplexOntologyDeviceCaseIds } from "./host/kplexOntology.mjs";
+import { runtimeCompactionCaseIds } from "./host/runtimeCompaction.mjs";
 
 export const requiredDeviceCases = [
   ...deviceProfiles(),
@@ -35,6 +36,7 @@ export const requiredDeviceCases = [
 ].map((profile) => "native:device:" + profile.id).concat(kplexOntologyDeviceCaseIds, embedControlDeviceCaseIds, frameSemanticsDeviceCaseIds);
 
 export const requiredNativeCases = [
+  ...runtimeCompactionCaseIds,
   ...workflowBundleCaseIds,
   ...issue3052CaseIds,
   ...aiAndEmbedsCaseIds,

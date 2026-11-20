@@ -14,6 +14,7 @@ import json from '@rollup/plugin-json';
 import { parseEnv } from 'node:util';
 import { buildReactRuntime } from './scripts/buildReactRuntime.mjs';
 import { localExcalidrawTypePaths } from './scripts/excalidrawTypeSource.mjs';
+import { chromaParserOnly } from './scripts/chromaParser.mjs';
 import ts from 'typescript';
 
 function compressDeflateBase64(code) {
@@ -320,6 +321,7 @@ function pairedTypeOptions(config) {
 }
 
 const getRollupPlugins = (tsconfig, ...plugins) => [
+  chromaParserOnly(),
   typescript(pairedTypeOptions(tsconfig)),
   json(),
   replace({
