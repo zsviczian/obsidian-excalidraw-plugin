@@ -1094,7 +1094,9 @@ pre.excalidraw-drawing-load-error-message code {
 
 .excalidraw.excalidraw-toolsPanel-wrapper .Island.App-menu__left.scrollbar {
   max-height: 350px;
-  width: initial;
+  /* Use the tools-panel width instead of the native property-panel cap. */
+  max-width: none;
+  width: 100%;
   --padding: 0.125rem;
 }
 
