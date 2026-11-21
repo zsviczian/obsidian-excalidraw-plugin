@@ -99,6 +99,7 @@ import { ObserverManager } from "./managers/ObserverManager";
 import { PackageManager } from "./managers/PackageManager";
 import { MonkeyPatchManager } from "./managers/MonkeyPatchManager";
 import ExcalidrawView from "../view/ExcalidrawView";
+import { isCanvasFlowchartNavigationShortcut } from "../view/managers/flowchartNavigationShortcut";
 import { ExcalidrawSidepanelView } from "../view/sidepanel/Sidepanel";
 import { CommandManager } from "./managers/CommandManager";
 import { LucideIconPicker } from "src/view/sidepanel/LucideIconPicker";
@@ -951,6 +952,13 @@ export default class ExcalidrawPlugin extends Plugin {
     // Force handlers to the front of the list
     overrideHandlers.forEach(() => scope.keys.unshift(scope.keys.pop()));
 
+    // A wildcard may decline unrelated keys; an explicit key handler cannot.
+    // Claim only canvas navigation so core editor shortcuts cannot swallow it.
+    const flowchartHandler = scope.register(null, null, (event) => {
+      if (isCanvasFlowchartNavigationShortcut(this.activeExcalidrawView, event)) return true;
+    });
+    scope.keys.unshift(scope.keys.pop());
+
     const handler_ctrlF = scope.register(["Mod"], "f", () => true);
     scope.keys.unshift(scope.keys.pop()); // Force our handler to the front of the list
     const forceSaveCommand = this.commandManager?.forceSaveCommand;
@@ -966,6 +974,7 @@ export default class ExcalidrawPlugin extends Plugin {
     }
     this.popScope = () => {
       overrideHandlers.forEach((handler) => scope.unregister(handler));
+      scope.unregister(flowchartHandler);
       scope.unregister(handler_ctrlF);
       if (saveHandler) {
         scope.unregister(saveHandler);

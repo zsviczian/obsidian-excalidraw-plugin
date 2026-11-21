@@ -17,12 +17,24 @@ export async function exerciseInteractionBehavior(c, env, rows, modifier) {
         listener = (e) =>
           events.push({
             type: e.type,
+            key: e.key,
+            altKey: e.altKey,
             at: e.timeStamp,
             trusted: e.isTrusted,
             pointerType: e.pointerType,
             x:e.clientX,y:e.clientY,target:e.target?.outerHTML?.slice(0,250),
           });
       const toolsPanelLayouts = [];
+      const flowchartHotkeys = [];
+      if (checkColorShortcut) {
+        // Match the reported core-Obsidian conflict without persisting hotkeys.
+        for (const [id, arrow] of [["editor:swap-line-up", "ArrowUp"], ["editor:swap-line-down", "ArrowDown"]]) {
+          check(app.commands.commands[id], "Missing core move-line command");
+          flowchartHotkeys.push({id, prior: structuredClone(app.hotkeyManager.getHotkeys(id))});
+          app.hotkeyManager.setHotkeys(id, [{modifiers: ["Alt"], key: arrow}]);
+        }
+        p.registerHotkeyOverrides();
+      }
       for (const type of ["keydown", "pointerdown", "contextmenu"])
         doc.addEventListener(type, listener, true);
       try {
@@ -126,6 +138,236 @@ export async function exerciseInteractionBehavior(c, env, rows, modifier) {
           );
         } else {
           if (checkColorShortcut) {
+            // Flowchart navigation must receive all four Alt/Option+Arrow keys.
+            const graph = view.packages.excalidrawLib.convertToExcalidrawElements(
+              [
+                {
+                  id: "nav-center",
+                  type: "rectangle",
+                  x: 300,
+                  y: 300,
+                  width: 100,
+                  height: 60,
+                },
+                {
+                  id: "nav-up",
+                  type: "rectangle",
+                  x: 300,
+                  y: 100,
+                  width: 100,
+                  height: 60,
+                },
+                {
+                  id: "nav-down",
+                  type: "rectangle",
+                  x: 300,
+                  y: 500,
+                  width: 100,
+                  height: 60,
+                },
+                {
+                  id: "nav-left",
+                  type: "rectangle",
+                  x: 100,
+                  y: 300,
+                  width: 100,
+                  height: 60,
+                },
+                {
+                  id: "nav-right",
+                  type: "rectangle",
+                  x: 500,
+                  y: 300,
+                  width: 100,
+                  height: 60,
+                },
+                ...[
+                  ["up", 0, -200],
+                  ["down", 0, 200],
+                  ["left", -200, 0],
+                  ["right", 200, 0],
+                ].map(([direction, x, y]) => ({
+                  type: "arrow",
+                  x: 350,
+                  y: 330,
+                  width: Math.abs(x),
+                  height: Math.abs(y),
+                  points: [
+                    [0, 0],
+                    [x, y],
+                  ],
+                  start: { id: "nav-center" },
+                  end: { id: "nav-" + direction },
+                })),
+              ].map((el) =>
+                el.type === "rectangle"
+                  ? { ...el, label: { text: el.id, fontFamily: 2 } }
+                  : el
+              ),
+              { regenerateIds: false }
+            );
+            check(
+              graph
+                .filter((el) => el.type === "arrow")
+                .every(
+                  (el) =>
+                    el.startBinding?.elementId === "nav-center" &&
+                    el.endBinding?.elementId
+                ),
+              "Flowchart fixture has incomplete bindings"
+            );
+            const positions = graph.map(({ id, x, y }) => ({ id, x, y }));
+            const originalGraphScene = api.getSceneElements();
+            const navigationMode = api.getEditorInterface().desktopUIMode;
+            try {
+              for (const mode of ["full", "tray", "compact"]) {
+                p.settings.desktopUIMode = mode;
+                view.setUIMode(mode);
+                await c.waitFor(
+                  () => api.getEditorInterface().desktopUIMode === mode,
+                  "flowchart UI mode"
+                );
+                for (const [direction, keyCode] of [
+                  ["up", 38],
+                  ["down", 40],
+                  ["left", 37],
+                  ["right", 39],
+                ]) {
+                  api.updateScene({
+                    elements: graph,
+                    appState: {
+                      selectedElementIds: {},
+                      selectedGroupIds: {},
+                      activeTool: {
+                        type: "selection",
+                        customType: null,
+                        locked: false,
+                        lastActiveTool: null,
+                      },
+                      viewModeEnabled: false,
+                      openPopup: null,
+                    },
+                    captureUpdate: "NEVER",
+                  });
+                  api.setViewport({ target: graph, animation: false });
+                  const canvas = view.containerEl.querySelector("canvas.interactive");
+                  let point, pointSignature, stableSince;
+                  await c.waitFor(() => {
+                    const st = api.getAppState();
+                    point = {
+                      x: (300 + st.scrollX) * st.zoom.value + st.offsetLeft,
+                      y: (310 + st.scrollY) * st.zoom.value + st.offsetTop,
+                    };
+                    // Viewport/selection layout commits can follow the public
+                    // scene update. Measure the settled node before CDP input.
+                    const signature = JSON.stringify([point.x, point.y, st.zoom.value]);
+                    if (signature !== pointSignature) {
+                      pointSignature = signature;
+                      stableSince = Date.now();
+                    }
+                    return doc.elementFromPoint(point.x, point.y) === canvas && Date.now() - stableSince >= 180;
+                  }, "settled uncovered flowchart node");
+                  c.caseTrace = {flowchart: {mode, direction, phase: "mouse selection", point, selected: api.getAppState().selectedElementIds, events}};
+                  await env.input(
+                    "Input.dispatchMouseEvent",
+                    ["mousePressed", "mouseReleased"].map((type) => ({
+                      type,
+                      ...point,
+                      button: "left",
+                      buttons: type === "mousePressed" ? 1 : 0,
+                      clickCount: 1,
+                    }))
+                  );
+                  await c.waitFor(
+                    () => api.getAppState().selectedElementIds["nav-center"],
+                    "mouse-selected flowchart center"
+                  );
+                  const arrow = "Arrow" + direction[0].toUpperCase() + direction.slice(1);
+                  await env.input("Input.dispatchKeyEvent", {
+                    type: "keyDown",
+                    key: "Alt",
+                    code: "AltLeft",
+                    windowsVirtualKeyCode: 18,
+                    modifiers: 1,
+                  });
+                  try {
+                    await key(arrow, arrow, keyCode, 1);
+                  } finally {
+                    await env.input("Input.dispatchKeyEvent", {
+                      type: "keyUp",
+                      key: "Alt",
+                      code: "AltLeft",
+                      windowsVirtualKeyCode: 18,
+                      modifiers: 0,
+                    });
+                  }
+                  c.caseTrace = {
+                    flowchart: {
+                      mode,
+                      direction,
+                      selected: api.getAppState().selectedElementIds,
+                      activeElement: doc.activeElement?.outerHTML?.slice(0, 600),
+                      events,
+                    },
+                  };
+                  await c.waitFor(
+                    () => api.getAppState().selectedElementIds["nav-" + direction],
+                    "Alt/Option+" + arrow + " selects the flowchart neighbor"
+                  );
+                  check(
+                    positions.every((el) => {
+                      const live = api
+                        .getSceneElements()
+                        .find((item) => item.id === el.id);
+                      return live?.x === el.x && live?.y === el.y;
+                    }),
+                    "Flowchart navigation moved scene elements"
+                  );
+                }
+              }
+            } finally {
+              api.updateScene({
+                elements: originalGraphScene,
+                appState: { selectedElementIds: {}, openPopup: null },
+                captureUpdate: "NEVER",
+              });
+              p.settings.desktopUIMode = navigationMode;
+              view.setUIMode(navigationMode);
+            }
+            // Re-registering the active view must replace its root handlers.
+            const scope = app.keymap.getRootScope(), handlerCount = scope.keys.length;
+            p.registerHotkeyOverrides();
+            p.registerHotkeyOverrides();
+            check(scope.keys.length === handlerCount, "Flowchart scope handlers accumulated");
+
+            // The same configured keys must retain core Markdown line movement.
+            view = await env.saveReopen(view);
+            api = view.excalidrawAPI;
+            const drawing = view.file, leaf = view.leaf;
+            const note = await env.create("flowchart-hotkey-scope.md", "one\ntwo\nthree");
+            await leaf.openFile(note);
+            await c.waitFor(() => leaf.view.getViewType() === "markdown" && leaf.view.editor, "Markdown hotkey target");
+            app.workspace.setActiveLeaf(leaf, {focus: true});
+            leaf.view.editor.setCursor({line: 1, ch: 0});
+            leaf.view.editor.focus();
+            await c.waitFor(() => leaf.view.containerEl.contains(doc.activeElement) && doc.activeElement?.closest(".cm-editor"), "Markdown editor focus");
+            await env.input("Input.dispatchKeyEvent", {type: "keyDown", key: "Alt", code: "AltLeft", windowsVirtualKeyCode: 18, modifiers: 1});
+            try {
+              await key("ArrowUp", "ArrowUp", 38, 1);
+              await c.waitFor(() => leaf.view.editor.getValue() === "two\none\nthree", "Alt+Up still moves Markdown lines");
+              await key("ArrowDown", "ArrowDown", 40, 1);
+              await c.waitFor(() => leaf.view.editor.getValue() === "one\ntwo\nthree", "Alt+Down still moves Markdown lines");
+            } finally {
+              await env.input("Input.dispatchKeyEvent", {type: "keyUp", key: "Alt", code: "AltLeft", windowsVirtualKeyCode: 18, modifiers: 0});
+            }
+            await leaf.view.save();
+            await leaf.openFile(drawing);
+            await env.ready(leaf);
+            view = leaf.view;
+            api = view.excalidrawAPI;
+            app.workspace.setActiveLeaf(leaf, {focus: true});
+            await c.waitFor(() => p.activeExcalidrawView === view, "restored active drawing scope");
+            check(scope.keys.length === handlerCount, "Drawing scope was not restored exactly once");
             // #3061: native keys must stay inside a color picker in its own document.
             const priorMode = api.getEditorInterface().desktopUIMode;
             const originalElements = api.getSceneElements();
@@ -349,7 +591,7 @@ export async function exerciseInteractionBehavior(c, env, rows, modifier) {
         }
         return {
           assertions: row.assertions.filter(assertion => checkColorShortcut ||
-            !assertion.startsWith("desktop color-picker shortcuts")),
+            !assertion.startsWith("desktop ")),
           actual: env.geometry(),
           input:
             "trusted CDP mouse/touch/keyboard; context menu uses mouse compatibility input in mobile emulation",
@@ -357,6 +599,10 @@ export async function exerciseInteractionBehavior(c, env, rows, modifier) {
           toolsPanelLayouts,
         };
       } finally {
+        for (const {id, prior} of flowchartHotkeys) {
+          if (prior === undefined) app.hotkeyManager.removeHotkeys(id);
+          else app.hotkeyManager.setHotkeys(id, prior);
+        }
         for (const type of ["keydown", "pointerdown", "contextmenu"])
           doc.removeEventListener(type, listener, true);
         if (doc.querySelector(".prompt input.prompt-input, .context-menu"))

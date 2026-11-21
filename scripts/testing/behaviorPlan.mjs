@@ -245,6 +245,8 @@ export const workflowCases = [
     id: "toolbar-context-shortcuts",
     features: ["P07"],
     assertions: [
+      "desktop Alt/Option+Arrow changes flowchart selection in full, tray and compact modes",
+      "desktop canvas navigation overrides conflicting core hotkeys while Markdown line movement and scope cleanup remain intact",
       "desktop color-picker shortcuts recolor selected text in its owning window",
       "floating tools panel header and body edges align",
       "tools panel collapses and expands through trusted input",

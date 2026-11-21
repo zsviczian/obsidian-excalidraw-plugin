@@ -1476,6 +1476,10 @@
         {
           "path": "src/shared/ExcalidrawAutomate.ts",
           "symbol": "export class ExcalidrawAutomate"
+        },
+        {
+          "path": "src/view/managers/flowchartNavigationShortcut.ts",
+          "symbol": "export function isCanvasFlowchartNavigationShortcut"
         }
       ],
       "tests": [
@@ -1607,6 +1611,24 @@
             "native:behavior:tablet:ea-selection-groups-bindings-frames",
             "native:behavior:tablet:command-palette-selection-cancel",
             "native:behavior:tablet:toolbar-context-shortcuts"
+          ]
+        },
+        {
+          "repository": "fork",
+          "layer": "browser",
+          "path": "tests/obsidian/browser/flowchartNavigation.mjs",
+          "cases": [
+            "fork-browser:production:flowchart-alt-navigation",
+            "fork-browser:development:flowchart-alt-navigation"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/flowchartNavigationShortcut.test.mjs",
+          "cases": [
+            "node:scripts/testing/flowchartNavigationShortcut.test.mjs::canvas flowchart arrows remain eligible in their owning main/popout documents",
+            "node:scripts/testing/flowchartNavigationShortcut.test.mjs::flowchart scope leaves text fields, property popups and other modifier shortcuts alone",
+            "node:scripts/testing/flowchartNavigationShortcut.test.mjs::flowchart scope requires one live selection and a ready editable canvas"
           ]
         }
       ],
@@ -3140,6 +3162,8 @@
             "P07"
           ],
           "assertions": [
+            "desktop Alt/Option+Arrow changes flowchart selection in full, tray and compact modes",
+            "desktop canvas navigation overrides conflicting core hotkeys while Markdown line movement and scope cleanup remain intact",
             "desktop color-picker shortcuts recolor selected text in its owning window",
             "floating tools panel header and body edges align",
             "tools panel collapses and expands through trusted input",
