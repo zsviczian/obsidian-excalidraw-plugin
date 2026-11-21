@@ -2752,6 +2752,7 @@ export default class ExcalidrawView
     this.textFileViewLoadedFile = shouldRetainLoadedFileAfterReload(
       fullreload,
       Boolean(loadOnModifyTrigger),
+      getExcalidraAndMarkdowViewsForFile(this.app, this.file).length > 1,
     )
       ? this.file
       : null;
