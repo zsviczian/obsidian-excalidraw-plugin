@@ -3,11 +3,14 @@ export async function exerciseInteractionBehavior(c, env, rows, modifier) {
   const { p, check, doc, key, click } = env;
   for (const row of rows)
     await c.case(row.testId, row.featureIds, async () => {
+      const checkColorShortcut = row.id === "toolbar-context-shortcuts" &&
+        ["main", "popout"].includes(row.context);
       Object.assign(p.settings, {
         defaultMode: "normal",
         disableContextMenu: false,
         penModeSingleFingerPanning: false,
       });
+      if (checkColorShortcut) p.settings.desktopUIMode = "full";
       let view = await env.openDrawing(row.id),
         api = view.excalidrawAPI;
       const events = [],
@@ -19,6 +22,7 @@ export async function exerciseInteractionBehavior(c, env, rows, modifier) {
             pointerType: e.pointerType,
             x:e.clientX,y:e.clientY,target:e.target?.outerHTML?.slice(0,250),
           });
+      const toolsPanelLayouts = [];
       for (const type of ["keydown", "pointerdown", "contextmenu"])
         doc.addEventListener(type, listener, true);
       try {
@@ -121,6 +125,66 @@ export async function exerciseInteractionBehavior(c, env, rows, modifier) {
             "Palette input was not trusted",
           );
         } else {
+          if (checkColorShortcut) {
+            // #3061: native keys must stay inside a color picker in its own document.
+            const priorMode = api.getEditorInterface().desktopUIMode;
+            const originalElements = api.getSceneElements();
+            view.setUIMode("full");
+            await c.waitFor(() => api.getEditorInterface().desktopUIMode === "full", "desktop color-picker mode");
+            const probe = view.packages.excalidrawLib.convertToExcalidrawElements([
+              { type: "text", text: "Color shortcut probe", x: 30, y: 30, fontFamily: 2, strokeColor: "#e03131" },
+            ])[0];
+            try {
+              api.updateScene({elements: [probe], appState: {selectedElementIds: {[probe.id]: true}, viewModeEnabled: false, openPopup: null}, captureUpdate: "NEVER"});
+              await c.waitFor(() => api.getAppState().selectedElementIds[probe.id], "selected color shortcut text");
+              view.excalidrawContainer.focus();
+              await key("s", "KeyS", 83);
+              await c.waitFor(() => api.getAppState().openPopup === "elementStroke" && doc.querySelector(".color-picker-content"), "S opens stroke palette");
+              const picker = doc.querySelector(".color-picker-content");
+              const choice = picker.querySelector('.color-picker-content--default button[aria-label$="— s"]');
+              check(choice, "S palette entry missing");
+              const expected = choice.title.match(/#[0-9a-f]{6}/i)?.[0];
+              check(expected && expected !== probe.strokeColor, "Color shortcut fixture is ambiguous");
+              c.caseTrace = {colorShortcut: {context: row.context, expected, activeElement: doc.activeElement?.outerHTML?.slice(0, 800), pickerDocument: picker.ownerDocument === doc}};
+              await key("s", "KeyS", 83);
+              await c.waitFor(() => api.getSceneElements().find(el => el.id === probe.id)?.strokeColor === expected, "second S applies palette color to selected text");
+              check(api.getAppState().activeTool.type === "selection", "Palette shortcut reached tool selection");
+              await key("Escape", "Escape", 27);
+              await c.waitFor(() => !doc.querySelector(".color-picker-content"), "palette Escape closes in owning window");
+            } finally {
+              api.updateScene({elements: originalElements, appState: {selectedElementIds: {}, openPopup: null}, captureUpdate: "NEVER"});
+              view.setUIMode(priorMode);
+            }
+          }
+          const panel = view.toolsPanelRef.current;
+          const wasVisible = panel.state.visible;
+          if (!wasVisible) panel.toggleVisibility(true);
+          try {
+            const wrapper = panel.containerRef.current;
+            const handle = wrapper.querySelector(".excalidraw-toolsPanel-dragHandle");
+            const body = wrapper.querySelector(".Island.App-menu__left.scrollbar");
+            await c.waitFor(() => body.getBoundingClientRect().height > 0, "expanded Obsidian tools panel");
+            const aligned = () => {
+              const headerRect = handle.getBoundingClientRect();
+              const bodyRect = body.getBoundingClientRect();
+              const layout = {
+                handle: {left: headerRect.left, right: headerRect.right},
+                body: {left: bodyRect.left, right: bodyRect.right},
+              };
+              check(Math.abs(headerRect.left - bodyRect.left) < 0.5 &&
+                Math.abs(headerRect.right - bodyRect.right) < 0.5,
+                "Tools panel edges differ: " + JSON.stringify(layout));
+              toolsPanelLayouts.push(layout);
+            };
+            aligned();
+            await click(handle);
+            await c.waitFor(() => body.getBoundingClientRect().height === 0, "tools panel collapse");
+            await click(handle);
+            await c.waitFor(() => body.getBoundingClientRect().height > 0, "tools panel expand");
+            aligned();
+          } finally {
+            if (!wasVisible && panel.state.visible) panel.toggleVisibility(true);
+          }
           api.updateScene({
             appState: { penMode: false, viewModeEnabled: false },
             captureUpdate: "NEVER",
@@ -284,11 +348,13 @@ export async function exerciseInteractionBehavior(c, env, rows, modifier) {
           view = await env.saveReopen(view);
         }
         return {
-          assertions: row.assertions,
+          assertions: row.assertions.filter(assertion => checkColorShortcut ||
+            !assertion.startsWith("desktop color-picker shortcuts")),
           actual: env.geometry(),
           input:
             "trusted CDP mouse/touch/keyboard; context menu uses mouse compatibility input in mobile emulation",
           events,
+          toolsPanelLayouts,
         };
       } finally {
         for (const type of ["keydown", "pointerdown", "contextmenu"])

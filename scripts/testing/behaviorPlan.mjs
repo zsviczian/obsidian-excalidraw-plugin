@@ -245,6 +245,9 @@ export const workflowCases = [
     id: "toolbar-context-shortcuts",
     features: ["P07"],
     assertions: [
+      "desktop color-picker shortcuts recolor selected text in its owning window",
+      "floating tools panel header and body edges align",
+      "tools panel collapses and expands through trusted input",
       "trusted toolbar and context menu",
       "keyboard shortcut and cancellation",
       "scene state and on-disk save",
