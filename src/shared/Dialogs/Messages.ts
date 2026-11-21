@@ -24,7 +24,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 - Create a **New Drawing** from empty tabs. Hide this action and the ribbon icon independently in settings. [#3047](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3047).
 - PNG fullscreen previews open faster, then sharpen in the background while preserving zoom and pan.
 - Press P again while using the pen to return to the selection tool. [#3044](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3044).
-- Configure drawing images directly in the scene: choose a view, padding and original-size anchoring, then update one image or all copies of the same drawing.
+- Configure nested excalidraw images directly in the scene: choose a view, padding and original-size anchoring, then update one image or all copies of the same drawing.
 - Choose a named frame or marker frame as the drawing thumbnail, pick frames from embed controls, and use **Navigate to frame** to jump within a drawing. Named frames are listed in the document's \`excalidraw-anchors\` property. [#3042](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3042).
 - Adjust outer padding for thumbnails, whole scenes and frames, or expand the captured area of \`area=\` drawing embeds from their Live Preview toolbar. Preview changes with the slider, then close it to save; Escape cancels. Inspired by 🙏[Evgene-Kopylov](${URLs.GITHUB_COM}/Evgene-Kopylov) [#2868](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2868).
 
