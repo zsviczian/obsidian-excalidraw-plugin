@@ -28,6 +28,17 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 - Choose a named frame or marker frame as the drawing thumbnail, pick frames from embed controls, and use **Navigate to frame** to jump within a drawing. Named frames are listed in the document's \`excalidraw-anchors\` property. [#3042](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3042).
 - Adjust outer padding for thumbnails, whole scenes and frames, or expand the captured area of \`area=\` drawing embeds from their Live Preview toolbar. Preview changes with the slider, then close it to save; Escape cancels. Inspired by 🙏[Evgene-Kopylov](${URLs.GITHUB_COM}/Evgene-Kopylov) [#2868](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2868).
 
+## New and improved from Excalidraw.com
+- **Keep editing across apps.** Switching to another app and back no longer ends text editing. [#12675](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/12675).
+- **Flowchart navigation.** Alt/Option+arrow keys choose nearby nodes more predictably, including in uneven layouts. [#12646](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/12646).
+- **Drawing minimap and zoom menu.** Navigate large drawings with the minimap beside the zoom level on desktop/tablet, or select the zoom level for zoom-to-fit and zoom-to-selection. [#12605](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/12605).
+- **Text wrapping.** Drag the sides of standalone text while editing to set its wrap width, or toggle auto-resize with Alt/Option+W. [#12634](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/12634), [#12672](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/12672).
+- **Zoom while editing.** Keyboard zoom keeps the text cursor in place on screen. [#12622](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/12622).
+- **Steadier text.** Center- and right-aligned text no longer jumps while typing at different zoom levels. [#12623](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/12623).
+- **Wrap and unwrap.** W includes enclosed elements when framing a selection and keeps existing shapes when detaching their text. [#12638](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/12638).
+- **Smoother large drawings.** Pan large scenes and draw frames around large groups with less lag. [#12489](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/12489), [#12692](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/12692).
+- **Toolbar hints.** Your **Preferences → Toolbar hints** choice is now saved with each drawing. [#12165](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/12165).
+
 ## Fixed
 - Scroll embedded Markdown directly in reading mode, including when **Lock to reading mode** is enabled. [#3055](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3055).
 - Drawing embed controls appear in Live Preview tables and remain reachable in phone Reading view. [#3049](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3049).

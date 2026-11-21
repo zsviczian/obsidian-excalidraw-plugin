@@ -5,7 +5,7 @@ Generate HTML, Mermaid, mind maps, editable SVG strokes and images from a canvas
 
 Uses **Excalidraw AI** provider profiles and model preferences, including OpenAI reasoning effort. Configure keys in the plugin (obfuscated vault settings or device-local Obsidian SecretStorage); this script never stores API keys. Your chosen task sends its prompt and, when enabled, selected canvas image to that provider.
 
-Requires Excalidraw 2.29.2 or newer. Open a drawing and run **ExcaliAI**. Preserve that script filename when replacing an older copy so its task library and preferences remain under the same Script Engine settings key.
+Requires Excalidraw 2.29.3 or newer. Open a drawing and run **ExcaliAI**. Preserve that script filename when replacing an older copy so its task library and preferences remain under the same Script Engine settings key.
 
 The migration preserves legacy settings and task IDs. Existing JavaScript modal/export orchestration remains in run.js, with import-safe task helpers and typed request helpers. New script UI strings and default prompts are in lang/en.ts; maintained locale files use English fallback for untranslated advanced content.
 
@@ -17,7 +17,7 @@ Tutorial: https://www.youtube.com/watch?v=A1vrSGBbWgo
 
 Maintained source: https://github.com/zsviczian/ea-scripts/tree/main/src/scripts/excali-ai
 
-Build version: 2026-11-17T17:24:59.281Z
+Build version: 2026-11-21T13:00:37.416Z
 
 ```javascript
 */
@@ -527,7 +527,7 @@ Build version: 2026-11-17T17:24:59.281Z
     scriptFailed: "ExcaliAI could not start. Check that your drawing is open and the selected images are available.",
     requestFailed: "ExcaliAI could not complete this task. Check your model settings and try again.",
     errorTitle: "Error",
-    thisScriptRequiresExcalidrawOrLaterPlease: "This script requires Excalidraw 2.23.0 or later. Please update the plugin.",
+    thisScriptRequiresExcalidrawOrLaterPlease: "This script requires Excalidraw 2.29.3 or later. Please update the plugin.",
     textResponse: "Text response",
     usesTheTextOrMultimodalModelAnd: "Uses the text or multimodal model and returns structured output such as HTML, Mermaid, a mind map, or Excalidraw strokes.",
     writePromptThenGenerateImage: "Write prompt, then generate image",
@@ -720,13 +720,13 @@ Build version: 2026-11-17T17:24:59.281Z
     advancedPromptWarning: "Advanced: change this only if you know why.",
     reasoningHelp: "Reasoning effort: {effort} (from Excalidraw AI settings).",
     reasoningDefault: "API default",
-    requiresVersion: "This script requires Excalidraw 2.29.2 or later. Please update the plugin."
+    requiresVersion: "This script requires Excalidraw 2.29.3 or later. Please update the plugin."
   };
 
   // src/scripts/excali-ai/lang/de.ts
   var de = {
     noView: "\xD6ffne zuerst eine Excalidraw-Zeichnung.",
-    requiresVersion: "Dieses Skript erfordert Excalidraw 2.29.2 oder neuer. Bitte aktualisiere das Plugin.",
+    requiresVersion: "Dieses Skript erfordert Excalidraw 2.29.3 oder neuer. Bitte aktualisiere das Plugin.",
     prompt: "Prompt",
     advancedSettings: "{value1} <span>Erweiterte Einstellungen</span>",
     systemPrompt: "System-Prompt",
@@ -740,7 +740,7 @@ Build version: 2026-11-17T17:24:59.281Z
   // src/scripts/excali-ai/lang/es.ts
   var es = {
     noView: "Abre primero un dibujo de Excalidraw.",
-    requiresVersion: "Este script requiere Excalidraw 2.29.2 o posterior. Actualiza el complemento.",
+    requiresVersion: "Este script requiere Excalidraw 2.29.3 o posterior. Actualiza el complemento.",
     prompt: "Instrucciones",
     advancedSettings: "{value1} <span>Ajustes avanzados</span>",
     systemPrompt: "Instrucciones del sistema",
@@ -754,7 +754,7 @@ Build version: 2026-11-17T17:24:59.281Z
   // src/scripts/excali-ai/lang/fr.ts
   var fr = {
     noView: "Ouvrez d\u2019abord un dessin Excalidraw.",
-    requiresVersion: "Ce script n\xE9cessite Excalidraw 2.29.2 ou une version ult\xE9rieure. Mettez le plugin \xE0 jour.",
+    requiresVersion: "Ce script n\xE9cessite Excalidraw 2.29.3 ou une version ult\xE9rieure. Mettez le plugin \xE0 jour.",
     prompt: "Instruction",
     advancedSettings: "{value1} <span>Param\xE8tres avanc\xE9s</span>",
     systemPrompt: "Instruction syst\xE8me",
@@ -768,7 +768,7 @@ Build version: 2026-11-17T17:24:59.281Z
   // src/scripts/excali-ai/lang/ru.ts
   var ru = {
     noView: "\u0421\u043D\u0430\u0447\u0430\u043B\u0430 \u043E\u0442\u043A\u0440\u043E\u0439\u0442\u0435 \u0440\u0438\u0441\u0443\u043D\u043E\u043A Excalidraw.",
-    requiresVersion: "\u0414\u043B\u044F \u044D\u0442\u043E\u0433\u043E \u0441\u043A\u0440\u0438\u043F\u0442\u0430 \u0442\u0440\u0435\u0431\u0443\u0435\u0442\u0441\u044F Excalidraw 2.29.2 \u0438\u043B\u0438 \u043D\u043E\u0432\u0435\u0435. \u041E\u0431\u043D\u043E\u0432\u0438\u0442\u0435 \u043F\u043B\u0430\u0433\u0438\u043D.",
+    requiresVersion: "\u0414\u043B\u044F \u044D\u0442\u043E\u0433\u043E \u0441\u043A\u0440\u0438\u043F\u0442\u0430 \u0442\u0440\u0435\u0431\u0443\u0435\u0442\u0441\u044F Excalidraw 2.29.3 \u0438\u043B\u0438 \u043D\u043E\u0432\u0435\u0435. \u041E\u0431\u043D\u043E\u0432\u0438\u0442\u0435 \u043F\u043B\u0430\u0433\u0438\u043D.",
     prompt: "\u0417\u0430\u043F\u0440\u043E\u0441",
     advancedSettings: "{value1} <span>\u0414\u043E\u043F\u043E\u043B\u043D\u0438\u0442\u0435\u043B\u044C\u043D\u044B\u0435 \u043D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438</span>",
     systemPrompt: "\u0421\u0438\u0441\u0442\u0435\u043C\u043D\u044B\u0439 \u0437\u0430\u043F\u0440\u043E\u0441",
@@ -782,7 +782,7 @@ Build version: 2026-11-17T17:24:59.281Z
   // src/scripts/excali-ai/lang/zh-cn.ts
   var zhCn = {
     noView: "\u8BF7\u5148\u6253\u5F00 Excalidraw \u7ED8\u56FE\u3002",
-    requiresVersion: "\u6B64\u811A\u672C\u9700\u8981 Excalidraw 2.29.2 \u6216\u66F4\u65B0\u7248\u672C\u3002\u8BF7\u66F4\u65B0\u63D2\u4EF6\u3002",
+    requiresVersion: "\u6B64\u811A\u672C\u9700\u8981 Excalidraw 2.29.3 \u6216\u66F4\u65B0\u7248\u672C\u3002\u8BF7\u66F4\u65B0\u63D2\u4EF6\u3002",
     prompt: "\u63D0\u793A\u8BCD",
     advancedSettings: "{value1} <span>\u9AD8\u7EA7\u8BBE\u7F6E</span>",
     systemPrompt: "\u7CFB\u7EDF\u63D0\u793A\u8BCD",
@@ -888,7 +888,7 @@ Build version: 2026-11-17T17:24:59.281Z
       loadExcaliAISettings
     } = createTaskHelpers(t);
     let dirty = false;
-    if (!ea2.verifyMinimumPluginVersion || !ea2.verifyMinimumPluginVersion("2.29.2")) {
+    if (!ea2.verifyMinimumPluginVersion || !ea2.verifyMinimumPluginVersion("2.29.3")) {
       new Notice(t("requiresVersion"));
       return;
     }
