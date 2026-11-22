@@ -1,9 +1,9 @@
 /** Recover only the exact native write receipt after lost stdout; never replay the write. */
 export function createNativeCLIActions(cli) {
   const recoveries = [];
-  const action = (command, request = {}) => {
+  const action = (command, request = {}, inputPath) => {
     try {
-      return JSON.parse(cli(`obsidian-excalidraw-plugin:${command}`, `json=${JSON.stringify({ apiVersion: 1, ...request })}`));
+      return JSON.parse(cli(`obsidian-excalidraw-plugin:${command}`, inputPath ? `input=${inputPath}` : `json=${JSON.stringify({ apiVersion: 1, ...request })}`));
     } catch (error) {
       if (!request.requestId || !/\bETIMEDOUT\b/.test(error.message)) throw error;
       let receipt;

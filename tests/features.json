@@ -612,7 +612,7 @@
         }
       ],
       "fixtures": [
-        "Links/Árvíztűrő 测试.md"
+        "Links/\u00c1rv\u00edzt\u0171r\u0151 \u6d4b\u8bd5.md"
       ],
       "platforms": [
         "Windows desktop",
@@ -878,7 +878,16 @@
             "node:scripts/testing/markdownEmbeds.test.mjs::PDF postprocessing claims drawing images before native embed discovery",
             "node:scripts/testing/markdownEmbeds.test.mjs::synchronous embed ownership preserves native text and hybrid Markdown",
             "node:scripts/testing/markdownEmbeds.test.mjs::plugin unload releases Reading controls and context cleanup removes owners from its registry",
-            "node:scripts/testing/markdownEmbeds.test.mjs::Reading export finishing after plugin unload is discarded without mounting controls"
+            "node:scripts/testing/markdownEmbeds.test.mjs::Reading export finishing after plugin unload is discarded without mounting controls",
+            "node:scripts/testing/markdownEmbeds.test.mjs::#3040 Live Preview uses the rendered drawing identity for a host-relative embed",
+            "node:scripts/testing/markdownEmbeds.test.mjs::#3039 a claimed Reading section renders while detached and survives later attachment",
+            "node:scripts/testing/markdownEmbeds.test.mjs::Reading callbacks deduplicate deferred renders and retire controls when the image is replaced",
+            "node:scripts/testing/markdownEmbeds.test.mjs::Reading context retirement cancels queued and in-flight detached images",
+            "node:scripts/testing/markdownEmbeds.test.mjs::PNG inline images are created in their owning document",
+            "node:scripts/testing/markdownEmbeds.test.mjs::PNG preview images are created in their owning document",
+            "node:scripts/testing/markdownEmbeds.test.mjs::PNG fullscreen routing opens the displayed raster without starting the high-resolution exporter",
+            "node:scripts/testing/markdownEmbeds.test.mjs::PNG detail upgrade forces a fresh raster and abort immediately terminates its loader",
+            "node:scripts/testing/markdownEmbeds.test.mjs::adopted PNG images retain fast fullscreen detail and disposal when their owning-window instanceof check fails"
           ]
         },
         {
@@ -1783,7 +1792,9 @@
           "cases": [
             "node:scripts/testing/svgImport.test.mjs::unsupported SVG colors use the SVG current color without aborting other geometry",
             "node:scripts/testing/svgImport.test.mjs::unsupported current colors fall back to black while explicit none and zero alpha stay transparent",
-            "node:scripts/testing/svgImport.test.mjs::unsupported paint servers honor an explicit SVG fallback without fetching resources"
+            "node:scripts/testing/svgImport.test.mjs::unsupported paint servers honor an explicit SVG fallback without fetching resources",
+            "node:scripts/testing/svgImport.test.mjs::attached Mermaid mindmap retains local variable colors, alpha and labels",
+            "node:scripts/testing/svgImport.test.mjs::cyclic and missing SVG variables use their call-site fallback or inherited presentation"
           ]
         },
         {
@@ -2076,19 +2087,13 @@
           "cases": [
             "node:scripts/testing/cli.test.mjs::registration validates minimum API, optional method and desktop without bumping the baseline",
             "node:scripts/testing/cli.test.mjs::icon discovery is read-only, bounded and snapshot-paginated",
+            "node:scripts/testing/cli.test.mjs::polygon skeletons and updates support dense bounded line contours without accepting foreign fields",
+            "node:scripts/testing/cli.test.mjs::selection packets capture exact targets and bound labels independently of later selection",
+            "node:scripts/testing/cli.test.mjs::drawing image insertion keeps links and anchor options while refusing ordinary Markdown and source races",
             "node:scripts/testing/cli.test.mjs::status reports optional services without activating Extras or starting Builder",
             "node:scripts/testing/cli.test.mjs::CLI Mermaid dependency refusal preserves prior script uncertainty and clears invocation context",
             "node:scripts/testing/cli.test.mjs::CLI script JSON return failures remain recoverable without repeating already executed work",
             "node:scripts/testing/cli.test.mjs::addMermaid rejects unavailable CLI dependencies before the interactive converter while manual calls retain it"
-          ]
-        },
-        {
-          "layer": "source",
-          "path": "scripts/testing/host/nativeCLITransport.test.mjs",
-          "cases": [
-            "node:scripts/testing/host/nativeCLITransport.test.mjs::native stdout timeout recovers only the exact settled receipt without replaying a write",
-            "node:scripts/testing/host/nativeCLITransport.test.mjs::pending, unknown and mismatched native receipts retain the original transport failure",
-            "node:scripts/testing/host/nativeCLITransport.test.mjs::native operation failures and unrelated transport errors are never converted into success"
           ]
         },
         {
@@ -2169,6 +2174,29 @@
             "all provider text pipelines normalize responses without OpenAI reasoning fields leaking",
             "current image providers generate and edit through their actual payload and response adapters"
           ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/strokeConversion.test.mjs",
+          "cases": [
+            "node:scripts/testing/strokeConversion.test.mjs::line to free-draw retains world placement, identity and metadata for rotated strokes",
+            "node:scripts/testing/strokeConversion.test.mjs::rounded line conversion samples the actual spline within tolerance instead of retagging control points",
+            "node:scripts/testing/strokeConversion.test.mjs::free-draw to line simplifies centerlines and explicitly removes custom pen and pressure semantics",
+            "node:scripts/testing/strokeConversion.test.mjs::custom free-draw tips/pressure configuration is copied without modifying caller settings",
+            "node:scripts/testing/strokeConversion.test.mjs::conversion preserves closed fills and rejects unsupported relationships or budgets atomically",
+            "node:scripts/testing/strokeConversion.test.mjs::concatenation chooses endpoint order, retains sharp corners and publishes no intermediate changes",
+            "node:scripts/testing/strokeConversion.test.mjs::concatenation refuses disconnected, conflicting and closed inputs without deleting any source",
+            "node:scripts/testing/strokeConversion.test.mjs::concatenation samples spline sections and normalizes rotation before endpoint matching"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/host/nativeCLITransport.test.mjs",
+          "cases": [
+            "node:scripts/testing/host/nativeCLITransport.test.mjs::native stdout timeout recovers only the exact settled receipt without replaying a write",
+            "node:scripts/testing/host/nativeCLITransport.test.mjs::pending, unknown and mismatched native receipts retain the original transport failure",
+            "node:scripts/testing/host/nativeCLITransport.test.mjs::native operation failures and unrelated transport errors are never converted into success"
+          ]
         }
       ],
       "fixtures": [],
@@ -2214,7 +2242,8 @@
           "layer": "native",
           "path": "scripts/testing/host/extrasServices.mjs",
           "cases": [
-            "native:extras-mathjax-gateway"
+            "native:extras-mathjax-gateway",
+            "native:extras-mermaid-gateway"
           ]
         },
         {

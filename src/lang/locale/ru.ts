@@ -88,6 +88,8 @@ export default {
   CLI_COPY_SKILL: "Копировать инструкции для агентов",
   CLI_AGENT_INSTRUCTIONS: `Прочитай: ${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_CLI}\n\n<<инструкции пользователя>>`,
   CLI_DESCRIPTION: "Нативный CLI Excalidraw",
+  CLI_COPY_SELECTION: "Копировать выбранные элементы для агента",
+  CLI_COPY_SELECTION_ERROR: "Не удалось скопировать выбранные элементы. Выберите меньше элементов и повторите попытку.",
 
   // main.ts
   SETTINGS_DATA_INVALID:

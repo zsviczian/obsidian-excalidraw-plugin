@@ -529,6 +529,24 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field: "convertLineToFreedraw",
+    after: "",
+    code: "convertLineToFreedraw(id: string, options?: StrokeConversionOptions): StrokeConversionResult;",
+    desc: "Converts a line already copied into the EA workbench to free-draw, retaining its ID, frame, groups and unrelated metadata. Rounded curves are sampled within tolerance (default 0.5 scene units); maxPoints defaults to 10000. Options also accept strokeWidth and the fork's full penOptions. Returns id, type, pointCount and warnings. Custom options are ignored by excalidraw.com. Labels/arrowheads and exceeded budgets are refused without mutation. Publish and save explicitly.",
+  },
+  {
+    field: "convertFreedrawToLine",
+    after: "",
+    code: "convertFreedrawToLine(id: string, options?: StrokeConversionOptions): StrokeConversionResult;",
+    desc: "Fits a copied workbench free-draw centerline to an editable polyline, retaining its ID. tolerance bounds simplification error (default 0.5 scene units); maxPoints defaults to 10000. Pressure, taper and custom cap/outline behavior are removed. Nominal width is approximated unless strokeWidth is supplied. Returns JSON-safe id, type, pointCount and warnings. Does not publish/save; invalid input leaves the workbench unchanged.",
+  },
+  {
+    field: "concatenateLines",
+    after: "",
+    code: "concatenateLines(ids: string[], options?: ConcatenateLinesOptions): ConcatenateLinesResult;",
+    desc: "Joins 2–100 compatible open workbench lines by nearby endpoints, allowing reversed/rotated paths and sharp corners. maxGap defaults to 1 scene unit, tolerance to 0.5, maxPoints to 10000. Rounded segments are sampled before joining. The first ID survives and removedIds are staged as deleted. Styles, frame, groups and metadata must match; labels, arrowheads and disconnected/branching sets are refused without partial mutation. Returns id, removedIds, pointCount and warnings. Publish/save explicitly.",
+  },
+  {
     field: "clear",
     code: "clear(): void;",
     desc: "Clears elementsDict and imagesDict only",

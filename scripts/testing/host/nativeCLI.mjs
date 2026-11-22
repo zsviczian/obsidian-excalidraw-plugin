@@ -1,6 +1,7 @@
 /** Native authoring round-trip on fixtures owned by the guarded parent runner. */
 import assert from 'node:assert/strict';
 import { runCLIImagePreviewScenario } from './cliImagePreview.mjs';
+import { runCLIAuthoringExtensions } from './cliAuthoringExtensions.mjs';
 import { createNativeCLIActions } from './nativeCLITransport.mjs';
 
 export async function runNativeCLIScenario({ cli, drawingPath, reportDir }) {
@@ -17,7 +18,7 @@ export async function runNativeCLIScenario({ cli, drawingPath, reportDir }) {
   const control = '__excalidrawNativeCLIRegression';
   const extrasControl = '__excalidrawCLIMermaidDependency';
   let cleanup = false;
-  const artifacts = []; let imagePreviews;
+  const artifacts = []; let imagePreviews, authoringExtensions;
   try {
     for (const command of ['help', 'status', 'skill', 'list']) ok(action(command));
     const status = ok(action('status')).data;
@@ -93,6 +94,7 @@ export async function runNativeCLIScenario({ cli, drawingPath, reportDir }) {
     live = read();
     const image = ok(action('apply', { requestId: `${idPrefix}-image`, path: paths.drawing, expectedRevision: live.revision, operations: [{ op: 'image', id: 'preview', asset: paths.png, x: 0, y: 200 }] })); assert.ok(image.data.idMap.preview);
     assert.equal(ok(action('read', { path: paths.drawing, source: 'disk' })).data.types.image, 1);
+    authoringExtensions = await runCLIAuthoringExtensions({ cli, drawingPath, reportDir });
     imagePreviews = await runCLIImagePreviewScenario({ cli, drawingPath, reportDir });
     write(paths.script, 'return {input:utils.input,source:utils.executionSource,converter:typeof utils.excalidrawLib.convertToExcalidrawElements};');
     const scriptRequest = { requestId: `${idPrefix}-script`, script: paths.script, trusted: true, args: { x: 0, text: '${literal}' } };
@@ -129,5 +131,5 @@ export async function runNativeCLIScenario({ cli, drawingPath, reportDir }) {
     cleanup = result.clean;
   }
   assert.equal(cleanup, true);
-  return { id: 'native-cli-authoring', status: 'passed', assertions: ['native discovery/file input', 'stable labels, bindings and frames', 'template prose', 'collision and invalid-batch refusal', 'guarded text save/read-back', 'idempotent receipts', 'competing write BUSY', 'stale async text leaves metadata intact', 'failed save preserves recoverable edit', 'add/connect/group/ungroup/delete and frame child guard', 'live/disk SVG/PNG', 'vault image metadata round-trip', 'trusted script context/source identity/prompt refusal', 'save/reopen', 'owned fixture cleanup'], artifacts, imagePreviews, transportRecoveries: recoveries };
+  return { id: 'native-cli-authoring', status: 'passed', assertions: ['native discovery/file input', 'stable labels, bindings and frames', 'template prose', 'collision and invalid-batch refusal', 'guarded text save/read-back', 'idempotent receipts', 'competing write BUSY', 'stale async text leaves metadata intact', 'failed save preserves recoverable edit', 'add/connect/group/ungroup/delete and frame child guard', 'live/disk SVG/PNG', 'vault image metadata round-trip', 'trusted script context/source identity/prompt refusal', 'save/reopen', 'owned fixture cleanup'], artifacts, imagePreviews, authoringExtensions, transportRecoveries: recoveries };
 }

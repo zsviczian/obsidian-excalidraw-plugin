@@ -85,6 +85,8 @@ export default {
   CLI_COPY_SKILL: "复制智能体说明",
   CLI_AGENT_INSTRUCTIONS: `阅读：${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_CLI}\n\n<<用户指令>>`,
   CLI_DESCRIPTION: "Excalidraw 原生 CLI",
+  CLI_COPY_SELECTION: "复制所选元素供智能体使用",
+  CLI_COPY_SELECTION_ERROR: "无法复制所选元素。请减少所选元素后重试。",
 
   INITIALIZATION_MESSAGE: "等待所有插件就绪…",
   // Sugester

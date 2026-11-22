@@ -5,7 +5,8 @@ import { nanoid } from "src/constants/constants";
 import { CLIError, boolean, number, object, string } from "./cliProtocol";
 
 export const CLI_SHAPES = ["rectangle", "ellipse", "diamond", "text", "arrow", "line", "frame", "stickynote"];
-export const CLI_STYLE_FIELDS = ["x", "y", "width", "height", "angle", "strokeColor", "backgroundColor", "fillStyle", "strokeWidth", "strokeStyle", "roughness", "opacity", "locked", "link", "text", "fontSize", "fontFamily", "textAlign", "verticalAlign"];
+export const CLI_MAX_LINEAR_POINTS = 1000;
+export const CLI_STYLE_FIELDS = ["x", "y", "width", "height", "angle", "strokeColor", "backgroundColor", "fillStyle", "strokeWidth", "strokeStyle", "roughness", "opacity", "locked", "link", "text", "fontSize", "fontFamily", "textAlign", "verticalAlign", "polygon"];
 const skeletonFields = new Set([...CLI_STYLE_FIELDS, "id", "type", "roundness", "label", "points", "start", "end", "startArrowhead", "endArrowhead", "children", "name"]);
 const arrowheads = ["arrow", "bar", "circle", "circle_outline", "triangle", "triangle_outline", "diamond", "diamond_outline"];
 
@@ -15,7 +16,7 @@ export function fields(value: Record<string, unknown>, allowed: readonly string[
 }
 
 /** Validates the finite assignable style/geometry surface shared by batches and updates. */
-export function validateStyle(value: Record<string, unknown>): void {
+export function validateStyle(value: Record<string, unknown>, type?: string): void {
   for (const key of ["x", "y", "angle"]) if (value[key] !== undefined) number(value[key], key, 0, -1_000_000, 1_000_000);
   for (const key of ["width", "height"]) if (value[key] !== undefined) number(value[key], key, 0, 0, 100_000);
   for (const [key, min, max] of [["opacity", 0, 100], ["strokeWidth", 0, 100], ["roughness", 0, 3], ["fontSize", 1, 1000], ["fontFamily", 1, 10]] as const) {
@@ -29,6 +30,20 @@ export function validateStyle(value: Record<string, unknown>): void {
   if (value.text !== undefined && (typeof value.text !== "string" || value.text.length > 10000)) throw new CLIError("INVALID_INPUT", "Text must be a string of at most 10000 characters.", "text");
   if (value.link !== undefined && value.link !== null) string(value.link, "link");
   if (value.locked !== undefined) boolean(value.locked, "locked");
+  if (value.polygon !== undefined) {
+    boolean(value.polygon, "polygon");
+    if (type !== undefined && type !== "line") throw new CLIError("INVALID_INPUT", "Polygon applies only to line elements.", "polygon");
+  }
+}
+
+/** Matches the fork's isValidPolygon contract; restoration resets an open path's flag. */
+export function validatePolygonPoints(points: unknown): void {
+  const first: unknown = Array.isArray(points) ? points[0] : null;
+  const last: unknown = Array.isArray(points) ? points.at(-1) : null;
+  if (!Array.isArray(points) || points.length < 4 || !Array.isArray(first) || !Array.isArray(last) ||
+    first[0] !== last[0] || first[1] !== last[1]) {
+    throw new CLIError("INVALID_INPUT", "Polygon requires at least four points with the last point equal to the first. Close the contour explicitly.", "polygon");
+  }
 }
 
 /** Complete validation precedes conversion; relationship references are batch-local. */
@@ -36,7 +51,7 @@ export function validateBatch(input: unknown): Record<string, unknown>[] {
   if (!Array.isArray(input) || input.length > 500) throw new CLIError("INVALID_INPUT", "Expected at most 500 skeletons.", "elements");
   const batch = input.map((entry, index) => {
     const element = object(entry, `elements[${index}]`);
-    fields(element, [...skeletonFields]); validateStyle(element);
+    fields(element, [...skeletonFields]); validateStyle(element, string(element.type, "type"));
     if (!CLI_SHAPES.includes(string(element.type, "type"))) throw new CLIError("INVALID_INPUT", "Unsupported skeleton type.", "type");
     if (element.type !== "frame") { number(element.x, "x", 0, -1_000_000, 1_000_000); number(element.y, "y", 0, -1_000_000, 1_000_000); }
     if (element.type === "text" && typeof element.text !== "string") throw new CLIError("INVALID_INPUT", "Text skeleton requires text.", "text");
@@ -58,12 +73,13 @@ export function validateBatch(input: unknown): Record<string, unknown>[] {
       if (roundness.value !== undefined) number(roundness.value, "roundness.value", 0, 0, 1000);
     }
     if (element.points !== undefined) {
-      if (!["line", "arrow"].includes(string(element.type, "type")) || !Array.isArray(element.points) || element.points.length < 2 || element.points.length > 100) throw new CLIError("INVALID_INPUT", "Expected 2–100 linear points.", "points");
+      if (!["line", "arrow"].includes(string(element.type, "type")) || !Array.isArray(element.points) || element.points.length < 2 || element.points.length > CLI_MAX_LINEAR_POINTS) throw new CLIError("INVALID_INPUT", `Expected 2–${CLI_MAX_LINEAR_POINTS} linear points.`, "points");
       for (const point of element.points) {
         if (!Array.isArray(point) || point.length !== 2) throw new CLIError("INVALID_INPUT", "Expected [x,y] point.", "points");
         point.forEach(coordinate => number(coordinate, "points", 0, -100000, 100000));
       }
     }
+    if (element.polygon === true) validatePolygonPoints(element.points);
     for (const key of ["startArrowhead", "endArrowhead"]) if (element[key] !== undefined) {
       if (!["arrow", "line"].includes(string(element.type, "type"))) throw new CLIError("INVALID_INPUT", "Arrowheads require a linear element.", key);
       if (element[key] !== null && !arrowheads.includes(string(element[key], key))) throw new CLIError("INVALID_INPUT", "Unknown arrowhead.", key);
@@ -89,6 +105,7 @@ export function validateBatch(input: unknown): Record<string, unknown>[] {
       }
     } else if (element.children !== undefined) throw new CLIError("INVALID_INPUT", "Children require a frame.", "children");
   }
+  if (batch.reduce((sum, element) => sum + (Array.isArray(element.points) ? element.points.length : 0), 0) > 100000) throw new CLIError("INVALID_INPUT", "Batch exceeds 100000 linear points.", "points");
   return batch;
 }
 
@@ -113,7 +130,7 @@ export function constructBatch(input: unknown, lib: NonNullable<Packages["excali
   const ids = new Set(elements.map(element => element.id));
   if (ids.size !== elements.length || Object.values(idMap).some(id => !ids.has(id)) || elements.some(element => !CLI_SHAPES.includes(element.type) || element.id.length !== 8)) throw new CLIError("INVALID_INPUT", "Converter did not preserve the requested batch identities.", "elements");
   for (const element of elements) {
-    validateStyle(element);
+    validateStyle(element, element.type);
     const references = [...(element.boundElements ?? []).map(bound => bound.id), element.frameId,
       ...(element.type === "text" ? [element.containerId] : []),
       ...(element.type === "arrow" ? [element.startBinding?.elementId, element.endBinding?.elementId] : [])].filter(Boolean);

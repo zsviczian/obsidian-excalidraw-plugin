@@ -6,6 +6,9 @@ import LZString from "lz-string";
 import type { ExcalidrawCLIRequest, ExcalidrawCLIResult } from "src/types/excalidrawCliTypes";
 import { isCLIScript } from "src/core/cli/cliScriptContext";
 import { CLIError } from "src/core/cli/cliProtocol";
+import { convertWorkbenchStroke } from "src/utils/strokeConversion";
+import { concatenateWorkbenchLines } from "src/utils/strokeConcatenation";
+import type { ConcatenateLinesOptions, ConcatenateLinesResult, StrokeConversionOptions, StrokeConversionResult } from "src/types/strokeConversionTypes";
 import {
   FillStyle,
   StrokeStyle,
@@ -1402,6 +1405,36 @@ export class ExcalidrawAutomate {
    */
   getElement(id: string): MutableElementMapEntry {
     return this.elementsDict[id];
+  }
+
+  /**
+   * Convert a copied workbench line to a free-draw stroke, sampling rounded curves
+   * within tolerance (default 0.5 scene units). Retains its ID/frame/groups/metadata.
+   * Custom pen options are ignored by excalidraw.com. Returns warnings and point count;
+   * does not publish/save. Throws before mutation for unsupported relationships or budgets.
+   */
+  public convertLineToFreedraw(id: string, options: StrokeConversionOptions = {}): StrokeConversionResult {
+    return convertWorkbenchStroke(this, id, "freedraw", options);
+  }
+
+  /**
+   * Fit a copied workbench free-draw centerline to an editable polyline, retaining ID.
+   * Default error tolerance is 0.5 scene units. Pressure/custom pen behavior is lost;
+   * nominal width is approximated unless strokeWidth is supplied. Does not publish/save.
+   * Throws without mutation on invalid input or exceeded geometry/work budgets.
+   */
+  public convertFreedrawToLine(id: string, options: StrokeConversionOptions = {}): StrokeConversionResult {
+    return convertWorkbenchStroke(this, id, "line", options);
+  }
+
+  /**
+   * Join 2–100 compatible open workbench lines through nearby endpoints (default gap 1).
+   * Samples rounded segments, handles reversed/rotated paths and keeps sharp junctions.
+   * Retains the first ID; stages the other IDs as deleted. Rejects disconnected sets,
+   * incompatible styles/metadata and labels/arrowheads without any mutation. Publish/save explicitly.
+   */
+  public concatenateLines(ids: string[], options: ConcatenateLinesOptions = {}): ConcatenateLinesResult {
+    return concatenateWorkbenchLines(this, ids, options);
   }
 
   /**
