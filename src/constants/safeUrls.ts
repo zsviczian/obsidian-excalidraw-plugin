@@ -44,6 +44,14 @@ export const URL_REGISTRY = {
     "https://github.com/zsviczian/obsidian-excalidraw-cli",
     UrlPurpose.DOCS,
   ),
+  GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_CLI_ISSUE_3: defineUrl(
+    "https://github.com/zsviczian/obsidian-excalidraw-cli/issues/3",
+    UrlPurpose.RELEASE_LOG,
+  ),
+  GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_CLI_ISSUE_6: defineUrl(
+    "https://github.com/zsviczian/obsidian-excalidraw-cli/issues/6",
+    UrlPurpose.RELEASE_LOG,
+  ),
   RAW_GITHUBUSERCONTENT_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_MASTER_EA_SCRIPTS_DIRECTORY_INFO_JSON:
     defineUrl(
       "https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/directory-info.json",
@@ -71,6 +79,10 @@ export const URL_REGISTRY = {
   GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES: defineUrl(
     "https://github.com/zsviczian/obsidian-excalidraw-plugin/issues",
     UrlPurpose.DOCS,
+  ),
+  GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUE_3053: defineUrl(
+    "https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/3053",
+    UrlPurpose.RELEASE_LOG,
   ),
   GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_EXTRAS_ISSUES: defineUrl(
     "https://github.com/zsviczian/obsidian-excalidraw-extras/issues",

@@ -19,9 +19,9 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 `,
 "2.29.4": `
 ## New and improved
-- Choose whether the Excalidraw sidepanel opens in the sidebar or a separate desktop window under **Excalidraw appearance and behavior → UI Modes**.
-- Copy selected canvas elements for an agent to edit, including their bound labels and exact drawing targets. CLI agents can also insert linked drawing images and create longer filled line contours.
-- Scripts can convert between lines and free-draw strokes while preserving curved paths, and join compatible line sections. Custom free-draw styling can look different on excalidraw.com.
+- Choose whether the Excalidraw sidepanel opens in the sidebar or a separate desktop window under **Excalidraw appearance and behavior → UI Modes**. [#3053](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUE_3053})
+- Copy selected canvas elements for an agent to edit, including their bound labels and exact drawing targets. [CLI #3](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_CLI_ISSUE_3}) CLI agents can also insert linked drawing images and create longer filled line contours.
+- Scripts can convert between lines and free-draw strokes while preserving curved paths, and join compatible line sections. [CLI #6](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_CLI_ISSUE_6}) Custom free-draw styling can look different on excalidraw.com.
 `,
 "2.29.3": `
 ## New and improved
