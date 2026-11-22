@@ -1,5 +1,5 @@
 import { ItemView, WorkspaceLeaf, type EventRef, setIcon } from "obsidian";
-import { ICON_NAME, VIEW_TYPE_SIDEPANEL } from "src/constants/constants";
+import { DEVICE, ICON_NAME, VIEW_TYPE_SIDEPANEL } from "src/constants/constants";
 import ExcalidrawPlugin from "src/core/main";
 import { t } from "src/lang/helpers";
 import type { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
@@ -19,6 +19,7 @@ type TabCreationConfig = {
 export class ExcalidrawSidepanelView extends ItemView {
   private static singleton: ExcalidrawSidepanelView | null = null;
   private static restoreSilent = false;
+  private static popoutOnReveal = new WeakSet<WorkspaceLeaf>();
   private static restoreSkipScripts = new Set<string>();
 
   /**
@@ -29,7 +30,7 @@ export class ExcalidrawSidepanelView extends ItemView {
   ): ExcalidrawSidepanelView | null {
     const spView = ExcalidrawSidepanelView.singleton;
     if (spView && reveal && !ExcalidrawSidepanelView.restoreSilent) {
-      void spView.plugin.app.workspace.revealLeaf(spView.leaf);
+      void spView.reveal();
     }
     return spView;
   }
@@ -42,32 +43,77 @@ export class ExcalidrawSidepanelView extends ItemView {
     reveal: boolean = true,
   ): Promise<ExcalidrawSidepanelView | null> {
     const effectiveReveal = reveal && !ExcalidrawSidepanelView.restoreSilent;
-    let leaf = plugin.app.workspace.getLeavesOfType(VIEW_TYPE_SIDEPANEL)[0];
+    const workspace = plugin.app.workspace;
+    let leaf = workspace.getLeavesOfType(VIEW_TYPE_SIDEPANEL)[0];
     if (!leaf) {
-      leaf = plugin.app.workspace.getRightLeaf(false);
+      const preferPopout =
+        DEVICE.isDesktop && plugin.settings.sidepanelOpenInPopout === true;
+      leaf =
+        preferPopout && effectiveReveal
+          ? workspace.openPopoutLeaf()
+          : workspace.getRightLeaf(false);
       if (!leaf) {
         return null;
+      }
+      if (preferPopout && !effectiveReveal) {
+        ExcalidrawSidepanelView.popoutOnReveal.add(leaf);
       }
       await leaf.setViewState({
         type: VIEW_TYPE_SIDEPANEL,
         active: effectiveReveal,
       });
     }
-    let spView = leaf.view;
-    if (!(spView instanceof ExcalidrawSidepanelView)) {
-      // Obsidian startup sequence. Leaves constructors are not called until they are revealed.
-      // So when getOrCreate is called from a script, we may have a leaf of the right type but with a generic ItemView.
-      await leaf.setViewState({ type: VIEW_TYPE_SIDEPANEL, active: true });
-      spView = leaf.view;
-      if (!(spView instanceof ExcalidrawSidepanelView)) {
-        return null;
-      }
+    if (!(leaf.view instanceof ExcalidrawSidepanelView)) {
+      // A restored sidebar tab may still be deferred. Load it without selecting
+      // or revealing it, so background scripts can initialize it quietly.
+      await leaf.loadIfDeferred();
     }
-    if (effectiveReveal) {
-      await plugin.app.workspace.revealLeaf(leaf);
-    }
+    const spView = leaf.view;
+    if (!(spView instanceof ExcalidrawSidepanelView)) return null;
     await spView.waitUntilReady();
+    if (effectiveReveal) {
+      await spView.reveal();
+    }
     return spView;
+  }
+
+  /**
+   * Queues a popout for the next reveal, or docks immediately without opening
+   * the sidebar. Later manual moves are respected.
+   */
+  public static applyLocationPreference(
+    plugin: ExcalidrawPlugin,
+    popout: boolean,
+  ): void {
+    if (!DEVICE.isDesktop) return;
+    const workspace = plugin.app.workspace;
+    const leaf = workspace.getLeavesOfType(VIEW_TYPE_SIDEPANEL)[0];
+    if (!leaf) return;
+    if (popout) {
+      if (leaf.view.containerEl.ownerDocument === workspace.containerEl.ownerDocument) {
+        ExcalidrawSidepanelView.popoutOnReveal.add(leaf);
+      }
+      return;
+    }
+    ExcalidrawSidepanelView.popoutOnReveal.delete(leaf);
+    if (leaf.getRoot() === workspace.rightSplit) return;
+
+    // Use the existing sidebar tab group. Requesting a split would stack a new
+    // group below it. Reparent the live leaf to preserve its script tabs.
+    const placeholder = workspace.getRightLeaf(false);
+    if (!placeholder) return;
+    const destination = placeholder.parent;
+    const source = leaf.parent;
+    // Unpublished host operations, also used by Obsidian's own popout move.
+    if (!source?.removeChild || !destination?.insertChild || !leaf.setDimension) {
+      placeholder.detach();
+      return;
+    }
+    source.removeChild(leaf);
+    leaf.setDimension(null);
+    destination.insertChild(-1, leaf);
+    placeholder.detach();
+    workspace.requestResize?.();
   }
 
   /**
@@ -75,6 +121,7 @@ export class ExcalidrawSidepanelView extends ItemView {
    */
   public static onPluginUnload(plugin: ExcalidrawPlugin) {
     ExcalidrawSidepanelView.singleton = null;
+    ExcalidrawSidepanelView.popoutOnReveal = new WeakSet<WorkspaceLeaf>();
     ExcalidrawSidepanelView.restoreSkipScripts.clear();
     plugin.app.workspace.detachLeavesOfType(VIEW_TYPE_SIDEPANEL);
   }
@@ -434,8 +481,8 @@ export class ExcalidrawSidepanelView extends ItemView {
             return;
           }
           this.setActiveTab(target);
-          if (reveal) {
-            this.reveal();
+          if (reveal && !ExcalidrawSidepanelView.restoreSilent) {
+            void this.reveal();
           }
         },
         close: (target) => this.removeTab(target),
@@ -443,7 +490,11 @@ export class ExcalidrawSidepanelView extends ItemView {
         plugin: this.plugin,
         ea,
         isVisible: () => this.leaf.isVisible?.(),
-        reveal: () => this.reveal(),
+        reveal: () => {
+          if (!ExcalidrawSidepanelView.restoreSilent) {
+            void this.reveal();
+          }
+        },
       },
       { bodyEl: this.bodyEl },
       scriptName,
@@ -804,7 +855,19 @@ export class ExcalidrawSidepanelView extends ItemView {
     }
   }
 
-  public reveal(): void {
-    void this.app.workspace.revealLeaf(this.leaf);
+  /** Reveals this panel, applying a queued desktop move at most once. */
+  public async reveal(): Promise<void> {
+    const workspace = this.app.workspace;
+    if (
+      ExcalidrawSidepanelView.popoutOnReveal.delete(this.leaf) &&
+      this.containerEl.ownerDocument === workspace.containerEl.ownerDocument
+    ) {
+      const { width, height } = this.leaf.containerEl.getBoundingClientRect();
+      // A collapsed sidebar has no measurable size to pass to the popout.
+      workspace.moveLeafToPopout(this.leaf, {
+        size: { width: width || 480, height: height || 640 },
+      });
+    }
+    await workspace.revealLeaf(this.leaf);
   }
 }

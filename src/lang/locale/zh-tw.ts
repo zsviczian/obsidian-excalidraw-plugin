@@ -422,6 +422,8 @@ export default {
   SHOW_TAB_TITLEBAR_BUTTONS: "顯示標籤頁標題欄按鈕",
   OPEN_LINK: "開啟所選元素裡的連結 \n（按住 Shift 在新面板開啟）",
   EXCALIDRAW_SIDEPANEL: "Excalidraw 側邊面板",
+  SIDEPANEL_POPOUT_NAME: "在獨立視窗中開啟 Excalidraw 側邊面板",
+  SIDEPANEL_POPOUT_DESC: "在桌面端啟用後，下次顯示 Excalidraw 側邊面板時會在獨立視窗中開啟。停用後，面板會停駐回側邊欄，但不會展開側邊欄。之後手動移動的位置會保留。",
   LINK_BUTTON_CLICK_NO_TEXT: "請選擇一個包含內部或外部連結的元素。\n",
   LINEAR_ELEMENT_LINK_CLICK_ERROR:
     `箭頭和線條元素的連結無法透過 ${labelCTRL()} + 點選元素來跳轉，因為這也會啟用線條編輯器。\n` +

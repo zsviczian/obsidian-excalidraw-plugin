@@ -1678,6 +1678,29 @@
       ],
       "tests": [
         {
+          "layer": "source",
+          "path": "scripts/testing/sidepanel.source.test.mjs",
+          "cases": [
+            "sidepanel defaults to the sidebar and opts into desktop popouts",
+            "mobile sidepanels ignore the synchronized desktop popout preference",
+            "reopening reuses sidepanel tabs and silent creation does not reveal the leaf",
+            "changing placement defers the popout and docks without revealing the sidebar",
+            "a deferred sidebar leaf loads quietly before its queued popout",
+            "applying sidepanel placement on mobile or without a panel creates no leaves"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/sidepanelPopout.mjs",
+          "cases": [
+            "native:sidepanel:sidebar-default",
+            "native:sidepanel:popout-reuse",
+            "native:sidepanel:settings-reload",
+            "native:sidepanel:markdown-popout-focus",
+            "native:sidepanel:location-setting-change"
+          ]
+        },
+        {
           "layer": "native",
           "path": "scripts/testing/host/workflowFixes.mjs",
           "cases": [

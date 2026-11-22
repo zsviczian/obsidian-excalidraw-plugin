@@ -29,7 +29,7 @@ async function setup(t) {
     "../../constants/constants": { MD_EX_SECTIONS: [] },
     "../../lang/helpers": { t: key => key },
     "../../utils/pathUtils": { cleanSectionHeading: text => text },
-    "src/constants/constants": { ICON_NAME: "excalidraw", VIEW_TYPE_SIDEPANEL: "sidepanel" },
+    "src/constants/constants": { DEVICE: { isDesktop: true }, ICON_NAME: "excalidraw", VIEW_TYPE_SIDEPANEL: "sidepanel" },
     "src/lang/helpers": { t: key => key },
     "src/utils/excalidrawViewLookup": { getLastActiveExcalidrawView: () => null },
     "./SidepanelTab": { ExcalidrawSidepanelTab: class {} },

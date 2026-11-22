@@ -2,6 +2,7 @@ import {
   TFile,
   View,
   WorkspaceLeaf,
+  type WorkspaceItem,
   PluginManifest,
   Hotkey,
   TAbstractFile,
@@ -330,6 +331,8 @@ declare module "obsidian" {
     tabHeaderInnerTitleEl: HTMLDivElement;
     tabHeaderInnerIconEl: HTMLDivElement;
     isVisible?(): boolean;
+    /** Used by Obsidian when reparenting a leaf between workspace containers. */
+    setDimension?(dimension: null): void;
   }
   interface WorkspaceWindowInitData {
     x?: number;
@@ -339,12 +342,19 @@ declare module "obsidian" {
     type?: string;
     children?: unknown[];
   }
+  interface WorkspaceParent {
+    /** Guarded internal reparenting operations; observed in Obsidian 1.15.1. */
+    removeChild?(child: WorkspaceItem): void;
+    insertChild?(index: number, child: WorkspaceItem): void;
+  }
   interface WorkspaceMobileDrawer {
     type?: string;
     children?: unknown[];
   }
   interface Workspace {
     floatingSplit?: WorkspaceSplit;
+    /** Requests a workspace layout refresh after guarded internal reparenting. */
+    requestResize?(): void;
     getAdjacentLeafInDirection(
       leaf: WorkspaceLeaf,
       direction: string,

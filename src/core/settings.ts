@@ -112,6 +112,7 @@ import {
   canNavigateSettingsPages,
   navigateToSettingsPage,
 } from "src/core/settings/settingsNavigation";
+import { ExcalidrawSidepanelView } from "src/view/sidepanel/Sidepanel";
 
 declare const mainDocument: Document;
 
@@ -2805,6 +2806,21 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
   private getUIModeSpecs(): SettingSpec[] {
     return [
+      {
+        name: t("SIDEPANEL_POPOUT_NAME"),
+        desc: t("SIDEPANEL_POPOUT_DESC"),
+        aliases: ["sidepanel", "popout", "separate window"],
+        visible: () => DEVICE.isDesktop,
+        control: {
+          type: "toggle",
+          key: "sidepanelOpenInPopout",
+          before: (value) => {
+            if (value !== this.plugin.settings.sidepanelOpenInPopout) {
+              ExcalidrawSidepanelView.applyLocationPreference(this.plugin, value);
+            }
+          },
+        },
+      },
       {
         name: t("SHOW_TAB_TITLEBAR_BUTTONS"),
         aliases: ["tab buttons", "titlebar buttons"],
