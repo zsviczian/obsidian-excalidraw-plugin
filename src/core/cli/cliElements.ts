@@ -38,8 +38,10 @@ export function validateStyle(value: Record<string, unknown>, type?: string): vo
 
 /** Matches the fork's isValidPolygon contract; restoration resets an open path's flag. */
 export function validatePolygonPoints(points: unknown): void {
-  if (!Array.isArray(points) || points.length < 4 || !Array.isArray(points[0]) || !Array.isArray(points.at(-1)) ||
-    points[0][0] !== points.at(-1)[0] || points[0][1] !== points.at(-1)[1]) {
+  const first: unknown = Array.isArray(points) ? points[0] : null;
+  const last: unknown = Array.isArray(points) ? points.at(-1) : null;
+  if (!Array.isArray(points) || points.length < 4 || !Array.isArray(first) || !Array.isArray(last) ||
+    first[0] !== last[0] || first[1] !== last[1]) {
     throw new CLIError("INVALID_INPUT", "Polygon requires at least four points with the last point equal to the first. Close the contour explicitly.", "polygon");
   }
 }

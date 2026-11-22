@@ -291,7 +291,8 @@ APIs with their normal dependency and interaction requirements.
 
 Discover `convertLineToFreedraw`, `convertFreedrawToLine`, and `concatenateLines`
 with `api surface=ea name=...`. These operate only on copied workbench elements;
-publish with `await ea.addElementsToView(false, true)` and save explicitly.
+publish with `await ea.addElementsToView(false, false)` to mark the view dirty,
+then `await ea.targetView.save(false)` and verify saved disk content.
 They retain IDs, frame/groups and unrelated metadata, and reject unsupported
 labels, bindings and arrowheads before mutation. They return JSON-safe results
 with point counts and warnings.
