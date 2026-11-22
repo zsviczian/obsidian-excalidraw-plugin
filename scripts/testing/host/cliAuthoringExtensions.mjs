@@ -52,16 +52,16 @@ export async function runCLIAuthoringExtensions({ cli, drawingPath, reportDir })
     const embedded = evaluate(`(async()=>{const v=app.workspace.getLeavesOfType('excalidraw').find(l=>l.view.id===${JSON.stringify(opened.viewId)}).view;const image=v.getViewElements().find(e=>e.type==='image'),ef=v.excalidrawData.getFile(image.fileId);await app.vault.create(${JSON.stringify(files.note)},'An ordinary note');return JSON.stringify({source:ef.file.path,text:await app.vault.read(v.file)})})()`);
     assert.equal(embedded.source, files.source); assert.ok(embedded.text.includes('|100%'));
     const image = read().elements.find(e => e.type === 'image');
-    ok(action('export', { requestId: id('embed-png'), path: files.host, source: 'live', out: files.embed, area: { x: image.x, y: image.y, width: image.width, height: image.height }, padding: 0 }));
+    ok(action('export', { requestId: id('embed-png'), path: files.host, source: 'live', out: files.embed, theme: 'light', area: { x: image.x, y: image.y, width: image.width, height: image.height }, padding: 0 }));
     const embedPixels = await runInAppTask({ cli, execute: redPixels, args: [files.embed], timeoutMs: 30000 });
     assert.ok(embedPixels.blue > embedPixels.total * 0.3, JSON.stringify(embedPixels));
     for (const asset of [files.note, files.host]) assert.equal(action('apply', { requestId: id(asset === files.note ? 'plain-note' : 'self'), path: files.host, expectedRevision: read().revision, operations: [{ op: 'image', asset }] }).error.code, 'INVALID_INPUT');
     const area = { x: 150, y: 90, width: 20, height: 20 };
-    ok(action('export', { requestId: id('filled'), path: files.host, source: 'live', out: files.filled, area, padding: 0 }));
+    ok(action('export', { requestId: id('filled'), path: files.host, source: 'live', out: files.filled, theme: 'light', area, padding: 0 }));
     const filled = await runInAppTask({ cli, execute: redPixels, args: [files.filled], timeoutMs: 30000 });
     assert.ok(filled.red > filled.total * 0.8, JSON.stringify(filled));
     ok(action('apply', { requestId: id('open-line'), path: files.host, expectedRevision: read().revision, operations: [{ op: 'update', id: polygonId, set: { polygon: false } }] }));
-    ok(action('export', { requestId: id('open-png'), path: files.host, source: 'live', out: files.open, area, padding: 0 }));
+    ok(action('export', { requestId: id('open-png'), path: files.host, source: 'live', out: files.open, theme: 'light', area, padding: 0 }));
     const unfilled = await runInAppTask({ cli, execute: redPixels, args: [files.open], timeoutMs: 30000 });
     assert.equal(unfilled.red, 0);
     strokeResults = await runInAppTask({ cli, execute: exerciseStrokeAuthoring, args: [files.host], timeoutMs: 90000 });
@@ -76,16 +76,20 @@ export async function runCLIAuthoringExtensions({ cli, drawingPath, reportDir })
     assert.equal(reopened.find(e => e.id === strokeResults.convertedId).type, 'line');
     assert.equal(reopened.some(e => e.id === strokeResults.removedId), false);
     assert.ok(reopened.some(e => e.type === 'image'));
-    if (reportDir) {
-      const target = join(reportDir, 'authoring-extensions'); mkdirSync(target, { recursive: true });
-      for (const [key, path] of Object.entries(files).filter(([key]) => ['filled', 'open', 'embed', 'overview', 'svg'].includes(key))) {
-        const data = evaluate(`(async()=>{const b=new Uint8Array(await app.vault.readBinary(app.vault.getFileByPath(${JSON.stringify(path)})));let s='';for(const n of b)s+=String.fromCharCode(n);return JSON.stringify({base64:btoa(s)})})()`);
-        writeFileSync(join(target, key + (key === 'svg' ? '.svg' : '.png')), Buffer.from(data.base64, 'base64'));
-      }
-    }
     return { status: 'passed', assertions: ['250-point polygon fill and false update verified by decoded pixels', 'live packet and actual copy command retain bound labels after deselection', ...(process.env.EXCALIDRAW_CLI_POPOUT === '1' ? ['actual selection-copy command in a separate popout owner document'] : []), 'targeted label edit preserves unrelated content and refuses a stale packet', 'linked drawing embed/100% anchor and host SVG/PNG/save/reopen', 'ordinary Markdown and self-embed refusal', ...strokeResults.assertions], transportRecoveries: recoveries };
   } finally {
+    try {
+      // Preserve available render evidence on failures too, before deleting owned fixtures.
+      if (reportDir) {
+        const target = join(reportDir, 'authoring-extensions'); mkdirSync(target, { recursive: true });
+        for (const [key, path] of Object.entries(files).filter(([key]) => ['filled', 'open', 'embed', 'overview', 'svg'].includes(key))) {
+          const data = evaluate(`(async()=>{const f=app.vault.getFileByPath(${JSON.stringify(path)});if(!f)return JSON.stringify(null);const b=new Uint8Array(await app.vault.readBinary(f));let s='';for(const n of b)s+=String.fromCharCode(n);return JSON.stringify({base64:btoa(s)})})()`);
+          if (data) writeFileSync(join(target, key + (key === 'svg' ? '.svg' : '.png')), Buffer.from(data.base64, 'base64'));
+        }
+      }
+    } finally {
     evaluate(`(async()=>{for(const path of ${JSON.stringify(Object.values(files))}){if(!path.startsWith(${JSON.stringify(prefix)}))throw Error('Unsafe cleanup');for(const l of app.workspace.getLeavesOfType('excalidraw').filter(l=>l.view.file?.path===path)){await l.setViewState({type:'empty',state:{}});l.detach()}const f=app.vault.getFileByPath(path);if(f)await app.vault.delete(f)}return JSON.stringify({clean:true})})()`);
+    }
   }
 }
 
@@ -125,7 +129,8 @@ async function redPixels(c, path) {
       if (data[i] > 180 && data[i + 1] < 80 && data[i + 2] < 80 && data[i + 3] > 200) red++;
       if (data[i] < 80 && data[i + 1] < 180 && data[i + 2] > 150 && data[i + 3] > 200) blue++;
     }
-    return { red, blue, total: data.length / 4 };
+    const center = (Math.floor(canvas.height / 2) * canvas.width + Math.floor(canvas.width / 2)) * 4;
+    return { red, blue, total: data.length / 4, center: [...data.slice(center, center + 4)] };
   } finally { URL.revokeObjectURL(url); }
 }
 
