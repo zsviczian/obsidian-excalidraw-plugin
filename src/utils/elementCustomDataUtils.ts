@@ -5,6 +5,12 @@ import type {
   ExcalidrawImageElement,
 } from "@zsviczian/excalidraw/types/element/src/types";
 import type { PDFPageViewProps } from "src/types/embeddedFileLoaderTypes";
+import type { PenOptions } from "src/types/penTypes";
+
+/** Write/remove only the fork-owned custom-pen namespace, retaining unrelated metadata. */
+export function setFreedrawPenOptions(element: Mutable<ExcalidrawElement>, options?: PenOptions): void {
+  addAppendUpdateCustomData(element, { strokeOptions: options ? structuredClone(options) : undefined });
+}
 
 export const MARKDOWN_IMAGE_CUSTOM_DATA_KEY = "markdownImage";
 

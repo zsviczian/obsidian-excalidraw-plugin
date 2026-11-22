@@ -90,6 +90,8 @@ export default {
   CLI_COPY_SKILL: "Copy agent instructions",
   CLI_AGENT_INSTRUCTIONS: `Read: ${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_CLI}\n\n<<user instructions>>`,
   CLI_DESCRIPTION: "Native Excalidraw CLI",
+  CLI_COPY_SELECTION: "Copy selected elements for agent",
+  CLI_COPY_SELECTION_ERROR: "Could not copy the selected elements. Select fewer elements and try again.",
 
   INITIALIZATION_MESSAGE:
     "Excalidraw is waiting for Obsidian to initialize all of your plugins...",

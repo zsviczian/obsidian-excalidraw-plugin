@@ -14,6 +14,7 @@ import { commandSchema } from "src/core/cli/cliSchema";
 import { imageInventory } from "src/core/cli/cliImages";
 import { nanoid } from "src/constants/constants";
 import { getLucideIcons } from "src/shared/lucideIcons";
+import { selectionPacket } from "src/core/cli/cliSelection";
 
 type Receipt = { fingerprint: string; result: ExcalidrawCLIResult; finishedAt?: number; preExecutionBusy?: boolean };
 
@@ -192,6 +193,11 @@ export class ExcalidrawCLI {
       return { surface, subset: surface === "lib", entries: entries.filter(entry => request.name ? entry.name.toLowerCase() === query : `${entry.name} ${entry.description}`.toLowerCase().includes(query)).slice(0, 20) };
     }
     if (!plugin.isReady) throw new CLIError("NOT_READY", "Excalidraw is still initializing.", undefined, "Retry status after startup.");
+    if (command === "selection") {
+      const file = drawingFile(plugin, request.path), view = drawingView(plugin, file, request.view);
+      if (!view) throw new CLIError("NOT_READY", "Selection requires an open live drawing.", "path");
+      return selectionPacket(this, view);
+    }
     if (command === "icons") {
       const query = request.query === undefined ? "" : request.query;
       if (typeof query !== "string" || query.length > 128) throw new CLIError("INVALID_INPUT", "Expected an icon query of at most 128 characters.", "query");

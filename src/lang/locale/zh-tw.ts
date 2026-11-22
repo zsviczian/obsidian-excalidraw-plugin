@@ -85,6 +85,8 @@ export default {
   CLI_COPY_SKILL: "複製代理程式說明",
   CLI_AGENT_INSTRUCTIONS: `閱讀：${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_CLI}\n\n<<使用者指令>>`,
   CLI_DESCRIPTION: "Excalidraw 原生 CLI",
+  CLI_COPY_SELECTION: "複製所選元素供代理程式使用",
+  CLI_COPY_SELECTION_ERROR: "無法複製所選元素。請減少所選元素後重試。",
 
   INITIALIZATION_MESSAGE: "等待所有外掛就緒…",
   // Sugester

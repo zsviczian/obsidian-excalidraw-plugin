@@ -2,11 +2,11 @@
 import type { CLICommand } from "src/types/excalidrawCliTypes";
 import { CLI_COMMANDS } from "./cliCommands";
 import { CLI_OPERATION_FIELDS } from "./cliApply";
-import { CLI_SHAPES, CLI_STYLE_FIELDS } from "./cliElements";
+import { CLI_MAX_LINEAR_POINTS, CLI_SHAPES, CLI_STYLE_FIELDS } from "./cliElements";
 import { CLI_ICON_FIELDS } from "./cliIcons";
 
 const required: Partial<Record<CLICommand, string[]>> = {
-  schema: ["action"], read: ["path"], open: ["path"], create: ["requestId", "path"],
+  schema: ["action"], read: ["path"], selection: ["path"], open: ["path"], create: ["requestId", "path"],
   apply: ["requestId", "path", "expectedRevision", "operations"], export: ["requestId", "path", "out"],
   script: ["requestId", "script", "trusted"], result: ["requestId"],
 };
@@ -16,6 +16,10 @@ const operationRequired: Record<string, string[]> = {
   group: ["ids"], ungroup: ["ids", "groupId"], image: ["asset"], imageMetadata: ["id"], latex: ["text"],
 };
 function property(name: string): Record<string, unknown> {
+  if (name === "x") return { type: "number", description: "For text skeletons, x is the left/center/right alignment anchor according to textAlign. Existing-element updates use the scene element's x coordinate." };
+  if (name === "polygon") return { type: "boolean", description: "Line elements only: close the contour for background fill. False retains an open line." };
+  if (name === "anchor") return { type: "boolean", default: true, description: "With scale=false, anchor the image/drawing embed to 100% of its source size. With scale=true this option has no effect." };
+  if (name === "asset") return { type: "string", description: "Exact vault path of a raster image, SVG or plugin-recognized Excalidraw drawing (including .excalidraw.md). Ordinary Markdown notes and self-embeds are refused." };
   if (["x", "y", "size", "width", "height", "angle", "fontSize", "fontFamily", "opacity", "strokeWidth", "roughness", "offset", "limit", "padding", "scale", "scaleX", "scaleY", "maxWidth", "maxHeight", "maxPixels", "maxArtifactBytes"].includes(name)) return { type: "number" };
   if (name === "icons") return { type: "array", maxItems: 100, items: { type: "object", required: ["id", "icon"], additionalProperties: false, properties: Object.fromEntries(CLI_ICON_FIELDS.map(field => [field, property(field)])) } };
   if (["overwrite", "trusted", "selectedOnly", "locked"].includes(name)) return { type: "boolean" };
@@ -45,7 +49,7 @@ function property(name: string): Record<string, unknown> {
   };
   if (name === "tags") return { anyOf: [{ type: "null" }, { type: "array", maxItems: 12, uniqueItems: true, items: { type: "string", maxLength: 32 } }] };
   if (["area", "roundness", "label", "start", "end"].includes(name)) return { type: "object" };
-  if (name === "points") return { type: "array", minItems: 2, maxItems: 100, items: { type: "array", minItems: 2, maxItems: 2, items: { type: "number" } } };
+  if (name === "points") return { type: "array", minItems: 2, maxItems: CLI_MAX_LINEAR_POINTS, description: "Line/arrow contour points; up to 100000 points across a skeleton batch.", items: { type: "array", minItems: 2, maxItems: 2, items: { type: "number" } } };
   if (name === "link") return { type: ["string", "null"] };
   return { type: "string" };
 }

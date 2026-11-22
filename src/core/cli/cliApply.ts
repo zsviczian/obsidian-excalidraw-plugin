@@ -15,7 +15,7 @@ export const CLI_OPERATION_FIELDS: Record<string, string[]> = {
   lucide: CLI_ICON_FIELDS,
   add: ["elements"], update: ["id", "set"], delete: ["ids", "children"],
   connect: ["id", "from", "to", "fromSide", "toSide"], group: ["ids"], ungroup: ["ids", "groupId"],
-  image: ["id", "asset", "x", "y", "scale"], imageMetadata: ["id", "label", "tags"], latex: ["id", "text", "x", "y", "scaleX", "scaleY"],
+  image: ["id", "asset", "x", "y", "scale", "anchor"], imageMetadata: ["id", "label", "tags"], latex: ["id", "text", "x", "y", "scaleX", "scaleY"],
 };
 
 function ids(value: unknown): string[] {
@@ -53,7 +53,7 @@ export function validateOperations(input: unknown): Record<string, unknown>[] {
     if (op === "connect") { string(operation.from, "from"); string(operation.to, "to"); side(operation.fromSide); side(operation.toSide); }
     if (["image", "latex"].includes(op)) {
       number(operation.x, "x", 0, -1000000, 1000000); number(operation.y, "y", 0, -1000000, 1000000);
-      if (op === "image") { vaultPath(operation.asset, "asset"); boolean(operation.scale, "scale", true); }
+      if (op === "image") { vaultPath(operation.asset, "asset"); boolean(operation.scale, "scale", true); boolean(operation.anchor, "anchor", true); }
       else { string(operation.text, "text"); number(operation.scaleX, "scaleX", 1, 0.1, 4); number(operation.scaleY, "scaleY", 1, 0.1, 4); }
     }
     if (operation.id !== undefined) string(operation.id, "id");
@@ -109,6 +109,7 @@ export async function applyDrawing(cli: ExcalidrawCLI, request: Record<string, u
       for (const element of batch.elements) elementsMap.set(element.id, element);
     } else if (op === "update") {
       const element = resolve(operation.id), set = { ...object(operation.set) };
+      validateStyle(set, element.type);
       if (element.type !== "text" && ["text", "fontSize", "fontFamily", "textAlign", "verticalAlign"].some(key => key in set)) throw new CLIError("INVALID_INPUT", "Text fields require a text element; edit its bound label ID.", "set");
       if (["arrow", "line", "freedraw"].includes(element.type) && ["width", "height"].some(key => key in set)) throw new CLIError("INVALID_INPUT", "Linear resizing requires a trusted EA script.", "set");
       if ("text" in set) { set.rawText = set.text; set.originalText = set.text; }
@@ -162,10 +163,11 @@ export async function applyDrawing(cli: ExcalidrawCLI, request: Record<string, u
       }
     } else if (op === "image") {
       const path = vaultPath(operation.asset, "asset"), asset = plugin.app.vault.getFileByPath(path);
-      if (!asset || !["png", "jpg", "jpeg", "gif", "webp", "svg"].includes(asset.extension.toLowerCase())) throw new CLIError("INVALID_INPUT", "Image requires an existing vault raster image or SVG.", "asset");
+      if (!asset || !(["png", "jpg", "jpeg", "gif", "webp", "svg"].includes(asset.extension.toLowerCase()) || plugin.isExcalidrawFile(asset))) throw new CLIError("INVALID_INPUT", "Image requires an existing vault raster image, SVG or recognized Excalidraw drawing.", "asset");
+      if (asset === file) throw new CLIError("INVALID_INPUT", "A drawing cannot embed itself.", "asset");
       if (asset.stat.size > 16 * 1024 * 1024) throw new CLIError("INVALID_INPUT", "Image exceeds 16 MiB.", "asset");
       const stat = JSON.stringify(asset.stat);
-      const actual = await ea.addImage(number(operation.x, "x", 0, -1000000, 1000000), number(operation.y, "y", 0, -1000000, 1000000), asset, boolean(operation.scale, "scale", true));
+      const actual = await ea.addImage(number(operation.x, "x", 0, -1000000, 1000000), number(operation.y, "y", 0, -1000000, 1000000), asset, boolean(operation.scale, "scale", true), boolean(operation.anchor, "anchor", true));
       if (plugin.app.vault.getFileByPath(path) !== asset || JSON.stringify(asset.stat) !== stat) throw new CLIError("STALE_REVISION", "Image changed during preparation.", "asset");
       recordId(operation.id, actual);
     } else if (op === "latex") {

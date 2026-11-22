@@ -17,6 +17,11 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.29.4": `
+## New and improved
+- Copy selected canvas elements for an agent to edit, including their bound labels and exact drawing targets. CLI agents can also insert linked drawing images and create longer filled line contours.
+- Scripts can convert between lines and free-draw strokes while preserving curved paths, and join compatible line sections. Custom free-draw styling can look different on excalidraw.com.
+`,
 "2.29.3": `
 ## New and improved
 - Choose OpenAI reasoning effort per text model and use updated AI model recommendations on new installs. ExcaliAI uses the selected model's effort. [#3056](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/3056).

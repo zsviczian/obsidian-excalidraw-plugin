@@ -11,6 +11,7 @@ Put large requests in a visible vault-relative JSON file and pass input="<file>"
 Requests in files include apiVersion:1; the native command supplies command. The in-process ea.executeCLI request also includes command.
 Use exact drawing paths including extensions. Never assume an active drawing. :open explicitly creates a tab and can run configured drawing scripts.
 Loop: :read source=live detail=elements (or detail=images to inventory) → :apply with expectedRevision and a unique requestId → check persistence=saved → :export → inspect the image file.
+For selected targets use :selection with an explicit path/view, or the drawing command Copy selected elements for agent. Retain packet IDs (including bound-label IDs), read those IDs at the packet revision, and apply only authorized targets. A stale packet needs inspection and a fresh revision, never guessed replacement IDs.
 For duplicate views use the view ID from :open or :read. Refresh after STALE_REVISION; retry BUSY with the same requestId only when refused before execution; unknown outcomes require read-back.
 New skeleton IDs are local labels; use returned idMap actual IDs for updates. Updates reject identity, bindings and asset internals.
 Every write requires requestId. Repeat the identical effective request to retrieve its receipt; different content with the same ID fails.
