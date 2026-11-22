@@ -73,6 +73,38 @@ types are rectangle, ellipse, diamond, text, arrow, line, frame, and stickynote.
 Arrow `start`/`end` bindings and frame `children` reference IDs in their batch.
 Frames require children and cannot nest. Use `connect` for existing endpoints.
 
+Line skeletons and line `update.set` accept boolean `polygon`. True requires
+an explicitly closed contour: at least four points with the last equal to the
+first. The CLI does not reshape the path. False retains ordinary line semantics;
+a closed path can still fill from its background color. Use a transparent
+background to remove fill. Other element types reject this field.
+Line/arrow skeletons allow 2–1000 points, with at most 100000
+points per batch. Use a request file for dense contours. Ordinary lines do not
+accept `strokeLinecap`; custom free-draw styling belongs in an explicit EA script.
+Text skeleton `x` is the left/center/right anchor according to `textAlign`;
+an existing text element's `update.set.x` is its stored scene coordinate.
+
+## Selected targets for agents
+
+Select canvas objects and run **Excalidraw: Copy selected elements for agent**,
+then paste the JSON packet with the requested edit. The read-only native
+equivalent is `:selection path="Drawings/Flow.excalidraw.md" view="<view-id>"`.
+It requires an open drawing and an explicit view when duplicate views exist;
+it does not write the clipboard or drawing.
+
+The packet includes `packetVersion`, `vault`, `path`, `view`, `revision`, and up
+to 500 `elements` including bound labels. Entries contain `id`, `type`, `selected`,
+`text`, `frameId`, `containerId`, `labelId`, and scene `bounds` as
+`[minX,minY,maxX,maxY]`. Related labels have `selected: false` unless selected
+directly. This identifies targets after selection changes; it creates no hidden
+marks. Frame selection does not implicitly authorize edits to every descendant.
+
+Read the exact IDs at the packet's live `revision` before editing, then use
+`expectedRevision` and actual label IDs for text changes. A stale packet requires
+fresh inspection of those IDs and their relationships. Never guess replacement
+targets from text or position. A migrated/closed view requires explicit resolution
+of the same drawing's current view ID.
+
 ## Native Lucide icons
 
 Check `status` for `lucideIcons`, then use `icons query=database limit=50` to
@@ -137,17 +169,25 @@ not every later human edit. A handoff is not reported as durable.
 | `group` | `ids`; returns a new group ID |
 | `ungroup` | `ids`, `groupId`; preserves other groups |
 | `imageMetadata` | `id`, `label` (1–80 characters or `null` to clear), `tags` (up to 12 unique short strings or `null`) |
-| `image` | `asset`: exact vault PNG/JPEG/GIF/WebP/SVG; optional `id`, `x`, `y`, `scale` (boolean) |
+| `image` | `asset`: exact vault PNG/JPEG/GIF/WebP/SVG or recognized Excalidraw drawing; optional `id`, `x`, `y`, `scale`, `anchor` (booleans) |
 | `latex` | `text`; optional `id`, `x`, `y`, `scaleX`, `scaleY`; requires compatible enabled Extras MathJax |
 | `lucide` | `id`, `icon`; optional `x`, `y`, `size`, `strokeColor`, `strokeWidth`, `roughness`, `opacity`; returns `groupMap` |
 
 `update` accepts x/y/width/height/angle, strokeColor/backgroundColor/fillStyle,
 strokeWidth/strokeStyle/roughness/opacity, locked/link, and text/fontSize/fontFamily/
-textAlign/verticalAlign. Text fields require a text element; edit the bound label
+textAlign/verticalAlign, and line-only boolean polygon. Text fields require a text element; edit the bound label
 ID to change its text. Linear resizing and identity, version, binding, frame,
 binary, or Markdown-image metadata edits require a trusted script. Unknown
 requested fields are rejected; existing custom data is preserved. Delete uses
 tombstones and binding cleanup and does not delete attachment files.
+
+Drawing images use the existing EA loader and retain a source link; ordinary
+Markdown notes and direct self-embeds are refused. `scale=true` fits the image to
+the normal insertion size. With `scale=false`, `anchor=true` (default) retains
+the source-size `100%` option; `anchor=false` allows later manual scaling to
+survive refresh. Verify the source link, saved/reopened host, and rendered content.
+The existing nested-drawing depth limit remains; source edits may need a host
+reload to refresh their rendition. Arbitrary `customData` remains script-only.
 
 ## Read, render, and recover
 
@@ -246,3 +286,27 @@ results fail without claiming rollback. A terminal timeout cannot preempt
 arbitrary synchronous code or undo side effects. PDF, Mermaid, SVG import, and
 advanced Markdown-image workflows remain available through existing EA/Extras
 APIs with their normal dependency and interaction requirements.
+
+### Stroke conversion and concatenation
+
+Discover `convertLineToFreedraw`, `convertFreedrawToLine`, and `concatenateLines`
+with `api surface=ea name=...`. These operate only on copied workbench elements;
+publish with `await ea.addElementsToView(false, false)` to mark the view dirty,
+then `await ea.targetView.save(false)` and verify saved disk content.
+They retain IDs, frame/groups and unrelated metadata, and reject unsupported
+labels, bindings and arrowheads before mutation. They return JSON-safe results
+with point counts and warnings.
+
+Conversion samples rounded line curves in world coordinates instead of retagging
+control points. `tolerance` defaults to 0.5 scene units, `maxPoints` to 10000;
+`strokeWidth` overrides the nominal-width estimate. Line-to-free-draw accepts
+the fork's full `penOptions`. **excalidraw.com ignores custom free-draw options**,
+so appearance can differ. Reverse conversion simplifies the centerline to a
+polyline and loses pressure, taper, custom caps and outlines. Compare an export.
+
+Concatenation joins 2–100 compatible open lines by nearest endpoints, handles
+reversal, rotation and sharp corners, and samples rounded sections. `maxGap`
+defaults to 1 scene unit. The first ID survives; other input IDs are staged as
+deleted. Styles, frame, groups and metadata must match; disconnected/branching
+sets and exceeded budgets are refused without partial deletion. Keep actual
+branches separate, then inspect and save the published result.

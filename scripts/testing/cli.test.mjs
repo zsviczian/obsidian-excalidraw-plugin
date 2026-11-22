@@ -41,11 +41,90 @@ function harness({ supported = true, desktop = true, native = true } = {}) {
 }
 const request = (command, values = {}) => ({ apiVersion: 1, command, ...values });
 
+function authoringView(h, initial = []) {
+  let elements = structuredClone(initial), selected = {};
+  const model = { textElements: new Map(), markdownImages: new Map(), equations: new Map(), mermaids: new Map(),
+    getFileEntries: () => [], exportPreparedSaveData: () => ({ files: [] }) };
+  const view = Object.assign(new h.View(), { id: 'owned-view', file: h.files[0], plugin: h.plugin, excalidrawData: model,
+    isLoaded: true, isClosingOrMigrating: () => false, isSameFileEditingActive: () => false, isPersistenceBusy: () => false,
+    getScene: () => ({ elements, appState: {}, files: {} }), isDirty: () => false,
+    excalidrawAPI: { getSceneElements: () => elements, getSceneElementsIncludingDeleted: () => elements, getFiles: () => ({}), getAppState: () => ({ selectedElementIds: selected }) },
+    addElements: async options => { options.validateBeforePublish(); elements = structuredClone(options.newElements); return true; },
+    saveWithOutcome: async () => ({ requestedRevision: 1, acknowledgedRevision: 1, currentRevision: 1, status: 'persisted' }),
+  });
+  h.plugin.app.workspace.getLeavesOfType = () => [{ view }];
+  const lib = { getCommonBounds: ([e]) => [e.x, e.y, e.x + e.width, e.y + e.height],
+    mutateElement: (element, map, set) => { Object.assign(element, set); element.version++; },
+    convertToExcalidrawElements: skeletons => skeletons.map(e => ({ ...e, groupIds: [], version: 1 })) };
+  h.plugin.getCLIRuntime = () => lib;
+  const ea = { elementsDict: {}, imagesDict: {}, setView() {}, getElements() { return Object.values(this.elementsDict); },
+    copyViewElementsToEAforEditing(values) { for (const e of structuredClone(values)) this.elementsDict[e.id] = e; } };
+  return { view, ea, lib, select: value => { selected = value; } };
+}
+
+test('polygon skeletons and updates support dense bounded line contours without accepting foreign fields', async () => {
+  const h = harness(), points = Array.from({ length: 250 }, (_, i) => [i, i % 5]);
+  points[249] = [...points[0]];
+  assert.doesNotThrow(() => h.elements.validateBatch([{ type: 'line', points, polygon: true }]));
+  assert.throws(() => h.elements.validateBatch([{ type: 'arrow', polygon: true }]));
+  assert.throws(() => h.elements.validateBatch([{ type: 'line', polygon: 'yes' }]));
+  assert.throws(() => h.elements.validateBatch([{ type: 'line', points: Array(1001).fill([0, 0]) }]));
+  assert.throws(() => h.elements.validateBatch([{ type: 'line', strokeLinecap: 'round' }]));
+  assert.throws(() => h.elements.validateBatch([{ type: 'line', points: points.slice(0, -1), polygon: true }]), error => error.field === 'polygon');
+  assert.throws(() => h.elements.validateBatch([{ type: 'line', points: [[0, 0], [1, 1], [0, 0]], polygon: true }]));
+  assert.equal(h.apply.validateOperations([{ op: 'update', id: 'line', set: { polygon: false } }]).length, 1);
+  const a = authoringView(h, [{ id: 'line', type: 'line', points: [[0, 0], [50, 0], [50, 50]], x: 0, y: 0, width: 50, height: 50 }]);
+  const run = () => h.apply.applyDrawing(h.manager, { path: a.view.file.path, expectedRevision: h.manager.targets.revision(a.view), operations: [{ op: 'update', id: 'line', set: { polygon: true } }] }, a.ea);
+  await assert.rejects(run(), error => error.field === 'polygon');
+});
+
+test('selection packets capture exact targets and bound labels independently of later selection', async () => {
+  const h = harness(), a = authoringView(h, [
+    { id: 'shape', type: 'rectangle', x: 10, y: 20, width: 100, height: 60, frameId: 'frame', boundElements: [{ id: 'label', type: 'text' }] },
+    { id: 'label', type: 'text', text: 'Target', containerId: 'shape', x: 20, y: 30, width: 80, height: 20 },
+    { id: 'other', type: 'rectangle', x: 300, y: 0, width: 40, height: 40 },
+  ]);
+  a.select({ shape: true });
+  const result = await h.manager.execute(request('selection', { path: a.view.file.path, view: a.view.id }));
+  assert.equal(result.ok, true, JSON.stringify(result));
+  const packet = result.data;
+  assert.equal(packet.vault, 'Test'); assert.equal(packet.view, a.view.id);
+  assert.deepEqual(packet.elements.map(e => e.id), ['shape', 'label']);
+  assert.equal(packet.elements[0].labelId, 'label'); assert.equal(packet.elements[0].text, 'Target');
+  assert.deepEqual(packet.elements[0].bounds, [10, 20, 110, 80]);
+  assert.equal(packet.elements[1].selected, false);
+  a.select({});
+  const read = await h.manager.execute(request('read', { path: packet.path, view: packet.view, source: 'live', ids: packet.elements.map(e => e.id), revision: packet.revision, detail: 'elements' }));
+  assert.equal(read.ok, true); assert.equal(read.data.total, 2);
+  assert.equal((await h.manager.execute(request('selection', { path: packet.path }))).error.code, 'INVALID_INPUT');
+});
+
+test('drawing image insertion keeps links and anchor options while refusing ordinary Markdown and source races', async () => {
+  for (const mode of ['drawing', 'markdown', 'self', 'changed']) {
+    const h = harness(), a = authoringView(h);
+    const asset = new h.files[0].constructor(mode === 'markdown' ? 'Notes/Plain.md' : mode === 'self' ? a.view.file.path : 'Maps/Source.excalidraw.md');
+    if (mode !== 'self') h.files.push(asset);
+    let published = false, called = false;
+    a.view.addElements = async options => { options.validateBeforePublish(); published = true; return true; };
+    a.ea.addImage = async (x, y, file, scale, anchor) => {
+      called = true; assert.equal(file, asset); assert.equal(scale, false); assert.equal(anchor, false);
+      if (mode === 'changed') asset.stat.size++;
+      a.ea.elementsDict.image = { id: 'image', type: 'image', version: 1, groupIds: [] }; return 'image';
+    };
+    const revision = h.manager.targets.revision(a.view);
+    const run = () => h.apply.applyDrawing(h.manager, { path: a.view.file.path, expectedRevision: revision,
+      operations: [{ op: 'image', id: 'embed', asset: asset.path, scale: false, anchor: false }] }, a.ea);
+    if (mode === 'drawing') { const result = await run(); assert.equal(result.persistence, 'saved'); assert.equal(result.data.idMap.embed, 'image'); }
+    else { await assert.rejects(run(), error => error.code === (mode === 'changed' ? 'STALE_REVISION' : 'INVALID_INPUT')); assert.equal(published, false); }
+    assert.equal(called, mode === 'drawing' || mode === 'changed');
+  }
+});
+
 test('registration validates minimum API, optional method and desktop without bumping the baseline', () => {
   for (const options of [{ supported: false }, { native: false }, { desktop: false }]) {
     const h = harness(options); h.manager.initialize(); assert.equal(h.registrations.size, 0);
   }
-  const h = harness(); h.manager.initialize(); assert.equal(h.registrations.size, 15);
+  const h = harness(); h.manager.initialize(); assert.equal(h.registrations.size, 16);
   assert.deepEqual(h.versionChecks, ['1.12.2']);
 });
 

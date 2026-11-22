@@ -2075,7 +2075,10 @@
           "path": "scripts/testing/cli.test.mjs",
           "cases": [
             "node:scripts/testing/cli.test.mjs::registration validates minimum API, optional method and desktop without bumping the baseline",
-            "node:scripts/testing/cli.test.mjs::icon discovery is read-only, bounded and snapshot-paginated"
+            "node:scripts/testing/cli.test.mjs::icon discovery is read-only, bounded and snapshot-paginated",
+            "node:scripts/testing/cli.test.mjs::polygon skeletons and updates support dense bounded line contours without accepting foreign fields",
+            "node:scripts/testing/cli.test.mjs::selection packets capture exact targets and bound labels independently of later selection",
+            "node:scripts/testing/cli.test.mjs::drawing image insertion keeps links and anchor options while refusing ordinary Markdown and source races"
           ]
         },
         {
@@ -2155,6 +2158,29 @@
             "OpenAI text and multimodal requests inherit configured reasoning and use completion token limits",
             "all provider text pipelines normalize responses without OpenAI reasoning fields leaking",
             "current image providers generate and edit through their actual payload and response adapters"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/strokeConversion.test.mjs",
+          "cases": [
+            "node:scripts/testing/strokeConversion.test.mjs::line to free-draw retains world placement, identity and metadata for rotated strokes",
+            "node:scripts/testing/strokeConversion.test.mjs::rounded line conversion samples the actual spline within tolerance instead of retagging control points",
+            "node:scripts/testing/strokeConversion.test.mjs::free-draw to line simplifies centerlines and explicitly removes custom pen and pressure semantics",
+            "node:scripts/testing/strokeConversion.test.mjs::custom free-draw tips/pressure configuration is copied without modifying caller settings",
+            "node:scripts/testing/strokeConversion.test.mjs::conversion preserves closed fills and rejects unsupported relationships or budgets atomically",
+            "node:scripts/testing/strokeConversion.test.mjs::concatenation chooses endpoint order, retains sharp corners and publishes no intermediate changes",
+            "node:scripts/testing/strokeConversion.test.mjs::concatenation refuses disconnected, conflicting and closed inputs without deleting any source",
+            "node:scripts/testing/strokeConversion.test.mjs::concatenation samples spline sections and normalizes rotation before endpoint matching"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/host/nativeCLITransport.test.mjs",
+          "cases": [
+            "node:scripts/testing/host/nativeCLITransport.test.mjs::native stdout timeout recovers only the exact settled receipt without replaying a write",
+            "node:scripts/testing/host/nativeCLITransport.test.mjs::pending, unknown and mismatched native receipts retain the original transport failure",
+            "node:scripts/testing/host/nativeCLITransport.test.mjs::native operation failures and unrelated transport errors are never converted into success"
           ]
         }
       ],

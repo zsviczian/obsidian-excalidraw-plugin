@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { runCLILargeIdentity } from './cliLargeIdentity.mjs';
+import { createNativeCLIActions } from './nativeCLITransport.mjs';
 
 export async function runCLIImagePreviewScenario({ cli, drawingPath, reportDir }) {
   const prefix = drawingPath.replace(/\.(?:excalidraw\.md|excalidraw|md)$/, '') + '_images';
@@ -11,7 +12,7 @@ export async function runCLIImagePreviewScenario({ cli, drawingPath, reportDir }
   const outputs = [], artifacts = []; let largeIdentity;
   const control = '__excalidrawImagePreviewRegression';
   const evaluate = code => JSON.parse(cli('eval', `code=${code}`).trim().replace(/^=>\s*/, ''));
-  const action = (command, values = {}) => JSON.parse(cli(`obsidian-excalidraw-plugin:${command}`, `json=${JSON.stringify({ apiVersion: 1, ...values })}`));
+  const { action, recoveries } = createNativeCLIActions(cli);
   const ok = result => { assert.equal(result.ok, true, JSON.stringify(result)); return result; };
   const id = suffix => `${prefix.split('/').at(-1).slice(-38)}-${suffix}`;
   const viewCode = `app.workspace.getLeavesOfType('excalidraw').find(l=>l.view.file?.path===${JSON.stringify(paths.drawing)})?.view`;
@@ -120,7 +121,7 @@ export async function runCLIImagePreviewScenario({ cli, drawingPath, reportDir }
     assert.equal(race?.error?.code, 'STALE_REVISION', JSON.stringify(race));
     assert.equal(evaluate(`JSON.stringify({exists:!!app.vault.getFileByPath(${JSON.stringify(raced)})})`).exists, false);
     evaluate(`(async()=>{const c=globalThis.${control};c.vault.read=c.read;await c.vault.adapter.writeBinary(c.source.path,c.bytes,{mtime:c.stat.mtime,ctime:c.stat.ctime});Object.assign(c.source.stat,c.stat);delete globalThis.${control};return JSON.stringify({restored:true})})()`);
-    return { status: 'passed', assertions: ['shared image original/thumbnail/placeholder identities', 'crop, mirroring, rotation, opacity, frame membership and title bounds', 'transparent PNG and SVG icon, light/dark', 'XML/Unicode labels', 'complete SVG omits original payloads', 'source text/elements/dirty unchanged', 'metadata clear preserves tags and customData', 'live/disk thumbnails', 'file transport and omitted-asset overwrite refusal', 'same-size same-mtime disk attachment race refuses publication'], artifacts, popoutCoverage: process.env.EXCALIDRAW_CLI_POPOUT === '1' ? 'passed' : 'not run (set EXCALIDRAW_CLI_POPOUT=1)', ...(largeIdentity ? { largeIdentity } : {}) };
+    return { status: 'passed', assertions: ['shared image original/thumbnail/placeholder identities', 'crop, mirroring, rotation, opacity, frame membership and title bounds', 'transparent PNG and SVG icon, light/dark', 'XML/Unicode labels', 'complete SVG omits original payloads', 'source text/elements/dirty unchanged', 'metadata clear preserves tags and customData', 'live/disk thumbnails', 'file transport and omitted-asset overwrite refusal', 'same-size same-mtime disk attachment race refuses publication'], artifacts, transportRecoveries: recoveries, popoutCoverage: process.env.EXCALIDRAW_CLI_POPOUT === '1' ? 'passed' : 'not run (set EXCALIDRAW_CLI_POPOUT=1)', ...(largeIdentity ? { largeIdentity } : {}) };
   } finally {
     evaluate(`(async()=>{const c=globalThis.${control};if(c){c.vault.read=c.read;c.release();if(c.bytes)await c.vault.adapter.writeBinary(c.source.path,c.bytes);delete globalThis.${control}}for(const path of ${JSON.stringify([...Object.values(paths), ...outputs])}){if(!path.startsWith(${JSON.stringify(prefix)}))throw Error('unsafe cleanup');for(const l of app.workspace.getLeavesOfType('excalidraw').filter(l=>l.view.file?.path===path)){await l.setViewState({type:'empty',state:{}});l.detach()}const f=app.vault.getFileByPath(path);if(f)await app.vault.delete(f)}return JSON.stringify({clean:true})})()`);
   }

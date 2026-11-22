@@ -36,6 +36,7 @@ import { ExcalidrawAutomate } from "../../shared/ExcalidrawAutomate";
 import { search } from "src/utils/excalidrawAutomateUtils";
 import { selectDrawingTemplate } from "../../shared/Dialogs/TemplatePrompt";
 import { t } from "../../lang/helpers";
+import { copySelectionPacket } from "src/core/cli/cliSelection";
 import {
   createOrOverwriteFile,
   getAliasWithSize,
@@ -909,6 +910,17 @@ export class CommandManager {
           return true;
         }
         return false;
+      },
+    });
+
+    this.addCommand({
+      id: "copy-selection-for-agent",
+      name: t("CLI_COPY_SELECTION"),
+      checkCallback: (checking: boolean) => {
+        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
+        if (!view?.excalidrawAPI || !view.getViewSelectedElements().length) return false;
+        if (!checking) void copySelectionPacket(this.plugin, view).catch(() => new Notice(t("CLI_COPY_SELECTION_ERROR")));
+        return true;
       },
     });
 

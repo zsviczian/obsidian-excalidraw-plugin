@@ -90,6 +90,8 @@ export default {
   CLI_COPY_SKILL: "Copiar instrucciones para agentes",
   CLI_AGENT_INSTRUCTIONS: `Lee: ${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_CLI}\n\n<<instrucciones del usuario>>`,
   CLI_DESCRIPTION: "CLI nativa de Excalidraw",
+  CLI_COPY_SELECTION: "Copiar elementos seleccionados para el agente",
+  CLI_COPY_SELECTION_ERROR: "No se pudieron copiar los elementos seleccionados. Selecciona menos elementos e inténtalo de nuevo.",
 
   // Sugester
   SELECT_FILE_TO_INSERT: "Selecciona un archivo para insertar",
