@@ -2664,18 +2664,10 @@ button.excalidraw-font-picker {
   color: var(--text-muted);
   font-size: var(--font-ui-smaller);
 }
-.excalidraw-drawing-preview-popover {
-  position: fixed;
-  z-index: var(--layer-popover);
+.modal.excalidraw-drawing-preview-popover {
   width: 340px;
   max-width: calc(100vw - 16px);
   max-height: calc(100vh - 16px);
-  overflow: auto;
-  padding: 12px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-m);
-  background: var(--background-primary);
-  box-shadow: var(--shadow-s);
 }
 .excalidraw-drawing-preview-image {
   display: flex;

@@ -1,6 +1,6 @@
 /** Trusted in-scene controls, shared-source scope and persisted link/geometry behavior. */
 export async function exerciseDrawingImagePreview(c, env, template, drawing, context, modifier) {
-  const { p, leaf, doc, check, click, key } = env;
+  const { p, leaf, doc, win, check, click, key } = env;
   let view = await env.openDrawing("Image-host", {}, template);
   const ea = p.ea.getAPI(view); let first, variant;
   try {
@@ -48,7 +48,25 @@ export async function exerciseDrawingImagePreview(c, env, template, drawing, con
     await click(buttons.find(button=>all?button.textContent.startsWith("All 3"):button.textContent==="Only this image"));
     await c.waitFor(()=>!doc.querySelector(".excalidraw-drawing-preview-popover"),"image settings commit closes popover");
   };
-  let popup=await open(); await chooseFrame(popup); await choosePadding(popup,3); await apply(popup,false);
+  let popup=await open();
+  await c.waitFor(()=>popup.closest(".mod-excalidraw-draggable"),"shared floating modal initialized");
+  check(win.getComputedStyle(popup).position === "absolute", "preview configuration is not a floating modal");
+  check(win.getComputedStyle(popup.parentElement).pointerEvents === "none", "floating modal blocks the workspace");
+  const start = popup.getBoundingClientRect(), x = start.left + 8, y = start.top + 8;
+  await env.input("Input.dispatchMouseEvent", {type:"mousePressed",x,y,button:"left",buttons:1,clickCount:1});
+  await env.input("Input.dispatchMouseEvent", {type:"mouseMoved",x:x+32,y:y+24,button:"left",buttons:1});
+  await env.input("Input.dispatchMouseEvent", {type:"mouseReleased",x:x+32,y:y+24,button:"left",buttons:0,clickCount:1});
+  await c.waitFor(()=>Math.abs(popup.getBoundingClientRect().left-start.left)>4,"native drag moves configuration modal");
+  const moved = popup.getBoundingClientRect();
+  await env.input("Input.dispatchMouseEvent", {type:"mousePressed",x:win.innerWidth-20,y:win.innerHeight-80,button:"left",buttons:1,clickCount:1});
+  await env.input("Input.dispatchMouseEvent", {type:"mouseReleased",x:win.innerWidth-20,y:win.innerHeight-80,button:"left",buttons:0,clickCount:1});
+  win.dispatchEvent(new win.Event("blur"));
+  check(popup.isConnected,"outside interaction or window blur closed the floating modal");
+  const imageBefore = popup.querySelector("img").src;
+  await chooseFrame(popup); await choosePadding(popup,3);
+  await c.waitFor(()=>popup.querySelector("img").src!==imageBefore&&popup.querySelector("img").naturalWidth>0,"floating modal live preview decoded");
+  check(Math.abs(popup.getBoundingClientRect().left-moved.left)<1&&Math.abs(popup.getBoundingClientRect().top-moved.top)<1,"preview rendering reset the dragged modal position");
+  await apply(popup,false);
   check(get(first).fileId!==originalId && get("shared-copy").fileId===originalId,"only-this-image changed a shared copy");
   check(link(first).includes("#^frame=frame-marker,padding=3"),"image settings not persisted to embedded link");
   check(link(variant).includes("padding=20|100%"),"only-this-image changed a distinct view");
@@ -63,7 +81,15 @@ export async function exerciseDrawingImagePreview(c, env, template, drawing, con
   check(link("shared-copy").includes("as-image,padding=5"),"apply-all pinned a default-thumbnail copy");
   check(link(variant).includes("frame=frame-marker,padding=5|100%"),"apply-all lost another copy's anchor or frame");
   for(let i=0;i<3;i++)check(JSON.stringify(center([first,"shared-copy",variant][i]))===JSON.stringify(oldCenters[i]),"apply-all changed a copy's center");
-  popup=await open(); await click(popup.querySelector(".checkbox-container")); await apply(popup,true);
+  popup=await open();
+  const toggle = popup.querySelector(".checkbox-container"), touch = toggle.getBoundingClientRect();
+  await env.input("Emulation.setTouchEmulationEnabled", {enabled:true,maxTouchPoints:1});
+  try {
+    await env.input("Input.dispatchTouchEvent", {type:"touchStart",touchPoints:[{x:touch.left+touch.width/2,y:touch.top+touch.height/2,id:1}]});
+    await env.input("Input.dispatchTouchEvent", {type:"touchEnd",touchPoints:[]});
+    await c.waitFor(()=>toggle.classList.contains("is-enabled"),"touch toggles anchoring without starting a drag");
+  } finally { await env.input("Emulation.setTouchEmulationEnabled", {enabled:false}); }
+  await apply(popup,true);
   for(const id of [first,"shared-copy",variant]){
     const el=get(id), source=view.excalidrawData.getFile(el.fileId);
     check(link(id).endsWith("|100%")&&el.customData.isAnchored,"100% state absent from link or derived canvas flag");
@@ -73,10 +99,15 @@ export async function exerciseDrawingImagePreview(c, env, template, drawing, con
   const savedLinks=beforeLinks.map(value=>value.replace(/^[^#|]*/,app.metadataCache.fileToLinktext(drawing,view.file.path)));
   popup=await open(); await choosePadding(popup,9); await key("Escape","Escape",27);
   check(!doc.querySelector(".excalidraw-drawing-preview-popover")&&JSON.stringify(view.getViewElements())===before,"Escape wrote draft image settings");
+  popup=await open(); await choosePadding(popup,11); await click(popup.querySelector(".modal-close-button, .modal-header-button"));
+  check(!popup.isConnected&&JSON.stringify(view.getViewElements())===before,"close button wrote draft settings");
+  await view.drawingImagePreview.open(first); view.drawingImagePreview.reset();
+  await new Promise(resolve=>window.setTimeout(resolve,30));
+  check(!doc.querySelector(".excalidraw-drawing-preview-popover"),"quick close left a deferred floating modal behind");
   view=await env.saveReopen(view);
   c.caseTrace.imageLinks = { expected: savedLinks, after: [first,"shared-copy",variant].map(link) };
   check(JSON.stringify([first,"shared-copy",variant].map(link))===JSON.stringify(savedLinks),"reopen lost image preview links or anchoring");
   for(const id of [first,"shared-copy",variant])check(view.excalidrawData.getFile(get(id).fileId).file===drawing&&get(id).customData.isAnchored,"reopen changed image source or anchoring");
   check(view.getViewElements().filter(el=>el.type==='image').length===3,"settings created duplicate image elements");
-  return { assertions: ["selected drawing image opens owner-window configuration", "native frame/padding controls prompt once for all three source copies", "only-this-image isolates its link and preserves image area/center", "one native undo/redo restores references and geometry", "apply-all changes only edited fields across shared and distinct references", "100% persists in links and uses intrinsic dimensions", "Escape cancels drafts", "save/reopen preserves all links and three scene elements"] };
+  return { assertions: ["selected drawing image opens owner-window configuration", "native frame/padding controls prompt once for all three source copies", "only-this-image isolates its link and preserves image area/center", "one native undo/redo restores references and geometry", "apply-all changes only edited fields across shared and distinct references", "100% persists in links and uses intrinsic dimensions", "floating modal drags without blocking workspace or closing on blur", "live preview preserves dragged position", "Escape and close button cancel drafts", "quick close cancels deferred modal setup", "save/reopen preserves all links and three scene elements"] };
 }
