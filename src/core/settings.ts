@@ -89,6 +89,8 @@ import {
   KNOWN_AI_TEXT_MODEL_CONFIGS,
   KNOWN_AI_IMAGE_MODEL_CONFIGS,
   cloneModelConfigs,
+  ensureCustomPenSlots,
+  MAX_CUSTOM_PENS,
 } from "src/core/settingsDefaults";
 import { SettingBindingRegistry } from "src/core/settings/SettingBindingRegistry";
 import { LegacySettingsAdapter } from "src/core/settings/LegacySettingsAdapter";
@@ -4707,11 +4709,12 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           type: "number-dropdown",
           key: "numberOfCustomPens",
           parse: "int",
-          options: Array.from({ length: 11 }, (_, value) => ({
+          options: Array.from({ length: MAX_CUSTOM_PENS + 1 }, (_, value) => ({
             value,
             label: value.toString(),
           })),
           after: () => {
+            ensureCustomPenSlots(this.plugin.settings);
             this.requestUpdatePinnedPens = true;
           },
         },
