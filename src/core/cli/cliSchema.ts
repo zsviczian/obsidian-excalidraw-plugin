@@ -17,7 +17,7 @@ const operationRequired: Record<string, string[]> = {
 };
 function property(name: string): Record<string, unknown> {
   if (name === "x") return { type: "number", description: "For text skeletons, x is the left/center/right alignment anchor according to textAlign. Existing-element updates use the scene element's x coordinate." };
-  if (name === "polygon") return { type: "boolean", description: "Line elements only: close the contour for background fill. False retains an open line." };
+  if (name === "polygon") return { type: "boolean", description: "Line elements only. True requires at least four points, last equal to first; the CLI does not reshape the path. False retains regular line semantics; a closed path can still fill from backgroundColor." };
   if (name === "anchor") return { type: "boolean", default: true, description: "With scale=false, anchor the image/drawing embed to 100% of its source size. With scale=true this option has no effect." };
   if (name === "asset") return { type: "string", description: "Exact vault path of a raster image, SVG or plugin-recognized Excalidraw drawing (including .excalidraw.md). Ordinary Markdown notes and self-embeds are refused." };
   if (["x", "y", "size", "width", "height", "angle", "fontSize", "fontFamily", "opacity", "strokeWidth", "roughness", "offset", "limit", "padding", "scale", "scaleX", "scaleY", "maxWidth", "maxHeight", "maxPixels", "maxArtifactBytes"].includes(name)) return { type: "number" };

@@ -4,7 +4,7 @@ import type { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import type { ExcalidrawCLI } from "src/core/managers/ExcalidrawCLI";
 import type { ConnectionPoint } from "src/types/types";
 import { CLIError, boolean, number, object, string, vaultPath } from "./cliProtocol";
-import { CLI_STYLE_FIELDS, constructBatch, fields, validateBatch, validateStyle } from "./cliElements";
+import { CLI_STYLE_FIELDS, constructBatch, fields, validateBatch, validatePolygonPoints, validateStyle } from "./cliElements";
 import { drawingFile, drawingView, liveIdentity } from "./cliTarget";
 import { sameCLIIdentity } from "./cliIdentity";
 import { cliImageMetadataPatch } from "src/utils/elementCustomDataUtils";
@@ -110,6 +110,7 @@ export async function applyDrawing(cli: ExcalidrawCLI, request: Record<string, u
     } else if (op === "update") {
       const element = resolve(operation.id), set = { ...object(operation.set) };
       validateStyle(set, element.type);
+      if (set.polygon === true && element.type === "line") validatePolygonPoints(element.points);
       if (element.type !== "text" && ["text", "fontSize", "fontFamily", "textAlign", "verticalAlign"].some(key => key in set)) throw new CLIError("INVALID_INPUT", "Text fields require a text element; edit its bound label ID.", "set");
       if (["arrow", "line", "freedraw"].includes(element.type) && ["width", "height"].some(key => key in set)) throw new CLIError("INVALID_INPUT", "Linear resizing requires a trusted EA script.", "set");
       if ("text" in set) { set.rawText = set.text; set.originalText = set.text; }

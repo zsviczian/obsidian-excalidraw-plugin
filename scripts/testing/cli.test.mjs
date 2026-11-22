@@ -62,14 +62,20 @@ function authoringView(h, initial = []) {
   return { view, ea, lib, select: value => { selected = value; } };
 }
 
-test('polygon skeletons and updates support dense bounded line contours without accepting foreign fields', () => {
+test('polygon skeletons and updates support dense bounded line contours without accepting foreign fields', async () => {
   const h = harness(), points = Array.from({ length: 250 }, (_, i) => [i, i % 5]);
+  points[249] = [...points[0]];
   assert.doesNotThrow(() => h.elements.validateBatch([{ type: 'line', points, polygon: true }]));
   assert.throws(() => h.elements.validateBatch([{ type: 'arrow', polygon: true }]));
   assert.throws(() => h.elements.validateBatch([{ type: 'line', polygon: 'yes' }]));
   assert.throws(() => h.elements.validateBatch([{ type: 'line', points: Array(1001).fill([0, 0]) }]));
   assert.throws(() => h.elements.validateBatch([{ type: 'line', strokeLinecap: 'round' }]));
+  assert.throws(() => h.elements.validateBatch([{ type: 'line', points: points.slice(0, -1), polygon: true }]), error => error.field === 'polygon');
+  assert.throws(() => h.elements.validateBatch([{ type: 'line', points: [[0, 0], [1, 1], [0, 0]], polygon: true }]));
   assert.equal(h.apply.validateOperations([{ op: 'update', id: 'line', set: { polygon: false } }]).length, 1);
+  const a = authoringView(h, [{ id: 'line', type: 'line', points: [[0, 0], [50, 0], [50, 50]], x: 0, y: 0, width: 50, height: 50 }]);
+  const run = () => h.apply.applyDrawing(h.manager, { path: a.view.file.path, expectedRevision: h.manager.targets.revision(a.view), operations: [{ op: 'update', id: 'line', set: { polygon: true } }] }, a.ea);
+  await assert.rejects(run(), error => error.field === 'polygon');
 });
 
 test('selection packets capture exact targets and bound labels independently of later selection', async () => {

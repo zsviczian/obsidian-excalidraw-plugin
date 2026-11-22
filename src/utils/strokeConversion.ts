@@ -43,6 +43,9 @@ export function convertWorkbenchStroke(ea: ExcalidrawAutomate, id: string, targe
   const centerline = strokeCenterline(source, ea.plugin.getCLIRuntime(), tolerance, 100000);
   const points = target === "line" ? simplifyStroke(centerline, tolerance) : centerline;
   if (points.length > maxPoints) throw Error("Stroke point budget exceeded; increase it or use a larger tolerance");
+  const closed = Math.hypot(points[0][0] - points.at(-1)[0], points[0][1] - points.at(-1)[1]) <= tolerance;
+  // Exact closure is required for the fork to retain a line's polygon flag on restoration.
+  if (target === "line" && closed) points[points.length - 1] = [...points[0]];
   // cloneElement retains the discriminant; its general return type does not retain this narrowed stroke union.
   const geometry = strokeGeometry(points), base = cloneElement(source) as typeof source, warnings: string[] = [];
   // The fork renders nominal free-draw width at 4.25 times the element strokeWidth.
@@ -51,16 +54,15 @@ export function convertWorkbenchStroke(ea: ExcalidrawAutomate, id: string, targe
     const converted: Mutable<ExcalidrawFreeDrawElement> & Record<string, unknown> = { ...base, ...geometry, type: "freedraw", strokeWidth, roughness: 0, roundness: null,
       pressures: points.map(() => 0.5), simulatePressure: pen.options.simulatePressure ?? !pen.constantPressure,
       strokeOptions: { variability: "constant" as const, streamline: 0 },
-      backgroundColor: source.type === "line" && !source.polygon ? "transparent" : source.backgroundColor };
+      backgroundColor: source.type === "line" && !closed ? "transparent" : source.backgroundColor };
     for (const key of ["polygon", "startArrowhead", "endArrowhead", "startBinding", "endBinding", "lastCommittedPoint"]) Reflect.deleteProperty(converted, key);
     setFreedrawPenOptions(converted, pen);
     ea.elementsDict[id] = converted;
     warnings.push("excalidraw.com ignores custom free-draw options; appearance can differ there.");
     if (source.roughness) warnings.push("Converted the ideal centerline, not the original rough ink jitter.");
   } else {
-    const closed = Math.hypot(points[0][0] - points.at(-1)[0], points[0][1] - points.at(-1)[1]) <= tolerance;
     const converted: Mutable<ExcalidrawLineElement> & Record<string, unknown> = { ...base, ...geometry, type: "line", strokeWidth, roughness: 0,
-      polygon: closed || !["transparent", ""].includes(source.backgroundColor), roundness: null,
+      polygon: closed && points.length >= 4, roundness: null,
       startArrowhead: null, endArrowhead: null, startBinding: null, endBinding: null, lastCommittedPoint: null };
     for (const key of ["pressures", "simulatePressure", "strokeOptions"]) Reflect.deleteProperty(converted, key);
     setFreedrawPenOptions(converted);

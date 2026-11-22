@@ -73,9 +73,12 @@ types are rectangle, ellipse, diamond, text, arrow, line, frame, and stickynote.
 Arrow `start`/`end` bindings and frame `children` reference IDs in their batch.
 Frames require children and cannot nest. Use `connect` for existing endpoints.
 
-Line skeletons and line `update.set` accept boolean `polygon`: `true` closes
-the contour for background fill; `false` keeps it open. Other element types
-reject this field. Line/arrow skeletons allow 2–1000 points, with at most 100000
+Line skeletons and line `update.set` accept boolean `polygon`. True requires
+an explicitly closed contour: at least four points with the last equal to the
+first. The CLI does not reshape the path. False retains ordinary line semantics;
+a closed path can still fill from its background color. Use a transparent
+background to remove fill. Other element types reject this field.
+Line/arrow skeletons allow 2–1000 points, with at most 100000
 points per batch. Use a request file for dense contours. Ordinary lines do not
 accept `strokeLinecap`; custom free-draw styling belongs in an explicit EA script.
 Text skeleton `x` is the left/center/right anchor according to `textAlign`;

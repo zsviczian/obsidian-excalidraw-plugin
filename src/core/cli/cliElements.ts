@@ -36,6 +36,14 @@ export function validateStyle(value: Record<string, unknown>, type?: string): vo
   }
 }
 
+/** Matches the fork's isValidPolygon contract; restoration resets an open path's flag. */
+export function validatePolygonPoints(points: unknown): void {
+  if (!Array.isArray(points) || points.length < 4 || !Array.isArray(points[0]) || !Array.isArray(points.at(-1)) ||
+    points[0][0] !== points.at(-1)[0] || points[0][1] !== points.at(-1)[1]) {
+    throw new CLIError("INVALID_INPUT", "Polygon requires at least four points with the last point equal to the first. Close the contour explicitly.", "polygon");
+  }
+}
+
 /** Complete validation precedes conversion; relationship references are batch-local. */
 export function validateBatch(input: unknown): Record<string, unknown>[] {
   if (!Array.isArray(input) || input.length > 500) throw new CLIError("INVALID_INPUT", "Expected at most 500 skeletons.", "elements");
@@ -69,6 +77,7 @@ export function validateBatch(input: unknown): Record<string, unknown>[] {
         point.forEach(coordinate => number(coordinate, "points", 0, -100000, 100000));
       }
     }
+    if (element.polygon === true) validatePolygonPoints(element.points);
     for (const key of ["startArrowhead", "endArrowhead"]) if (element[key] !== undefined) {
       if (!["arrow", "line"].includes(string(element.type, "type"))) throw new CLIError("INVALID_INPUT", "Arrowheads require a linear element.", key);
       if (element[key] !== null && !arrowheads.includes(string(element[key], key))) throw new CLIError("INVALID_INPUT", "Unknown arrowhead.", key);

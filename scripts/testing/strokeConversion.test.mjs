@@ -93,6 +93,10 @@ test('conversion preserves closed fills and rejects unsupported relationships or
   convertWorkbenchStroke(ea, 'closed', 'freedraw');
   assert.deepEqual(ea.getElement('closed').points.at(-1), [0, 0]);
   convertWorkbenchStroke(ea, 'closed', 'line'); assert.equal(ea.getElement('closed').polygon, true);
+  const ordinary = workbench([line('ordinary', [[0, 0], [50, 0], [0, 50], [0, 0]], { backgroundColor: '#ff0000' })]);
+  convertWorkbenchStroke(ordinary, 'ordinary', 'freedraw'); assert.equal(ordinary.getElement('ordinary').backgroundColor, '#ff0000');
+  const open = workbench([line('open', [[0, 0], [50, 0]], { type: 'freedraw', backgroundColor: '#ff0000' })]);
+  convertWorkbenchStroke(open, 'open', 'line'); assert.equal(open.getElement('open').polygon, false);
   for (const extra of [{ startArrowhead: 'arrow' }, { startBinding: { elementId: 'shape' } }, { endBinding: { elementId: 'shape' } }, { boundElements: [{ id: 'label', type: 'text' }] }]) {
     const e = line('bad', [[0, 0], [20, 30]], extra), target = workbench([e]), before = structuredClone(e);
     assert.throws(() => convertWorkbenchStroke(target, 'bad', 'freedraw')); assert.deepEqual(target.getElement('bad'), before);

@@ -17,7 +17,8 @@ export async function runCLIAuthoringExtensions({ cli, drawingPath, reportDir })
   let strokeResults;
   try {
     ok(action('create', { requestId: id('source'), path: files.source, elements: [{ type: 'rectangle', x: 0, y: 0, width: 200, height: 90, backgroundColor: '#1971c2', fillStyle: 'solid', label: { text: 'Embedded mind map' } }] }));
-    const points = Array.from({ length: 250 }, (_, i) => [80 * (Math.cos(i / 249 * Math.PI * 1.8) - 1), 60 * Math.sin(i / 249 * Math.PI * 1.8)]);
+    const points = Array.from({ length: 250 }, (_, i) => [80 * (Math.cos(i / 249 * Math.PI * 2) - 1), 60 * Math.sin(i / 249 * Math.PI * 2)]);
+    points[249] = [...points[0]];
     const hostRequest = { apiVersion: 1, requestId: id('host'), path: files.host, elements: [
       { id: 'contour', type: 'line', x: 240, y: 100, width: 160, height: 120, polygon: true, points, roughness: 0, strokeColor: '#ff0000', backgroundColor: '#ff0000', fillStyle: 'solid' },
       { id: 'target', type: 'rectangle', x: 400, y: 0, width: 180, height: 80, label: { text: 'Selected target' } },
@@ -60,7 +61,9 @@ export async function runCLIAuthoringExtensions({ cli, drawingPath, reportDir })
     ok(action('export', { requestId: id('filled'), path: files.host, source: 'live', out: files.filled, theme: 'light', area, padding: 0 }));
     const filled = await runInAppTask({ cli, execute: redPixels, args: [files.filled], timeoutMs: 30000 });
     assert.ok(filled.red > filled.total * 0.8, JSON.stringify(filled));
-    ok(action('apply', { requestId: id('open-line'), path: files.host, expectedRevision: read().revision, operations: [{ op: 'update', id: polygonId, set: { polygon: false } }] }));
+    assert.equal(read().elements.find(e => e.id === polygonId).polygon, true);
+    ok(action('apply', { requestId: id('open-line'), path: files.host, expectedRevision: read().revision, operations: [{ op: 'update', id: polygonId, set: { polygon: false, backgroundColor: 'transparent' } }] }));
+    assert.equal(read().elements.find(e => e.id === polygonId).polygon, false);
     ok(action('export', { requestId: id('open-png'), path: files.host, source: 'live', out: files.open, theme: 'light', area, padding: 0 }));
     const unfilled = await runInAppTask({ cli, execute: redPixels, args: [files.open], timeoutMs: 30000 });
     assert.equal(unfilled.red, 0);
