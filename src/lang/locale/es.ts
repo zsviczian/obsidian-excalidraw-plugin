@@ -959,6 +959,8 @@ export default {
     }'>Modo de Lectura de Markdown</a> en 'Apariencia y Comportamiento' más arriba.<br>` +
     `⚠️ Debes cerrar y volver a abrir el archivo de Excalidraw/Markdown para que los cambios surtan efecto. ⚠️`,
   MODES_HEAD: "Modos",
+  SIDEPANEL_POPOUT_NAME: "Abrir el panel lateral de Excalidraw en una ventana independiente",
+  SIDEPANEL_POPOUT_DESC: "En escritorio, al activar este ajuste, el panel lateral de Excalidraw se abre en una ventana independiente la próxima vez que lo muestres. Al desactivarlo, el panel vuelve a la barra lateral sin desplegarla. Los movimientos manuales posteriores se conservan.",
   MODES_DESC:
     "Elige diseños de interfaz específicos para cada dispositivo, controles de la barra de título y la posición de la bandeja para diestros o zurdos.",
   HOTKEY_OVERRIDE_HEAD: "Anulaciones de atajos de teclado",

@@ -220,6 +220,7 @@ export interface ExcalidrawSettings {
   taskboneAPIKeySecret?: string;
   pinnedScripts: string[];
   sidepanelTabs: string[];
+  sidepanelOpenInPopout: boolean;
   customPens: PenStyle[];
   numberOfCustomPens: number;
   pdfScale: number;
@@ -575,6 +576,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   taskboneAPIKeySecret: "",
   pinnedScripts: [],
   sidepanelTabs: [],
+  sidepanelOpenInPopout: false,
   customPens: [
     { ...PENS.default },
     { ...PENS.highlighter },

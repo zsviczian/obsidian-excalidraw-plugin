@@ -29,6 +29,7 @@ import { embedReliabilityCaseIds } from "./host/embedReliability.mjs";
 import { frameSemanticsCaseIds, frameSemanticsDeviceCaseIds } from "./host/frameSemantics.mjs";
 import { kplexOntologyCaseIds, kplexOntologyDeviceCaseIds } from "./host/kplexOntology.mjs";
 import { runtimeCompactionCaseIds } from "./host/runtimeCompaction.mjs";
+import { sidepanelPopoutCaseIds } from "./host/sidepanelPopout.mjs";
 
 export const requiredDeviceCases = [
   ...deviceProfiles(),
@@ -36,6 +37,7 @@ export const requiredDeviceCases = [
 ].map((profile) => "native:device:" + profile.id).concat(kplexOntologyDeviceCaseIds, embedControlDeviceCaseIds, frameSemanticsDeviceCaseIds);
 
 export const requiredNativeCases = [
+  ...sidepanelPopoutCaseIds,
   ...runtimeCompactionCaseIds,
   ...workflowBundleCaseIds,
   ...issue3052CaseIds,

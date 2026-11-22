@@ -50,7 +50,7 @@ export class LucideIconPicker {
       this.tab.open(false);
       // Revealing the main-window panel can transiently activate its old drawing
       // while leaving a popout. Preserve the explicit initiating view until reveal completes.
-      await this.plugin.app.workspace.revealLeaf(panel.leaf);
+      await panel.reveal();
       this.tab?.contentEl.querySelector("input")?.focus();
     } catch { new Notice(t("LUCIDE_INSERT_FAILED")); }
     finally {

@@ -1245,6 +1245,10 @@ body>[data-radix-portal] .main-menu {
   padding: 12px;
 }
 
+.excalidraw-markdown-image-editor__source {
+  padding-top: var(--size-4-2);
+}
+
 .excalidraw-markdown-image-editor__section-description {
   margin: 4px 0 10px;
   color: var(--text-muted);

@@ -243,6 +243,17 @@ not physical Android/iOS, native OS drag or stylus evidence.
 
 ## Earlier focused scenario details
 
+Run `npm run verify:obsidian -- --sidepanel-popout` for the desktop sidepanel
+setting. It checks the default right sidebar, popout document ownership,
+singleton/tab-input reuse, deferred popout on the next reveal of a live or restored
+sidebar tab, docking as a sibling tab without expanding the sidebar through both
+settings controls, preservation of later manual moves, Markdown
+image insertion retaining popout/editor focus, extraction-section padding, and
+non-default settings plus unknown-key preservation across plugin unload and
+startup. It restores its settings and closes its owned panels/windows. Mobile's
+desktop-preference guard has source coverage; physical mobile and other desktop
+operating systems remain separate manual checks.
+
 The following scenario notes retain their feature-specific assertions. Their
 native execution now uses the preparation and local vault contract above.
 

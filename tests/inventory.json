@@ -1996,199 +1996,204 @@
       "line": 222
     },
     {
-      "name": "customPens",
+      "name": "sidepanelOpenInPopout",
       "path": "src/core/settingsDefaults.ts",
       "line": 223
     },
     {
-      "name": "numberOfCustomPens",
+      "name": "customPens",
       "path": "src/core/settingsDefaults.ts",
       "line": 224
     },
     {
-      "name": "pdfScale",
+      "name": "numberOfCustomPens",
       "path": "src/core/settingsDefaults.ts",
       "line": 225
     },
     {
-      "name": "pdfBorderBox",
+      "name": "pdfScale",
       "path": "src/core/settingsDefaults.ts",
       "line": 226
     },
     {
-      "name": "pdfFrame",
+      "name": "pdfBorderBox",
       "path": "src/core/settingsDefaults.ts",
       "line": 227
     },
     {
-      "name": "pdfGapSize",
+      "name": "pdfFrame",
       "path": "src/core/settingsDefaults.ts",
       "line": 228
     },
     {
-      "name": "pdfGroupPages",
+      "name": "pdfGapSize",
       "path": "src/core/settingsDefaults.ts",
       "line": 229
     },
     {
-      "name": "pdfLockAfterImport",
+      "name": "pdfGroupPages",
       "path": "src/core/settingsDefaults.ts",
       "line": 230
     },
     {
-      "name": "pdfNumColumns",
+      "name": "pdfLockAfterImport",
       "path": "src/core/settingsDefaults.ts",
       "line": 231
     },
     {
-      "name": "pdfNumRows",
+      "name": "pdfNumColumns",
       "path": "src/core/settingsDefaults.ts",
       "line": 232
     },
     {
-      "name": "pdfDirection",
+      "name": "pdfNumRows",
       "path": "src/core/settingsDefaults.ts",
       "line": 233
     },
     {
-      "name": "pdfImportScale",
+      "name": "pdfDirection",
       "path": "src/core/settingsDefaults.ts",
       "line": 234
     },
     {
-      "name": "gridSettings",
+      "name": "pdfImportScale",
       "path": "src/core/settingsDefaults.ts",
       "line": 235
     },
     {
-      "name": "laserSettings",
+      "name": "gridSettings",
       "path": "src/core/settingsDefaults.ts",
       "line": 236
     },
     {
-      "name": "embeddableMarkdownDefaults",
+      "name": "laserSettings",
       "path": "src/core/settingsDefaults.ts",
-      "line": 241
+      "line": 237
     },
     {
-      "name": "markdownNodeOneClickEditing",
+      "name": "embeddableMarkdownDefaults",
       "path": "src/core/settingsDefaults.ts",
       "line": 242
     },
     {
-      "name": "canvasImmersiveEmbed",
+      "name": "markdownNodeOneClickEditing",
       "path": "src/core/settingsDefaults.ts",
       "line": 243
     },
     {
-      "name": "startupScriptPath",
+      "name": "canvasImmersiveEmbed",
       "path": "src/core/settingsDefaults.ts",
       "line": 244
     },
     {
-      "name": "aiEnabled",
+      "name": "startupScriptPath",
       "path": "src/core/settingsDefaults.ts",
       "line": 245
     },
     {
-      "name": "aiVerboseLogging",
+      "name": "aiEnabled",
       "path": "src/core/settingsDefaults.ts",
       "line": 246
     },
     {
-      "name": "aiProviderProfiles",
+      "name": "aiVerboseLogging",
       "path": "src/core/settingsDefaults.ts",
       "line": 247
     },
     {
-      "name": "aiTextModelConfigs",
+      "name": "aiProviderProfiles",
       "path": "src/core/settingsDefaults.ts",
       "line": 248
     },
     {
-      "name": "aiImageModelConfigs",
+      "name": "aiTextModelConfigs",
       "path": "src/core/settingsDefaults.ts",
       "line": 249
     },
     {
-      "name": "aiDefaultTextModel",
+      "name": "aiImageModelConfigs",
       "path": "src/core/settingsDefaults.ts",
       "line": 250
     },
     {
-      "name": "aiDefaultMultimodalModel",
+      "name": "aiDefaultTextModel",
       "path": "src/core/settingsDefaults.ts",
       "line": 251
     },
     {
-      "name": "aiDefaultImageGenerationModel",
+      "name": "aiDefaultMultimodalModel",
       "path": "src/core/settingsDefaults.ts",
       "line": 252
     },
     {
-      "name": "aiDefaultMaxOutgoingTokens",
+      "name": "aiDefaultImageGenerationModel",
       "path": "src/core/settingsDefaults.ts",
       "line": 253
     },
     {
-      "name": "aiDefaultMaxResponseTokens",
+      "name": "aiDefaultMaxOutgoingTokens",
       "path": "src/core/settingsDefaults.ts",
       "line": 254
     },
     {
-      "name": "modifierKeyConfig",
+      "name": "aiDefaultMaxResponseTokens",
       "path": "src/core/settingsDefaults.ts",
       "line": 255
     },
     {
-      "name": "slidingPanesSupport",
+      "name": "modifierKeyConfig",
       "path": "src/core/settingsDefaults.ts",
-      "line": 259
+      "line": 256
     },
     {
-      "name": "areaZoomLimit",
+      "name": "slidingPanesSupport",
       "path": "src/core/settingsDefaults.ts",
       "line": 260
     },
     {
-      "name": "longPressDesktop",
+      "name": "areaZoomLimit",
       "path": "src/core/settingsDefaults.ts",
       "line": 261
     },
     {
-      "name": "longPressMobile",
+      "name": "longPressDesktop",
       "path": "src/core/settingsDefaults.ts",
       "line": 262
     },
     {
-      "name": "doubleClickLinkOpenViewMode",
+      "name": "longPressMobile",
       "path": "src/core/settingsDefaults.ts",
       "line": 263
     },
     {
-      "name": "rank",
+      "name": "doubleClickLinkOpenViewMode",
       "path": "src/core/settingsDefaults.ts",
       "line": 264
     },
     {
-      "name": "modifierKeyOverrides",
+      "name": "rank",
       "path": "src/core/settingsDefaults.ts",
       "line": 265
     },
     {
-      "name": "showSplashscreen",
+      "name": "modifierKeyOverrides",
       "path": "src/core/settingsDefaults.ts",
       "line": 266
     },
     {
-      "name": "pdfSettings",
+      "name": "showSplashscreen",
       "path": "src/core/settingsDefaults.ts",
       "line": 267
     },
     {
-      "name": "disableContextMenu",
+      "name": "pdfSettings",
       "path": "src/core/settingsDefaults.ts",
       "line": 268
+    },
+    {
+      "name": "disableContextMenu",
+      "path": "src/core/settingsDefaults.ts",
+      "line": 269
     }
   ],
   "frontmatter": [
@@ -2843,6 +2848,10 @@
     },
     {
       "path": "scripts/testing/settings/settingsWriter.test.mjs",
+      "mode": "direct-module-or-tooling"
+    },
+    {
+      "path": "scripts/testing/sidepanel.source.test.mjs",
       "mode": "direct-module-or-tooling"
     },
     {

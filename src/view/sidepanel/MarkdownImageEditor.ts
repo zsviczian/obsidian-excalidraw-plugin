@@ -256,7 +256,7 @@ class MarkdownImageEditorController {
       this.tab.onExcalidrawViewClosed = () => void this.invalidateOwner(false);
       this.watchActiveExcalidrawView();
       this.renderPanel();
-      await this.app.workspace.revealLeaf(sidepanel.leaf);
+      await sidepanel.reveal();
       if (!this.tab || this.closed || !this.ensureOwnerValid()) {
         return false;
       }
@@ -312,7 +312,7 @@ class MarkdownImageEditorController {
     this.focusEditorOnMount = true;
     this.sidepanelRevealComplete = false;
     this.tab.open(false);
-    await this.app.workspace.revealLeaf(sidepanel.leaf);
+    await sidepanel.reveal();
     if (!this.tab || !this.ensureOwnerValid()) {
       return;
     }
@@ -1867,9 +1867,12 @@ class MarkdownImageEditorController {
       return;
     }
 
-    this.app.workspace.setActiveLeaf(editorView.leaf, { focus: true });
-    editorView.editor.focus();
     const targetWindow = editorView.containerEl.ownerDocument.defaultView;
+    // This editor uses a detached workspace leaf. Obsidian's leaf focus can
+    // promote the main workspace while its DOM is already hosted by a popout.
+    this.app.workspace.setActiveLeaf(editorView.leaf, { focus: false });
+    targetWindow?.focus();
+    editorView.editor.focus();
     if (targetWindow) {
       this.stabilizeActiveEditor(editorView, targetWindow);
     }

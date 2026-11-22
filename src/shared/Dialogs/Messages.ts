@@ -19,6 +19,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 `,
 "2.29.4": `
 ## New and improved
+- Choose whether the Excalidraw sidepanel opens in the sidebar or a separate desktop window under **Excalidraw appearance and behavior → UI Modes**.
 - Copy selected canvas elements for an agent to edit, including their bound labels and exact drawing targets. CLI agents can also insert linked drawing images and create longer filled line contours.
 - Scripts can convert between lines and free-draw strokes while preserving curved paths, and join compatible line sections. Custom free-draw styling can look different on excalidraw.com.
 `,

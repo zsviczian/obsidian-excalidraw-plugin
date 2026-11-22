@@ -462,6 +462,8 @@ export default {
   SHOW_TAB_TITLEBAR_BUTTONS: "Show tab titlebar buttons",
   OPEN_LINK: "Open selected text as link\n(SHIFT+CLICK to open in a new pane)",
   EXCALIDRAW_SIDEPANEL: "Excalidraw Sidepanel",
+  SIDEPANEL_POPOUT_NAME: "Open Excalidraw sidepanel in a popout window",
+  SIDEPANEL_POPOUT_DESC: "On desktop, enabling this opens the Excalidraw sidepanel in a separate window the next time you show it. Disabling it docks the panel without expanding the sidebar. Later manual moves are preserved.",
   LINK_BUTTON_CLICK_NO_TEXT:
     "Select an element that contains an internal or external link.\n",
   LINEAR_ELEMENT_LINK_CLICK_ERROR:
