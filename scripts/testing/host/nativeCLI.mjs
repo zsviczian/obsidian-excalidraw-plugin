@@ -16,10 +16,14 @@ export async function runNativeCLIScenario({ cli, drawingPath, reportDir }) {
   const write = (path, text) => evaluate(`(async()=>{const path=${JSON.stringify(path)},file=app.vault.getFileByPath(path);if(file)await app.vault.modify(file,${JSON.stringify(text)});else await app.vault.create(path,${JSON.stringify(text)});return JSON.stringify({written:true})})()`);
   const viewCode = `app.workspace.getLeavesOfType('excalidraw').find(leaf=>leaf.view.file?.path===${JSON.stringify(paths.drawing)})?.view`;
   const control = '__excalidrawNativeCLIRegression';
+  const extrasControl = '__excalidrawCLIMermaidDependency';
   let cleanup = false;
   const artifacts = []; let imagePreviews, authoringExtensions;
   try {
     for (const command of ['help', 'status', 'skill', 'list']) ok(action(command));
+    const status = ok(action('status')).data;
+    assert.equal(typeof status.mindMapBuilder.ready, 'boolean');
+    assert.equal(typeof status.extras.components.mermaid.compatible, 'boolean');
     assert.equal(ok(action('schema', { action: 'apply' })).data.command, 'apply');
     assert.equal(ok(action('api', { name: 'executeCLI' })).data.entries[0].name, 'executeCLI');
     const create = { apiVersion: 1, requestId: `${idPrefix}-create`, path: paths.drawing, elements: [
@@ -99,11 +103,30 @@ export async function runNativeCLIScenario({ cli, drawingPath, reportDir }) {
     write(paths.script, 'await utils.inputPrompt("must fail");');
     assert.equal(action('script', scriptRequest).error.field, 'requestId');
     assert.equal(action('script', { ...scriptRequest, requestId: `${idPrefix}-prompt` }).error.code, 'INTERACTION_REQUIRED');
+    write(paths.script, 'return {nodeId:"already-saved",arrowId:undefined};');
+    const unsafeResult = { ...scriptRequest, requestId: `${idPrefix}-undefined` };
+    assert.equal(action('script', unsafeResult).error.code, 'OUTCOME_UNKNOWN');
+    write(paths.script, 'return JSON.parse(JSON.stringify({nodeId:"already-saved",arrowId:undefined}));');
+    assert.deepEqual(ok(action('script', { ...scriptRequest, requestId: `${idPrefix}-json-safe` })).data, { nodeId: 'already-saved' });
+    write(paths.script, 'return await ea.addMermaid("flowchart TD; A-->B");');
+    evaluate(`(()=>{const g=app.plugins.plugins['obsidian-excalidraw-plugin'].extrasGateway;if(globalThis.${extrasControl})throw Error('Extras test already active');globalThis.${extrasControl}={gateway:g,descriptor:Object.getOwnPropertyDescriptor(g,'getAPI')};g.getAPI=()=>({versions:{mermaid:'3.0.0'},features:{isActive:()=>true,enable:()=>{throw Error('Unexpected activation')}}});return JSON.stringify({ready:true})})()`);
+    try {
+      const incompatible = ok(action('status')).data;
+      assert.equal(incompatible.ready, true);
+      assert.equal(incompatible.extras.components.mermaid.version, '3.0.0');
+      assert.equal(incompatible.extras.components.mermaid.compatible, false);
+      const refused = action('script', { ...scriptRequest, requestId: `${idPrefix}-mermaid-version` });
+      assert.equal(refused.error.code, 'DEPENDENCY_UNAVAILABLE');
+      assert.equal(refused.mutation, 'unknown'); assert.equal(refused.persistence, 'unknown');
+    } finally {
+      evaluate(`(()=>{const c=globalThis.${extrasControl};if(c.descriptor)Object.defineProperty(c.gateway,'getAPI',c.descriptor);else delete c.gateway.getAPI;delete globalThis.${extrasControl};return JSON.stringify({restored:true})})()`);
+    }
     const close = evaluate(`(async()=>{for(const leaf of app.workspace.getLeavesOfType('excalidraw').filter(l=>l.view.file?.path===${JSON.stringify(paths.drawing)})){await leaf.setViewState({type:'empty',state:{}});leaf.detach()}return JSON.stringify({closed:true})})()`); assert.equal(close.closed, true);
     ok(action('open', { path: paths.drawing }));
     await new Promise(resolve => setTimeout(resolve, 250));
     assert.equal(read().elements.find(element => element.id === label.id).rawText, 'Recoverable edit');
   } finally {
+    evaluate(`(()=>{const c=globalThis.${extrasControl};if(c){if(c.descriptor)Object.defineProperty(c.gateway,'getAPI',c.descriptor);else delete c.gateway.getAPI;delete globalThis.${extrasControl}}return JSON.stringify({restored:true})})()`);
     const result = evaluate(`(async()=>{const c=globalThis.${control};if(c){if(c.original)c.model.addTextElement=c.original;if(c.originalSave)c.view.saveWithOutcome=c.originalSave;c.release?.();delete globalThis.${control}}const paths=${JSON.stringify(Object.values(paths))};for(const path of paths){if(!path.startsWith(${JSON.stringify(prefix)}))throw Error('unsafe fixture cleanup');for(const leaf of app.workspace.getLeavesOfType('excalidraw').filter(l=>l.view.file?.path===path)){await leaf.setViewState({type:'empty',state:{}});leaf.detach()}const file=app.vault.getFileByPath(path);if(file)await app.vault.delete(file)}return JSON.stringify({clean:true})})()`);
     cleanup = result.clean;
   }

@@ -500,7 +500,8 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
       "Creates a mermaid diagram and returns the ids of the created elements as a string[]. " +
       "The elements will be added to ea. To add them to the canvas you'll need to use addElementsToView. " +
       "Depending on the diagram type the result will be either a single SVG image, or a number of excalidraw elements.<br>" +
-      "If there is an error, the function returns a string with the error message.",
+      "If there is an error, the function returns a string with the error message. " +
+      "In one-shot CLI scripts, unavailable, disabled or incompatible Excalidraw Extras Mermaid throws DEPENDENCY_UNAVAILABLE without opening an activation modal; inspect CLI status.extras before conversion.",
     after: "",
   },
   {

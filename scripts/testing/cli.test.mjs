@@ -7,6 +7,7 @@ import { transpileModule, ModuleKind, createSourceFile, ScriptTarget, SyntaxKind
 
 function harness({ supported = true, desktop = true, native = true } = {}) {
   const cache = new Map(), registrations = new Map(), versionChecks = []; let nextId = 0;
+  const window = {};
   class View {}
   class File { constructor(path) { this.path = path; this.extension = path.split('.').at(-1); this.stat = { size: 1 }; } }
   const files = [new File('a.excalidraw.md'), new File('Drawings/b.excalidraw.md')];
@@ -15,6 +16,7 @@ function harness({ supported = true, desktop = true, native = true } = {}) {
     app: { vault: { getName: () => 'Test', getFileByPath: path => files.find(file => file.path === path), getFiles: () => files,
       read: async file => file.content ?? '{}' }, workspace: { getLeavesOfType: () => [] } },
     isExcalidrawFile: file => file.path.endsWith('.excalidraw.md'), getCLIRuntime: () => ({ convertToExcalidrawElements() {} }),
+    extrasGateway: { getStatus: () => ({ installed: false, enabled: false, pluginVersion: null, components: {} }) },
     ...(native ? { registerCliHandler: (name, desc, flags, fn) => { assert.ok(desc); assert.ok(flags); registrations.set(name, fn); } } : {}),
   };
   const mocks = {
@@ -32,14 +34,62 @@ function harness({ supported = true, desktop = true, native = true } = {}) {
     if (cache.has(file)) return cache.get(file).exports;
     const module = { exports: {} }; cache.set(file, module);
     const compiled = transpileModule(readFileSync(file, 'utf8'), { compilerOptions: { module: ModuleKind.CommonJS, target: 9 } }).outputText;
-    new Function('require', 'exports', 'module', compiled)(specifier => load(specifier, resolve(file, '..')), module.exports, module);
+    new Function('require', 'exports', 'module', 'window', compiled)(specifier => load(specifier, resolve(file, '..')), module.exports, module, window);
     return module.exports;
   }
   const protocol = load('src/core/cli/cliProtocol');
   const { ExcalidrawCLI } = load('src/core/managers/ExcalidrawCLI');
-  return { manager: new ExcalidrawCLI(plugin), protocol, icons: load('src/core/cli/cliIcons'), elements: load('src/core/cli/cliElements'), apply: load('src/core/cli/cliApply'), exporting: load('src/core/cli/cliExport'), images: load('src/core/cli/cliImages'), dimensions: load('src/core/cli/cliImageDimensions'), dependencies: load('src/core/cli/cliDependencies'), customData: load('src/utils/elementCustomDataUtils'), plugin, registrations, versionChecks, files, View, mocks };
+  return { manager: new ExcalidrawCLI(plugin), protocol, scriptContext: load('src/core/cli/cliScriptContext'), window, icons: load('src/core/cli/cliIcons'), elements: load('src/core/cli/cliElements'), apply: load('src/core/cli/cliApply'), exporting: load('src/core/cli/cliExport'), images: load('src/core/cli/cliImages'), dimensions: load('src/core/cli/cliImageDimensions'), dependencies: load('src/core/cli/cliDependencies'), customData: load('src/utils/elementCustomDataUtils'), plugin, registrations, versionChecks, files, View, mocks };
 }
 const request = (command, values = {}) => ({ apiVersion: 1, command, ...values });
+
+test('status reports optional services without activating Extras or starting Builder', async () => {
+  const h = harness();
+  assert.deepEqual((await h.manager.execute(request('status'))).data.mindMapBuilder, { available: false, ready: false });
+  h.window.MindMapBuilderAPI = { ready: () => true, setView: () => assert.fail('status retargeted Builder') };
+  const extras = { components: { mermaid: { version: '3.0.0', compatible: false, active: true } } };
+  h.plugin.extrasGateway.getStatus = () => extras;
+  const result = await h.manager.execute(request('status'));
+  assert.equal(result.ok, true); assert.equal(result.data.ready, true);
+  assert.deepEqual(result.data.extras, extras);
+  assert.deepEqual(result.data.mindMapBuilder, { available: true, ready: true });
+  assert.equal(result.mutation, 'not-applied');
+  h.window.MindMapBuilderAPI.ready = () => { throw Error('retired script'); };
+  assert.deepEqual((await h.manager.execute(request('status'))).data.mindMapBuilder, { available: true, ready: false });
+  h.plugin.isReady = false; delete h.plugin.extrasGateway;
+  const startup = await h.manager.execute(request('status'));
+  assert.equal(startup.ok, true); assert.equal(startup.data.ready, false); assert.equal(startup.data.extras, null);
+});
+
+test('CLI Mermaid dependency refusal preserves prior script uncertainty and clears invocation context', async () => {
+  const h = harness(), ea = { destroy() {} };
+  const file = h.files[0]; file.content = 'await ea.addMermaid(utils.input);';
+  h.plugin.ea = { getAPI: () => ea };
+  h.plugin.scriptEngine = { executeScriptFileForCLI: async (file, view, actualEA, input, lib, source, check) => {
+    check(); assert.equal(h.scriptContext.isCLIScript(actualEA), true);
+    throw new h.protocol.CLIError('DEPENDENCY_UNAVAILABLE', 'Mermaid 3.6.0 required', undefined, 'Update Extras');
+  } };
+  const result = await h.manager.execute(request('script', { script: file.path, trusted: true, requestId: 'missing-mermaid' }));
+  assert.equal(result.error.code, 'DEPENDENCY_UNAVAILABLE');
+  assert.equal(result.error.recovery, 'Update Extras');
+  assert.equal(result.mutation, 'unknown'); assert.equal(result.persistence, 'unknown');
+  assert.equal(h.scriptContext.isCLIScript(ea), false);
+});
+
+test('CLI script JSON return failures remain recoverable without repeating already executed work', async () => {
+  const h = harness(), file = h.files[0]; file.content = 'return an API result;';
+  h.plugin.ea = { getAPI: () => ({ destroy() {} }) };
+  let executions = 0;
+  h.plugin.scriptEngine = { executeScriptFileForCLI: async (f, v, ea, args, lib, source, check) => {
+    check(); executions++; return executions === 1 ? { arrowId: undefined, nodeId: 'saved' } : JSON.parse(JSON.stringify({ arrowId: undefined, nodeId: 'saved' }));
+  } };
+  const input = request('script', { script: file.path, trusted: true, requestId: 'undefined-result' });
+  const result = await h.manager.execute(input);
+  assert.equal(result.error.code, 'OUTCOME_UNKNOWN'); assert.equal(result.persistence, 'unknown');
+  assert.deepEqual(await h.manager.execute(input), result); assert.equal(executions, 1);
+  const safe = await h.manager.execute({ ...input, requestId: 'safe-result' });
+  assert.equal(safe.ok, true); assert.deepEqual(safe.data, { nodeId: 'saved' });
+});
 
 function authoringView(h, initial = []) {
   let elements = structuredClone(initial), selected = {};
@@ -270,6 +320,28 @@ function productionMethod(path, className, name, dependencies = {}) {
   new Function('exports', ...Object.keys(dependencies), compiled)(exports, ...Object.values(dependencies));
   return exports.Loaded.prototype[name];
 }
+
+test('addMermaid rejects unavailable CLI dependencies before the interactive converter while manual calls retain it', async () => {
+  const h = harness(); let conversions = 0;
+  const convert = productionMethod('src/shared/ExcalidrawAutomate.ts', 'ExcalidrawAutomate', 'addMermaid', {
+    isCLIScript: h.scriptContext.isCLIScript, CLIError: h.protocol.CLIError,
+    mermaidToExcalidraw: async () => { conversions++; return { elements: [] }; },
+  });
+  const api = { features: { isActive: () => true } };
+  const gateway = { getAPI: () => api, checkVersion: () => ({ valid: true }) };
+  const ea = { plugin: { extrasGateway: gateway }, style: { fontSize: 20, roundness: null } };
+  for (const state of ['missing', 'incompatible', 'disabled']) {
+    gateway.getAPI = () => state === 'missing' ? null : api;
+    gateway.checkVersion = () => ({ valid: state !== 'incompatible' });
+    api.features.isActive = () => state !== 'disabled';
+    await assert.rejects(h.scriptContext.withCLIScriptContext(ea, () => convert.call(ea, 'graph TD; A-->B')), error => error.code === 'DEPENDENCY_UNAVAILABLE');
+    assert.equal(conversions, 0); assert.equal(h.scriptContext.isCLIScript(ea), false);
+  }
+  await convert.call(ea, 'graph TD; A-->B'); assert.equal(conversions, 1);
+  gateway.getAPI = () => api; gateway.checkVersion = () => ({ valid: true }); api.features.isActive = () => true;
+  await h.scriptContext.withCLIScriptContext(ea, () => convert.call(ea, 'graph TD; A-->B'));
+  assert.equal(conversions, 2);
+});
 
 test('delayed text preparation leaves concurrent metadata and the scene intact when publication is rejected', async () => {
   let resume;

@@ -396,832 +396,832 @@
     {
       "name": "obsidian",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 344
+      "line": 346
     },
     {
       "name": "FloatingModal",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 353
+      "line": 355
     },
     {
       "name": "LASERPOINTER",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 361
+      "line": 363
     },
     {
       "name": "DEVICE",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 369
+      "line": 371
     },
     {
       "name": "printStartupBreakdown",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 376
+      "line": 378
     },
     {
       "name": "printURLsInCodebase",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 385
+      "line": 387
     },
     {
       "name": "addAppendUpdateCustomData",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 423
+      "line": 425
     },
     {
       "name": "help",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 442
+      "line": 444
     },
     {
       "name": "postAI",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 513
+      "line": 515
     },
     {
       "name": "postOpenAI",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 522
+      "line": 524
     },
     {
       "name": "getAISettings",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 529
+      "line": 531
     },
     {
       "name": "generateAIText",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 536
+      "line": 538
     },
     {
       "name": "analyzeAIImage",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 543
+      "line": 545
     },
     {
       "name": "generateAIImage",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 550
+      "line": 552
     },
     {
       "name": "transformAIImage",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 557
+      "line": 559
     },
     {
       "name": "maskEditAIImage",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 564
+      "line": 566
     },
     {
       "name": "createAIChatSession",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 571
+      "line": 573
     },
     {
       "name": "getAIUsage",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 581
+      "line": 583
     },
     {
       "name": "showAIUsageModal",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 589
+      "line": 591
     },
     {
       "name": "formatAIUsageLabel",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 602
+      "line": 604
     },
     {
       "name": "extractCodeBlocks",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 611
+      "line": 613
     },
     {
       "name": "convertStringToDataURL",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 621
+      "line": 623
     },
     {
       "name": "checkAndCreateFolder",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 652
+      "line": 654
     },
     {
       "name": "splitFolderAndFilename",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 660
+      "line": 662
     },
     {
       "name": "getNewUniqueFilepath",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 675
+      "line": 677
     },
     {
       "name": "getListOfTemplateFiles",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 683
+      "line": 685
     },
     {
       "name": "templateFilePath",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 688
+      "line": 690
     },
     {
       "name": "getDrawingFilePath",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 699
+      "line": 701
     },
     {
       "name": "getEmbeddedImagesFiletree",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 714
+      "line": 716
     },
     {
       "name": "getAttachmentFilepath",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 729
+      "line": 731
     },
     {
       "name": "compressToBase64",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 751
+      "line": 753
     },
     {
       "name": "decompressFromBase64",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 760
+      "line": 762
     },
     {
       "name": "newFilePrompt",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 790
+      "line": 792
     },
     {
       "name": "getLeaf",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 819
+      "line": 821
     },
     {
       "name": "getActiveEmbeddableViewOrEditor",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 832
+      "line": 834
     },
     {
       "name": "isExcalidrawMaskFile",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 866
+      "line": 868
     },
     {
       "name": "setStyle",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 899
+      "line": 901
     },
     {
       "name": "registerCleanup",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 943
+      "line": 945
     },
     {
       "name": "checkForActiveSidepanelTabForScript",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 980
+      "line": 982
     },
     {
       "name": "createSidepanelTab",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 1001
+      "line": 1003
     },
     {
       "name": "getSidepanelLeaf",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 1045
+      "line": 1047
     },
     {
       "name": "skipSidepanelScriptRestore",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 1058
+      "line": 1060
     },
     {
       "name": "toggleSidepanelView",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 1074
+      "line": 1076
     },
     {
       "name": "persistSidepanelTab",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 1093
+      "line": 1095
     },
     {
       "name": "attachInlineLinkSuggester",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 1117
+      "line": 1119
     },
     {
       "name": "parseText",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 1141
+      "line": 1143
     },
     {
       "name": "getViewLastPointerPosition",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 1161
+      "line": 1163
     },
     {
       "name": "getViewCenterPosition",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 1173
+      "line": 1175
     },
     {
       "name": "getAPI",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 1195
+      "line": 1197
     },
     {
       "name": "executeCLI",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 1207
+      "line": 1209
     },
     {
       "name": "setFillStyle",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 1216
+      "line": 1218
     },
     {
       "name": "setStrokeStyle",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 1235
+      "line": 1237
     },
     {
       "name": "setStrokeSharpness",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 1254
+      "line": 1256
     },
     {
       "name": "setFontFamily",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 1274
+      "line": 1276
     },
     {
       "name": "setTheme",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 1284
+      "line": 1286
     },
     {
       "name": "addToGroup",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 1300
+      "line": 1302
     },
     {
       "name": "toClipboard",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 1315
+      "line": 1317
     },
     {
       "name": "getSceneFromFile",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 1362
+      "line": 1364
     },
     {
       "name": "getElements",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 1390
+      "line": 1392
     },
     {
       "name": "getElement",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 1404
+      "line": 1406
     },
     {
       "name": "convertLineToFreedraw",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 1414
+      "line": 1416
     },
     {
       "name": "convertFreedrawToLine",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 1424
+      "line": 1426
     },
     {
       "name": "concatenateLines",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 1434
+      "line": 1436
     },
     {
       "name": "getBoundTextElement",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 1464
+      "line": 1466
     },
     {
       "name": "create",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 1528
+      "line": 1530
     },
     {
       "name": "getPagePDFDimensions",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 1788
+      "line": 1790
     },
     {
       "name": "createPDF",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 1817
+      "line": 1819
     },
     {
       "name": "createViewSVG",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 1947
+      "line": 1949
     },
     {
       "name": "createViewPNG",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 1987
+      "line": 1989
     },
     {
       "name": "createSVG",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 2016
+      "line": 2018
     },
     {
       "name": "createPNG",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 2078
+      "line": 2080
     },
     {
       "name": "createPNGBase64",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 2135
+      "line": 2137
     },
     {
       "name": "wrapText",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 2160
+      "line": 2162
     },
     {
       "name": "addIFrame",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 2264
+      "line": 2266
     },
     {
       "name": "addEmbeddable",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 2308
+      "line": 2310
     },
     {
       "name": "addElementsToFrame",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 2385
+      "line": 2387
     },
     {
       "name": "addFrame",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 2406
+      "line": 2408
     },
     {
       "name": "addRect",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 2437
+      "line": 2439
     },
     {
       "name": "addStickyNote",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 2474
+      "line": 2476
     },
     {
       "name": "addDiamond",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 2531
+      "line": 2533
     },
     {
       "name": "addEllipse",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 2561
+      "line": 2563
     },
     {
       "name": "addBlob",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 2591
+      "line": 2593
     },
     {
       "name": "refreshTextElementSize",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 2649
+      "line": 2651
     },
     {
       "name": "addText",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 2682
+      "line": 2684
     },
     {
       "name": "addLine",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 2823
+      "line": 2825
     },
     {
       "name": "addArrow",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 2868
+      "line": 2870
     },
     {
       "name": "addMermaid",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 2990
+      "line": 2993
     },
     {
       "name": "addImage",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 3042
+      "line": 3053
     },
     {
       "name": "addLaTex",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 3185
+      "line": 3196
     },
     {
       "name": "tex2dataURL",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 3234
+      "line": 3245
     },
     {
       "name": "connectObjects",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 3261
+      "line": 3272
     },
     {
       "name": "addLabelToLine",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 3393
+      "line": 3404
     },
     {
       "name": "clear",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 3432
+      "line": 3443
     },
     {
       "name": "reset",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 3440
+      "line": 3451
     },
     {
       "name": "isExcalidrawFile",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 3473
+      "line": 3484
     },
     {
       "name": "setView",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 3509
+      "line": 3520
     },
     {
       "name": "getExcalidrawAPI",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 3558
+      "line": 3569
     },
     {
       "name": "getViewElements",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 3570
+      "line": 3581
     },
     {
       "name": "deleteViewElements",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 3583
+      "line": 3594
     },
     {
       "name": "addBackOfTheCardNoteToView",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 3613
+      "line": 3624
     },
     {
       "name": "getViewSelectedElement",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 3637
+      "line": 3648
     },
     {
       "name": "getViewSelectedElements",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 3647
+      "line": 3658
     },
     {
       "name": "getViewFileForImageElement",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 3662
+      "line": 3673
     },
     {
       "name": "getPathForImageFileId",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 3678
+      "line": 3689
     },
     {
       "name": "getColorMapForImageElement",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 3687
+      "line": 3698
     },
     {
       "name": "updateViewSVGImageColorMap",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 3701
+      "line": 3712
     },
     {
       "name": "getSVGColorInfoForImgElement",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 3774
+      "line": 3785
     },
     {
       "name": "getColosFromExcalidrawFile",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 3815
+      "line": 3826
     },
     {
       "name": "getColorsFromSVGString",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 3860
+      "line": 3871
     },
     {
       "name": "copyViewElementsToEAforEditing",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 3932
+      "line": 3943
     },
     {
       "name": "viewToggleFullScreen",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 3990
+      "line": 4001
     },
     {
       "name": "setViewModeEnabled",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4018
+      "line": 4029
     },
     {
       "name": "registerViewLinkClickHook",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4041
+      "line": 4052
     },
     {
       "name": "viewUpdateScene",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4060
+      "line": 4071
     },
     {
       "name": "connectObjectWithViewSelectedElement",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4103
+      "line": 4114
     },
     {
       "name": "viewZoomToElements",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4149
+      "line": 4160
     },
     {
       "name": "viewZoomToFit",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4167
+      "line": 4178
     },
     {
       "name": "clearViewDirty",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4182
+      "line": 4193
     },
     {
       "name": "addElementsToView",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4198
+      "line": 4209
     },
     {
       "name": "registerThisAsViewEA",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4231
+      "line": 4242
     },
     {
       "name": "deregisterThisAsViewEA",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4245
+      "line": 4256
     },
     {
       "name": "registerElementActionProvider",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4277
+      "line": 4288
     },
     {
       "name": "registerAutostart",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4340
+      "line": 4351
     },
     {
       "name": "getEmbeddedFilesLoader",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4664
+      "line": 4675
     },
     {
       "name": "getExportSettings",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4675
+      "line": 4686
     },
     {
       "name": "getElementsInArea",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4691
+      "line": 4702
     },
     {
       "name": "getElementsIntersectionArea",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4711
+      "line": 4722
     },
     {
       "name": "getBoundingBox",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4725
+      "line": 4736
     },
     {
       "name": "getMaximumGroups",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4745
+      "line": 4756
     },
     {
       "name": "getLargestElement",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4755
+      "line": 4766
     },
     {
       "name": "intersectElementWithLine",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4782
+      "line": 4793
     },
     {
       "name": "getCommonGroupForElements",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4801
+      "line": 4812
     },
     {
       "name": "getReleaseNotes",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4812
+      "line": 4823
     },
     {
       "name": "getElementsInTheSameGroupWithElement",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4822
+      "line": 4833
     },
     {
       "name": "getElementsInFrame",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4879
+      "line": 4890
     },
     {
       "name": "getScriptSettings",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4905
+      "line": 4916
     },
     {
       "name": "setScriptSettings",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4917
+      "line": 4928
     },
     {
       "name": "setScriptSettingValue",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4926
+      "line": 4937
     },
     {
       "name": "getScriptSettingValue",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4934
+      "line": 4945
     },
     {
       "name": "saveScriptSettings",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4945
+      "line": 4956
     },
     {
       "name": "openFileInNewOrAdjacentLeaf",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4957
+      "line": 4968
     },
     {
       "name": "measureText",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4982
+      "line": 4993
     },
     {
       "name": "getOriginalImageSize",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4998
+      "line": 5009
     },
     {
       "name": "resetImageAspectRatio",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 5048
+      "line": 5059
     },
     {
       "name": "verifyMinimumPluginVersion",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 5092
+      "line": 5103
     },
     {
       "name": "isExcalidrawView",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 5101
+      "line": 5112
     },
     {
       "name": "toggleViewMode",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 5116
+      "line": 5127
     },
     {
       "name": "selectElementsInView",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 5168
+      "line": 5179
     },
     {
       "name": "generateElementId",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 5191
+      "line": 5202
     },
     {
       "name": "cloneElement",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 5203
+      "line": 5214
     },
     {
       "name": "cloneElements",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 5217
+      "line": 5228
     },
     {
       "name": "moveViewElementToZIndex",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 5350
+      "line": 5361
     },
     {
       "name": "hexStringToRgb",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 5390
+      "line": 5401
     },
     {
       "name": "rgbToHexString",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 5401
+      "line": 5412
     },
     {
       "name": "hslToRgb",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 5412
+      "line": 5423
     },
     {
       "name": "rgbToHsl",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 5423
+      "line": 5434
     },
     {
       "name": "colorNameToHex",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 5433
+      "line": 5444
     },
     {
       "name": "getCM",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 5445
+      "line": 5456
     },
     {
       "name": "getViewColorPalette",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 5472
+      "line": 5483
     },
     {
       "name": "showColorPicker",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 5492
+      "line": 5503
     },
     {
       "name": "getPolyBool",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 5509
+      "line": 5520
     },
     {
       "name": "importSVG",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 5529
+      "line": 5540
     },
     {
       "name": "addLucideIcon",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 5566
+      "line": 5577
     },
     {
       "name": "getCM6",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 5581
+      "line": 5592
     },
     {
       "name": "getMathEditorExtensions",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 5607
+      "line": 5618
     },
     {
       "name": "destroy",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 5635
+      "line": 5646
     }
   ],
   "settings": [
@@ -2404,72 +2404,72 @@
     {
       "name": "onViewUnloadHook",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4396
+      "line": 4407
     },
     {
       "name": "onViewModeChangeHook",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4402
+      "line": 4413
     },
     {
       "name": "onLinkHoverHook",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4414
+      "line": 4425
     },
     {
       "name": "onLinkClickHook",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4427
+      "line": 4438
     },
     {
       "name": "onDropHook",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4441
+      "line": 4452
     },
     {
       "name": "onPasteHook",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4463
+      "line": 4474
     },
     {
       "name": "onImageFilePathHook",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4501
+      "line": 4512
     },
     {
       "name": "onImageExportPathHook",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4549
+      "line": 4560
     },
     {
       "name": "onTriggerAutoexportHook",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4580
+      "line": 4591
     },
     {
       "name": "onSceneChangeHook",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4595
+      "line": 4606
     },
     {
       "name": "onFileOpenHook",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4613
+      "line": 4624
     },
     {
       "name": "onFileCreateHook",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4623
+      "line": 4634
     },
     {
       "name": "onCanvasColorChangeHook",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4635
+      "line": 4646
     },
     {
       "name": "onUpdateElementLinkForExportHook",
       "path": "src/shared/ExcalidrawAutomate.ts",
-      "line": 4652
+      "line": 4663
     }
   ],
   "testFiles": [

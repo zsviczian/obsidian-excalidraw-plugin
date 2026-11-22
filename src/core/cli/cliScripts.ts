@@ -5,6 +5,7 @@ import type { ExcalidrawCLIResult } from "src/types/excalidrawCliTypes";
 import { CLIError, boolean, jsonValue, vaultPath } from "./cliProtocol";
 import { drawingFile, drawingView, liveIdentity } from "./cliTarget";
 import { sameCLIIdentity } from "./cliIdentity";
+import { withCLIScriptContext } from "./cliScriptContext";
 
 /** Source content participates in the effective request identity, including cached scripts. */
 export async function prepareScript(cli: ExcalidrawCLI, request: Record<string, unknown>) {
@@ -35,10 +36,13 @@ export async function executeScript(cli: ExcalidrawCLI, request: Record<string, 
   const outcome: Partial<ExcalidrawCLIResult> = { mutation: "unknown", persistence: "unknown", ...(view ? { target: { vault: plugin.app.vault.getName(), path: drawing.path, viewId: view.id } } : {}) };
   let started = false;
   try {
-    const value = await plugin.scriptEngine.executeScriptFileForCLI(prepared.file, view ?? undefined, ea, request.args ?? null, plugin.getCLIRuntime(), prepared.source, () => { check(); started = true; });
+    const value = await withCLIScriptContext(ea, () => plugin.scriptEngine.executeScriptFileForCLI(prepared.file, view ?? undefined, ea, request.args ?? null, plugin.getCLIRuntime(), prepared.source, () => { check(); started = true; }));
     return { ...outcome, data: jsonValue(value === undefined ? null : value), warnings: ["Script completion does not verify drawing persistence. Trusted scripts must await their writes and saves."] };
   } catch (error) {
     if (!started && error instanceof CLIError) throw error;
+    if (error instanceof CLIError && error.code === "DEPENDENCY_UNAVAILABLE") {
+      throw new CLIError(error.code, error.message, error.field, error.recovery, outcome);
+    }
     const interaction = error instanceof Error && error.message.startsWith("INTERACTION_REQUIRED:");
     throw new CLIError(interaction ? "INTERACTION_REQUIRED" : started ? "OUTCOME_UNKNOWN" : "SCRIPT_FAILED", interaction ? error.message : "Script execution or result serialization failed.", undefined, "Inspect drawing/output before retrying; script side effects cannot be rolled back.", started ? outcome : {});
   }
