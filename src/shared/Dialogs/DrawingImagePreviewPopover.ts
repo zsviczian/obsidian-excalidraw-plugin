@@ -3,12 +3,13 @@ import type { ExcalidrawFrameElement } from "@zsviczian/excalidraw/types/element
 import type ExcalidrawView from "src/view/ExcalidrawView";
 import type { EmbeddedFile } from "src/shared/EmbeddedFileLoader";
 import { getDrawingPreviewParts, rewriteDrawingPreviewLink, type DrawingPreviewChanges } from "src/utils/drawingPreviewLink";
-import { setStyle } from "src/utils/styleUtils";
+import { FloatingModal } from "./FloatingModal";
 import { t } from "src/lang/helpers";
 import { OUTER_PADDING_MAX } from "src/utils/drawingPadding";
 
 /** Draft image-link controls: preview locally, then commit once after choosing scope. */
-export class DrawingImagePreviewPopover extends Component {
+export class DrawingImagePreviewPopover extends FloatingModal {
+  private events: Component | null = null;
   private popup: HTMLElement;
   private image: HTMLImageElement;
   private timer: number | null = null;
@@ -18,20 +19,27 @@ export class DrawingImagePreviewPopover extends Component {
   private readonly original: string;
   private readonly changes: DrawingPreviewChanges = {};
 
-  constructor(private readonly view: ExcalidrawView, private readonly source: EmbeddedFile,
+  constructor(view: ExcalidrawView, private readonly source: EmbeddedFile,
     private readonly frames: readonly ExcalidrawFrameElement[], private readonly defaultPadding: number, private readonly areaPaddingMax: number,
     private readonly isCurrent: () => boolean,
     private readonly render: (link: string) => Promise<{ image: { dataURL: string } }>,
     private readonly commit: (changes: DrawingPreviewChanges) => Promise<boolean>, private readonly closed: () => void) {
-    super(); this.original = source.linkParts.original;
+    super(view.app); this.original = source.linkParts.original;
   }
 
-  /** Mount in the selected image's owning window, outside canvas paint containment. */
-  onload(): void {
+  protected shouldNotStartDrag(target: HTMLElement, event: PointerEvent | TouchEvent): boolean {
+    return !!target.closest(".setting-item-control") || super.shouldNotStartDrag(target, event);
+  }
+
+  /** Use the shared draggable modal without blocking interaction with the drawing. */
+  onOpen(): void {
     this.active = true;
-    const doc = this.view.ownerDocument, win = doc.defaultView;
-    this.popup = doc.body.createDiv({ cls: "excalidraw-drawing-preview-popover", attr: { role: "dialog", "aria-label": t("PREVIEW_CONFIGURE") } });
-    this.popup.createEl("strong", { text: t("PREVIEW_CONFIGURE") });
+    this.events = new Component(); this.events.load();
+    const doc = this.modalEl.ownerDocument;
+    this.modalEl.addClass("excalidraw-drawing-preview-popover");
+    this.modalEl.setAttribute("aria-label", t("PREVIEW_CONFIGURE"));
+    this.setTitle(t("PREVIEW_CONFIGURE"));
+    this.popup = this.contentEl;
     this.popup.createDiv({ cls: "setting-item-description", text: t("PREVIEW_CONFIGURE_HELP") });
     this.image = this.popup.createDiv({ cls: "excalidraw-drawing-preview-image" }).createEl("img", { attr: { alt: t("PREVIEW_VIEW") } });
     const parts = getDrawingPreviewParts(this.original), ref = parts.blockref ?? parts.sectionref;
@@ -86,35 +94,23 @@ export class DrawingImagePreviewPopover extends Component {
     const buttons = this.popup.createDiv({ cls: "excalidraw-drawing-preview-buttons" });
     const cancel = buttons.createEl("button", { text: t("PROMPT_BUTTON_CANCEL"), attr: { type: "button" } });
     const apply = buttons.createEl("button", { text: t("PREVIEW_APPLY"), cls: "mod-cta", attr: { type: "button" } });
-    this.registerDomEvent(cancel, "click", () => { if (!this.applying) this.unload(); });
+    this.events.registerDomEvent(cancel, "click", () => { if (!this.applying) this.close(); });
     const save = async () => {
       if (this.applying || !this.current()) return;
-      if (!Object.keys(this.changes).length) { this.unload(); return; }
+      if (!Object.keys(this.changes).length) { this.close(); return; }
       this.applying = true; apply.disabled = true;
-      try { if (await this.commit({ ...this.changes })) this.unload(); }
+      try { if (await this.commit({ ...this.changes })) this.close(); }
       finally { this.applying = false; apply.disabled = false; }
     };
-    this.registerDomEvent(apply, "click", () => { void save(); });
-    this.registerDomEvent(this.popup, "pointerdown", event => event.stopPropagation());
-    this.registerDomEvent(this.popup, "wheel", event => event.stopPropagation());
-    this.registerDomEvent(doc, "pointerdown", event => { if (!this.applying && !event.composedPath().includes(this.popup)) this.unload(); });
-    this.registerDomEvent(doc, "keydown", event => {
-      if (event.key === "Escape" && !this.applying) { event.preventDefault(); event.stopPropagation(); this.unload(); }
+    this.events.registerDomEvent(apply, "click", () => { void save(); });
+    this.events.registerDomEvent(this.popup, "wheel", event => event.stopPropagation());
+    this.events.registerDomEvent(doc, "keydown", event => {
+      if (event.key === "Escape" && !this.applying) { event.preventDefault(); event.stopPropagation(); this.close(); }
     }, true);
-    this.registerDomEvent(win, "resize", () => this.place());
-    this.registerDomEvent(win, "blur", () => { if (!this.applying) this.unload(); });
-    this.place(); this.queuePreview(); this.popup.querySelector("select")?.focus();
+    this.queuePreview();
   }
 
   private current(): boolean { return this.active && this.isCurrent(); }
-
-  private place(): void {
-    if (!this.current()) { this.unload(); return; }
-    const anchor = this.view.excalidrawContainer.querySelector(".excalidraw-selected-element-menu") ?? this.view.excalidrawContainer;
-    const bounds = anchor.getBoundingClientRect(), popup = this.popup.getBoundingClientRect(), win = this.popup.ownerDocument.defaultView;
-    setStyle(this.popup, { left: `${Math.max(8, Math.min(bounds.left, win.innerWidth - popup.width - 8))}px`,
-      top: `${Math.max(8, Math.min(bounds.bottom + 4, win.innerHeight - popup.height - 8))}px` });
-  }
 
   private queuePreview(): void {
     const generation = ++this.generation;
@@ -124,15 +120,17 @@ export class DrawingImagePreviewPopover extends Component {
       if (!link || !this.current()) return;
       try {
         const result = await this.render(link);
-        if (this.current() && generation === this.generation) { this.image.src = result.image.dataURL; this.place(); }
+        if (this.current() && generation === this.generation) { this.image.src = result.image.dataURL; }
       } catch { /* The owned controller reports apply failures; a stale draft never writes. */ }
     })(); }, 300);
   }
 
   /** Cancel delayed renders and release this window's controls without a scene write. */
-  onunload(): void {
+  onClose(): void {
+    if (!this.active) return;
     this.active = false; this.generation++;
     if (this.timer !== null) window.clearTimeout(this.timer);
-    this.timer = null; this.popup?.remove(); this.closed();
+    this.timer = null; this.events?.unload(); this.events = null;
+    this.contentEl.empty(); this.closed();
   }
 }

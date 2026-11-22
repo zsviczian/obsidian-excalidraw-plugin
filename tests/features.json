@@ -15,6 +15,10 @@
         {
           "path": "src/core/managers/PluginSettingsManager.ts",
           "symbol": "export class PluginSettingsManager"
+        },
+        {
+          "path": "src/shared/Dialogs/FloatingModal.ts",
+          "symbol": "export class FloatingModal"
         }
       ],
       "tests": [
@@ -80,6 +84,13 @@
           "path": "scripts/testing/extrasUnavailable.test.mjs",
           "cases": [
             "an enabled Extras plugin with an absent or incomplete API cancels service access cleanly"
+          ]
+        },
+        {
+          "layer": "source",
+          "path": "scripts/testing/floatingModal.source.test.mjs",
+          "cases": [
+            "node:scripts/testing/floatingModal.source.test.mjs::closing a floating modal before deferred setup cancels its listeners and positioning"
           ]
         }
       ],

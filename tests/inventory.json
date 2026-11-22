@@ -2610,6 +2610,10 @@
       "mode": "isolated-or-extracted"
     },
     {
+      "path": "scripts/testing/floatingModal.source.test.mjs",
+      "mode": "direct-module-or-tooling"
+    },
+    {
       "path": "scripts/testing/flowchartNavigationShortcut.test.mjs",
       "mode": "direct-module-or-tooling"
     },

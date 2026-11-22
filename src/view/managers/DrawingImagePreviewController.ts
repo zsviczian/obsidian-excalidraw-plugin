@@ -38,7 +38,7 @@ export class DrawingImagePreviewController {
     return source?.file && !source.isMarkdownSection && this.view.plugin.isExcalidrawFile(source.file) ? source : null;
   }
 
-  /** Open one selected-image popover, rechecking the view after reading frame names. */
+  /** Open one selected-image floating modal, rechecking the view after reading frame names. */
   async open(elementId: string): Promise<void> {
     if (this.busy) return;
     this.reset();
@@ -56,13 +56,16 @@ export class DrawingImagePreviewController {
     try {
       const elements = await this.dependencies.readScene(view.plugin.app.vault, source.file);
       if (!ownsImage()) return;
-      this.popover = new DrawingImagePreviewPopover(view, source, getSceneFrames(elements), this.dependencies.getExportPadding(view.plugin, source.file),
+      const popover = new DrawingImagePreviewPopover(view, source, getSceneFrames(elements), this.dependencies.getExportPadding(view.plugin, source.file),
         getDrawingPaddingMax(elements, originalLink, getCommonBoundingBox),
         ownsImage,
         link => this.load(source, link),
         changes => this.apply(elementId, source, changes, ownsImage),
-        () => { this.popover = null; });
-      this.popover.load();
+        () => {
+          if (this.popover !== popover) return;
+          this.popover = null; this.reset();
+        });
+      this.popover = popover; popover.open();
     } catch (error: unknown) { if (current()) { errorlog({ where: "DrawingImagePreviewController.open", error }); new Notice(t("ERROR_TRY_AGAIN")); } }
   }
 
@@ -136,7 +139,7 @@ export class DrawingImagePreviewController {
 
   /** Retire pending renders, prompts and controls on file change, migration or unload. */
   reset(): void {
-    this.generation++; this.popover?.unload(); this.popover = null;
+    this.generation++; const popover = this.popover; this.popover = null; popover?.close();
     this.prompt?.close(); this.prompt = null;
     for (const loader of this.loaders) loader.terminate = true;
     this.loaders.clear();

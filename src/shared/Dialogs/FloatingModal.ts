@@ -98,6 +98,7 @@ function isPointOnText(e: PointerEvent | TouchEvent, doc: Document): boolean {
 
 export class FloatingModal extends Modal {
   private dragging = false;
+  private openTimer: number | null = null;
   private offsetX = 0;
   private offsetY = 0;
   private readonly pointerDownHandler: (e: PointerEvent | TouchEvent) => void;
@@ -270,7 +271,8 @@ export class FloatingModal extends Modal {
       // prevent automatic selection / focus restoration
       this.shouldRestoreSelection = false;
     }
-    window.setTimeout(() => {
+    this.openTimer = window.setTimeout(() => {
+      this.openTimer = null;
       const { containerEl, modalEl, bgEl } = this;
       containerEl.addClass("mod-excalidraw-draggable");
 
@@ -336,6 +338,10 @@ export class FloatingModal extends Modal {
   }
 
   close(): void {
+    if (this.openTimer !== null) {
+      window.clearTimeout(this.openTimer);
+      this.openTimer = null;
+    }
     // Optional: restore previous focus if body ended up focused
     if (
       this.disableKeyCapture &&
