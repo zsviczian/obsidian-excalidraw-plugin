@@ -4,6 +4,8 @@ import type { LucideIconOptions, LucideIconResult } from "src/types/lucideTypes"
 import ExcalidrawPlugin from "src/core/main";
 import LZString from "lz-string";
 import type { ExcalidrawCLIRequest, ExcalidrawCLIResult } from "src/types/excalidrawCliTypes";
+import { isCLIScript } from "src/core/cli/cliScriptContext";
+import { CLIError } from "src/core/cli/cliProtocol";
 import {
   FillStyle,
   StrokeStyle,
@@ -2953,11 +2955,20 @@ export class ExcalidrawAutomate {
    * @param {string} diagram - The mermaid diagram string.
    * @param {boolean} [groupElements=true] - Whether to group the elements.
    * @returns {Promise<string[]|string>} Promise resolving to the IDs of the created elements or an error message.
+   * @throws CLI dependency error when Extras Mermaid is unavailable, disabled or incompatible in a one-shot CLI invocation.
    */
   async addMermaid(
     diagram: string,
     groupElements: boolean = true,
   ): Promise<string[] | string> {
+    if (isCLIScript(this)) {
+      const gateway = this.plugin.extrasGateway;
+      const api = gateway.getAPI();
+      if (!api || !gateway.checkVersion("mermaid", api).valid || !api.features.isActive("mermaid")) {
+        throw new CLIError("DEPENDENCY_UNAVAILABLE", "CLI Mermaid conversion requires compatible, enabled Excalidraw Extras Mermaid.", undefined,
+          "Inspect status.extras, update Excalidraw Extras and enable Mermaid before retrying. Read back any earlier script writes first.");
+      }
+    }
     const result = await mermaidToExcalidraw(diagram, {
       themeVariables: { fontSize: `${this.style.fontSize}` },
       flowchart: { curve: this.style.roundness === null ? "linear" : "basis" },

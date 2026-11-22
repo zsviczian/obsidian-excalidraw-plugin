@@ -146,6 +146,27 @@ export class ExcalidrawExtrasGateway {
       ? api : null;
   }
 
+  /** Read-only component readiness; never activates features, loads modules or opens a modal. */
+  public getStatus() {
+    const api = this.getAPI();
+    const components: ExtrasComponent[] = ["mathjax", "mermaid", "pdf", "filesystem"];
+    return {
+      installed: this.isInstalled(),
+      enabled: this.isPluginEnabled(),
+      pluginVersion: this.app.plugins.manifests[EXTRAS_PLUGIN_ID]?.version ?? null,
+      components: Object.fromEntries(components.map(component => {
+        const required = REQUIRED_EXTRAS_VERSIONS[component];
+        return [component, {
+          version: api?.versions[component] ?? null,
+          active: api?.features.isActive(component) === true,
+          compatible: api ? this.checkVersion(component, api).valid : false,
+          requiredVersion: required.exact ?? required.min,
+          exact: required.exact !== undefined,
+        }];
+      })),
+    };
+  }
+
   public checkVersion(
     component: string,
     api: ExcalidrawExtrasAPI,

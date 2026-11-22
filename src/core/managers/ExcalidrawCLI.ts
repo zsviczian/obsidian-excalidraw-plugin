@@ -14,6 +14,7 @@ import { commandSchema } from "src/core/cli/cliSchema";
 import { imageInventory } from "src/core/cli/cliImages";
 import { nanoid } from "src/constants/constants";
 import { getLucideIcons } from "src/shared/lucideIcons";
+import { mindMapBuilderStatus } from "src/core/cli/cliStatus";
 
 type Receipt = { fingerprint: string; result: ExcalidrawCLIResult; finishedAt?: number; preExecutionBusy?: boolean };
 
@@ -178,7 +179,7 @@ export class ExcalidrawCLI {
       if (request.format !== undefined && !["json", "markdown"].includes(string(request.format, "format"))) throw new CLIError("INVALID_INPUT", "Expected json or markdown.", "format");
       return { markdown: CLI_SKILL };
     }
-    if (command === "status") return { apiVersion: 1, nativeCLI: Platform.isDesktop && requireApiVersion("1.12.2") && typeof (plugin as ExcalidrawPlugin & Partial<ObsidianCliRuntime>).registerCliHandler === "function", ready: plugin.isReady, vault: plugin.app.vault.getName(), version: plugin.manifest.version, converter: plugin.isReady && typeof plugin.getCLIRuntime().convertToExcalidrawElements === "function", lucideIcons: plugin.isReady, receiptTTLSeconds: 900, receiptCapacity: 128 };
+    if (command === "status") return { apiVersion: 1, nativeCLI: Platform.isDesktop && requireApiVersion("1.12.2") && typeof (plugin as ExcalidrawPlugin & Partial<ObsidianCliRuntime>).registerCliHandler === "function", ready: plugin.isReady, vault: plugin.app.vault.getName(), version: plugin.manifest.version, converter: plugin.isReady && typeof plugin.getCLIRuntime().convertToExcalidrawElements === "function", lucideIcons: plugin.isReady, extras: plugin.extrasGateway?.getStatus() ?? null, mindMapBuilder: mindMapBuilderStatus(), receiptTTLSeconds: 900, receiptCapacity: 128 };
     if (command === "schema") {
       const action = string(request.action, "action");
       if (!Object.hasOwn(CLI_COMMANDS, action)) throw new CLIError("UNSUPPORTED_COMMAND", "Unknown action.", "action");
