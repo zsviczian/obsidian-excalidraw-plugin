@@ -1710,6 +1710,15 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     let previousFolder = "";
     return [
       {
+        name: t("VR_FRAMEWORK_FOLDER"),
+        desc: t("VR_FRAMEWORK_FOLDER_DESC"),
+        control: { type: "text", key: "frameworkFolder", vaultPath: { kind: "folder", options: { optional: true } } },
+      },
+      {
+        name: t("VR_PROMPT_ON_BLANK"),
+        control: { type: "toggle", key: "frameworksOnBlank" },
+      },
+      {
         name: t("FOLDER_NAME"),
         desc: fragWithHTML(t("FOLDER_DESC")),
         aliases: ["drawing folder", "save location"],

@@ -30,6 +30,7 @@ import { frameSemanticsCaseIds, frameSemanticsDeviceCaseIds } from "./host/frame
 import { kplexOntologyCaseIds, kplexOntologyDeviceCaseIds } from "./host/kplexOntology.mjs";
 import { runtimeCompactionCaseIds } from "./host/runtimeCompaction.mjs";
 import { sidepanelPopoutCaseIds } from "./host/sidepanelPopout.mjs";
+import { visualResourceCaseIds } from "./host/visualResources.mjs";
 
 export const requiredDeviceCases = [
   ...deviceProfiles(),
@@ -38,6 +39,7 @@ export const requiredDeviceCases = [
 
 export const requiredNativeCases = [
   ...sidepanelPopoutCaseIds,
+  ...visualResourceCaseIds,
   ...runtimeCompactionCaseIds,
   ...workflowBundleCaseIds,
   ...issue3052CaseIds,

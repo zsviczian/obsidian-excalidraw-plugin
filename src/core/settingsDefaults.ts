@@ -11,6 +11,7 @@
  */
 import { Modifier } from "obsidian";
 import type { ThumbnailRenamePolicy } from "src/types/frameTypes";
+import type { FrameworkInstallState, FrameworkRemote, VisualResourcePreferences } from "src/types/visualResourceTypes";
 import type { CodeBlockInsertionPreference } from "src/types/codeBlockTypes";
 import { PenStyle } from "src/types/penTypes";
 import { DynamicStyle, GridSettings } from "src/types/types";
@@ -219,6 +220,13 @@ export interface ExcalidrawSettings {
   taskboneAPIKeySource?: "settings" | "secret";
   taskboneAPIKeySecret?: string;
   pinnedScripts: string[];
+  visualResources: VisualResourcePreferences;
+  frameworkFolder: string;
+  frameworksOnBlank: boolean;
+  frameworksSnoozedUntil: number;
+  frameworkCatalogCheckedAt: number;
+  frameworkCatalog: FrameworkRemote[];
+  frameworkInstalls: Record<string, FrameworkInstallState>;
   sidepanelTabs: string[];
   sidepanelOpenInPopout: boolean;
   customPens: PenStyle[];
@@ -575,6 +583,13 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   taskboneAPIKeySource: "settings",
   taskboneAPIKeySecret: "",
   pinnedScripts: [],
+  visualResources: {},
+  frameworkFolder: "",
+  frameworksOnBlank: true,
+  frameworksSnoozedUntil: 0,
+  frameworkCatalogCheckedAt: 0,
+  frameworkCatalog: [],
+  frameworkInstalls: {},
   sidepanelTabs: [],
   sidepanelOpenInPopout: false,
   customPens: [

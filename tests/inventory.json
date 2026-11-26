@@ -67,294 +67,304 @@
       "line": 552
     },
     {
-      "name": "excalidraw-open",
+      "name": "visual-resources",
       "path": "src/core/managers/CommandManager.ts",
       "line": 558
     },
     {
+      "name": "visual-resources-icons",
+      "path": "src/core/managers/CommandManager.ts",
+      "line": 563
+    },
+    {
+      "name": "thinking-frameworks-new-drawing",
+      "path": "src/core/managers/CommandManager.ts",
+      "line": 568
+    },
+    {
+      "name": "excalidraw-open",
+      "path": "src/core/managers/CommandManager.ts",
+      "line": 577
+    },
+    {
       "name": "excalidraw-open-on-current",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 566
+      "line": 585
     },
     {
       "name": "excalidraw-insert-transclusion",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 574
+      "line": 593
     },
     {
       "name": "excalidraw-insert-last-active-transclusion",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 586
+      "line": 605
     },
     {
       "name": "excalidraw-autocreate",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 607
+      "line": 626
     },
     {
       "name": "excalidraw-autocreate-newtab",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 618
+      "line": 637
     },
     {
       "name": "excalidraw-autocreate-on-current",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 629
+      "line": 648
     },
     {
       "name": "excalidraw-autocreate-popout",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 640
+      "line": 659
     },
     {
       "name": "excalidraw-autocreate-and-embed",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 679
+      "line": 698
     },
     {
       "name": "excalidraw-autocreate-and-embed-new-tab",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 691
+      "line": 710
     },
     {
       "name": "excalidraw-autocreate-and-embed-on-current",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 703
+      "line": 722
     },
     {
       "name": "excalidraw-autocreate-and-embed-popout",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 715
+      "line": 734
     },
     {
       "name": "run-ocr",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 730
+      "line": 749
     },
     {
       "name": "rerun-ocr",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 750
+      "line": 769
     },
     {
       "name": "run-ocr-selectedelements",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 770
+      "line": 789
     },
     {
       "name": "search-text",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 794
+      "line": 813
     },
     {
       "name": "navigate-to-frame",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 812
+      "line": 831
     },
     {
       "name": "fullscreen",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 823
+      "line": 842
     },
     {
       "name": "disable-binding",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 845
+      "line": 864
     },
     {
       "name": "disable-framerendering",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 863
+      "line": 882
     },
     {
       "name": "frame-settings",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 881
+      "line": 900
     },
     {
       "name": "copy-link-to-drawing",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 899
+      "line": 918
     },
     {
       "name": "copy-selection-for-agent",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 917
+      "line": 936
     },
     {
       "name": "disable-frameclipping",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 928
+      "line": 947
     },
     {
       "name": "export-image",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 946
+      "line": 965
     },
     {
       "name": "save",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 967
+      "line": 986
     },
     {
       "name": "toggle-lock",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 980
+      "line": 999
     },
     {
       "name": "scriptengine-store",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 1001
+      "line": 1020
     },
     {
       "name": "delete-file",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 1015
+      "line": 1034
     },
     {
       "name": "convert-text2MD",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 1046
+      "line": 1065
     },
     {
       "name": "insert-link",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 1077
+      "line": 1096
     },
     {
       "name": "insert-cmd",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 1100
+      "line": 1119
     },
     {
       "name": "insert-link-to-element",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 1122
+      "line": 1141
     },
     {
       "name": "insert-link-to-element-group",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 1140
+      "line": 1159
     },
     {
       "name": "insert-link-to-element-frame",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 1158
+      "line": 1177
     },
     {
       "name": "insert-link-to-element-frame-clipped",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 1176
+      "line": 1195
     },
     {
       "name": "insert-link-to-element-area",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 1194
+      "line": 1213
     },
     {
       "name": "toggle-lefthanded-mode",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 1212
+      "line": 1231
     },
     {
       "name": "toggle-enable-context-menu",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 1241
+      "line": 1260
     },
     {
       "name": "flip-image",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 1256
+      "line": 1275
     },
     {
       "name": "duplicate-image",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 1316
+      "line": 1335
     },
     {
       "name": "reset-image-to-100",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 1381
+      "line": 1400
     },
     {
       "name": "reset-image-ar",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 1436
+      "line": 1455
     },
     {
       "name": "open-link-props",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 1479
+      "line": 1498
     },
     {
       "name": "convert-card-to-file",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 1522
+      "line": 1541
     },
     {
       "name": "insert-active-pdfpage",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 1559
+      "line": 1578
     },
     {
       "name": "crop-image",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 1625
+      "line": 1644
     },
     {
       "name": "annotate-image",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 1960
+      "line": 1979
     },
     {
       "name": "insert-editable-markdown-image",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 2256
+      "line": 2275
     },
     {
       "name": "edit-selected-markdown-image",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 2271
+      "line": 2290
     },
     {
       "name": "refresh-scene-images",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 2294
+      "line": 2313
     },
     {
       "name": "insert-image",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 2320
+      "line": 2339
     },
     {
       "name": "import-svg",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 2338
+      "line": 2357
     },
     {
       "name": "release-notes",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 2356
+      "line": 2375
     },
     {
       "name": "view-autostart-scripts",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 2370
+      "line": 2389
     },
     {
       "name": "tray-mode",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 2378
+      "line": 2397
     },
     {
       "name": "insert-md",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 2403
-    },
-    {
-      "name": "insert-pdf",
-      "path": "src/core/managers/CommandManager.ts",
-      "line": 2421
+      "line": 2422
     },
     {
       "name": "insert-pdf",
@@ -362,34 +372,39 @@
       "line": 2440
     },
     {
+      "name": "insert-pdf",
+      "path": "src/core/managers/CommandManager.ts",
+      "line": 2459
+    },
+    {
       "name": "universal-add-file",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 2471
+      "line": 2490
     },
     {
       "name": "universal-card",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 2493
+      "line": 2512
     },
     {
       "name": "insert-LaTeX-symbol",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 2511
+      "line": 2530
     },
     {
       "name": "toggle-excalidraw-view",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 2529
+      "line": 2548
     },
     {
       "name": "convert-to-excalidraw",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 2562
+      "line": 2581
     },
     {
       "name": "convert-excalidraw",
       "path": "src/core/managers/CommandManager.ts",
-      "line": 2594
+      "line": 2613
     }
   ],
   "publicEA": [
@@ -1228,972 +1243,1007 @@
     {
       "name": "showRibbonIcon",
       "path": "src/core/settingsDefaults.ts",
-      "line": 46
+      "line": 47
     },
     {
       "name": "showNewDrawingInEmptyTab",
       "path": "src/core/settingsDefaults.ts",
-      "line": 47
+      "line": 48
     },
     {
       "name": "thumbnailRenamePolicy",
       "path": "src/core/settingsDefaults.ts",
-      "line": 48
+      "line": 49
     },
     {
       "name": "showTabTitlebarButtons",
       "path": "src/core/settingsDefaults.ts",
-      "line": 49
+      "line": 50
     },
     {
       "name": "copyLinkToElemenetAnchorTo100",
       "path": "src/core/settingsDefaults.ts",
-      "line": 50
+      "line": 51
     },
     {
       "name": "copyFrameLinkByName",
       "path": "src/core/settingsDefaults.ts",
-      "line": 51
+      "line": 52
     },
     {
       "name": "disableDoubleClickTextEditing",
       "path": "src/core/settingsDefaults.ts",
-      "line": 52
+      "line": 53
     },
     {
       "name": "phoneFooterSafeAreaPadding",
       "path": "src/core/settingsDefaults.ts",
-      "line": 53
+      "line": 54
     },
     {
       "name": "tabletFooterSafeAreaPadding",
       "path": "src/core/settingsDefaults.ts",
-      "line": 54
+      "line": 55
     },
     {
       "name": "folder",
       "path": "src/core/settingsDefaults.ts",
-      "line": 55
+      "line": 56
     },
     {
       "name": "libraryFolderPath",
       "path": "src/core/settingsDefaults.ts",
-      "line": 56
+      "line": 57
     },
     {
       "name": "libraryFileName",
       "path": "src/core/settingsDefaults.ts",
-      "line": 57
+      "line": 58
     },
     {
       "name": "libraryStorageMode",
       "path": "src/core/settingsDefaults.ts",
-      "line": 58
+      "line": 59
     },
     {
       "name": "libraryMigrationStatus",
       "path": "src/core/settingsDefaults.ts",
-      "line": 59
+      "line": 60
     },
     {
       "name": "libraryMigrationSnoozeUntil",
       "path": "src/core/settingsDefaults.ts",
-      "line": 60
+      "line": 61
     },
     {
       "name": "cropFolder",
       "path": "src/core/settingsDefaults.ts",
-      "line": 61
+      "line": 62
     },
     {
       "name": "annotateFolder",
       "path": "src/core/settingsDefaults.ts",
-      "line": 62
+      "line": 63
     },
     {
       "name": "embedUseExcalidrawFolder",
       "path": "src/core/settingsDefaults.ts",
-      "line": 63
+      "line": 64
     },
     {
       "name": "templateFilePath",
       "path": "src/core/settingsDefaults.ts",
-      "line": 64
+      "line": 65
     },
     {
       "name": "scriptFolderPath",
       "path": "src/core/settingsDefaults.ts",
-      "line": 65
+      "line": 66
     },
     {
       "name": "allowJavaScriptFiles",
       "path": "src/core/settingsDefaults.ts",
-      "line": 66
+      "line": 67
     },
     {
       "name": "storeScriptFilesAsJavaScript",
       "path": "src/core/settingsDefaults.ts",
-      "line": 67
+      "line": 68
     },
     {
       "name": "fontAssetsPath",
       "path": "src/core/settingsDefaults.ts",
-      "line": 68
+      "line": 69
     },
     {
       "name": "loadChineseFonts",
       "path": "src/core/settingsDefaults.ts",
-      "line": 69
+      "line": 70
     },
     {
       "name": "loadJapaneseFonts",
       "path": "src/core/settingsDefaults.ts",
-      "line": 70
+      "line": 71
     },
     {
       "name": "loadKoreanFonts",
       "path": "src/core/settingsDefaults.ts",
-      "line": 71
+      "line": 72
     },
     {
       "name": "compress",
       "path": "src/core/settingsDefaults.ts",
-      "line": 72
+      "line": 73
     },
     {
       "name": "decompressForMDView",
       "path": "src/core/settingsDefaults.ts",
-      "line": 73
+      "line": 74
     },
     {
       "name": "onceOffCompressFlagReset",
       "path": "src/core/settingsDefaults.ts",
-      "line": 74
+      "line": 75
     },
     {
       "name": "autosaveIntervalDesktop",
       "path": "src/core/settingsDefaults.ts",
-      "line": 75
+      "line": 76
     },
     {
       "name": "autosaveIntervalMobile",
       "path": "src/core/settingsDefaults.ts",
-      "line": 76
+      "line": 77
     },
     {
       "name": "drawingFilenamePrefix",
       "path": "src/core/settingsDefaults.ts",
-      "line": 77
+      "line": 78
     },
     {
       "name": "drawingEmbedPrefixWithFilename",
       "path": "src/core/settingsDefaults.ts",
-      "line": 78
+      "line": 79
     },
     {
       "name": "drawingFilnameEmbedPostfix",
       "path": "src/core/settingsDefaults.ts",
-      "line": 79
+      "line": 80
     },
     {
       "name": "drawingFilenameDateTime",
       "path": "src/core/settingsDefaults.ts",
-      "line": 80
+      "line": 81
     },
     {
       "name": "useExcalidrawExtension",
       "path": "src/core/settingsDefaults.ts",
-      "line": 81
+      "line": 82
     },
     {
       "name": "cropSuffix",
       "path": "src/core/settingsDefaults.ts",
-      "line": 82
+      "line": 83
     },
     {
       "name": "cropPrefix",
       "path": "src/core/settingsDefaults.ts",
-      "line": 83
+      "line": 84
     },
     {
       "name": "annotateSuffix",
       "path": "src/core/settingsDefaults.ts",
-      "line": 84
+      "line": 85
     },
     {
       "name": "annotatePrefix",
       "path": "src/core/settingsDefaults.ts",
-      "line": 85
+      "line": 86
     },
     {
       "name": "annotatePreserveSize",
       "path": "src/core/settingsDefaults.ts",
-      "line": 86
+      "line": 87
     },
     {
       "name": "displaySVGInPreview",
       "path": "src/core/settingsDefaults.ts",
-      "line": 87
+      "line": 88
     },
     {
       "name": "previewImageType",
       "path": "src/core/settingsDefaults.ts",
-      "line": 88
+      "line": 89
     },
     {
       "name": "renderingConcurrency",
       "path": "src/core/settingsDefaults.ts",
-      "line": 89
+      "line": 90
     },
     {
       "name": "imageCacheRetentionDays",
       "path": "src/core/settingsDefaults.ts",
-      "line": 90
+      "line": 91
     },
     {
       "name": "allowImageCache",
       "path": "src/core/settingsDefaults.ts",
-      "line": 91
+      "line": 92
     },
     {
       "name": "allowImageCacheInScene",
       "path": "src/core/settingsDefaults.ts",
-      "line": 92
+      "line": 93
     },
     {
       "name": "displayExportedImageIfAvailable",
       "path": "src/core/settingsDefaults.ts",
-      "line": 93
+      "line": 94
     },
     {
       "name": "previewMatchObsidianTheme",
       "path": "src/core/settingsDefaults.ts",
-      "line": 94
+      "line": 95
     },
     {
       "name": "width",
       "path": "src/core/settingsDefaults.ts",
-      "line": 95
+      "line": 96
     },
     {
       "name": "height",
       "path": "src/core/settingsDefaults.ts",
-      "line": 96
+      "line": 97
     },
     {
       "name": "overrideObsidianFontSize",
       "path": "src/core/settingsDefaults.ts",
-      "line": 97
+      "line": 98
     },
     {
       "name": "dynamicStyling",
       "path": "src/core/settingsDefaults.ts",
-      "line": 98
+      "line": 99
     },
     {
       "name": "isLeftHanded",
       "path": "src/core/settingsDefaults.ts",
-      "line": 99
+      "line": 100
     },
     {
       "name": "desktopUIMode",
       "path": "src/core/settingsDefaults.ts",
-      "line": 100
+      "line": 101
     },
     {
       "name": "tabletUIMode",
       "path": "src/core/settingsDefaults.ts",
-      "line": 101
+      "line": 102
     },
     {
       "name": "phoneUIMode",
       "path": "src/core/settingsDefaults.ts",
-      "line": 102
+      "line": 103
     },
     {
       "name": "iframeMatchExcalidrawTheme",
       "path": "src/core/settingsDefaults.ts",
-      "line": 103
+      "line": 104
     },
     {
       "name": "matchTheme",
       "path": "src/core/settingsDefaults.ts",
-      "line": 104
+      "line": 105
     },
     {
       "name": "matchThemeAlways",
       "path": "src/core/settingsDefaults.ts",
-      "line": 105
+      "line": 106
     },
     {
       "name": "matchThemeTrigger",
       "path": "src/core/settingsDefaults.ts",
-      "line": 106
+      "line": 107
     },
     {
       "name": "defaultMode",
       "path": "src/core/settingsDefaults.ts",
-      "line": 107
+      "line": 108
     },
     {
       "name": "defaultPenMode",
       "path": "src/core/settingsDefaults.ts",
-      "line": 108
+      "line": 109
     },
     {
       "name": "penModeDoubleTapEraser",
       "path": "src/core/settingsDefaults.ts",
-      "line": 109
+      "line": 110
     },
     {
       "name": "penModeSingleFingerPanning",
       "path": "src/core/settingsDefaults.ts",
-      "line": 110
+      "line": 111
     },
     {
       "name": "penModeCrosshairVisible",
       "path": "src/core/settingsDefaults.ts",
-      "line": 111
+      "line": 112
     },
     {
       "name": "renderImageInMarkdownReadingMode",
       "path": "src/core/settingsDefaults.ts",
-      "line": 112
+      "line": 113
     },
     {
       "name": "renderImageInHoverPreviewForMDNotes",
       "path": "src/core/settingsDefaults.ts",
-      "line": 113
+      "line": 114
     },
     {
       "name": "renderImageInMarkdownToPDF",
       "path": "src/core/settingsDefaults.ts",
-      "line": 114
+      "line": 115
     },
     {
       "name": "allowPinchZoom",
       "path": "src/core/settingsDefaults.ts",
-      "line": 115
+      "line": 116
     },
     {
       "name": "allowWheelZoom",
       "path": "src/core/settingsDefaults.ts",
-      "line": 116
+      "line": 117
     },
     {
       "name": "zoomToFitOnOpen",
       "path": "src/core/settingsDefaults.ts",
-      "line": 117
+      "line": 118
     },
     {
       "name": "zoomToFitOnResize",
       "path": "src/core/settingsDefaults.ts",
-      "line": 118
+      "line": 119
     },
     {
       "name": "zoomToFitMaxLevel",
       "path": "src/core/settingsDefaults.ts",
-      "line": 119
+      "line": 120
     },
     {
       "name": "zoomStep",
       "path": "src/core/settingsDefaults.ts",
-      "line": 120
+      "line": 121
     },
     {
       "name": "zoomMin",
       "path": "src/core/settingsDefaults.ts",
-      "line": 121
+      "line": 122
     },
     {
       "name": "zoomMax",
       "path": "src/core/settingsDefaults.ts",
-      "line": 122
+      "line": 123
     },
     {
       "name": "openInAdjacentPane",
       "path": "src/core/settingsDefaults.ts",
-      "line": 123
+      "line": 124
     },
     {
       "name": "showSecondOrderLinks",
       "path": "src/core/settingsDefaults.ts",
-      "line": 124
+      "line": 125
     },
     {
       "name": "focusOnFileTab",
       "path": "src/core/settingsDefaults.ts",
-      "line": 125
+      "line": 126
     },
     {
       "name": "openInMainWorkspace",
       "path": "src/core/settingsDefaults.ts",
-      "line": 126
+      "line": 127
     },
     {
       "name": "showLinkBrackets",
       "path": "src/core/settingsDefaults.ts",
-      "line": 127
+      "line": 128
     },
     {
       "name": "syncElementLinkWithText",
       "path": "src/core/settingsDefaults.ts",
-      "line": 128
+      "line": 129
     },
     {
       "name": "linkPrefix",
       "path": "src/core/settingsDefaults.ts",
-      "line": 129
+      "line": 130
     },
     {
       "name": "urlPrefix",
       "path": "src/core/settingsDefaults.ts",
-      "line": 130
+      "line": 131
     },
     {
       "name": "parseTODO",
       "path": "src/core/settingsDefaults.ts",
-      "line": 131
+      "line": 132
     },
     {
       "name": "todo",
       "path": "src/core/settingsDefaults.ts",
-      "line": 132
+      "line": 133
     },
     {
       "name": "done",
       "path": "src/core/settingsDefaults.ts",
-      "line": 133
+      "line": 134
     },
     {
       "name": "hoverPreviewWithoutCTRL",
       "path": "src/core/settingsDefaults.ts",
-      "line": 134
+      "line": 135
     },
     {
       "name": "linkOpacity",
       "path": "src/core/settingsDefaults.ts",
-      "line": 135
+      "line": 136
     },
     {
       "name": "allowCtrlClick",
       "path": "src/core/settingsDefaults.ts",
-      "line": 136
+      "line": 137
     },
     {
       "name": "forceWrap",
       "path": "src/core/settingsDefaults.ts",
-      "line": 137
+      "line": 138
     },
     {
       "name": "pageTransclusionCharLimit",
       "path": "src/core/settingsDefaults.ts",
-      "line": 138
+      "line": 139
     },
     {
       "name": "wordWrappingDefault",
       "path": "src/core/settingsDefaults.ts",
-      "line": 139
+      "line": 140
     },
     {
       "name": "removeTransclusionQuoteSigns",
       "path": "src/core/settingsDefaults.ts",
-      "line": 140
+      "line": 141
     },
     {
       "name": "oEmbedAllowed",
       "path": "src/core/settingsDefaults.ts",
-      "line": 141
+      "line": 142
     },
     {
       "name": "pngExportScale",
       "path": "src/core/settingsDefaults.ts",
-      "line": 142
+      "line": 143
     },
     {
       "name": "exportWithTheme",
       "path": "src/core/settingsDefaults.ts",
-      "line": 143
+      "line": 144
     },
     {
       "name": "exportWithBackground",
       "path": "src/core/settingsDefaults.ts",
-      "line": 144
+      "line": 145
     },
     {
       "name": "exportPaddingSVG",
       "path": "src/core/settingsDefaults.ts",
-      "line": 145
+      "line": 146
     },
     {
       "name": "exportEmbedScene",
       "path": "src/core/settingsDefaults.ts",
-      "line": 146
+      "line": 147
     },
     {
       "name": "keepInSync",
       "path": "src/core/settingsDefaults.ts",
-      "line": 147
+      "line": 148
     },
     {
       "name": "autoexportSVG",
       "path": "src/core/settingsDefaults.ts",
-      "line": 148
+      "line": 149
     },
     {
       "name": "autoexportPNG",
       "path": "src/core/settingsDefaults.ts",
-      "line": 149
+      "line": 150
     },
     {
       "name": "autoExportLightAndDark",
       "path": "src/core/settingsDefaults.ts",
-      "line": 150
+      "line": 151
     },
     {
       "name": "autoexportExcalidraw",
       "path": "src/core/settingsDefaults.ts",
-      "line": 151
+      "line": 152
     },
     {
       "name": "embedType",
       "path": "src/core/settingsDefaults.ts",
-      "line": 152
+      "line": 153
     },
     {
       "name": "embedMarkdownCommentLinks",
       "path": "src/core/settingsDefaults.ts",
-      "line": 153
+      "line": 154
     },
     {
       "name": "embedWikiLink",
       "path": "src/core/settingsDefaults.ts",
-      "line": 154
+      "line": 155
     },
     {
       "name": "embedPlaceholderImage",
       "path": "src/core/settingsDefaults.ts",
-      "line": 158
+      "line": 159
     },
     {
       "name": "syncExcalidraw",
       "path": "src/core/settingsDefaults.ts",
-      "line": 159
+      "line": 160
     },
     {
       "name": "compatibilityMode",
       "path": "src/core/settingsDefaults.ts",
-      "line": 160
+      "line": 161
     },
     {
       "name": "experimentalFileType",
       "path": "src/core/settingsDefaults.ts",
-      "line": 161
+      "line": 162
     },
     {
       "name": "experimentalFileTag",
       "path": "src/core/settingsDefaults.ts",
-      "line": 162
+      "line": 163
     },
     {
       "name": "experimentalLivePreview",
       "path": "src/core/settingsDefaults.ts",
-      "line": 163
+      "line": 164
     },
     {
       "name": "fadeOutExcalidrawMarkup",
       "path": "src/core/settingsDefaults.ts",
-      "line": 164
+      "line": 165
     },
     {
       "name": "loadPropertySuggestions",
       "path": "src/core/settingsDefaults.ts",
-      "line": 165
+      "line": 166
     },
     {
       "name": "experimentalEnableFourthFont",
       "path": "src/core/settingsDefaults.ts",
-      "line": 166
+      "line": 167
     },
     {
       "name": "experimantalFourthFont",
       "path": "src/core/settingsDefaults.ts",
-      "line": 167
+      "line": 168
     },
     {
       "name": "addDummyTextElement",
       "path": "src/core/settingsDefaults.ts",
-      "line": 168
+      "line": 169
     },
     {
       "name": "zoteroCompatibility",
       "path": "src/core/settingsDefaults.ts",
-      "line": 169
+      "line": 170
     },
     {
       "name": "fieldSuggester",
       "path": "src/core/settingsDefaults.ts",
-      "line": 170
+      "line": 171
     },
     {
       "name": "enableOnloadScripts",
       "path": "src/core/settingsDefaults.ts",
-      "line": 171
+      "line": 172
     },
     {
       "name": "enableCommandLinks",
       "path": "src/core/settingsDefaults.ts",
-      "line": 172
+      "line": 173
     },
     {
       "name": "drawingOpenCount",
       "path": "src/core/settingsDefaults.ts",
-      "line": 174
+      "line": 175
     },
     {
       "name": "library",
       "path": "src/core/settingsDefaults.ts",
-      "line": 175
+      "line": 176
     },
     {
       "name": "library2",
       "path": "src/core/settingsDefaults.ts",
-      "line": 176
+      "line": 177
     },
     {
       "name": "imageElementNotice",
       "path": "src/core/settingsDefaults.ts",
-      "line": 178
+      "line": 179
     },
     {
       "name": "mdSVGwidth",
       "path": "src/core/settingsDefaults.ts",
-      "line": 181
+      "line": 182
     },
     {
       "name": "mdSVGmaxHeight",
       "path": "src/core/settingsDefaults.ts",
-      "line": 182
+      "line": 183
     },
     {
       "name": "mdFont",
       "path": "src/core/settingsDefaults.ts",
-      "line": 183
+      "line": 184
     },
     {
       "name": "mdFontColor",
       "path": "src/core/settingsDefaults.ts",
-      "line": 184
+      "line": 185
     },
     {
       "name": "mdBorderColor",
       "path": "src/core/settingsDefaults.ts",
-      "line": 185
+      "line": 186
     },
     {
       "name": "mdCSS",
       "path": "src/core/settingsDefaults.ts",
-      "line": 186
+      "line": 187
     },
     {
       "name": "markdownImageSettings",
       "path": "src/core/settingsDefaults.ts",
-      "line": 187
+      "line": 188
     },
     {
       "name": "markdownImageDeletionPreference",
       "path": "src/core/settingsDefaults.ts",
-      "line": 188
+      "line": 189
     },
     {
       "name": "pasteCodeBlockAs",
       "path": "src/core/settingsDefaults.ts",
-      "line": 189
+      "line": 190
     },
     {
       "name": "scriptEngineSettings",
       "path": "src/core/settingsDefaults.ts",
-      "line": 190
+      "line": 191
     },
     {
       "name": "autostartScripts",
       "path": "src/core/settingsDefaults.ts",
-      "line": 198
+      "line": 199
     },
     {
       "name": "autostartScriptFailures",
       "path": "src/core/settingsDefaults.ts",
-      "line": 205
+      "line": 206
     },
     {
       "name": "previousRelease",
       "path": "src/core/settingsDefaults.ts",
-      "line": 208
+      "line": 209
     },
     {
       "name": "showReleaseNotes",
       "path": "src/core/settingsDefaults.ts",
-      "line": 209
+      "line": 210
     },
     {
       "name": "useDeclarativeSettings",
       "path": "src/core/settingsDefaults.ts",
-      "line": 210
+      "line": 211
     },
     {
       "name": "excalidrawMasteryPromoCollapsed",
       "path": "src/core/settingsDefaults.ts",
-      "line": 211
+      "line": 212
     },
     {
       "name": "compareManifestToPluginVersion",
       "path": "src/core/settingsDefaults.ts",
-      "line": 212
+      "line": 213
     },
     {
       "name": "showNewVersionNotification",
       "path": "src/core/settingsDefaults.ts",
-      "line": 213
+      "line": 214
     },
     {
       "name": "latexBoilerplate",
       "path": "src/core/settingsDefaults.ts",
-      "line": 215
+      "line": 216
     },
     {
       "name": "latexPreambleLocation",
       "path": "src/core/settingsDefaults.ts",
-      "line": 216
+      "line": 217
     },
     {
       "name": "taskboneEnabled",
       "path": "src/core/settingsDefaults.ts",
-      "line": 217
+      "line": 218
     },
     {
       "name": "taskboneAPIkey",
       "path": "src/core/settingsDefaults.ts",
-      "line": 218
+      "line": 219
     },
     {
       "name": "taskboneAPIKeySource",
       "path": "src/core/settingsDefaults.ts",
-      "line": 219
+      "line": 220
     },
     {
       "name": "taskboneAPIKeySecret",
       "path": "src/core/settingsDefaults.ts",
-      "line": 220
+      "line": 221
     },
     {
       "name": "pinnedScripts",
       "path": "src/core/settingsDefaults.ts",
-      "line": 221
-    },
-    {
-      "name": "sidepanelTabs",
-      "path": "src/core/settingsDefaults.ts",
       "line": 222
     },
     {
-      "name": "sidepanelOpenInPopout",
+      "name": "visualResources",
       "path": "src/core/settingsDefaults.ts",
       "line": 223
     },
     {
-      "name": "customPens",
+      "name": "frameworkFolder",
       "path": "src/core/settingsDefaults.ts",
       "line": 224
     },
     {
-      "name": "numberOfCustomPens",
+      "name": "frameworksOnBlank",
       "path": "src/core/settingsDefaults.ts",
       "line": 225
     },
     {
-      "name": "pdfScale",
+      "name": "frameworksSnoozedUntil",
       "path": "src/core/settingsDefaults.ts",
       "line": 226
     },
     {
-      "name": "pdfBorderBox",
+      "name": "frameworkCatalogCheckedAt",
       "path": "src/core/settingsDefaults.ts",
       "line": 227
     },
     {
-      "name": "pdfFrame",
+      "name": "frameworkCatalog",
       "path": "src/core/settingsDefaults.ts",
       "line": 228
     },
     {
-      "name": "pdfGapSize",
+      "name": "frameworkInstalls",
       "path": "src/core/settingsDefaults.ts",
       "line": 229
     },
     {
-      "name": "pdfGroupPages",
+      "name": "sidepanelTabs",
       "path": "src/core/settingsDefaults.ts",
       "line": 230
     },
     {
-      "name": "pdfLockAfterImport",
+      "name": "sidepanelOpenInPopout",
       "path": "src/core/settingsDefaults.ts",
       "line": 231
     },
     {
-      "name": "pdfNumColumns",
+      "name": "customPens",
       "path": "src/core/settingsDefaults.ts",
       "line": 232
     },
     {
-      "name": "pdfNumRows",
+      "name": "numberOfCustomPens",
       "path": "src/core/settingsDefaults.ts",
       "line": 233
     },
     {
-      "name": "pdfDirection",
+      "name": "pdfScale",
       "path": "src/core/settingsDefaults.ts",
       "line": 234
     },
     {
-      "name": "pdfImportScale",
+      "name": "pdfBorderBox",
       "path": "src/core/settingsDefaults.ts",
       "line": 235
     },
     {
-      "name": "gridSettings",
+      "name": "pdfFrame",
       "path": "src/core/settingsDefaults.ts",
       "line": 236
     },
     {
-      "name": "laserSettings",
+      "name": "pdfGapSize",
       "path": "src/core/settingsDefaults.ts",
       "line": 237
     },
     {
-      "name": "embeddableMarkdownDefaults",
+      "name": "pdfGroupPages",
+      "path": "src/core/settingsDefaults.ts",
+      "line": 238
+    },
+    {
+      "name": "pdfLockAfterImport",
+      "path": "src/core/settingsDefaults.ts",
+      "line": 239
+    },
+    {
+      "name": "pdfNumColumns",
+      "path": "src/core/settingsDefaults.ts",
+      "line": 240
+    },
+    {
+      "name": "pdfNumRows",
+      "path": "src/core/settingsDefaults.ts",
+      "line": 241
+    },
+    {
+      "name": "pdfDirection",
       "path": "src/core/settingsDefaults.ts",
       "line": 242
     },
     {
-      "name": "markdownNodeOneClickEditing",
+      "name": "pdfImportScale",
       "path": "src/core/settingsDefaults.ts",
       "line": 243
     },
     {
-      "name": "canvasImmersiveEmbed",
+      "name": "gridSettings",
       "path": "src/core/settingsDefaults.ts",
       "line": 244
     },
     {
-      "name": "startupScriptPath",
+      "name": "laserSettings",
       "path": "src/core/settingsDefaults.ts",
       "line": 245
     },
     {
-      "name": "aiEnabled",
-      "path": "src/core/settingsDefaults.ts",
-      "line": 246
-    },
-    {
-      "name": "aiVerboseLogging",
-      "path": "src/core/settingsDefaults.ts",
-      "line": 247
-    },
-    {
-      "name": "aiProviderProfiles",
-      "path": "src/core/settingsDefaults.ts",
-      "line": 248
-    },
-    {
-      "name": "aiTextModelConfigs",
-      "path": "src/core/settingsDefaults.ts",
-      "line": 249
-    },
-    {
-      "name": "aiImageModelConfigs",
+      "name": "embeddableMarkdownDefaults",
       "path": "src/core/settingsDefaults.ts",
       "line": 250
     },
     {
-      "name": "aiDefaultTextModel",
+      "name": "markdownNodeOneClickEditing",
       "path": "src/core/settingsDefaults.ts",
       "line": 251
     },
     {
-      "name": "aiDefaultMultimodalModel",
+      "name": "canvasImmersiveEmbed",
       "path": "src/core/settingsDefaults.ts",
       "line": 252
     },
     {
-      "name": "aiDefaultImageGenerationModel",
+      "name": "startupScriptPath",
       "path": "src/core/settingsDefaults.ts",
       "line": 253
     },
     {
-      "name": "aiDefaultMaxOutgoingTokens",
+      "name": "aiEnabled",
       "path": "src/core/settingsDefaults.ts",
       "line": 254
     },
     {
-      "name": "aiDefaultMaxResponseTokens",
+      "name": "aiVerboseLogging",
       "path": "src/core/settingsDefaults.ts",
       "line": 255
     },
     {
-      "name": "modifierKeyConfig",
+      "name": "aiProviderProfiles",
       "path": "src/core/settingsDefaults.ts",
       "line": 256
     },
     {
-      "name": "slidingPanesSupport",
+      "name": "aiTextModelConfigs",
+      "path": "src/core/settingsDefaults.ts",
+      "line": 257
+    },
+    {
+      "name": "aiImageModelConfigs",
+      "path": "src/core/settingsDefaults.ts",
+      "line": 258
+    },
+    {
+      "name": "aiDefaultTextModel",
+      "path": "src/core/settingsDefaults.ts",
+      "line": 259
+    },
+    {
+      "name": "aiDefaultMultimodalModel",
       "path": "src/core/settingsDefaults.ts",
       "line": 260
     },
     {
-      "name": "areaZoomLimit",
+      "name": "aiDefaultImageGenerationModel",
       "path": "src/core/settingsDefaults.ts",
       "line": 261
     },
     {
-      "name": "longPressDesktop",
+      "name": "aiDefaultMaxOutgoingTokens",
       "path": "src/core/settingsDefaults.ts",
       "line": 262
     },
     {
-      "name": "longPressMobile",
+      "name": "aiDefaultMaxResponseTokens",
       "path": "src/core/settingsDefaults.ts",
       "line": 263
     },
     {
-      "name": "doubleClickLinkOpenViewMode",
+      "name": "modifierKeyConfig",
       "path": "src/core/settingsDefaults.ts",
       "line": 264
     },
     {
-      "name": "rank",
-      "path": "src/core/settingsDefaults.ts",
-      "line": 265
-    },
-    {
-      "name": "modifierKeyOverrides",
-      "path": "src/core/settingsDefaults.ts",
-      "line": 266
-    },
-    {
-      "name": "showSplashscreen",
-      "path": "src/core/settingsDefaults.ts",
-      "line": 267
-    },
-    {
-      "name": "pdfSettings",
+      "name": "slidingPanesSupport",
       "path": "src/core/settingsDefaults.ts",
       "line": 268
     },
     {
-      "name": "disableContextMenu",
+      "name": "areaZoomLimit",
       "path": "src/core/settingsDefaults.ts",
       "line": 269
+    },
+    {
+      "name": "longPressDesktop",
+      "path": "src/core/settingsDefaults.ts",
+      "line": 270
+    },
+    {
+      "name": "longPressMobile",
+      "path": "src/core/settingsDefaults.ts",
+      "line": 271
+    },
+    {
+      "name": "doubleClickLinkOpenViewMode",
+      "path": "src/core/settingsDefaults.ts",
+      "line": 272
+    },
+    {
+      "name": "rank",
+      "path": "src/core/settingsDefaults.ts",
+      "line": 273
+    },
+    {
+      "name": "modifierKeyOverrides",
+      "path": "src/core/settingsDefaults.ts",
+      "line": 274
+    },
+    {
+      "name": "showSplashscreen",
+      "path": "src/core/settingsDefaults.ts",
+      "line": 275
+    },
+    {
+      "name": "pdfSettings",
+      "path": "src/core/settingsDefaults.ts",
+      "line": 276
+    },
+    {
+      "name": "disableContextMenu",
+      "path": "src/core/settingsDefaults.ts",
+      "line": 277
     }
   ],
   "frontmatter": [
@@ -2913,6 +2963,10 @@
     {
       "path": "scripts/testing/textSubmissionHistory.test.mjs",
       "mode": "isolated-or-extracted"
+    },
+    {
+      "path": "scripts/testing/visualResources.source.test.mjs",
+      "mode": "direct-module-or-tooling"
     },
     {
       "path": "scripts/testing/windowMigrationTimers.test.mjs",

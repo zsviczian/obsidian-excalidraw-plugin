@@ -2909,3 +2909,193 @@ button.excalidraw-font-picker {
 .is-mobile .excalidraw-embed-padding-track {
   min-height: 44px;
 }
+.excalidraw-resource-browser,
+.excalidraw-framework-picker {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  gap: var(--size-4-2);
+}
+
+.excalidraw-resource-browser {
+  height: 100%;
+}
+
+.excalidraw-resource-toolbar,
+.excalidraw-framework-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--size-2-2);
+}
+
+.excalidraw-resource-toolbar input[type="search"] {
+  flex: 1 1 100%;
+  min-width: 0;
+  margin-bottom: var(--size-2-2);
+}
+
+.excalidraw-resource-toolbar .clickable-icon,
+.excalidraw-resource-actions .clickable-icon {
+  min-width: 28px;
+  min-height: 28px;
+}
+
+.excalidraw-resource-status {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+.excalidraw-resource-status:empty {
+  display: none;
+}
+
+.excalidraw-resource-main,
+.excalidraw-resource-frames,
+.excalidraw-framework-picker .excalidraw-resource-gallery {
+  overflow: auto;
+  min-height: 0;
+}
+
+.excalidraw-resource-main {
+  flex: 1;
+}
+
+.excalidraw-resource-frames {
+  flex: 1;
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+.excalidraw-resource-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--excalidraw-resource-size, 100px)), 1fr));
+  gap: var(--size-4-2);
+  padding: var(--size-2-2);
+}
+
+.excalidraw-resource-grid.is-list {
+  grid-template-columns: 1fr;
+}
+
+.excalidraw-resource-card {
+  position: relative;
+  min-width: 0;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  background: var(--background-secondary);
+}
+
+.excalidraw-resource-card .excalidraw-resource-body {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: auto;
+  align-items: stretch;
+  gap: var(--size-2-2);
+  background: transparent;
+  box-shadow: none;
+  padding: var(--size-4-1);
+  padding-bottom: 30px;
+}
+
+.excalidraw-resource-card .excalidraw-resource-body:focus-visible,
+.excalidraw-resource-card .excalidraw-resource-body[aria-pressed="true"] {
+  outline: 2px solid var(--interactive-accent);
+  outline-offset: -2px;
+}
+
+.excalidraw-resource-card .excalidraw-resource-body[aria-disabled="true"] {
+  cursor: default;
+}
+
+.excalidraw-resource-preview {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: var(--excalidraw-resource-size, 100px);
+  overflow: hidden;
+  background: var(--background-primary);
+  border-radius: var(--radius-s);
+}
+
+.excalidraw-resource-preview img,
+.excalidraw-resource-preview svg {
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.excalidraw-resource-preview svg {
+  width: 36%;
+  height: 36%;
+}
+
+.excalidraw-resource-label,
+.excalidraw-resource-label > span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.excalidraw-resource-source {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+.excalidraw-resource-kind,
+.excalidraw-resource-actions {
+  position: absolute;
+  bottom: var(--size-2-1);
+}
+
+.excalidraw-resource-kind {
+  left: var(--size-4-2);
+  color: var(--text-muted);
+  --icon-size: var(--icon-xs);
+}
+
+.excalidraw-resource-actions {
+  right: var(--size-2-1);
+  display: flex;
+  font-size: var(--font-ui-smaller);
+  --icon-size: var(--icon-xs);
+}
+
+.excalidraw-resource-actions [aria-pressed="true"] {
+  color: var(--interactive-accent);
+}
+
+.excalidraw-resource-grid.is-list .excalidraw-resource-body {
+  flex-direction: row;
+  align-items: center;
+  text-align: start;
+  padding-bottom: var(--size-4-1);
+  padding-right: 96px;
+}
+
+.excalidraw-resource-grid.is-list .excalidraw-resource-preview {
+  width: 42px;
+  height: 38px;
+  flex: 0 0 42px;
+}
+
+.excalidraw-resource-grid.is-list .excalidraw-resource-kind {
+  left: var(--size-2-2);
+  bottom: var(--size-2-1);
+}
+
+.excalidraw-framework-picker .excalidraw-resource-gallery {
+  max-height: 54vh;
+}
+
+.is-mobile .excalidraw-resource-actions .clickable-icon,
+.is-mobile .excalidraw-resource-toolbar .clickable-icon {
+  min-width: 34px;
+  min-height: 34px;
+}
+
+.is-mobile .excalidraw-resource-frames {
+  flex: 3;
+}

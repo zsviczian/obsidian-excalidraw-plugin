@@ -201,7 +201,7 @@ export class CommandManager {
           file.path.substring(0, file.path.lastIndexOf(file.name)),
         );
       }
-      void this.plugin.createAndOpenDrawing(
+      void this.plugin.createAndOpenInteractiveDrawing(
         getDrawingFilename(this.settings),
         linkClickModifierType(emulateCTRLClickForLinks(e)),
         folderpath,
@@ -555,6 +555,25 @@ export class CommandManager {
     });
 
     this.addCommand({
+      id: "visual-resources",
+      name: t("VR_TITLE"),
+      callback: () => { void this.plugin.visualResourcePanel.open(this.app.workspace.getActiveViewOfType(ExcalidrawView)); },
+    });
+    this.addCommand({
+      id: "visual-resources-icons",
+      name: t("VR_ICON_LIBRARY"),
+      callback: () => { void this.plugin.visualResourcePanel.open(this.app.workspace.getActiveViewOfType(ExcalidrawView), "Icon Library"); },
+    });
+    this.addCommand({
+      id: "thinking-frameworks-new-drawing",
+      name: t("VR_NEW_WITH_FRAMEWORK"),
+      callback: async () => {
+        const prepared = await this.plugin.prepareInteractiveDrawing(true);
+        if (prepared.kind === "ready") await this.plugin.createAndOpenDrawing(getDrawingFilename(this.settings), "new-tab", undefined, prepared.data);
+      },
+    });
+
+    this.addCommand({
       id: "excalidraw-open",
       name: t("OPEN_EXISTING_NEW_PANE"),
       callback: () => {
@@ -607,7 +626,7 @@ export class CommandManager {
       id: "excalidraw-autocreate",
       name: t("NEW_IN_NEW_PANE"),
       callback: () => {
-        void this.plugin.createAndOpenDrawing(
+        void this.plugin.createAndOpenInteractiveDrawing(
           getDrawingFilename(this.settings),
           "new-pane",
         );
@@ -618,7 +637,7 @@ export class CommandManager {
       id: "excalidraw-autocreate-newtab",
       name: t("NEW_IN_NEW_TAB"),
       callback: () => {
-        void this.plugin.createAndOpenDrawing(
+        void this.plugin.createAndOpenInteractiveDrawing(
           getDrawingFilename(this.settings),
           "new-tab",
         );
@@ -629,7 +648,7 @@ export class CommandManager {
       id: "excalidraw-autocreate-on-current",
       name: t("NEW_IN_ACTIVE_PANE"),
       callback: () => {
-        void this.plugin.createAndOpenDrawing(
+        void this.plugin.createAndOpenInteractiveDrawing(
           getDrawingFilename(this.settings),
           "active-pane",
         );
@@ -643,7 +662,7 @@ export class CommandManager {
         if (checking) {
           return !DEVICE.isMobile;
         }
-        void this.plugin.createAndOpenDrawing(
+        void this.plugin.createAndOpenInteractiveDrawing(
           getDrawingFilename(this.settings),
           "popout-window",
         );
@@ -659,7 +678,7 @@ export class CommandManager {
         activeView.file.basename,
         this.settings,
       );
-      const prepared = await this.plugin.prepareDrawing();
+      const prepared = await this.plugin.prepareInteractiveDrawing();
       if (prepared.kind === "cancel") return;
       const folder = this.settings.embedUseExcalidrawFolder
         ? null

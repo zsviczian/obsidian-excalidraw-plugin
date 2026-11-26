@@ -103,6 +103,8 @@ import { isCanvasFlowchartNavigationShortcut } from "../view/managers/flowchartN
 import { ExcalidrawSidepanelView } from "../view/sidepanel/Sidepanel";
 import { CommandManager } from "./managers/CommandManager";
 import { LucideIconPicker } from "src/view/sidepanel/LucideIconPicker";
+import { VisualResources } from "src/shared/visualResources/VisualResources";
+import { VisualResourcePanel } from "src/view/sidepanel/VisualResourcePanel";
 import type { ObsidianExcalidrawHostAdapter } from "@zsviczian/excalidraw/types/excalidraw/obsidianExcalidrawHost";
 import { EventManager } from "./managers/EventManager";
 import { UniversalInsertFileModal } from "src/shared/Dialogs/UniversalInsertFileModal";
@@ -181,6 +183,8 @@ export default class ExcalidrawPlugin extends Plugin {
   private monkeyPatchManager: MonkeyPatchManager;
   private commandManager: CommandManager;
   public lucidePicker: LucideIconPicker;
+  public visualResources: VisualResources;
+  public visualResourcePanel: VisualResourcePanel;
   private eventManager: EventManager;
   private settingsManager: PluginSettingsManager;
   private settingsTab: ExcalidrawSettingTab;
@@ -533,6 +537,8 @@ export default class ExcalidrawPlugin extends Plugin {
     this.commandManager = new CommandManager(this);
     this.lucidePicker = new LucideIconPicker(this);
     this.stencilLibraryManager = new StencilLibraryManager(this);
+    this.visualResources = new VisualResources(this);
+    this.visualResourcePanel = new VisualResourcePanel(this);
 
     try {
       initCompressionWorker();
@@ -788,7 +794,7 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   private async actionRibbonClick(e: MouseEvent) {
-    await this.createAndOpenDrawing(
+    await this.createAndOpenInteractiveDrawing(
       getDrawingFilename(this.settings),
       linkClickModifierType(emulateCTRLClickForLinks(e)),
     );
@@ -1167,6 +1173,11 @@ export default class ExcalidrawPlugin extends Plugin {
     return this.fileManager.prepareDrawing();
   }
 
+  /** Prepare a new interactive drawing before a file or leaf is created. */
+  public prepareInteractiveDrawing(forceFramework = false): Promise<PreparedDrawing> {
+    return this.fileManager.prepareInteractiveDrawing(forceFramework);
+  }
+
   public async createDrawing(
     filename: string,
     foldername?: string,
@@ -1231,6 +1242,13 @@ export default class ExcalidrawPlugin extends Plugin {
     const file = await this.createDrawing(filename, foldername, initData);
     this.fileManager.openDrawing(file, location, true, undefined, true);
     return file.path;
+  }
+
+  /** Create a drawing from an interactive UI entry point, including the optional framework prompt. */
+  public async createAndOpenInteractiveDrawing(filename: string, location: PaneTarget, foldername?: string): Promise<string> {
+    const prepared = await this.prepareInteractiveDrawing();
+    if (prepared.kind === "cancel") return "";
+    return this.createAndOpenDrawing(filename, location, foldername, prepared.data);
   }
 
   public async setMarkdownView(

@@ -1,4 +1,6 @@
 import type { ExactDrawingCreationOptions, PreparedDrawing } from "src/types/drawingCreationTypes";
+import type { LibraryItem } from "@zsviczian/excalidraw/types/excalidraw/types";
+import { ThinkingFrameworksPicker } from "src/shared/Dialogs/ThinkingFrameworksPicker";
 import {
   App,
   FrontMatterCache,
@@ -193,7 +195,24 @@ export class PluginFileManager {
     return { kind: "ready", data: await this.getDrawingContent(selection.kind === "template" ? selection.file : undefined) };
   }
 
-  private async getDrawingContent(template?: TFile): Promise<string> {
+  /** Resolve all prompts before the interactive creation path touches the vault or workspace. */
+  public async prepareInteractiveDrawing(forceFramework = false): Promise<PreparedDrawing> {
+    if (!forceFramework) {
+      const selection = await selectDrawingTemplate(getListOfTemplateFiles(this.plugin), this.app, normalizePath(this.settings.templateFilePath));
+      if (selection.kind === "cancel") return selection;
+      if (selection.kind === "template") return { kind: "ready", data: await this.getDrawingContent(selection.file) };
+      if (!this.settings.frameworksOnBlank || this.settings.frameworksSnoozedUntil > Date.now() || !this.plugin.visualResources) {
+        return { kind: "ready", data: await this.getDrawingContent() };
+      }
+    }
+    const picker = new ThinkingFrameworksPicker(this.plugin);
+    picker.open();
+    const choice = await picker.result;
+    if (choice.kind === "cancel") return choice;
+    return { kind: "ready", data: await this.getDrawingContent(undefined, choice.kind === "framework" ? choice.item : undefined) };
+  }
+
+  private async getDrawingContent(template?: TFile, framework?: LibraryItem): Promise<string> {
     if (template) {
       if (
         (template.extension == "md" && !this.settings.compatibilityMode) ||
@@ -208,15 +227,19 @@ export class PluginFileManager {
         }
       }
     }
-    if (this.settings.compatibilityMode) {
-      return this.settings.matchTheme && isObsidianThemeDark()
-        ? DARK_BLANK_DRAWING
-        : BLANK_DRAWING;
-    }
     const blank =
       this.settings.matchTheme && isObsidianThemeDark()
         ? DARK_BLANK_DRAWING
         : BLANK_DRAWING;
+    if (framework) {
+      const scene = { ...JSON_parse<object>(blank), elements: framework.elements };
+      const json = JSON.stringify(scene);
+      if (this.settings.compatibilityMode) return json;
+      const text = framework.elements.filter(element => element.type === "text")
+        .map(element => (element.rawText ?? element.originalText ?? element.text) + " ^" + element.id + "\n\n").join("");
+      return FRONTMATTER + "\n# Excalidraw Data\n\n## Text Elements\n" + text + "\n" + getMarkdownDrawingSection(json, this.settings.compress);
+    }
+    if (this.settings.compatibilityMode) return blank;
     return `${FRONTMATTER}\n${getMarkdownDrawingSection(
       blank,
       this.settings.compress,

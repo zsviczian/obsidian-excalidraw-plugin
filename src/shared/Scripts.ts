@@ -5,7 +5,7 @@ import {
   TAbstractFile,
   TFile,
 } from "obsidian";
-import { PLUGIN_ID } from "../constants/constants";
+import { PLUGIN_ID, SCRIPT_INSTALL_FOLDER } from "../constants/constants";
 import ExcalidrawView from "../view/ExcalidrawView";
 import ExcalidrawPlugin from "../core/main";
 import { GenericInputPrompt, GenericSuggester } from "./Dialogs/Prompt";
@@ -797,7 +797,7 @@ export class ScriptEngine {
         }
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
         if (view) {
-          void this.executeScriptFile(view, f, scriptName);
+          void this.runPaletteScript(view, f, scriptName);
           return true;
         }
         return false;
@@ -805,6 +805,29 @@ export class ScriptEngine {
     });
     this.loadedScriptPaths.add(f.path);
     await iconLoad;
+  }
+
+  private async runPaletteScript(view: ExcalidrawView, file: TFile, scriptName: string): Promise<void> {
+    if (file.basename === "Icon Library" && scriptName.startsWith(SCRIPT_INSTALL_FOLDER + "/") && this.plugin.visualResourcePanel) {
+      // This checksum names the distributed Icon Library revision that the native
+      // browser replaces. A user-edited script keeps its original command behavior.
+      const stock = "85c939dc4b26755d00f1f74008dca0d1c03b4796f398d03cf62bc05b5a4541a1";
+      try {
+        const api = view.excalidrawAPI;
+        const target = view.file;
+        const source = (await this.app.vault.cachedRead(file)).replaceAll("\r\n", "\n").trim();
+        const bytes = await view.ownerWindow.crypto.subtle.digest("SHA-256", new TextEncoder().encode(source));
+        const digest = Array.from(new Uint8Array(bytes), byte => byte.toString(16).padStart(2, "0")).join("");
+        if (view.file !== target || view.excalidrawAPI !== api || view.isClosingOrMigrating()) return;
+        if (digest === stock) {
+          await this.plugin.visualResourcePanel.open(view, scriptName);
+          return;
+        }
+      } catch (error: unknown) {
+        errorlog({ where: "ScriptEngine.runPaletteScript", scriptName, error });
+      }
+    }
+    await this.executeScriptFile(view, file, scriptName);
   }
 
   unloadScripts() {

@@ -57,7 +57,7 @@ export class DrawingCreationUI extends Component {
         pending = true; button.disabled = true;
         this.plugin.app.workspace.setActiveLeaf(leaf, { focus: true });
         // Same folder, format and template-selection path as the existing command.
-        void this.plugin.createAndOpenDrawing(getDrawingFilename(this.plugin.settings), "active-pane")
+        void this.plugin.createAndOpenInteractiveDrawing(getDrawingFilename(this.plugin.settings), "active-pane")
           .catch((error: unknown) => errorlog({ where: "DrawingCreationUI.createAndOpenDrawing", error }))
           .finally(() => { pending = false; button.disabled = false; });
       });

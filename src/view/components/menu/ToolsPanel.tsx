@@ -727,6 +727,15 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                     icon={ICONS["add-file"]}
                   />
                   <ActionButton
+                    key={"visual-resources"}
+                    title={t("VR_TITLE")}
+                    action={() => {
+                      const view = this.getView();
+                      if (view) void view.plugin.visualResourcePanel.open(view);
+                    }}
+                    icon={ICONS.Shapes}
+                  />
+                  <ActionButton
                     key={"image"}
                     title={t("INSERT_IMAGE")}
                     action={() => this.actionInsertImage()}

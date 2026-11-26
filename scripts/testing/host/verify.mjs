@@ -26,6 +26,7 @@ import { runSvgPaintScenario } from "./svgPaint.mjs";
 import { runSvgTextScenario } from "./svgText.mjs";
 import { runSVGEntryPointsScenario } from "./svgEntryPoints.mjs";
 import { runLucideScenario } from "./lucideIcons.mjs";
+import { runVisualResourcesScenario } from "./visualResources.mjs";
 import { runWorkflowFixesScenario } from "./workflowFixes.mjs";
 import { runWorkflowBundleScenario } from "./workflowBundle.mjs";
 import { runAIAndEmbedsScenario } from "./aiAndEmbeds.mjs";
@@ -118,6 +119,7 @@ const svgPaint = process.argv.includes("--svg-paint");
 const svgText = process.argv.includes("--svg-text");
 const svgEntryPoints = process.argv.includes("--svg-entry-points");
 const lucide = coreScenarios || process.argv.includes("--lucide");
+const visualResources = coreScenarios || process.argv.includes("--visual-resources");
 const workflowFixes = coreScenarios || process.argv.includes("--workflow-fixes");
 const workflowBundle = coreScenarios || process.argv.includes("--workflow-bundle");
 const aiAndEmbeds = coreScenarios || process.argv.includes("--ai-and-embeds");
@@ -177,6 +179,7 @@ const flags = [
   "--code-cards",
   "--kplex-ontology",
   "--lucide",
+  "--visual-resources",
   "--text-undo",
   "--stability",
   "--native-cli",
@@ -339,6 +342,7 @@ try {
           : []),
         ...(runtimeCompaction ? [runRuntimeCompactionScenario] : []),
         ...(sidepanelPopout ? [runSidepanelPopoutScenario] : []),
+        ...(visualResources ? [runVisualResourcesScenario] : []),
         ...(lifecycle ? [runLifecycleScenario] : []),
         ...(migrationComparison ? [
           context => runLifecycleScenario(context),

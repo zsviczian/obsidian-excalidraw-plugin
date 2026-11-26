@@ -1674,9 +1674,35 @@
         {
           "path": "src/view/sidepanel/Sidepanel.ts",
           "symbol": "export class ExcalidrawSidepanelView"
+        },
+        {
+          "path": "src/view/sidepanel/VisualResourcePanel.ts",
+          "symbol": "export class VisualResourcePanel"
         }
       ],
       "tests": [
+        {
+          "layer": "source",
+          "path": "scripts/testing/visualResources.source.test.mjs",
+          "cases": [
+            "visual discovery combines AND rules, OR groups and independent catch-all",
+            "frame keywords surface only the parent and provider identities remain independent",
+            "collections replay edits on the latest file and retain memberships through moves",
+            "stencil moves keep empty files and can resume after source cleanup fails",
+            "framework catalog is local-first and coalesces checks for 24 hours"
+          ]
+        },
+        {
+          "layer": "native",
+          "path": "scripts/testing/host/visualResources.mjs",
+          "cases": [
+            "native:visual-resources:palette-and-insertion",
+            "native:visual-resources:svg-strokes-and-curation",
+            "native:visual-resources:popout-drop",
+            "native:visual-resources:framework-picker",
+            "native:visual-resources:reload"
+          ]
+        },
         {
           "layer": "source",
           "path": "scripts/testing/sidepanel.source.test.mjs",

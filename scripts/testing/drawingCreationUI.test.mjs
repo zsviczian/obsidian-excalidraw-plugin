@@ -24,7 +24,7 @@ test("creation actions default to visible, respect independent opt-outs and rele
   let leaves = [leaf], ribbonCount = 0, active, resolveCreation;
   const plugin = { settings: null, isReady: true,
     app: { workspace: { on: (_, callback) => { events.add(callback); return callback; }, onLayoutReady(callback) { this.ready = callback; }, getLeavesOfType: () => leaves, setActiveLeaf: leaf => { active = leaf; } } },
-    addRibbonIcon() { ribbonCount++; return ribbon; }, createAndOpenDrawing: (...args) => { created.push(args); return new Promise(resolve => { resolveCreation = resolve; }); } };
+    addRibbonIcon() { ribbonCount++; return ribbon; }, createAndOpenInteractiveDrawing: (...args) => { created.push(args); return new Promise(resolve => { resolveCreation = resolve; }); } };
   const ribbon = new dom.Element();
   const previousVersion = globalThis.PLUGIN_VERSION;
   try {
