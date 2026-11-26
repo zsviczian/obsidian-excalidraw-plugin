@@ -139,12 +139,21 @@ async function exercise(c, drawingPath, library) {
       "playlist membership and favorite are independent"], sourceLinks: 1, nativeElements: count() - before };
   });
   await runCase("native:visual-resources:popout-drop", async () => {
-    const receivingPath = await plugin.createAndOpenDrawing("Resource drop receiver.excalidraw.md", "popout-window", root, drawingData);
-    let receiver;
+    const receivingFile = await plugin.createDrawing("Resource drop receiver.excalidraw.md", root, drawingData);
+    const receivingLeaf = workspace.openPopoutLeaf();
+    c.defer(() => {
+      if (workspace.getLeafById(receivingLeaf.id) === receivingLeaf) receivingLeaf.detach();
+    });
+    await c.waitFor(() => receivingLeaf.view.containerEl.ownerDocument !== view.ownerDocument, "receiving leaf migrated to its popout");
+    await receivingLeaf.setViewState({ type: "excalidraw", state: { file: receivingFile.path }, active: true });
     await c.waitFor(() => {
-      receiver = workspace.getLeavesOfType("excalidraw").find(leaf => leaf.view.file?.path === receivingPath)?.view;
-      return receiver?.ownerDocument !== view.ownerDocument && plugin.visualResources.writable(receiver);
+      const receiver = receivingLeaf.view;
+      c.observations.receiver = { sameDocument: receiver.ownerDocument === view.ownerDocument,
+        loaded: !!receiver.isLoaded, hasEditor: !!receiver.excalidrawAPI,
+        fileMatches: receiver.file === receivingFile };
+      return receiver.file === receivingFile && receiver.ownerDocument !== view.ownerDocument && plugin.visualResources.writable(receiver);
     }, "writable receiving popout");
+    const receiver = receivingLeaf.view;
     await plugin.visualResourcePanel.open(view, "Icon Library");
     search("Resource probe");
     await c.waitFor(card, "draggable icon card in the main window sidebar");
