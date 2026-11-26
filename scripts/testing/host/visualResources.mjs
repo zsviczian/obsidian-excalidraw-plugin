@@ -2,9 +2,11 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { runInAppTask } from "./inAppTask.mjs";
+import { behaviorInputDriver } from "./behaviorMatrix.mjs";
 
 export const visualResourceCaseIds = [
   "native:visual-resources:palette-and-insertion",
+  "native:visual-resources:panel-controls",
   "native:visual-resources:svg-strokes-and-curation",
   "native:visual-resources:popout-drop",
   "native:visual-resources:framework-picker",
@@ -15,6 +17,7 @@ export async function runVisualResourcesScenario({ cli, drawingPath }) {
   const library = JSON.parse(readFileSync(new URL("../../../visual-frameworks/thinking-frameworks.excalidrawlib", import.meta.url), "utf8"));
   library.libraryItems = library.libraryItems.slice(0, 1);
   const result = await runInAppTask({ cli, execute: exercise, args: [drawingPath, library], timeoutMs: 120000, cleanupMs: 60000,
+    onRequest: behaviorInputDriver(cli),
     onProgress: phase => { if (phase) process.stdout.write("Visual Resources: " + phase + "\n"); } });
   assert.deepEqual(result.tests.map(test => test.testId), visualResourceCaseIds);
   return { id: "visual-resources-3074", status: "passed", ...result };
@@ -119,6 +122,110 @@ async function exercise(c, drawingPath, library) {
     return { assertions: ["vault icon discovered and rendered", "double-click opens without inserting",
       "changing target cancels pending insertion", "one panel serves both presets", "linked icon keeps its configured width"],
       linkedImage: image.id, samePanel: true, doubleClickInsertions: 0 };
+  });
+  await runCase("native:visual-resources:panel-controls", async () => {
+    const doc = panel.ownerDocument, win = doc.defaultView;
+    const preferences = structuredClone(plugin.settings.visualResources);
+    const controller = plugin.visualResourcePanel;
+    const showMenu = controller.show;
+    controller.show = function(menu, ...args) { return showMenu.call(this, menu.setUseNativeMenu(false), ...args); };
+    c.defer(() => { controller.show = showMenu; });
+    const trigger = view.containerEl.querySelector(".excalidraw-visual-resources-trigger");
+    check(trigger, "Canvas toolbar is missing the Visual Resources action");
+    const adjacent = trigger.previousElementSibling;
+    check(win.getComputedStyle(trigger).backgroundColor === win.getComputedStyle(adjacent).backgroundColor,
+      "The shapes button paints different button chrome from Insert Any File");
+    check(trigger.getBoundingClientRect().height === adjacent.getBoundingClientRect().height,
+      "The shapes button uses different toolbar sizing");
+    trigger.click();
+    await c.waitFor(() => !controller.script, "canvas action opens general resources");
+    const query = panel.querySelector("input[type=search]");
+    const toolbarButton = key => [...panel.querySelectorAll(".excalidraw-resource-search-tools button")]
+      .find(button => button.getAttribute("aria-label") === plugin.getLabel(key));
+    const filter = toolbarButton("VR_FILTER");
+    const originalWidth = panel.style.width;
+    try {
+      panel.style.width = "720px";
+      check(filter.getBoundingClientRect().top < query.getBoundingClientRect().bottom, "The wide toolbar wraps below search");
+      panel.style.width = "285px";
+      check(filter.getBoundingClientRect().top >= query.getBoundingClientRect().bottom, "The narrow toolbar does not wrap below search");
+    } finally { panel.style.width = originalWidth; }
+    const menuAction = async key => {
+      let item;
+      await c.waitFor(() => (item = [...doc.querySelectorAll(".menu-item-title")]
+        .find(el => el.textContent === plugin.getLabel(key))), "rendered menu action " + key);
+      item.closest(".menu-item").click();
+    };
+    const openFilters = () => filter.click();
+    openFilters();
+    await menuAction("VR_SELECT_NO_FILTERS");
+    check(!plugin.settings.visualResources.filters.length && !plugin.settings.visualResources.groups.length,
+      "Select none did not clear resource kinds and discovery groups");
+    check(!panel.querySelector(".excalidraw-resource-card"), "Select none left visible results");
+    openFilters();
+    await menuAction("VR_SELECT_ALL_FILTERS");
+    check(plugin.settings.visualResources.filters.includes("other") && plugin.settings.visualResources.groups.length > 0,
+      "Select all did not enable all kinds and discovery groups");
+    search("Resource probe");
+    await c.waitFor(card, "resource visible after Select all");
+    const before = count();
+    toolbarButton("VR_SELECT").click();
+    const checkbox = [...panel.querySelectorAll("input.excalidraw-resource-checkbox")]
+      .find(input => input.getAttribute("aria-label") === "Resource probe");
+    const selectionBar = panel.querySelector(".excalidraw-resource-selection");
+    const selectedActions = selectionBar.querySelector("button");
+    check(checkbox && !checkbox.checked && selectedActions.disabled, "Selection mode omitted checkboxes or initial state");
+    checkbox.focus();
+    checkbox.click();
+    check(checkbox.isConnected && checkbox.checked && doc.activeElement === checkbox && !selectedActions.disabled,
+      "Toggling a checkbox removed focus or failed to enable bulk actions");
+    check(selectionBar.textContent.includes(plugin.getLabel("VR_SELECTION_COUNT").replace("{COUNT}", "1")),
+      "Selection count did not update");
+    checkbox.dispatchEvent(new win.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    check(!panel.querySelector(".excalidraw-resource-checkbox") && card() && count() === before,
+      "Exiting selection mode changed the scene or left selection controls");
+
+    const ea = plugin.ea.getAPI(view);
+    try {
+      const frameId = ea.addFrame(480, 310, 230, 160, "Divider test frame");
+      ea.addElementsToFrame(frameId, [ea.addRect(500, 340, 55, 43)]);
+      check(await ea.addElementsToView(false, true, true), "Could not save the owned frame fixture");
+    } finally { ea.destroy(); }
+    search("Divider test frame");
+    let framesButton;
+    await c.waitFor(() => (framesButton = [...panel.querySelectorAll(".excalidraw-resource-actions button")]
+      .find(button => button.getAttribute("aria-label") === plugin.getLabel("VR_FRAME") + " (1)" &&
+        !button.classList.contains("excalidraw-display-none"))), "named-frame count in search results");
+    framesButton.click();
+    const divider = panel.querySelector(".excalidraw-resource-divider");
+    const galleryPane = panel.querySelector(".excalidraw-resource-main");
+    const framePane = panel.querySelector(".excalidraw-resource-frames");
+    await c.waitFor(() => framePane.querySelector(".excalidraw-resource-body")?.textContent.includes("Divider test frame"),
+      "frame selector with a visible split divider");
+    const start = divider.getBoundingClientRect();
+    const beforeHeight = galleryPane.getBoundingClientRect().height;
+    const x = Math.round(start.left + start.width / 2), y = Math.round(start.top + start.height / 2);
+    const contentsId = win.require("@electron/remote").getCurrentWebContents().id;
+    await c.requestHost("behavior-input", { contentsId, method: "Input.dispatchMouseEvent", params: [
+      { type: "mouseMoved", x, y, button: "none", buttons: 0 },
+      { type: "mousePressed", x, y, button: "left", buttons: 1, clickCount: 1 },
+      { type: "mouseMoved", x, y: y - 45, button: "left", buttons: 1 },
+      { type: "mouseReleased", x, y: y - 45, button: "left", buttons: 0, clickCount: 1 },
+    ] });
+    await c.waitFor(() => galleryPane.getBoundingClientRect().height < beforeHeight - 12, "pointer drag grows the frame pane");
+    const afterPointer = Number(divider.getAttribute("aria-valuenow"));
+    divider.dispatchEvent(new win.KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true, cancelable: true }));
+    check(Number(divider.getAttribute("aria-valuenow")) > afterPointer, "Divider keyboard input did not resize the panes");
+    check(query.value === "Divider test frame" && framePane.querySelector(".excalidraw-resource-body"),
+      "Resizing dropped search or frame context");
+    framePane.querySelector(".excalidraw-resource-toolbar button").click();
+    check(divider.classList.contains("excalidraw-display-none"), "Closing frames left the split divider visible");
+    controller.show = showMenu;
+    plugin.settings.visualResources = preferences;
+    await plugin.saveSettings();
+    return { assertions: ["canvas button uses neighboring toolbar styling", "toolbar shares the search row at wide widths and wraps when narrow",
+      "bulk filter actions update kinds and groups", "checkbox selection keeps focus and preserves the scene",
+      "pointer and keyboard resize the frame split without losing the current search"] };
   });
   await runCase("native:visual-resources:svg-strokes-and-curation", async () => {
     const resources = plugin.visualResources;

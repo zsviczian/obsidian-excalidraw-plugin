@@ -61,7 +61,8 @@ export class VisualResourceGallery extends Component {
   private observer: IntersectionObserver | null = null;
   private click: { win: Window; id: number } | null = null;
   private disposed = false;
-  private controls: HTMLButtonElement[] = [];
+  private controls: HTMLElement[] = [];
+  private checkboxes = new Map<HTMLInputElement, VisualResource>();
   public readonly root: HTMLElement;
 
   constructor(parent: HTMLElement, private readonly service: VisualResources, private readonly actions: GalleryActions) {
@@ -73,7 +74,7 @@ export class VisualResourceGallery extends Component {
   public onload(): void {
     this.registerDomEvent(this.root, "keydown", event => {
       if (event.key === "Escape") { this.cancelClick(); this.actions.escape?.(); return; }
-      const index = this.controls.indexOf(event.target as HTMLButtonElement);
+      const index = this.controls.indexOf(event.target as HTMLElement);
       if (index < 0) return;
       const top = this.controls[0].getBoundingClientRect().top;
       const wrap = this.controls.findIndex(button => Math.abs(button.getBoundingClientRect().top - top) > 4);
@@ -94,6 +95,13 @@ export class VisualResourceGallery extends Component {
 
   /** Focus the first rendered resource from the search field. */
   public focusFirst(): void { this.controls[0]?.focus(); }
+
+  /** Synchronize visible checkboxes while keeping focus and thumbnails in place. */
+  public updateSelection(): void {
+    for (const [checkbox, resource] of this.checkboxes) {
+      checkbox.checked = this.actions.selected?.(resource) ?? false;
+    }
+  }
 
   /** Stop a pending pointer gesture when the target changes, a drag starts, or the gallery moves. */
   public cancelClick(): void {
@@ -122,6 +130,7 @@ export class VisualResourceGallery extends Component {
     this.resetPreviews();
     this.root.empty();
     this.controls = [];
+    this.checkboxes.clear();
     const grid = this.root.createDiv({ cls: "excalidraw-resource-grid" });
     grid.toggleClass("is-list", !!this.options.list);
     setStyle(grid, { "--excalidraw-resource-size": (this.options.size ?? 100) + "px" });
@@ -161,16 +170,28 @@ export class VisualResourceGallery extends Component {
   private card(grid: HTMLElement, resource: VisualResource): void {
     const win = grid.ownerDocument.defaultView;
     const card = grid.createDiv({ cls: "excalidraw-resource-card" });
-    const button = card.createEl("button", { cls: "excalidraw-resource-body", attr: { type: "button", "aria-label": resource.title } });
     const selected = this.actions.selected?.(resource);
-    if (selected !== undefined) button.setAttribute("aria-pressed", String(selected));
-    if (this.actions.canActivate && !this.actions.canActivate(resource)) button.setAttribute("aria-disabled", "true");
-    this.controls.push(button);
-    const preview = button.createSpan({ cls: "excalidraw-resource-preview", attr: { "aria-hidden": "true" } });
+    const button = selected === undefined ? card.createEl("button", {
+      cls: "excalidraw-resource-body", attr: { type: "button", "aria-label": resource.title },
+    }) : null;
+    const body = button ?? card.createEl("label", { cls: "excalidraw-resource-body" });
+    if (button) {
+      if (this.actions.canActivate && !this.actions.canActivate(resource)) button.setAttribute("aria-disabled", "true");
+      this.controls.push(button);
+    } else {
+      const checkbox = body.createEl("input", {
+        cls: "excalidraw-resource-checkbox", type: "checkbox", attr: { "aria-label": resource.title },
+      });
+      checkbox.checked = selected;
+      checkbox.onchange = () => this.actions.activate(resource);
+      this.controls.push(checkbox);
+      this.checkboxes.set(checkbox, resource);
+    }
+    const preview = body.createSpan({ cls: "excalidraw-resource-preview", attr: { "aria-hidden": "true" } });
     if (this.options.background) setStyle(preview, { backgroundColor: this.options.background });
     const icon = resource.locator.provider === "lucide" ? "sparkles" : KIND_ICONS[resource.kind];
     setIcon(preview, icon);
-    const text = button.createSpan({ cls: "excalidraw-resource-label" });
+    const text = body.createSpan({ cls: "excalidraw-resource-label" });
     text.createSpan({ text: resource.title });
     if (this.options.list) text.createSpan({ text: resource.source, cls: "excalidraw-resource-source" });
     setIcon(card.createSpan({ cls: "excalidraw-resource-kind", attr: {
@@ -194,29 +215,31 @@ export class VisualResourceGallery extends Component {
       menu.onclick = event => { this.cancelClick(); this.actions.menu?.(resource, menu, event); };
       card.oncontextmenu = event => { event.preventDefault(); this.cancelClick(); this.actions.menu?.(resource, menu, event); };
     }
-    const canOpen = !!this.actions.open && resource.locator.provider === "vault";
-    button.onclick = event => {
-      if (event.detail > 1) return;
-      if (this.actions.canActivate && !this.actions.canActivate(resource)) return;
-      if (!canOpen || !Platform.isDesktopApp || !event.detail || selected !== undefined) {
-        this.actions.activate(resource);
-        return;
-      }
-      this.cancelClick();
-      const activate = this.actions.deferredActivation?.(resource) ?? (() => this.actions.activate(resource));
-      this.click = { win, id: win.setTimeout(() => { this.click = null; activate(); }, 500) };
-    };
-    if (canOpen) button.ondblclick = () => {
-      this.cancelClick();
-      if (selected === undefined) this.actions.open?.(resource);
-    };
-    if (this.actions.drag && selected === undefined) {
-      button.draggable = true;
-      button.ondragstart = event => {
+    if (button) {
+      const canOpen = !!this.actions.open && resource.locator.provider === "vault";
+      button.onclick = event => {
+        if (event.detail > 1) return;
+        if (this.actions.canActivate && !this.actions.canActivate(resource)) return;
+        if (!canOpen || !Platform.isDesktopApp || !event.detail) {
+          this.actions.activate(resource);
+          return;
+        }
         this.cancelClick();
-        if (event.dataTransfer) this.actions.drag?.(resource, event.dataTransfer);
+        const activate = this.actions.deferredActivation?.(resource) ?? (() => this.actions.activate(resource));
+        this.click = { win, id: win.setTimeout(() => { this.click = null; activate(); }, 500) };
       };
-      button.ondragend = () => this.service.endDrag();
+      if (canOpen) button.ondblclick = () => {
+        this.cancelClick();
+        this.actions.open?.(resource);
+      };
+      if (this.actions.drag) {
+        button.draggable = true;
+        button.ondragstart = event => {
+          this.cancelClick();
+          if (event.dataTransfer) this.actions.drag?.(resource, event.dataTransfer);
+        };
+        button.ondragend = () => this.service.endDrag();
+      }
     }
     if (this.observer) {
       this.observed.set(preview, task);
