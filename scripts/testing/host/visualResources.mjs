@@ -245,8 +245,9 @@ async function exercise(c, drawingPath, library) {
       { ...source.find(element => element.type === "text"), id: "stencil-text", x: 0, y: 340, width: 90, height: 24,
         fontSize: 20, text: "BRAIN", originalText: "BRAIN", rawText: "", autoResize: true },
     ] };
+    const sibling = { ...original, id: "sibling", name: "stencil-probe-zz sibling", elements: [original.elements[0]] };
     const file = await vault.create(libraryFolderPath + "/Probe.excalidrawlib", JSON.stringify({
-      ...library, source: "native-test", libraryItems: [original],
+      ...library, source: "native-test", libraryItems: [original, sibling],
     }));
     await plugin.visualResourcePanel.open(view);
     search(original.id);
@@ -291,9 +292,42 @@ async function exercise(c, drawingPath, library) {
     nameInput().value = "Canceled name";
     key(nameInput(), "Escape");
     check(!nameInput() && !((await diskItem()).name), "Cancel saved a stencil name or closed the panel");
+    search("stencil-probe");
+    const thumbnail = title => cardFor(title)?.querySelector(".excalidraw-resource-preview img");
+    await c.waitFor(() => thumbnail(original.id)?.complete && thumbnail(sibling.name)?.complete, "both previews load");
+    const originalCard = cardFor(original.id), originalPreview = thumbnail(original.id);
+    const siblingCard = cardFor(sibling.name), siblingPreview = thumbnail(sibling.name);
+    const resources = plugin.visualResources;
+    const previewResource = resources.preview;
+    const previewRequests = [];
+    resources.preview = function(resource, dark) {
+      if (resource.locator.provider === "stencil") previewRequests.push(resource.locator.id);
+      return previewResource.call(this, resource, dark);
+    };
+    c.defer(() => { resources.preview = previewResource; });
     cardFor(original.id).querySelector(".excalidraw-resource-rename").click();
     nameInput().value = "Tall stencil";
     key(nameInput(), "Enter");
+    await c.waitFor(() => cardFor("Tall stencil"), "rename stays in the original search results");
+    check(cardFor("Tall stencil") === originalCard && originalCard.nextElementSibling === siblingCard &&
+      doc.activeElement === originalCard.querySelector(".excalidraw-resource-rename"), "Rename changed tile position or keyboard focus");
+    plugin.visualResourcePanel.reload();
+    await c.waitFor(() => !panel.querySelector(".excalidraw-resource-status[aria-live]").textContent, "background refresh finishes");
+    check(thumbnail("Tall stencil") === originalPreview && thumbnail(sibling.name) === siblingPreview,
+      "Rename or background refresh recreated the loaded previews");
+    search("");
+    check(siblingCard.nextElementSibling === originalCard && thumbnail(sibling.name) === siblingPreview,
+      "Changing the query should apply normal sort and reuse unmoved preview data");
+    check(!previewRequests.length, "Rename, refresh, or sorting requested previews for unchanged stencils: " + previewRequests.join(", "));
+    await vault.process(file, raw => {
+      const data = JSON.parse(raw);
+      data.libraryItems[1].elements[0].backgroundColor = "#3388ff";
+      return JSON.stringify(data);
+    });
+    await c.waitFor(() => thumbnail(sibling.name) && thumbnail(sibling.name) !== siblingPreview, "edited stencil preview refreshes");
+    check(thumbnail("Tall stencil") === originalPreview && previewRequests.every(id => id === sibling.id),
+      "Editing one stencil requested unrelated stencil previews");
+    resources.preview = previewResource;
     search("Tall stencil");
     await c.waitFor(() => cardFor("Tall stencil"), "inline name appears in search");
     check((await diskItem()).name === "Tall stencil", "Inline rename did not reach the owning library");
@@ -325,7 +359,9 @@ async function exercise(c, drawingPath, library) {
     plugin.settings.visualResources = preferences;
     return { assertions: ["tall stencil thumbnail fits entirely", "drag inserts visible and editable text when rawText is empty",
       "one undo removes the stencil", "inline rename accepts Enter and cancels with Escape",
-      "action menu rename preserves identity, elements and curation"] };
+      "action menu rename preserves identity, elements and curation",
+      "rename preserves search context, tile position and keyboard focus",
+      "refresh and sort reuse loaded previews, while edits refresh only their own stencil"] };
   });
   await runCase("native:visual-resources:svg-strokes-and-curation", async () => {
     const resources = plugin.visualResources;

@@ -1,8 +1,10 @@
 import { Component, Platform, setIcon, setTooltip } from "obsidian";
 import { t } from "src/lang/helpers";
 import type { VisualResource } from "src/types/visualResourceTypes";
-import { setStyle } from "src/utils/styleUtils";
+import { setElementHidden } from "src/utils/htmlUtils";
+import { removeStyle, setStyle } from "src/utils/styleUtils";
 import type { VisualResources } from "./VisualResources";
+import { visualResourceKey } from "./visualResourceModel";
 
 const PAGE_SIZE = 48;
 const PREVIEW_CONCURRENCY = 3;
@@ -33,13 +35,24 @@ interface GalleryOptions {
   list?: boolean;
   size?: number;
   background?: string;
+  frameFilterKey?: string;
 }
-type PreviewTask = {
-  resource: VisualResource;
+type PreviewSlot = { element: HTMLElement; desired?: string; ready?: string; loading?: string };
+type GalleryCard = {
   element: HTMLElement;
-  generation: number;
-  frameButton?: HTMLButtonElement;
-  frameCount?: HTMLElement;
+  variant: string;
+  preview: PreviewSlot;
+  control: HTMLElement;
+  checkbox?: HTMLInputElement;
+  update: (resource: VisualResource, selected: boolean | undefined) => void;
+  frames?: { button: HTMLButtonElement; count: HTMLElement; desired?: string; ready?: string; loading?: string };
+};
+type PreviewTask = {
+  card: GalleryCard;
+  resource: VisualResource;
+  stamp: string;
+  frameStamp: string;
+  dark: boolean;
 };
 
 /** Create a compact keyboard- and touch-accessible control with a native button target. */
@@ -55,7 +68,7 @@ export class VisualResourceGallery extends Component {
   private resources: readonly VisualResource[] = [];
   private options: GalleryOptions = {};
   private page = 0;
-  private generation = 0;
+  private cards = new Map<string, GalleryCard>();
   private active = 0;
   private pending: PreviewTask[] = [];
   private observed = new Map<Element, PreviewTask>();
@@ -65,14 +78,26 @@ export class VisualResourceGallery extends Component {
   private controls: HTMLElement[] = [];
   private checkboxes = new Map<HTMLInputElement, VisualResource>();
   public readonly root: HTMLElement;
+  private readonly grid: HTMLElement;
+  private readonly empty: HTMLElement;
+  private readonly pager: HTMLElement;
+  private readonly previous: HTMLButtonElement;
+  private readonly next: HTMLButtonElement;
 
   constructor(parent: HTMLElement, private readonly service: VisualResources, private readonly actions: GalleryActions) {
     super();
     this.root = parent.createDiv({ cls: "excalidraw-resource-gallery" });
+    this.grid = this.root.createDiv({ cls: "excalidraw-resource-grid" });
+    this.empty = this.grid.createDiv({ cls: "excalidraw-resource-status", text: t("VR_EMPTY") });
+    this.pager = this.root.createDiv({ cls: "excalidraw-resource-toolbar" });
+    this.previous = visualResourceButton(this.pager, "chevron-left", t("LUCIDE_PREVIOUS"));
+    this.next = visualResourceButton(this.pager, "chevron-right", t("LUCIDE_NEXT"));
   }
 
   /** Attach shared navigation and cleanup to the gallery's lifecycle. */
   public onload(): void {
+    this.registerDomEvent(this.previous, "click", () => this.changePage(-1));
+    this.registerDomEvent(this.next, "click", () => this.changePage(1));
     this.registerDomEvent(this.root, "keydown", event => {
       if (event.key === "Escape") { this.cancelClick(); this.actions.escape?.(); return; }
       const index = this.controls.indexOf(event.target as HTMLElement);
@@ -89,6 +114,7 @@ export class VisualResourceGallery extends Component {
     this.register(() => {
       this.disposed = true;
       this.resetPreviews();
+      this.cards.clear();
       this.cancelClick();
       this.root.remove();
     });
@@ -120,7 +146,6 @@ export class VisualResourceGallery extends Component {
   }
 
   private resetPreviews(): void {
-    this.generation++;
     this.observer?.disconnect();
     this.observer = null;
     this.pending = [];
@@ -129,36 +154,62 @@ export class VisualResourceGallery extends Component {
 
   private render(): void {
     this.resetPreviews();
-    this.root.empty();
     this.controls = [];
     this.checkboxes.clear();
-    const grid = this.root.createDiv({ cls: "excalidraw-resource-grid" });
-    grid.toggleClass("is-list", !!this.options.list);
-    setStyle(grid, { "--excalidraw-resource-size": (this.options.size ?? 100) + "px" });
+    this.grid.toggleClass("is-list", !!this.options.list);
+    setStyle(this.grid, { "--excalidraw-resource-size": (this.options.size ?? 100) + "px" });
     const win = this.root.ownerDocument.defaultView;
     if (win?.IntersectionObserver) {
-      this.observer = new win.IntersectionObserver(entries => {
+      const observer = this.observer = new win.IntersectionObserver(entries => {
+        if (this.observer !== observer) return;
         for (const entry of entries) {
           if (!entry.isIntersecting) continue;
           const task = this.observed.get(entry.target);
-          this.observer?.unobserve(entry.target);
+          observer.unobserve(entry.target);
           this.observed.delete(entry.target);
           if (task) this.enqueue(task);
         }
       }, { rootMargin: "64px" });
     }
     const offset = this.page * PAGE_SIZE;
-    for (const resource of this.resources.slice(offset, offset + PAGE_SIZE)) this.card(grid, resource);
-    if (!this.resources.length) grid.createDiv({ cls: "excalidraw-resource-status", text: t("VR_EMPTY") });
-    if (this.resources.length > PAGE_SIZE) {
-      const pages = this.root.createDiv({ cls: "excalidraw-resource-toolbar" });
-      const previous = visualResourceButton(pages, "chevron-left", t("LUCIDE_PREVIOUS"));
-      const next = visualResourceButton(pages, "chevron-right", t("LUCIDE_NEXT"));
-      previous.disabled = offset === 0;
-      next.disabled = offset + PAGE_SIZE >= this.resources.length;
-      previous.onclick = () => this.changePage(-1);
-      next.onclick = () => this.changePage(1);
+    const visible = this.resources.slice(offset, offset + PAGE_SIZE);
+    const keys = new Set(visible.map(resource => visualResourceKey(resource.locator)));
+    for (const [key, card] of this.cards) {
+      if (keys.has(key)) continue;
+      card.element.remove();
+      this.cards.delete(key);
     }
+    const focused = this.root.ownerDocument.activeElement as HTMLElement | null;
+    const dark = this.root.ownerDocument.body.hasClass("theme-dark");
+    let next = this.empty.nextElementSibling;
+    for (const resource of visible) {
+      const key = visualResourceKey(resource.locator);
+      const selected = this.actions.selected?.(resource);
+      const variant = JSON.stringify([resource.kind, selected !== undefined, !!resource.inspectFrames, !!this.options.list]);
+      let card = this.cards.get(key);
+      if (card?.variant !== variant) {
+        const old = card;
+        card = this.card(resource, selected, variant, old?.preview);
+        if (old) {
+          if (next === old.element) next = next.nextElementSibling;
+          old.element.remove();
+        }
+        this.cards.set(key, card);
+      }
+      if (card.element !== next) this.grid.insertBefore(card.element, next);
+      next = card.element.nextElementSibling;
+      card.update(resource, selected);
+      this.controls.push(card.control);
+      if (card.checkbox) this.checkboxes.set(card.checkbox, resource);
+      this.queuePreview(card, resource, dark);
+    }
+    if (focused?.isConnected && this.root.contains(focused) && this.root.ownerDocument.activeElement !== focused) {
+      focused.focus({ preventScroll: true });
+    }
+    setElementHidden(this.empty, !!visible.length);
+    setElementHidden(this.pager, this.resources.length <= PAGE_SIZE);
+    this.previous.disabled = offset === 0;
+    this.next.disabled = offset + PAGE_SIZE >= this.resources.length;
   }
 
   private changePage(offset: number): void {
@@ -168,10 +219,8 @@ export class VisualResourceGallery extends Component {
     this.focusFirst();
   }
 
-  private card(grid: HTMLElement, resource: VisualResource): void {
-    const win = grid.ownerDocument.defaultView;
-    const card = grid.createDiv({ cls: "excalidraw-resource-card" });
-    const selected = this.actions.selected?.(resource);
+  private card(resource: VisualResource, selected: boolean | undefined, variant: string, reused?: PreviewSlot): GalleryCard {
+    const card = this.grid.createDiv({ cls: "excalidraw-resource-card" });
     const rename = selected === undefined && resource.locator.provider === "stencil" && this.actions.rename;
     const row = rename ? card.createDiv({ cls: "excalidraw-resource-body is-renamable" }) : card;
     const button = selected === undefined ? row.createEl("button", {
@@ -179,42 +228,30 @@ export class VisualResourceGallery extends Component {
       attr: { type: "button", "aria-label": resource.title },
     }) : null;
     const body = button ?? card.createEl("label", { cls: "excalidraw-resource-body" });
-    if (button) {
-      if (this.actions.canActivate && !this.actions.canActivate(resource)) button.setAttribute("aria-disabled", "true");
-      this.controls.push(button);
-    } else {
-      const checkbox = body.createEl("input", {
-        cls: "excalidraw-resource-checkbox", type: "checkbox", attr: { "aria-label": resource.title },
-      });
-      checkbox.checked = selected;
-      checkbox.onchange = () => this.actions.activate(resource);
-      this.controls.push(checkbox);
-      this.checkboxes.set(checkbox, resource);
-    }
-    const preview = body.createSpan({ cls: "excalidraw-resource-preview", attr: { "aria-hidden": "true" } });
-    if (this.options.background) setStyle(preview, { backgroundColor: this.options.background });
+    const checkbox = button ? undefined : body.createEl("input", {
+      cls: "excalidraw-resource-checkbox", type: "checkbox", attr: { "aria-label": resource.title },
+    });
+    if (checkbox) checkbox.onchange = () => this.actions.activate(resource);
+    const preview = reused ?? { element: body.createSpan({ cls: "excalidraw-resource-preview", attr: { "aria-hidden": "true" } }) };
     const icon = resource.locator.provider === "lucide" ? "sparkles" : KIND_ICONS[resource.kind];
-    setIcon(preview, icon);
+    if (reused) body.append(preview.element);
+    else setIcon(preview.element, icon);
     const text = (rename ? row : body).createSpan({ cls: "excalidraw-resource-label" });
-    if (rename) this.editableTitle(text, resource, name => rename(resource, name));
-    else text.createSpan({ text: resource.title });
-    if (this.options.list) text.createSpan({ text: resource.source, cls: "excalidraw-resource-source" });
+    const title = rename ? this.editableTitle(text, () => resource.title, name => rename(resource, name)) : text.createSpan();
+    const source = this.options.list ? text.createSpan({ cls: "excalidraw-resource-source" }) : undefined;
     setIcon(card.createSpan({ cls: "excalidraw-resource-kind", attr: {
       role: "img", "aria-label": t(KIND_NAMES[resource.locator.provider === "lucide" ? "lucide" : resource.kind]),
     } }), icon);
     const actions = card.createDiv({ cls: "excalidraw-resource-actions" });
-    const task: PreviewTask = { resource, element: preview, generation: this.generation };
+    let frames: GalleryCard["frames"];
     if (resource.inspectFrames && this.actions.frames) {
-      task.frameButton = visualResourceButton(actions, "frame", t("VR_FRAME"));
-      task.frameButton.addClass("excalidraw-display-none");
-      task.frameCount = task.frameButton.createSpan();
-      task.frameButton.onclick = () => { this.cancelClick(); this.actions.frames?.(resource); };
+      const frameButton = visualResourceButton(actions, "frame", t("VR_FRAME"));
+      frames = { button: frameButton, count: frameButton.createSpan() };
+      setElementHidden(frameButton, true);
+      frameButton.onclick = () => { this.cancelClick(); this.actions.frames?.(resource); };
     }
-    if (this.actions.favorite) {
-      const { favorite } = this.service.collections.state(resource.locator);
-      const star = visualResourceButton(actions, "bookmark", t(favorite ? "VR_UNFAVORITE" : "VR_FAVORITE"), favorite);
-      star.onclick = () => { this.cancelClick(); this.actions.favorite?.(resource); };
-    }
+    const star = this.actions.favorite ? visualResourceButton(actions, "bookmark", "") : undefined;
+    if (star) star.onclick = () => { this.cancelClick(); this.actions.favorite?.(resource); };
     if (this.actions.menu) {
       const menu = visualResourceButton(actions, "ellipsis", t("VR_ACTIONS"));
       menu.onclick = event => { this.cancelClick(); this.actions.menu?.(resource, menu, event); };
@@ -231,6 +268,7 @@ export class VisualResourceGallery extends Component {
         }
         this.cancelClick();
         const activate = this.actions.deferredActivation?.(resource) ?? (() => this.actions.activate(resource));
+        const win = card.ownerDocument.defaultView;
         this.click = { win, id: win.setTimeout(() => { this.click = null; activate(); }, 500) };
       };
       if (canOpen) button.ondblclick = () => {
@@ -246,26 +284,41 @@ export class VisualResourceGallery extends Component {
         button.ondragend = () => this.service.endDrag();
       }
     }
-    if (this.observer) {
-      this.observed.set(preview, task);
-      this.observer.observe(preview);
-    } else this.enqueue(task);
+    const control = button ?? checkbox;
+    return { element: card, variant, preview, control, checkbox, frames, update: (next, checked) => {
+      resource = next;
+      title.setText(resource.title);
+      if (rename) title.setAttribute("aria-label", t("VR_RENAME") + " " + resource.title);
+      source?.setText(resource.source);
+      control.setAttribute("aria-label", resource.title);
+      if (checkbox) checkbox.checked = checked;
+      if (button) {
+        if (this.actions.canActivate && !this.actions.canActivate(resource)) button.setAttribute("aria-disabled", "true");
+        else button.removeAttribute("aria-disabled");
+      }
+      if (star) {
+        const { favorite } = this.service.collections.state(resource.locator);
+        star.setAttribute("aria-pressed", String(favorite));
+        star.setAttribute("aria-label", t(favorite ? "VR_UNFAVORITE" : "VR_FAVORITE"));
+      }
+      if (this.options.background) setStyle(preview.element, { backgroundColor: this.options.background });
+      else removeStyle(preview.element, ["backgroundColor"]);
+    } };
   }
 
-  private editableTitle(label: HTMLElement, resource: VisualResource, rename: (name: string) => void): void {
-    const name = label.createEl("button", { cls: "excalidraw-resource-rename", text: resource.title,
-      attr: { type: "button", "aria-label": t("VR_RENAME") + " " + resource.title } });
+  private editableTitle(label: HTMLElement, title: () => string, rename: (name: string) => void): HTMLButtonElement {
+    const name = label.createEl("button", { cls: "excalidraw-resource-rename", attr: { type: "button" } });
     setTooltip(name, t("VR_RENAME"));
     name.onclick = () => {
       const input = label.createEl("input", { cls: "excalidraw-resource-name-input", type: "text",
-        value: resource.title, attr: { "aria-label": t("VR_NAME") } });
+        value: title(), attr: { "aria-label": t("VR_NAME") } });
       const finish = (save: boolean, refocus: boolean) => {
         input.onblur = null;
         if (!input.isConnected) return;
         input.replaceWith(name);
         if (refocus) name.focus();
-        const title = input.value.trim();
-        if (save && title && title !== resource.title) rename(title);
+        const next = input.value.trim();
+        if (save && next && next !== title()) rename(next);
       };
       input.onblur = () => finish(true, false);
       input.oncontextmenu = event => event.stopPropagation();
@@ -279,11 +332,27 @@ export class VisualResourceGallery extends Component {
       input.focus();
       input.select();
     };
+    return name;
   }
 
   private enqueue(task: PreviewTask): void {
     this.pending.push(task);
     this.drain();
+  }
+
+  private queuePreview(card: GalleryCard, resource: VisualResource, dark: boolean): void {
+    const stamp = this.service.previewKey(resource, dark);
+    const frameStamp = card.frames ? stamp + (this.options.frameFilterKey ?? "") : "";
+    const { preview, frames } = card;
+    preview.desired = stamp;
+    if (frames) frames.desired = frameStamp;
+    if ((preview.ready === stamp || preview.loading === stamp) &&
+        (!frames || frames.ready === frameStamp || frames.loading === frameStamp)) return;
+    const task = { card, resource, stamp, frameStamp, dark };
+    if (this.observer) {
+      this.observed.set(preview.element, task);
+      this.observer.observe(preview.element);
+    } else this.enqueue(task);
   }
 
   private drain(): void {
@@ -295,21 +364,36 @@ export class VisualResourceGallery extends Component {
   }
 
   private async loadPreview(task: PreviewTask): Promise<void> {
-    const current = () => task.generation === this.generation && task.element.isConnected;
-    if (task.frameButton && this.actions.inspectFrames) {
-      const frames = await this.actions.inspectFrames(task.resource).catch((): VisualResource[] => []);
-      if (!current()) return;
-      if (frames.length) {
-        task.frameButton.removeClass("excalidraw-display-none");
-        task.frameButton.setAttribute("aria-label", t("VR_FRAME") + " (" + frames.length + ")");
-        task.frameCount.setText(String(frames.length));
+    const { preview, frames } = task.card;
+    if (frames && this.actions.inspectFrames && frames.desired === task.frameStamp &&
+        frames.ready !== task.frameStamp && frames.loading !== task.frameStamp) {
+      frames.loading = task.frameStamp;
+      try {
+        const result = await this.actions.inspectFrames(task.resource).catch((): VisualResource[] => []);
+        if (frames.button.isConnected && frames.desired === task.frameStamp) {
+          frames.ready = task.frameStamp;
+          setElementHidden(frames.button, !result.length);
+          frames.button.setAttribute("aria-label", t("VR_FRAME") + " (" + result.length + ")");
+          frames.count.setText(String(result.length));
+        }
+      } finally {
+        if (frames.loading === task.frameStamp) frames.loading = undefined;
       }
     }
-    const dark = task.element.ownerDocument.body.hasClass("theme-dark");
-    const preview = await this.service.preview(task.resource, dark);
-    if (!preview || !current()) return;
-    task.element.empty();
-    if (typeof preview === "string") task.element.createEl("img", { attr: { src: preview, alt: "", draggable: "false" } });
-    else task.element.append(preview);
+    const current = () => preview.element.isConnected && preview.desired === task.stamp;
+    if (!current() || preview.ready === task.stamp || preview.loading === task.stamp) return;
+    preview.loading = task.stamp;
+    try {
+      const image = await this.service.preview(task.resource, task.dark);
+      if (!current()) return;
+      preview.ready = task.stamp;
+      if (typeof image === "string" && preview.element.querySelector("img")?.getAttribute("src") === image) return;
+      preview.element.empty();
+      if (typeof image === "string") preview.element.createEl("img", { attr: { src: image, alt: "", draggable: "false" } });
+      else if (image) preview.element.append(image);
+      else setIcon(preview.element, task.resource.locator.provider === "lucide" ? "sparkles" : KIND_ICONS[task.resource.kind]);
+    } finally {
+      if (preview.loading === task.stamp) preview.loading = undefined;
+    }
   }
 }

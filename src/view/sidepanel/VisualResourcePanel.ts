@@ -127,6 +127,8 @@ export class VisualResourcePanel {
     const parent = heading.createSpan();
     let selectedParent: VisualResource | null = null;
     let frames: VisualResource[] = [], data: VisualResource[] = [], curatedFrames: VisualResource[] = [];
+    let results: VisualResource[] = [], queryContext = "";
+    const renamePositions = new Map<string, number>();
     let load = 0, frameLoad = 0, closed = false, loading = true;
     const open = (resource: VisualResource): void => { void this.service.openSource(resource).catch(() => this.failed()); };
     const closeFrames = () => { frameLoad++; selectedParent = null; frames = []; refresh(false); };
@@ -157,6 +159,22 @@ export class VisualResourcePanel {
       const target = this.target;
       void this.service.insert(resource, target, () => this.tab === tab && this.target === target, undefined, this.script);
     };
+    const rename = async (resource: VisualResource, name: string) => {
+      const { locator } = resource;
+      if (locator.provider !== "stencil" || name === resource.title) return;
+      const key = visualResourceKey(locator);
+      const index = results.findIndex(item => visualResourceKey(item.locator) === key);
+      if (index >= 0 && !renamePositions.has(key)) renamePositions.set(key, index);
+      try {
+        await this.plugin.stencilLibraryManager.renameResourceStencil(locator.path, locator.id, name);
+        if (closed) return;
+        data = data.map(item => visualResourceKey(item.locator) === key ? { ...item, title: name } : item)
+          .sort((left, right) => left.title.localeCompare(right.title));
+        refresh(false);
+      } catch {
+        if (!closed) this.failed();
+      }
+    };
     const actions = {
       activate, open,
       deferredActivation: (resource: VisualResource) => {
@@ -169,8 +187,12 @@ export class VisualResourcePanel {
       favorite: (resource: VisualResource) => this.run(this.service.collections.curate([resource.locator], {
         favorite: !this.service.collections.state(resource.locator).favorite,
       })),
-      menu: (resource: VisualResource, el: HTMLElement, event: MouseEvent) => this.show(this.menus.resource(resource, this.collection, () => this.tab === tab, value => { this.svgSource = value; }), el, event),
-      rename: (resource: VisualResource, name: string) => this.run(this.menus.renameStencil(resource, name)),
+      menu: (resource: VisualResource, el: HTMLElement, event: MouseEvent) => this.show(this.menus.resource(resource, this.collection,
+        () => this.tab === tab, value => { this.svgSource = value; }, name => {
+          el.focus({ preventScroll: true });
+          void rename(resource, name);
+        }), el, event),
+      rename: (resource: VisualResource, name: string) => { void rename(resource, name); },
       frames: (resource: VisualResource) => {
         const revision = ++frameLoad;
         selectedParent = resource;
@@ -197,19 +219,32 @@ export class VisualResourcePanel {
     const refresh = (reset = true) => {
       const scroll = main.scrollTop;
       const group = this.collection;
+      const context = JSON.stringify([this.script, group, this.library, search.value, this.filters, this.groups]);
+      if (context !== queryContext) {
+        renamePositions.clear();
+        queryContext = context;
+      }
       const candidates = group ? [...data, ...curatedFrames].filter(resource => {
         const record = this.service.collections.state(resource.locator);
         return group === "favorites" ? record.favorite : record.memberships.includes(group);
       }) : data;
-      const resources = filterVisualResources(candidates, search.value, this.filters, this.groups)
-        .filter(resource => !this.library || resource.locator.provider !== "stencil" || resource.locator.path === this.library);
+      const libraryMatches = candidates.filter(resource =>
+        !this.library || resource.locator.provider !== "stencil" || resource.locator.path === this.library);
+      results = filterVisualResources(libraryMatches, search.value, this.filters, this.groups);
+      if (renamePositions.size) {
+        const retained = filterVisualResources(libraryMatches.filter(item => renamePositions.has(visualResourceKey(item.locator))),
+          "", this.filters, this.groups).map(item => ({ item, index: renamePositions.get(visualResourceKey(item.locator)) }));
+        results = results.filter(item => !renamePositions.has(visualResourceKey(item.locator)));
+        for (const { item, index } of retained.sort((left, right) => left.index - right.index)) results.splice(index, 0, item);
+      }
       const old = this.service.iconSettings(this.script);
       const dark = root.ownerDocument.body.hasClass("theme-dark");
       const background = dark ? this.preferences.darkBackground ?? old.darkBackground : this.preferences.lightBackground ?? old.lightBackground;
-      const options = { list: this.preferences.list, size: this.preferences.thumbnailSize ?? old.thumbnailSize, background };
+      const options = { list: this.preferences.list, size: this.preferences.thumbnailSize ?? old.thumbnailSize, background,
+        frameFilterKey: JSON.stringify([this.groups, this.service.rules(this.script).frame]) };
       status.setText(loading ? t("VR_LOADING") : !this.service.writable(this.target) ? t("VR_NO_DRAWING") : "");
       updateSelectionBar();
-      gallery.show(resources, options, reset);
+      gallery.show(results, options, reset);
       split.showFrames(!!selectedParent);
       if (selectedParent) {
         parent.setText(selectedParent.title);
@@ -229,7 +264,7 @@ export class VisualResourcePanel {
         data = resources;
         refresh(false);
       };
-      void Promise.all([this.service.list(this.script, progressive), this.collection ? this.service.curatedFrames() : []]).then(([resources, curated]) => {
+      void Promise.all([this.service.list(this.script, data.length ? undefined : progressive), this.collection ? this.service.curatedFrames() : []]).then(([resources, curated]) => {
         if (closed || revision !== load) return;
         data = resources;
         curatedFrames = curated;

@@ -1,3 +1,5 @@
+import type { LibraryItem } from "@zsviczian/excalidraw/types/excalidraw/types";
+
 /** Lightweight references used by discovery, collections, and insertion. */
 export type VisualResourceLocator =
   | { provider: "vault"; path: string; frame?: string }
@@ -21,6 +23,7 @@ export interface VisualResource {
   other?: boolean;
   frames?: VisualResource[];
   inspectFrames?: boolean;
+  previewElements?: LibraryItem["elements"];
 }
 
 export interface VisualDiscoveryRule {

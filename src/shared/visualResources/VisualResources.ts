@@ -6,6 +6,7 @@ import { t } from "src/lang/helpers";
 import { FRAME_ANCHORS_PROPERTY, getSceneFrames } from "src/utils/frameMetadata";
 import { getTemplate } from "src/utils/excalidrawAutomateUtils";
 import { repositionElementsToCursor } from "src/utils/excalidrawElementUtils";
+import { getExcalidrawEmbeddedFilesFiletree } from "src/utils/fileUtils";
 import type { VisualDiscoveryCandidate, VisualDiscoveryRule, VisualResource, VisualResourceLocator } from "src/types/visualResourceTypes";
 import type ExcalidrawView from "src/view/ExcalidrawView";
 import { EmbeddedFile, EmbeddedFilesLoader } from "../EmbeddedFileLoader";
@@ -31,7 +32,8 @@ export class VisualResources {
   public readonly frameworks: FrameworkCatalog;
   private drag: { token: string; resource: VisualResource; file: TFile | null } | null = null;
   private disposed = false;
-  private readonly previews = new Map<string, { path: string; data: string }>();
+  private readonly previews = new Map<string, string>();
+  private readonly libraryPreviewKeys = new WeakMap<LibraryItem["elements"], string>();
   private readonly framePreviews = new Map<string, { stamp: string; frames: Promise<VisualResource[]> }>();
   private previewBytes = 0;
 
@@ -113,11 +115,11 @@ export class VisualResources {
     const [stencils, frameworks] = await Promise.all([this.plugin.stencilLibraryManager.getResourceLibraries(), this.frameworks.list()]);
     for (const { item, path } of stencils.items) {
       result.push({ locator: { provider: "stencil", id: item.id, path }, kind: "stencil",
-        title: item.name || item.id, source: path ?? t("VR_DEFAULT_LIBRARY"), keywords: [] });
+        title: item.name || item.id, source: path ?? t("VR_DEFAULT_LIBRARY"), keywords: [], previewElements: item.elements });
     }
     for (const { item, path } of frameworks) {
       result.push({ locator: { provider: "framework", id: item.id, path }, kind: "framework",
-        title: item.name || item.id, source: path, keywords: [] });
+        title: item.name || item.id, source: path, keywords: [], previewElements: item.elements });
     }
     return result.sort((a, b) => a.title.localeCompare(b.title));
   }
@@ -366,6 +368,25 @@ export class VisualResources {
     return true;
   }
 
+  /** Identify the rendered content independently of gallery ordering and labels. */
+  public previewKey(resource: VisualResource, dark: boolean): string {
+    if (resource.previewElements) {
+      let geometry = this.libraryPreviewKeys.get(resource.previewElements);
+      if (geometry === undefined) {
+        // Restoring older items can repair indices and bump version metadata.
+        geometry = JSON.stringify(resource.previewElements.map(({ version, versionNonce, updated, ...element }) => element));
+        this.libraryPreviewKeys.set(resource.previewElements, geometry);
+      }
+      return JSON.stringify([visualResourceKey(resource.locator), dark]) + geometry;
+    }
+    const file = this.sourceFile(resource);
+    const drawing = file && this.plugin.isExcalidrawFile(file);
+    const dependencies = drawing
+      ? getExcalidrawEmbeddedFilesFiletree(file, this.plugin).map(source => [source.path, source.stat.mtime, source.stat.size])
+      : [];
+    return JSON.stringify([visualResourceKey(resource.locator), !!drawing, file?.stat.mtime, file?.stat.size, dark, dependencies]);
+  }
+
   /** Return a local image preview, with SVG markup used only as an image URL. */
   public async preview(resource: VisualResource, dark: boolean): Promise<string | SVGSVGElement | null> {
     if (resource.locator.provider === "lucide") return getIcon(resource.locator.icon);
@@ -377,46 +398,40 @@ export class VisualResources {
       const input = resource.locator.frame ? new EmbeddedFile(this.plugin, file.path, this.link(resource, file)) : file;
       return (await loader.getObsidianImage(input, 0))?.dataURL || null;
     }
-    const stamp = file?.stat.mtime;
-    const key = JSON.stringify([visualResourceKey(resource.locator), file?.path, stamp, dark]);
-    const cached = file && this.previews.get(key);
+    const key = this.previewKey(resource, dark);
+    const cached = this.previews.get(key);
     if (cached) {
       this.previews.delete(key);
       this.previews.set(key, cached);
-      return cached.data;
+      return cached;
     }
     const ea = this.plugin.ea.getAPI();
     try {
       const options = { ...ea.getExportSettings(false, false), drawingThumbnail: true };
-      const item = await this.libraryItem(resource.locator);
-      if (!item) return null;
-      const elements = structuredClone(Array.from(item.elements));
+      const source = resource.previewElements ?? (await this.libraryItem(resource.locator))?.elements;
+      if (!source) return null;
+      const elements = structuredClone(Array.from(source));
       for (const element of elements) ea.elementsDict[element.id] = element;
       const svg = await ea.createSVG(undefined, false, options, undefined, dark ? "dark" : "light", 4);
       if (!svg) return null;
       const data = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg.outerHTML);
-      if (!this.disposed && file && this.sourceFile(resource) === file && file.stat.mtime === stamp && data.length < PREVIEW_CACHE_BYTES) {
+      if (!this.disposed && resource.previewElements && key.length + data.length < PREVIEW_CACHE_BYTES) {
         const previous = this.previews.get(key);
-        this.previewBytes += data.length - (previous?.data.length ?? 0);
-        this.previews.set(key, { path: file.path, data });
+        this.previewBytes += previous === undefined ? key.length + data.length : data.length - previous.length;
+        this.previews.set(key, data);
         for (const [oldKey, preview] of this.previews) {
           if (this.previewBytes <= PREVIEW_CACHE_BYTES) break;
           this.previews.delete(oldKey);
-          this.previewBytes -= preview.data.length;
+          this.previewBytes -= oldKey.length + preview.length;
         }
       }
       return data;
     } finally { ea.destroy(); }
   }
 
-  /** Drop only preview entries owned by the changed path or a moved folder. */
+  /** Drop frame discovery entries owned by the changed path or a moved folder. */
   public invalidatePreview(path: string): void {
     for (const source of this.framePreviews.keys()) if (source === path || source.startsWith(path + "/")) this.framePreviews.delete(source);
-    for (const [key, preview] of this.previews) {
-      if (preview.path !== path && !preview.path.startsWith(path + "/")) continue;
-      this.previews.delete(key);
-      this.previewBytes -= preview.data.length;
-    }
   }
 
   /** Reveal a backing file in the system explorer when the desktop adapter exposes that operation. */

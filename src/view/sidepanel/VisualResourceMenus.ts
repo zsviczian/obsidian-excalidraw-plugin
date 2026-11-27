@@ -24,7 +24,8 @@ export class VisualResourceMenus {
   }
 
   /** Construct a resource's applicable actions using its live capability checks. */
-  public resource(resource: VisualResource, collection: string, panelOpen: () => boolean, toggleSvgSource: (value: boolean) => void): Menu {
+  public resource(resource: VisualResource, collection: string, panelOpen: () => boolean, toggleSvgSource: (value: boolean) => void,
+    rename: (name: string) => void): Menu {
     const menu = new Menu();
     const view = this.target();
     const active = () => panelOpen() && this.target() === view;
@@ -56,22 +57,14 @@ export class VisualResourceMenus {
     if (resource.locator.provider === "stencil") {
       menu.addSeparator();
       menu.addItem(item => item.setTitle(t("VR_RENAME")).setIcon("pencil").onClick(() => {
-        this.run(resourceInput(this.plugin.app, t("VR_RENAME"), { value: resource.title }).then(name => {
-          if (name) return this.renameStencil(resource, name);
-        }));
+        void resourceInput(this.plugin.app, t("VR_RENAME"), { value: resource.title }).then(name => {
+          if (name && panelOpen()) rename(name);
+        }).catch(() => new Notice(t("VR_ACTION_FAILED")));
       }));
       menu.addItem(item => item.setTitle(t("VR_MOVE_LIBRARY")).onClick(() => this.run(this.move([resource]))));
       menu.addItem(item => item.setTitle(t("VR_MANAGE_LIBRARIES")).onClick(() => this.run(this.manage())));
     }
     return menu;
-  }
-
-  /** Persist either editor's change in the stencil's owning library. */
-  public async renameStencil(resource: VisualResource, name: string): Promise<void> {
-    const { locator } = resource;
-    if (locator.provider !== "stencil" || name === resource.title) return;
-    await this.plugin.stencilLibraryManager.renameResourceStencil(locator.path, locator.id, name);
-    this.refresh();
   }
 
   /** Bulk memberships support mixed resources. Library moves use selected stencils only. */

@@ -74,7 +74,7 @@ export class ThinkingFrameworksPicker extends Modal {
       if (!this.openPicker) return;
       resources = local.map(({ path, item }): VisualResource => ({
         locator: { provider: "framework", path, id: item.id }, kind: "framework",
-        title: item.name, source: path, keywords: [],
+        title: item.name, source: path, keywords: [], previewElements: item.elements,
       }));
       setElementHidden(download, !!resources.length);
       redraw();
