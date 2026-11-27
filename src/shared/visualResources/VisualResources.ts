@@ -251,7 +251,13 @@ export class VisualResources {
         const item = await this.libraryItem(resource.locator);
         if (!item) return;
         validate();
-        const elements = repositionElementsToCursor(ea.cloneElements([...item.elements]), center, true);
+        // Native library files can carry display text with empty Obsidian raw text.
+        const copies = ea.cloneElements([...item.elements]).map(element =>
+          element.type === "text" && !element.rawText
+            ? { ...element, rawText: element.originalText || element.text }
+            : element,
+        );
+        const elements = repositionElementsToCursor(copies, center, true);
         if (await view.addElements({ newElements: elements, newElementsOnTop: true, validateBeforePublish: validate })) {
           api.selectElements(elements);
           await view.saveWithOutcome();

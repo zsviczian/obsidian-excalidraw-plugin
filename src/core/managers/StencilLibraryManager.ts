@@ -125,14 +125,9 @@ export class StencilLibraryManager {
     if (this.isUpdatingOpenViews) {
       return;
     }
-    if (this.plugin.settings.libraryStorageMode === "data-json") {
-      await this.plugin.setLegacyStencilLibrary(this.createFileData(items));
-      return;
-    }
-    this.saveQueue = this.saveQueue.then(() => this.persistChanges(items));
-    const save = this.saveQueue;
-    this.saveQueue = save.catch(() => {});
-    await save;
+    await this.queueSave(() => this.plugin.settings.libraryStorageMode === "data-json"
+      ? this.plugin.setLegacyStencilLibrary(this.createFileData(items))
+      : this.persistChanges(items));
   }
 
   /** Read the effective items, their owners, and the valid destination libraries. */
@@ -141,16 +136,51 @@ export class StencilLibraryManager {
     paths: string[];
     defaultPath?: string;
   }> {
+    await this.saveQueue;
     if (this.plugin.settings.libraryStorageMode === "data-json") {
       const items = restoreLibraryItems(getLibraryItems(this.plugin.getLegacyStencilLibrary()), "unpublished");
       const owned = items.map<{ item: LibraryItem; path: string | undefined }>(item => ({ item, path: undefined }));
       return { items: owned, paths: [] };
     }
-    await this.saveQueue;
     await this.ensureLoaded();
     const defaultPath = this.getLocalLibraryPath();
     const paths = [defaultPath, ...this.libraryFiles().filter(file => file.path !== defaultPath).map(file => file.path)];
     return { items: this.currentItems.map(item => ({ item, path: this.itemSource.get(item.id) })), paths, defaultPath };
+  }
+
+  /** Rename one stencil in its current owner without rewriting its elements. */
+  public async renameResourceStencil(path: string | undefined, id: string, name: string): Promise<void> {
+    const title = name.trim();
+    if (!title) throw Error("Stencil name is empty");
+    const rename = (items: LibraryItems): LibraryItems => {
+      const matching = items.filter(item => item.id === id);
+      if (matching.length !== 1) throw Error("Stencil no longer has a unique match in its library");
+      if (matching[0].name === title) return items;
+      return items.map(item => item.id === id ? { ...item, name: title } : item);
+    };
+    if (path === undefined) {
+      await this.queueSave(async () => {
+        if (this.plugin.settings.libraryStorageMode !== "data-json") throw Error("Stencil storage changed");
+        const data = this.plugin.getLegacyStencilLibrary();
+        const items = getLibraryItems(data);
+        const renamed = rename(items);
+        if (renamed === items) return;
+        await this.plugin.setLegacyStencilLibrary(this.withLibraryItems(data, renamed));
+        await this.updateLibrariesInOpenViews(restoreLibraryItems(renamed, "unpublished"));
+      });
+      return;
+    }
+    await this.editResourceLibraries(async () => {
+      const vault = this.plugin.app.vault;
+      const file = vault.getFileByPath(path);
+      if (!file) throw Error("Library is missing");
+      await vault.process(file, raw => {
+        const data = this.parseLibrary(raw);
+        const items = getLibraryItems(data);
+        const renamed = rename(items);
+        return renamed === items ? raw : JSON.stringify(this.withLibraryItems(data, renamed), null, 2);
+      });
+    }, path);
   }
 
   /** Create an empty standard library in the configured vault folder. */
@@ -250,17 +280,21 @@ export class StencilLibraryManager {
       !(file instanceof TFolder) && file.name.toLowerCase().endsWith("." + LIBRARY_EXTENSION)) ?? [];
   }
 
+  private queueSave(edit: () => Promise<void>): Promise<void> {
+    const pending = this.saveQueue.then(edit);
+    this.saveQueue = pending.catch(() => {});
+    return pending;
+  }
+
   private async editResourceLibraries(edit: () => Promise<void>, ...paths: string[]): Promise<void> {
-    const run = this.saveQueue.then(async () => {
+    try { await this.queueSave(async () => {
       if (this.plugin.settings.libraryStorageMode !== "vault" || paths.some(path =>
-        path.slice(0, path.lastIndexOf("/")) !== this.getFolderPath() || !path.endsWith("." + LIBRARY_EXTENSION))) {
+        path.slice(0, path.lastIndexOf("/")) !== this.getFolderPath() || !path.toLowerCase().endsWith("." + LIBRARY_EXTENSION))) {
         throw Error("Vault stencil libraries are required");
       }
       try { await edit(); }
       finally { this.invalidate(); }
-    });
-    this.saveQueue = run.catch(() => {});
-    try { await run; }
+    }); }
     finally { await this.reloadLibrariesInOpenViews(); }
   }
 
@@ -295,11 +329,15 @@ export class StencilLibraryManager {
     await this.saveQueue;
     this.invalidate();
     await this.ensureLoaded();
+    await this.updateLibrariesInOpenViews(this.currentItems);
+  }
+
+  private async updateLibrariesInOpenViews(items: LibraryItems): Promise<void> {
     this.isUpdatingOpenViews = true;
     try {
       for (const view of getExcalidrawViews(this.plugin.app, true)) {
         await view.excalidrawAPI.updateLibrary({
-          libraryItems: this.currentItems,
+          libraryItems: items,
           merge: false,
         });
       }

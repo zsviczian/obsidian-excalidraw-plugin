@@ -1698,6 +1698,7 @@
           "cases": [
             "native:visual-resources:palette-and-insertion",
             "native:visual-resources:panel-controls",
+            "native:visual-resources:stencils",
             "native:visual-resources:svg-strokes-and-curation",
             "native:visual-resources:popout-drop",
             "native:visual-resources:framework-picker",

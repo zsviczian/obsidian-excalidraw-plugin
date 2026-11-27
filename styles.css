@@ -3064,6 +3064,7 @@ button.excalidraw-font-picker {
 }
 
 .excalidraw-resource-card .excalidraw-resource-body:focus-visible,
+.excalidraw-resource-card .excalidraw-resource-preview-button:focus-visible,
 .excalidraw-resource-card label.excalidraw-resource-body:focus-within {
   outline: 2px solid var(--interactive-accent);
   outline-offset: -2px;
@@ -3089,8 +3090,51 @@ button.excalidraw-font-picker {
   cursor: default;
 }
 
+.excalidraw-resource-card .excalidraw-resource-body.is-renamable {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  box-sizing: border-box;
+}
+
+.excalidraw-resource-card .excalidraw-resource-preview-button {
+  display: block;
+  height: auto;
+  min-width: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.excalidraw-resource-card .excalidraw-resource-preview-button[aria-disabled="true"] {
+  cursor: default;
+}
+
+.excalidraw-resource-card .excalidraw-resource-rename,
+.excalidraw-resource-card .excalidraw-resource-name-input {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-width: 0;
+  text-align: start;
+}
+
+.excalidraw-resource-card .excalidraw-resource-rename {
+  padding: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  background: transparent;
+  box-shadow: none;
+  font: inherit;
+}
+
+.excalidraw-resource-card .excalidraw-resource-rename:hover {
+  text-decoration: underline;
+}
+
 .excalidraw-resource-preview {
   display: grid;
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
   place-items: center;
   width: 100%;
   height: var(--excalidraw-resource-size, 100px);
@@ -3154,6 +3198,10 @@ button.excalidraw-font-picker {
   text-align: start;
   padding-bottom: var(--size-4-1);
   padding-right: 96px;
+}
+
+.excalidraw-resource-grid.is-list .excalidraw-resource-body.is-renamable {
+  grid-template-columns: 42px minmax(0, 1fr);
 }
 
 .excalidraw-resource-grid.is-list .excalidraw-resource-preview {

@@ -7,6 +7,7 @@ import { behaviorInputDriver } from "./behaviorMatrix.mjs";
 export const visualResourceCaseIds = [
   "native:visual-resources:palette-and-insertion",
   "native:visual-resources:panel-controls",
+  "native:visual-resources:stencils",
   "native:visual-resources:svg-strokes-and-curation",
   "native:visual-resources:popout-drop",
   "native:visual-resources:framework-picker",
@@ -36,7 +37,7 @@ async function exercise(c, drawingPath, library) {
   };
   check(root.startsWith("__excalidraw_cli_smoke_") && !vault.getAbstractFileByPath(root), "Unowned visual resources fixture root");
   const saved = {};
-  for (const key of ["folder", "visualResources", "frameworkFolder", "frameworksOnBlank", "frameworksSnoozedUntil", "sidepanelOpenInPopout", "showNewVersionNotification", "templateFilePath"]) {
+  for (const key of ["folder", "visualResources", "frameworkFolder", "frameworksOnBlank", "frameworksSnoozedUntil", "sidepanelOpenInPopout", "showNewVersionNotification", "templateFilePath", "libraryFolderPath", "libraryStorageMode", "libraryMigrationStatus"]) {
     saved[key] = plugin.settings[key];
   }
   c.defer(async () => {
@@ -50,6 +51,7 @@ async function exercise(c, drawingPath, library) {
       leaf.detach();
     }
     Object.assign(plugin.settings, saved);
+    plugin.stencilLibraryManager.invalidate();
     await plugin.saveSettings();
     const folder = vault.getFolderByPath(root);
     if (folder) await vault.delete(folder, true);
@@ -226,6 +228,104 @@ async function exercise(c, drawingPath, library) {
     return { assertions: ["canvas button uses neighboring toolbar styling", "toolbar shares the search row at wide widths and wraps when narrow",
       "bulk filter actions update kinds and groups", "checkbox selection keeps focus and preserves the scene",
       "pointer and keyboard resize the frame split without losing the current search"] };
+  });
+  await runCase("native:visual-resources:stencils", async () => {
+    const doc = panel.ownerDocument, win = doc.defaultView;
+    const preferences = plugin.settings.visualResources;
+    const libraryFolderPath = root + "/Stencils";
+    Object.assign(plugin.settings, { libraryFolderPath, libraryStorageMode: "vault", libraryMigrationStatus: "not-required",
+      visualResources: { ...preferences, filters: ["stencil"], list: false } });
+    plugin.stencilLibraryManager.invalidate();
+    await vault.createFolder(libraryFolderPath);
+    const source = library.libraryItems[0].elements;
+    const rectangle = source.find(element => element.type === "rectangle");
+    const original = { id: "stencil-probe-generated-id", created: 1, status: "unpublished", elements: [
+      { ...rectangle, id: "stencil-top", x: 0, y: 0, width: 90, height: 40, backgroundColor: "#ff2222", fillStyle: "solid" },
+      { ...rectangle, id: "stencil-bottom", x: 0, y: 700, width: 90, height: 40, backgroundColor: "#22ff22", fillStyle: "solid" },
+      { ...source.find(element => element.type === "text"), id: "stencil-text", x: 0, y: 340, width: 90, height: 24,
+        fontSize: 20, text: "BRAIN", originalText: "BRAIN", rawText: "", autoResize: true },
+    ] };
+    const file = await vault.create(libraryFolderPath + "/Probe.excalidrawlib", JSON.stringify({
+      ...library, source: "native-test", libraryItems: [original],
+    }));
+    await plugin.visualResourcePanel.open(view);
+    search(original.id);
+    const cardFor = title => [...panel.querySelectorAll(".excalidraw-resource-card")]
+      .find(el => el.querySelector('[aria-label="' + title + '"]'));
+    let tile, img;
+    await c.waitFor(() => (img = (tile = cardFor(original.id))?.querySelector(".excalidraw-resource-preview img"))?.naturalHeight,
+      "tall unnamed stencil thumbnail loads");
+    const preview = img.parentElement.getBoundingClientRect(), image = img.getBoundingClientRect();
+    const fits = image.top >= preview.top - 1 && image.bottom <= preview.bottom + 1 &&
+      image.left >= preview.left - 1 && image.right <= preview.right + 1;
+    const grip = tile.querySelector("[draggable=true]");
+    await view.changeTextMode("parsed", false);
+    await c.waitFor(() => plugin.visualResources.writable(view), "drawing prepared for the stencil drop");
+    const before = new Set(api.getSceneElements().map(element => element.id));
+    const transfer = new win.DataTransfer();
+    grip.dispatchEvent(new win.DragEvent("dragstart", { dataTransfer: transfer, bubbles: true }));
+    const state = api.getAppState();
+    const event = new win.DragEvent("drop", { dataTransfer: transfer, clientX: state.offsetLeft + 120,
+      clientY: state.offsetTop + 140, cancelable: true });
+    check(view.dropManager.onDrop(event) === false && event.defaultPrevented, "Stencil drag did not reach the native scene drop path");
+    let inserted;
+    await c.waitFor(() => (inserted = api.getSceneElements().filter(element => !before.has(element.id))).length === 3, "stencil inserted");
+    const text = inserted.find(element => element.type === "text");
+    c.observations.stencil = { previewHeight: preview.height, imageHeight: image.height, text: text?.text, width: text?.width };
+    check(fits && text?.text === "BRAIN" && text.width > 40,
+      "Stencil preview or text regression: " + JSON.stringify(c.observations.stencil));
+    check(view.excalidrawData.getRawText(text.id) === "BRAIN", "Inserted text lost its editable source");
+    await c.waitFor(() => plugin.visualResources.writable(view), "stencil insertion saved");
+    api.history.undo();
+    await c.waitFor(() => api.getSceneElements().length === before.size, "one undo removes the stencil");
+    const stencilLocator = { provider: "stencil", path: file.path, id: original.id };
+    const diskItem = async () => JSON.parse(await vault.read(file)).libraryItems[0];
+    check((await diskItem()).elements[2].rawText === "", "Dropping mutated the source stencil");
+    await plugin.visualResources.collections.curate([stencilLocator], { favorite: true });
+    await c.waitFor(() => cardFor(original.id)?.querySelector("[aria-pressed=true]"), "favorited stencil is rendered");
+    const nameInput = () => panel.querySelector(".excalidraw-resource-name-input");
+    const key = (element, value) => element.dispatchEvent(new win.KeyboardEvent("keydown", { key: value, bubbles: true, cancelable: true }));
+    cardFor(original.id).querySelector(".excalidraw-resource-rename").click();
+    check(doc.activeElement === nameInput() && nameInput().selectionEnd === original.id.length,
+      "Clicking a stencil name did not select the generated ID for editing");
+    nameInput().value = "Canceled name";
+    key(nameInput(), "Escape");
+    check(!nameInput() && !((await diskItem()).name), "Cancel saved a stencil name or closed the panel");
+    cardFor(original.id).querySelector(".excalidraw-resource-rename").click();
+    nameInput().value = "Tall stencil";
+    key(nameInput(), "Enter");
+    search("Tall stencil");
+    await c.waitFor(() => cardFor("Tall stencil"), "inline name appears in search");
+    check((await diskItem()).name === "Tall stencil", "Inline rename did not reach the owning library");
+
+    const controller = plugin.visualResourcePanel;
+    const showMenu = controller.show;
+    controller.show = function(menu, ...args) { return showMenu.call(this, menu.setUseNativeMenu(false), ...args); };
+    try {
+      cardFor("Tall stencil").querySelector(".excalidraw-resource-actions button:last-child").click();
+      let menuItem;
+      await c.waitFor(() => (menuItem = [...doc.querySelectorAll(".menu-item-title")]
+        .find(el => el.textContent === plugin.getLabel("VR_RENAME"))), "stencil action menu has Rename");
+      menuItem.closest(".menu-item").click();
+      let editor;
+      await c.waitFor(() => (editor = doc.querySelector('.modal input[aria-label="' + plugin.getLabel("VR_NAME") + '"]')),
+        "menu rename opens the name editor");
+      check(editor.value === "Tall stencil", "Menu rename lost the current stencil name");
+      editor.value = "Renamed stencil";
+      editor.dispatchEvent(new win.Event("input", { bubbles: true }));
+      key(editor, "Enter");
+      search("Renamed stencil");
+      await c.waitFor(() => cardFor("Renamed stencil"), "menu name appears in search");
+    } finally { controller.show = showMenu; }
+    const renamed = await diskItem();
+    check(renamed.name === "Renamed stencil" && renamed.id === original.id &&
+      JSON.stringify(renamed.elements) === JSON.stringify(original.elements), "Renaming changed stencil identity or contents");
+    check(plugin.visualResources.collections.state(stencilLocator).favorite && count() === before.size,
+      "Renaming lost the favorite or inserted another stencil");
+    plugin.settings.visualResources = preferences;
+    return { assertions: ["tall stencil thumbnail fits entirely", "drag inserts visible and editable text when rawText is empty",
+      "one undo removes the stencil", "inline rename accepts Enter and cancels with Escape",
+      "action menu rename preserves identity, elements and curation"] };
   });
   await runCase("native:visual-resources:svg-strokes-and-curation", async () => {
     const resources = plugin.visualResources;

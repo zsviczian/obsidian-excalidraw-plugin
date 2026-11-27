@@ -1,4 +1,4 @@
-import { Component, Platform, setIcon } from "obsidian";
+import { Component, Platform, setIcon, setTooltip } from "obsidian";
 import { t } from "src/lang/helpers";
 import type { VisualResource } from "src/types/visualResourceTypes";
 import { setStyle } from "src/utils/styleUtils";
@@ -23,6 +23,7 @@ interface GalleryActions {
   frames?: (resource: VisualResource) => void;
   inspectFrames?: (resource: VisualResource) => Promise<VisualResource[]>;
   menu?: (resource: VisualResource, button: HTMLElement, event: MouseEvent) => void;
+  rename?: (resource: VisualResource, name: string) => void;
   drag?: (resource: VisualResource, transfer: DataTransfer) => void;
   escape?: () => void;
   selected?: (resource: VisualResource) => boolean;
@@ -171,8 +172,11 @@ export class VisualResourceGallery extends Component {
     const win = grid.ownerDocument.defaultView;
     const card = grid.createDiv({ cls: "excalidraw-resource-card" });
     const selected = this.actions.selected?.(resource);
-    const button = selected === undefined ? card.createEl("button", {
-      cls: "excalidraw-resource-body", attr: { type: "button", "aria-label": resource.title },
+    const rename = selected === undefined && resource.locator.provider === "stencil" && this.actions.rename;
+    const row = rename ? card.createDiv({ cls: "excalidraw-resource-body is-renamable" }) : card;
+    const button = selected === undefined ? row.createEl("button", {
+      cls: rename ? "excalidraw-resource-preview-button" : "excalidraw-resource-body",
+      attr: { type: "button", "aria-label": resource.title },
     }) : null;
     const body = button ?? card.createEl("label", { cls: "excalidraw-resource-body" });
     if (button) {
@@ -191,8 +195,9 @@ export class VisualResourceGallery extends Component {
     if (this.options.background) setStyle(preview, { backgroundColor: this.options.background });
     const icon = resource.locator.provider === "lucide" ? "sparkles" : KIND_ICONS[resource.kind];
     setIcon(preview, icon);
-    const text = body.createSpan({ cls: "excalidraw-resource-label" });
-    text.createSpan({ text: resource.title });
+    const text = (rename ? row : body).createSpan({ cls: "excalidraw-resource-label" });
+    if (rename) this.editableTitle(text, resource, name => rename(resource, name));
+    else text.createSpan({ text: resource.title });
     if (this.options.list) text.createSpan({ text: resource.source, cls: "excalidraw-resource-source" });
     setIcon(card.createSpan({ cls: "excalidraw-resource-kind", attr: {
       role: "img", "aria-label": t(KIND_NAMES[resource.locator.provider === "lucide" ? "lucide" : resource.kind]),
@@ -245,6 +250,35 @@ export class VisualResourceGallery extends Component {
       this.observed.set(preview, task);
       this.observer.observe(preview);
     } else this.enqueue(task);
+  }
+
+  private editableTitle(label: HTMLElement, resource: VisualResource, rename: (name: string) => void): void {
+    const name = label.createEl("button", { cls: "excalidraw-resource-rename", text: resource.title,
+      attr: { type: "button", "aria-label": t("VR_RENAME") + " " + resource.title } });
+    setTooltip(name, t("VR_RENAME"));
+    name.onclick = () => {
+      const input = label.createEl("input", { cls: "excalidraw-resource-name-input", type: "text",
+        value: resource.title, attr: { "aria-label": t("VR_NAME") } });
+      const finish = (save: boolean, refocus: boolean) => {
+        input.onblur = null;
+        if (!input.isConnected) return;
+        input.replaceWith(name);
+        if (refocus) name.focus();
+        const title = input.value.trim();
+        if (save && title && title !== resource.title) rename(title);
+      };
+      input.onblur = () => finish(true, false);
+      input.oncontextmenu = event => event.stopPropagation();
+      input.onkeydown = event => {
+        if (event.isComposing || event.key !== "Enter" && event.key !== "Escape") return;
+        event.preventDefault();
+        event.stopPropagation();
+        finish(event.key === "Enter", true);
+      };
+      name.remove();
+      input.focus();
+      input.select();
+    };
   }
 
   private enqueue(task: PreviewTask): void {

@@ -184,6 +184,46 @@ test("stencil moves keep empty files and can resume after source cleanup fails",
   } finally { globalThis.PLUGIN_VERSION = originalVersion; harness.close(); }
 });
 
+test("stencil rename changes only the owned item name in vault and legacy libraries", async () => {
+  const harness = sourceHarness({ obsidian, "src/lang/helpers": t,
+    "src/constants/constants": { restoreLibraryItems: items => items },
+    "src/constants/safeUrls": { URLs: { GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES_TAG: "release" } },
+    "src/shared/Dialogs/StencilLibraryMigrationPrompt": { StencilLibraryMigrationPrompt: class {} },
+    "src/utils/obsidianUtils": { getExcalidrawViews: () => [] },
+  });
+  const originalVersion = globalThis.PLUGIN_VERSION;
+  globalThis.PLUGIN_VERSION = "test";
+  try {
+    const { StencilLibraryManager } = await harness.importModule("src/core/managers/StencilLibraryManager.ts");
+    const vault = vaultSetup(), plugin = makePlugin(vault);
+    const manager = new StencilLibraryManager(plugin);
+    const owner = await manager.createResourceLibrary("Owner");
+    const other = await manager.createResourceLibrary("Other");
+    const stencil = { id: "generated", status: "unpublished", created: 1, elements: [{ id: "label", type: "text", text: "The shape", rawText: "" }] };
+    const remote = { ...stencil, id: "remote", name: "Remote edit" };
+    let legacy = { type: "excalidrawlib", version: 2, custom: "keep", libraryItems: [stencil] };
+    const read = async path => JSON.parse(await vault.read(vault.getFileByPath(path)));
+    await vault.modify(vault.getFileByPath(owner), JSON.stringify(legacy));
+    await vault.modify(vault.getFileByPath(other), JSON.stringify(legacy));
+    await manager.getResourceLibraries();
+    // Sync changes the file after the browser has taken a snapshot.
+    const edit = { ...legacy, libraryItems: [{ ...stencil, status: "published" }, remote] };
+    await vault.modify(vault.getFileByPath(owner), JSON.stringify(edit));
+    await manager.renameResourceStencil(owner, stencil.id, "  Tall shape  ");
+    assert.deepEqual(await read(owner), { ...edit, libraryItems: [{ ...edit.libraryItems[0], name: "Tall shape" }, remote] });
+    assert.deepEqual(await read(other), legacy);
+    await assert.rejects(manager.renameResourceStencil(owner, "removed", "New"), /unique match/);
+    await assert.rejects(manager.renameResourceStencil(owner, stencil.id, " "), /empty/);
+
+    plugin.settings.libraryStorageMode = "data-json";
+    plugin.getLegacyStencilLibrary = () => legacy;
+    plugin.setLegacyStencilLibrary = async data => { legacy = data; };
+    await manager.renameResourceStencil(undefined, stencil.id, "Legacy shape");
+    assert.deepEqual(legacy, { type: "excalidrawlib", version: 2, custom: "keep", libraryItems: [{ ...stencil, name: "Legacy shape" }] });
+    assert.equal((await manager.getResourceLibraries()).items[0].item.name, "Legacy shape");
+  } finally { globalThis.PLUGIN_VERSION = originalVersion; harness.close(); }
+});
+
 test("framework catalog is local-first and coalesces checks for 24 hours", async () => {
   const asset = readFileSync(new URL("../../visual-frameworks/thinking-frameworks.excalidrawlib", import.meta.url), "utf8");
   const directory = readFileSync(new URL("../../visual-frameworks/directory-info.json", import.meta.url), "utf8");

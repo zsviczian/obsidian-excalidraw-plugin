@@ -12,4 +12,6 @@ For new blank drawings, choose a framework, continue with a blank drawing, or de
 
 Favorites, manual selections and playlist memberships live in `resource-collections.json` in the Excalidraw folder. Local edits replay against the latest vault contents. Obsidian Sync or another sync provider still determines how simultaneous offline edits to that file are reconciled. Confirmed deletions leave unresolved registry entries, while currently unavailable resources are omitted from the gallery until they resolve.
 
+To rename a stencil, click its name and press Enter to save or Escape to cancel. You can also choose **Rename** from its action menu. The name is saved in the stencil’s owning library.
+
 Stencil moves preserve the original item ID and check the destination before removing the source copy. If the second write fails, both copies may remain. Empty stencil libraries stay available until explicitly deleted.

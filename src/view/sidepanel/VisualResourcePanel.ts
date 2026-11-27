@@ -170,6 +170,7 @@ export class VisualResourcePanel {
         favorite: !this.service.collections.state(resource.locator).favorite,
       })),
       menu: (resource: VisualResource, el: HTMLElement, event: MouseEvent) => this.show(this.menus.resource(resource, this.collection, () => this.tab === tab, value => { this.svgSource = value; }), el, event),
+      rename: (resource: VisualResource, name: string) => this.run(this.menus.renameStencil(resource, name)),
       frames: (resource: VisualResource) => {
         const revision = ++frameLoad;
         selectedParent = resource;
