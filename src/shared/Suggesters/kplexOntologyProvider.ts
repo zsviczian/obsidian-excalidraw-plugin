@@ -2,13 +2,10 @@
  * this consumer validates bounded detached data and retains only the offered API incarnation.
  * Every read reacquires the public window entry point, including after reload or in a popout. */
 
-type DataRecord = Record<string, unknown>;
-type PublicRead = (this: DataRecord, ...args: unknown[]) => unknown;
+import { getKplexPublicRead, isPublicRecord as record } from "src/utils/kplexPublicApi";
+
 export type OntologyFieldSuggestion = Readonly<{name: string; partner?: string; description?: string}>;
-export type OntologyCompletionOffer = Readonly<{
-  provider: DataRecord;
-  api: DataRecord;
-  read: PublicRead;
+export type OntologyCompletionOffer = Readonly<NonNullable<ReturnType<typeof getKplexPublicRead>> & {
   configuration: number;
   text: string;
   cursor: number;
@@ -19,25 +16,6 @@ export type OntologyCompletionOffer = Readonly<{
 const MAX_TEXT = 65_536;
 const MAX_ITEMS = 100;
 const MAX_OUTPUT = 1_048_576;
-
-/** Narrow only plain object-shaped protocol values; arrays are never envelopes or API roots. */
-function record(value: unknown): value is DataRecord {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-/** A public method is invoked with its captured API as receiver, preserving service ownership. */
-function callable(value: unknown): value is PublicRead {
-  return typeof value === "function";
-}
-
-/** Read the documented public root, preferring the input's realm and its supported popout alias. */
-function providerFor(input: HTMLInputElement | HTMLTextAreaElement): DataRecord | null {
-  const owner = input.ownerDocument.defaultView ?? window;
-  const local: unknown = Reflect.get(owner, "kplexApi");
-  if (record(local)) return local;
-  const main: unknown = Reflect.get(window, "kplexApi");
-  return record(main) ? main : null;
-}
 
 /** Request current public completion without loading K-Plex, reading private settings or issuing
  * graph work. Missing, old, disabled, retired, malformed and throwing providers are silent fallbacks.
@@ -50,15 +28,9 @@ export function readKplexOntologyCompletion(
   if (input.isConnected === false || cursor === null || cursor !== input.selectionEnd ||
     text.length > MAX_TEXT || !Number.isInteger(limit) || limit < 1 || limit > MAX_ITEMS) return null;
   try {
-    const provider = providerFor(input);
-    if (!provider || provider.version !== 1 || !record(provider.v1)) return null;
-    const api = provider.v1;
-    if (api.version !== 1 || !callable(api.capabilities) || !callable(api.completeOntology)) return null;
-    const capabilities: unknown = api.capabilities.call(api);
-    if (!record(capabilities) || capabilities.ok !== true || !record(capabilities.value) ||
-      !Array.isArray(capabilities.value.operations) || capabilities.value.operations.length > 64 ||
-      !capabilities.value.operations.includes("completeOntology")) return null;
-    const read = api.completeOntology;
+    const operation = getKplexPublicRead(input.ownerDocument.defaultView ?? window, "completeOntology");
+    if (!operation) return null;
+    const { api, read } = operation;
     const result: unknown = read.call(api, {text, cursor, limit});
     if (!record(result) || result.ok !== true || !record(result.revision) ||
       !Number.isSafeInteger(result.revision.configuration) || Number(result.revision.configuration) < 0 ||
@@ -81,7 +53,7 @@ export function readKplexOntologyCompletion(
       if (budget > MAX_OUTPUT) return null;
       items.push({name: field.name, partner, description});
     }
-    return {provider, api, read, configuration: Number(result.revision.configuration), text, cursor,
+    return {...operation, configuration: Number(result.revision.configuration), text, cursor,
       range: {start, end: cursor}, items};
   } catch {
     // Another optional plugin's failure must not interrupt ordinary input or existing suggestions.

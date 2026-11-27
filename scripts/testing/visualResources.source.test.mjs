@@ -47,6 +47,28 @@ test("frame keywords surface only the parent and provider identities remain inde
     model.visualResourceKey({ provider: "framework", id: "same", path: "B" }));
 });
 
+test("fine filters affect only their owning resource type or frame list", () => {
+  const icon = { locator: { provider: "vault", path: "one.svg" }, kind: "icon", title: "Mark",
+    source: "one.svg", keywords: [], groups: ["icon:Logo"] };
+  const frame = { locator: { provider: "vault", path: "board.md", frame: "a" }, kind: "frame",
+    title: "Interview", source: "board.md", keywords: [], groups: ["frame:Named frames"] };
+  const drawing = { locator: { provider: "vault", path: "board.md" }, kind: "drawing",
+    title: "Board", source: "board.md", keywords: [], groups: ["icon:Logo", "drawing:Boards", "frame:Named frames"], frames: [frame] };
+  assert.deepEqual(model.filterVisualResources([icon, drawing], "", ["icon", "drawing"], ["drawing:Boards"]), [drawing]);
+  assert.deepEqual(model.filterVisualResources([drawing], "interview", ["drawing"], ["drawing:Boards"]), []);
+  assert.deepEqual(model.filterVisualResources([drawing], "interview", ["drawing"], ["drawing:Boards", "frame:Named frames"]), [drawing]);
+  assert.deepEqual(model.filterVisualResources([drawing], "", ["drawing"], ["frame:Named frames"]), []);
+  assert.deepEqual(model.filterVisualResources([icon, drawing], "", ["icon"], ["icon:Logo"]), [icon, drawing]);
+});
+
+test("cold drawing previews reject asset loading and compressed scenes with large render work", () => {
+  assert.equal(model.admitDrawingPreview([{ type: "rectangle" }, { type: "image", isDeleted: true }]), true);
+  assert.equal(model.admitDrawingPreview([{ type: "image" }]), false);
+  assert.equal(model.admitDrawingPreview(Array(513).fill({ type: "ellipse" })), false);
+  assert.equal(model.admitDrawingPreview([{ type: "freedraw", points: Array(16_001).fill([1, 1]) }]), false);
+  assert.equal(model.admitDrawingPreview([{ type: "text", text: "x".repeat(8_001) }]), false);
+});
+
 class Component { registerEvent() {} }
 class TFolder {}
 const vaultSetup = () => {

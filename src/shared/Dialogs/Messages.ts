@@ -19,7 +19,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 `,
 "2.30.0": `
 ## New and improved
-- Browse vault visuals, named frames, stencils, and Lucide icons in **Visual Resources**, and organize favorites and playlists across drawings.
+- Browse visuals, named frames, stencils, and Lucide icons in **Visual Resources**. Organize favorites and playlists, and insert vault visuals into Excalidraw, Markdown, or Obsidian Canvas.
 - Start a new drawing with an editable **Thinking Framework**, or choose **Blank drawing** to start from scratch.
 `,
 "2.29.4": `

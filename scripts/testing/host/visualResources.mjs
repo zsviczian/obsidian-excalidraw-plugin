@@ -9,6 +9,7 @@ export const visualResourceCaseIds = [
   "native:visual-resources:panel-controls",
   "native:visual-resources:stencils",
   "native:visual-resources:svg-strokes-and-curation",
+  "native:visual-resources:document-targets-and-preview-budget",
   "native:visual-resources:popout-drop",
   "native:visual-resources:framework-picker",
   "native:visual-resources:reload",
@@ -145,6 +146,9 @@ async function exercise(c, drawingPath, library) {
     const toolbarButton = key => [...panel.querySelectorAll(".excalidraw-resource-search-tools button")]
       .find(button => button.getAttribute("aria-label") === plugin.getLabel(key));
     const filter = toolbarButton("VR_FILTER");
+    const toolbarLabels = [...panel.querySelectorAll(".excalidraw-resource-search-tools button")].map(button => button.getAttribute("aria-label"));
+    check(toolbarLabels.join("|") === ["VR_FILTER", "VR_COLLECTIONS", "VR_SELECT", "VR_LAYOUT", "VR_SETTINGS", "VR_POPOUT"]
+      .map(key => plugin.getLabel(key)).join("|"), "Toolbar actions are out of order or still include the help button");
     const originalWidth = panel.style.width;
     try {
       panel.style.width = "720px";
@@ -159,15 +163,20 @@ async function exercise(c, drawingPath, library) {
       item.closest(".menu-item").click();
     };
     const openFilters = () => filter.click();
+    const groups = JSON.stringify(plugin.settings.visualResources.groups);
     openFilters();
     await menuAction("VR_SELECT_NO_FILTERS");
-    check(!plugin.settings.visualResources.filters.length && !plugin.settings.visualResources.groups.length,
-      "Select none did not clear resource kinds and discovery groups");
+    check(!plugin.settings.visualResources.filters.length && JSON.stringify(plugin.settings.visualResources.groups) === groups,
+      "Select none changed discovery groups or left resource types enabled");
     check(!panel.querySelector(".excalidraw-resource-card"), "Select none left visible results");
     openFilters();
+    await c.waitFor(() => [...doc.querySelectorAll(".menu-item-title")].some(el => el.textContent === plugin.getLabel("VR_SELECT_ALL_FILTERS")),
+      "empty resource types filter menu");
+    check(![...doc.querySelectorAll(".menu-item-title")].some(el => el.textContent === plugin.getLabel("VR_ICON_GROUPS") ||
+      el.textContent === plugin.getLabel("VR_FRAME_GROUPS")), "Fine filters remained visible with their resource types disabled");
     await menuAction("VR_SELECT_ALL_FILTERS");
-    check(plugin.settings.visualResources.filters.includes("other") && plugin.settings.visualResources.groups.length > 0,
-      "Select all did not enable all kinds and discovery groups");
+    check(plugin.settings.visualResources.filters.includes("other") && JSON.stringify(plugin.settings.visualResources.groups) === groups,
+      "Select all changed discovery groups or skipped a resource type");
     search("Resource probe");
     await c.waitFor(card, "resource visible after Select all");
     const before = count();
@@ -183,6 +192,11 @@ async function exercise(c, drawingPath, library) {
       "Toggling a checkbox removed focus or failed to enable bulk actions");
     check(selectionBar.textContent.includes(plugin.getLabel("VR_SELECTION_COUNT").replace("{COUNT}", "1")),
       "Selection count did not update");
+    selectedActions.click();
+    await menuAction("VR_FAVORITE");
+    await c.waitFor(() => plugin.visualResources.collections.state(locator).favorite, "bulk favorite applied without an existing playlist");
+    await plugin.visualResources.collections.curate([locator], { favorite: false });
+    await c.waitFor(() => !plugin.visualResources.collections.state(locator).favorite, "test favorite cleared");
     checkbox.dispatchEvent(new win.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     check(!panel.querySelector(".excalidraw-resource-checkbox") && card() && count() === before,
       "Exiting selection mode changed the scene or left selection controls");
@@ -196,7 +210,7 @@ async function exercise(c, drawingPath, library) {
     search("Divider test frame");
     let framesButton;
     await c.waitFor(() => (framesButton = [...panel.querySelectorAll(".excalidraw-resource-actions button")]
-      .find(button => button.getAttribute("aria-label") === plugin.getLabel("VR_FRAME") + " (1)" &&
+      .find(button => button.getAttribute("aria-label") === plugin.getLabel("VR_BROWSE_FRAMES") + " (1)" &&
         !button.classList.contains("excalidraw-display-none"))), "named-frame count in search results");
     framesButton.click();
     const divider = panel.querySelector(".excalidraw-resource-divider");
@@ -226,7 +240,8 @@ async function exercise(c, drawingPath, library) {
     plugin.settings.visualResources = preferences;
     await plugin.saveSettings();
     return { assertions: ["canvas button uses neighboring toolbar styling", "toolbar shares the search row at wide widths and wraps when narrow",
-      "bulk filter actions update kinds and groups", "checkbox selection keeps focus and preserves the scene",
+      "bulk filter actions change resource types and preserve their fine filters",
+      "bulk favorite works without a playlist, and selection preserves the scene",
       "pointer and keyboard resize the frame split without losing the current search"] };
   });
   await runCase("native:visual-resources:stencils", async () => {
@@ -372,14 +387,132 @@ async function exercise(c, drawingPath, library) {
     await c.waitFor(() => count() > before, "editable SVG strokes published");
     check(api.getSceneElements().filter(element => element.type === "image").length === 1, "Editable import added an image element");
     await c.waitFor(() => app.metadataCache.getFileCache(view.file)?.frontmatter?.["excalidraw-svg-sources"]?.length === 1, "SVG source property cached");
+    const doc = panel.ownerDocument, win = doc.defaultView, controller = plugin.visualResourcePanel;
+    const previous = Object.getOwnPropertyDescriptor(win, "kplexApi");
+    const showMenu = controller.show;
+    Object.defineProperty(win, "kplexApi", { configurable: true, value: { version: 1, v1: {
+      version: 1,
+      capabilities: () => ({ ok: true, value: { operations: ["ontology"] } }),
+      ontology: () => ({ ok: true, value: { fields: [
+        { name: "Illustration parent", configured: true, roles: ["parent"] },
+        { name: "Derived artwork", configured: true, roles: ["child"] },
+      ] } }),
+    } } });
+    controller.show = function(menu, ...args) { return showMenu.call(this, menu.setUseNativeMenu(false), ...args); };
+    try {
+      await controller.open(view);
+      search("Resource probe");
+      await c.waitFor(() => card() && resources.writable(view), "SVG stroke options have an editable drawing");
+      card().closest(".excalidraw-resource-card").querySelector(".excalidraw-resource-actions button:last-child").click();
+      let strokes;
+      await c.waitFor(() => (strokes = [...doc.querySelectorAll(".menu-item-title")]
+        .find(el => el.textContent === plugin.getLabel("VR_INSERT_STROKES"))), "stroke insertion offers a property chooser");
+      strokes.closest(".menu-item").click();
+      let modal;
+      await c.waitFor(() => (modal = [...doc.querySelectorAll(".modal")].find(el => el.querySelector(".modal-title")?.textContent ===
+        plugin.getLabel("VR_INSERT_STROKES"))), "SVG stroke dialog opens");
+      const setting = key => [...modal.querySelectorAll(".setting-item-name")]
+        .find(el => el.textContent === plugin.getLabel(key))?.closest(".setting-item");
+      setting("VR_SVG_RETAIN_LINK").querySelector(".checkbox-container").click();
+      const direction = setting("VR_KPLEX_DIRECTION").querySelector("select");
+      const fields = setting("VR_KPLEX_FIELD").querySelector("select");
+      check([...fields.options].some(option => option.value === "Illustration parent") &&
+        ![...fields.options].some(option => option.value === "Derived artwork"), "K-Plex fields did not follow the selected relationship direction");
+      direction.value = "child";
+      direction.dispatchEvent(new win.Event("change", { bubbles: true }));
+      fields.value = "Derived artwork";
+      fields.dispatchEvent(new win.Event("change", { bubbles: true }));
+      check(setting("VR_SVG_PROPERTY").querySelector("input").value === "Derived artwork", "Chosen K-Plex property did not reach the editable field");
+      modal.querySelector("button.mod-cta").click();
+      await c.waitFor(() => app.metadataCache.getFileCache(view.file)?.frontmatter?.["Derived artwork"]?.length === 1,
+        "stroke insertion writes the chosen K-Plex property");
+    } finally {
+      if (previous) Object.defineProperty(win, "kplexApi", previous);
+      else Reflect.deleteProperty(win, "kplexApi");
+      controller.show = showMenu;
+    }
     await resources.collections.savePlaylist("Native playlist", "native-list");
     await resources.collections.curate([locator], { favorite: true, playlist: "native-list", member: true });
     await resources.collections.refresh();
     check(resources.collections.state(locator).favorite && resources.collections.state(locator).memberships.includes("native-list"), "Favorite and playlist membership did not persist");
     await resources.collections.curate([locator], { playlist: "native-list", member: false });
     check(resources.collections.state(locator).favorite && !resources.collections.state(locator).memberships.includes("native-list"), "Removing membership changed the independent favorite");
-    return { assertions: ["SVG conversion publishes editable elements", "source link appears in the drawing properties",
+    return { assertions: ["SVG conversion publishes editable elements", "source link appears in the default and selected ontology properties",
       "playlist membership and favorite are independent"], sourceLinks: 1, nativeElements: count() - before };
+  });
+  await runCase("native:visual-resources:document-targets-and-preview-budget", async () => {
+    const doc = panel.ownerDocument;
+    const original = await vault.read(view.file);
+    const large = await vault.create(root + "/Large frame preview probe.excalidraw.md", original + "\n" + " ".repeat(1024 * 1024 + 128));
+    await c.waitFor(() => app.metadataCache.getFileCache(large)?.frontmatter?.["excalidraw-anchors"]?.includes("Divider test frame"),
+      "large drawing has indexed frame metadata");
+    const note = await vault.create(root + "/Destination note.md", "Test note\n");
+    const canvas = await vault.create(root + "/Destination canvas.canvas", '{"nodes":[],"edges":[]}');
+    const documentLeaf = workspace.getLeaf("tab");
+    c.defer(() => documentLeaf.detach());
+    await documentLeaf.setViewState({ type: "markdown", state: { file: note.path, mode: "source" }, active: true });
+    await c.waitFor(() => documentLeaf.view.file === note && documentLeaf.view.getMode() === "source", "note editor is writable");
+    workspace.setActiveLeaf(documentLeaf, { focus: true });
+    check(app.commands.executeCommandById(id + ":visual-resources"), "Visual Resources command unavailable from Markdown");
+    await c.waitFor(() => plugin.visualResourcePanel.target === documentLeaf.view, "Markdown is the insertion target");
+    search("Resource probe");
+    await c.waitFor(() => card()?.getAttribute("aria-disabled") === null, "SVG can be embedded in Markdown");
+    card().click();
+    await c.waitFor(() => documentLeaf.view.editor.getValue().includes("![[") &&
+      documentLeaf.view.editor.getValue().includes("Resource probe"), "note has a linked SVG embed");
+    const controller = plugin.visualResourcePanel;
+    const show = controller.show;
+    controller.show = function(menu, ...args) { return show.call(this, menu.setUseNativeMenu(false), ...args); };
+    try {
+      card().closest(".excalidraw-resource-card").querySelector(".excalidraw-resource-actions button:last-child").click();
+      await c.waitFor(() => [...doc.querySelectorAll(".menu-item-title")].some(el => el.textContent === plugin.getLabel("VR_SVG_OPTIONS")),
+        "stroke source defaults are available from Markdown");
+      check(![...doc.querySelectorAll(".menu-item-title")].some(el => el.textContent === plugin.getLabel("VR_INSERT_STROKES")),
+        "Markdown menu offered to insert editable strokes");
+      controller.menu.hide();
+    } finally { controller.show = show; }
+
+    const read = vault.read;
+    let largeReads = 0;
+    vault.read = function(file) {
+      if (file === large) largeReads++;
+      return read.call(this, file);
+    };
+    try {
+      search("Large frame preview probe");
+      let browse;
+      await c.waitFor(() => (browse = [...panel.querySelectorAll(".excalidraw-resource-main .excalidraw-resource-actions button")]
+        .find(button => button.getAttribute("aria-label") === plugin.getLabel("VR_BROWSE_FRAMES") + " (1)")),
+        "large drawing uses its indexed frame count");
+      browse.click();
+      await c.waitFor(() => panel.querySelector(".excalidraw-resource-frames .excalidraw-resource-body")?.textContent.includes("Divider test frame"),
+        "large drawing lists frames from its metadata");
+      const resources = plugin.visualResources;
+      const descriptor = (await resources.list()).find(item => item.source === large.path);
+      check(await resources.preview(descriptor, false) === null, "Cold large drawing was rendered");
+      const frame = (await resources.frames(descriptor))[0];
+      check(await resources.preview(frame, false) === null && largeReads === 0,
+        "Listing a large drawing or frame read its full scene");
+      panel.querySelector(".excalidraw-resource-frames .excalidraw-resource-body").click();
+      await c.waitFor(() => documentLeaf.view.editor.getValue().includes("#^frame="), "named frame embedded in Markdown");
+
+      await documentLeaf.openFile(canvas);
+      workspace.setActiveLeaf(documentLeaf, { focus: true });
+      await c.waitFor(() => documentLeaf.view.getViewType() === "canvas" && plugin.visualResourcePanel.target === documentLeaf.view,
+        "native Canvas is the insertion target");
+      const frameCard = () => panel.querySelector(".excalidraw-resource-frames .excalidraw-resource-body");
+      await c.waitFor(() => frameCard()?.getAttribute("aria-disabled") === null, "named frame can be added to Canvas");
+      frameCard().click();
+      await c.waitFor(async () => JSON.parse(await read.call(vault, canvas)).nodes.some(node =>
+        node.type === "file" && node.file === large.path && node.subpath?.startsWith("#^frame=")), "Canvas saved a native frame file node");
+    } finally { vault.read = read; }
+    await documentLeaf.setViewState({ type: "empty", state: {} });
+    documentLeaf.detach();
+    workspace.setActiveLeaf(leaf, { focus: true });
+    await plugin.visualResourcePanel.open(view);
+    check(doc === panel.ownerDocument, "document insertion changed the panel's owning document");
+    return { assertions: ["Markdown receives linked SVG and named-frame embeds", "Canvas saves a native file node with its frame subpath",
+      "large drawing and frame preview misses skip full scene reads"] };
   });
   await runCase("native:visual-resources:popout-drop", async () => {
     const receivingFile = await plugin.createDrawing("Resource drop receiver.excalidraw.md", root, drawingData);

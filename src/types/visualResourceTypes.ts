@@ -48,6 +48,8 @@ export interface VisualResourcePreferences {
   lightBackground?: string;
   darkBackground?: string;
   excludeFolders?: string;
+  linkSvgSource?: boolean;
+  svgSourceProperty?: string;
 }
 
 export interface VisualDiscoveryCandidate {

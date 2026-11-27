@@ -1,6 +1,7 @@
 import type {
   VisualDiscoveryCandidate, VisualDiscoveryRule, VisualResource, VisualResourceFilter, VisualResourceLocator,
 } from "src/types/visualResourceTypes";
+import type { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/src/types";
 
 const ICON_EXTENSIONS = ["png", "jpg", "jpeg", "gif", "svg", "webp"];
 export const VISUAL_RESOURCE_FILTERS: readonly VisualResourceFilter[] = ["icon", "lucide", "image", "drawing", "stencil", "framework", "other"];
@@ -8,6 +9,21 @@ export const VISUAL_RESOURCE_FILTERS: readonly VisualResourceFilter[] = ["icon",
 export const DEFAULT_ICON_RULES: readonly VisualDiscoveryRule[] = ["Icon", "Stickfigure", "Logo"].map(name => ({
   name, pattern: "^" + name.toLowerCase() + " - (.*?)(?: - [^-]+)?$",
 }));
+
+/** A cold gallery render is limited to small, self-contained vector scenes. */
+export function admitDrawingPreview(elements: readonly ExcalidrawElement[]): boolean {
+  if (elements.length > 512) return false;
+  let points = 0;
+  let textLength = 0;
+  for (const element of elements) {
+    if (element.isDeleted) continue;
+    if (element.type === "image" || element.type === "embeddable" || element.type === "iframe") return false;
+    if ("points" in element) points += element.points.length;
+    if (element.type === "text") textLength += element.text.length;
+    if (points > 16_000 || textLength > 8_000) return false;
+  }
+  return true;
+}
 
 /** Provider-qualified identity. A native stencil ID survives an ownership change. */
 export function visualResourceKey(locator: VisualResourceLocator): string {
@@ -83,14 +99,23 @@ export function compileVisualRules(kind: "icon" | "drawing" | "frame", rules: re
 /** Apply independent resource-kind, discovery-group, and text filters. */
 export function filterVisualResources(resources: readonly VisualResource[], query: string, filters: readonly VisualResourceFilter[], groups?: readonly string[]): VisualResource[] {
   const terms = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
+  const allowGroup = (resource: VisualResource, prefix: string) => {
+    if (groups === undefined) return true;
+    const matches = resource.groups?.filter(group => group.startsWith(prefix + ":"));
+    return !matches?.length || matches.some(group => groups.includes(group));
+  };
   return resources.filter(resource => {
-    const kind = resource.locator.provider === "lucide" ? "lucide" : resource.kind === "frame" ? "drawing" : resource.kind === "note" ? "image" : resource.kind;
-    const hasIconGroup = resource.groups?.some(group => group.startsWith("icon:"));
-    const byKind = (filters.includes(kind) || filters.includes("icon") && hasIconGroup) && !resource.other;
-    if (!(resource.other && filters.includes("other")) &&
-        (!byKind || groups !== undefined && resource.groups?.length && !resource.groups.some(group => groups.includes(group)))) return false;
+    const kind = resource.locator.provider === "lucide" ? "lucide" :
+      resource.kind === "frame" ? "drawing" : resource.kind === "note" ? "image" : resource.kind;
+    const drawing = kind === "drawing" && filters.includes("drawing");
+    const icon = filters.includes("icon") && (kind === "icon" || resource.groups?.some(group => group.startsWith("icon:"))) &&
+      allowGroup(resource, "icon");
+    const category = drawing ? allowGroup(resource, resource.kind === "frame" ? "frame" : "drawing") :
+      kind !== "icon" && kind !== "drawing" && filters.includes(kind);
+    if (resource.other ? !filters.includes("other") : !category && !icon) return false;
     const text = [resource.title, resource.source, ...resource.keywords,
-      ...(resource.frames?.flatMap(frame => [frame.title, ...frame.keywords]) ?? [])].join(" ").toLowerCase();
+      ...(drawing ? resource.frames?.filter(frame => allowGroup(frame, "frame"))
+        .flatMap(frame => [frame.title, ...frame.keywords]) ?? [] : [])].join(" ").toLowerCase();
     return terms.every(term => text.includes(term));
   });
 }

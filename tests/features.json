@@ -1700,6 +1700,7 @@
             "native:visual-resources:panel-controls",
             "native:visual-resources:stencils",
             "native:visual-resources:svg-strokes-and-curation",
+            "native:visual-resources:document-targets-and-preview-budget",
             "native:visual-resources:popout-drop",
             "native:visual-resources:framework-picker",
             "native:visual-resources:reload"

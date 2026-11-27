@@ -1,4 +1,4 @@
-import { FileSystemAdapter, getAllTags, getIcon, Notice, Platform, type TFile } from "obsidian";
+import { FileSystemAdapter, getAllTags, getIcon, MarkdownView, Notice, Platform, type TFile, type View } from "obsidian";
 import type { LibraryItem } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { IMAGE_TYPES, nanoid } from "src/constants/constants";
 import type ExcalidrawPlugin from "src/core/main";
@@ -13,10 +13,15 @@ import { EmbeddedFile, EmbeddedFilesLoader } from "../EmbeddedFileLoader";
 import { getLucideIcons, prepareLucideIcon } from "../lucideIcons";
 import { FrameworkCatalog } from "./FrameworkCatalog";
 import { ResourceCollections } from "./ResourceCollections";
-import { compileVisualExclusions, compileVisualRules, readIconLibrarySettings, visualResourceKey } from "./visualResourceModel";
+import { addCanvasResource, drawingTarget, writableDocument } from "./VisualResourceTargets";
+import { admitDrawingPreview, compileVisualExclusions, compileVisualRules, readIconLibrarySettings, visualResourceKey } from "./visualResourceModel";
 
 const DRAG_TYPE = "application/x-obsidian-excalidraw-visual-resource";
 const PREVIEW_CACHE_BYTES = 2 * 1024 * 1024;
+const DRAWING_PREVIEW_BYTES = 256 * 1024;
+const COLD_DRAWING_BYTES = 64 * 1024;
+const COLD_FRAME_BYTES = 32 * 1024;
+const FRAME_INSPECTION_BYTES = 1024 * 1024;
 
 type ScenePoint = { x: number; y: number };
 type MindMapBuilder = {
@@ -36,11 +41,13 @@ export class VisualResources {
   private readonly libraryPreviewKeys = new WeakMap<LibraryItem["elements"], string>();
   private readonly framePreviews = new Map<string, { stamp: string; frames: Promise<VisualResource[]> }>();
   private previewBytes = 0;
+  private drawingPreviewQueue: Promise<unknown> = Promise.resolve();
+  private readonly lucideAttachments = new Map<string, TFile>();
 
   constructor(private readonly plugin: ExcalidrawPlugin) {
     this.collections = plugin.addChild(new ResourceCollections(plugin));
     this.frameworks = new FrameworkCatalog(plugin);
-    plugin.register(() => { this.disposed = true; this.endDrag(); this.previews.clear(); this.framePreviews.clear(); });
+    plugin.register(() => { this.disposed = true; this.endDrag(); this.previews.clear(); this.framePreviews.clear(); this.lucideAttachments.clear(); });
   }
 
   /** Read compatible script settings as defaults without altering the installed script. */
@@ -103,7 +110,7 @@ export class VisualResources {
       const keywords = matches.map(match => match.keyword);
       result.push({ locator, kind, title: keywords[0] || file.basename, source: file.path, keywords,
         groups: [...new Set([...matches.map(match => match.group), ...children.flatMap(child => child.groups ?? [])])],
-        other: !matches.length && !children.length && !explicit,
+        other: !matches.length && !children.length && !explicit && (!candidate.drawing || rules.drawing.length > 0),
         frames: children,
         inspectFrames: children.length > 0 || candidate.drawing && candidate.extension === "excalidraw",
       });
@@ -129,6 +136,8 @@ export class VisualResources {
     if (resource.locator.provider !== "vault") return [];
     const file = this.sourceFile(resource);
     if (!file || !this.plugin.isExcalidrawFile(file)) return [];
+    if (file.stat.size > COLD_DRAWING_BYTES && resource.frames?.length) return resource.frames;
+    if (file.stat.size > FRAME_INSPECTION_BYTES) return [];
     const frameRules = this.rules(scriptName).frame;
     const stamp = JSON.stringify([file.stat.mtime, frameRules]);
     const cached = this.framePreviews.get(file.path);
@@ -178,6 +187,13 @@ export class VisualResources {
     for (const [path, ids] of grouped) {
       const file = this.plugin.app.vault.getFileByPath(path);
       if (!file || !this.plugin.isExcalidrawFile(file)) continue;
+      if (file.stat.size > FRAME_INSPECTION_BYTES) {
+        const names: unknown = this.plugin.app.metadataCache.getFileCache(file)?.frontmatter?.[FRAME_ANCHORS_PROPERTY];
+        if (Array.isArray(names)) for (const name of names) {
+          if (typeof name === "string" && ids.has(name)) results.push(this.frameResource(file, name, name, []));
+        }
+        continue;
+      }
       try {
         const data = await getTemplate(this.plugin, path, false, null, 0);
         for (const frame of getSceneFrames(data.elements)) {
@@ -219,6 +235,53 @@ export class VisualResources {
       !view.isClosingOrMigrating() && !view.isSameFileEditingActive() && !view.isPersistenceBusy() &&
       !view.excalidrawAPI.getAppState().viewModeEnabled &&
       this.plugin.app.vault.getFileByPath(view.file.path) === view.file;
+  }
+
+  public canInsertInto(resource: VisualResource, view: View | null): boolean {
+    if (this.writable(drawingTarget(view))) return true;
+    if (!writableDocument(view)) return false;
+    if (resource.locator.provider === "lucide") return true;
+    const source = this.sourceFile(resource);
+    return resource.locator.provider === "vault" && !!source && source !== view.file;
+  }
+
+  /** Place a vault link in a Markdown editor or native Canvas, or insert on an Excalidraw scene. */
+  public async insertInto(resource: VisualResource, view: View | null, active: () => boolean, scriptName?: string): Promise<void> {
+    const drawing = drawingTarget(view);
+    if (drawing) return this.insert(resource, drawing, active, undefined, scriptName);
+    if (!this.canInsertInto(resource, view) || !active()) return;
+    const vault = this.plugin.app.vault;
+    const target = view.file;
+    const path = target.path;
+    const valid = () => !this.disposed && active() && view.file === target && target.path === path &&
+      vault.getFileByPath(path) === target && writableDocument(view);
+    const subpath = resource.locator.provider === "vault" && resource.locator.frame ? "#^frame=" + resource.locator.frame : undefined;
+    try {
+      const source = resource.locator.provider === "lucide" ? await this.lucideAttachment(resource.locator.icon, path, valid) : this.sourceFile(resource);
+      if (!source || !valid()) return;
+      if (view instanceof MarkdownView) {
+        const link = this.plugin.app.fileManager.generateMarkdownLink(source, target.path, subpath);
+        const embed = IMAGE_TYPES.includes(source.extension.toLowerCase()) || this.plugin.isExcalidrawFile(source);
+        view.editor.replaceSelection(embed ? "!" + link : link);
+      } else {
+        addCanvasResource(view, source, subpath);
+      }
+    } catch { if (active()) new Notice(t("VR_INSERT_FAILED")); }
+  }
+
+  private async lucideAttachment(icon: string, targetPath: string, active: () => boolean): Promise<TFile | null> {
+    if (!/^[a-z0-9-]+$/.test(icon)) return null;
+    const svg = getIcon(icon);
+    if (!svg) return null;
+    svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+    const { vault, fileManager } = this.plugin.app;
+    const cached = this.lucideAttachments.get(icon);
+    if (cached && vault.getFileByPath(cached.path) === cached && await vault.cachedRead(cached) === svg.outerHTML) return cached;
+    const path = await fileManager.getAvailablePathForAttachment(icon + ".svg", targetPath);
+    if (!active()) return null;
+    const file = await vault.create(path, svg.outerHTML);
+    this.lucideAttachments.set(icon, file);
+    return file;
   }
 
   /** Insert through the corresponding native engine, revalidating after each asynchronous preparation. */
@@ -269,7 +332,8 @@ export class VisualResources {
       const source = this.sourceFile(resource);
       if (!source || source === file && this.plugin.isExcalidrawFile(source)) return;
       const frameId = resource.locator.frame;
-      if (frameId) {
+      const anchors: unknown = frameId && this.plugin.app.metadataCache.getFileCache(source)?.frontmatter?.[FRAME_ANCHORS_PROPERTY];
+      if (frameId && !(Array.isArray(anchors) && anchors.includes(frameId))) {
         const data = await getTemplate(this.plugin, source.path, false, null, 0);
         if (!getSceneFrames(data.elements).some(frame => frame.id === frameId)) return;
         validate();
@@ -309,7 +373,7 @@ export class VisualResources {
   }
 
   /** Insert editable SVG geometry and optionally add a vault wikilink to the drawing's properties. */
-  public async insertSvgStrokes(resource: VisualResource, view: ExcalidrawView | null, active: () => boolean, retainSource: boolean): Promise<void> {
+  public async insertSvgStrokes(resource: VisualResource, view: ExcalidrawView | null, active: () => boolean, retainSource: boolean | string): Promise<void> {
     if (!this.writable(view) || !active() || resource.locator.provider !== "vault") return;
     const source = this.sourceFile(resource);
     if (source?.extension.toLowerCase() !== "svg" || source.stat.size > 2_000_000) return;
@@ -337,10 +401,10 @@ export class VisualResources {
       const link = "[[" + this.plugin.app.metadataCache.fileToLinktext(source, file.path) + "]]";
       await this.plugin.app.fileManager.processFrontMatter(file, (frontmatter: Record<string, unknown>) => {
         if (!stillTarget()) return;
-        const property = "excalidraw-svg-sources";
-        const current = frontmatter[property];
+        const property = typeof retainSource === "string" ? retainSource : "excalidraw-svg-sources";
+        const current: unknown = Object.hasOwn(frontmatter, property) ? frontmatter[property] : undefined;
         const links: unknown[] = Array.isArray(current) ? current : current === undefined ? [] : [current];
-        if (!links.includes(link)) frontmatter[property] = [...links, link];
+        if (!links.includes(link)) Object.defineProperty(frontmatter, property, { value: [...links, link], enumerable: true, writable: true, configurable: true });
       });
     } finally { ea.destroy(); }
   }
@@ -388,22 +452,37 @@ export class VisualResources {
   }
 
   /** Return a local image preview, with SVG markup used only as an image URL. */
-  public async preview(resource: VisualResource, dark: boolean): Promise<string | SVGSVGElement | null> {
+  public async preview(resource: VisualResource, dark: boolean, active: () => boolean = () => true): Promise<string | SVGSVGElement | null> {
     if (resource.locator.provider === "lucide") return getIcon(resource.locator.icon);
     const file = this.sourceFile(resource);
     if (resource.locator.provider === "vault" && file && !this.plugin.isExcalidrawFile(file))
       return IMAGE_TYPES.includes(file.extension.toLowerCase()) ? this.plugin.app.vault.getResourcePath(file) : null;
-    if (resource.locator.provider === "vault" && file) {
-      const loader = new EmbeddedFilesLoader(this.plugin, dark);
-      const input = resource.locator.frame ? new EmbeddedFile(this.plugin, file.path, this.link(resource, file)) : file;
-      return (await loader.getObsidianImage(input, 0))?.dataURL || null;
-    }
     const key = this.previewKey(resource, dark);
     const cached = this.previews.get(key);
     if (cached) {
       this.previews.delete(key);
       this.previews.set(key, cached);
       return cached;
+    }
+    if (resource.locator.provider === "vault" && file) {
+      const frame = resource.locator.frame;
+      const path = file.path, mtime = file.stat.mtime;
+      const pending = this.drawingPreviewQueue.then(async () => {
+        if (this.disposed || !active() || this.sourceFile(resource) !== file || file.path !== path || file.stat.mtime !== mtime) return null;
+        const loader = new EmbeddedFilesLoader(this.plugin, dark);
+        loader.admitPreviewScene = admitDrawingPreview;
+        const input = frame ? new EmbeddedFile(this.plugin, file.path, this.link(resource, file)) : file;
+        const result = await loader.getObsidianImage(input, 0, {
+          transientExcalidrawPreviewBytes: DRAWING_PREVIEW_BYTES,
+          deferUncachedExcalidraw: file.stat.size > (frame ? COLD_FRAME_BYTES : COLD_DRAWING_BYTES) ||
+            getExcalidrawEmbeddedFilesFiletree(file, this.plugin).length > 0,
+        });
+        if (!result?.dataURL || !active() || this.previewKey(resource, dark) !== key) return null;
+        this.rememberPreview(key, result.dataURL);
+        return result.dataURL;
+      });
+      this.drawingPreviewQueue = pending.catch(() => {});
+      return pending;
     }
     const ea = this.plugin.ea.getAPI();
     try {
@@ -415,18 +494,21 @@ export class VisualResources {
       const svg = await ea.createSVG(undefined, false, options, undefined, dark ? "dark" : "light", 4);
       if (!svg) return null;
       const data = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg.outerHTML);
-      if (!this.disposed && resource.previewElements && key.length + data.length < PREVIEW_CACHE_BYTES) {
-        const previous = this.previews.get(key);
-        this.previewBytes += previous === undefined ? key.length + data.length : data.length - previous.length;
-        this.previews.set(key, data);
-        for (const [oldKey, preview] of this.previews) {
-          if (this.previewBytes <= PREVIEW_CACHE_BYTES) break;
-          this.previews.delete(oldKey);
-          this.previewBytes -= oldKey.length + preview.length;
-        }
-      }
+      if (resource.previewElements) this.rememberPreview(key, data);
       return data;
     } finally { ea.destroy(); }
+  }
+
+  private rememberPreview(key: string, data: string): void {
+    if (this.disposed || key.length + data.length >= PREVIEW_CACHE_BYTES) return;
+    const previous = this.previews.get(key);
+    this.previewBytes += previous === undefined ? key.length + data.length : data.length - previous.length;
+    this.previews.set(key, data);
+    for (const [oldKey, preview] of this.previews) {
+      if (this.previewBytes <= PREVIEW_CACHE_BYTES) break;
+      this.previews.delete(oldKey);
+      this.previewBytes -= oldKey.length + preview.length;
+    }
   }
 
   /** Drop frame discovery entries owned by the changed path or a moved folder. */

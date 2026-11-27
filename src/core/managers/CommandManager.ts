@@ -557,12 +557,12 @@ export class CommandManager {
     this.addCommand({
       id: "visual-resources",
       name: t("VR_TITLE"),
-      callback: () => { void this.plugin.visualResourcePanel.open(this.app.workspace.getActiveViewOfType(ExcalidrawView)); },
+      callback: () => { void this.plugin.visualResourcePanel.openFromWorkspace(); },
     });
     this.addCommand({
       id: "visual-resources-icons",
       name: t("VR_ICON_LIBRARY"),
-      callback: () => { void this.plugin.visualResourcePanel.open(this.app.workspace.getActiveViewOfType(ExcalidrawView), "Icon Library"); },
+      callback: () => { void this.plugin.visualResourcePanel.openFromWorkspace("Icon Library"); },
     });
     this.addCommand({
       id: "thinking-frameworks-new-drawing",

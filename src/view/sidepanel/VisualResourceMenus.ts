@@ -1,17 +1,19 @@
-import { Menu, Modal, Notice, Setting, SuggestModal, type TFile } from "obsidian";
+import { Menu, Modal, Notice, Setting, SuggestModal, type TFile, type View } from "obsidian";
+import { nanoid } from "src/constants/constants";
 import type ExcalidrawPlugin from "src/core/main";
 import { t } from "src/lang/helpers";
 import { KIND_NAMES } from "src/shared/visualResources/VisualResourceGallery";
 import { resourceInput } from "src/shared/visualResources/resourceDialogs";
+import { SvgStrokeOptions } from "src/shared/visualResources/SvgStrokeOptions";
+import { drawingTarget } from "src/shared/visualResources/VisualResourceTargets";
 import type { VisualResource } from "src/types/visualResourceTypes";
-import type ExcalidrawView from "../ExcalidrawView";
 
 type LibrarySnapshot = Awaited<ReturnType<ExcalidrawPlugin["stencilLibraryManager"]["getResourceLibraries"]>>;
 
 /** Native action menus shared by cards, list rows, frames, and multi-selection. */
 export class VisualResourceMenus {
   constructor(private readonly plugin: ExcalidrawPlugin, private readonly refresh: () => void,
-    private readonly target: () => ExcalidrawView | null, private readonly svgSource: () => boolean) {}
+    private readonly target: () => View | null) {}
 
   private get service() { return this.plugin.visualResources; }
 
@@ -24,11 +26,13 @@ export class VisualResourceMenus {
   }
 
   /** Construct a resource's applicable actions using its live capability checks. */
-  public resource(resource: VisualResource, collection: string, panelOpen: () => boolean, toggleSvgSource: (value: boolean) => void,
+  public resource(resource: VisualResource, collection: string, panelOpen: () => boolean,
     rename: (name: string) => void): Menu {
     const menu = new Menu();
     const view = this.target();
-    const active = () => panelOpen() && this.target() === view;
+    const file = view?.file;
+    const active = () => panelOpen() && this.target() === view && view?.file === file;
+    const drawing = drawingTarget(view);
     const source = this.service.sourceFile(resource);
     const svg = resource.locator.provider === "vault" && source?.extension.toLowerCase() === "svg";
     menu.addItem(item => item.setTitle(t("VR_RESOURCE_INFO")).setIcon("info").onClick(() => {
@@ -38,13 +42,19 @@ export class VisualResourceMenus {
       if (resource.source) modal.contentEl.createEl("p", { text: resource.source });
       modal.open();
     }));
-    menu.addItem(item => item.setTitle(t(svg ? "VR_INSERT_SVG" : "VR_INSERT")).setIcon("plus").setDisabled(!this.service.writable(view))
-      .onClick(() => this.run(this.service.insert(resource, view, active))));
+    const insertLabel = view?.getViewType() === "markdown" ? "VR_INSERT_NOTE" : view?.getViewType() === "canvas" ? "VR_INSERT_CANVAS" : "VR_INSERT";
+    menu.addItem(item => item.setTitle(t(svg && drawing ? "VR_INSERT_SVG" : insertLabel)).setIcon("plus")
+      .setDisabled(!this.service.canInsertInto(resource, view))
+      .onClick(() => { void this.service.insertInto(resource, view, active); }));
     if (svg) {
-      menu.addItem(item => item.setTitle(t("VR_INSERT_STROKES")).setIcon("pen-tool").setDisabled(!this.service.writable(view))
-        .onClick(() => this.run(this.service.insertSvgStrokes(resource, view, active, this.svgSource()))));
-      if (view?.file.extension === "md") menu.addItem(item => item.setTitle(t("VR_SVG_RETAIN_LINK"))
-        .setChecked(this.svgSource()).onClick(() => toggleSvgSource(!this.svgSource())));
+      if (this.service.writable(drawing)) {
+        menu.addItem(item => item.setTitle(t("VR_INSERT_STROKES")).setIcon("pen-tool").onClick(() => {
+          const insert = (property: string | false) => this.run(this.service.insertSvgStrokes(resource, drawing, active, property));
+          if (drawing.file.extension === "md") new SvgStrokeOptions(this.plugin, insert).open();
+          else insert(false);
+        }));
+      }
+      menu.addItem(item => item.setTitle(t("VR_SVG_OPTIONS")).setIcon("settings").onClick(() => new SvgStrokeOptions(this.plugin).open()));
     }
     if (resource.locator.provider === "vault" && source) menu.addItem(item =>
       item.setTitle(t("VR_OPEN_SOURCE")).setIcon("file-up").onClick(() => this.run(this.service.openSource(resource))));
@@ -70,9 +80,27 @@ export class VisualResourceMenus {
   /** Bulk memberships support mixed resources. Library moves use selected stencils only. */
   public selection(selection: VisualResource[], collection: string): Menu {
     const menu = new Menu();
+    const store = this.service.collections;
+    const locators = selection.map(resource => resource.locator);
+    if (locators.some(locator => !store.state(locator).favorite)) menu.addItem(item =>
+      item.setTitle(t("VR_FAVORITE")).setIcon("bookmark").onClick(() => this.run(store.curate(locators, { favorite: true }))));
+    if (locators.some(locator => store.state(locator).favorite)) menu.addItem(item =>
+      item.setTitle(t("VR_UNFAVORITE")).setIcon("bookmark-minus").onClick(() => this.run(store.curate(locators, { favorite: false }))));
+    menu.addSeparator();
+    menu.addItem(item => item.setTitle(t("VR_NEW_PLAYLIST")).setIcon("list-plus").onClick(() => {
+      this.run(resourceInput(this.plugin.app, t("VR_NEW_PLAYLIST"), { value: "" }).then(async name => {
+        if (!name) return;
+        const playlist = nanoid();
+        await store.savePlaylist(name, playlist);
+        await store.curate(locators, { playlist, member: true });
+      }));
+    }));
     this.addMembershipActions(menu, selection, collection);
     const stencils = selection.filter(resource => resource.locator.provider === "stencil");
-    if (stencils.length) menu.addItem(item => item.setTitle(t("VR_MOVE_LIBRARY")).onClick(() => this.run(this.move(stencils))));
+    if (stencils.some(resource => resource.locator.provider === "stencil" && resource.locator.path)) {
+      menu.addSeparator();
+      menu.addItem(item => item.setTitle(t("VR_MOVE_LIBRARY")).onClick(() => this.run(this.move(stencils))));
+    }
     return menu;
   }
 

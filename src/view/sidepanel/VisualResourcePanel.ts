@@ -1,15 +1,15 @@
-import { Component, Menu, Modal, Notice, Platform, TFile, View, type TAbstractFile, type WorkspaceLeaf } from "obsidian";
+import { Component, getIcon, Menu, Notice, Platform, setTooltip, TFile, View, type TAbstractFile, type WorkspaceLeaf } from "obsidian";
 import { IMAGE_TYPES } from "src/constants/constants";
 import type ExcalidrawPlugin from "src/core/main";
 import { t } from "src/lang/helpers";
 import { KIND_NAMES, VisualResourceGallery, visualResourceButton } from "src/shared/visualResources/VisualResourceGallery";
 import { VisualResourceSettings } from "src/shared/visualResources/VisualResourceSettings";
+import { drawingTarget, isDocumentTarget, writableDocument } from "src/shared/visualResources/VisualResourceTargets";
 import { resourceInput, showResourceMenu, VisualResourceFilePrompt } from "src/shared/visualResources/resourceDialogs";
 import { filterVisualResources, visualResourceKey, VISUAL_RESOURCE_FILTERS } from "src/shared/visualResources/visualResourceModel";
 import type { VisualResource, VisualResourceFilter } from "src/types/visualResourceTypes";
 import { setElementHidden } from "src/utils/htmlUtils";
 import { errorlog } from "src/utils/coreUtils";
-import ExcalidrawView from "../ExcalidrawView";
 import { ExcalidrawSidepanelView } from "./Sidepanel";
 import type { ExcalidrawSidepanelTab } from "./SidepanelTab";
 import { VisualResourceMenus } from "./VisualResourceMenus";
@@ -22,7 +22,7 @@ const DEFAULT_FILTERS = VISUAL_RESOURCE_FILTERS.filter(key => key !== "other");
 export class VisualResourcePanel {
   private tab: ExcalidrawSidepanelTab | null = null;
   private opening: Promise<void> | null = null;
-  private target: ExcalidrawView | null = null;
+  private target: View | null = null;
   private mode: BrowserMode = { kind: "general" };
   private selection: Map<string, VisualResource> | null = null;
   private collection = "";
@@ -30,7 +30,6 @@ export class VisualResourcePanel {
   private library = "";
   private disposed = false;
   private revealing = 0;
-  private svgSource = false;
   private refresh = () => {};
   private reload = () => {};
   private search: HTMLInputElement | null = null;
@@ -38,21 +37,32 @@ export class VisualResourcePanel {
   private readonly menus: VisualResourceMenus;
 
   constructor(private readonly plugin: ExcalidrawPlugin) {
-    this.menus = new VisualResourceMenus(plugin, () => this.reload(), () => this.target, () => this.svgSource);
+    this.menus = new VisualResourceMenus(plugin, () => this.reload(), () => this.target);
     plugin.register(() => { this.disposed = true; this.tab?.close(); });
   }
 
   private get service() { return this.plugin.visualResources; }
   private get preferences() { return this.plugin.settings.visualResources; }
   private get script() { return this.mode.kind === "icon" ? this.mode.scriptName : undefined; }
-  private get filters(): readonly VisualResourceFilter[] { return this.script ? ["icon"] : this.preferences.filters ?? DEFAULT_FILTERS; }
+  private get availableFilters(): readonly VisualResourceFilter[] {
+    return isDocumentTarget(this.target) ? VISUAL_RESOURCE_FILTERS.filter(key => key !== "stencil" && key !== "framework") : VISUAL_RESOURCE_FILTERS;
+  }
+  private get filters(): readonly VisualResourceFilter[] {
+    return this.script ? ["icon"] : (this.preferences.filters ?? DEFAULT_FILTERS).filter(key => this.availableFilters.includes(key));
+  }
   private get groups(): string[] | undefined {
     return this.script ? this.preferences.iconGroups?.[this.script] ?? this.service.iconSettings(this.script).groups : this.preferences.groups;
   }
 
+  public openFromWorkspace(scriptName?: string): Promise<void> {
+    const view = this.plugin.app.workspace.getMostRecentLeaf()?.view ?? null;
+    return this.open(view instanceof ExcalidrawSidepanelView ? this.target : view, scriptName);
+  }
+
   /** Open the one sidepanel tab and preserve the explicitly initiating editor across reveal. */
-  public async open(view: ExcalidrawView | null, scriptName?: string): Promise<void> {
+  public async open(view: View | null, scriptName?: string): Promise<void> {
     if (this.disposed) return;
+    if (isDocumentTarget(this.target) !== isDocumentTarget(view)) this.selection = null;
     this.target = view;
     const previousScript = this.script;
     if (previousScript !== scriptName) {
@@ -107,12 +117,13 @@ export class VisualResourcePanel {
     const search = this.search = toolbar.createEl("input", { type: "search", placeholder: t("VR_SEARCH"), attr: { "aria-label": t("VR_SEARCH") } });
     const tools = toolbar.createDiv({ cls: "excalidraw-resource-toolbar excalidraw-resource-search-tools" });
     const filter = visualResourceButton(tools, "filter", t("VR_FILTER"));
-    const collections = visualResourceButton(tools, "folder", t("VR_COLLECTIONS"));
-    const popout = Platform.isDesktopApp ? visualResourceButton(tools, "external-link", t("VR_POPOUT")) : null;
-    const help = visualResourceButton(tools, "info", t("VR_HELP"));
-    const settings = visualResourceButton(tools, "settings", t("VR_SETTINGS"));
-    const layout = visualResourceButton(tools, "list", t("VR_LAYOUT"), this.preferences.list);
+    const collectionsIcon = ["square-library", "library-big"].find(icon => getIcon(icon)) ?? "library";
+    const collections = visualResourceButton(tools, collectionsIcon, t("VR_COLLECTIONS"));
     const select = visualResourceButton(tools, "list-checks", t("VR_SELECT"), false);
+    const layout = visualResourceButton(tools, "list", t("VR_LAYOUT"), this.preferences.list);
+    const settings = visualResourceButton(tools, "settings", t("VR_SETTINGS"));
+    const popout = Platform.isDesktopApp ? visualResourceButton(tools, "external-link", t("VR_POPOUT")) : null;
+    for (const button of tools.querySelectorAll("button")) setTooltip(button, button.getAttribute("aria-label"));
     const status = root.createDiv({ cls: "excalidraw-resource-status", attr: { "aria-live": "polite" } });
     const selectionBar = root.createDiv({ cls: "excalidraw-resource-toolbar excalidraw-resource-selection" });
     const selectionCount = selectionBar.createSpan({ attr: { "aria-live": "polite" } });
@@ -135,7 +146,11 @@ export class VisualResourcePanel {
     const updateSelectionBar = () => {
       const selecting = this.selection !== null;
       select.setAttribute("aria-pressed", String(selecting));
-      select.setAttribute("aria-label", t(selecting ? "VR_EXIT_SELECTION" : "VR_SELECT"));
+      const label = t(selecting ? "VR_EXIT_SELECTION" : "VR_SELECT");
+      if (select.getAttribute("aria-label") !== label) {
+        select.setAttribute("aria-label", label);
+        setTooltip(select, label);
+      }
       setElementHidden(selectionBar, !selecting);
       const count = this.selection?.size ?? 0;
       selectionCount.setText(t("VR_SELECTION_COUNT").replace("{COUNT}", String(count)));
@@ -157,7 +172,8 @@ export class VisualResourcePanel {
         return;
       }
       const target = this.target;
-      void this.service.insert(resource, target, () => this.tab === tab && this.target === target, undefined, this.script);
+      const file = target?.file;
+      void this.service.insertInto(resource, target, () => this.tab === tab && this.target === target && target?.file === file, this.script);
     };
     const rename = async (resource: VisualResource, name: string) => {
       const { locator } = resource;
@@ -178,17 +194,17 @@ export class VisualResourcePanel {
     const actions = {
       activate, open,
       deferredActivation: (resource: VisualResource) => {
-        const target = this.target, api = target?.excalidrawAPI, file = target?.file, mode = this.mode;
+        const target = this.target, api = drawingTarget(target)?.excalidrawAPI, file = target?.file, mode = this.mode;
         return () => {
-          if (this.target === target && target?.excalidrawAPI === api && target?.file === file && this.mode === mode && !this.selection) activate(resource);
+          if (this.target === target && drawingTarget(target)?.excalidrawAPI === api && target?.file === file && this.mode === mode && !this.selection) activate(resource);
         };
       },
-      canActivate: () => !!this.selection || this.service.writable(this.target),
+      canActivate: (resource: VisualResource) => !!this.selection || this.service.canInsertInto(resource, this.target),
       favorite: (resource: VisualResource) => this.run(this.service.collections.curate([resource.locator], {
         favorite: !this.service.collections.state(resource.locator).favorite,
       })),
       menu: (resource: VisualResource, el: HTMLElement, event: MouseEvent) => this.show(this.menus.resource(resource, this.collection,
-        () => this.tab === tab, value => { this.svgSource = value; }, name => {
+        () => this.tab === tab, name => {
           el.focus({ preventScroll: true });
           void rename(resource, name);
         }), el, event),
@@ -204,8 +220,11 @@ export class VisualResourcePanel {
           refresh(false);
         }).catch(() => this.failed());
       },
-      inspectFrames: (resource: VisualResource) => this.service.frames(resource, this.script)
-        .then(frames => filterVisualResources(frames, "", ["drawing"], this.groups)),
+      frameCount: (resource: VisualResource) => {
+        if (!this.filters.includes("drawing")) return null;
+        if (this.groups && !this.groups.some(group => group.startsWith("frame:"))) return null;
+        return resource.frames?.length ? filterVisualResources(resource.frames, "", ["drawing"], this.groups).length || null : 0;
+      },
       drag: (resource: VisualResource, transfer: DataTransfer) => this.service.startDrag(transfer, resource),
       escape: () => {
         if (this.selection) { toggleSelection(); select.focus(); }
@@ -240,13 +259,15 @@ export class VisualResourcePanel {
       const old = this.service.iconSettings(this.script);
       const dark = root.ownerDocument.body.hasClass("theme-dark");
       const background = dark ? this.preferences.darkBackground ?? old.darkBackground : this.preferences.lightBackground ?? old.lightBackground;
-      const options = { list: this.preferences.list, size: this.preferences.thumbnailSize ?? old.thumbnailSize, background,
-        frameFilterKey: JSON.stringify([this.groups, this.service.rules(this.script).frame]) };
-      status.setText(loading ? t("VR_LOADING") : !this.service.writable(this.target) ? t("VR_NO_DRAWING") : "");
+      const options = { list: this.preferences.list, size: this.preferences.thumbnailSize ?? old.thumbnailSize, background };
+      const drawing = this.service.writable(drawingTarget(this.target));
+      status.setText(loading ? t("VR_LOADING") : drawing ? "" : writableDocument(this.target)
+        ? t("VR_INSERT_TARGET").replace("{TITLE}", this.target.file.basename) : t("VR_NO_DRAWING"));
       updateSelectionBar();
       gallery.show(results, options, reset);
-      split.showFrames(!!selectedParent);
-      if (selectedParent) {
+      const showingFrames = !!selectedParent && this.filters.includes("drawing");
+      split.showFrames(showingFrames);
+      if (showingFrames) {
         parent.setText(selectedParent.title);
         const allowedFrames = filterVisualResources(frames, "", ["drawing"], this.groups);
         const matchingFrames = filterVisualResources(allowedFrames, search.value, ["drawing"]);
@@ -286,10 +307,12 @@ export class VisualResourcePanel {
       pending = { win, id: win.setTimeout(() => { pending = null; reload(); }, 150) };
     };
     const followLeaf = (leaf: WorkspaceLeaf | null) => {
-      if (this.revealing || leaf === panel.leaf || root.contains(root.ownerDocument.activeElement)) return;
+      if (this.revealing || leaf === panel.leaf ||
+          root.contains(root.ownerDocument.activeElement) && leaf !== this.target?.leaf) return;
       if (this.plugin.app.workspace.getActiveViewOfType(View) !== leaf?.view) return;
-      const view = leaf?.view instanceof ExcalidrawView ? leaf.view : null;
+      const view = leaf?.view ?? null;
       if (view === this.target) return;
+      if (isDocumentTarget(this.target) !== isDocumentTarget(view)) this.selection = null;
       this.target = view;
       gallery.cancelClick(); childGallery.cancelClick();
       refresh(false);
@@ -309,11 +332,16 @@ export class VisualResourcePanel {
     lifetime.registerEvent(vault.on("rename", (file, oldPath) => { this.service.invalidatePreview(oldPath); changed(file); }));
     lifetime.registerEvent(this.plugin.app.metadataCache.on("changed", changed));
     lifetime.registerEvent(this.plugin.app.workspace.on("active-leaf-change", followLeaf));
+    lifetime.registerEvent(this.plugin.app.workspace.on("file-open", () => {
+      const recent = this.plugin.app.workspace.getMostRecentLeaf();
+      if (recent === this.target?.leaf) followLeaf(recent);
+      this.refresh();
+    }));
     tab.onWindowMigrated = () => {
       split.cancelDrag(); this.service.endDrag(); cancelScheduled(); gallery.cancelClick(); childGallery.cancelClick(); refresh(false);
     };
     tab.onFocus = () => this.refresh();
-    tab.onExcalidrawViewClosed = () => { this.target = null; this.refresh(); };
+    tab.onExcalidrawViewClosed = () => { if (drawingTarget(this.target)) { this.target = null; this.refresh(); } };
     back.onclick = closeFrames;
     search.oninput = () => { gallery.cancelClick(); childGallery.cancelClick(); refresh(); };
     search.onkeydown = event => {
@@ -326,12 +354,6 @@ export class VisualResourcePanel {
       const docked = root.ownerDocument === this.plugin.app.workspace.containerEl.ownerDocument;
       ExcalidrawSidepanelView.applyLocationPreference(this.plugin, docked);
       void panel.reveal();
-    };
-    help.onclick = () => {
-      const modal = new Modal(this.plugin.app);
-      modal.setTitle(t("VR_TITLE"));
-      modal.contentEl.createEl("p", { text: t("VR_HELP_TEXT") });
-      modal.open();
     };
     settings.onclick = () => new VisualResourceSettings(this.plugin, reload, this.script).open();
     layout.onclick = () => {
@@ -353,41 +375,44 @@ export class VisualResourcePanel {
     const menu = new Menu();
     const script = this.script;
     const rules = this.service.rules(script);
-    const groups = Object.entries(rules)
-      .filter(([kind]) => !script || kind === "icon")
-      .flatMap(([kind, definitions]) => definitions.map(rule => [kind + ":" + rule.name, rule.name]));
+    const allGroups = Object.entries(rules).flatMap(([kind, definitions]) => definitions.map(rule => kind + ":" + rule.name));
     const setGroups = (next: string[]) => {
       if (script) (this.preferences.iconGroups ??= {})[script] = next;
       else this.preferences.groups = next;
     };
     const save = () => { this.run(this.plugin.saveSettings()); refresh(); };
-    const groupKeys = groups.map(([group]) => group);
-    const setAll = (enabled: boolean) => {
-      if (!script) this.preferences.filters = enabled ? [...VISUAL_RESOURCE_FILTERS] : [];
-      setGroups(enabled ? groupKeys : []);
+    const setTypes = (visible: readonly VisualResourceFilter[]) => {
+      const hidden = (this.preferences.filters ?? DEFAULT_FILTERS).filter(key => !this.availableFilters.includes(key));
+      this.preferences.filters = [...hidden, ...visible];
       save();
     };
-    if (!script || groups.length) {
-      menu.addItem(item => item.setTitle(t("VR_SELECT_ALL_FILTERS")).onClick(() => setAll(true)));
-      menu.addItem(item => item.setTitle(t("VR_SELECT_NO_FILTERS")).onClick(() => setAll(false)));
+    if (!script) {
+      menu.addItem(item => item.setTitle(t("VR_SELECT_ALL_FILTERS")).onClick(() => setTypes(this.availableFilters)));
+      menu.addItem(item => item.setTitle(t("VR_SELECT_NO_FILTERS")).onClick(() => setTypes([])));
       menu.addSeparator();
     }
-    if (!script) for (const key of VISUAL_RESOURCE_FILTERS) menu.addItem(item =>
+    if (!script) for (const key of this.availableFilters) menu.addItem(item =>
       item.setTitle(t(KIND_NAMES[key])).setChecked(this.filters.includes(key)).onClick(() => {
-        this.preferences.filters = this.filters.includes(key) ? this.filters.filter(filter => filter !== key) : [...this.filters, key];
-        save();
+        setTypes(this.filters.includes(key) ? this.filters.filter(filter => filter !== key) : [...this.filters, key]);
       }));
-    if (!script && groups.length) menu.addSeparator();
-    for (const [key, label] of groups) menu.addItem(item =>
-      item.setTitle(label).setChecked(this.groups?.includes(key) ?? true).onClick(() => {
-        const current = this.groups ?? groupKeys;
-        const next = current.includes(key) ? current.filter(group => group !== key) : [...current, key];
-        setGroups(next);
-        save();
-      }));
+    for (const [kind, category, label] of [["icon", "icon", "VR_ICON_GROUPS"], ["drawing", "drawing", "VR_DRAWING_GROUPS"],
+      ["frame", "drawing", "VR_FRAME_GROUPS"]] as const) {
+      if (!this.filters.includes(category) || !rules[kind].length) continue;
+      if (!script) menu.addSeparator();
+      menu.addItem(item => item.setTitle(t(label)).setDisabled(true));
+      for (const { name } of rules[kind]) {
+        const key = kind + ":" + name;
+        menu.addItem(item => item.setTitle(name).setChecked(this.groups?.includes(key) ?? true).onClick(() => {
+          const current = this.groups ?? allGroups;
+          setGroups(current.includes(key) ? current.filter(group => group !== key) : [...current, key]);
+          save();
+        }));
+      }
+    }
     if (!script && this.filters.includes("stencil")) {
       const { paths } = await this.plugin.stencilLibraryManager.getResourceLibraries();
       menu.addSeparator();
+      menu.addItem(item => item.setTitle(t("VR_STENCIL_LIBRARIES")).setDisabled(true));
       for (const path of ["", ...paths]) menu.addItem(item =>
         item.setTitle(path || t("VR_ALL_LIBRARIES")).setChecked(this.library === path).onClick(() => { this.library = path; refresh(); }));
       menu.addItem(item => item.setTitle(t("VR_MANAGE_LIBRARIES")).setIcon("library").onClick(() => void this.menus.manage().catch(() => this.failed())));

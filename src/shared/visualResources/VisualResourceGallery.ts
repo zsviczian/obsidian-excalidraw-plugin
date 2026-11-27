@@ -23,7 +23,7 @@ interface GalleryActions {
   canActivate?: (resource: VisualResource) => boolean;
   favorite?: (resource: VisualResource) => void;
   frames?: (resource: VisualResource) => void;
-  inspectFrames?: (resource: VisualResource) => Promise<VisualResource[]>;
+  frameCount?: (resource: VisualResource) => number | null;
   menu?: (resource: VisualResource, button: HTMLElement, event: MouseEvent) => void;
   rename?: (resource: VisualResource, name: string) => void;
   drag?: (resource: VisualResource, transfer: DataTransfer) => void;
@@ -35,7 +35,6 @@ interface GalleryOptions {
   list?: boolean;
   size?: number;
   background?: string;
-  frameFilterKey?: string;
 }
 type PreviewSlot = { element: HTMLElement; desired?: string; ready?: string; loading?: string };
 type GalleryCard = {
@@ -45,13 +44,11 @@ type GalleryCard = {
   control: HTMLElement;
   checkbox?: HTMLInputElement;
   update: (resource: VisualResource, selected: boolean | undefined) => void;
-  frames?: { button: HTMLButtonElement; count: HTMLElement; desired?: string; ready?: string; loading?: string };
 };
 type PreviewTask = {
   card: GalleryCard;
   resource: VisualResource;
   stamp: string;
-  frameStamp: string;
   dark: boolean;
 };
 
@@ -243,10 +240,11 @@ export class VisualResourceGallery extends Component {
       role: "img", "aria-label": t(KIND_NAMES[resource.locator.provider === "lucide" ? "lucide" : resource.kind]),
     } }), icon);
     const actions = card.createDiv({ cls: "excalidraw-resource-actions" });
-    let frames: GalleryCard["frames"];
+    let frameButton: HTMLButtonElement;
+    let frameCount: HTMLElement;
     if (resource.inspectFrames && this.actions.frames) {
-      const frameButton = visualResourceButton(actions, "frame", t("VR_FRAME"));
-      frames = { button: frameButton, count: frameButton.createSpan() };
+      frameButton = visualResourceButton(actions, "frame", t("VR_FRAME"));
+      frameCount = frameButton.createSpan();
       setElementHidden(frameButton, true);
       frameButton.onclick = () => { this.cancelClick(); this.actions.frames?.(resource); };
     }
@@ -285,7 +283,7 @@ export class VisualResourceGallery extends Component {
       }
     }
     const control = button ?? checkbox;
-    return { element: card, variant, preview, control, checkbox, frames, update: (next, checked) => {
+    return { element: card, variant, preview, control, checkbox, update: (next, checked) => {
       resource = next;
       title.setText(resource.title);
       if (rename) title.setAttribute("aria-label", t("VR_RENAME") + " " + resource.title);
@@ -300,6 +298,12 @@ export class VisualResourceGallery extends Component {
         const { favorite } = this.service.collections.state(resource.locator);
         star.setAttribute("aria-pressed", String(favorite));
         star.setAttribute("aria-label", t(favorite ? "VR_UNFAVORITE" : "VR_FAVORITE"));
+      }
+      if (frameButton) {
+        const count = this.actions.frameCount?.(resource) ?? null;
+        setElementHidden(frameButton, count === null);
+        frameButton.setAttribute("aria-label", t("VR_BROWSE_FRAMES") + (count ? " (" + count + ")" : ""));
+        frameCount.setText(count ? String(count) : "");
       }
       if (this.options.background) setStyle(preview.element, { backgroundColor: this.options.background });
       else removeStyle(preview.element, ["backgroundColor"]);
@@ -342,13 +346,10 @@ export class VisualResourceGallery extends Component {
 
   private queuePreview(card: GalleryCard, resource: VisualResource, dark: boolean): void {
     const stamp = this.service.previewKey(resource, dark);
-    const frameStamp = card.frames ? stamp + (this.options.frameFilterKey ?? "") : "";
-    const { preview, frames } = card;
+    const { preview } = card;
     preview.desired = stamp;
-    if (frames) frames.desired = frameStamp;
-    if ((preview.ready === stamp || preview.loading === stamp) &&
-        (!frames || frames.ready === frameStamp || frames.loading === frameStamp)) return;
-    const task = { card, resource, stamp, frameStamp, dark };
+    if (preview.ready === stamp || preview.loading === stamp) return;
+    const task = { card, resource, stamp, dark };
     if (this.observer) {
       this.observed.set(preview.element, task);
       this.observer.observe(preview.element);
@@ -364,27 +365,12 @@ export class VisualResourceGallery extends Component {
   }
 
   private async loadPreview(task: PreviewTask): Promise<void> {
-    const { preview, frames } = task.card;
-    if (frames && this.actions.inspectFrames && frames.desired === task.frameStamp &&
-        frames.ready !== task.frameStamp && frames.loading !== task.frameStamp) {
-      frames.loading = task.frameStamp;
-      try {
-        const result = await this.actions.inspectFrames(task.resource).catch((): VisualResource[] => []);
-        if (frames.button.isConnected && frames.desired === task.frameStamp) {
-          frames.ready = task.frameStamp;
-          setElementHidden(frames.button, !result.length);
-          frames.button.setAttribute("aria-label", t("VR_FRAME") + " (" + result.length + ")");
-          frames.count.setText(String(result.length));
-        }
-      } finally {
-        if (frames.loading === task.frameStamp) frames.loading = undefined;
-      }
-    }
+    const { preview } = task.card;
     const current = () => preview.element.isConnected && preview.desired === task.stamp;
     if (!current() || preview.ready === task.stamp || preview.loading === task.stamp) return;
     preview.loading = task.stamp;
     try {
-      const image = await this.service.preview(task.resource, task.dark);
+      const image = await this.service.preview(task.resource, task.dark, current);
       if (!current()) return;
       preview.ready = task.stamp;
       if (typeof image === "string" && preview.element.querySelector("img")?.getAttribute("src") === image) return;
