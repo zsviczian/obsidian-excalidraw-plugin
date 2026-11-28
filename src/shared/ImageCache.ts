@@ -44,6 +44,8 @@ export type ImageKey = {
 } & FILENAMEPARTS;
 
 type GetImageFromCacheOptions = {
+  maxPayloadBytes?: number;
+  maxIntrinsicDimension?: number;
   skipDependencyCheck?: boolean;
   minRenderScale?: number;
   expectedPayloadKind?: FileCacheData["payloadKind"];
@@ -547,6 +549,9 @@ class ImageCache {
         this.touchedCacheKeys.delete(key);
         return undefined;
       }
+      if (options?.maxPayloadBytes !== undefined && cachedData.blob.size > options.maxPayloadBytes) return undefined;
+      if (options?.maxIntrinsicDimension !== undefined && cachedData.size &&
+          Math.max(cachedData.size.height, cachedData.size.width) > options.maxIntrinsicDimension) return undefined;
 
       const file = this.app.vault.getFileByPath(key_.filepath.split("#")[0]);
       if (!file) {
@@ -785,6 +790,7 @@ class ImageCache {
   }
 
   public async clearImageCache(): Promise<void> {
+    await this.plugin?.visualResources?.clearThumbnailCache();
     if (!this.isReady()) {
       return; // Database not initialized yet
     }

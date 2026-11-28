@@ -15,6 +15,8 @@ const defaults = {
     border: { enabled: false, color: "#000000" }, css: "", transclusion: { border: {} } } },
   markdownImageDeletionPreference: "keep", pasteCodeBlockAs: "ask", previewImageType: "SVGIMG",
   oEmbedAllowed: false, zoomMax: 3, allowWheelZoom: false, pinnedScripts: [], scriptEngineSettings: {},
+  visualResources: {}, frameworkFolder: "", frameworksOnBlank: true, frameworksSnoozedUntil: 0,
+  frameworkCatalogCheckedAt: 0, frameworkCatalog: [], frameworkInstalls: {},
 };
 async function fixture(t, options = {}) {
   const harness = sourceHarness({
@@ -31,6 +33,9 @@ async function fixture(t, options = {}) {
   const original = { ...structuredClone(defaults), zoomMax: 7, templateFilePath: "Templates/Custom.md",
     allowWheelZoom: true, pinnedScripts: ["Capture Note"],
     scriptEngineSettings: { "Capture Note": { noteTypes: { Custom: { template: "Templates/Note.md" } } } },
+    visualResources: { filters: ["lucide", "other"], iconWidth: 132, groups: ["icon:Shapes"], futureBrowserKey: true },
+    frameworkFolder: "Assets/Frameworks", frameworksOnBlank: false, frameworksSnoozedUntil: 1800000000000,
+    frameworkCatalogCheckedAt: 1799990000000, frameworkCatalog: [{ fname: "templates.excalidrawlib", mtime: 1799980000000 }],
     futureSetting: { flag: false, zero: 0, paths: ["custom"] } };
   const state = { disk: structuredClone(original), writes: [], reads: 0, stats: 0,
     recoveryWrites: [], recoveryReads: 0, destroyed: 0, prompts: 0, promptModes: [] };

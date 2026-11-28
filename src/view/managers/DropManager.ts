@@ -227,6 +227,10 @@ export class DropManager {
       { clientX: event.clientX, clientY: event.clientY },
       st,
     );
+    if (this.plugin.visualResources?.drop(event.dataTransfer, this.view, this.currentPosition)) {
+      event.preventDefault();
+      return false;
+    }
     const draggable = this.app.dragManager
       .draggable as unknown as ObsidianDraggable;
     const requestedInternalAction = internalDragModifierType(event);
@@ -745,6 +749,11 @@ export class DropManager {
   }
 
   public onDragOver(e: DragEvent) {
+    if (this.plugin.visualResources?.isDrag(e.dataTransfer)) {
+      e.dataTransfer.dropEffect = this.plugin.visualResources.writable(this.view) ? "copy" : "none";
+      e.preventDefault();
+      return false;
+    }
     const action = this.dropAction(e.dataTransfer);
     if (action) {
       if (!this.draginfoDiv) {

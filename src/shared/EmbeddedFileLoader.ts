@@ -172,6 +172,8 @@ type LoadImageOptions = {
   onStaleCacheHit?: (validation: DeferredCacheValidation) => void;
   deferUncachedExcalidraw?: boolean;
   onExcalidrawGenerationDeferred?: () => void;
+  /** A transient gallery may reuse a bounded cache hit and cap any generated SVG. */
+  transientExcalidrawPreviewBytes?: number;
   markdownTransclusionRender?: MarkdownImageRenderSettings;
   fileId?: FileId;
   pdfScale?: number;
@@ -874,6 +876,7 @@ export class EmbeddedFilesLoader {
   public async getObsidianImage(
     inFile: TFile | EmbeddedFile,
     depth: number,
+    options?: LoadImageOptions,
   ): Promise<{
     mimeType: MimeType;
     fileId: FileId;
@@ -884,7 +887,7 @@ export class EmbeddedFilesLoader {
     pdfPageViewProps?: PDFPageViewProps;
   }> {
     try {
-      return await this._getObsidianImage(inFile, depth);
+      return await this._getObsidianImage(inFile, depth, options);
     } finally {
       this.emptyPDFDocsMap();
     }
@@ -901,6 +904,7 @@ export class EmbeddedFilesLoader {
     bypassCache = false,
     onStaleCacheHit,
     deferUncachedGeneration = false,
+    transientPreviewBytes,
   }: {
     isDark: boolean;
     file: TFile;
@@ -912,6 +916,7 @@ export class EmbeddedFilesLoader {
     bypassCache?: boolean;
     onStaleCacheHit?: (validation: DeferredCacheValidation) => void;
     deferUncachedGeneration?: boolean;
+    transientPreviewBytes?: number;
   }): Promise<{
     dataURL: DataURL;
     hasSVGwithBitmap: boolean;
@@ -919,6 +924,7 @@ export class EmbeddedFilesLoader {
     size?: Size;
     generationDeferred?: boolean;
   }> {
+    const maxPreviewDimension = transientPreviewBytes === undefined ? undefined : 16_384;
     if (this.terminate) {
       return { dataURL: "" as DataURL, hasSVGwithBitmap: false };
     }
@@ -989,6 +995,8 @@ export class EmbeddedFilesLoader {
           expectedPayloadKind: "svg",
           requireSvgInspectionMetadata: true,
           svgFormat: "data-url",
+          maxPayloadBytes: transientPreviewBytes,
+          maxIntrinsicDimension: maxPreviewDimension,
           onCacheHit: ({ mtime, size, hasSVGwithBitmap }) => {
             cachedSize = size;
             cachedHasSVGwithBitmap = hasSVGwithBitmap;
@@ -1056,6 +1064,7 @@ export class EmbeddedFilesLoader {
       depth + 1,
       getExportPadding(this.plugin, file),
     );
+    if (this.terminate) return { dataURL: "" as DataURL, hasSVGwithBitmap: false };
     const svg = replaceSVGColors(
       generatedSVG,
       inFile instanceof EmbeddedFile ? inFile.colorMap : null,
@@ -1123,11 +1132,17 @@ export class EmbeddedFilesLoader {
       height > 0
         ? { width, height }
         : undefined;
+    if (maxPreviewDimension && size && Math.max(size.width, size.height) > maxPreviewDimension) {
+      return { dataURL: null, hasSVGwithBitmap: false, generationDeferred: true };
+    }
     const svgBlob = new Blob([svg.outerHTML.replaceAll("&nbsp;", " ")], {
       type: "image/svg+xml",
     });
+    if (transientPreviewBytes !== undefined && svgBlob.size > transientPreviewBytes) {
+      return { dataURL: null, hasSVGwithBitmap: false, generationDeferred: true };
+    }
     const dURL = await blobToDataURL(svgBlob);
-    if (shouldUseCache) {
+    if (shouldUseCache && transientPreviewBytes === undefined) {
       // Scene cache hits need enough metadata to avoid reparsing the SVG merely
       // to rediscover bitmap content and intrinsic dimensions.
       getImageCache().addImageToCache(cacheKey, "", svgBlob, {
@@ -1247,6 +1262,7 @@ export class EmbeddedFilesLoader {
           bypassCache: options?.bypassCache,
           onStaleCacheHit: options?.onStaleCacheHit,
           deferUncachedGeneration: options?.deferUncachedExcalidraw,
+          transientPreviewBytes: options?.transientExcalidrawPreviewBytes,
         });
         if (this.terminate) {
           return null;

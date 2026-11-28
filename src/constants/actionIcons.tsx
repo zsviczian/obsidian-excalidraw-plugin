@@ -186,6 +186,7 @@ export const getIconAsJSX = (iconId: string) => {
 };
 
 export const ICONS = {
+  Shapes: getIconAsJSX("shapes"),
   ExportImage: getIconAsJSX("image-down"),
   Info: getIconAsJSX("info"),
   BackOfNote: getIconAsJSX("text-select"),

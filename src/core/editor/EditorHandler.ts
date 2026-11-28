@@ -2,6 +2,7 @@ import { Extension } from "@codemirror/state";
 import ExcalidrawPlugin from "src/core/main";
 import { HideTextBetweenCommentsExtension } from "./Fadeout";
 import { createDrawingEmbedExtension } from "./drawingEmbedExtension";
+import { visualResourceDropExtension } from "./visualResourceDropExtension";
 export const EDITOR_FADEOUT = "fadeOutExcalidrawMarkup";
 
 type TaggedExtension = Extension & { exID?: string };
@@ -24,7 +25,7 @@ export class EditorHandler {
 
   setup(): void {
     const drawingEmbeds = createDrawingEmbedExtension(this.plugin);
-    this.activeEditorExtensions.push(drawingEmbeds.extension);
+    this.activeEditorExtensions.push(drawingEmbeds.extension, visualResourceDropExtension(this.plugin));
     this.disposeDrawingEmbeds = drawingEmbeds.dispose;
     this.plugin.registerEditorExtension(this.activeEditorExtensions);
     this.updateCMExtensionState(

@@ -230,6 +230,8 @@ declare module "obsidian" {
     listSecrets(): string[];
   }
   interface App {
+    /** Desktop shell action used by Obsidian's file navigation. */
+    showInFolder?(vaultRelativePath: string): void;
     secretStorage?: SecretStorage;
     appId: string;
     dragManager: ObsidianDragManager;

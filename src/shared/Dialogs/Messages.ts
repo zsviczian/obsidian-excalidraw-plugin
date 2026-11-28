@@ -17,6 +17,11 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.30.0": `
+## New and improved
+- Browse visuals, named frames, stencils, and Lucide icons in **Visual Resources**. Organize favorites and playlists, and insert vault visuals into Excalidraw, Markdown, or Obsidian Canvas.
+- Start a new drawing with an editable **Thinking Framework**, or choose **Blank drawing** to start from scratch.
+`,
 "2.29.4": `
 ## New and improved
 - Choose whether the Excalidraw sidepanel opens in the sidebar or a separate desktop window under **Excalidraw appearance and behavior → UI Modes**. [#3053](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUE_3053})

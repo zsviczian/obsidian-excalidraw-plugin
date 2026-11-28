@@ -434,6 +434,16 @@ export class ObsidianMenu {
             {ICONS["add-file"]}
           </div>
         </label>
+        <button
+          className={clsx("ToolIcon", "ToolIcon_type_toggle", "ToolIcon_size_medium", "excalidraw-visual-resources-trigger", {
+            "is-mobile": isMobile,
+          })}
+          type="button"
+          aria-label={t("VR_TITLE")}
+          onClick={() => void this.plugin.visualResourcePanel.open(this.view)}
+        >
+          <span className="ToolIcon__icon" aria-hidden="true">{ICONS.Shapes}</span>
+        </button>
         <label
           className={clsx("ToolIcon", "ToolIcon_size_medium", {
             "is-mobile": isMobile,

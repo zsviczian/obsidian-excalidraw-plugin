@@ -25,6 +25,9 @@ export class LucideIconPicker {
     plugin.register(() => { this.disposed = true; this.tab?.close(); this.target = null; });
   }
 
+  /** The last selected native icon size, also used by Visual Resources. */
+  public get insertionSize(): number { return this.size; }
+
   /** Resolves the initiating editor exactly, including popouts; never falls back to another view. */
   public openForEditor(editorId?: string): void {
     if (!editorId) return;

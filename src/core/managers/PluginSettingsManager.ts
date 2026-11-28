@@ -208,6 +208,11 @@ export class PluginSettingsManager {
       DEFAULT_SETTINGS,
       decryptedSettings,
     );
+    // UI filters and the catalog's installed revisions are mutated through the
+    // normal settings writer. Give each loaded instance its own records.
+    this.host.settings.visualResources = { ...this.host.settings.visualResources };
+    this.host.settings.frameworkInstalls = { ...this.host.settings.frameworkInstalls };
+    if (!Array.isArray(this.host.settings.frameworkCatalog)) this.host.settings.frameworkCatalog = [];
     if (typeof decryptedSettings.libraryStorageMode === "undefined") {
       const legacyLibrary: unknown =
         typeof decryptedSettings.library === "string" &&

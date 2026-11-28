@@ -705,6 +705,7 @@ export async function createSVG(
         exportSettings?.drawingThumbnail,
       )
     : null;
+  if (loader.terminate) return null;
   let elements = template?.elements ?? [];
   elements = elements.concat(automateElements);
   const files = imagesDict ?? {};

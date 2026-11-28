@@ -43,10 +43,12 @@ export class StencilLibraryManager {
   private migrationPrompt: Promise<void> | null = null;
   private saveQueue: Promise<void> = Promise.resolve();
   private reloadTimer: number | null = null;
-  private readonly ownWritePaths = new Set<string>();
+  private readonly ownWritePaths = new Map<string, number>();
   private isUpdatingOpenViews = false;
+  private readonly ownerWindow: Window;
 
   constructor(private readonly plugin: ExcalidrawPlugin) {
+    this.ownerWindow = plugin.app.workspace.containerEl.ownerDocument.defaultView;
     const handleLibraryFileChange = (file: { path: string }) => {
       if (
         file.path.startsWith(`${this.getFolderPath()}/`) &&
@@ -78,8 +80,10 @@ export class StencilLibraryManager {
     );
     plugin.register(() => {
       if (this.reloadTimer !== null) {
-        window.clearTimeout(this.reloadTimer);
+        this.ownerWindow.clearTimeout(this.reloadTimer);
       }
+      for (const timeout of this.ownWritePaths.values()) this.ownerWindow.clearTimeout(timeout);
+      this.ownWritePaths.clear();
     });
   }
 
@@ -121,12 +125,177 @@ export class StencilLibraryManager {
     if (this.isUpdatingOpenViews) {
       return;
     }
+    await this.queueSave(() => this.plugin.settings.libraryStorageMode === "data-json"
+      ? this.plugin.setLegacyStencilLibrary(this.createFileData(items))
+      : this.persistChanges(items));
+  }
+
+  /** Read the effective items, their owners, and the valid destination libraries. */
+  public async getResourceLibraries(): Promise<{
+    items: Array<{ item: LibraryItem; path: string | undefined }>;
+    paths: string[];
+    defaultPath?: string;
+  }> {
+    await this.saveQueue;
     if (this.plugin.settings.libraryStorageMode === "data-json") {
-      await this.plugin.setLegacyStencilLibrary(this.createFileData(items));
+      const items = restoreLibraryItems(getLibraryItems(this.plugin.getLegacyStencilLibrary()), "unpublished");
+      const owned = items.map<{ item: LibraryItem; path: string | undefined }>(item => ({ item, path: undefined }));
+      return { items: owned, paths: [] };
+    }
+    await this.ensureLoaded();
+    const defaultPath = this.getLocalLibraryPath();
+    const paths = [defaultPath, ...this.libraryFiles().filter(file => file.path !== defaultPath).map(file => file.path)];
+    return { items: this.currentItems.map(item => ({ item, path: this.itemSource.get(item.id) })), paths, defaultPath };
+  }
+
+  /** Rename one stencil in its current owner without rewriting its elements. */
+  public async renameResourceStencil(path: string | undefined, id: string, name: string): Promise<void> {
+    const title = name.trim();
+    if (!title) throw Error("Stencil name is empty");
+    const rename = (items: LibraryItems): LibraryItems => {
+      const matching = items.filter(item => item.id === id);
+      if (matching.length !== 1) throw Error("Stencil no longer has a unique match in its library");
+      if (matching[0].name === title) return items;
+      return items.map(item => item.id === id ? { ...item, name: title } : item);
+    };
+    if (path === undefined) {
+      await this.queueSave(async () => {
+        if (this.plugin.settings.libraryStorageMode !== "data-json") throw Error("Stencil storage changed");
+        const data = this.plugin.getLegacyStencilLibrary();
+        const items = getLibraryItems(data);
+        const renamed = rename(items);
+        if (renamed === items) return;
+        await this.plugin.setLegacyStencilLibrary(this.withLibraryItems(data, renamed));
+        await this.updateLibrariesInOpenViews(restoreLibraryItems(renamed, "unpublished"));
+      });
       return;
     }
-    this.saveQueue = this.saveQueue.then(() => this.persistChanges(items));
-    await this.saveQueue;
+    await this.editResourceLibraries(async () => {
+      const vault = this.plugin.app.vault;
+      const file = vault.getFileByPath(path);
+      if (!file) throw Error("Library is missing");
+      await vault.process(file, raw => {
+        const data = this.parseLibrary(raw);
+        const items = getLibraryItems(data);
+        const renamed = rename(items);
+        return renamed === items ? raw : JSON.stringify(this.withLibraryItems(data, renamed), null, 2);
+      });
+    }, path);
+  }
+
+  /** Create an empty standard library in the configured vault folder. */
+  public async createResourceLibrary(name: string): Promise<string> {
+    const filename = name.trim().replace(/\.excalidrawlib$/i, "");
+    if (!filename || filename.startsWith(".") || /[\\/:*?"<>|]/.test(filename) || filename.endsWith(".")) {
+      throw Error("Invalid library filename");
+    }
+    const path = this.getFolderPath() + "/" + filename + "." + LIBRARY_EXTENSION;
+    await this.editResourceLibraries(async () => {
+      if (this.plugin.app.vault.getAbstractFileByPath(path)) throw Error("Library already exists");
+      await this.ensureFolder();
+      await this.plugin.app.vault.create(path, JSON.stringify(this.createFileData([]), null, 2));
+    }, path);
+    return path;
+  }
+
+  /** Copy first, verify the destination, then remove only unchanged source items. */
+  public async moveResourceStencils(source: string, destination: string, ids: readonly string[]): Promise<void> {
+    if (source === destination || !ids.length) return;
+    await this.editResourceLibraries(async () => this.moveItems(source, destination, new Set(ids)), source, destination);
+  }
+
+  /** Trash a library only after a confirmed delete or a completed move of its contents. */
+  public async deleteResourceLibrary(path: string, destination: string | null, confirmedIds: readonly string[]): Promise<void> {
+    if (path === destination) throw Error("Source and destination must differ");
+    await this.editResourceLibraries(async () => {
+      const vault = this.plugin.app.vault;
+      const file = vault.getFileByPath(path);
+      if (!file) return;
+      const confirmed = new Set(confirmedIds);
+      const current = getLibraryItems(this.parseLibrary(await vault.read(file)));
+      if (current.some(item => !confirmed.has(item.id))) throw Error("Library contents changed");
+      if (destination) {
+        await this.moveItems(path, destination, new Set(current.map(item => item.id)));
+        if (getLibraryItems(this.parseLibrary(await vault.read(file))).length) throw Error("Library contents changed");
+      }
+      await this.plugin.app.fileManager.trashFile(file);
+    }, ...(destination ? [path, destination] : [path]));
+  }
+
+  private async moveItems(source: string, destination: string, ids: ReadonlySet<string>): Promise<void> {
+    const vault = this.plugin.app.vault;
+    const sourceFile = vault.getFileByPath(source);
+    let destinationFile = vault.getFileByPath(destination);
+    if (!sourceFile || !destinationFile && destination !== this.getLocalLibraryPath()) throw Error("Library is missing");
+    const sourceItems = getLibraryItems(this.parseLibrary(await vault.read(sourceFile)));
+    const moving = sourceItems.filter(item => ids.has(item.id));
+    if (!moving.length) return;
+    if (new Set(moving.map(item => item.id)).size !== moving.length) throw Error("Duplicate stencil IDs in source library");
+    const merge = (data: StencilLibraryData) => {
+      const items = getLibraryItems(data);
+      for (const item of moving) {
+        const existing = items.find(other => other.id === item.id);
+        if (existing && JSON.stringify(existing) !== JSON.stringify(item)) throw Error("Destination stencil ID collision");
+      }
+      return this.withLibraryItems(data, this.mergeById(items, moving));
+    };
+    if (!destinationFile) {
+      await this.ensureFolder();
+      destinationFile = await vault.create(destination, JSON.stringify(merge(this.createFileData([])), null, 2));
+    } else {
+      await vault.process(destinationFile, raw => JSON.stringify(merge(this.parseLibrary(raw)), null, 2));
+    }
+    const destinationRevision = destinationFile.stat.mtime;
+    const recorded = getLibraryItems(this.parseLibrary(await vault.read(destinationFile)));
+    if (!moving.every(item => recorded.some(other => JSON.stringify(item) === JSON.stringify(other)))) {
+      throw Error("Destination stencil write could not be verified");
+    }
+    const expected = new Map(moving.map(item => [item.id, JSON.stringify(item)]));
+    await vault.process(sourceFile, raw => {
+      if (vault.getFileByPath(destination) !== destinationFile || destinationFile.stat.mtime !== destinationRevision) {
+        throw Error("Destination library changed during move");
+      }
+      const data = this.parseLibrary(raw);
+      const items = getLibraryItems(data);
+      if (items.some(item => expected.has(item.id) && expected.get(item.id) !== JSON.stringify(item))) {
+        throw Error("Stencil changed during move; both copies were kept");
+      }
+      return JSON.stringify(this.withLibraryItems(data, items.filter(item => !expected.has(item.id))), null, 2);
+    });
+  }
+
+  private parseLibrary(raw: string): StencilLibraryData {
+    const data = JSON.parse(raw) as StencilLibraryData;
+    if (data?.type !== "excalidrawlib" || data.version !== 2 || !Array.isArray(data.libraryItems)) throw Error("Invalid stencil library");
+    return data;
+  }
+
+  private withLibraryItems(data: StencilLibraryData, items: LibraryItems): StencilLibraryFileData {
+    return { ...data, type: "excalidrawlib", version: 2, libraryItems: items };
+  }
+
+  private libraryFiles() {
+    const folder = this.getFolderPath();
+    return this.plugin.app.vault.getFolderByPath(folder)?.children.filter(file =>
+      !(file instanceof TFolder) && file.name.toLowerCase().endsWith("." + LIBRARY_EXTENSION)) ?? [];
+  }
+
+  private queueSave(edit: () => Promise<void>): Promise<void> {
+    const pending = this.saveQueue.then(edit);
+    this.saveQueue = pending.catch(() => {});
+    return pending;
+  }
+
+  private async editResourceLibraries(edit: () => Promise<void>, ...paths: string[]): Promise<void> {
+    try { await this.queueSave(async () => {
+      if (this.plugin.settings.libraryStorageMode !== "vault" || paths.some(path =>
+        path.slice(0, path.lastIndexOf("/")) !== this.getFolderPath() || !path.toLowerCase().endsWith("." + LIBRARY_EXTENSION))) {
+        throw Error("Vault stencil libraries are required");
+      }
+      try { await edit(); }
+      finally { this.invalidate(); }
+    }); }
+    finally { await this.reloadLibrariesInOpenViews(); }
   }
 
   public async showMigrationPrompt(): Promise<void> {
@@ -160,11 +329,15 @@ export class StencilLibraryManager {
     await this.saveQueue;
     this.invalidate();
     await this.ensureLoaded();
+    await this.updateLibrariesInOpenViews(this.currentItems);
+  }
+
+  private async updateLibrariesInOpenViews(items: LibraryItems): Promise<void> {
     this.isUpdatingOpenViews = true;
     try {
       for (const view of getExcalidrawViews(this.plugin.app, true)) {
         await view.excalidrawAPI.updateLibrary({
-          libraryItems: this.currentItems,
+          libraryItems: items,
           merge: false,
         });
       }
@@ -268,9 +441,9 @@ export class StencilLibraryManager {
 
   private scheduleOpenViewReload(): void {
     if (this.reloadTimer !== null) {
-      window.clearTimeout(this.reloadTimer);
+      this.ownerWindow.clearTimeout(this.reloadTimer);
     }
-    this.reloadTimer = window.setTimeout(() => {
+    this.reloadTimer = this.ownerWindow.setTimeout(() => {
       this.reloadTimer = null;
       void this.reloadLibrariesInOpenViews().catch((error) =>
         console.error("Could not reload stencil libraries", error),
@@ -504,7 +677,7 @@ export class StencilLibraryManager {
     }
   }
 
-  /** Writes a non-empty library or removes its file when no items remain. */
+  /** Write a standard library file, retaining empty libraries as destinations. */
   private async persistLibraryFile(
     path: string,
     data: StencilLibraryFileData,
@@ -513,12 +686,10 @@ export class StencilLibraryManager {
     if (data.libraryItems.length === 0 && !existing) {
       return;
     }
-    this.ownWritePaths.add(path);
+    const prior = this.ownWritePaths.get(path);
+    if (prior !== undefined) this.ownerWindow.clearTimeout(prior);
+    this.ownWritePaths.set(path, 0);
     try {
-      if (data.libraryItems.length === 0) {
-        await this.plugin.app.fileManager.trashFile(existing);
-        return;
-      }
       await this.ensureFolder();
       const content = JSON.stringify(data, null, 2);
       if (existing) {
@@ -530,10 +701,10 @@ export class StencilLibraryManager {
       }
       await this.plugin.app.vault.create(path, content);
     } finally {
-      window.setTimeout(
+      this.ownWritePaths.set(path, this.ownerWindow.setTimeout(
         () => this.ownWritePaths.delete(path),
         OWN_WRITE_EVENT_WINDOW_MS,
-      );
+      ));
     }
   }
 }

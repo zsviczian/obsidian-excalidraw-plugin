@@ -16,10 +16,11 @@ function fixture({ connected, nested = false, deferTimers = false, provider }) {
   const helpers = new Map();
   function helper(name) {
     if (helpers.has(name)) return helpers.get(name);
-    const source = readFileSync(resolve(import.meta.dirname, "../../src/shared/Suggesters", name.slice(2) + ".ts"), "utf8");
+    const path = name.startsWith("src/") ? "../../" + name : "../../src/shared/Suggesters/" + name.slice(2);
+    const source = readFileSync(resolve(import.meta.dirname, path + ".ts"), "utf8");
     const exports = {};
     vm.runInNewContext(ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText,
-      { exports, window: ownerWindow });
+      { exports, window: ownerWindow, require: helper });
     helpers.set(name, exports);
     return exports;
   }
