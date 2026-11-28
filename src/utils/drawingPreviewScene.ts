@@ -15,7 +15,7 @@ export async function readDrawingPreviewScene(vault: Vault, file: TFile, maxScen
   if (!json || json.length > maxSceneLength) throw Error("Drawing geometry exceeds the preview budget");
   const scene = JSON_parse<{ elements: ExcalidrawElement[] }>(json);
   if (!Array.isArray(scene?.elements)) throw Error("Drawing elements are missing");
-  return { elements: scene.elements.filter(element => !element.isDeleted), source: data };
+  return { elements: scene.elements.filter(element => !element.isDeleted), source: data, length: json.length };
 }
 
 /** Read saved geometry only, without constructing a model or refreshing text/images. */

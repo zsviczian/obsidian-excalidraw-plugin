@@ -12,23 +12,22 @@ import { getExcalidrawEmbeddedFilesFiletree, getIMGFilename } from "src/utils/fi
 import { blobToDataURL } from "src/utils/coreUtils";
 import type { VisualDiscoveryCandidate, VisualDiscoveryRule, VisualResource, VisualResourceLocator } from "src/types/visualResourceTypes";
 import type ExcalidrawView from "src/view/ExcalidrawView";
-import { EmbeddedFile, EmbeddedFilesLoader } from "../EmbeddedFileLoader";
+import { EmbeddedFilesLoader } from "../EmbeddedFileLoader";
 import { getLucideIcons, prepareLucideIcon } from "../lucideIcons";
 import { FrameworkCatalog } from "./FrameworkCatalog";
 import { ResourceCollections } from "./ResourceCollections";
 import { addCanvasResource, drawingTarget, writableDocument } from "./VisualResourceTargets";
-import { compileVisualExclusions, compileVisualRules, MAX_THUMBNAIL_ELEMENTS, readIconLibrarySettings, visualResourceKey } from "./visualResourceModel";
+import { compileVisualExclusions, compileVisualRules, DRAWING_PREVIEW_SCENE_LENGTH, DRAWING_PREVIEW_SOURCE_BYTES,
+  MAX_THUMBNAIL_ELEMENTS, readIconLibrarySettings, visualResourceKey } from "./visualResourceModel";
 import { rasterizeDrawingResource } from "./drawingResourceThumbnail";
 import { DrawingThumbnailCache } from "./DrawingThumbnailCache";
 
 const DRAG_TYPE = "application/x-obsidian-excalidraw-visual-resource";
 const HOVER_SOURCE = "excalidraw-visual-resources";
-const THUMBNAIL_VERSION = "png-v1";
+const THUMBNAIL_VERSION = "png-v2";
 const PREVIEW_CACHE_BYTES = 2 * 1024 * 1024;
 const DRAWING_PREVIEW_BYTES = 256 * 1024;
 const COLD_DRAWING_BYTES = 64 * 1024;
-const FRAME_INSPECTION_BYTES = 1024 * 1024;
-const PREVIEW_SCENE_LENGTH = 6 * 1024 * 1024;
 
 type ScenePoint = { x: number; y: number };
 type MindMapBuilder = {
@@ -159,7 +158,7 @@ export class VisualResources {
     const file = this.sourceFile(resource);
     if (!file || !this.plugin.isExcalidrawFile(file)) return [];
     if (file.stat.size > COLD_DRAWING_BYTES && resource.frames?.length) return resource.frames;
-    if (file.stat.size > FRAME_INSPECTION_BYTES) return [];
+    if (file.stat.size > DRAWING_PREVIEW_SOURCE_BYTES) return [];
     const frameRules = this.rules(scriptName).frame;
     const stamp = JSON.stringify([file.stat.mtime, frameRules]);
     const cached = this.framePreviews.get(file.path);
@@ -177,7 +176,7 @@ export class VisualResources {
   private async inspectFrames(file: TFile, frameRules: VisualDiscoveryRule[]): Promise<VisualResource[]> {
     const candidate = this.candidate(file);
     const matches = compileVisualRules("frame", frameRules);
-    const frames = getSceneFrames(await readDrawingPreviewElements(this.plugin.app.vault, file, PREVIEW_SCENE_LENGTH));
+    const frames = getSceneFrames(await readDrawingPreviewElements(this.plugin.app.vault, file, DRAWING_PREVIEW_SCENE_LENGTH));
     const nameCounts = new Map<string, number>();
     for (const frame of frames) nameCounts.set(frame.name, (nameCounts.get(frame.name) ?? 0) + 1);
     return frames.flatMap(frame => {
@@ -207,7 +206,7 @@ export class VisualResources {
     for (const [path, ids] of grouped) {
       const file = this.plugin.app.vault.getFileByPath(path);
       if (!file || !this.plugin.isExcalidrawFile(file)) continue;
-      if (file.stat.size > FRAME_INSPECTION_BYTES) {
+      if (file.stat.size > DRAWING_PREVIEW_SOURCE_BYTES) {
         const names: unknown = this.plugin.app.metadataCache.getFileCache(file)?.frontmatter?.[FRAME_ANCHORS_PROPERTY];
         if (Array.isArray(names)) for (const name of names) {
           if (typeof name === "string" && ids.has(name)) results.push(this.frameResource(file, name, name, []));
@@ -575,27 +574,26 @@ export class VisualResources {
         const png = persistent() ? await this.thumbnailCache.get(cacheId, stamp) : null;
         if (!current()) return null;
         let image = png && persistent() ? await blobToDataURL(png) : null;
-        if (!image) {
+        if (!image && !frame) {
           const loader = new EmbeddedFilesLoader(this.plugin, dark);
-          const input = frame ? new EmbeddedFile(this.plugin, file.path, this.link(resource, file)) : file;
-          const result = await loader.getObsidianImage(input, 0, {
+          const result = await loader.getObsidianImage(file, 0, {
             transientExcalidrawPreviewBytes: DRAWING_PREVIEW_BYTES,
             deferUncachedExcalidraw: true,
           });
           image = result?.dataURL ?? null;
         }
         let rendered: Blob | null = null;
-        if (!image && current() && file.stat.size <= FRAME_INSPECTION_BYTES) {
+        if (!image && current() && file.stat.size <= DRAWING_PREVIEW_SOURCE_BYTES) {
           // Yield between cold previews so scrolling and editing can continue.
           await new Promise<void>(resolve => window.setTimeout(resolve, 16));
           if (!current()) return null;
           const previous = this.previewScene;
           const scene = previous?.file === file && previous.path === path && previous.mtime === mtime
-            ? previous.scene : await readDrawingPreviewScene(this.plugin.app.vault, file, PREVIEW_SCENE_LENGTH);
+            ? previous.scene : await readDrawingPreviewScene(this.plugin.app.vault, file, DRAWING_PREVIEW_SCENE_LENGTH);
           if (!current()) return null;
           if (scene.elements.length <= MAX_THUMBNAIL_ELEMENTS) this.previewScene = { file, path, mtime, scene };
           const thumbnail: unknown = this.plugin.app.metadataCache.getFileCache(file)?.frontmatter?.[FRAME_THUMBNAIL_PROPERTY];
-          rendered = await rasterizeDrawingResource(this.plugin.app, file, scene, frame, thumbnail, dark, current);
+          rendered = await rasterizeDrawingResource(this.plugin, file, scene, frame, thumbnail, dark, current);
           if (rendered && current()) image = await blobToDataURL(rendered);
         }
         if (!image || !current() || this.previewKey(resource, dark) !== key) return null;

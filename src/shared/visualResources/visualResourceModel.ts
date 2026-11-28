@@ -5,23 +5,32 @@ import type { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/src/
 
 const ICON_EXTENSIONS = ["png", "jpg", "jpeg", "gif", "svg", "webp"];
 export const MAX_THUMBNAIL_ELEMENTS = 2400;
+export const DRAWING_PREVIEW_SOURCE_BYTES = 1024 * 1024;
+export const DRAWING_PREVIEW_SCENE_LENGTH = 6 * 1024 * 1024;
 export const VISUAL_RESOURCE_FILTERS: readonly VisualResourceFilter[] = ["icon", "lucide", "image", "drawing", "stencil", "framework", "other"];
 
 export const DEFAULT_ICON_RULES: readonly VisualDiscoveryRule[] = ["Icon", "Stickfigure", "Logo"].map(name => ({
   name, pattern: "^" + name.toLowerCase() + " - (.*?)(?: - [^-]+)?$",
 }));
 
-/** Limit the decoded geometry passed to the gallery rasterizer. */
-export function admitDrawingPreview(elements: readonly ExcalidrawElement[]): boolean {
-  if (elements.length > MAX_THUMBNAIL_ELEMENTS) return false;
+export function drawingPreviewGeometryBudget() {
+  return { elements: MAX_THUMBNAIL_ELEMENTS, points: 64_000, text: 12_000 };
+}
+
+/** Limit the geometry across a thumbnail and the drawings embedded in it. */
+export function admitDrawingPreview(elements: readonly ExcalidrawElement[], budget = drawingPreviewGeometryBudget()): boolean {
+  if (elements.length > budget.elements) return false;
   let points = 0;
   let textLength = 0;
   for (const element of elements) {
     if (element.isDeleted) continue;
     if ("points" in element) points += element.points.length;
     if (element.type === "text") textLength += element.text.length;
-    if (points > 64_000 || textLength > 12_000) return false;
+    if (points > budget.points || textLength > budget.text) return false;
   }
+  budget.elements -= elements.length;
+  budget.points -= points;
+  budget.text -= textLength;
   return true;
 }
 

@@ -91,6 +91,7 @@ async function exercise(c, drawingPath, library) {
   const count = () => api.getSceneElements().length;
   const locator = { provider: "vault", path: svg.path };
   let persistedThumbnail;
+  let persistedFrame;
   await runCase("native:visual-resources:palette-and-insertion", async () => {
     const indexedResources = await plugin.visualResources.list();
     const indexed = indexedResources.find(resource => resource.source === svg.path);
@@ -330,6 +331,13 @@ async function exercise(c, drawingPath, library) {
     await c.waitFor(() => framePane.querySelector(".excalidraw-resource-body")?.textContent.includes("Divider test frame"),
       "frame selector with a visible split divider");
     check(framePane.querySelectorAll(".excalidraw-resource-body").length === 3, "The master query hid other frames from the selected drawing");
+    const selectedCard = framesButton.closest(".excalidraw-resource-card");
+    check(selectedCard.classList.contains("is-frame-source") && win.getComputedStyle(selectedCard).outlineWidth === "2px" &&
+      framesButton.getAttribute("aria-pressed") === "true", "The drawing with an open frame pane did not get an accent outline");
+    framesButton.click();
+    check(!selectedCard.classList.contains("is-frame-source"), "The drawing kept its accent outline after closing its frames");
+    framesButton.click();
+    await c.waitFor(() => framePane.querySelectorAll(".excalidraw-resource-body").length === 3, "highlighted drawing reopens its frames");
     let x, y;
     await c.waitFor(() => {
       const start = divider.getBoundingClientRect();
@@ -607,6 +615,18 @@ async function exercise(c, drawingPath, library) {
     const linked = await vault.create(root + "/Preview linked frame.excalidraw.md", savedDrawing([
       previewFrame, makeImage("preview-inside", "inside", 0), makeImage("preview-outside", "outside", 700),
     ], "excalidraw-thumbnail: Thumbnail\n", "## Embedded Files\ninside: [[" + inside.path + "]]\n\noutside: [[" + outside.path + "]]\n"));
+    const rectangle = library.libraryItems[0].elements.find(el => el.type === "rectangle");
+    const tile = (id, x, width, color) => ({ ...rectangle, id, x, y: 0, width, height: 300, angle: 0,
+      opacity: 100, frameId: null, index: null, groupIds: [], backgroundColor: color, strokeColor: color, fillStyle: "solid", roughness: 0 });
+    const child = await vault.create(root + "/Preview linked drawing child.excalidraw.md", savedDrawing([
+      { ...previewFrame, name: "card", frameRole: "marker" },
+      tile("blue-tile", 0, 400, "#1266dc"),
+      tile("pink-tile", 400, 410, "#db278f"),
+    ]));
+    const nested = await vault.create(root + "/Preview linked drawing parent.excalidraw.md", savedDrawing([
+      { ...previewFrame, name: "Linked drawing frame", frameRole: "marker" },
+      makeImage("nested-image", "nested", 0),
+    ], "excalidraw-anchors: [Linked drawing frame]\n", "## Embedded Files\nnested: [[" + child.path + "#^frame=card|100%]]\n"));
     const line = library.libraryItems[0].elements.find(el => el.type === "line");
     const detailed = await vault.create(root + "/Preview detailed vectors.excalidraw.md", savedDrawing(
       Array.from({ length: 1734 }, (_, i) => ({ ...line, id: "preview-line-" + i, index: null, groupIds: [],
@@ -614,6 +634,7 @@ async function exercise(c, drawingPath, library) {
         points: Array.from({ length: 30 }, (_, point) => [point, point % 2 * 6]), boundElements: null, angle: 0 }))));
     await c.waitFor(() => app.metadataCache.getFileCache(linked)?.frontmatter?.["excalidraw-thumbnail"] === "Thumbnail",
       "saved thumbnail frame is indexed");
+    await c.waitFor(() => plugin.isExcalidrawFile(child) && plugin.isExcalidrawFile(nested), "nested drawing thumbnail fixtures are indexed");
     await c.waitFor(() => app.metadataCache.getFileCache(large)?.frontmatter?.["excalidraw-anchors"]?.includes("Divider test frame"),
       "large drawing has indexed frame metadata");
     const note = await vault.create(root + "/Destination note.md", "Test note\n");
@@ -684,6 +705,7 @@ async function exercise(c, drawingPath, library) {
       const previews = await resources.list();
       const linkedResource = previews.find(item => item.source === linked.path);
       const detailedResource = previews.find(item => item.source === detailed.path);
+      const nestedResource = previews.find(item => item.source === nested.path);
       const readBinary = vault.readBinary, rasterReads = [];
       vault.readBinary = function(file) {
         if (file === inside || file === outside) rasterReads.push(file.path);
@@ -712,6 +734,24 @@ async function exercise(c, drawingPath, library) {
         check(changed !== url && changed?.startsWith("data:image/png") && rasterReads.length === 2,
           "A stale thumbnail survived a linked image change");
         persistedThumbnail = { drawing: linked, attachment: inside, url: changed };
+        const [namedFrame] = await resources.frames(nestedResource);
+        check(namedFrame?.title === "Linked drawing frame", "The nested-drawing fixture has no named frame");
+        const frameKey = JSON.stringify([nested.path, namedFrame.locator.frame, false]);
+        const frameStamp = resources.previewKey(namedFrame, false);
+        const oldPng = await (await win.fetch(url)).blob();
+        await resources.thumbnailCache.put(frameKey, "png-v1" + frameStamp, oldPng);
+        const frameUrl = await resources.preview(namedFrame, false);
+        check(frameUrl?.startsWith("data:image/png") && frameUrl !== url, "The named frame did not render a fresh PNG");
+        image.src = frameUrl;
+        await image.decode();
+        check(image.naturalWidth === 256 && image.naturalHeight === 192, "The named frame PNG exceeded its size or lost its aspect ratio");
+        ctx.clearRect(0, 0, 1, 1);
+        ctx.drawImage(image, -128, -96);
+        const [nr, ng, nb, na] = ctx.getImageData(0, 0, 1, 1).data;
+        check(nr < 40 && ng > 70 && nb > 190 && na === 255, "Named frame did not show the linked drawing's chosen frame: " + [nr, ng, nb, na]);
+        check((await resources.thumbnailCache.get(frameKey, "png-v2" + frameStamp))?.type === "image/png",
+          "The named frame PNG was not stored in the same thumbnail cache");
+        persistedFrame = { drawing: nested, child, resource: namedFrame, url: frameUrl };
         check((await resources.preview(detailedResource, false))?.startsWith("data:image/png"),
           "The detailed cold drawing with 1,734 elements and 52,020 stroke points did not produce a PNG");
       } finally { vault.readBinary = readBinary; }
@@ -743,7 +783,7 @@ async function exercise(c, drawingPath, library) {
     check(doc === panel.ownerDocument, "document insertion changed the panel's owning document");
     return { assertions: ["Markdown receives linked SVG and named-frame embeds, including drop at the pointer",
       "Canvas saves a native file node with its frame subpath",
-      "low-resolution drawing PNGs retain linked JPEG pixels and skip assets outside the selected frame",
+      "low-resolution drawing and frame PNGs retain linked JPEGs and linked drawing frames, and skip out-of-frame assets",
       "detailed vector scenes produce a PNG and over-budget cold files use the ribbon icon without reading the scene"] };
   });
   await runCase("native:visual-resources:popout-drop", async () => {
@@ -849,7 +889,7 @@ async function exercise(c, drawingPath, library) {
     const cachedRead = vault.cachedRead, readBinary = vault.readBinary;
     let renderedAgain = 0;
     vault.cachedRead = function(file) {
-      if (file === persistedThumbnail.drawing) renderedAgain++;
+      if ([persistedThumbnail.drawing, persistedFrame?.drawing, persistedFrame?.child].includes(file)) renderedAgain++;
       return cachedRead.call(this, file);
     };
     vault.readBinary = function(file) {
@@ -859,9 +899,11 @@ async function exercise(c, drawingPath, library) {
     try {
       check(await service.preview(thumbnail, false) === persistedThumbnail.url && !renderedAgain,
         "The PNG was regenerated after restarting the plugin");
+      check(persistedFrame && await service.preview(persistedFrame.resource, false) === persistedFrame.url && !renderedAgain,
+        "The named frame PNG reread its drawing or nested drawing after plugin restart");
       const cache = service.thumbnailCache;
       const key = JSON.stringify([persistedThumbnail.drawing.path, null, false]);
-      const stamp = "png-v1" + service.previewKey(thumbnail, false);
+      const stamp = "png-v2" + service.previewKey(thumbnail, false);
       check((await cache.get(key, stamp))?.type === "image/png", "IndexedDB did not store the preview as a PNG blob");
       await service.clearThumbnailCache();
       check(!await cache.get(key, stamp), "Purge Cache left a Visual Resources thumbnail in IndexedDB");

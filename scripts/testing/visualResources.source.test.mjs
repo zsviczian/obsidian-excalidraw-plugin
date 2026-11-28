@@ -70,6 +70,10 @@ test("drawing thumbnail geometry admits detailed drawings and separates asset lo
   assert.equal(model.admitDrawingPreview(Array(2401).fill({ type: "ellipse" })), false);
   assert.equal(model.admitDrawingPreview([{ type: "freedraw", points: Array(64_001).fill([1, 1]) }]), false);
   assert.equal(model.admitDrawingPreview([{ type: "text", text: "x".repeat(12_001) }]), false);
+  const shared = model.drawingPreviewGeometryBudget();
+  assert.equal(model.admitDrawingPreview([{ type: "freedraw", points: Array(49_000).fill([1, 1]) }], shared), true);
+  assert.equal(model.admitDrawingPreview([{ type: "freedraw", points: Array(15_001).fill([1, 1]) }], shared), false);
+  assert.equal(model.admitDrawingPreview([{ type: "freedraw", points: Array(15_000).fill([1, 1]) }], shared), true);
 });
 
 class Component { registerEvent() {} }

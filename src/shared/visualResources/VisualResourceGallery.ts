@@ -322,9 +322,11 @@ export class VisualResourceGallery extends Component implements HoverParent {
       }
       if (frameButton) {
         const count = this.actions.frameCount?.(resource) ?? null;
+        const selected = this.actions.frameSelected?.(resource) ?? false;
+        card.toggleClass("is-frame-source", selected);
         setElementHidden(frameButton, count === null);
         frameButton.setAttribute("aria-label", t("VR_BROWSE_FRAMES") + (count ? " (" + count + ")" : ""));
-        frameButton.setAttribute("aria-pressed", String(this.actions.frameSelected?.(resource) ?? false));
+        frameButton.setAttribute("aria-pressed", String(selected));
         frameCount.setText(count ? String(count) : "");
       }
       if (this.options.background) setStyle(preview.element, { backgroundColor: this.options.background });
