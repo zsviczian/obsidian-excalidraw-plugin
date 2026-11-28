@@ -1338,9 +1338,9 @@ export default {
   EMBED_THEME_BACKGROUND: "图像的主题和背景色",
   EMBED_THEME_BACKGROUND_DESC:
     "选择导出图像的背景和主题，以及预览是否跟随 Obsidian 主题。",
-  EMBED_IMAGE_CACHE_NAME: "为嵌入到 Markdown 文档中的绘图创建预览图缓存",
+  EMBED_IMAGE_CACHE_NAME: "缓存渲染图像和缩略图",
   EMBED_IMAGE_CACHE_DESC:
-    "缓存用于嵌入 Markdown 的图像。绘图或其嵌套的仓库文件依赖发生变化时，缓存的绘图会刷新。",
+    "在此设备上缓存 Markdown 嵌入图像和视觉资源中的绘图缩略图。绘图或其依赖的仓库文件发生变化时，缓存会刷新。",
   SCENE_IMAGE_CACHE_NAME: "缓存场景中嵌套的绘图",
   SCENE_IMAGE_CACHE_DESC:
     "Excalidraw 会识别嵌套绘图及其嵌入仓库文件源的变化，并相应更新缓存。" +

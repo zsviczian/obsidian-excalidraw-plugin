@@ -1,4 +1,4 @@
-import { Component, Platform, setIcon, setTooltip } from "obsidian";
+import { Component, Platform, setIcon, setTooltip, type HoverParent, type HoverPopover } from "obsidian";
 import { ICON_NAME } from "src/constants/constants";
 import { t } from "src/lang/helpers";
 import type { VisualResource } from "src/types/visualResourceTypes";
@@ -64,7 +64,9 @@ export function visualResourceButton(parent: HTMLElement, icon: string, label: s
 }
 
 /** Viewport-driven previews and shared card semantics for sidepanel and picker. */
-export class VisualResourceGallery extends Component {
+export class VisualResourceGallery extends Component implements HoverParent {
+  public hoverPopover: HoverPopover | null = null;
+  private hoverTarget: HTMLElement | null = null;
   private resources: readonly VisualResource[] = [];
   private options: GalleryOptions = {};
   private page = 0;
@@ -116,6 +118,7 @@ export class VisualResourceGallery extends Component {
       this.resetPreviews();
       this.cards.clear();
       this.cancelClick();
+      this.closeHoverPreview();
       this.root.remove();
     });
   }
@@ -137,6 +140,13 @@ export class VisualResourceGallery extends Component {
   public cancelClick(): void {
     if (this.click) this.click.win.clearTimeout(this.click.id);
     this.click = null;
+  }
+
+  /** Close the native preview when its gallery or owner window changes. */
+  public closeHoverPreview(): void {
+    this.hoverPopover?.hide();
+    this.hoverPopover = null;
+    this.hoverTarget = null;
   }
 
   /** Render a bounded page of matching descriptors. */
@@ -209,6 +219,7 @@ export class VisualResourceGallery extends Component {
     if (focused?.isConnected && this.root.contains(focused) && this.root.ownerDocument.activeElement !== focused) {
       focused.focus({ preventScroll: true });
     }
+    if (this.hoverTarget && !this.hoverTarget.isConnected) this.closeHoverPreview();
     setElementHidden(this.empty, !!visible.length);
     setElementHidden(this.pager, this.resources.length <= PAGE_SIZE);
     this.previous.disabled = offset === 0;
@@ -232,6 +243,9 @@ export class VisualResourceGallery extends Component {
       attr: { type: "button", "aria-label": resource.title },
     }) : null;
     const body = button ?? card.createEl("label", { cls: "excalidraw-resource-body" });
+    if (resource.locator.provider === "vault") body.onmouseenter = event => {
+      if (this.service.hover(resource, event, body, this)) this.hoverTarget = body;
+    };
     const checkbox = button ? undefined : body.createEl("input", {
       cls: "excalidraw-resource-checkbox", type: "checkbox", attr: { "aria-label": resource.title },
     });

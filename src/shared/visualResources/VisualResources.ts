@@ -1,4 +1,4 @@
-import { FileSystemAdapter, getAllTags, getIcon, MarkdownView, Notice, Platform, type TFile, type View } from "obsidian";
+import { FileSystemAdapter, getAllTags, getIcon, MarkdownView, Notice, Platform, type HoverParent, type TFile, type View } from "obsidian";
 import type { LibraryItem } from "@zsviczian/excalidraw/types/excalidraw/types";
 import type { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/src/types";
 import { IMAGE_TYPES, nanoid } from "src/constants/constants";
@@ -9,6 +9,7 @@ import { getTemplate } from "src/utils/excalidrawAutomateUtils";
 import { readDrawingPreviewElements, readDrawingPreviewScene } from "src/utils/drawingPreviewScene";
 import { repositionElementsToCursor } from "src/utils/excalidrawElementUtils";
 import { getExcalidrawEmbeddedFilesFiletree, getIMGFilename } from "src/utils/fileUtils";
+import { blobToDataURL } from "src/utils/coreUtils";
 import type { VisualDiscoveryCandidate, VisualDiscoveryRule, VisualResource, VisualResourceLocator } from "src/types/visualResourceTypes";
 import type ExcalidrawView from "src/view/ExcalidrawView";
 import { EmbeddedFile, EmbeddedFilesLoader } from "../EmbeddedFileLoader";
@@ -18,8 +19,11 @@ import { ResourceCollections } from "./ResourceCollections";
 import { addCanvasResource, drawingTarget, writableDocument } from "./VisualResourceTargets";
 import { compileVisualExclusions, compileVisualRules, MAX_THUMBNAIL_ELEMENTS, readIconLibrarySettings, visualResourceKey } from "./visualResourceModel";
 import { rasterizeDrawingResource } from "./drawingResourceThumbnail";
+import { DrawingThumbnailCache } from "./DrawingThumbnailCache";
 
 const DRAG_TYPE = "application/x-obsidian-excalidraw-visual-resource";
+const HOVER_SOURCE = "excalidraw-visual-resources";
+const THUMBNAIL_VERSION = "png-v1";
 const PREVIEW_CACHE_BYTES = 2 * 1024 * 1024;
 const DRAWING_PREVIEW_BYTES = 256 * 1024;
 const COLD_DRAWING_BYTES = 64 * 1024;
@@ -44,6 +48,8 @@ export class VisualResources {
   private readonly libraryPreviewKeys = new WeakMap<LibraryItem["elements"], string>();
   private readonly framePreviews = new Map<string, { stamp: string; frames: Promise<VisualResource[]> }>();
   private previewBytes = 0;
+  private previewEpoch = 0;
+  private readonly thumbnailCache: DrawingThumbnailCache;
   private drawingPreviewQueue: Promise<unknown> = Promise.resolve();
   private previewScene: { file: TFile; path: string; mtime: number; scene: Awaited<ReturnType<typeof readDrawingPreviewScene>> } | null = null;
   private readonly lucideAttachments = new Map<string, TFile>();
@@ -51,7 +57,19 @@ export class VisualResources {
   constructor(private readonly plugin: ExcalidrawPlugin) {
     this.collections = plugin.addChild(new ResourceCollections(plugin));
     this.frameworks = new FrameworkCatalog(plugin);
-    plugin.register(() => { this.disposed = true; this.endDrag(); this.previews.clear(); this.framePreviews.clear(); this.previewScene = null; this.lucideAttachments.clear(); });
+    const owner = plugin.app.workspace.containerEl.ownerDocument.defaultView;
+    this.thumbnailCache = new DrawingThumbnailCache(owner, "Excalidraw Visual Resources " + plugin.app.appId,
+      () => plugin.settings.imageCacheRetentionDays ?? 30);
+    if (Platform.isDesktopApp) plugin.registerHoverLinkSource(HOVER_SOURCE, { display: t("VR_TITLE"), defaultMod: true });
+    plugin.register(() => {
+      this.disposed = true;
+      this.thumbnailCache.destroy();
+      this.endDrag();
+      this.previews.clear();
+      this.framePreviews.clear();
+      this.previewScene = null;
+      this.lucideAttachments.clear();
+    });
   }
 
   /** Read compatible script settings as defaults without altering the installed script. */
@@ -229,6 +247,17 @@ export class VisualResources {
 
   private link(resource: VisualResource, file: TFile): string {
     return file.path + (resource.locator.provider === "vault" && resource.locator.frame ? "#^frame=" + resource.locator.frame : "");
+  }
+
+  /** Route eligible gallery cards through Obsidian's Page Preview and its modifier settings. */
+  public hover(resource: VisualResource, event: MouseEvent, targetEl: HTMLElement, hoverParent: HoverParent): boolean {
+    if (!Platform.isDesktopApp || resource.locator.provider !== "vault") return false;
+    const file = this.sourceFile(resource);
+    if (!file || !this.plugin.isExcalidrawFile(file) && !IMAGE_TYPES.includes(file.extension.toLowerCase())) return false;
+    this.plugin.app.workspace.trigger("hover-link", {
+      event, targetEl, hoverParent, source: HOVER_SOURCE, sourcePath: "", linktext: this.link(resource, file),
+    });
+    return true;
   }
 
   private markdownLink(source: TFile, target: TFile, subpath?: string): string {
@@ -497,11 +526,13 @@ export class VisualResources {
     const file = this.sourceFile(resource);
     const drawing = file && this.plugin.isExcalidrawFile(file);
     const dependencies = drawing
-      ? getExcalidrawEmbeddedFilesFiletree(file, this.plugin).map(source => [source.path, source.stat.mtime, source.stat.size])
+      ? getExcalidrawEmbeddedFilesFiletree(file, this.plugin).sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0)
+        .map(source => [source.path, source.stat.mtime, source.stat.size])
       : [];
     const rendition = drawing && resource.locator.provider === "vault" && !resource.locator.frame ? this.exportedPreview(file, dark) : null;
+    const thumbnail: unknown = drawing ? this.plugin.app.metadataCache.getFileCache(file)?.frontmatter?.[FRAME_THUMBNAIL_PROPERTY] : null;
     return JSON.stringify([visualResourceKey(resource.locator), !!drawing, file?.stat.mtime, file?.stat.size, dark, dependencies,
-      rendition?.path, rendition?.stat.mtime]);
+      rendition?.path, rendition?.stat.mtime, typeof thumbnail === "string" ? thumbnail : null]);
   }
 
   private exportedPreview(file: TFile, dark: boolean): TFile | null {
@@ -532,18 +563,28 @@ export class VisualResources {
     if (resource.locator.provider === "vault" && file) {
       const frame = resource.locator.frame;
       const path = file.path, mtime = file.stat.mtime;
+      const epoch = this.previewEpoch;
       const pending = this.drawingPreviewQueue.then(async () => {
         if (this.disposed || !active() || this.sourceFile(resource) !== file || file.path !== path || file.stat.mtime !== mtime) return null;
         const rendition = !frame && this.exportedPreview(file, dark);
         if (rendition) return this.plugin.app.vault.getResourcePath(rendition);
-        const loader = new EmbeddedFilesLoader(this.plugin, dark);
-        const input = frame ? new EmbeddedFile(this.plugin, file.path, this.link(resource, file)) : file;
-        const result = await loader.getObsidianImage(input, 0, {
-          transientExcalidrawPreviewBytes: DRAWING_PREVIEW_BYTES,
-          deferUncachedExcalidraw: true,
-        });
         const current = () => !this.disposed && active() && this.sourceFile(resource) === file && file.path === path && file.stat.mtime === mtime;
-        let image = result?.dataURL as string | undefined;
+        const persistent = () => epoch === this.previewEpoch && this.plugin.settings.allowImageCache;
+        const cacheId = JSON.stringify([path, frame ?? null, dark]);
+        const stamp = THUMBNAIL_VERSION + key;
+        const png = persistent() ? await this.thumbnailCache.get(cacheId, stamp) : null;
+        if (!current()) return null;
+        let image = png && persistent() ? await blobToDataURL(png) : null;
+        if (!image) {
+          const loader = new EmbeddedFilesLoader(this.plugin, dark);
+          const input = frame ? new EmbeddedFile(this.plugin, file.path, this.link(resource, file)) : file;
+          const result = await loader.getObsidianImage(input, 0, {
+            transientExcalidrawPreviewBytes: DRAWING_PREVIEW_BYTES,
+            deferUncachedExcalidraw: true,
+          });
+          image = result?.dataURL ?? null;
+        }
+        let rendered: Blob | null = null;
         if (!image && current() && file.stat.size <= FRAME_INSPECTION_BYTES) {
           // Yield between cold previews so scrolling and editing can continue.
           await new Promise<void>(resolve => window.setTimeout(resolve, 16));
@@ -554,10 +595,13 @@ export class VisualResources {
           if (!current()) return null;
           if (scene.elements.length <= MAX_THUMBNAIL_ELEMENTS) this.previewScene = { file, path, mtime, scene };
           const thumbnail: unknown = this.plugin.app.metadataCache.getFileCache(file)?.frontmatter?.[FRAME_THUMBNAIL_PROPERTY];
-          image = await rasterizeDrawingResource(this.plugin.app, file, scene, frame, thumbnail, dark, current);
+          rendered = await rasterizeDrawingResource(this.plugin.app, file, scene, frame, thumbnail, dark, current);
+          if (rendered && current()) image = await blobToDataURL(rendered);
         }
         if (!image || !current() || this.previewKey(resource, dark) !== key) return null;
-        this.rememberPreview(key, image);
+        if (rendered && persistent()) await this.thumbnailCache.put(cacheId, stamp, rendered);
+        if (!current()) return null;
+        if (epoch === this.previewEpoch) this.rememberPreview(key, image);
         return image;
       });
       this.drawingPreviewQueue = pending.catch(() => {});
@@ -576,6 +620,14 @@ export class VisualResources {
       if (resource.previewElements) this.rememberPreview(key, data);
       return data;
     } finally { ea.destroy(); }
+  }
+
+  /** Clears both thumbnail tiers and retires writes already rendering. */
+  public async clearThumbnailCache(): Promise<void> {
+    this.previewEpoch++;
+    this.previews.clear();
+    this.previewBytes = 0;
+    await this.thumbnailCache.clear();
   }
 
   private rememberPreview(key: string, data: string): void {

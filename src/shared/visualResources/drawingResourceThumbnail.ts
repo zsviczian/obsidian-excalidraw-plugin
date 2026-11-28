@@ -3,7 +3,6 @@ import type { BinaryFiles, DataURL } from "@zsviczian/excalidraw/types/excalidra
 import type { App, TFile } from "obsidian";
 import { exportToBlob } from "src/constants/constants";
 import { EMBEDDED_VAULT_FILE_REG, RE_EXCALIDRAWDATA_NOSECTION_OK } from "src/shared/excalidrawMarkdownParsing";
-import { blobToDataURL } from "src/utils/coreUtils";
 import { getElementsInArea } from "src/utils/excalidrawElementUtils";
 import { resolveThumbnailFrame } from "src/utils/frameMetadata";
 import { getFrameBasedOnFrameNameOrId } from "src/utils/excalidrawViewUtils";
@@ -86,7 +85,7 @@ async function loadVisibleImages(app: App, drawing: TFile, source: string, eleme
 
 /** Render from saved scene data using a small output canvas and only in-area image renditions. */
 export async function rasterizeDrawingResource(app: App, drawing: TFile, scene: PreviewScene, frameId: string | undefined,
-  thumbnail: unknown, dark: boolean, active: () => boolean): Promise<string | null> {
+  thumbnail: unknown, dark: boolean, active: () => boolean): Promise<Blob | null> {
   const { elements, source } = scene;
   const frame = frameId ? getFrameBasedOnFrameNameOrId(frameId, elements) : resolveThumbnailFrame(elements, thumbnail);
   if (frameId && !frame) return null;
@@ -113,7 +112,7 @@ export async function rasterizeDrawingResource(app: App, drawing: TFile, scene: 
       return { ...element, isDeleted: false, type: "rectangle", fillStyle: "solid", strokeColor: "#868e96", backgroundColor: "#868e9633", roughness: 0 };
     return { ...element, isDeleted: false };
   });
-  const blob = await exportToBlob({
+  return exportToBlob({
     elements: geometry,
     files,
     exportingFrame: frame ? { ...frame, isDeleted: false } : undefined,
@@ -126,5 +125,4 @@ export async function rasterizeDrawingResource(app: App, drawing: TFile, scene: 
       return { width: Math.max(1, Math.floor(width * scale)), height: Math.max(1, Math.floor(height * scale)), scale };
     },
   });
-  return blobToDataURL(blob);
 }

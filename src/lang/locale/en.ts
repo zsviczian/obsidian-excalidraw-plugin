@@ -1430,9 +1430,9 @@ export default {
   EMBED_THEME_BACKGROUND: "Image theme and background color",
   EMBED_THEME_BACKGROUND_DESC:
     "Choose exported-image background and theme behavior and whether previews follow Obsidian's theme.",
-  EMBED_IMAGE_CACHE_NAME: "Cache images for embedding in markdown",
+  EMBED_IMAGE_CACHE_NAME: "Cache rendered images and thumbnails",
   EMBED_IMAGE_CACHE_DESC:
-    "Cache images for embedding in markdown. Cached drawings are refreshed when the drawing or one of its nested vault-file dependencies changes.",
+    "Store rendered Markdown embeds and Visual Resources drawing thumbnails on this device. Cached drawings are refreshed when the drawing or one of its nested vault-file dependencies changes.",
   SCENE_IMAGE_CACHE_NAME: "Cache nested Excalidraws in Scene",
   SCENE_IMAGE_CACHE_DESC:
     "Cache nested Excalidraws in the Scene for faster scene rendering. This will speed up the rendering process, especially if you have deeply nested Excalidraws in your scene. " +

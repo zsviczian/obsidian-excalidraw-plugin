@@ -363,6 +363,8 @@ export class VisualResourcePanel {
     }));
     tab.onWindowMigrated = () => {
       closeFilters();
+      gallery.closeHoverPreview();
+      childGallery.closeHoverPreview();
       split.cancelDrag(); this.service.endDrag(); cancelScheduled(); gallery.cancelClick(); childGallery.cancelClick(); refresh(false);
     };
     tab.onFocus = () => this.refresh();

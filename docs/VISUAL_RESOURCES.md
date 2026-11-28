@@ -13,9 +13,11 @@ Open **Visual Resources** from the Excalidraw command palette or use the shapes 
 | Work with several results at once | Choose **Select multiple resources**, check items, then choose **Actions for selected resources**. | Add favorites, organize playlists, move eligible stencils, or insert the selection into the current drawing in a single undo step. |
 | Switch collections or adjust the gallery | Open **Collections** using the library icon. The selection and layout controls sit beside it. | Collections contains **Favorites**, playlists, and manually added vault files. Settings and moving the panel sit at the end of the toolbar. |
 
-Drag the divider to resize the gallery and frame selector, or focus it and use the Up and Down arrow keys. On desktop, double-click a vault resource to open its source, or drag it to an Excalidraw drawing to insert it at the drop position.
+Drag the divider to resize the gallery and frame selector, or focus it and use the Up and Down arrow keys. On desktop, double-click a vault resource to open its source, or drag it to an Excalidraw drawing to insert it at the drop position. Hold Ctrl (Cmd on macOS) and hover over a vault image or drawing to open Obsidian’s Page Preview. The Page Preview settings control whether the modifier is required.
 
-Drawings reuse fresh exports and suitably sized cached previews when available. Otherwise, the browser renders a small PNG of the saved drawing or its chosen thumbnail frame. It downsizes local PNG, JPEG and WebP assets within the rendered area and uses placeholders for images outside its rendering budget. The Excalidraw ribbon icon marks drawings that exceed the scene budget. Browsing adds no drawing thumbnails to the persistent cache.
+Drawings reuse fresh exports and suitable cached previews. Otherwise, the browser renders a small PNG of the saved drawing or its chosen thumbnail frame. It downsizes local PNG, JPEG and WebP assets within the rendered area and uses placeholders for images outside its rendering budget. The Excalidraw ribbon icon marks drawings that exceed the scene budget.
+
+With image caching enabled, Excalidraw keeps the generated drawing and frame PNGs in a device-local IndexedDB cache with a 100 MiB budget. It evicts the least recently used entries when full, follows the local image cache retention setting, and refreshes previews when their sources change. Use **Purge Cache** under image caching settings to clear it.
 
 Open **Visual Resources settings** to edit one discovery rule at a time, page through rules, and test them against vault filenames. Frame search rules add search keywords without hiding frames from the selected drawing. The options below the tester control excluded folders, size, and light and dark thumbnail backgrounds.
 

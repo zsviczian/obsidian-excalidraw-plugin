@@ -1338,9 +1338,9 @@ export default {
   EMBED_THEME_BACKGROUND: "影像的主題和背景色",
   EMBED_THEME_BACKGROUND_DESC:
     "選擇匯出影像的背景和主題，以及預覽是否跟隨 Obsidian 主題。",
-  EMBED_IMAGE_CACHE_NAME: "為嵌入到 Markdown 文件中的繪圖建立預覽圖快取",
+  EMBED_IMAGE_CACHE_NAME: "快取轉譯影像與縮圖",
   EMBED_IMAGE_CACHE_DESC:
-    "快取用於嵌入 Markdown 的影像。繪圖或其巢狀的倉庫檔案相依項發生變化時，快取的繪圖會重新整理。",
+    "在此裝置上快取 Markdown 嵌入影像及視覺資源中的繪圖縮圖。繪圖或其相依的倉庫檔案發生變更時，快取會重新整理。",
   SCENE_IMAGE_CACHE_NAME: "快取場景中巢狀的繪圖",
   SCENE_IMAGE_CACHE_DESC:
     "Excalidraw 會識別巢狀繪圖及其嵌入倉庫檔案來源的變化，並相應更新快取。" +

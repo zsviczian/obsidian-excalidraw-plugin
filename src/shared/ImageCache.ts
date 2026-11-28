@@ -790,6 +790,7 @@ class ImageCache {
   }
 
   public async clearImageCache(): Promise<void> {
+    await this.plugin?.visualResources?.clearThumbnailCache();
     if (!this.isReady()) {
       return; // Database not initialized yet
     }

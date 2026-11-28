@@ -90,8 +90,10 @@ async function exercise(c, drawingPath, library) {
     .find(button => button.getAttribute("aria-label") === "Resource probe");
   const count = () => api.getSceneElements().length;
   const locator = { provider: "vault", path: svg.path };
+  let persistedThumbnail;
   await runCase("native:visual-resources:palette-and-insertion", async () => {
-    const indexed = (await plugin.visualResources.list()).find(resource => resource.source === svg.path);
+    const indexedResources = await plugin.visualResources.list();
+    const indexed = indexedResources.find(resource => resource.source === svg.path);
     check(indexed?.kind === "icon", "Vault icon is absent from discovery results");
     const initial = count();
     check(app.commands.executeCommandById(id + ":visual-resources"), "Browser command was unavailable");
@@ -103,6 +105,57 @@ async function exercise(c, drawingPath, library) {
       return card();
     }, "configured vault icon searchable");
     const win = panel.ownerDocument.defaultView;
+    const doc = panel.ownerDocument;
+    const contentsId = win.require("@electron/remote").getCurrentWebContents().id;
+    const nativeMouse = params => c.requestHost("behavior-input", { contentsId, method: "Input.dispatchMouseEvent", params });
+    const away = { type: "mouseMoved", x: win.innerWidth - 5, y: win.innerHeight - 5, buttons: 0 };
+    const modifier = win.navigator.platform.startsWith("Mac") ? 4 : 2;
+    const activePopover = () => [...doc.querySelectorAll(".hover-popover")].find(el => el.getClientRects().length);
+    const events = [];
+    const ref = workspace.on("hover-link", event => {
+      if (event.source === "excalidraw-visual-resources") events.push(event.linktext);
+    });
+    const hover = async (find, modifiers) => {
+      let position;
+      await c.waitFor(() => {
+        const target = find();
+        if (!target) return false;
+        const rect = target.getBoundingClientRect();
+        position = { x: Math.round(rect.left + rect.width / 2), y: Math.round(rect.top + rect.height / 3) };
+        return target.contains(doc.elementFromPoint(position.x, position.y));
+      }, "uncovered resource card for native Page Preview");
+      await nativeMouse([away, { type: "mouseMoved", ...position, buttons: 0, modifiers }]);
+    };
+    try {
+      await hover(card, 0);
+      await new Promise(resolve => win.setTimeout(resolve, 650));
+      check(!activePopover(), "Resource Page Preview appeared without the default modifier");
+      await hover(card, modifier);
+      await c.waitFor(() => activePopover()?.querySelector("img")?.naturalWidth, "native hover preview renders the vault SVG");
+      check(events.at(-1) === svg.path, "The vault icon hover targeted the wrong file");
+      await nativeMouse(away);
+      await c.waitFor(() => !activePopover(), "the vault icon preview closes after the pointer leaves");
+      const drawing = indexedResources.find(resource => resource.source === view.file.path);
+      const namedCard = title => [...panel.querySelectorAll(".excalidraw-resource-body")]
+        .find(element => element.getAttribute("aria-label") === title);
+      search(drawing.title);
+      await hover(() => namedCard(drawing.title), modifier);
+      await c.waitFor(() => activePopover(), "native hover preview opens for an Excalidraw file");
+      check(events.at(-1) === view.file.path, "Drawing hover targeted the wrong file");
+      await nativeMouse(away);
+      await c.waitFor(() => !activePopover(), "the drawing preview closes after the pointer leaves");
+      const lucide = indexedResources.find(resource => resource.locator.provider === "lucide");
+      search(lucide.title);
+      const countBeforeHover = events.length;
+      await hover(() => namedCard(lucide.title), modifier);
+      await new Promise(resolve => win.setTimeout(resolve, 650));
+      check(events.length === countBeforeHover && !activePopover(), "Lucide should not open a file preview");
+    } finally {
+      workspace.offref(ref);
+      await nativeMouse(away);
+    }
+    search("Resource probe");
+    await c.waitFor(card, "icon available after Page Preview");
     card().dispatchEvent(new win.MouseEvent("click", { bubbles: true, detail: 1 }));
     card().dispatchEvent(new win.MouseEvent("click", { bubbles: true, detail: 2 }));
     card().dispatchEvent(new win.MouseEvent("dblclick", { bubbles: true, detail: 2 }));
@@ -128,7 +181,7 @@ async function exercise(c, drawingPath, library) {
     await c.waitFor(() => count() === initial + 1, "single click inserted one linked image");
     const image = api.getSceneElements().find(element => element.type === "image");
     check(image && image.width === 180, "Vault icon did not keep the existing width");
-    return { assertions: ["vault icon discovered and rendered", "double-click opens without inserting",
+    return { assertions: ["vault icon discovered and rendered", "native modifier hover previews vault SVG and drawing, and skips Lucide", "double-click opens without inserting",
       "changing target cancels pending insertion", "one panel serves both presets", "linked icon keeps its configured width"],
       linkedImage: image.id, samePanel: true, doubleClickInsertions: 0 };
   });
@@ -526,7 +579,7 @@ async function exercise(c, drawingPath, library) {
     const original = await vault.read(view.file);
     const large = await vault.create(root + "/Large frame preview probe.excalidraw.md", original + "\n" + " ".repeat(1024 * 1024 + 128));
     const medium = await vault.create(root + "/Medium linked preview probe.excalidraw.md", original + "\n" + " ".repeat(128 * 1024));
-    const solidRaster = async (name, color) => {
+    const solidRaster = async color => {
       const canvas = doc.createElement("canvas");
       canvas.width = 640;
       canvas.height = 480;
@@ -534,10 +587,10 @@ async function exercise(c, drawingPath, library) {
       ctx.fillStyle = color;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", 0.9));
-      return await vault.createBinary(root + "/" + name, await blob.arrayBuffer());
+      return await blob.arrayBuffer();
     };
-    const inside = await solidRaster("Preview inside.jpg", "#23c46e");
-    const outside = await solidRaster("Preview outside.jpg", "#b20a92");
+    const inside = await vault.createBinary(root + "/Preview inside.jpg", await solidRaster("#23c46e"));
+    const outside = await vault.createBinary(root + "/Preview outside.jpg", await solidRaster("#b20a92"));
     const sourceImage = api.getSceneElements().find(el => el.type === "image");
     const sourceFrame = api.getSceneElements().find(el => el.type === "frame");
     check(sourceImage && sourceFrame, "Preview fixture is missing its native image and frame");
@@ -651,6 +704,14 @@ async function exercise(c, drawingPath, library) {
         check(g > 165 && r < 75 && b < 145 && a === 255, "Linked JPEG pixels were replaced by a placeholder: " + [r, g, b, a]);
         check(await resources.preview(linkedResource, false) === url && rasterReads.join("|") === inside.path,
           "A warm request reloaded the raster or the renderer read assets outside the thumbnail frame");
+        const oldKey = resources.previewKey(linkedResource, false);
+        await vault.modifyBinary(inside, await solidRaster("#257ceb"));
+        await c.waitFor(() => resources.previewKey(linkedResource, false) !== oldKey,
+          "a linked image change invalidates the thumbnail key");
+        const changed = await resources.preview(linkedResource, false);
+        check(changed !== url && changed?.startsWith("data:image/png") && rasterReads.length === 2,
+          "A stale thumbnail survived a linked image change");
+        persistedThumbnail = { drawing: linked, attachment: inside, url: changed };
         check((await resources.preview(detailedResource, false))?.startsWith("data:image/png"),
           "The detailed cold drawing with 1,734 elements and 52,020 stroke points did not produce a PNG");
       } finally { vault.readBinary = readBinary; }
@@ -782,7 +843,70 @@ async function exercise(c, drawingPath, library) {
     check(plugin.settings.visualResources.unknownPreference === "retain" && plugin.settings.frameworksSnoozedUntil === disk.frameworksSnoozedUntil,
       "Snooze or unknown preferences were lost during startup");
     check(plugin.visualResources.collections.state(locator).favorite, "Vault-wide favorite was lost after plugin reload");
-    return { assertions: ["settings and unknown keys survive full plugin reload", "vault collection reload restores favorites"] };
+    const service = plugin.visualResources;
+    const thumbnail = (await service.list()).find(resource => resource.source === persistedThumbnail?.drawing.path);
+    check(thumbnail, "The drawing thumbnail fixture is missing after reload");
+    const cachedRead = vault.cachedRead, readBinary = vault.readBinary;
+    let renderedAgain = 0;
+    vault.cachedRead = function(file) {
+      if (file === persistedThumbnail.drawing) renderedAgain++;
+      return cachedRead.call(this, file);
+    };
+    vault.readBinary = function(file) {
+      if (file === persistedThumbnail.attachment) renderedAgain++;
+      return readBinary.call(this, file);
+    };
+    try {
+      check(await service.preview(thumbnail, false) === persistedThumbnail.url && !renderedAgain,
+        "The PNG was regenerated after restarting the plugin");
+      const cache = service.thumbnailCache;
+      const key = JSON.stringify([persistedThumbnail.drawing.path, null, false]);
+      const stamp = "png-v1" + service.previewKey(thumbnail, false);
+      check((await cache.get(key, stamp))?.type === "image/png", "IndexedDB did not store the preview as a PNG blob");
+      await service.clearThumbnailCache();
+      check(!await cache.get(key, stamp), "Purge Cache left a Visual Resources thumbnail in IndexedDB");
+      check(await service.preview(thumbnail, false) === persistedThumbnail.url && renderedAgain > 0,
+        "The thumbnail did not rebuild after purging both cache tiers");
+    } finally { vault.cachedRead = cachedRead; vault.readBinary = readBinary; }
+    const win = workspace.containerEl.ownerDocument.defaultView;
+    const name = "Excalidraw Visual Resources test " + root;
+    let housekeeping;
+    const host = { indexedDB: win.indexedDB, IDBKeyRange: win.IDBKeyRange,
+      setTimeout(callback, delay) {
+        check(delay === 60_000, "Cache housekeeping is not deferred");
+        housekeeping = callback;
+        return 1;
+      },
+      clearTimeout() { housekeeping = null; } };
+    const probe = new service.thumbnailCache.constructor(host, name, () => 1);
+    const idb = request => new Promise((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    try {
+      const png = new win.Blob([new Uint8Array(300 * 1024)], { type: "image/png" });
+      await probe.put("expired", "budget", png);
+      const entries = mode => probe.database.transaction("entries", mode).objectStore("entries");
+      const record = await idb(entries("readonly").get("expired"));
+      await idb(entries("readwrite").put({ ...record, used: Date.now() - 172_800_000 }, "expired"));
+      check(housekeeping && await probe.get("expired", "budget") === null, "An expired cache entry was returned");
+      housekeeping();
+      await c.waitFor(async () => !await idb(entries("readonly").get("expired")), "timed purge removes the expired PNG metadata");
+      check(!await idb(probe.database.transaction("pngs").objectStore("pngs").get("expired")), "Timed purge left the PNG payload behind");
+      await probe.put("oldest", "budget", png);
+      const oldest = await idb(entries("readonly").get("oldest"));
+      await idb(entries("readwrite").put({ ...oldest, used: Date.now() - 86_000_000 }, "oldest"));
+      for (let i = 0; i < 342; i++) await probe.put("new-" + i, "budget", png);
+      const size = await idb(probe.database.transaction("totals").objectStore("totals").get("size"));
+      check(size.bytes <= 100 * 1024 * 1024 && size.count < 343 && !await probe.get("oldest", "budget") &&
+        (await probe.get("new-341", "budget"))?.size === png.size, "Cache exceeded its limit or kept the oldest PNG in place of the newest");
+    } finally {
+      probe.destroy();
+      await idb(win.indexedDB.deleteDatabase(name));
+    }
+    return { assertions: ["settings and unknown keys survive full plugin reload", "vault collection reload restores favorites",
+      "binary PNGs survive plugin reload without reading the source, purge cleanly and rebuild on demand",
+      "timed retention removes both records and least-recently-used eviction enforces the 100 MiB budget"] };
   });
   return { tests: c.tests, observations: c.observations };
 }

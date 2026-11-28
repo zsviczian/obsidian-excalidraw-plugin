@@ -1390,9 +1390,9 @@ export default {
   EMBED_THEME_BACKGROUND_DESC:
     "Elige el fondo y el tema de las imágenes exportadas y si las vistas previas siguen el tema de Obsidian.",
   EMBED_IMAGE_CACHE_NAME:
-    "Guardar imágenes en caché para incrustar en Markdown",
+    "Guardar imágenes renderizadas y miniaturas en caché",
   EMBED_IMAGE_CACHE_DESC:
-    "Guarda imágenes en caché para incrustarlas en Markdown. Los bosquejos almacenados en caché se actualizan cuando cambia el bosquejo o una de sus dependencias de archivos de la bóveda.",
+    "Guarda en este dispositivo las imágenes renderizadas para Markdown y las miniaturas de dibujos de Recursos visuales. Los dibujos en caché se actualizan cuando cambia el dibujo o alguno de los archivos de la bóveda de los que depende.",
   SCENE_IMAGE_CACHE_NAME:
     "Guardar bosquejos anidados de Excalidraw en caché en la escena",
   SCENE_IMAGE_CACHE_DESC:
