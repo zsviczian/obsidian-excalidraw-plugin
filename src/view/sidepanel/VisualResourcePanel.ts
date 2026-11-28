@@ -116,7 +116,26 @@ export class VisualResourcePanel {
     const toolbar = root.createDiv({ cls: "excalidraw-resource-toolbar excalidraw-resource-search-row" });
     const search = this.search = toolbar.createEl("input", { type: "search", placeholder: t("VR_SEARCH"), attr: { "aria-label": t("VR_SEARCH") } });
     const tools = toolbar.createDiv({ cls: "excalidraw-resource-toolbar excalidraw-resource-search-tools" });
-    const filter = visualResourceButton(tools, "filter", t("VR_FILTER"));
+    const filterHost = tools.createDiv({ cls: "excalidraw-resource-filter-host" });
+    const filter = visualResourceButton(filterHost, "filter", t("VR_FILTER"));
+    filter.setAttribute("aria-expanded", "false");
+    const filtersEl = filterHost.createDiv({ cls: "excalidraw-resource-filter-popover", attr: { role: "group", "aria-label": t("VR_FILTER") } });
+    setElementHidden(filtersEl, true);
+    let filterDocument: Document | null = null;
+    const closeFilters = (restoreFocus = false) => {
+      filterDocument?.removeEventListener("pointerdown", outsideFilters, true);
+      filterDocument = null;
+      filter.setAttribute("aria-expanded", "false");
+      setElementHidden(filtersEl, true);
+      if (restoreFocus) filter.focus();
+    };
+    const outsideFilters = (event: PointerEvent) => {
+      if (!event.composedPath().includes(filterHost)) closeFilters();
+    };
+    lifetime.register(closeFilters);
+    lifetime.registerDomEvent(filtersEl, "keydown", event => {
+      if (event.key === "Escape") { event.stopPropagation(); closeFilters(true); }
+    });
     const collectionsIcon = ["square-library", "library-big"].find(icon => getIcon(icon)) ?? "library";
     const collections = visualResourceButton(tools, collectionsIcon, t("VR_COLLECTIONS"));
     const select = visualResourceButton(tools, "list-checks", t("VR_SELECT"), false);
@@ -210,6 +229,7 @@ export class VisualResourcePanel {
         }), el, event),
       rename: (resource: VisualResource, name: string) => { void rename(resource, name); },
       frames: (resource: VisualResource) => {
+        if (selectedParent && visualResourceKey(selectedParent.locator) === visualResourceKey(resource.locator)) { closeFrames(); return; }
         const revision = ++frameLoad;
         selectedParent = resource;
         frames = [];
@@ -222,9 +242,10 @@ export class VisualResourcePanel {
       },
       frameCount: (resource: VisualResource) => {
         if (!this.filters.includes("drawing")) return null;
-        if (this.groups && !this.groups.some(group => group.startsWith("frame:"))) return null;
-        return resource.frames?.length ? filterVisualResources(resource.frames, "", ["drawing"], this.groups).length || null : 0;
+        return resource.frames?.length ?? 0;
       },
+      frameSelected: (resource: VisualResource) => !!selectedParent && visualResourceKey(selectedParent.locator) === visualResourceKey(resource.locator),
+      pageChanged: () => { if (selectedParent) refresh(false); },
       drag: (resource: VisualResource, transfer: DataTransfer) => this.service.startDrag(transfer, resource),
       escape: () => {
         if (this.selection) { toggleSelection(); select.focus(); }
@@ -238,7 +259,7 @@ export class VisualResourcePanel {
     const refresh = (reset = true) => {
       const scroll = main.scrollTop;
       const group = this.collection;
-      const context = JSON.stringify([this.script, group, this.library, search.value, this.filters, this.groups]);
+      const context = JSON.stringify([this.script, group, this.library, search.value, this.filters, this.groups, this.preferences.hasNamedFrames]);
       if (context !== queryContext) {
         renamePositions.clear();
         queryContext = context;
@@ -249,10 +270,10 @@ export class VisualResourcePanel {
       }) : data;
       const libraryMatches = candidates.filter(resource =>
         !this.library || resource.locator.provider !== "stencil" || resource.locator.path === this.library);
-      results = filterVisualResources(libraryMatches, search.value, this.filters, this.groups);
+      results = filterVisualResources(libraryMatches, search.value, this.filters, this.groups, this.preferences.hasNamedFrames);
       if (renamePositions.size) {
         const retained = filterVisualResources(libraryMatches.filter(item => renamePositions.has(visualResourceKey(item.locator))),
-          "", this.filters, this.groups).map(item => ({ item, index: renamePositions.get(visualResourceKey(item.locator)) }));
+          "", this.filters, this.groups, this.preferences.hasNamedFrames).map(item => ({ item, index: renamePositions.get(visualResourceKey(item.locator)) }));
         results = results.filter(item => !renamePositions.has(visualResourceKey(item.locator)));
         for (const { item, index } of retained.sort((left, right) => left.index - right.index)) results.splice(index, 0, item);
       }
@@ -265,14 +286,17 @@ export class VisualResourcePanel {
         ? t("VR_INSERT_TARGET").replace("{TITLE}", this.target.file.basename) : t("VR_NO_DRAWING"));
       updateSelectionBar();
       gallery.show(results, options, reset);
+      if (selectedParent && !gallery.shows(selectedParent)) {
+        frameLoad++;
+        selectedParent = null;
+        frames = [];
+      }
       const showingFrames = !!selectedParent && this.filters.includes("drawing");
       split.showFrames(showingFrames);
       if (showingFrames) {
         parent.setText(selectedParent.title);
-        const allowedFrames = filterVisualResources(frames, "", ["drawing"], this.groups);
-        const matchingFrames = filterVisualResources(allowedFrames, search.value, ["drawing"]);
-        childGallery.show(matchingFrames.length ? matchingFrames : allowedFrames, { ...options, list: true }, reset);
       }
+      childGallery.show(showingFrames ? frames : [], { ...options, list: true }, reset);
       if (!reset) main.scrollTop = scroll;
     };
     this.refresh = () => refresh(false);
@@ -338,6 +362,7 @@ export class VisualResourcePanel {
       this.refresh();
     }));
     tab.onWindowMigrated = () => {
+      closeFilters();
       split.cancelDrag(); this.service.endDrag(); cancelScheduled(); gallery.cancelClick(); childGallery.cancelClick(); refresh(false);
     };
     tab.onFocus = () => this.refresh();
@@ -348,7 +373,15 @@ export class VisualResourcePanel {
       if (event.key === "ArrowDown") { event.preventDefault(); gallery.focusFirst(); }
       if (event.key === "Escape") actions.escape();
     };
-    filter.onclick = () => void this.filterMenu(filter, () => refresh()).catch(() => this.failed());
+    filter.onclick = () => {
+      if (filterDocument) { closeFilters(); return; }
+      this.menu?.hide();
+      filterDocument = filter.ownerDocument;
+      filterDocument.addEventListener("pointerdown", outsideFilters, true);
+      filter.setAttribute("aria-expanded", "true");
+      setElementHidden(filtersEl, false);
+      void this.filterMenu(filtersEl, () => refresh(), () => closeFilters(true)).catch(() => this.failed());
+    };
     collections.onclick = () => this.show(this.collectionsMenu(), collections);
     if (popout) popout.onclick = () => {
       const docked = root.ownerDocument === this.plugin.app.workspace.containerEl.ownerDocument;
@@ -364,60 +397,93 @@ export class VisualResourcePanel {
     };
     select.onclick = toggleSelection;
     selectionActions.onclick = () => {
-      if (this.selection?.size) this.show(this.menus.selection([...this.selection.values()], this.collection), selectionActions);
+      if (this.selection?.size) this.show(this.menus.selection([...this.selection.values()], this.collection, () => this.tab === tab, this.script), selectionActions);
     };
     refresh();
     void this.service.collections.refresh().catch(() => this.failed());
     reload();
   }
 
-  private async filterMenu(button: HTMLElement, refresh: () => void): Promise<void> {
-    const menu = new Menu();
+  private async filterMenu(popover: HTMLElement, refresh: () => void, close: () => void): Promise<void> {
     const script = this.script;
     const rules = this.service.rules(script);
-    const allGroups = Object.entries(rules).flatMap(([kind, definitions]) => definitions.map(rule => kind + ":" + rule.name));
+    const paths = !script && this.availableFilters.includes("stencil")
+      ? (await this.plugin.stencilLibraryManager.getResourceLibraries()).paths : [];
+    if (!popover.isConnected || this.script !== script || popover.hasClass("excalidraw-display-none")) return;
+    const allGroups = [...rules.icon.map(rule => "icon:" + rule.name), ...rules.drawing.map(rule => "drawing:" + rule.name)];
     const setGroups = (next: string[]) => {
       if (script) (this.preferences.iconGroups ??= {})[script] = next;
       else this.preferences.groups = next;
     };
-    const save = () => { this.run(this.plugin.saveSettings()); refresh(); };
+    const save = () => { this.run(this.plugin.saveSettings()); refresh(); draw(); };
     const setTypes = (visible: readonly VisualResourceFilter[]) => {
       const hidden = (this.preferences.filters ?? DEFAULT_FILTERS).filter(key => !this.availableFilters.includes(key));
       this.preferences.filters = [...hidden, ...visible];
       save();
     };
-    if (!script) {
-      menu.addItem(item => item.setTitle(t("VR_SELECT_ALL_FILTERS")).onClick(() => setTypes(this.availableFilters)));
-      menu.addItem(item => item.setTitle(t("VR_SELECT_NO_FILTERS")).onClick(() => setTypes([])));
-      menu.addSeparator();
-    }
-    if (!script) for (const key of this.availableFilters) menu.addItem(item =>
-      item.setTitle(t(KIND_NAMES[key])).setChecked(this.filters.includes(key)).onClick(() => {
-        setTypes(this.filters.includes(key) ? this.filters.filter(filter => filter !== key) : [...this.filters, key]);
-      }));
-    for (const [kind, category, label] of [["icon", "icon", "VR_ICON_GROUPS"], ["drawing", "drawing", "VR_DRAWING_GROUPS"],
-      ["frame", "drawing", "VR_FRAME_GROUPS"]] as const) {
-      if (!this.filters.includes(category) || !rules[kind].length) continue;
-      if (!script) menu.addSeparator();
-      menu.addItem(item => item.setTitle(t(label)).setDisabled(true));
-      for (const { name } of rules[kind]) {
-        const key = kind + ":" + name;
-        menu.addItem(item => item.setTitle(name).setChecked(this.groups?.includes(key) ?? true).onClick(() => {
-          const current = this.groups ?? allGroups;
-          setGroups(current.includes(key) ? current.filter(group => group !== key) : [...current, key]);
-          save();
-        }));
+    const draw = () => {
+      const focus = popover.ownerDocument.activeElement?.getAttribute("data-filter");
+      const scroll = popover.scrollTop;
+      popover.empty();
+      const actions = popover.createDiv({ cls: "excalidraw-resource-filter-actions" });
+      const button = (parent: HTMLElement, name: string, key: string, action: () => void) => {
+        parent.createEl("button", { text: name, attr: { type: "button", "data-filter": key } }).onclick = action;
+      };
+      const check = (parent: HTMLElement, name: string, key: string, checked: boolean, action: (value: boolean) => void) => {
+        const label = parent.createEl("label", { cls: "excalidraw-resource-filter-option" });
+        const input = label.createEl("input", { type: "checkbox", attr: { "data-filter": key } });
+        input.checked = checked;
+        input.onchange = () => action(input.checked);
+        label.createSpan({ text: name });
+        return label;
+      };
+      if (!script) {
+        button(actions, t("VR_SELECT_ALL_FILTERS"), "all", () => setTypes(this.availableFilters));
+        button(actions, t("VR_SELECT_NO_FILTERS"), "none", () => setTypes([]));
       }
-    }
-    if (!script && this.filters.includes("stencil")) {
-      const { paths } = await this.plugin.stencilLibraryManager.getResourceLibraries();
-      menu.addSeparator();
-      menu.addItem(item => item.setTitle(t("VR_STENCIL_LIBRARIES")).setDisabled(true));
-      for (const path of ["", ...paths]) menu.addItem(item =>
-        item.setTitle(path || t("VR_ALL_LIBRARIES")).setChecked(this.library === path).onClick(() => { this.library = path; refresh(); }));
-      menu.addItem(item => item.setTitle(t("VR_MANAGE_LIBRARIES")).setIcon("library").onClick(() => void this.menus.manage().catch(() => this.failed())));
-    }
-    if (this.script === script) this.show(menu, button);
+      button(actions, t("VR_FILTER_DONE"), "done", close);
+      const types = popover.createDiv();
+      if (!script) for (const key of this.availableFilters) {
+        check(types, t(KIND_NAMES[key]), key, this.filters.includes(key), checked =>
+          setTypes(checked ? [...this.filters, key] : this.filters.filter(filter => filter !== key)));
+      }
+      if (this.filters.includes("drawing")) {
+        const row = check(types, t("VR_HAS_NAMED_FRAMES"), "has-named-frames", !!this.preferences.hasNamedFrames, checked => {
+          this.preferences.hasNamedFrames = checked;
+          save();
+        });
+        setTooltip(row, t("VR_HAS_NAMED_FRAMES_DESC"));
+        row.createSpan({ cls: "excalidraw-resource-filter-hint", text: t("VR_HAS_NAMED_FRAMES_DESC") });
+      }
+      for (const [kind, label] of [["icon", "VR_ICON_GROUPS"], ["drawing", "VR_DRAWING_GROUPS"]] as const) {
+        if (!this.filters.includes(kind) || !rules[kind].length) continue;
+        const section = popover.createDiv({ cls: "excalidraw-resource-filter-section" });
+        section.createEl("h4", { text: t(label) });
+        for (const { name } of rules[kind]) {
+          const key = kind + ":" + name;
+          check(section, name, key, this.groups?.includes(key) ?? true, checked => {
+            const current = this.groups ?? allGroups;
+            setGroups(checked ? [...current, key] : current.filter(group => group !== key));
+            save();
+          });
+        }
+      }
+      if (!script && this.filters.includes("stencil")) {
+        const section = popover.createDiv({ cls: "excalidraw-resource-filter-section" });
+        const label = section.createEl("label");
+        label.createSpan({ text: t("VR_STENCIL_LIBRARIES") });
+        const library = label.createEl("select", { attr: { "data-filter": "library" } });
+        for (const path of ["", ...paths]) library.createEl("option", { value: path, text: path || t("VR_ALL_LIBRARIES") });
+        library.value = this.library;
+        library.onchange = () => { this.library = library.value; refresh(); };
+        button(section, t("VR_MANAGE_LIBRARIES"), "manage", () => { close(); this.run(this.menus.manage()); });
+      }
+      if (focus) [...popover.querySelectorAll<HTMLElement>("[data-filter]")]
+        .find(control => control.getAttribute("data-filter") === focus)?.focus({ preventScroll: true });
+      popover.scrollTop = scroll;
+    };
+    draw();
+    popover.querySelector<HTMLElement>("[data-filter]")?.focus();
   }
 
   private collectionsMenu(): Menu {

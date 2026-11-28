@@ -814,8 +814,6 @@ export class EmbeddedFilesLoader {
   public uid: string;
   /** Request-local export guard. Its presence also bypasses stat-keyed rendition caches. */
   public beforeFileRead?: (file: TFile) => Promise<void>;
-  /** Optional work limit checked before a gallery preview loads scene assets or exports geometry. */
-  public admitPreviewScene?: (elements: readonly ExcalidrawElement[]) => boolean;
 
   constructor(plugin: ExcalidrawPlugin, isDark?: boolean) {
     this.plugin = plugin;

@@ -12,6 +12,20 @@ declare const PLUGIN_VERSION: string;
 // 繁體中文
 export default {
   // Visual Resources and Thinking Frameworks
+  VR_INSERT_SELECTED: "將選取的資源插入繪圖",
+  VR_HAS_NAMED_FRAMES: "有命名畫框",
+  VR_HAS_NAMED_FRAMES_DESC: "尋找以 Excalidraw 2.29.4 或更新版本儲存且含命名畫框的繪圖。",
+  VR_FILTER_DONE: "完成",
+  VR_FRAME_SEARCH_RULES: "畫框搜尋規則",
+  VR_COPY_PROMPT_DESC: "複製用於請 AI 助手編寫探索規則的說明。",
+  VR_PROMPT_COPIED: "已複製提示詞。",
+  VR_RULES_DESC: "正規表示式不區分大小寫。使用 (.+) 等擷取群組取得關鍵字。",
+  VR_RULE_POSITION: "規則 {CURRENT} / {TOTAL}",
+  VR_TEST_PATH: "依名稱或路徑尋找範例檔案",
+  VR_EXCLUSIONS_DESC: "使用逗號或換行分隔儲存庫路徑。",
+  VR_RULE_ADVANCED: "進階條件",
+  VR_NO_LIMIT: "無限制",
+  VR_TRANSPARENT: "透明",
   VR_BROWSE_FRAMES: "瀏覽命名畫框",
   VR_ICON_GROUPS: "儲存庫圖示分組",
   VR_DRAWING_GROUPS: "繪圖分組",

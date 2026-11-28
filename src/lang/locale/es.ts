@@ -17,6 +17,20 @@ declare const PLUGIN_VERSION: string;
 // Español
 export default {
   // Visual Resources and Thinking Frameworks
+  VR_INSERT_SELECTED: "Insertar selección en el dibujo",
+  VR_HAS_NAMED_FRAMES: "Tiene marcos con nombre",
+  VR_HAS_NAMED_FRAMES_DESC: "Encuentra dibujos con marcos con nombre guardados con Excalidraw 2.29.4 o posterior.",
+  VR_FILTER_DONE: "Listo",
+  VR_FRAME_SEARCH_RULES: "Reglas de búsqueda de marcos",
+  VR_COPY_PROMPT_DESC: "Copia instrucciones para crear reglas de detección con un asistente de IA.",
+  VR_PROMPT_COPIED: "Instrucciones copiadas.",
+  VR_RULES_DESC: "Usa expresiones regulares sin distinción de mayúsculas. Captura la palabra clave con un grupo como (.+).",
+  VR_RULE_POSITION: "Regla {CURRENT} / {TOTAL}",
+  VR_TEST_PATH: "Buscar un archivo de ejemplo por nombre o ruta",
+  VR_EXCLUSIONS_DESC: "Rutas de la bóveda separadas por comas o saltos de línea.",
+  VR_RULE_ADVANCED: "Condiciones avanzadas",
+  VR_NO_LIMIT: "Sin límite",
+  VR_TRANSPARENT: "Transparente",
   VR_BROWSE_FRAMES: "Explorar marcos con nombre",
   VR_ICON_GROUPS: "Grupos de iconos de la bóveda",
   VR_DRAWING_GROUPS: "Grupos de dibujos",

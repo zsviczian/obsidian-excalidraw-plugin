@@ -330,11 +330,6 @@ export async function getTemplate(
 
     if (file.extension === "excalidraw") {
       await excalidrawData.loadLegacyData(data, file);
-      if (loadFiles && loader?.admitPreviewScene && !loader.admitPreviewScene(excalidrawData.scene.elements)) {
-        excalidrawData.destroy();
-        loader.terminate = true;
-        return null;
-      }
       return {
         elements: convertMarkdownLinksToObsidianURLs
           ? updateElementLinksToObsidianLinks({
@@ -359,11 +354,6 @@ export async function getTemplate(
     }
 
     let scene = excalidrawData.scene;
-    if (loadFiles && loader?.admitPreviewScene && !loader.admitPreviewScene(scene.elements)) {
-      excalidrawData.destroy();
-      loader.terminate = true;
-      return null;
-    }
     const implicit = !(filenameParts.hasBlockref || filenameParts.hasSectionref) || filenameParts.blockref === "as-image";
     const thumbnail = drawingThumbnail && implicit ? resolveThumbnailFrame(scene.elements, readFrameProperty(data)) : null;
 

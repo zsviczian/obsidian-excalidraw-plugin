@@ -3224,6 +3224,229 @@ button.excalidraw-font-picker {
   max-height: 54vh;
 }
 
+.excalidraw-resource-search-row {
+  position: relative;
+}
+
+.excalidraw-resource-filter-popover {
+  position: absolute;
+  z-index: 5;
+  inset-block-start: calc(100% + var(--size-4-1));
+  inset-inline-end: 0;
+  width: min(20rem, 100%);
+  max-height: min(70vh, 36rem);
+  overflow: auto;
+  padding: var(--size-4-2);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  background: var(--background-primary);
+  box-shadow: var(--shadow-s);
+}
+
+.excalidraw-resource-filter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-4-1);
+  margin-block-end: var(--size-4-2);
+}
+
+.excalidraw-resource-filter-actions button:last-child {
+  margin-inline-start: auto;
+}
+
+.excalidraw-resource-filter-option {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--size-2-1) var(--size-4-2);
+  padding: var(--size-4-1);
+  border-radius: var(--radius-s);
+  cursor: pointer;
+}
+
+.excalidraw-resource-filter-option:hover,
+.excalidraw-resource-filter-option:focus-within {
+  background: var(--background-modifier-hover);
+}
+
+.excalidraw-resource-filter-option input {
+  margin: 0;
+}
+
+.excalidraw-resource-filter-hint {
+  grid-column: 2;
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+.excalidraw-resource-filter-section {
+  border-top: 1px solid var(--background-modifier-border);
+  margin-block-start: var(--size-4-2);
+  padding-block-start: var(--size-4-2);
+}
+
+.excalidraw-resource-filter-section h4,
+.excalidraw-resource-filter-section select {
+  margin: 0 0 var(--size-4-1);
+}
+
+.excalidraw-resource-filter-section select {
+  display: block;
+  width: 100%;
+}
+
+.excalidraw-resource-settings-modal {
+  display: flex;
+  flex-direction: column;
+  width: min(610px, 94vw);
+  overflow: hidden;
+}
+
+.excalidraw-resource-settings-modal .modal-title,
+.excalidraw-resource-settings-heading,
+.excalidraw-resource-settings-pager,
+.excalidraw-resource-settings-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--size-4-2);
+}
+
+.excalidraw-resource-settings-modal .modal-title {
+  flex-wrap: wrap;
+  padding-inline-end: var(--size-4-5);
+  font-size: var(--font-ui-large);
+  font-weight: var(--font-semibold);
+}
+
+.excalidraw-resource-settings-modal .modal-title button {
+  font-size: var(--font-ui-smaller);
+  font-weight: var(--font-normal);
+}
+
+.excalidraw-resource-settings p {
+  margin-block: var(--size-4-2) var(--size-4-3);
+}
+
+.excalidraw-resource-settings {
+  min-height: 0;
+  overflow: auto;
+  padding-inline-end: var(--size-4-1);
+}
+
+.excalidraw-resource-settings-heading {
+  margin-block-start: var(--size-4-5);
+}
+
+.excalidraw-resource-settings-heading h3 {
+  margin: 0;
+  font-size: var(--font-ui-medium);
+}
+
+.excalidraw-resource-settings-pager,
+.excalidraw-resource-settings-card,
+.excalidraw-resource-settings-tester {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+}
+
+.excalidraw-resource-settings-pager {
+  padding: var(--size-2-1) var(--size-4-2);
+  margin-block-end: var(--size-4-2);
+  background: var(--background-secondary);
+  font-size: var(--font-ui-small);
+}
+
+.excalidraw-resource-settings-card {
+  padding: var(--size-4-3);
+}
+
+.excalidraw-resource-settings-card-header input {
+  min-width: 0;
+  width: min(100%, 16rem);
+  font-weight: var(--font-semibold);
+}
+
+.excalidraw-resource-settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--size-4-2) var(--size-4-3);
+  margin-block-start: var(--size-4-3);
+}
+
+.excalidraw-resource-settings-grid label {
+  display: grid;
+  gap: var(--size-2-2);
+  min-width: 0;
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+}
+
+.excalidraw-resource-settings-grid input,
+.excalidraw-resource-settings-tester input {
+  width: 100%;
+  min-width: 0;
+}
+
+.excalidraw-resource-settings-advanced {
+  margin-block-start: var(--size-4-3);
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+}
+
+.excalidraw-resource-settings summary {
+  cursor: pointer;
+}
+
+.excalidraw-resource-settings-add {
+  margin-block: var(--size-4-3);
+}
+
+.excalidraw-resource-settings-tester {
+  padding: var(--size-4-2) var(--size-4-3);
+  margin-block: var(--size-4-1) var(--size-4-4);
+}
+
+.excalidraw-resource-settings-tester summary {
+  font-weight: var(--font-semibold);
+}
+
+.excalidraw-resource-settings-tester input {
+  margin-block: var(--size-4-2);
+}
+
+.excalidraw-resource-settings-test-results {
+  max-height: 10rem;
+  overflow: auto;
+  overflow-wrap: anywhere;
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+}
+
+.excalidraw-resource-settings-appearance .setting-item {
+  padding-block: var(--size-4-2);
+}
+
+.excalidraw-resource-settings-appearance input[type="text"],
+.excalidraw-resource-settings-appearance input[type="number"] {
+  width: 8rem;
+}
+
+.excalidraw-resource-settings-footer {
+  flex: 0 0 auto;
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+.excalidraw-resource-settings-footer .setting-item {
+  padding: var(--size-4-2) 0 0;
+}
+
+@media (max-width: 460px) {
+  .excalidraw-resource-settings-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .is-mobile .excalidraw-resource-actions .clickable-icon,
 .is-mobile .excalidraw-resource-toolbar .clickable-icon {
   min-width: 34px;

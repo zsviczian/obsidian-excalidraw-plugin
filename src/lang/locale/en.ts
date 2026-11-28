@@ -17,6 +17,20 @@ declare const PLUGIN_VERSION: string;
 // English
 export default {
   // Visual Resources and Thinking Frameworks
+  VR_INSERT_SELECTED: "Insert selected into drawing",
+  VR_HAS_NAMED_FRAMES: "Has named frames",
+  VR_HAS_NAMED_FRAMES_DESC: "Finds drawings with named frames saved in Excalidraw 2.29.4 or newer.",
+  VR_FILTER_DONE: "Done",
+  VR_FRAME_SEARCH_RULES: "Frame search rules",
+  VR_COPY_PROMPT_DESC: "Copy instructions for writing discovery rules with an AI assistant.",
+  VR_PROMPT_COPIED: "Prompt copied.",
+  VR_RULES_DESC: "Use case-insensitive regular expressions. Put the search keyword in a capture group, such as (.+).",
+  VR_RULE_POSITION: "Rule {CURRENT} / {TOTAL}",
+  VR_TEST_PATH: "Find a sample file by name or path",
+  VR_EXCLUSIONS_DESC: "Comma or newline separated vault paths.",
+  VR_RULE_ADVANCED: "Advanced conditions",
+  VR_NO_LIMIT: "No limit",
+  VR_TRANSPARENT: "Transparent",
   VR_BROWSE_FRAMES: "Browse named frames",
   VR_ICON_GROUPS: "Vault icon groups",
   VR_DRAWING_GROUPS: "Drawing groups",

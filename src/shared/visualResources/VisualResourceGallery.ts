@@ -1,4 +1,5 @@
 import { Component, Platform, setIcon, setTooltip } from "obsidian";
+import { ICON_NAME } from "src/constants/constants";
 import { t } from "src/lang/helpers";
 import type { VisualResource } from "src/types/visualResourceTypes";
 import { setElementHidden } from "src/utils/htmlUtils";
@@ -8,7 +9,7 @@ import { visualResourceKey } from "./visualResourceModel";
 
 const PAGE_SIZE = 48;
 const PREVIEW_CONCURRENCY = 3;
-const KIND_ICONS = { icon: "star", image: "image", drawing: "pen-tool", frame: "frame",
+const KIND_ICONS = { icon: "star", image: "image", drawing: ICON_NAME, frame: "frame",
   note: "file-text", stencil: "library", framework: "layout-template" } as const;
 
 export const KIND_NAMES = {
@@ -24,6 +25,8 @@ interface GalleryActions {
   favorite?: (resource: VisualResource) => void;
   frames?: (resource: VisualResource) => void;
   frameCount?: (resource: VisualResource) => number | null;
+  frameSelected?: (resource: VisualResource) => boolean;
+  pageChanged?: () => void;
   menu?: (resource: VisualResource, button: HTMLElement, event: MouseEvent) => void;
   rename?: (resource: VisualResource, name: string) => void;
   drag?: (resource: VisualResource, transfer: DataTransfer) => void;
@@ -120,6 +123,9 @@ export class VisualResourceGallery extends Component {
   /** Focus the first rendered resource from the search field. */
   public focusFirst(): void { this.controls[0]?.focus(); }
 
+  /** Whether the current page actually contains the selected drawing. */
+  public shows(resource: VisualResource): boolean { return this.cards.has(visualResourceKey(resource.locator)); }
+
   /** Synchronize visible checkboxes while keeping focus and thumbnails in place. */
   public updateSelection(): void {
     for (const [checkbox, resource] of this.checkboxes) {
@@ -214,6 +220,7 @@ export class VisualResourceGallery extends Component {
     this.page += offset;
     this.render();
     this.focusFirst();
+    this.actions.pageChanged?.();
   }
 
   private card(resource: VisualResource, selected: boolean | undefined, variant: string, reused?: PreviewSlot): GalleryCard {
@@ -232,7 +239,7 @@ export class VisualResourceGallery extends Component {
     const preview = reused ?? { element: body.createSpan({ cls: "excalidraw-resource-preview", attr: { "aria-hidden": "true" } }) };
     const icon = resource.locator.provider === "lucide" ? "sparkles" : KIND_ICONS[resource.kind];
     if (reused) body.append(preview.element);
-    else setIcon(preview.element, icon);
+    else setIcon(preview.element, resource.drawing ? ICON_NAME : icon);
     const text = (rename ? row : body).createSpan({ cls: "excalidraw-resource-label" });
     const title = rename ? this.editableTitle(text, () => resource.title, name => rename(resource, name)) : text.createSpan();
     const source = this.options.list ? text.createSpan({ cls: "excalidraw-resource-source" }) : undefined;
@@ -303,6 +310,7 @@ export class VisualResourceGallery extends Component {
         const count = this.actions.frameCount?.(resource) ?? null;
         setElementHidden(frameButton, count === null);
         frameButton.setAttribute("aria-label", t("VR_BROWSE_FRAMES") + (count ? " (" + count + ")" : ""));
+        frameButton.setAttribute("aria-pressed", String(this.actions.frameSelected?.(resource) ?? false));
         frameCount.setText(count ? String(count) : "");
       }
       if (this.options.background) setStyle(preview.element, { backgroundColor: this.options.background });
@@ -377,7 +385,8 @@ export class VisualResourceGallery extends Component {
       preview.element.empty();
       if (typeof image === "string") preview.element.createEl("img", { attr: { src: image, alt: "", draggable: "false" } });
       else if (image) preview.element.append(image);
-      else setIcon(preview.element, task.resource.locator.provider === "lucide" ? "sparkles" : KIND_ICONS[task.resource.kind]);
+      else setIcon(preview.element, task.resource.drawing ? ICON_NAME :
+        task.resource.locator.provider === "lucide" ? "sparkles" : KIND_ICONS[task.resource.kind]);
     } finally {
       if (preview.loading === task.stamp) preview.loading = undefined;
     }

@@ -1,12 +1,14 @@
 import { FileSystemAdapter, getAllTags, getIcon, MarkdownView, Notice, Platform, type TFile, type View } from "obsidian";
 import type { LibraryItem } from "@zsviczian/excalidraw/types/excalidraw/types";
+import type { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/src/types";
 import { IMAGE_TYPES, nanoid } from "src/constants/constants";
 import type ExcalidrawPlugin from "src/core/main";
 import { t } from "src/lang/helpers";
-import { FRAME_ANCHORS_PROPERTY, getSceneFrames } from "src/utils/frameMetadata";
+import { FRAME_ANCHORS_PROPERTY, FRAME_THUMBNAIL_PROPERTY, getSceneFrames } from "src/utils/frameMetadata";
 import { getTemplate } from "src/utils/excalidrawAutomateUtils";
+import { readDrawingPreviewElements } from "src/utils/drawingPreviewScene";
 import { repositionElementsToCursor } from "src/utils/excalidrawElementUtils";
-import { getExcalidrawEmbeddedFilesFiletree } from "src/utils/fileUtils";
+import { getExcalidrawEmbeddedFilesFiletree, getIMGFilename } from "src/utils/fileUtils";
 import type { VisualDiscoveryCandidate, VisualDiscoveryRule, VisualResource, VisualResourceLocator } from "src/types/visualResourceTypes";
 import type ExcalidrawView from "src/view/ExcalidrawView";
 import { EmbeddedFile, EmbeddedFilesLoader } from "../EmbeddedFileLoader";
@@ -14,14 +16,15 @@ import { getLucideIcons, prepareLucideIcon } from "../lucideIcons";
 import { FrameworkCatalog } from "./FrameworkCatalog";
 import { ResourceCollections } from "./ResourceCollections";
 import { addCanvasResource, drawingTarget, writableDocument } from "./VisualResourceTargets";
-import { admitDrawingPreview, compileVisualExclusions, compileVisualRules, readIconLibrarySettings, visualResourceKey } from "./visualResourceModel";
+import { compileVisualExclusions, compileVisualRules, MAX_THUMBNAIL_ELEMENTS, readIconLibrarySettings, visualResourceKey } from "./visualResourceModel";
+import { rasterizeDrawingResource } from "./drawingResourceThumbnail";
 
 const DRAG_TYPE = "application/x-obsidian-excalidraw-visual-resource";
 const PREVIEW_CACHE_BYTES = 2 * 1024 * 1024;
 const DRAWING_PREVIEW_BYTES = 256 * 1024;
 const COLD_DRAWING_BYTES = 64 * 1024;
-const COLD_FRAME_BYTES = 32 * 1024;
 const FRAME_INSPECTION_BYTES = 1024 * 1024;
+const PREVIEW_SCENE_LENGTH = 6 * 1024 * 1024;
 
 type ScenePoint = { x: number; y: number };
 type MindMapBuilder = {
@@ -42,12 +45,13 @@ export class VisualResources {
   private readonly framePreviews = new Map<string, { stamp: string; frames: Promise<VisualResource[]> }>();
   private previewBytes = 0;
   private drawingPreviewQueue: Promise<unknown> = Promise.resolve();
+  private previewScene: { file: TFile; path: string; mtime: number; elements: ExcalidrawElement[] } | null = null;
   private readonly lucideAttachments = new Map<string, TFile>();
 
   constructor(private readonly plugin: ExcalidrawPlugin) {
     this.collections = plugin.addChild(new ResourceCollections(plugin));
     this.frameworks = new FrameworkCatalog(plugin);
-    plugin.register(() => { this.disposed = true; this.endDrag(); this.previews.clear(); this.framePreviews.clear(); this.lucideAttachments.clear(); });
+    plugin.register(() => { this.disposed = true; this.endDrag(); this.previews.clear(); this.framePreviews.clear(); this.previewScene = null; this.lucideAttachments.clear(); });
   }
 
   /** Read compatible script settings as defaults without altering the installed script. */
@@ -100,7 +104,7 @@ export class VisualResources {
         if (typeof name !== "string" || !name.trim()) return [];
         // An indexed name has no role until the drawing is opened for details.
         const matches = frame({ ...candidate, frame: { name, type: "frame" } }).concat(frame({ ...candidate, frame: { name, type: "magicframe" } }));
-        return matches.length ? [this.frameResource(file, name, name, matches.map(match => match.group))] : [];
+        return [this.frameResource(file, name, name, matches.map(match => match.group), matches.map(match => match.keyword))];
       });
       if (!candidate.image && !candidate.drawing && !(candidate.extension === "md" && (explicit || icons.length))) continue;
       const matches = [...icons, ...drawings];
@@ -111,7 +115,7 @@ export class VisualResources {
       result.push({ locator, kind, title: keywords[0] || file.basename, source: file.path, keywords,
         groups: [...new Set([...matches.map(match => match.group), ...children.flatMap(child => child.groups ?? [])])],
         other: !matches.length && !children.length && !explicit && (!candidate.drawing || rules.drawing.length > 0),
-        frames: children,
+        frames: children, drawing: candidate.drawing,
         inspectFrames: children.length > 0 || candidate.drawing && candidate.extension === "excalidraw",
       });
     }
@@ -155,23 +159,21 @@ export class VisualResources {
   private async inspectFrames(file: TFile, frameRules: VisualDiscoveryRule[]): Promise<VisualResource[]> {
     const candidate = this.candidate(file);
     const matches = compileVisualRules("frame", frameRules);
-    const data = await getTemplate(this.plugin, file.path, false, null, 0);
-    const frames = getSceneFrames(data.elements);
+    const frames = getSceneFrames(await readDrawingPreviewElements(this.plugin.app.vault, file, PREVIEW_SCENE_LENGTH));
     const nameCounts = new Map<string, number>();
     for (const frame of frames) nameCounts.set(frame.name, (nameCounts.get(frame.name) ?? 0) + 1);
     return frames.flatMap(frame => {
       if (!frame.name?.trim()) return [];
       const rules = matches({ ...candidate, frame: { name: frame.name, type: frame.frameRole === "marker" ? "magicframe" : "frame" } });
-      if (!rules.length) return [];
-      const resource = this.frameResource(file, frame.id, frame.name, rules.map(rule => rule.group));
+      const resource = this.frameResource(file, frame.id, frame.name, rules.map(rule => rule.group), rules.map(rule => rule.keyword));
       if (nameCounts.get(frame.name) > 1) resource.title += " (" + frame.id.slice(0, 8) + ")";
       return [resource];
     });
   }
 
-  private frameResource(file: TFile, id: string, name: string, groups: string[]): VisualResource {
+  private frameResource(file: TFile, id: string, name: string, groups: string[], keywords: string[] = []): VisualResource {
     return { locator: { provider: "vault", path: file.path, frame: id }, kind: "frame",
-      title: name, source: file.path, keywords: [name], groups: [...new Set(groups)] };
+      title: name, source: file.path, keywords: [...new Set([name, ...keywords])], groups: [...new Set(groups)] };
   }
 
   /** Resolve curated frames by stored frame ID, including those no longer matching discovery rules. */
@@ -229,12 +231,27 @@ export class VisualResources {
     return file.path + (resource.locator.provider === "vault" && resource.locator.frame ? "#^frame=" + resource.locator.frame : "");
   }
 
+  private markdownLink(source: TFile, target: TFile, subpath?: string): string {
+    const link = this.plugin.app.fileManager.generateMarkdownLink(source, target.path, subpath);
+    const embed = IMAGE_TYPES.includes(source.extension.toLowerCase()) || this.plugin.isExcalidrawFile(source);
+    return embed ? "!" + link : link;
+  }
+
   /** A drawing can receive inserts only while the current editor and file are live. */
   public writable(view: ExcalidrawView | null): view is ExcalidrawView {
     return !!view?.file && view.isLoaded && view.leaf.view === view && !!view.excalidrawAPI && !view.excalidrawAPI.isDestroyed &&
-      !view.isClosingOrMigrating() && !view.isSameFileEditingActive() && !view.isPersistenceBusy() &&
+      !view.isClosingOrMigrating() && !view.isSameFileEditingActive() &&
       !view.excalidrawAPI.getAppState().viewModeEnabled &&
       this.plugin.app.vault.getFileByPath(view.file.path) === view.file;
+  }
+
+  private async waitForDrawing(view: ExcalidrawView, validate: () => void): Promise<void> {
+    for (let attempts = 0; view.isPersistenceBusy(); attempts++) {
+      validate();
+      if (attempts >= 120) throw Error("Drawing did not finish saving");
+      await new Promise<void>(resolve => window.setTimeout(resolve, 25));
+    }
+    validate();
   }
 
   public canInsertInto(resource: VisualResource, view: View | null): boolean {
@@ -260,9 +277,7 @@ export class VisualResources {
       const source = resource.locator.provider === "lucide" ? await this.lucideAttachment(resource.locator.icon, path, valid) : this.sourceFile(resource);
       if (!source || !valid()) return;
       if (view instanceof MarkdownView) {
-        const link = this.plugin.app.fileManager.generateMarkdownLink(source, target.path, subpath);
-        const embed = IMAGE_TYPES.includes(source.extension.toLowerCase()) || this.plugin.isExcalidrawFile(source);
-        view.editor.replaceSelection(embed ? "!" + link : link);
+        view.editor.replaceSelection(this.markdownLink(source, target, subpath));
       } else {
         addCanvasResource(view, source, subpath);
       }
@@ -285,8 +300,13 @@ export class VisualResources {
   }
 
   /** Insert through the corresponding native engine, revalidating after each asynchronous preparation. */
-  public async insert(resource: VisualResource, view: ExcalidrawView | null, active: () => boolean, point?: ScenePoint, scriptName?: string): Promise<void> {
-    if (!this.writable(view) || this.disposed || !active()) return;
+  public insert(resource: VisualResource, view: ExcalidrawView | null, active: () => boolean, point?: ScenePoint, scriptName?: string): Promise<void> {
+    return this.insertMany([resource], view, active, point, scriptName);
+  }
+
+  /** Prepare the selection together and publish one undoable scene update. */
+  public async insertMany(resources: readonly VisualResource[], view: ExcalidrawView | null, active: () => boolean, point?: ScenePoint, scriptName?: string): Promise<void> {
+    if (!resources.length || !this.writable(view) || this.disposed || !active()) return;
     const file = view.file, path = file.path, api = view.excalidrawAPI, owner = view.ownerDocument;
     const validate = () => {
       if (this.disposed || !active() || !this.writable(view) || view.file !== file || file.path !== path ||
@@ -296,7 +316,10 @@ export class VisualResources {
     const center = point ?? { x: -state.scrollX + state.width / (2 * state.zoom.value), y: -state.scrollY + state.height / (2 * state.zoom.value) };
     const size = this.plugin.settings.visualResources.iconWidth ?? this.iconSettings(scriptName).iconWidth;
     const ea = this.plugin.ea.getAPI(view);
-    try {
+    const sources: Array<{ resource: VisualResource; file: TFile }> = [];
+    let approximated = false;
+    const prepare = async (resource: VisualResource): Promise<ExcalidrawElement[]> => {
+      validate();
       if (resource.locator.provider === "lucide") {
         const lucideSize = this.plugin.lucidePicker.insertionSize;
         const prepared = prepareLucideIcon({ icon: resource.locator.icon, size: lucideSize, x: center.x - lucideSize / 2, y: center.y - lucideSize / 2,
@@ -305,16 +328,12 @@ export class VisualResources {
           element.x += (lucideSize - prepared.result.viewport.width) / 2;
           element.y += (lucideSize - prepared.result.viewport.height) / 2;
         }
-        if (await view.addElements({ newElements: prepared.elements, newElementsOnTop: true, validateBeforePublish: validate })) {
-          api.selectElements(prepared.elements);
-          await view.saveWithOutcome();
-          if (prepared.result.warnings.length) new Notice(t("LUCIDE_APPROXIMATION"));
-        }
-        return;
+        approximated ||= !!prepared.result.warnings.length;
+        return prepared.elements;
       }
       if (resource.locator.provider !== "vault") {
         const item = await this.libraryItem(resource.locator);
-        if (!item) return;
+        if (!item) return [];
         validate();
         // Native library files can carry display text with empty Obsidian raw text.
         const copies = ea.cloneElements([...item.elements]).map(element =>
@@ -322,50 +341,65 @@ export class VisualResources {
             ? { ...element, rawText: element.originalText || element.text }
             : element,
         );
-        const elements = repositionElementsToCursor(copies, center, true);
-        if (await view.addElements({ newElements: elements, newElementsOnTop: true, validateBeforePublish: validate })) {
-          api.selectElements(elements);
-          await view.saveWithOutcome();
-        }
-        return;
+        return repositionElementsToCursor(copies, center, true);
       }
       const source = this.sourceFile(resource);
-      if (!source || source === file && this.plugin.isExcalidrawFile(source)) return;
+      if (!source || source === file && this.plugin.isExcalidrawFile(source)) return [];
       const frameId = resource.locator.frame;
       const anchors: unknown = frameId && this.plugin.app.metadataCache.getFileCache(source)?.frontmatter?.[FRAME_ANCHORS_PROPERTY];
       if (frameId && !(Array.isArray(anchors) && anchors.includes(frameId))) {
         const data = await getTemplate(this.plugin, source.path, false, null, 0);
-        if (!getSceneFrames(data.elements).some(frame => frame.id === frameId)) return;
+        if (!getSceneFrames(data.elements).some(frame => frame.id === frameId)) return [];
         validate();
       }
       const link = this.link(resource, source);
       const isNote = source.extension === "md" && !this.plugin.isExcalidrawFile(source);
       type MindMapWindow = Window & { MindMapBuilderAPI?: MindMapBuilder };
       const mainWindow = this.plugin.app.workspace.containerEl.ownerDocument.defaultView;
-      const mindMap = !point && scriptName && !isNote && (
+      const mindMap = resources.length === 1 && !point && scriptName && !isNote && (
         (owner.defaultView as MindMapWindow).MindMapBuilderAPI ?? (mainWindow as MindMapWindow).MindMapBuilderAPI);
       if (mindMap && typeof mindMap.ready === "function" && mindMap.ready() && mindMap.getView?.().data?.view === view) {
         const selection = mindMap.getSelection();
         if (selection.ok && selection.data?.nodeId && (await mindMap.addNode({ text: "![["
-          + link + "|" + size + "]]", parentId: selection.data.nodeId })).ok) return;
+          + link + "|" + size + "]]", parentId: selection.data.nodeId })).ok) return [];
         validate();
       }
-      if (!isNote && !this.plugin.isExcalidrawFile(source) && !IMAGE_TYPES.includes(source.extension.toLowerCase())) return;
+      if (!isNote && !this.plugin.isExcalidrawFile(source) && !IMAGE_TYPES.includes(source.extension.toLowerCase())) return [];
       const id = isNote ? ea.addText(center.x, center.y, "[[" + link + "]]") :
         await ea.addImage(0, 0, resource.locator.frame ? link : source, true);
       const element = ea.getElement(id);
-      if (!element) return;
+      if (!element) return [];
       if ((resource.kind === "icon" || !!scriptName) && !isNote) {
         element.height = size * (element.width ? element.height / element.width : 1);
         element.width = size;
       }
       element.x = center.x - element.width / 2;
       element.y = center.y - element.height / 2;
-      validate();
-      if (this.sourceFile(resource) !== source) return;
-      if (await view.addElements({ newElements: ea.getElements(), images: ea.imagesDict, newElementsOnTop: true, validateBeforePublish: validate })) {
-        api.selectElements([element]);
+      sources.push({ resource, file: source });
+      return [element];
+    };
+    try {
+      await this.waitForDrawing(view, validate);
+      const elements: ExcalidrawElement[] = [];
+      let right: number | undefined;
+      for (const resource of resources) {
+        const prepared = await prepare(resource);
+        if (!prepared.length) continue;
+        const bounds = ea.getBoundingBox(prepared);
+        const left = right === undefined ? bounds.topX : right + 24;
+        elements.push(...(right === undefined ? prepared : repositionElementsToCursor(prepared, { x: left, y: bounds.topY }, false)));
+        right = left + bounds.width;
+      }
+      if (!elements.length) return;
+      await this.waitForDrawing(view, validate);
+      const publish = () => {
+        validate();
+        if (sources.some(source => this.sourceFile(source.resource) !== source.file)) throw Error("Visual resource source retired");
+      };
+      if (await view.addElements({ newElements: elements, images: ea.imagesDict, newElementsOnTop: true, validateBeforePublish: publish })) {
+        api.selectElements(elements);
         await view.saveWithOutcome();
+        if (approximated) new Notice(t("LUCIDE_APPROXIMATION"));
       }
     } catch {
       if (active()) new Notice(t("VR_INSERT_FAILED"));
@@ -386,6 +420,7 @@ export class VisualResources {
     };
     const ea = this.plugin.ea.getAPI(view);
     try {
+      await this.waitForDrawing(view, validate);
       const text = await vault.read(source);
       validate();
       if (!ea.importSVG(text) || !ea.getElements().length) return;
@@ -423,6 +458,22 @@ export class VisualResources {
   /** Accept only the current in-process drag payload. */
   public isDrag(transfer: DataTransfer): boolean { return !!this.drag && transfer.types.includes(DRAG_TYPE); }
 
+  public canDropInMarkdown(transfer: DataTransfer, target: TFile): boolean {
+    const drag = this.drag;
+    return !this.disposed && this.isDrag(transfer) && drag.resource.locator.provider === "vault" &&
+      !!drag.file && drag.file !== target && this.sourceFile(drag.resource) === drag.file &&
+      this.plugin.app.vault.getFileByPath(target.path) === target;
+  }
+
+  /** Consume a vault-resource drag and produce the same link as a click insertion. */
+  public markdownDrop(transfer: DataTransfer, target: TFile): string | null {
+    if (!this.canDropInMarkdown(transfer, target) || transfer.getData(DRAG_TYPE) !== this.drag.token) return null;
+    const { resource, file } = this.drag;
+    this.endDrag();
+    const frame = resource.locator.provider === "vault" && resource.locator.frame;
+    return this.markdownLink(file, target, frame ? "#^frame=" + frame : undefined);
+  }
+
   /** Consume a drop once in the receiving drawing. */
   public drop(transfer: DataTransfer, view: ExcalidrawView, point: ScenePoint): boolean {
     if (!this.drag || transfer.getData(DRAG_TYPE) !== this.drag.token) return false;
@@ -448,7 +499,21 @@ export class VisualResources {
     const dependencies = drawing
       ? getExcalidrawEmbeddedFilesFiletree(file, this.plugin).map(source => [source.path, source.stat.mtime, source.stat.size])
       : [];
-    return JSON.stringify([visualResourceKey(resource.locator), !!drawing, file?.stat.mtime, file?.stat.size, dark, dependencies]);
+    const rendition = drawing && resource.locator.provider === "vault" && !resource.locator.frame ? this.exportedPreview(file, dark) : null;
+    return JSON.stringify([visualResourceKey(resource.locator), !!drawing, file?.stat.mtime, file?.stat.size, dark, dependencies,
+      rendition?.path, rendition?.stat.mtime]);
+  }
+
+  private exportedPreview(file: TFile, dark: boolean): TFile | null {
+    const vault = this.plugin.app.vault;
+    const thumbnail: unknown = this.plugin.app.metadataCache.getFileCache(file)?.frontmatter?.[FRAME_THUMBNAIL_PROPERTY];
+    if (typeof thumbnail === "string" && thumbnail.trim()) return null;
+    const theme = dark ? "dark" : "light";
+    for (const extension of [theme + ".png", theme + ".svg", "png", "svg"]) {
+      const candidate = vault.getFileByPath(getIMGFilename(file.path, extension));
+      if (candidate && candidate.stat.mtime >= file.stat.mtime && candidate.stat.size <= DRAWING_PREVIEW_BYTES) return candidate;
+    }
+    return null;
   }
 
   /** Return a local image preview, with SVG markup used only as an image URL. */
@@ -469,17 +534,31 @@ export class VisualResources {
       const path = file.path, mtime = file.stat.mtime;
       const pending = this.drawingPreviewQueue.then(async () => {
         if (this.disposed || !active() || this.sourceFile(resource) !== file || file.path !== path || file.stat.mtime !== mtime) return null;
+        const rendition = !frame && this.exportedPreview(file, dark);
+        if (rendition) return this.plugin.app.vault.getResourcePath(rendition);
         const loader = new EmbeddedFilesLoader(this.plugin, dark);
-        loader.admitPreviewScene = admitDrawingPreview;
         const input = frame ? new EmbeddedFile(this.plugin, file.path, this.link(resource, file)) : file;
         const result = await loader.getObsidianImage(input, 0, {
           transientExcalidrawPreviewBytes: DRAWING_PREVIEW_BYTES,
-          deferUncachedExcalidraw: file.stat.size > (frame ? COLD_FRAME_BYTES : COLD_DRAWING_BYTES) ||
-            getExcalidrawEmbeddedFilesFiletree(file, this.plugin).length > 0,
+          deferUncachedExcalidraw: true,
         });
-        if (!result?.dataURL || !active() || this.previewKey(resource, dark) !== key) return null;
-        this.rememberPreview(key, result.dataURL);
-        return result.dataURL;
+        const current = () => !this.disposed && active() && this.sourceFile(resource) === file && file.path === path && file.stat.mtime === mtime;
+        let image = result?.dataURL as string | undefined;
+        if (!image && current() && file.stat.size <= FRAME_INSPECTION_BYTES) {
+          // Yield between cold previews so scrolling and editing can continue.
+          await new Promise<void>(resolve => window.setTimeout(resolve, 16));
+          if (!current()) return null;
+          const previous = this.previewScene;
+          const elements = previous?.file === file && previous.path === path && previous.mtime === mtime
+            ? previous.elements : await readDrawingPreviewElements(this.plugin.app.vault, file, PREVIEW_SCENE_LENGTH);
+          if (!current()) return null;
+          if (elements.length <= MAX_THUMBNAIL_ELEMENTS) this.previewScene = { file, path, mtime, elements };
+          const thumbnail: unknown = this.plugin.app.metadataCache.getFileCache(file)?.frontmatter?.[FRAME_THUMBNAIL_PROPERTY];
+          image = await rasterizeDrawingResource(elements, frame, thumbnail, dark);
+        }
+        if (!image || !current() || this.previewKey(resource, dark) !== key) return null;
+        this.rememberPreview(key, image);
+        return image;
       });
       this.drawingPreviewQueue = pending.catch(() => {});
       return pending;

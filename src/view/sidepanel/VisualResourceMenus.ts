@@ -78,8 +78,16 @@ export class VisualResourceMenus {
   }
 
   /** Bulk memberships support mixed resources. Library moves use selected stencils only. */
-  public selection(selection: VisualResource[], collection: string): Menu {
+  public selection(selection: VisualResource[], collection: string, panelOpen: () => boolean, scriptName?: string): Menu {
     const menu = new Menu();
+    const view = this.target();
+    const file = view?.file;
+    const drawing = drawingTarget(view);
+    if (this.service.writable(drawing)) {
+      menu.addItem(item => item.setTitle(t("VR_INSERT_SELECTED")).setIcon("plus").onClick(() =>
+        this.run(this.service.insertMany(selection, drawing, () => panelOpen() && this.target() === view && view.file === file, undefined, scriptName))));
+      menu.addSeparator();
+    }
     const store = this.service.collections;
     const locators = selection.map(resource => resource.locator);
     if (locators.some(locator => !store.state(locator).favorite)) menu.addItem(item =>

@@ -1,6 +1,7 @@
 /** Native Visual Resources gestures, curation, and blank-drawing framework workflow. */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { runInAppTask } from "./inAppTask.mjs";
 import { behaviorInputDriver } from "./behaviorMatrix.mjs";
 
@@ -15,11 +16,16 @@ export const visualResourceCaseIds = [
   "native:visual-resources:reload",
 ];
 
-export async function runVisualResourcesScenario({ cli, drawingPath }) {
+export async function runVisualResourcesScenario({ cli, drawingPath, reportDir }) {
   const library = JSON.parse(readFileSync(new URL("../../../visual-frameworks/thinking-frameworks.excalidrawlib", import.meta.url), "utf8"));
   library.libraryItems = library.libraryItems.slice(0, 1);
-  const result = await runInAppTask({ cli, execute: exercise, args: [drawingPath, library], timeoutMs: 120000, cleanupMs: 60000,
-    onRequest: behaviorInputDriver(cli),
+  const input = behaviorInputDriver(cli);
+  const result = await runInAppTask({ cli, execute: exercise, args: [drawingPath, library], timeoutMs: 150000, cleanupMs: 60000,
+    onRequest: request => {
+      if (request.method !== "resource-settings-screenshot") return input(request);
+      cli("dev:screenshot", "path=" + join(reportDir, "visual-resource-settings.png"));
+      return { captured: true };
+    },
     onProgress: phase => { if (phase) process.stdout.write("Visual Resources: " + phase + "\n"); } });
   assert.deepEqual(result.tests.map(test => test.testId), visualResourceCaseIds);
   return { id: "visual-resources-3074", status: "passed", ...result };
@@ -162,21 +168,44 @@ async function exercise(c, drawingPath, library) {
         .find(el => el.textContent === plugin.getLabel(key))), "rendered menu action " + key);
       item.closest(".menu-item").click();
     };
-    const openFilters = () => filter.click();
+    const filterOption = key => panel.querySelector('.excalidraw-resource-filter-popover [data-filter="' + key + '"]');
     const groups = JSON.stringify(plugin.settings.visualResources.groups);
-    openFilters();
-    await menuAction("VR_SELECT_NO_FILTERS");
+    filter.click();
+    await c.waitFor(() => filterOption("none"), "filter popover opens");
+    filterOption("none").click();
     check(!plugin.settings.visualResources.filters.length && JSON.stringify(plugin.settings.visualResources.groups) === groups,
       "Select none changed discovery groups or left resource types enabled");
     check(!panel.querySelector(".excalidraw-resource-card"), "Select none left visible results");
-    openFilters();
-    await c.waitFor(() => [...doc.querySelectorAll(".menu-item-title")].some(el => el.textContent === plugin.getLabel("VR_SELECT_ALL_FILTERS")),
-      "empty resource types filter menu");
-    check(![...doc.querySelectorAll(".menu-item-title")].some(el => el.textContent === plugin.getLabel("VR_ICON_GROUPS") ||
-      el.textContent === plugin.getLabel("VR_FRAME_GROUPS")), "Fine filters remained visible with their resource types disabled");
-    await menuAction("VR_SELECT_ALL_FILTERS");
+    check(filter.getAttribute("aria-expanded") === "true" && !filterOption("has-named-frames") &&
+      !panel.querySelector(".excalidraw-resource-filter-section"), "Disabling resource types closed the popover or left fine filters visible");
+    filterOption("all").click();
     check(plugin.settings.visualResources.filters.includes("other") && JSON.stringify(plugin.settings.visualResources.groups) === groups,
       "Select all changed discovery groups or skipped a resource type");
+    check(filter.getAttribute("aria-expanded") === "true" && filterOption("has-named-frames").parentElement.textContent.includes("2.29.4"),
+      "The drawing facet was missing its requirement, or the popover closed after editing");
+    filterOption("done").click();
+    toolbarButton("VR_SETTINGS").click();
+    let settings;
+    await c.waitFor(() => (settings = doc.querySelector(".excalidraw-resource-settings-modal")), "settings opens the compact editor");
+    const grids = settings.querySelector(".excalidraw-resource-settings-card .excalidraw-resource-settings-grid");
+    const ruleName = () => settings.querySelector(".excalidraw-resource-settings-card-header input");
+    check(settings.querySelectorAll(".excalidraw-resource-settings-card").length === 1 &&
+      win.getComputedStyle(grids).gridTemplateColumns.split(" ").length === 2 &&
+      settings.querySelectorAll('input[type="color"]').length === 2,
+      "Settings did not show one paged rule, a two-column card, and color swatches");
+    const firstRule = ruleName().value;
+    settings.querySelector(".excalidraw-resource-settings-pager button:last-child").click();
+    check(ruleName().value !== firstRule, "Rule navigation did not change the editable card");
+    settings.querySelector(".excalidraw-resource-settings-pager button:first-child").click();
+    await c.requestHost("resource-settings-screenshot", {});
+    const closeSettings = settings.querySelector(".modal-close-button, .modal-header-button");
+    if (closeSettings) closeSettings.click();
+    else await c.requestHost("behavior-input", {
+      contentsId: win.require("@electron/remote").getCurrentWebContents().id,
+      method: "Input.dispatchKeyEvent",
+      params: [{ type: "keyDown", key: "Escape", code: "Escape" }, { type: "keyUp", key: "Escape", code: "Escape" }],
+    });
+    await c.waitFor(() => !settings.isConnected, "settings dismissal completes");
     search("Resource probe");
     await c.waitFor(card, "resource visible after Select all");
     const before = count();
@@ -201,16 +230,45 @@ async function exercise(c, drawingPath, library) {
     check(!panel.querySelector(".excalidraw-resource-checkbox") && card() && count() === before,
       "Exiting selection mode changed the scene or left selection controls");
 
+    await vault.create(root + "/icon - Resource probe second.svg", '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>');
+    const actions = () => card().closest(".excalidraw-resource-card").querySelector(".excalidraw-resource-actions button:last-child");
+    const isBusy = view.isPersistenceBusy;
+    let busy = true;
+    view.isPersistenceBusy = () => busy || isBusy.call(view);
+    try {
+      actions().click();
+      await menuAction("VR_INSERT_SVG");
+      check(count() === before, "Insertion published before its target finished saving");
+      busy = false;
+      await c.waitFor(() => count() === before + 1, "insertion requested during save publishes without canvas refocus");
+      api.history.undo();
+      await c.waitFor(() => count() === before, "one undo removes the single insertion");
+    } finally { view.isPersistenceBusy = isBusy; }
+    toolbarButton("VR_SELECT").click();
+    const bulkFixtures = new Set(["Resource probe", "Resource probe second"]);
+    const bulkInputs = () => [...panel.querySelectorAll(".excalidraw-resource-checkbox")]
+      .filter(input => bulkFixtures.has(input.getAttribute("aria-label")));
+    await c.waitFor(() => bulkInputs().length === bulkFixtures.size, "both bulk insert resources are listed");
+    for (const input of bulkInputs()) input.click();
+    selectedActions.click();
+    await menuAction("VR_INSERT_SELECTED");
+    await c.waitFor(() => count() === before + 2, "bulk insertion publishes both SVGs");
+    api.history.undo();
+    await c.waitFor(() => count() === before, "a single undo removes the bulk insertion");
+    toolbarButton("VR_EXIT_SELECTION").click();
+
     const ea = plugin.ea.getAPI(view);
     try {
       const frameId = ea.addFrame(480, 310, 230, 160, "Divider test frame");
       ea.addElementsToFrame(frameId, [ea.addRect(500, 340, 55, 43)]);
+      ea.addFrame(760, 310, 180, 160, "Second frame");
+      ea.addFrame(980, 310, 180, 160, "Third frame");
       check(await ea.addElementsToView(false, true, true), "Could not save the owned frame fixture");
     } finally { ea.destroy(); }
     search("Divider test frame");
     let framesButton;
     await c.waitFor(() => (framesButton = [...panel.querySelectorAll(".excalidraw-resource-actions button")]
-      .find(button => button.getAttribute("aria-label") === plugin.getLabel("VR_BROWSE_FRAMES") + " (1)" &&
+      .find(button => button.getAttribute("aria-label") === plugin.getLabel("VR_BROWSE_FRAMES") + " (3)" &&
         !button.classList.contains("excalidraw-display-none"))), "named-frame count in search results");
     framesButton.click();
     const divider = panel.querySelector(".excalidraw-resource-divider");
@@ -218,31 +276,54 @@ async function exercise(c, drawingPath, library) {
     const framePane = panel.querySelector(".excalidraw-resource-frames");
     await c.waitFor(() => framePane.querySelector(".excalidraw-resource-body")?.textContent.includes("Divider test frame"),
       "frame selector with a visible split divider");
-    const start = divider.getBoundingClientRect();
+    check(framePane.querySelectorAll(".excalidraw-resource-body").length === 3, "The master query hid other frames from the selected drawing");
+    let x, y;
+    await c.waitFor(() => {
+      const start = divider.getBoundingClientRect();
+      x = Math.round(start.left + start.width / 2);
+      y = Math.round(start.top + start.height / 2);
+      const hit = doc.elementFromPoint(x, y);
+      c.observations.frameDivider = { x, y, hit: hit?.className, bounds: start.toJSON(),
+        gallery: galleryPane.getBoundingClientRect().height, frames: framePane.getBoundingClientRect().height,
+        ratio: win.devicePixelRatio, scale: win.visualViewport?.scale, events: [] };
+      return hit === divider;
+    }, "frame divider is unobstructed");
     const beforeHeight = galleryPane.getBoundingClientRect().height;
-    const x = Math.round(start.left + start.width / 2), y = Math.round(start.top + start.height / 2);
     const contentsId = win.require("@electron/remote").getCurrentWebContents().id;
-    await c.requestHost("behavior-input", { contentsId, method: "Input.dispatchMouseEvent", params: [
-      { type: "mouseMoved", x, y, button: "none", buttons: 0 },
-      { type: "mousePressed", x, y, button: "left", buttons: 1, clickCount: 1 },
-      { type: "mouseMoved", x, y: y - 45, button: "left", buttons: 1 },
-      { type: "mouseReleased", x, y: y - 45, button: "left", buttons: 0, clickCount: 1 },
-    ] });
+    const record = event => c.observations.frameDivider.events.push({ type: event.type, x: event.clientX, y: event.clientY,
+      target: event.target.className?.baseVal ?? event.target.className, trusted: event.isTrusted });
+    for (const type of ["pointerdown", "pointermove", "pointerup"]) doc.addEventListener(type, record, true);
+    try {
+      await c.requestHost("behavior-input", { contentsId, method: "Input.dispatchMouseEvent", params: [
+        { type: "mouseMoved", x, y, button: "none", buttons: 0 },
+        { type: "mousePressed", x, y, button: "left", buttons: 1, clickCount: 1 },
+        { type: "mouseMoved", x, y: y - 45, button: "left", buttons: 1 },
+        { type: "mouseReleased", x, y: y - 45, button: "left", buttons: 0, clickCount: 1 },
+      ] });
+      c.observations.frameDivider.after = { height: galleryPane.getBoundingClientRect().height, split: divider.getAttribute("aria-valuenow") };
+    } finally {
+      for (const type of ["pointerdown", "pointermove", "pointerup"]) doc.removeEventListener(type, record, true);
+    }
     await c.waitFor(() => galleryPane.getBoundingClientRect().height < beforeHeight - 12, "pointer drag grows the frame pane");
     const afterPointer = Number(divider.getAttribute("aria-valuenow"));
     divider.dispatchEvent(new win.KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true, cancelable: true }));
     check(Number(divider.getAttribute("aria-valuenow")) > afterPointer, "Divider keyboard input did not resize the panes");
     check(query.value === "Divider test frame" && framePane.querySelector(".excalidraw-resource-body"),
       "Resizing dropped search or frame context");
-    framePane.querySelector(".excalidraw-resource-toolbar button").click();
-    check(divider.classList.contains("excalidraw-display-none"), "Closing frames left the split divider visible");
+    search("second.svg");
+    check(!framesButton.isConnected && galleryPane.querySelector('[aria-label="Resource probe second"]'),
+      "A search for the unrelated SVG did not replace the selected drawing in the gallery");
+    check(divider.classList.contains("excalidraw-display-none") && !framePane.querySelector(".excalidraw-resource-body"),
+      "Leaving the selected drawing outside the search results left its frames visible");
     controller.show = showMenu;
     plugin.settings.visualResources = preferences;
     await plugin.saveSettings();
     return { assertions: ["canvas button uses neighboring toolbar styling", "toolbar shares the search row at wide widths and wraps when narrow",
       "bulk filter actions change resource types and preserve their fine filters",
       "bulk favorite works without a playlist, and selection preserves the scene",
-      "pointer and keyboard resize the frame split without losing the current search"] };
+      "settings uses a paged compact editor and both background swatches",
+      "context insertion remains available while the drawing saves, and bulk insertion has one undo",
+      "frame pane shows the entire selection and follows the parent search results"] };
   });
   await runCase("native:visual-resources:stencils", async () => {
     const doc = panel.ownerDocument, win = doc.defaultView;
@@ -444,6 +525,7 @@ async function exercise(c, drawingPath, library) {
     const doc = panel.ownerDocument;
     const original = await vault.read(view.file);
     const large = await vault.create(root + "/Large frame preview probe.excalidraw.md", original + "\n" + " ".repeat(1024 * 1024 + 128));
+    const medium = await vault.create(root + "/Medium linked preview probe.excalidraw.md", original + "\n" + " ".repeat(128 * 1024));
     await c.waitFor(() => app.metadataCache.getFileCache(large)?.frontmatter?.["excalidraw-anchors"]?.includes("Divider test frame"),
       "large drawing has indexed frame metadata");
     const note = await vault.create(root + "/Destination note.md", "Test note\n");
@@ -460,6 +542,21 @@ async function exercise(c, drawingPath, library) {
     card().click();
     await c.waitFor(() => documentLeaf.view.editor.getValue().includes("![[") &&
       documentLeaf.view.editor.getValue().includes("Resource probe"), "note has a linked SVG embed");
+    const editor = documentLeaf.view.editor;
+    editor.setValue("Above\nBelow");
+    const cm = editor.cm;
+    await c.waitFor(() => cm?.coordsAtPos(6), "Markdown editor has drop coordinates");
+    const coords = cm.coordsAtPos(6);
+    const win = cm.dom.ownerDocument.defaultView;
+    const transfer = new win.DataTransfer();
+    card().dispatchEvent(new win.DragEvent("dragstart", { dataTransfer: transfer, bubbles: true }));
+    const dragEvent = type => new win.DragEvent(type, { dataTransfer: transfer, clientX: coords.left + 1,
+      clientY: (coords.top + coords.bottom) / 2, bubbles: true, cancelable: true });
+    const over = dragEvent("dragover"), drop = dragEvent("drop");
+    cm.contentDOM.dispatchEvent(over);
+    cm.contentDOM.dispatchEvent(drop);
+    check(over.defaultPrevented && drop.defaultPrevented && editor.getValue().startsWith("Above\n![[") &&
+      editor.getValue().endsWith("Below"), "Markdown drop did not insert the embed at the pointed-to position");
     const controller = plugin.visualResourcePanel;
     const show = controller.show;
     controller.show = function(menu, ...args) { return show.call(this, menu.setUseNativeMenu(false), ...args); };
@@ -473,26 +570,37 @@ async function exercise(c, drawingPath, library) {
     } finally { controller.show = show; }
 
     const read = vault.read;
+    const cachedRead = vault.cachedRead;
     let largeReads = 0;
     vault.read = function(file) {
       if (file === large) largeReads++;
       return read.call(this, file);
     };
+    vault.cachedRead = function(file) {
+      if (file === large) largeReads++;
+      return cachedRead.call(this, file);
+    };
     try {
       search("Large frame preview probe");
       let browse;
       await c.waitFor(() => (browse = [...panel.querySelectorAll(".excalidraw-resource-main .excalidraw-resource-actions button")]
-        .find(button => button.getAttribute("aria-label") === plugin.getLabel("VR_BROWSE_FRAMES") + " (1)")),
+        .find(button => button.getAttribute("aria-label") === plugin.getLabel("VR_BROWSE_FRAMES") + " (3)")),
         "large drawing uses its indexed frame count");
       browse.click();
       await c.waitFor(() => panel.querySelector(".excalidraw-resource-frames .excalidraw-resource-body")?.textContent.includes("Divider test frame"),
         "large drawing lists frames from its metadata");
       const resources = plugin.visualResources;
       const descriptor = (await resources.list()).find(item => item.source === large.path);
+      const mediumResource = (await resources.list()).find(item => item.source === medium.path);
+      check((await resources.preview(mediumResource, false))?.startsWith("data:image/png"), "A medium drawing with linked assets did not produce a tiny raster preview");
       check(await resources.preview(descriptor, false) === null, "Cold large drawing was rendered");
       const frame = (await resources.frames(descriptor))[0];
       check(await resources.preview(frame, false) === null && largeReads === 0,
         "Listing a large drawing or frame read its full scene");
+      const placeholder = [...panel.querySelectorAll(".excalidraw-resource-main .excalidraw-resource-card")]
+        .find(el => el.textContent.includes("Large frame preview probe")).querySelector(".excalidraw-resource-preview svg");
+      const registered = plugin.drawingCreationUI.ribbon.querySelector("svg");
+      check(placeholder && placeholder.innerHTML === registered.innerHTML, "An uncached drawing did not use the ribbon icon");
       panel.querySelector(".excalidraw-resource-frames .excalidraw-resource-body").click();
       await c.waitFor(() => documentLeaf.view.editor.getValue().includes("#^frame="), "named frame embedded in Markdown");
 
@@ -505,14 +613,15 @@ async function exercise(c, drawingPath, library) {
       frameCard().click();
       await c.waitFor(async () => JSON.parse(await read.call(vault, canvas)).nodes.some(node =>
         node.type === "file" && node.file === large.path && node.subpath?.startsWith("#^frame=")), "Canvas saved a native frame file node");
-    } finally { vault.read = read; }
+    } finally { vault.read = read; vault.cachedRead = cachedRead; }
     await documentLeaf.setViewState({ type: "empty", state: {} });
     documentLeaf.detach();
     workspace.setActiveLeaf(leaf, { focus: true });
     await plugin.visualResourcePanel.open(view);
     check(doc === panel.ownerDocument, "document insertion changed the panel's owning document");
-    return { assertions: ["Markdown receives linked SVG and named-frame embeds", "Canvas saves a native file node with its frame subpath",
-      "large drawing and frame preview misses skip full scene reads"] };
+    return { assertions: ["Markdown receives linked SVG and named-frame embeds, including drop at the pointer",
+      "Canvas saves a native file node with its frame subpath",
+      "medium drawings produce a small raster preview and very large files use the ribbon icon without a scene read"] };
   });
   await runCase("native:visual-resources:popout-drop", async () => {
     const receivingFile = await plugin.createDrawing("Resource drop receiver.excalidraw.md", root, drawingData);

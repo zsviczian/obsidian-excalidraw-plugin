@@ -4,15 +4,16 @@ import type {
 import type { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/src/types";
 
 const ICON_EXTENSIONS = ["png", "jpg", "jpeg", "gif", "svg", "webp"];
+export const MAX_THUMBNAIL_ELEMENTS = 1200;
 export const VISUAL_RESOURCE_FILTERS: readonly VisualResourceFilter[] = ["icon", "lucide", "image", "drawing", "stencil", "framework", "other"];
 
 export const DEFAULT_ICON_RULES: readonly VisualDiscoveryRule[] = ["Icon", "Stickfigure", "Logo"].map(name => ({
   name, pattern: "^" + name.toLowerCase() + " - (.*?)(?: - [^-]+)?$",
 }));
 
-/** A cold gallery render is limited to small, self-contained vector scenes. */
+/** Limit the decoded geometry passed to the gallery rasterizer. */
 export function admitDrawingPreview(elements: readonly ExcalidrawElement[]): boolean {
-  if (elements.length > 512) return false;
+  if (elements.length > MAX_THUMBNAIL_ELEMENTS) return false;
   let points = 0;
   let textLength = 0;
   for (const element of elements) {
@@ -20,7 +21,7 @@ export function admitDrawingPreview(elements: readonly ExcalidrawElement[]): boo
     if (element.type === "image" || element.type === "embeddable" || element.type === "iframe") return false;
     if ("points" in element) points += element.points.length;
     if (element.type === "text") textLength += element.text.length;
-    if (points > 16_000 || textLength > 8_000) return false;
+    if (points > 24_000 || textLength > 12_000) return false;
   }
   return true;
 }
@@ -97,7 +98,8 @@ export function compileVisualRules(kind: "icon" | "drawing" | "frame", rules: re
 }
 
 /** Apply independent resource-kind, discovery-group, and text filters. */
-export function filterVisualResources(resources: readonly VisualResource[], query: string, filters: readonly VisualResourceFilter[], groups?: readonly string[]): VisualResource[] {
+export function filterVisualResources(resources: readonly VisualResource[], query: string, filters: readonly VisualResourceFilter[], groups?: readonly string[],
+  hasNamedFrames = false): VisualResource[] {
   const terms = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
   const allowGroup = (resource: VisualResource, prefix: string) => {
     if (groups === undefined) return true;
@@ -110,12 +112,11 @@ export function filterVisualResources(resources: readonly VisualResource[], quer
     const drawing = kind === "drawing" && filters.includes("drawing");
     const icon = filters.includes("icon") && (kind === "icon" || resource.groups?.some(group => group.startsWith("icon:"))) &&
       allowGroup(resource, "icon");
-    const category = drawing ? allowGroup(resource, resource.kind === "frame" ? "frame" : "drawing") :
+    const category = drawing ? resource.kind === "frame" || allowGroup(resource, "drawing") && (!hasNamedFrames || !!resource.frames?.length) :
       kind !== "icon" && kind !== "drawing" && filters.includes(kind);
-    if (resource.other ? !filters.includes("other") : !category && !icon) return false;
+    if (resource.other ? !filters.includes("other") || drawing && hasNamedFrames && !resource.frames?.length : !category && !icon) return false;
     const text = [resource.title, resource.source, ...resource.keywords,
-      ...(drawing ? resource.frames?.filter(frame => allowGroup(frame, "frame"))
-        .flatMap(frame => [frame.title, ...frame.keywords]) ?? [] : [])].join(" ").toLowerCase();
+      ...(drawing ? resource.frames?.flatMap(frame => [frame.title, ...frame.keywords]) ?? [] : [])].join(" ").toLowerCase();
     return terms.every(term => text.includes(term));
   });
 }

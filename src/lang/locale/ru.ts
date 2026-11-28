@@ -15,6 +15,20 @@ import {
 // русский
 export default {
   // Visual Resources and Thinking Frameworks
+  VR_INSERT_SELECTED: "Вставить выбранное в рисунок",
+  VR_HAS_NAMED_FRAMES: "Есть именованные рамки",
+  VR_HAS_NAMED_FRAMES_DESC: "Находит рисунки с именованными рамками, сохранённые в Excalidraw 2.29.4 или новее.",
+  VR_FILTER_DONE: "Готово",
+  VR_FRAME_SEARCH_RULES: "Правила поиска рамок",
+  VR_COPY_PROMPT_DESC: "Скопируйте инструкции для создания правил с помощью ИИ.",
+  VR_PROMPT_COPIED: "Инструкции скопированы.",
+  VR_RULES_DESC: "Учитываются регулярные выражения без учёта регистра. Поместите ключевое слово в группу, например (.+).",
+  VR_RULE_POSITION: "Правило {CURRENT} из {TOTAL}",
+  VR_TEST_PATH: "Найти пример файла по имени или пути",
+  VR_EXCLUSIONS_DESC: "Пути в хранилище через запятые или переносы строк.",
+  VR_RULE_ADVANCED: "Дополнительные условия",
+  VR_NO_LIMIT: "Без ограничений",
+  VR_TRANSPARENT: "Прозрачный",
   VR_BROWSE_FRAMES: "Просмотреть именованные рамки",
   VR_ICON_GROUPS: "Группы значков хранилища",
   VR_DRAWING_GROUPS: "Группы рисунков",

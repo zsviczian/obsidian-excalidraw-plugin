@@ -21,6 +21,7 @@ export interface VisualResource {
   keywords: string[];
   groups?: string[];
   other?: boolean;
+  drawing?: boolean;
   frames?: VisualResource[];
   inspectFrames?: boolean;
   previewElements?: LibraryItem["elements"];
@@ -42,6 +43,7 @@ export interface VisualResourcePreferences {
   filters?: VisualResourceFilter[];
   groups?: string[];
   list?: boolean;
+  hasNamedFrames?: boolean;
   iconGroups?: Record<string, string[]>;
   iconWidth?: number;
   thumbnailSize?: number;
