@@ -4,7 +4,7 @@ import type {
 import type { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/src/types";
 
 const ICON_EXTENSIONS = ["png", "jpg", "jpeg", "gif", "svg", "webp"];
-export const MAX_THUMBNAIL_ELEMENTS = 1200;
+export const MAX_THUMBNAIL_ELEMENTS = 2400;
 export const VISUAL_RESOURCE_FILTERS: readonly VisualResourceFilter[] = ["icon", "lucide", "image", "drawing", "stencil", "framework", "other"];
 
 export const DEFAULT_ICON_RULES: readonly VisualDiscoveryRule[] = ["Icon", "Stickfigure", "Logo"].map(name => ({
@@ -18,10 +18,9 @@ export function admitDrawingPreview(elements: readonly ExcalidrawElement[]): boo
   let textLength = 0;
   for (const element of elements) {
     if (element.isDeleted) continue;
-    if (element.type === "image" || element.type === "embeddable" || element.type === "iframe") return false;
     if ("points" in element) points += element.points.length;
     if (element.type === "text") textLength += element.text.length;
-    if (points > 24_000 || textLength > 12_000) return false;
+    if (points > 64_000 || textLength > 12_000) return false;
   }
   return true;
 }

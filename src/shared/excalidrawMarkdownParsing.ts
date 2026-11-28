@@ -26,6 +26,8 @@ export const DRAWING_COMPRESSED_REG =
 const DRAWING_COMPRESSED_REG_FALLBACK =
   /(\n##? Drawing\n(?:```compressed-json\n)?)(.*)((```)?(%%)?)/gm;
 
+export const EMBEDDED_VAULT_FILE_REG = /([\w\d]*):\s*!?\[\[([^\]]*)]]\s*(\{[^}]*})?\n/gm;
+
 const isCompressedMD = (data: string): boolean => {
   return data.match(/```compressed-json\n/gm) !== null;
 };

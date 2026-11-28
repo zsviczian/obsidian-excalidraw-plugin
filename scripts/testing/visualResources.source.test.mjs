@@ -63,11 +63,12 @@ test("fine filters affect only their owning resource type or frame list", () => 
   assert.deepEqual(model.filterVisualResources([withoutFrames, drawing], "", ["drawing"], undefined, true), [drawing]);
 });
 
-test("cold drawing previews reject asset loading and compressed scenes with large render work", () => {
-  assert.equal(model.admitDrawingPreview([{ type: "rectangle" }, { type: "image", isDeleted: true }]), true);
-  assert.equal(model.admitDrawingPreview([{ type: "image" }]), false);
-  assert.equal(model.admitDrawingPreview(Array(1201).fill({ type: "ellipse" })), false);
-  assert.equal(model.admitDrawingPreview([{ type: "freedraw", points: Array(24_001).fill([1, 1]) }]), false);
+test("drawing thumbnail geometry admits detailed drawings and separates asset loading from vector work", () => {
+  assert.equal(model.admitDrawingPreview([{ type: "rectangle" }, { type: "image" }]), true);
+  assert.equal(model.admitDrawingPreview(Array(1734).fill({ type: "ellipse" })), true);
+  assert.equal(model.admitDrawingPreview([{ type: "freedraw", points: Array(49_000).fill([1, 1]) }]), true);
+  assert.equal(model.admitDrawingPreview(Array(2401).fill({ type: "ellipse" })), false);
+  assert.equal(model.admitDrawingPreview([{ type: "freedraw", points: Array(64_001).fill([1, 1]) }]), false);
   assert.equal(model.admitDrawingPreview([{ type: "text", text: "x".repeat(12_001) }]), false);
 });
 

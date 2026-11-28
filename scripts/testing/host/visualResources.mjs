@@ -526,6 +526,41 @@ async function exercise(c, drawingPath, library) {
     const original = await vault.read(view.file);
     const large = await vault.create(root + "/Large frame preview probe.excalidraw.md", original + "\n" + " ".repeat(1024 * 1024 + 128));
     const medium = await vault.create(root + "/Medium linked preview probe.excalidraw.md", original + "\n" + " ".repeat(128 * 1024));
+    const solidRaster = async (name, color) => {
+      const canvas = doc.createElement("canvas");
+      canvas.width = 640;
+      canvas.height = 480;
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = color;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", 0.9));
+      return await vault.createBinary(root + "/" + name, await blob.arrayBuffer());
+    };
+    const inside = await solidRaster("Preview inside.jpg", "#23c46e");
+    const outside = await solidRaster("Preview outside.jpg", "#b20a92");
+    const sourceImage = api.getSceneElements().find(el => el.type === "image");
+    const sourceFrame = api.getSceneElements().find(el => el.type === "frame");
+    check(sourceImage && sourceFrame, "Preview fixture is missing its native image and frame");
+    const makeImage = (id, fileId, x) => ({ ...sourceImage, id, fileId, x, y: 0,
+      frameId: null, angle: 0, width: 400, height: 300, crop: null, scale: [1, 1], index: null, groupIds: [], opacity: 100 });
+    const previewFrame = { ...sourceFrame, id: "preview-frame", name: "Thumbnail", x: 0, y: 0, width: 400, height: 300 };
+    const fence = String.fromCharCode(96).repeat(3);
+    const savedDrawing = (elements, frontmatter = "", embedded = "") => {
+      const json = JSON.stringify({ type: "excalidraw", version: 2, elements, appState: {}, files: {} });
+      const compressed = plugin.ea.compressToBase64(json);
+      return "---\nexcalidraw-plugin: parsed\n" + frontmatter + "---\n\n# Excalidraw Data\n\n" +
+        embedded + "\n## Drawing\n" + fence + "compressed-json\n" + compressed + "\n" + fence + "\n";
+    };
+    const linked = await vault.create(root + "/Preview linked frame.excalidraw.md", savedDrawing([
+      previewFrame, makeImage("preview-inside", "inside", 0), makeImage("preview-outside", "outside", 700),
+    ], "excalidraw-thumbnail: Thumbnail\n", "## Embedded Files\ninside: [[" + inside.path + "]]\n\noutside: [[" + outside.path + "]]\n"));
+    const line = library.libraryItems[0].elements.find(el => el.type === "line");
+    const detailed = await vault.create(root + "/Preview detailed vectors.excalidraw.md", savedDrawing(
+      Array.from({ length: 1734 }, (_, i) => ({ ...line, id: "preview-line-" + i, index: null, groupIds: [],
+        x: (i % 40) * 32, y: Math.floor(i / 40) * 18, width: 29, height: 6,
+        points: Array.from({ length: 30 }, (_, point) => [point, point % 2 * 6]), boundElements: null, angle: 0 }))));
+    await c.waitFor(() => app.metadataCache.getFileCache(linked)?.frontmatter?.["excalidraw-thumbnail"] === "Thumbnail",
+      "saved thumbnail frame is indexed");
     await c.waitFor(() => app.metadataCache.getFileCache(large)?.frontmatter?.["excalidraw-anchors"]?.includes("Divider test frame"),
       "large drawing has indexed frame metadata");
     const note = await vault.create(root + "/Destination note.md", "Test note\n");
@@ -593,6 +628,32 @@ async function exercise(c, drawingPath, library) {
       const descriptor = (await resources.list()).find(item => item.source === large.path);
       const mediumResource = (await resources.list()).find(item => item.source === medium.path);
       check((await resources.preview(mediumResource, false))?.startsWith("data:image/png"), "A medium drawing with linked assets did not produce a tiny raster preview");
+      const previews = await resources.list();
+      const linkedResource = previews.find(item => item.source === linked.path);
+      const detailedResource = previews.find(item => item.source === detailed.path);
+      const readBinary = vault.readBinary, rasterReads = [];
+      vault.readBinary = function(file) {
+        if (file === inside || file === outside) rasterReads.push(file.path);
+        return readBinary.call(this, file);
+      };
+      try {
+        const url = await resources.preview(linkedResource, false);
+        check(url?.startsWith("data:image/png"), "Cold linked thumbnail frame did not produce a PNG");
+        const image = doc.createElement("img");
+        image.src = url;
+        await image.decode();
+        check(image.naturalWidth === 256 && image.naturalHeight === 192, "Thumbnail did not preserve the chosen frame's bounds");
+        const sample = doc.createElement("canvas");
+        sample.width = sample.height = 1;
+        const ctx = sample.getContext("2d");
+        ctx.drawImage(image, -128, -96);
+        const [r, g, b, a] = ctx.getImageData(0, 0, 1, 1).data;
+        check(g > 165 && r < 75 && b < 145 && a === 255, "Linked JPEG pixels were replaced by a placeholder: " + [r, g, b, a]);
+        check(await resources.preview(linkedResource, false) === url && rasterReads.join("|") === inside.path,
+          "A warm request reloaded the raster or the renderer read assets outside the thumbnail frame");
+        check((await resources.preview(detailedResource, false))?.startsWith("data:image/png"),
+          "The detailed cold drawing with 1,734 elements and 52,020 stroke points did not produce a PNG");
+      } finally { vault.readBinary = readBinary; }
       check(await resources.preview(descriptor, false) === null, "Cold large drawing was rendered");
       const frame = (await resources.frames(descriptor))[0];
       check(await resources.preview(frame, false) === null && largeReads === 0,
@@ -621,7 +682,8 @@ async function exercise(c, drawingPath, library) {
     check(doc === panel.ownerDocument, "document insertion changed the panel's owning document");
     return { assertions: ["Markdown receives linked SVG and named-frame embeds, including drop at the pointer",
       "Canvas saves a native file node with its frame subpath",
-      "medium drawings produce a small raster preview and very large files use the ribbon icon without a scene read"] };
+      "low-resolution drawing PNGs retain linked JPEG pixels and skip assets outside the selected frame",
+      "detailed vector scenes produce a PNG and over-budget cold files use the ribbon icon without reading the scene"] };
   });
   await runCase("native:visual-resources:popout-drop", async () => {
     const receivingFile = await plugin.createDrawing("Resource drop receiver.excalidraw.md", root, drawingData);

@@ -83,6 +83,7 @@ import {
 import {
   changeThemeOfExcalidrawMD,
   DRAWING_COMPRESSED_REG,
+  EMBEDDED_VAULT_FILE_REG,
   getExcalidrawMarkdownHeader,
   getExcalidrawMarkdownHeaderSection,
   getJSON,
@@ -1077,9 +1078,7 @@ export class ExcalidrawData {
           ? data.substring(indexOfNewEmbeddedFiles + embeddedFilesNewLength)
           : data.substring(indexOfOldEmbeddedFiles + embeddedFilesOldLength);
       //Load Embedded files
-      const REG_FILEID_FILEPATH =
-        /([\w\d]*):\s*!?\[\[([^\]]*)]]\s*(\{[^}]*})?\n/gm;
-      res = data.matchAll(REG_FILEID_FILEPATH);
+      res = data.matchAll(EMBEDDED_VAULT_FILE_REG);
       while (!(parts = res.next()).done) {
         const embeddedFile = new EmbeddedFile(
           this.plugin,

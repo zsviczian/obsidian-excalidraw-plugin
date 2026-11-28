@@ -6,7 +6,7 @@ import type ExcalidrawPlugin from "src/core/main";
 import { t } from "src/lang/helpers";
 import { FRAME_ANCHORS_PROPERTY, FRAME_THUMBNAIL_PROPERTY, getSceneFrames } from "src/utils/frameMetadata";
 import { getTemplate } from "src/utils/excalidrawAutomateUtils";
-import { readDrawingPreviewElements } from "src/utils/drawingPreviewScene";
+import { readDrawingPreviewElements, readDrawingPreviewScene } from "src/utils/drawingPreviewScene";
 import { repositionElementsToCursor } from "src/utils/excalidrawElementUtils";
 import { getExcalidrawEmbeddedFilesFiletree, getIMGFilename } from "src/utils/fileUtils";
 import type { VisualDiscoveryCandidate, VisualDiscoveryRule, VisualResource, VisualResourceLocator } from "src/types/visualResourceTypes";
@@ -45,7 +45,7 @@ export class VisualResources {
   private readonly framePreviews = new Map<string, { stamp: string; frames: Promise<VisualResource[]> }>();
   private previewBytes = 0;
   private drawingPreviewQueue: Promise<unknown> = Promise.resolve();
-  private previewScene: { file: TFile; path: string; mtime: number; elements: ExcalidrawElement[] } | null = null;
+  private previewScene: { file: TFile; path: string; mtime: number; scene: Awaited<ReturnType<typeof readDrawingPreviewScene>> } | null = null;
   private readonly lucideAttachments = new Map<string, TFile>();
 
   constructor(private readonly plugin: ExcalidrawPlugin) {
@@ -549,12 +549,12 @@ export class VisualResources {
           await new Promise<void>(resolve => window.setTimeout(resolve, 16));
           if (!current()) return null;
           const previous = this.previewScene;
-          const elements = previous?.file === file && previous.path === path && previous.mtime === mtime
-            ? previous.elements : await readDrawingPreviewElements(this.plugin.app.vault, file, PREVIEW_SCENE_LENGTH);
+          const scene = previous?.file === file && previous.path === path && previous.mtime === mtime
+            ? previous.scene : await readDrawingPreviewScene(this.plugin.app.vault, file, PREVIEW_SCENE_LENGTH);
           if (!current()) return null;
-          if (elements.length <= MAX_THUMBNAIL_ELEMENTS) this.previewScene = { file, path, mtime, elements };
+          if (scene.elements.length <= MAX_THUMBNAIL_ELEMENTS) this.previewScene = { file, path, mtime, scene };
           const thumbnail: unknown = this.plugin.app.metadataCache.getFileCache(file)?.frontmatter?.[FRAME_THUMBNAIL_PROPERTY];
-          image = await rasterizeDrawingResource(elements, frame, thumbnail, dark);
+          image = await rasterizeDrawingResource(this.plugin.app, file, scene, frame, thumbnail, dark, current);
         }
         if (!image || !current() || this.previewKey(resource, dark) !== key) return null;
         this.rememberPreview(key, image);

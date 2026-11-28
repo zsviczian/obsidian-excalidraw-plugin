@@ -15,7 +15,7 @@ Open **Visual Resources** from the Excalidraw command palette or use the shapes 
 
 Drag the divider to resize the gallery and frame selector, or focus it and use the Up and Down arrow keys. On desktop, double-click a vault resource to open its source, or drag it to an Excalidraw drawing to insert it at the drop position.
 
-Drawings reuse fresh exports and suitably sized cached previews when available. A bounded raster preview can also show the saved layout without loading nested drawings or original assets. The Excalidraw ribbon icon marks drawings whose previews exceed the limits. Browsing adds no drawing thumbnails to the persistent cache.
+Drawings reuse fresh exports and suitably sized cached previews when available. Otherwise, the browser renders a small PNG of the saved drawing or its chosen thumbnail frame. It downsizes local PNG, JPEG and WebP assets within the rendered area and uses placeholders for images outside its rendering budget. The Excalidraw ribbon icon marks drawings that exceed the scene budget. Browsing adds no drawing thumbnails to the persistent cache.
 
 Open **Visual Resources settings** to edit one discovery rule at a time, page through rules, and test them against vault filenames. Frame search rules add search keywords without hiding frames from the selected drawing. The options below the tester control excluded folders, size, and light and dark thumbnail backgrounds.
 

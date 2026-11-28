@@ -4,8 +4,8 @@ import { JSON_parse } from "src/constants/constants";
 import { DRAWING_COMPRESSED_REG, getJSON } from "src/shared/excalidrawMarkdownParsing";
 import { decompressAsync } from "./sceneDataUtils";
 
-/** Read saved geometry only, without constructing a model or refreshing text/images. */
-export async function readDrawingPreviewElements(vault: Vault, file: TFile, maxSceneLength = Infinity): Promise<ExcalidrawElement[]> {
+/** Read saved geometry and the source text without constructing a drawing model. */
+export async function readDrawingPreviewScene(vault: Vault, file: TFile, maxSceneLength = Infinity) {
   const data = (await vault.cachedRead(file)).replace(/\r\n?/g, "\n");
   const match: IteratorResult<RegExpMatchArray, undefined> | undefined = maxSceneLength < Infinity && file.extension !== "excalidraw"
     ? data.matchAll(DRAWING_COMPRESSED_REG).next() : undefined;
@@ -15,5 +15,10 @@ export async function readDrawingPreviewElements(vault: Vault, file: TFile, maxS
   if (!json || json.length > maxSceneLength) throw Error("Drawing geometry exceeds the preview budget");
   const scene = JSON_parse<{ elements: ExcalidrawElement[] }>(json);
   if (!Array.isArray(scene?.elements)) throw Error("Drawing elements are missing");
-  return scene.elements.filter(element => !element.isDeleted);
+  return { elements: scene.elements.filter(element => !element.isDeleted), source: data };
+}
+
+/** Read saved geometry only, without constructing a model or refreshing text/images. */
+export async function readDrawingPreviewElements(vault: Vault, file: TFile, maxSceneLength = Infinity): Promise<ExcalidrawElement[]> {
+  return (await readDrawingPreviewScene(vault, file, maxSceneLength)).elements;
 }
