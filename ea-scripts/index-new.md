@@ -389,6 +389,12 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 ```
 <table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/1-2-3'>@1-2-3</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Excalidraw%20Collaboration%20Frame.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Creates a new Excalidraw.com collaboration room and places the link to the room on the clipboard.<a href="https://www.youtube.com/watch?v=7isRfeAhEH4" target="_blank"><img src ="https://i.ytimg.com/vi/7isRfeAhEH4/maxresdefault.jpg" style="width:400px;"></a></td></tr></table>
 
+## Excalidraw Notebooks
+```excalidraw-script-install
+https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Excalidraw%20Notebooks.md
+```
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/shahriarpshuvo'>@shahriarpshuvo</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Excalidraw%20Notebooks.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Paged notebooks inside Excalidraw. One page per screen or a scrolling stack of pages, with a page bar, plain, ruled, dotted and grid paper, a thumbnail sidebar and PDF pages as notebook pages. "New notebook" sits in the Obsidian file menu next to New note, and a drawing can be turned into a notebook and back. Set it as the startup script once.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-excalidraw-notebooks.png'></td></tr></table>
+
 ## Expand rectangles horizontally keep text centered
 ```excalidraw-script-install
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Expand%20rectangles%20horizontally%20keep%20text%20centered.md
